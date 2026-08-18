@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --electric-blue: #0052ff;
+    --electric-blue-light: #3b82f6;
+    --electric-blue-dark: #0038b8;
+    --surface: #ffffff;
+    --surface-secondary: #f8fafc;
+    --surface-tertiary: #f1f5f9;
+    --text-primary: #0b0f19;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --border-subtle: #f1f5f9;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--text-primary);
+    background-color: var(--surface);
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: -0.025em;
+  }
+
+  /* Accessibility: Respect user reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto !important;
+    }
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Custom Design System Utility Helpers */
+.bg-electric-gradient {
+  background: linear-gradient(135deg, #0052ff 0%, #0038b8 100%);
+}
+
+.bg-electric-subtle {
+  background: linear-gradient(180deg, rgba(0, 82, 255, 0.04) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+.electric-glow {
+  box-shadow: 0 8px 30px -4px rgba(0, 82, 255, 0.18);
+}
+
+.electric-glow-sm {
+  box-shadow: 0 4px 20px -2px rgba(0, 82, 255, 0.12);
+}
+
+.border-subtle {
+  border-color: rgba(226, 232, 240, 0.8);
+}
+
+/* Hide scrollbar for clean horizontal rails */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

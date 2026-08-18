@@ -1,0 +1,5 @@
+# Robots.txt for Mahdev Pvt Ltd (mahdev.lk)
+User-agent: *
+Allow: /
+
+Sitemap: https://mahdev.lk/sitemap.xml

@@ -1,0 +1,90 @@
+import React from 'react';
+import {
+  Sparkles,
+  Camera,
+  Cpu,
+  Plane,
+  ShoppingBag,
+  Building2,
+  Heart,
+  Volume2,
+  Target,
+  Film,
+  UserCheck,
+  Compass,
+  Code,
+  Cloud,
+  Layers,
+  ShieldCheck,
+  MapPin,
+  Car,
+  Home,
+  Laptop,
+  Truck,
+  Briefcase,
+  CheckCircle2,
+  ArrowRight,
+  ChevronDown,
+  ChevronRight,
+  Menu,
+  X,
+  Globe,
+  Mail,
+  Phone,
+  Clock,
+  Award,
+  Users,
+  ExternalLink,
+  Search,
+  LucideIcon,
+} from 'lucide-react';
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  Sparkles,
+  Camera,
+  Cpu,
+  Plane,
+  ShoppingBag,
+  Building2,
+  Heart,
+  Volume2,
+  Target,
+  Film,
+  UserCheck,
+  Compass,
+  Code,
+  Cloud,
+  Layers,
+  ShieldCheck,
+  MapPin,
+  Car,
+  Home,
+  Laptop,
+  Truck,
+  Briefcase,
+  CheckCircle2,
+  ArrowRight,
+  ChevronDown,
+  ChevronRight,
+  Menu,
+  X,
+  Globe,
+  Mail,
+  Phone,
+  Clock,
+  Award,
+  Users,
+  ExternalLink,
+  Search,
+};
+
+interface IconRendererProps {
+  name: string;
+  className?: string;
+  size?: number;
+}
+
+export const IconRenderer: React.FC<IconRendererProps> = ({ name, className = 'w-5 h-5', size }) => {
+  const Component = ICON_MAP[name] || Sparkles;
+  return <Component className={className} size={size} />;
+};

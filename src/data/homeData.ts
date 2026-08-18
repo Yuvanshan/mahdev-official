@@ -1,0 +1,406 @@
+import { DivisionId, MilestoneItem, PortfolioProject, ServiceItem, TrustedCompany } from '../types';
+
+export interface FeaturedService extends ServiceItem {
+  divisionName: string;
+  divisionRoute: string;
+  accentColor: string;
+  badge: string;
+  turnaroundTime?: string;
+}
+
+export interface FeaturedWorkItem extends PortfolioProject {
+  divisionName: string;
+  divisionRoute: string;
+  badge: string;
+  imageUrl: string;
+  accentColor: string;
+  metric: {
+    label: string;
+    value: string;
+  };
+}
+
+export interface DifferentiatorItem {
+  id: string;
+  title: string;
+  shortDescription: string;
+  fullDescription: string;
+  iconName: string;
+  badge: string;
+  highlightPoints: string[];
+}
+
+export const FEATURED_SERVICES: FeaturedService[] = [
+  {
+    id: 'srv-event-decor',
+    divisionId: 'sws',
+    divisionName: 'SWS Event Management',
+    divisionRoute: '/sws',
+    title: 'Luxury Event Staging & Theme Production',
+    description: 'Complete spatial transformation, intelligent acoustic lighting, thematic floral architecture, and seamless VIP hospitality management.',
+    features: [
+      '3D Architectural Stage Rendering',
+      'Concert-Grade Acoustic Rigs & Line Arrays',
+      '4K LED Screen Matrices & Live Feeds',
+      'Dedicated Stage Director & Hospitality Concierge'
+    ],
+    iconName: 'Sparkles',
+    popular: true,
+    badge: 'Events & Production',
+    accentColor: '#0052FF',
+    turnaroundTime: 'Custom Timeline'
+  },
+  {
+    id: 'srv-cinema-photo',
+    divisionId: 'u1',
+    divisionName: 'U1 Studio',
+    divisionRoute: '/u1',
+    title: 'Cinematography & Fine-Art Photography',
+    description: 'Cinema-grade 8K video production, commercial brand storytelling, editorial fashion shoots, and luxury wedding documentation.',
+    features: [
+      'Cinema 8K RAW Multi-Camera Coverage',
+      'Licensed 4K FPV Aerial Drone Cinematography',
+      'High-End Color Grading & Dolby Audio Master',
+      'Handcrafted Archival Heirloom Photo Albums'
+    ],
+    iconName: 'Camera',
+    popular: true,
+    badge: 'Media & Film',
+    accentColor: '#0052FF',
+    turnaroundTime: '2-3 Weeks Delivery'
+  },
+  {
+    id: 'srv-cloud-software',
+    divisionId: 'it',
+    divisionName: 'IT & Solutions',
+    divisionRoute: '/it',
+    title: 'Enterprise Software & Cloud Platforms',
+    description: 'Custom React & Node.js web platforms, native mobile applications, automated cloud infrastructure, and real-time ERP systems.',
+    features: [
+      'Full-Stack Modern Web & Mobile Apps',
+      'Scalable Serverless & Microservices Mesh',
+      'Custom ERP, CRM & Inventory Integration',
+      'Enterprise Uptime & Security Hardening'
+    ],
+    iconName: 'Cpu',
+    popular: true,
+    badge: 'Tech & Engineering',
+    accentColor: '#0052FF',
+    turnaroundTime: 'Agile Sprints'
+  },
+  {
+    id: 'srv-luxury-travel',
+    divisionId: 'travels',
+    divisionName: 'Mahdev Travels',
+    divisionRoute: '/travels',
+    title: 'Bespoke Island Expeditions & VIP Concierge',
+    description: 'Handcrafted luxury journeys across Sri Lanka, corporate retreat management, private helicopter charters, and 5-star villa curation.',
+    features: [
+      'Personalized Day-by-Day Curated Itineraries',
+      'Premium Chauffeur Fleet & Luxury Vehicles',
+      'Exclusive Access to Heritage Estates & Resorts',
+      '24/7 Dedicated On-Ground Travel Host'
+    ],
+    iconName: 'Plane',
+    popular: false,
+    badge: 'Travel & Expeditions',
+    accentColor: '#0052FF',
+    turnaroundTime: 'Immediate Confirmation'
+  },
+  {
+    id: 'srv-online-commerce',
+    divisionId: 'mart',
+    divisionName: 'Mahdev Online Mart',
+    divisionRoute: '/mart',
+    title: 'Enterprise Hardware & Curated Tech Mart',
+    description: 'Verified cinema gear, IT hardware, corporate bulk procurement solutions, and authenticated lifestyle accessories with warranty.',
+    features: [
+      '100% Genuine Authorized Brand Stock',
+      'Bulk Corporate Pricing & Tax Invoicing',
+      'Fast Island-wide Express Doorstep Delivery',
+      'Dedicated After-Sales & Warranty Support'
+    ],
+    iconName: 'ShoppingBag',
+    popular: false,
+    badge: 'Commerce & Retail',
+    accentColor: '#0052FF',
+    turnaroundTime: '24-48h Dispatch'
+  }
+];
+
+export const FEATURED_WORK: FeaturedWorkItem[] = [
+  {
+    id: 'work-1',
+    divisionId: 'sws',
+    divisionName: 'SWS Event Management',
+    divisionRoute: '/sws',
+    title: 'South Asia Economic Forum & Gala',
+    category: 'Corporate Summit & VIP Gala',
+    client: 'International Trade Chamber',
+    year: '2025',
+    summary: 'A 3-day high-security summit hosting 2,200 foreign delegates with real-time interpretation, immersive LED tunnel entryways, and banquet staging.',
+    highlights: [
+      'Custom 40-meter curved 4K LED backdrop',
+      'Zero audio-latency live transmission',
+      'VIP protocol and security coordination'
+    ],
+    badge: 'Event Production',
+    imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1200&auto=format&fit=crop',
+    accentColor: '#0052FF',
+    metric: {
+      label: 'Delegates Hosted',
+      value: '2,200+'
+    }
+  },
+  {
+    id: 'work-2',
+    divisionId: 'u1',
+    divisionName: 'U1 Studio',
+    divisionRoute: '/u1',
+    title: 'Ceylon Heritage — Cinematic Docuseries',
+    category: 'Commercial & Cultural Cinematography',
+    client: 'National Tourism Board',
+    year: '2025',
+    summary: 'An award-winning 6-part mini docuseries filmed in 8K across misty central highlands, ancient kingdoms, and pristine coastal reefs.',
+    highlights: [
+      '8K HDR cinema production with anamorphic primes',
+      'FPV cinematic aerial tracking shots',
+      'Original orchestral score sound design'
+    ],
+    badge: 'Cinematography',
+    imageUrl: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=1200&auto=format&fit=crop',
+    accentColor: '#0052FF',
+    metric: {
+      label: 'Global Viewership',
+      value: '1.4M+'
+    }
+  },
+  {
+    id: 'work-3',
+    divisionId: 'it',
+    divisionName: 'IT & Solutions',
+    divisionRoute: '/it',
+    title: 'OmniTrade Real-time Logistics Platform',
+    category: 'Cloud Architecture & Enterprise Web',
+    client: 'Apex Global Logistics',
+    year: '2024',
+    summary: 'Modernized legacy supply-chain workflows with a cloud-native real-time portal handling fleet tracking, dynamic routing, and automated invoicing.',
+    highlights: [
+      'Sub-50ms sync latency across 14 distribution centers',
+      'Offline-capable driver mobile companion app',
+      '99.99% measured service uptime'
+    ],
+    badge: 'Enterprise Software',
+    imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1200&auto=format&fit=crop',
+    accentColor: '#0052FF',
+    metric: {
+      label: 'Efficiency Boost',
+      value: '+42%'
+    }
+  },
+  {
+    id: 'work-4',
+    divisionId: 'travels',
+    divisionName: 'Mahdev Travels',
+    divisionRoute: '/travels',
+    title: 'Royal Ceylon Highland Retreat',
+    category: 'VIP Bespoke Expedition',
+    client: 'Global Executive Delegation',
+    year: '2024',
+    summary: 'A 10-day private retreat encompassing helicopter transfers, private colonial tea bungalow stays, and exclusive culinary dining experiences.',
+    highlights: [
+      'Private helicopter transfers between 5 destinations',
+      'Curated tea estate masterclasses and biodiversity walks',
+      'Dedicated 24/7 multilingual travel concierges'
+    ],
+    badge: 'Luxury Travel',
+    imageUrl: 'https://images.unsplash.com/photo-1546708973-b339540b5162?q=80&w=1200&auto=format&fit=crop',
+    accentColor: '#0052FF',
+    metric: {
+      label: 'Guest Rating',
+      value: '5.0 / 5'
+    }
+  },
+  {
+    id: 'work-5',
+    divisionId: 'mart',
+    divisionName: 'Mahdev Online Mart',
+    divisionRoute: '/mart',
+    title: 'Broadcast Media Equipment Overhaul',
+    category: 'Enterprise Hardware Procurement',
+    client: 'Vanguard Media House',
+    year: '2025',
+    summary: 'Full-cycle procurement, testing, configuration, and warranty setup for 45 studio camera bodies, wireless transmission kits, and lighting matrices.',
+    highlights: [
+      'Direct authorized manufacturer sourcing',
+      'Pre-calibrated color profiles and stress testing',
+      'Delivered 4 days ahead of scheduled air date'
+    ],
+    badge: 'Procurement',
+    imageUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1200&auto=format&fit=crop',
+    accentColor: '#0052FF',
+    metric: {
+      label: 'Units Deployed',
+      value: '120+ Units'
+    }
+  }
+];
+
+export const COMPANY_MILESTONES: (MilestoneItem & { id: string; badge: string; keyOutcome: string })[] = [
+  {
+    id: 'ms-2018',
+    year: '2018',
+    title: 'Founding & SWS Event Management Debut',
+    description: 'Mahdev established corporate headquarters in Colombo, launching SWS Event Management with a focus on luxury wedding productions and high-profile corporate galas.',
+    divisionId: 'sws',
+    badge: 'Inception',
+    keyOutcome: 'Established nationwide reputation for flawless event execution and sound engineering.',
+    highlight: false
+  },
+  {
+    id: 'ms-2020',
+    year: '2020',
+    title: 'U1 Studio Establishment',
+    description: 'Expanded creative capabilities with a dedicated visual production wing, investing in 8K cinematography, fine-art photography, and state-of-the-art editing suites.',
+    divisionId: 'u1',
+    badge: 'Creative Expansion',
+    keyOutcome: 'Delivered national brand commercials and acclaimed cultural photo documentaries.',
+    highlight: false
+  },
+  {
+    id: 'ms-2022',
+    year: '2022',
+    title: 'IT & Solutions Division Launch',
+    description: 'Recognizing the demand for robust software systems, Mahdev IT was formed to build mission-critical enterprise applications, cloud infrastructure, and automated portals.',
+    divisionId: 'it',
+    badge: 'Tech Engineering',
+    keyOutcome: 'Engineered high-scale digital platforms for leading Sri Lankan logistics and commercial enterprises.',
+    highlight: true
+  },
+  {
+    id: 'ms-2024',
+    year: '2024',
+    title: 'Mahdev Travels & Online Mart Expansion',
+    description: 'Completed the foundational 5-division ecosystem by launching bespoke luxury travel curation and an authenticated tech hardware commerce storefront.',
+    divisionId: 'travels',
+    badge: 'Ecosystem Completion',
+    keyOutcome: 'Formed a unified multi-service ecosystem spanning lifestyle, digital, and logistics.',
+    highlight: false
+  },
+  {
+    id: 'ms-2025',
+    year: '2025 - Present',
+    title: 'Unified Corporate Synergy & Digital Mesh',
+    description: 'Consolidated parent governance and centralized technological architecture to deliver cross-division synergy for individuals and multinational brands alike.',
+    badge: 'Synergy Era',
+    keyOutcome: 'One trusted parent company providing 360-degree innovation and creative mastery.',
+    highlight: true
+  }
+];
+
+export const TRUSTED_COMPANIES: TrustedCompany[] = [
+  {
+    id: 'co-1',
+    name: 'Ceylon Enterprises Group',
+    industry: 'Conglomerate & Trade',
+    partnershipType: 'Enterprise IT & Corporate Events'
+  },
+  {
+    id: 'co-2',
+    name: 'Horizon Ventures',
+    industry: 'Private Equity & Capital',
+    partnershipType: 'Media Production & Brand Films'
+  },
+  {
+    id: 'co-3',
+    name: 'Vanguard Media House',
+    industry: 'Broadcasting & Telecommunications',
+    partnershipType: 'Studio Gear & Audio Engineering'
+  },
+  {
+    id: 'co-4',
+    name: 'Lanka Tech Labs',
+    industry: 'Software & Fintech',
+    partnershipType: 'Cloud Infrastructure & DevOps'
+  },
+  {
+    id: 'co-5',
+    name: 'Apex Global Logistics',
+    industry: 'Maritime & Freight',
+    partnershipType: 'Custom ERP & Fleet Portals'
+  },
+  {
+    id: 'co-6',
+    name: 'Serendib Heritage Resorts',
+    industry: 'Hospitality & Tourism',
+    partnershipType: 'VIP Travel Curation & Photojournalism'
+  }
+];
+
+export const WHY_MAHDEV_DIFFERENTIATORS: DifferentiatorItem[] = [
+  {
+    id: 'diff-ecosystem',
+    title: 'Multi-Service Ecosystem',
+    shortDescription: 'One trusted enterprise partner handling your events, visual media, technology, travel, and procurement without fragmented vendor management.',
+    fullDescription: 'Instead of dealing with multiple disjointed agencies, clients benefit from a single corporate partner with unified standards of quality, transparent billing, and synchronized project execution.',
+    iconName: 'Layers',
+    badge: 'Holistic Synergy',
+    highlightPoints: [
+      'Single point of accountability across 5 divisions',
+      'Synchronized project timelines and cross-functional support',
+      'Consolidated corporate invoicing and dedicated account manager'
+    ]
+  },
+  {
+    id: 'diff-creative',
+    title: 'Creative Expertise & Artistry',
+    shortDescription: 'Masterful storytelling, bespoke spatial aesthetics, and cinema-grade visual fidelity across every production.',
+    fullDescription: 'From high-impact conference staging with acoustic mastery to editorial photojournalism and brand commercials, our creative teams possess deep artistic training and elite equipment.',
+    iconName: 'Sparkles',
+    badge: 'Artistic Mastery',
+    highlightPoints: [
+      'Cinema 8K production rigs and fine-art composition',
+      'Artisanal stage design and custom lighting architecture',
+      'Award-winning visual directors and media specialists'
+    ]
+  },
+  {
+    id: 'diff-tech',
+    title: 'Technology-Driven Solutions',
+    shortDescription: 'Resilient cloud software, automated workflows, and modern web architectures engineered for scale.',
+    fullDescription: 'Our IT division engineers robust, type-safe software platforms and automated systems that power modern enterprise efficiency with high uptime and strict data integrity.',
+    iconName: 'Cpu',
+    badge: 'Engineered Precision',
+    highlightPoints: [
+      'High-performance React, TypeScript & cloud architectures',
+      '99.99% uptime guarantees on enterprise systems',
+      'Proactive cybersecurity and strict code quality standards'
+    ]
+  },
+  {
+    id: 'diff-customer',
+    title: 'Customer-Focused Service',
+    shortDescription: 'Attentive personal concierges, transparent communication, and tailored solutions built around your exact goals.',
+    fullDescription: 'We treat every engagement—from a private family celebration to a multinational software rollout—with dedicated care, prompt responses, and proactive problem solving.',
+    iconName: 'Heart',
+    badge: 'Client Commitment',
+    highlightPoints: [
+      'Dedicated project leads for every client engagement',
+      'Transparent milestone tracking and proactive updates',
+      'Tailored solutions designed around your exact needs'
+    ]
+  },
+  {
+    id: 'diff-growth',
+    title: 'Growing Reach Across Sri Lanka',
+    shortDescription: 'Established operational footprint in Colombo with island-wide logistics, regional event staging, and global traveler hospitality.',
+    fullDescription: 'With strong local roots and expanding operational capacity, Mahdev delivers consistent quality whether executing in Colombo or remote heritage destinations across the island.',
+    iconName: 'Globe',
+    badge: 'Nationwide Presence',
+    highlightPoints: [
+      'Island-wide logistics and on-ground deployment teams',
+      'Strong local network of certified vendors and venues',
+      'Global traveler concierge and international client support'
+    ]
+  }
+];
