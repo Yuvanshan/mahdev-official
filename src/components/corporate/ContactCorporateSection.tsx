@@ -27,6 +27,8 @@ import {
 import { CORPORATE_CONTACT_DETAILS } from '../../data/corporateData';
 import { COMPANY_INFO, getTelLink, getMailtoLink, getMapSearchUrl } from '../../config/company';
 import { DIVISION_LIST } from '../../config/divisions';
+import { evaluateBotRisk, checkActionThrottle } from '../../utils/securityProtection';
+import { notificationService } from '../../services/notificationService';
 
 interface ContactCorporateSectionProps {
   defaultDivision?: string;
@@ -46,6 +48,8 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
     message: '',
   });
 
+  const [honeypotValue, setHoneypotValue] = useState('');
+  const [formRenderTime] = useState<number>(() => Date.now());
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -54,6 +58,22 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
   // Validate form fields
   const validateForm = () => {
     const errs: { [key: string]: string } = {};
+
+    // 1. Bot & Abuse Evaluation
+    const botCheck = evaluateBotRisk({
+      honeypotValue,
+      formRenderTime,
+      email: formData.email,
+      messageOrNotes: formData.message,
+    });
+
+    if (!botCheck.isLegitimate) {
+      errs.bot = botCheck.reason || 'Verification check failed. Please try again.';
+    }
+
+    if (!checkActionThrottle('corporate_contact_submit', 2000)) {
+      errs.throttle = 'Please wait a moment before resubmitting your inquiry.';
+    }
 
     if (!formData.name.trim()) {
       errs.name = 'Full name is required';
@@ -90,7 +110,34 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
     setTimeout(() => {
       setLoading(false);
       setSubmitted(true);
-      setInquiryRef(`MDV-${Math.floor(100000 + Math.random() * 900000)}`);
+      const ref = `MDV-${Math.floor(100000 + Math.random() * 900000)}`;
+      setInquiryRef(ref);
+
+      // Dispatch notifications safely
+      if (formData.division !== 'general' || formData.serviceType) {
+        notificationService.notifyQuoteRequestReceived({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          service: formData.serviceType || 'General Enterprise Consultation',
+          division: formData.division,
+        }).catch(() => {});
+
+        notificationService.notifyAdminQuoteRequest({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          division: formData.division,
+          details: formData.message,
+        }).catch(() => {});
+      } else {
+        notificationService.notifyAdminContactInquiry({
+          name: formData.name,
+          email: formData.email,
+          subject: 'Corporate Contact Inquiry',
+          message: formData.message,
+        }).catch(() => {});
+      }
     }, 700);
   };
 
@@ -166,6 +213,28 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Bot / Throttle Alert */}
+                    {(errors.bot || errors.throttle) && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-xs text-red-700">
+                        <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                        <span>{errors.bot || errors.throttle}</span>
+                      </div>
+                    )}
+
+                    {/* Hidden Honeypot Trap */}
+                    <div className="hidden" aria-hidden="true" style={{ display: 'none' }}>
+                      <label htmlFor="company_website_contact_hp">Leave this field blank</label>
+                      <input
+                        id="company_website_contact_hp"
+                        type="text"
+                        name="_hp_corp_website"
+                        value={honeypotValue}
+                        onChange={(e) => setHoneypotValue(e.target.value)}
+                        tabIndex={-1}
+                        autoComplete="off"
+                      />
+                    </div>
+
                     <div className="border-b border-slate-100 pb-4 mb-2">
                       <h3 className="font-display text-xl font-bold text-slate-900">
                         Corporate Project Brief

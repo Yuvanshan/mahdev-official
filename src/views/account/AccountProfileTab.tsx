@@ -18,6 +18,7 @@ import {
 import { CustomerUser } from '../../types/customer';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
+import { ImageUploader } from '../../components/common/ImageUploader';
 
 interface AccountProfileTabProps {
   user: CustomerUser;
@@ -116,7 +117,7 @@ export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) =>
         </div>
 
         {/* Avatar Picker */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           <label className="text-xs font-bold text-slate-700 block">Profile Avatar</label>
           <div className="flex items-center gap-4 flex-wrap">
             <img
@@ -124,8 +125,8 @@ export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) =>
               alt={formData.fullName}
               className="w-16 h-16 rounded-2xl object-cover border-2 border-blue-500 shadow-sm shrink-0"
             />
-            <div className="space-y-1.5">
-              <span className="text-[11px] text-slate-500 block">Choose an executive avatar preset:</span>
+            <div className="space-y-1.5 flex-1 min-w-[240px]">
+              <span className="text-[11px] text-slate-500 block">Choose an executive preset:</span>
               <div className="flex items-center gap-2">
                 {AVATAR_PRESETS.map((preset, idx) => (
                   <button
@@ -143,6 +144,25 @@ export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) =>
                 ))}
               </div>
             </div>
+          </div>
+
+          <div className="pt-2">
+            <ImageUploader
+              category="users"
+              subfolder={user.id || user.uid}
+              currentImageUrl={formData.avatarUrl}
+              onUploadSuccess={(item) => {
+                setFormData((prev) => ({ ...prev, avatarUrl: item.url }));
+              }}
+              label="Upload Custom Profile Photo"
+              helperText="Upload your custom photo to Firebase Storage (users/ repository). WebP/JPEG auto-compressed."
+              options={{
+                maxWidth: 600,
+                maxHeight: 600,
+                quality: 0.9,
+                targetFormat: 'image/webp',
+              }}
+            />
           </div>
         </div>
 

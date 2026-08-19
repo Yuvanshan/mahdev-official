@@ -14,6 +14,7 @@ export interface OfficeLocation {
 export interface CompanyInformation {
   name: string;
   legalName: string;
+  registrationNumber?: string;
   tagline: string;
   description: string;
   domain: string;
@@ -42,6 +43,7 @@ export interface CompanyInformation {
 export const COMPANY_INFO: CompanyInformation = {
   name: 'Mahdev',
   legalName: 'Mahdev Pvt Ltd',
+  registrationNumber: 'PV-00289410',
   tagline: 'Creating Moments. Capturing Memories. Delivering Innovation.',
   description:
     'Premier multi-division enterprise ecosystem delivering 360° event engineering, cinema studio production, software architectures, luxury travel expeditions, and curated e-commerce.',
@@ -119,4 +121,14 @@ export function getMailtoLink(email: string = COMPANY_INFO.email, subject?: stri
 // Helper to format Google Maps search query link
 export function getMapSearchUrl(query: string): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+// Helper to format clean WhatsApp click-to-chat link
+export function getWhatsAppUrl(phone: string = COMPANY_INFO.primaryPhone, text?: string): string {
+  const digits = phone.replace(/\D/g, '');
+  const international = digits.startsWith('0') ? `94${digits.substring(1)}` : digits.startsWith('94') ? digits : `94${digits}`;
+  if (text) {
+    return `https://wa.me/${international}?text=${encodeURIComponent(text)}`;
+  }
+  return `https://wa.me/${international}`;
 }

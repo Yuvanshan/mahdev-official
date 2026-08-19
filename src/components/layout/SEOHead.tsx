@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { SEOMetaData } from '../../types';
 import { BRAND_CONFIG } from '../../config/brand';
+import { COMPANY_INFO } from '../../config/company';
 
 const SEO_STORAGE_KEY = 'mahdev_cms_seo_configs_v1';
 
@@ -50,11 +51,16 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       // Use standard props
     }
 
-    // Update Page Title
-    const formattedTitle = effectiveTitle.includes(BRAND_CONFIG.legalName)
-      ? effectiveTitle
-      : `${effectiveTitle} | ${BRAND_CONFIG.legalName}`;
-    document.title = formattedTitle;
+    // Ensure canonical URL is always fully qualified with production domain https://mahdev.lk
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
+    if (!effectiveCanonical || !effectiveCanonical.startsWith('http')) {
+      const cleanPath = effectiveCanonical ? (effectiveCanonical.startsWith('/') ? effectiveCanonical : `/${effectiveCanonical}`) : currentPath;
+      effectiveCanonical = `https://mahdev.lk${cleanPath === '/' ? '' : cleanPath}`;
+    }
+
+    // Hostname evaluation for environment-aware search engine indexing
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+    const isProductionHost = hostname === 'mahdev.lk' || hostname === 'www.mahdev.lk';
 
     // Helper to safely update or create meta tags
     const setMetaTag = (attr: string, key: string, content: string) => {
@@ -67,12 +73,25 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       element.setAttribute('content', content);
     };
 
+    // Prevent search indexing on Preview / Development staging environments
+    setMetaTag(
+      'name',
+      'robots',
+      isProductionHost
+        ? 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1'
+        : 'noindex, nofollow'
+    );
+
     setMetaTag('name', 'description', effectiveDesc);
     setMetaTag('property', 'og:title', effectiveOgTitle);
     setMetaTag('property', 'og:description', effectiveOgDesc);
     setMetaTag('property', 'og:image', effectiveOgImage);
     setMetaTag('property', 'og:type', ogType);
     setMetaTag('property', 'og:url', effectiveCanonical);
+    setMetaTag('name', 'twitter:card', 'summary_large_image');
+    setMetaTag('name', 'twitter:title', effectiveOgTitle);
+    setMetaTag('name', 'twitter:description', effectiveOgDesc);
+    setMetaTag('name', 'twitter:image', effectiveOgImage);
 
     // Canonical link
     let canonicalLink = document.querySelector('link[rel="canonical"]');
@@ -96,11 +115,51 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     const schema = {
       '@context': 'https://schema.org',
       '@type': 'Organization',
-      name: BRAND_CONFIG.legalName,
-      url: BRAND_CONFIG.domain,
-      logo: 'https://mahdev.lk/logo.png',
-      description: BRAND_CONFIG.tagline,
-      sameAs: Object.values(BRAND_CONFIG.socials).filter(Boolean),
+      name: COMPANY_INFO.legalName,
+      alternateName: COMPANY_INFO.name,
+      url: `https://${COMPANY_INFO.domain}`,
+      logo: `https://${COMPANY_INFO.domain}/logo.png`,
+      description: COMPANY_INFO.description,
+      email: COMPANY_INFO.email,
+      telephone: [COMPANY_INFO.primaryPhone, COMPANY_INFO.secondaryPhone],
+      sameAs: [
+        COMPANY_INFO.socials.linkedin,
+        COMPANY_INFO.socials.facebook,
+        COMPANY_INFO.socials.instagram,
+        COMPANY_INFO.socials.youtube,
+      ].filter(Boolean),
+      address: [
+        {
+          '@type': 'PostalAddress',
+          streetAddress: COMPANY_INFO.offices.colombo.address,
+          addressLocality: COMPANY_INFO.offices.colombo.city,
+          addressRegion: 'Western Province',
+          addressCountry: 'LK',
+        },
+        {
+          '@type': 'PostalAddress',
+          streetAddress: COMPANY_INFO.offices.trincomalee.address,
+          addressLocality: COMPANY_INFO.offices.trincomalee.city,
+          addressRegion: 'Eastern Province',
+          addressCountry: 'LK',
+        },
+      ],
+      contactPoint: [
+        {
+          '@type': 'ContactPoint',
+          telephone: COMPANY_INFO.primaryPhone,
+          contactType: 'customer service',
+          email: COMPANY_INFO.email,
+          availableLanguage: ['English', 'Tamil', 'Sinhala'],
+        },
+        {
+          '@type': 'ContactPoint',
+          telephone: COMPANY_INFO.secondaryPhone,
+          contactType: 'technical support',
+          email: COMPANY_INFO.email,
+          availableLanguage: ['English', 'Tamil', 'Sinhala'],
+        },
+      ],
     };
 
     scriptTag.textContent = JSON.stringify(schema);
@@ -108,3 +167,4 @@ export const SEOHead: React.FC<SEOMetaData> = ({
 
   return null;
 };
+

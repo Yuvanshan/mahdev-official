@@ -19,20 +19,20 @@ import { SectionContainer } from '../components/ui/SectionContainer';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { IconRenderer } from '../components/ui/IconRenderer';
-import { Product, ProductVariant, CartItem, MART_PRODUCTS } from '../data/martData';
+import { Product, ProductVariant, MART_PRODUCTS } from '../data/martData';
 import { DIVISION_LIST } from '../config/divisions';
 import { COMPANY_INFO, getTelLink } from '../config/company';
+import { useCart } from '../context/CartContext';
 
 interface MartViewProps {
   onNavigate: (route: string) => void;
 }
 
 export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
+  const { addToCart, totalQuantity: totalCartCount, openCart } = useCart();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedProductForDetail, setSelectedProductForDetail] = useState<Product | null>(null);
-  const [cartOpen, setCartOpen] = useState(false);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Check URL query parameters or path for sub-routes
@@ -54,69 +54,9 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
   };
 
   const handleAddToCart = (product: Product, variant?: ProductVariant, quantity: number = 1) => {
-    setCartItems((prev) => {
-      const existingIdx = prev.findIndex(
-        (i) => i.product.id === product.id && i.selectedVariant?.id === variant?.id
-      );
-
-      const variantMod = variant?.priceModifier || 0;
-      const unitPrice = product.price + variantMod;
-
-      if (existingIdx > -1) {
-        const updated = [...prev];
-        const newQty = updated[existingIdx].quantity + quantity;
-        updated[existingIdx] = {
-          ...updated[existingIdx],
-          quantity: newQty,
-          itemTotal: unitPrice * newQty,
-        };
-        return updated;
-      } else {
-        return [
-          ...prev,
-          {
-            product,
-            selectedVariant: variant,
-            quantity,
-            itemTotal: unitPrice * quantity,
-          },
-        ];
-      }
-    });
-
+    addToCart(product, variant, quantity);
     showToast(`Added ${quantity}x ${product.name} to cart`);
-    setCartOpen(true);
   };
-
-  const handleUpdateCartQuantity = (index: number, newQty: number) => {
-    if (newQty <= 0) {
-      handleRemoveCartItem(index);
-      return;
-    }
-    setCartItems((prev) => {
-      const updated = [...prev];
-      const item = updated[index];
-      const variantMod = item.selectedVariant?.priceModifier || 0;
-      const unitPrice = item.product.price + variantMod;
-
-      updated[index] = {
-        ...item,
-        quantity: newQty,
-        itemTotal: unitPrice * newQty,
-      };
-      return updated;
-    });
-  };
-
-  const handleRemoveCartItem = (index: number) => {
-    setCartItems((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleClearCart = () => {
-    setCartItems([]);
-  };
-
-  const totalCartCount = cartItems.reduce((acc, i) => acc + i.quantity, 0);
 
   const scrollToAnchor = (id: string) => {
     const el = document.getElementById(id);
@@ -181,7 +121,7 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
             {/* Cart Button with Reactive Badge */}
             <button
               type="button"
-              onClick={() => setCartOpen(true)}
+              onClick={openCart}
               className="relative inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0052FF] hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer shadow-sm"
               aria-label="View Shopping Cart"
             >
@@ -300,16 +240,6 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
           setSelectedProductForDetail(null);
         }}
         onSelectRelatedProduct={(relProd) => setSelectedProductForDetail(relProd)}
-      />
-
-      {/* 6. SLIDE-OUT CART DRAWER */}
-      <MartCartDrawer
-        isOpen={cartOpen}
-        onClose={() => setCartOpen(false)}
-        items={cartItems}
-        onUpdateQuantity={handleUpdateCartQuantity}
-        onRemoveItem={handleRemoveCartItem}
-        onClearCart={handleClearCart}
       />
     </div>
   );

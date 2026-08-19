@@ -17,6 +17,8 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { SEOHead } from '../../components/layout/SEOHead';
+import { evaluateBotRisk, checkActionThrottle } from '../../utils/securityProtection';
+import { notificationService } from '../../services/notificationService';
 
 interface RegisterViewProps {
   onNavigate: (path: string) => void;
@@ -24,6 +26,8 @@ interface RegisterViewProps {
 
 export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
   const { register } = useAuth();
+  const [formRenderTime] = useState<number>(() => Date.now());
+  const [honeypotValue, setHoneypotValue] = useState('');
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -61,6 +65,24 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+
+    // 1. Bot & Abuse Evaluation
+    const botCheck = evaluateBotRisk({
+      honeypotValue,
+      formRenderTime,
+      email: formData.email,
+    });
+
+    if (!botCheck.isLegitimate) {
+      setErrorMessage(botCheck.reason || 'Verification check failed. Please try again.');
+      return;
+    }
+
+    // 2. Throttle Check
+    if (!checkActionThrottle('user_register', 2000)) {
+      setErrorMessage('Please wait a moment before resubmitting.');
+      return;
+    }
 
     if (!formData.fullName.trim()) {
       setErrorMessage('Full name is required.');
@@ -107,6 +129,20 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
 
     if (result.success) {
       setSuccessMessage('Account created successfully! Redirecting to your customer dashboard...');
+      
+      // Dispatch customer welcome notification and admin alert
+      notificationService.notifyRegistration({
+        name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+      }).catch(() => {});
+
+      notificationService.notifyAdminNewCustomer({
+        name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+      }).catch(() => {});
+
       setTimeout(() => {
         onNavigate('/account');
       }, 1200);
@@ -181,6 +217,19 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
 
           {/* Registration Form */}
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+            {/* Honeypot Trap (Hidden from genuine human users, filled only by automated spam bots) */}
+            <div className="hidden" aria-hidden="true" style={{ display: 'none' }}>
+              <label htmlFor="company_website_hp">Leave this field blank</label>
+              <input
+                id="company_website_hp"
+                type="text"
+                name="_hp_company_website"
+                value={honeypotValue}
+                onChange={(e) => setHoneypotValue(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+              />
+            </div>
             <div className="space-y-1">
               <label className="font-semibold text-slate-700">Full Name *</label>
               <div className="relative">

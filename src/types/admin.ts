@@ -103,6 +103,7 @@ export interface AuditLogEntry {
 
 export type AdminSectionId =
   | 'dashboard'
+  | 'analytics'
   | 'homepage'
   | 'divisions'
   | 'services'

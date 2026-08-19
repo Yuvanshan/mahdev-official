@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Star, Quote, ChevronLeft, ChevronRight, CheckCircle2, MessageSquare, Sparkles } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body, Caption } from '../ui/Heading';
@@ -9,8 +9,9 @@ import {
   TiltCard,
   Magnetic,
 } from '../motion/MotionWrappers';
-import { TESTIMONIALS_DATA } from '../../data/corporateData';
-import { DivisionId, Testimonial } from '../../types';
+import { cmsService } from '../../services/cmsService';
+import { CmsTestimonial, HomepageCmsConfig } from '../../types/cms';
+import { DivisionId } from '../../types';
 
 interface TestimonialsSectionProps {
   initialDivision?: DivisionId | 'all';
@@ -21,9 +22,31 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
 }) => {
   const [selectedDivision, setSelectedDivision] = useState<DivisionId | 'all'>(initialDivision);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [testimonials, setTestimonials] = useState<CmsTestimonial[]>([]);
+  const [config, setConfig] = useState<HomepageCmsConfig>(() => cmsService.getHomepageConfig());
 
-  const filteredTestimonials = TESTIMONIALS_DATA.filter(
-    (t) => selectedDivision === 'all' || t.divisionId === selectedDivision
+  const loadData = () => {
+    const list = cmsService.getAll<CmsTestimonial>('testimonials', { status: 'active' });
+    setTestimonials(list);
+    setConfig(cmsService.getHomepageConfig());
+  };
+
+  useEffect(() => {
+    loadData();
+    const unsubT = cmsService.subscribe('testimonials', loadData);
+    const unsubH = cmsService.subscribeHomepage(loadData);
+    return () => {
+      unsubT();
+      unsubH();
+    };
+  }, []);
+
+  if (config.testimonials && !config.testimonials.enabled) {
+    return null;
+  }
+
+  const filteredTestimonials = testimonials.filter(
+    (t) => selectedDivision === 'all' || t.divisionId === selectedDivision || !t.divisionId
   );
 
   const nextTestimonial = () => {

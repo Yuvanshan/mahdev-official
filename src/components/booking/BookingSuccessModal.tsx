@@ -14,6 +14,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { Booking } from '../../types/booking';
+import { COMPANY_INFO, getWhatsAppUrl } from '../../config/company';
 
 interface BookingSuccessModalProps {
   booking: Booking;
@@ -36,9 +37,9 @@ export const BookingSuccessModal: React.FC<BookingSuccessModalProps> = ({
     // Generate simple .ics calendar file
     const icsData = `BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//Mahdev Pvt Ltd//Universal Booking System//EN
+PRODID:-//${COMPANY_INFO.legalName}//Universal Booking System//EN
 BEGIN:VEVENT
-UID:${booking.id}@mahdev.com
+UID:${booking.id}@${COMPANY_INFO.domain}
 DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z
 DTSTART:${booking.date.replace(/-/g, '')}T090000Z
 SUMMARY:${booking.serviceName} (${booking.divisionName})
@@ -172,9 +173,10 @@ END:VCALENDAR`;
             </button>
 
             <a
-              href={`https://wa.me/94750928078?text=${encodeURIComponent(
+              href={getWhatsAppUrl(
+                COMPANY_INFO.primaryPhone,
                 `Hello Mahdev Concierge, I have just made a booking [ID: ${booking.id}] for ${booking.serviceName}.`
-              )}`}
+              )}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-xs"

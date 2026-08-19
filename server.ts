@@ -7,14 +7,29 @@ import {
   PaymentTransaction,
   VerificationResult,
 } from './src/types/payment';
+import {
+  validateAndCreateAuthoritativeOrder,
+  validateOrderStatusTransition,
+  generateOrderSignature,
+} from './server/services/secureOrderService';
+import {
+  generateSecureFiscalInvoice,
+} from './server/services/secureInvoiceService';
+import {
+  dispatchServerNotification,
+} from './server/services/secureNotificationService';
+import {
+  getServerConfig,
+  validateServerSecrets,
+} from './server/config/serverEnv';
+
+const serverConfig = getServerConfig();
 
 // Server-side Secrets (never sent to client)
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
-const PAYMENT_WEBHOOK_SECRET =
-  process.env.PAYMENT_WEBHOOK_SECRET || 'mahdev_secure_hmac_secret_2026_enterprise_production_key';
-const PAYMENT_GATEWAY_ENV = process.env.PAYMENT_GATEWAY_ENV || 'sandbox';
-const ADMIN_SECRET_SALT =
-  process.env.ADMIN_SECRET_SALT || 'mahdev_super_admin_secure_kernel_signature_2026';
+const STRIPE_SECRET_KEY = serverConfig.payments.stripeSecretKey;
+const PAYMENT_WEBHOOK_SECRET = serverConfig.payments.webhookSecret;
+const PAYMENT_GATEWAY_ENV = serverConfig.payments.gatewayEnv;
+const ADMIN_SECRET_SALT = serverConfig.security.adminSecretSalt;
 
 // In-Memory Transaction Store (Persistent during server lifecycle)
 const transactionStore = new Map<string, PaymentTransaction>();
@@ -263,7 +278,7 @@ async function startServer() {
     res.header('Access-Control-Allow-Origin', '*');
     res.header(
       'Access-Control-Allow-Headers',
-      'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Firebase-AppCheck'
     );
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
 
@@ -888,6 +903,238 @@ async function startServer() {
   });
 
   // ==========================================
+  // PHASE 28: SECURE TRUSTED BACKEND ENDPOINTS
+  // ==========================================
+
+  // 1. Authoritative Order Creation & Validation (Protects against client-side cart tampering)
+  app.post(
+    '/api/orders/validate-and-create',
+    rateLimit({ windowMs: 60000, max: 20, endpointName: 'order_create' }),
+    (req: Request, res: Response) => {
+      const {
+        customerId,
+        customerEmail,
+        customerName,
+        customerPhone,
+        shippingAddress,
+        items,
+        couponCode,
+        currency,
+        deliveryMethod,
+      } = req.body;
+
+      if (!customerEmail || !customerName || !items || !Array.isArray(items)) {
+        res.status(400).json({
+          success: false,
+          error: 'Missing required order fields (customerEmail, customerName, items).',
+        });
+        return;
+      }
+
+      const result = validateAndCreateAuthoritativeOrder({
+        customerId: sanitizeString(customerId, 64) || undefined,
+        customerEmail: sanitizeString(customerEmail, 100),
+        customerName: sanitizeString(customerName, 100),
+        customerPhone: sanitizeString(customerPhone, 30),
+        shippingAddress: {
+          street: sanitizeString(shippingAddress?.street, 150),
+          city: sanitizeString(shippingAddress?.city, 80),
+          state: sanitizeString(shippingAddress?.state, 80),
+          country: sanitizeString(shippingAddress?.country, 80) || 'Sri Lanka',
+          postalCode: sanitizeString(shippingAddress?.postalCode, 20),
+        },
+        items,
+        couponCode: sanitizeString(couponCode, 30),
+        currency: sanitizeString(currency, 10) || 'USD',
+        deliveryMethod: deliveryMethod === 'express' || deliveryMethod === 'freight' ? deliveryMethod : 'standard',
+      });
+
+      if (!result.success || !result.order) {
+        res.status(400).json({ success: false, error: result.error });
+        return;
+      }
+
+      // Log secure audit trail
+      serverAuditLogs.unshift({
+        id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        timestamp: new Date().toISOString(),
+        adminEmail: 'system@mahdev.lk',
+        adminName: 'Kernel Order Authority',
+        action: 'ORDER_VALIDATED_AND_CREATED',
+        entityType: 'Order',
+        entityId: result.order.orderId,
+        details: `Authoritative order created for ${result.order.customerEmail}. Total: $${result.order.totalAmount} ${result.order.currency}.`,
+        status: 'success',
+      });
+
+      res.json({
+        success: true,
+        order: result.order,
+      });
+    }
+  );
+
+  // 2. Authoritative Order Status Transition (Protected: Admin / Staff / System only)
+  app.post(
+    '/api/orders/status-update',
+    requireAdminAuth(['superAdmin', 'admin', 'manager', 'staff']),
+    (req: Request, res: Response) => {
+      const { orderId, currentStatus, newStatus, trackingNumber, notes } = req.body;
+      const session = (req as any).adminSession;
+
+      if (!orderId || !currentStatus || !newStatus) {
+        res.status(400).json({
+          success: false,
+          error: 'orderId, currentStatus, and newStatus are required.',
+        });
+        return;
+      }
+
+      const transitionCheck = validateOrderStatusTransition(currentStatus, newStatus);
+      if (!transitionCheck.isValid) {
+        res.status(400).json({
+          success: false,
+          error: transitionCheck.reason,
+        });
+        return;
+      }
+
+      const auditEntry = {
+        id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        timestamp: new Date().toISOString(),
+        adminEmail: session.email,
+        adminName: session.adminId,
+        action: 'ORDER_STATUS_CHANGED',
+        entityType: 'Order',
+        entityId: sanitizeString(orderId, 64),
+        details: `Transitioned order from ${currentStatus} to ${newStatus}. Tracking: ${trackingNumber || 'N/A'}. Notes: ${notes || 'None'}.`,
+        status: 'success',
+      };
+
+      serverAuditLogs.unshift(auditEntry);
+
+      res.json({
+        success: true,
+        orderId,
+        previousStatus: currentStatus,
+        newStatus,
+        updatedAt: new Date().toISOString(),
+        auditId: auditEntry.id,
+      });
+    }
+  );
+
+  // 3. Cryptographically Signed Fiscal Invoice Generation
+  app.post(
+    '/api/invoices/generate',
+    rateLimit({ windowMs: 60000, max: 30, endpointName: 'invoice_gen' }),
+    (req: Request, res: Response) => {
+      const {
+        orderId,
+        customerName,
+        customerEmail,
+        customerAddress,
+        companyName,
+        taxRegistrationNumber,
+        items,
+        subtotal,
+        discount,
+        tax,
+        shipping,
+        total,
+        currency,
+        paymentMethod,
+        transactionId,
+      } = req.body;
+
+      if (!orderId || !customerName || !customerEmail || !items || typeof total !== 'number') {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid invoice payload. Missing orderId, customerName, customerEmail, or items.',
+        });
+        return;
+      }
+
+      const invoice = generateSecureFiscalInvoice({
+        orderId: sanitizeString(orderId, 64),
+        customerName: sanitizeString(customerName, 100),
+        customerEmail: sanitizeString(customerEmail, 100),
+        customerAddress: sanitizeString(customerAddress, 255),
+        companyName: sanitizeString(companyName, 100),
+        taxRegistrationNumber: sanitizeString(taxRegistrationNumber, 50),
+        items: items.map((it: any) => ({
+          description: sanitizeString(it.description || it.name, 150),
+          quantity: Number(it.quantity) || 1,
+          unitPrice: Number(it.unitPrice) || 0,
+          lineTotal: Number(it.lineTotal || it.quantity * it.unitPrice) || 0,
+        })),
+        subtotal: Number(subtotal) || 0,
+        discount: Number(discount) || 0,
+        tax: Number(tax) || 0,
+        shipping: Number(shipping) || 0,
+        total: Number(total),
+        currency: sanitizeString(currency, 10) || 'USD',
+        paymentMethod: sanitizeString(paymentMethod, 50) || 'LankaPay IPG / Credit Card',
+        transactionId: sanitizeString(transactionId, 64),
+      });
+
+      res.json({
+        success: true,
+        invoice,
+      });
+    }
+  );
+
+  // 4. Secure Multi-Channel Notification Dispatch (Server-side credentials)
+  app.post(
+    '/api/notifications/dispatch',
+    rateLimit({ windowMs: 60000, max: 40, endpointName: 'notif_dispatch' }),
+    async (req: Request, res: Response) => {
+      const { type, recipient, data, channels } = req.body;
+
+      if (!type || !recipient || (!recipient.email && !recipient.phone)) {
+        res.status(400).json({
+          success: false,
+          error: 'Recipient email or phone is required for notification dispatch.',
+        });
+        return;
+      }
+
+      try {
+        const result = await dispatchServerNotification({
+          type,
+          recipient: {
+            name: sanitizeString(recipient.name, 100),
+            email: recipient.email ? sanitizeString(recipient.email, 100) : undefined,
+            phone: recipient.phone ? sanitizeString(recipient.phone, 30) : undefined,
+          },
+          data: data || {},
+          channels: channels || ['email', 'whatsapp'],
+        });
+
+        res.json({
+          success: true,
+          ...result,
+        });
+      } catch (err: any) {
+        res.status(500).json({
+          success: false,
+          error: 'Notification dispatch failure: ' + (err?.message || 'Internal error'),
+        });
+      }
+    }
+  );
+
+  // 5. Lightweight Privacy-Safe Analytics Ingestion Endpoint (Phase 36)
+  app.post(
+    '/api/analytics/event',
+    (req: Request, res: Response) => {
+      // Non-blocking telemetry ingestion, returns 204 No Content immediately
+      res.status(204).end();
+    }
+  );
+
+  // ==========================================
   // VITE MIDDLEWARE (DEVELOPMENT / SPA)
   // ==========================================
   if (process.env.NODE_ENV !== 'production') {
@@ -905,7 +1152,11 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[Mahdev Core Server] running on http://0.0.0.0:${PORT}`);
+    console.log(`[Mahdev Core Server] running on http://0.0.0.0:${PORT} (NodeEnv: ${serverConfig.nodeEnv})`);
+    const { diagnostics } = validateServerSecrets();
+    for (const d of diagnostics) {
+      console.log(`  └─ [${d.category}]: ${d.description} (${d.status})`);
+    }
   });
 }
 

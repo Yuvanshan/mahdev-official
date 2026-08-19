@@ -1,0 +1,86 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // =========================================================================
+    // HELPER FUNCTIONS
+    // =========================================================================
+    function isSignedIn() {
+      return request.auth != null && request.auth.uid != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isStaff() {
+      return isSignedIn() && (
+        request.auth.token.role == 'staff' ||
+        request.auth.token.role == 'manager' ||
+        request.auth.token.role == 'admin' ||
+        request.auth.token.role == 'superAdmin'
+      );
+    }
+
+    // =========================================================================
+    // 1. PUBLIC MARKETING & CATALOG ASSETS
+    // =========================================================================
+    match /company/{allPaths=**} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /divisions/{allPaths=**} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /services/{allPaths=**} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /products/{allPaths=**} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /portfolio/{allPaths=**} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /gallery/{allPaths=**} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /testimonials/{allPaths=**} {
+      allow read: if true;
+      // Allow users to submit testimonial photos, staff to moderate
+      allow create: if isSignedIn();
+      allow update, delete: if isStaff();
+    }
+
+    // =========================================================================
+    // 2. USER PROFILE ASSETS
+    // =========================================================================
+    match /users/{userId}/{allPaths=**} {
+      allow read: if true; // Public display for user avatar
+      allow write: if isOwner(userId) || isStaff();
+    }
+
+    // =========================================================================
+    // 3. PRIVATE ENTERPRISE DOCUMENTS & INVOICES
+    // =========================================================================
+    match /documents/{userId}/{allPaths=**} {
+      allow read: if isOwner(userId) || isStaff();
+      allow write: if isOwner(userId) || isStaff();
+    }
+
+    match /invoices/{userId}/{allPaths=**} {
+      allow read: if isOwner(userId) || isStaff();
+      allow write: if isStaff();
+    }
+  }
+}

@@ -13,6 +13,7 @@ import {
   OrderRefundRecord,
 } from '../types/order';
 import { CartSummary, CartItem } from '../types/cart';
+import { notificationService } from './notificationService';
 
 const ORDERS_STORAGE_KEY = 'mahdev_orders_v1';
 
@@ -420,6 +421,10 @@ class OrderService {
 
     this.orders.unshift(newOrder);
     this.saveOrders();
+
+    // Trigger non-blocking customer confirmation email and admin alert
+    notificationService.notifyOrderConfirmation(newOrder).catch(() => {});
+    notificationService.notifyAdminNewOrder(newOrder).catch(() => {});
 
     return newOrder;
   }

@@ -53,7 +53,7 @@ export const CatalogProductModal: React.FC<CatalogProductModalProps> = ({
   const currentPrice = (product.price + (selectedVariant?.priceModifier || 0)) * quantity;
 
   const handleAddToCart = () => {
-    addToCart(product, quantity, selectedVariant);
+    addToCart(product, selectedVariant, quantity);
     setActionSuccess(true);
     setTimeout(() => {
       setActionSuccess(false);
@@ -61,7 +61,7 @@ export const CatalogProductModal: React.FC<CatalogProductModalProps> = ({
   };
 
   const handleBuyNow = () => {
-    addToCart(product, quantity, selectedVariant);
+    addToCart(product, selectedVariant, quantity);
     onClose();
     openCart();
   };

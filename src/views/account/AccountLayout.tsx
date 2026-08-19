@@ -29,11 +29,14 @@ import { AccountOrdersTab } from './AccountOrdersTab';
 import { AccountBookingsTab } from './AccountBookingsTab';
 import { AccountPaymentsTab } from './AccountPaymentsTab';
 import { AccountInvoicesTab } from './AccountInvoicesTab';
+import { AccountNotificationsTab } from './AccountNotificationsTab';
+import { notificationService } from '../../services/notificationService';
 import { Button } from '../../components/ui/Button';
+import { Bell } from 'lucide-react';
 import { SEOHead } from '../../components/layout/SEOHead';
 
 interface AccountLayoutProps {
-  currentTab?: 'overview' | 'profile' | 'orders' | 'bookings' | 'payments' | 'invoices';
+  currentTab?: 'overview' | 'profile' | 'orders' | 'bookings' | 'payments' | 'invoices' | 'notifications';
   onNavigate: (path: string) => void;
 }
 
@@ -149,8 +152,11 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
     );
   }
 
+  const unreadNotifs = notificationService.getUnreadCount(user.email, 'customer');
+
   const NAV_ITEMS = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard, path: '/account' },
+    { id: 'notifications', label: 'Alerts', icon: Bell, count: unreadNotifs, path: '/account/notifications' },
     { id: 'profile', label: 'Profile & Preferences', icon: User, path: '/account/profile' },
     { id: 'orders', label: 'My Orders', icon: ShoppingBag, count: orders.length, path: '/account/orders' },
     { id: 'bookings', label: 'My Bookings', icon: Calendar, count: bookings.length, path: '/account/bookings' },
@@ -262,7 +268,38 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
           </aside>
 
           {/* Main Content Area (8.5 Cols) */}
-          <main className="lg:col-span-9">
+          <main className="lg:col-span-9 space-y-6">
+            {/* Mobile Scrollable Horizontal Tab Navigation */}
+            <div className="lg:hidden bg-white p-2 rounded-2xl border border-slate-200 shadow-xs overflow-x-auto scrollbar-none flex items-center gap-1.5">
+              {NAV_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleTabChange(item.id)}
+                    className={`shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                      isActive
+                        ? 'bg-[#0052FF] text-white shadow-xs'
+                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span>{item.label}</span>
+                    {item.count !== undefined && item.count > 0 && (
+                      <span
+                        className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                          isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                        }`}
+                      >
+                        {item.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
             {activeTab === 'overview' && (
               <AccountOverviewTab
                 user={user}
@@ -290,6 +327,10 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
 
             {activeTab === 'invoices' && (
               <AccountInvoicesTab user={user} orders={orders} onNavigate={onNavigate} />
+            )}
+
+            {activeTab === 'notifications' && (
+              <AccountNotificationsTab userEmail={user.email} onNavigate={onNavigate} />
             )}
           </main>
         </div>

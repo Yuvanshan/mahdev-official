@@ -13,6 +13,7 @@ import {
 import { authService } from '../../services/authService';
 import { Button } from '../../components/ui/Button';
 import { SEOHead } from '../../components/layout/SEOHead';
+import { notificationService } from '../../services/notificationService';
 
 interface ForgotPasswordViewProps {
   onNavigate: (path: string) => void;
@@ -36,11 +37,16 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({ onNaviga
     }
 
     setIsLoading(true);
-    await authService.requestPasswordReset(email);
+    const result = await authService.requestPasswordReset(email);
     setIsLoading(false);
 
-    setResetToken(`RST-2026-${Math.floor(100000 + Math.random() * 900000)}`);
-    setIsSubmitted(true);
+    if (result.success) {
+      setResetToken(`RST-2026-${Math.floor(100000 + Math.random() * 900000)}`);
+      setIsSubmitted(true);
+      notificationService.notifyPasswordReset(email).catch(() => {});
+    } else {
+      setErrorMessage(result.error || 'Failed to send password reset email. Please try again.');
+    }
   };
 
   const handleCopyToken = () => {

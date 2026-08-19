@@ -171,6 +171,21 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
       />
 
       <div className="max-w-4xl mx-auto space-y-6">
+        {/* Printable Corporate Invoice Header */}
+        <div className="hidden print:flex items-start justify-between border-b-2 border-slate-900 pb-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 font-display">{COMPANY_INFO.legalName}</h1>
+            <p className="text-xs text-slate-600 mt-1">Official Tax Invoice & Order Settlement Receipt</p>
+            <p className="text-[11px] text-slate-500 font-mono mt-0.5">Registration Ref: {COMPANY_INFO.registrationNumber} • VAT/SVAT Compliant</p>
+          </div>
+          <div className="text-right text-xs text-slate-600 space-y-0.5 font-sans">
+            <p className="font-semibold text-slate-900">Colombo: {COMPANY_INFO.offices.colombo.address}</p>
+            <p className="font-semibold text-slate-900">Trincomalee: {COMPANY_INFO.offices.trincomalee.address}</p>
+            <p>Hotlines: {COMPANY_INFO.primaryPhone} | {COMPANY_INFO.secondaryPhone}</p>
+            <p>Email: {COMPANY_INFO.email} • Web: {COMPANY_INFO.domain}</p>
+          </div>
+        </div>
+
         {/* Top Actions & Order Status Header */}
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">

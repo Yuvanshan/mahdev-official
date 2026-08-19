@@ -18,6 +18,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { CatalogProduct, ProductType, StockStatus } from '../../types/catalog';
+import { useCart } from '../../context/CartContext';
 
 interface CatalogProductCardProps {
   product: CatalogProduct;
@@ -30,6 +31,19 @@ export const CatalogProductCard: React.FC<CatalogProductCardProps> = ({
   onSelect,
   onAddToCart,
 }) => {
+  const { addToCart } = useCart();
+  const [addedRecently, setAddedRecently] = React.useState(false);
+
+  const handleQuickAdd = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onAddToCart) {
+      onAddToCart(product);
+    } else {
+      addToCart(product, product.variants?.options[0] || null, 1);
+    }
+    setAddedRecently(true);
+    setTimeout(() => setAddedRecently(false), 2000);
+  };
   // Helper for Product Type Badge
   const getTypeBadge = (type: ProductType) => {
     switch (type) {
@@ -184,13 +198,35 @@ export const CatalogProductCard: React.FC<CatalogProductCardProps> = ({
             </span>
           </div>
 
-          <button
-            onClick={() => onSelect(product)}
-            className="inline-flex items-center gap-1 px-3 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-medium rounded-lg transition-colors shadow-xs"
-          >
-            <span>View</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => onSelect(product)}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-medium rounded-lg transition-colors cursor-pointer"
+            >
+              <span>View</span>
+            </button>
+            <button
+              onClick={handleQuickAdd}
+              disabled={product.stockStatus === 'out_of_stock'}
+              className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-all shadow-xs cursor-pointer ${
+                addedRecently
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-neutral-900 hover:bg-neutral-800 text-white disabled:opacity-50 disabled:cursor-not-allowed'
+              }`}
+            >
+              {addedRecently ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Added</span>
+                </>
+              ) : (
+                <>
+                  <ShoppingBag className="w-3.5 h-3.5" />
+                  <span>Add</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>

@@ -1,0 +1,322 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================================
+    // GLOBAL DEFAULT-DENY SAFETY NET
+    // =========================================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
+    // CORE PRIMITIVES & SECURITY HELPERS
+    // =========================================================================
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.uid != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Role Hierarchy Resolution from trusted users collection
+    function getUserDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasUserDoc() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isDedicatedAdmin() {
+      return exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function getUserRole() {
+      return hasUserDoc() ? getUserDoc().role : (isDedicatedAdmin() ? 'admin' : 'customer');
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && (getUserRole() == 'superAdmin' || isDedicatedAdmin());
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (isSuperAdmin() || getUserRole() == 'admin');
+    }
+
+    function isManager() {
+      return isSignedIn() && (isAdmin() || getUserRole() == 'manager');
+    }
+
+    function isStaff() {
+      return isSignedIn() && (isManager() || getUserRole() == 'staff');
+    }
+
+    // =========================================================================
+    // PUBLIC CORPORATE & CATALOG CONTENT
+    // =========================================================================
+
+    // 1. Company & Site Settings
+    match /companySettings/{settingId} {
+      allow get: if isValidId(settingId);
+      allow list: if true;
+      allow create, update: if isAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    match /siteSettings/{settingId} {
+      allow get: if isValidId(settingId);
+      allow list: if true;
+      allow create, update: if isAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // 2. Divisions
+    match /divisions/{divisionId} {
+      allow get: if isValidId(divisionId) && (resource.data.status == 'active' || isStaff());
+      allow list: if resource.data.status == 'active' || isStaff();
+      allow create, update: if isManager();
+      allow delete: if isSuperAdmin();
+    }
+
+    // 3. Services
+    match /services/{serviceId} {
+      allow get: if isValidId(serviceId) && (resource.data.status == 'active' || resource.data.status == 'published' || isStaff());
+      allow list: if resource.data.status == 'active' || resource.data.status == 'published' || isStaff();
+      allow create, update: if isManager();
+      allow delete: if isSuperAdmin();
+    }
+
+    // 4. Products
+    match /products/{productId} {
+      allow get: if isValidId(productId) && (resource.data.status == 'active' || resource.data.status == 'published' || isStaff());
+      allow list: if resource.data.status == 'active' || resource.data.status == 'published' || isStaff();
+      allow create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // 5. Categories
+    match /categories/{categoryId} {
+      allow get: if isValidId(categoryId) && (resource.data.status == 'active' || isStaff());
+      allow list: if resource.data.status == 'active' || isStaff();
+      allow create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // 6. Portfolio
+    match /portfolio/{projectId} {
+      allow get: if isValidId(projectId) && (resource.data.status == 'published' || resource.data.status == 'active' || isStaff());
+      allow list: if resource.data.status == 'published' || resource.data.status == 'active' || isStaff();
+      allow create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // 7. Gallery
+    match /gallery/{itemId} {
+      allow get: if isValidId(itemId) && (resource.data.status == 'active' || resource.data.status == 'published' || isStaff());
+      allow list: if resource.data.status == 'active' || resource.data.status == 'published' || isStaff();
+      allow create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // 8. Milestones
+    match /milestones/{milestoneId} {
+      allow get: if isValidId(milestoneId) && (resource.data.status == 'active' || resource.data.status == 'published' || isStaff());
+      allow list: if resource.data.status == 'active' || resource.data.status == 'published' || isStaff();
+      allow create, update: if isManager();
+      allow delete: if isAdmin();
+    }
+
+    // 9. Trusted Companies
+    match /trustedCompanies/{companyId} {
+      allow get: if isValidId(companyId) && (resource.data.status == 'active' || isStaff());
+      allow list: if resource.data.status == 'active' || isStaff();
+      allow create, update: if isManager();
+      allow delete: if isAdmin();
+    }
+
+    // 10. Testimonials (Approved are public, pending submitted by users, moderated by Staff)
+    match /testimonials/{testimonialId} {
+      allow get: if isValidId(testimonialId) && (resource.data.status == 'approved' || isStaff());
+      allow list: if resource.data.status == 'approved' || isStaff();
+      // Public / Customer can submit a testimonial in pending state
+      allow create: if isValidId(testimonialId) &&
+        incoming().author is string && incoming().author.size() > 0 && incoming().author.size() <= 100 &&
+        incoming().quote is string && incoming().quote.size() > 0 && incoming().quote.size() <= 1000 &&
+        (isStaff() || incoming().status == 'pending');
+      allow update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // CUSTOMER DATA (STRICT OWNERSHIP & PII ISOLATION)
+    // =========================================================================
+
+    // 11. User Profiles
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isStaff());
+      allow list: if isStaff();
+
+      // Customer Registration: Strictly lock role to 'customer'
+      allow create: if isOwner(userId) &&
+        isValidId(userId) &&
+        incoming().uid == userId &&
+        incoming().email is string &&
+        (incoming().role == 'customer' || isAdmin()) &&
+        (incoming().status == 'active' || incoming().status == 'pending');
+
+      // Customer Profile Update: Cannot escalate role or change UID/email ownership
+      allow update: if isValidId(userId) && (
+        isAdmin() ||
+        (
+          isOwner(userId) &&
+          incoming().uid == existing().uid &&
+          incoming().role == existing().role &&
+          incoming().status == existing().status
+        )
+      );
+
+      allow delete: if isSuperAdmin();
+
+      // Customer notifications subcollection
+      match /notifications/{notificationId} {
+        allow get, list: if isOwner(userId) || isStaff();
+        allow create: if isStaff() || isOwner(userId);
+        allow update: if isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['read', 'readAt']);
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // 12. Bookings
+    match /bookings/{bookingId} {
+      // Customer can read own booking; Staff can view all
+      allow get: if isValidId(bookingId) && (
+        isStaff() ||
+        (isSignedIn() && resource.data.customerId == request.auth.uid) ||
+        (isSignedIn() && request.auth.token.email != null && resource.data.customer.email == request.auth.token.email)
+      );
+
+      allow list: if isStaff() || (
+        isSignedIn() && (
+          resource.data.customerId == request.auth.uid ||
+          (request.auth.token.email != null && resource.data.customer.email == request.auth.token.email)
+        )
+      );
+
+      // Create Booking: Customer or Guest can submit a booking
+      allow create: if isValidId(bookingId) &&
+        incoming().serviceId is string &&
+        incoming().divisionId is string &&
+        (
+          !isSignedIn() ||
+          incoming().customerId == request.auth.uid ||
+          isStaff()
+        ) &&
+        (incoming().status == 'pending' || isStaff());
+
+      // Update Booking: Customer can cancel/reschedule; Staff can manage all
+      allow update: if isValidId(bookingId) && (
+        isStaff() ||
+        (
+          isSignedIn() &&
+          resource.data.customerId == request.auth.uid &&
+          incoming().customerId == existing().customerId &&
+          incoming().totalAmount == existing().totalAmount &&
+          incoming().paymentStatus == existing().paymentStatus &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['date', 'time', 'notes', 'specialRequests', 'status', 'updatedAt'])
+        )
+      );
+
+      allow delete: if isSuperAdmin();
+    }
+
+    // 13. Orders
+    match /orders/{orderId} {
+      allow get: if isValidId(orderId) && (
+        isStaff() ||
+        (isSignedIn() && resource.data.customerId == request.auth.uid) ||
+        (isSignedIn() && request.auth.token.email != null && resource.data.customer.email == request.auth.token.email)
+      );
+
+      allow list: if isStaff() || (
+        isSignedIn() && (
+          resource.data.customerId == request.auth.uid ||
+          (request.auth.token.email != null && resource.data.customer.email == request.auth.token.email)
+        )
+      );
+
+      // Create Order
+      allow create: if isValidId(orderId) &&
+        incoming().items is list &&
+        incoming().items.size() > 0 &&
+        incoming().total is number &&
+        (
+          !isSignedIn() ||
+          incoming().customerId == request.auth.uid ||
+          isStaff()
+        ) &&
+        (isStaff() || incoming().paymentStatus != 'paid' || incoming().paymentMethod == 'cash_on_delivery');
+
+      // Update Order: Customer cannot alter payment status or prices
+      allow update: if isValidId(orderId) && (
+        isStaff() ||
+        (
+          isSignedIn() &&
+          resource.data.customerId == request.auth.uid &&
+          incoming().customerId == existing().customerId &&
+          incoming().total == existing().total &&
+          incoming().paymentStatus == existing().paymentStatus &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['shippingAddress', 'notes', 'customerNotes', 'updatedAt'])
+        )
+      );
+
+      allow delete: if isSuperAdmin();
+    }
+
+    // 14. Payments
+    match /payments/{paymentId} {
+      allow get: if isValidId(paymentId) && (
+        isStaff() ||
+        (isSignedIn() && resource.data.customerId == request.auth.uid)
+      );
+
+      allow list: if isStaff() || (
+        isSignedIn() && resource.data.customerId == request.auth.uid
+      );
+
+      // Payments can only be written by staff or backend server
+      allow create, update: if isStaff();
+      allow delete: if isSuperAdmin();
+    }
+
+    // =========================================================================
+    // ADMINISTRATIVE PORTAL & AUDIT SYSTEM
+    // =========================================================================
+
+    // 15. Dedicated Admins Collection
+    match /admins/{adminId} {
+      allow get, list: if isStaff();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    // 16. Audit Logs (Append-Only, Immutable)
+    match /auditLogs/{logId} {
+      allow get, list: if isManager();
+      allow create: if isSignedIn() && isValidId(logId);
+      allow update, delete: if false; // Immutable audit trail
+    }
+  }
+}

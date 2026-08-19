@@ -6,6 +6,7 @@ import {
   VerifyPaymentResponse,
   PaymentTransaction,
 } from '../types/payment';
+import { notificationService } from './notificationService';
 
 export const paymentService = {
   // 1. Fetch available gateways
@@ -81,16 +82,55 @@ export const paymentService = {
 
   // 3. Server-Side Payment Verification (MANDATORY SECURITY RULE)
   async verifyPayment(payload: VerifyPaymentRequest): Promise<VerifyPaymentResponse> {
-    const res = await fetch('/api/payment/verify', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await fetch('/api/payment/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
 
-    const data = await res.json();
-    return data;
+      const data: VerifyPaymentResponse = await res.json();
+
+      if (data.success && data.paymentStatus === 'paid') {
+        const txn: PaymentTransaction = {
+          transactionId: data.transactionId,
+          orderId: data.orderId,
+          amount: 0,
+          currency: 'USD',
+          gateway: payload.gateway,
+          gatewayName: payload.gateway,
+          paymentStatus: 'paid',
+          timestamp: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          customerEmail: '',
+          customerName: 'Valued Customer',
+          verificationResult: data.verificationResult,
+        };
+
+        // Trigger customer payment receipt & admin payment alert
+        notificationService.notifyPaymentConfirmation(payload.orderId, txn, {
+          name: 'Valued Customer',
+        }).catch(() => {});
+        notificationService.notifyAdminPaymentReceived(txn, payload.orderId).catch(() => {});
+      } else if (!data.success) {
+        notificationService.notifyPaymentFailure(payload.orderId, data.failureReason?.message || data.error || 'Verification declined', {
+          name: 'Valued Customer',
+        }).catch(() => {});
+      }
+
+      return data;
+    } catch (err) {
+      console.warn('[PaymentService] Verification network issue:', err);
+      return {
+        success: false,
+        transactionId: payload.transactionId,
+        orderId: payload.orderId,
+        paymentStatus: 'failed',
+        error: 'Payment verification service temporarily unavailable.',
+      };
+    }
   },
 
   // 4. Cancel payment session

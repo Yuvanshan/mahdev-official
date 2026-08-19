@@ -1,4 +1,6 @@
-export type CustomerRole = 'customer' | 'corporate_partner' | 'admin';
+export type CustomerRole = 'customer' | 'corporate_partner' | 'admin' | 'superAdmin' | 'manager' | 'staff';
+
+export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated' | 'error';
 
 export interface CustomerAddress {
   street: string;
@@ -19,7 +21,8 @@ export interface CustomerPreferences {
 }
 
 export interface CustomerUser {
-  id: string; // e.g. "CUST-2026-8941"
+  id: string; // e.g. "CUST-2026-8941" or Firebase UID
+  uid?: string;
   fullName: string;
   email: string;
   phone: string;
@@ -52,6 +55,7 @@ export interface RegisterInput {
 }
 
 export interface AuthState {
+  status: AuthStatus;
   user: CustomerUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -61,3 +65,4 @@ export interface AuthState {
 export interface PasswordResetRequest {
   email: string;
 }
+

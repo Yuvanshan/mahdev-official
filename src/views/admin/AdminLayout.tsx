@@ -27,11 +27,13 @@ import {
   Shield,
   Bell,
   Search,
+  BarChart2,
 } from 'lucide-react';
 import { AdminSectionId } from '../../types/admin';
 import { useAdminAuth } from '../../context/AdminAuthContext';
 import { AdminLoginView } from './AdminLoginView';
 import { AdminDashboardView } from './AdminDashboardView';
+import { AdminAnalyticsView } from './AdminAnalyticsView';
 import { AdminDivisionsView } from './AdminDivisionsView';
 import { AdminServicesView } from './AdminServicesView';
 import { AdminProductsView } from './AdminProductsView';
@@ -56,6 +58,7 @@ import { AdminUsersView } from './AdminUsersView';
 import { AdminAuditLogsView } from './AdminAuditLogsView';
 import { AdminHomepageView } from './AdminHomepageView';
 import { AdminGenericView } from './AdminGenericView';
+import { AdminNotificationCenter } from '../../components/admin/AdminNotificationCenter';
 import { SEOHead } from '../../components/layout/SEOHead';
 
 interface AdminLayoutProps {
@@ -72,6 +75,7 @@ interface SidebarItem {
 
 const SIDEBAR_ITEMS: SidebarItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'analytics', label: 'Analytics & Reports', icon: BarChart2, badge: 'Live' },
   { id: 'homepage', label: 'Homepage CMS', icon: Globe, badge: 'Live' },
   { id: 'divisions', label: 'Divisions', icon: Building2 },
   { id: 'services', label: 'Services', icon: Briefcase },
@@ -339,6 +343,15 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
 
           {/* Top Bar Right Tools */}
           <div className="flex items-center gap-3">
+            <AdminNotificationCenter onNavigate={(path) => {
+              if (path.startsWith('/admin')) {
+                const section = path.replace('/admin/', '') || 'dashboard';
+                setActiveSection(section as AdminSectionId);
+              } else {
+                onNavigate(path);
+              }
+            }} />
+
             <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-mono font-bold">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
               <span>TLS 1.3 SECURE</span>

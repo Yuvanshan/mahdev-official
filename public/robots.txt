@@ -1,5 +1,29 @@
-# Robots.txt for Mahdev Pvt Ltd (mahdev.lk)
+# Robots.txt for Mahdev Pvt Ltd (https://mahdev.lk)
 User-agent: *
 Allow: /
+Allow: /sws
+Allow: /u1
+Allow: /it
+Allow: /travels
+Allow: /mart
+Allow: /catalog
+Allow: /about
+Allow: /portfolio
+Allow: /contact
+Allow: /book
+Allow: /privacy-policy
+Allow: /terms-and-conditions
+Allow: /refund-policy
+Allow: /shipping-policy
+Allow: /cookie-policy
+
+# Disallow Private & Administrative Portals
+Disallow: /admin
+Disallow: /admin/
+Disallow: /account
+Disallow: /account/
+Disallow: /checkout
+Disallow: /order/
+Disallow: /api/
 
 Sitemap: https://mahdev.lk/sitemap.xml

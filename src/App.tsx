@@ -22,6 +22,7 @@ import { LoginView } from './views/auth/LoginView';
 import { RegisterView } from './views/auth/RegisterView';
 import { ForgotPasswordView } from './views/auth/ForgotPasswordView';
 import { AccountLayout } from './views/account/AccountLayout';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { DivisionId, LegalPolicyType } from './types';
 import { DIVISIONS } from './config/divisions';
 import { CustomCursor } from './components/motion/CustomCursor';
@@ -31,12 +32,21 @@ import { AdminAuthProvider } from './context/AdminAuthContext';
 import { AdminLayout } from './views/admin/AdminLayout';
 import { CartDrawer } from './components/cart/CartDrawer';
 import { AnnouncementBanner } from './components/layout/AnnouncementBanner';
+import { testFirestoreConnection, initAppCheck } from './lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
   const [currentPath, setCurrentPath] = useState<string>(() => {
     return window.location.pathname || '/';
   });
+
+  // Verify Cloud Firestore connectivity and App Check on boot
+  useEffect(() => {
+    initAppCheck();
+    testFirestoreConnection().then((res) => {
+      console.info('[Firebase] Firestore Foundation Status:', res.message);
+    });
+  }, []);
 
   // Handle browser back/forward navigation
   useEffect(() => {
@@ -72,8 +82,12 @@ export default function App() {
     }
   };
 
-  // Normalize path
-  const normalizedPath = currentPath.toLowerCase().replace(/\/$/, '') || '/';
+  // Extract path and query params for redirection
+  const [basePath, searchParamsString] = currentPath.split('?');
+  const normalizedPath = basePath.toLowerCase().replace(/\/$/, '') || '/';
+  const redirectParam = searchParamsString
+    ? new URLSearchParams(searchParamsString).get('redirect') || undefined
+    : undefined;
 
   // Determine current division from path
   const divisionKey = (Object.keys(DIVISIONS) as DivisionId[]).find(
@@ -95,7 +109,7 @@ export default function App() {
   const renderCurrentView = () => {
     // Authentication Routes
     if (normalizedPath === '/login') {
-      return <LoginView onNavigate={navigate} />;
+      return <LoginView onNavigate={navigate} redirectPath={redirectParam || '/account'} />;
     }
 
     if (normalizedPath === '/register') {
@@ -106,37 +120,86 @@ export default function App() {
       return <ForgotPasswordView onNavigate={navigate} />;
     }
 
-    // Customer Account Sub-Routes
+    // Protected Customer Account Routes
     if (normalizedPath === '/account') {
-      return <AccountLayout currentTab="overview" onNavigate={navigate} />;
+      return (
+        <ProtectedRoute onNavigate={navigate} currentPath="/account">
+          <AccountLayout currentTab="overview" onNavigate={navigate} />
+        </ProtectedRoute>
+      );
     }
 
     if (normalizedPath === '/account/profile') {
-      return <AccountLayout currentTab="profile" onNavigate={navigate} />;
+      return (
+        <ProtectedRoute onNavigate={navigate} currentPath="/account/profile">
+          <AccountLayout currentTab="profile" onNavigate={navigate} />
+        </ProtectedRoute>
+      );
     }
 
     if (normalizedPath === '/account/orders') {
-      return <AccountLayout currentTab="orders" onNavigate={navigate} />;
+      return (
+        <ProtectedRoute onNavigate={navigate} currentPath="/account/orders">
+          <AccountLayout currentTab="orders" onNavigate={navigate} />
+        </ProtectedRoute>
+      );
     }
 
     if (normalizedPath === '/account/bookings') {
-      return <AccountLayout currentTab="bookings" onNavigate={navigate} />;
+      return (
+        <ProtectedRoute onNavigate={navigate} currentPath="/account/bookings">
+          <AccountLayout currentTab="bookings" onNavigate={navigate} />
+        </ProtectedRoute>
+      );
     }
 
     if (normalizedPath === '/account/payments') {
-      return <AccountLayout currentTab="payments" onNavigate={navigate} />;
+      return (
+        <ProtectedRoute onNavigate={navigate} currentPath="/account/payments">
+          <AccountLayout currentTab="payments" onNavigate={navigate} />
+        </ProtectedRoute>
+      );
     }
 
     if (normalizedPath === '/account/invoices') {
-      return <AccountLayout currentTab="invoices" onNavigate={navigate} />;
+      return (
+        <ProtectedRoute onNavigate={navigate} currentPath="/account/invoices">
+          <AccountLayout currentTab="invoices" onNavigate={navigate} />
+        </ProtectedRoute>
+      );
+    }
+
+    if (normalizedPath === '/account/notifications') {
+      return (
+        <ProtectedRoute onNavigate={navigate} currentPath="/account/notifications">
+          <AccountLayout currentTab="notifications" onNavigate={navigate} />
+        </ProtectedRoute>
+      );
+    }
+
+    // Protected Direct /orders and /bookings shortcuts
+    if (normalizedPath === '/orders') {
+      return (
+        <ProtectedRoute onNavigate={navigate} currentPath="/account/orders">
+          <AccountLayout currentTab="orders" onNavigate={navigate} />
+        </ProtectedRoute>
+      );
+    }
+
+    if (normalizedPath === '/bookings') {
+      return (
+        <ProtectedRoute onNavigate={navigate} currentPath="/account/bookings">
+          <AccountLayout currentTab="bookings" onNavigate={navigate} />
+        </ProtectedRoute>
+      );
+    }
+
+    if (normalizedPath === '/track-order') {
+      return <OrderLookupView onNavigate={navigate} />;
     }
 
     if (normalizedPath === '/checkout') {
       return <CheckoutView onNavigate={navigate} />;
-    }
-
-    if (normalizedPath === '/orders' || normalizedPath === '/track-order') {
-      return <OrderLookupView onNavigate={navigate} />;
     }
 
     if (normalizedPath.startsWith('/order/')) {

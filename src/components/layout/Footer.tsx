@@ -7,12 +7,29 @@ import { Modal } from '../ui/Modal';
 import { FOOTER_SECTIONS } from '../../config/navigation';
 import { BRAND_CONFIG } from '../../config/brand';
 import { COMPANY_INFO, getTelLink, getMailtoLink, getMapSearchUrl } from '../../config/company';
+import { useCompanySettings } from '../../hooks/useFirestoreData';
 
 interface FooterProps {
   onNavigate: (path: string) => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
+  const { data: dynamicSettings } = useCompanySettings();
+  const company = dynamicSettings && dynamicSettings.name ? {
+    ...COMPANY_INFO,
+    ...dynamicSettings,
+    offices: {
+      colombo: {
+        ...COMPANY_INFO.offices.colombo,
+        ...(dynamicSettings.offices?.colombo || {}),
+      },
+      trincomalee: {
+        ...COMPANY_INFO.offices.trincomalee,
+        ...(dynamicSettings.offices?.trincomalee || {}),
+      },
+    },
+  } : COMPANY_INFO;
+
   const [activeLegalModal, setActiveLegalModal] = useState<{
     title: string;
     content: string;
@@ -131,11 +148,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               {/* Direct Contact Anchors */}
               <div className="space-y-3 pt-2 text-xs text-slate-300">
                 <a
-                  href={getMailtoLink(COMPANY_INFO.email)}
+                  href={getMailtoLink(company.email)}
                   className="flex items-center gap-2 text-slate-300 hover:text-blue-400 transition-colors group"
                 >
                   <Mail className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                  <span className="break-all">{COMPANY_INFO.email}</span>
+                  <span className="break-all">{company.email}</span>
                 </a>
                 
                 <div className="space-y-1">
@@ -143,17 +160,17 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                     <Phone className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                       <a
-                        href={getTelLink(COMPANY_INFO.primaryPhone)}
+                        href={getTelLink(company.primaryPhone)}
                         className="hover:text-blue-400 transition-colors font-medium"
                       >
-                        {COMPANY_INFO.primaryPhone}
+                        {company.primaryPhone}
                       </a>
                       <span className="text-slate-600">/</span>
                       <a
-                        href={getTelLink(COMPANY_INFO.secondaryPhone)}
+                        href={getTelLink(company.secondaryPhone)}
                         className="hover:text-blue-400 transition-colors font-medium"
                       >
-                        {COMPANY_INFO.secondaryPhone}
+                        {company.secondaryPhone}
                       </a>
                     </div>
                   </div>
@@ -161,7 +178,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
                 <div className="pt-1 space-y-2 border-t border-slate-800/80">
                   <a
-                    href={getMapSearchUrl(COMPANY_INFO.offices.colombo.mapQuery)}
+                    href={getMapSearchUrl(company.offices.colombo.mapQuery)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-start gap-2 hover:text-blue-400 transition-colors group"
@@ -169,12 +186,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                     <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
                     <div>
                       <span className="font-semibold text-slate-200 block text-[11px]">Colombo Office:</span>
-                      <span className="text-[11px] text-slate-400">{COMPANY_INFO.offices.colombo.address}</span>
+                      <span className="text-[11px] text-slate-400">{company.offices.colombo.address}</span>
                     </div>
                   </a>
 
                   <a
-                    href={getMapSearchUrl(COMPANY_INFO.offices.trincomalee.mapQuery)}
+                    href={getMapSearchUrl(company.offices.trincomalee.mapQuery)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-start gap-2 hover:text-blue-400 transition-colors group"
@@ -182,7 +199,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                     <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
                     <div>
                       <span className="font-semibold text-slate-200 block text-[11px]">Trincomalee Office:</span>
-                      <span className="text-[11px] text-slate-400">{COMPANY_INFO.offices.trincomalee.address}</span>
+                      <span className="text-[11px] text-slate-400">{company.offices.trincomalee.address}</span>
                     </div>
                   </a>
                 </div>

@@ -8,6 +8,7 @@ import {
   BookingType,
 } from '../types/booking';
 import { MASTER_BOOKABLE_SERVICES } from '../data/bookingServices';
+import { notificationService } from './notificationService';
 
 const STORAGE_KEY = 'mahdev_bookings_store_v1';
 
@@ -371,6 +372,10 @@ class UniversalBookingService {
     this.bookings = [newBooking, ...this.bookings];
     this.saveToStorage();
 
+    // Trigger non-blocking customer confirmation email and admin alert
+    notificationService.notifyBookingConfirmation(newBooking).catch(() => {});
+    notificationService.notifyAdminNewBooking(newBooking).catch(() => {});
+
     return { success: true, booking: newBooking };
   }
 
@@ -470,6 +475,10 @@ class UniversalBookingService {
     }
     booking.updatedAt = new Date().toISOString();
     this.saveToStorage();
+
+    // Dispatch update notification
+    notificationService.notifyBookingUpdate(booking, `Rescheduled to ${newDate} (${newTime})`).catch(() => {});
+
     return { success: true, booking };
   }
 
@@ -481,6 +490,10 @@ class UniversalBookingService {
     booking.cancellationReason = reason;
     booking.updatedAt = new Date().toISOString();
     this.saveToStorage();
+
+    // Dispatch cancellation notification
+    notificationService.notifyBookingCancellation(booking, reason).catch(() => {});
+
     return { success: true, booking };
   }
 

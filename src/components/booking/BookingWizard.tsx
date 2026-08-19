@@ -34,6 +34,7 @@ import {
 } from '../../types/booking';
 import { MASTER_BOOKABLE_SERVICES } from '../../data/bookingServices';
 import { bookingService } from '../../services/bookingService';
+import { evaluateBotRisk, checkActionThrottle } from '../../utils/securityProtection';
 
 interface BookingWizardProps {
   initialDivision?: string;
@@ -90,6 +91,8 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
   const [company, setCompany] = useState<string>('');
   const [preferredContact, setPreferredContact] = useState<'phone' | 'email' | 'whatsapp'>('whatsapp');
   const [notes, setNotes] = useState<string>('');
+  const [honeypotValue, setHoneypotValue] = useState<string>('');
+  const [formRenderTime] = useState<number>(() => Date.now());
 
   // Validation Errors & Submission State
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -149,6 +152,23 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
   // Step 3 Validation (Customer Details)
   const validateStep3 = (): boolean => {
     const errs: Record<string, string> = {};
+
+    // 1. Bot & Abuse Evaluation
+    const botCheck = evaluateBotRisk({
+      honeypotValue,
+      formRenderTime,
+      email,
+      messageOrNotes: notes,
+    });
+
+    if (!botCheck.isLegitimate) {
+      errs.bot = botCheck.reason || 'Verification failed. Please review your details and resubmit.';
+    }
+
+    if (!checkActionThrottle('booking_create', 2500)) {
+      errs.throttle = 'Please wait a moment before resubmitting your booking.';
+    }
+
     if (!fullName || fullName.trim().length < 2) {
       errs.fullName = 'Full name is required (at least 2 characters).';
     }
@@ -642,6 +662,28 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
 
             {/* Customer Inputs */}
             <div className="space-y-4">
+              {/* Anti-Bot Error Alert */}
+              {(errors.bot || errors.throttle) && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-xs text-red-700">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  <span>{errors.bot || errors.throttle}</span>
+                </div>
+              )}
+
+              {/* Hidden Honeypot Field */}
+              <div className="hidden" aria-hidden="true" style={{ display: 'none' }}>
+                <label htmlFor="company_website_booking_hp">Leave this field blank</label>
+                <input
+                  id="company_website_booking_hp"
+                  type="text"
+                  name="_hp_website"
+                  value={honeypotValue}
+                  onChange={(e) => setHoneypotValue(e.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </div>
+
               <h4 className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
                 Primary Contact Information
               </h4>

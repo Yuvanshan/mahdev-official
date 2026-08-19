@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ExternalLink, Filter, Sparkles, TrendingUp, Layers, CheckCircle2, ChevronRight, Image as ImageIcon, X } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body, Caption } from '../ui/Heading';
@@ -13,6 +13,8 @@ import {
 } from '../motion/MotionWrappers';
 import { PORTFOLIO_PROJECTS_DATA } from '../../data/corporateData';
 import { PortfolioProject, DivisionId } from '../../types';
+import { cmsService } from '../../services/cmsService';
+import { CmsPortfolioProject } from '../../types/cms';
 
 interface PortfolioShowcaseProps {
   onInquireProject?: (project: PortfolioProject) => void;
@@ -27,11 +29,44 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedProject, setSelectedProject] = useState<PortfolioProject | null>(null);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState<number>(0);
+  const [projects, setProjects] = useState<PortfolioProject[]>(PORTFOLIO_PROJECTS_DATA);
+
+  const loadData = () => {
+    const cmsProjects = cmsService.getAll<CmsPortfolioProject>('portfolio', { status: 'active' });
+    if (cmsProjects && cmsProjects.length > 0) {
+      const mapped: PortfolioProject[] = cmsProjects.map((p) => ({
+        id: p.id,
+        title: p.title,
+        divisionId: (p.divisionId || 'sws') as DivisionId,
+        category: p.category || 'Production',
+        client: p.client || 'Corporate Client',
+        year: p.year ? String(p.year) : '2025',
+        summary: p.summary || '',
+        fullDescription: p.fullDescription || p.summary || '',
+        highlights: p.highlights || [],
+        deliverables: p.deliverables || [],
+        imageUrl: p.imageUrl || 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
+        galleryImages: p.galleryImages || [p.imageUrl || 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'],
+        liveUrl: p.liveUrl,
+        impactMetrics: p.impactMetrics || [],
+        tags: p.tags || ['Enterprise', 'Production'],
+      }));
+      setProjects(mapped);
+    } else {
+      setProjects(PORTFOLIO_PROJECTS_DATA);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+    const unsub = cmsService.subscribe('portfolio', loadData);
+    return () => unsub();
+  }, []);
 
   // Extract unique categories
-  const categories = ['All', ...Array.from(new Set(PORTFOLIO_PROJECTS_DATA.map((p) => p.category)))];
+  const categories = ['All', ...Array.from(new Set(projects.map((p) => p.category)))];
 
-  const filteredProjects = PORTFOLIO_PROJECTS_DATA.filter((p) => {
+  const filteredProjects = projects.filter((p) => {
     const matchDivision = selectedDivision === 'all' || p.divisionId === selectedDivision;
     const matchCategory = selectedCategory === 'All' || p.category === selectedCategory;
     return matchDivision && matchCategory;

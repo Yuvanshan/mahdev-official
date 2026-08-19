@@ -24,6 +24,18 @@ import { PORTFOLIO_PROJECTS_DATA, TESTIMONIALS_DATA } from '../data/corporateDat
 import { adminService } from './adminService';
 import { DivisionId } from '../types';
 import { COMPANY_INFO, CompanyInformation } from '../config/company';
+import {
+  firestoreSettingsService,
+  firestoreDivisionsService,
+  firestoreServicesService,
+  firestoreProductsService,
+  firestoreCategoriesService,
+  firestorePortfolioService,
+  firestoreGalleryService,
+  firestoreMilestonesService,
+  firestoreTrustedCompaniesService,
+  firestoreTestimonialsService,
+} from './firestore';
 
 const CMS_STORAGE_PREFIX = 'mahdev_cms_v1_';
 
@@ -720,7 +732,52 @@ class CmsService {
     });
 
     this.notify(entity);
+
+    // Asynchronously synchronize to Firestore
+    this.syncEntityItemToFirestore(entity, newItem);
+
     return newItem as T;
+  }
+
+  private async syncEntityItemToFirestore(entity: CmsEntityType, item: any): Promise<void> {
+    try {
+      if (entity === 'divisions' && item.divisionKey) {
+        await firestoreDivisionsService.saveDivision(item.divisionKey, item);
+      } else if (entity === 'services') {
+        await firestoreServicesService.saveService(item.id, {
+          division: item.divisionId,
+          name: item.title,
+          description: item.description,
+          price: item.startingPrice || 100,
+        });
+      } else if (entity === 'products') {
+        await firestoreProductsService.saveProduct(item.id, {
+          division: item.divisionId,
+          name: item.name,
+          price: item.price,
+          description: item.description,
+          sku: item.sku,
+        });
+      } else if (entity === 'categories') {
+        await firestoreCategoriesService.saveCategory(item.id, {
+          division: item.divisionId,
+          name: item.name,
+          slug: item.slug,
+        });
+      } else if (entity === 'portfolio') {
+        await firestorePortfolioService.savePortfolio(item.id, item);
+      } else if (entity === 'gallery') {
+        await firestoreGalleryService.saveGallery(item.id, item);
+      } else if (entity === 'milestones') {
+        await firestoreMilestonesService.saveMilestone(item.id, item);
+      } else if (entity === 'companies') {
+        await firestoreTrustedCompaniesService.saveTrustedCompany(item.id, item);
+      } else if (entity === 'testimonials') {
+        await firestoreTestimonialsService.saveTestimonial(item.id, item);
+      }
+    } catch (err) {
+      console.warn(`[Firestore Sync] Failed to sync ${entity}/${item.id}:`, err);
+    }
   }
 
   public update<T = any>(entity: CmsEntityType, id: string, data: Partial<T>): T | null {
@@ -750,6 +807,10 @@ class CmsService {
     });
 
     this.notify(entity);
+
+    // Asynchronously synchronize update to Firestore
+    this.syncEntityItemToFirestore(entity, updatedItem);
+
     return updatedItem as T;
   }
 
@@ -1121,13 +1182,13 @@ class CmsService {
     const key = `${CMS_STORAGE_PREFIX}company_info`;
     localStorage.setItem(key, JSON.stringify(merged));
 
-    adminService.logAction(
-      'UPDATE_COMPANY_INFO',
-      'CompanyInfo',
-      'SYS-COMPANY',
-      'Updated official Mahdev Pvt Ltd corporate details, phones, email, and office locations.',
-      'success'
-    );
+    adminService.logAudit({
+      action: 'UPDATE_COMPANY_INFO',
+      entityType: 'System',
+      entityId: 'SYS-COMPANY',
+      details: 'Updated official Mahdev Pvt Ltd corporate details, phones, email, and office locations.',
+      status: 'success',
+    });
 
     // Notify listeners
     this.notify('pages');
