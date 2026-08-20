@@ -12,6 +12,7 @@ import {
 } from '../motion/MotionWrappers';
 import { BRAND_CONFIG } from '../../config/brand';
 import { COMPANY_INFO, getTelLink, getMailtoLink, getMapSearchUrl } from '../../config/company';
+import { useCompanySettings } from '../../hooks/useFirestoreData';
 import { DIVISION_LIST } from '../../config/divisions';
 import { cmsService } from '../../services/cmsService';
 import { HomepageCmsConfig } from '../../types/cms';
@@ -21,6 +22,9 @@ interface CallToActionSectionProps {
 }
 
 export const CallToActionSection: React.FC<CallToActionSectionProps> = ({ onExploreServices }) => {
+  const { data: firestoreCompany } = useCompanySettings();
+  const company = firestoreCompany?.name ? firestoreCompany : COMPANY_INFO;
+
   const [config, setConfig] = useState<HomepageCmsConfig>(() => cmsService.getHomepageConfig());
   const [formData, setFormData] = useState({
     name: '',
@@ -48,9 +52,9 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({ onExpl
     primaryButtonLink: '#contact',
     secondaryButtonText: 'Explore Services',
     secondaryButtonLink: '#featured-services',
-    contactPhone: COMPANY_INFO.primaryPhone,
-    contactEmail: COMPANY_INFO.email,
-    corporateLocation: COMPANY_INFO.offices.colombo.fullAddress,
+    contactPhone: company.primaryPhone || COMPANY_INFO.primaryPhone,
+    contactEmail: company.email || COMPANY_INFO.email,
+    corporateLocation: company.offices?.colombo?.address || COMPANY_INFO.offices.colombo.fullAddress,
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -109,13 +113,13 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({ onExpl
               {/* Direct Contacts Bar */}
               <div className="pt-4 space-y-3.5">
                 <a
-                  href={getMailtoLink(COMPANY_INFO.email)}
+                  href={getMailtoLink(company.email || COMPANY_INFO.email)}
                   className="flex items-center gap-3 text-sm text-slate-300 hover:text-blue-400 transition-colors group"
                 >
                   <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-colors shrink-0">
                     <Mail className="w-4 h-4" />
                   </div>
-                  <span className="font-medium break-all">{COMPANY_INFO.email}</span>
+                  <span className="font-medium break-all">{company.email || COMPANY_INFO.email}</span>
                 </a>
 
                 <div className="flex items-center gap-3 text-sm text-slate-300">
@@ -124,24 +128,24 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({ onExpl
                   </div>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <a
-                      href={getTelLink(COMPANY_INFO.primaryPhone)}
+                      href={getTelLink(company.primaryPhone || COMPANY_INFO.primaryPhone)}
                       className="font-medium text-slate-300 hover:text-blue-400 transition-colors"
                     >
-                      {COMPANY_INFO.primaryPhone}
+                      {company.primaryPhone || COMPANY_INFO.primaryPhone}
                     </a>
                     <span className="text-slate-500">•</span>
                     <a
-                      href={getTelLink(COMPANY_INFO.secondaryPhone)}
+                      href={getTelLink(company.secondaryPhone || COMPANY_INFO.secondaryPhone)}
                       className="font-medium text-slate-300 hover:text-blue-400 transition-colors"
                     >
-                      {COMPANY_INFO.secondaryPhone}
+                      {company.secondaryPhone || COMPANY_INFO.secondaryPhone}
                     </a>
                   </div>
                 </div>
 
                 <div className="space-y-2 pt-1 border-t border-slate-800/80">
                   <a
-                    href={getMapSearchUrl(COMPANY_INFO.offices.colombo.mapQuery)}
+                    href={getMapSearchUrl(company.offices?.colombo?.mapQuery || COMPANY_INFO.offices.colombo.mapQuery)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-start gap-3 text-sm text-slate-300 hover:text-blue-400 transition-colors group"
@@ -154,13 +158,13 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({ onExpl
                         Colombo Office
                       </span>
                       <span className="text-xs text-slate-300 leading-relaxed">
-                        {COMPANY_INFO.offices.colombo.address}
+                        {company.offices?.colombo?.address || COMPANY_INFO.offices.colombo.address}
                       </span>
                     </div>
                   </a>
 
                   <a
-                    href={getMapSearchUrl(COMPANY_INFO.offices.trincomalee.mapQuery)}
+                    href={getMapSearchUrl(company.offices?.trincomalee?.mapQuery || COMPANY_INFO.offices.trincomalee.mapQuery)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-start gap-3 text-sm text-slate-300 hover:text-blue-400 transition-colors group"
@@ -173,7 +177,7 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({ onExpl
                         Trincomalee Office
                       </span>
                       <span className="text-xs text-slate-300 leading-relaxed">
-                        {COMPANY_INFO.offices.trincomalee.address}
+                        {company.offices?.trincomalee?.address || COMPANY_INFO.offices.trincomalee.address}
                       </span>
                     </div>
                   </a>

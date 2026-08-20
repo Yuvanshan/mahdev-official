@@ -70,8 +70,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
     <>
       <footer className="w-full bg-slate-950 text-slate-300 border-t border-slate-900 mt-auto">
         {/* Top Corporate Highlight Strip */}
-        <div className="border-b border-slate-800/80 py-10 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div className="border-b border-slate-800/80 py-8 sm:py-10 px-3 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
             <div className="lg:col-span-7">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-900/40 border border-blue-500/30 text-blue-400 text-xs font-semibold mb-3">
                 <Shield className="w-3.5 h-3.5" />
@@ -86,7 +86,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </div>
 
             {/* Newsletter Subscription Foundation */}
-            <div className="lg:col-span-5 bg-slate-900/90 rounded-xl p-5 border border-slate-800">
+            <div className="lg:col-span-5 bg-slate-900/90 rounded-xl p-4 sm:p-5 border border-slate-800">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-300 block mb-1">
                 Executive Dispatch
               </span>
@@ -99,7 +99,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                   <span>Thank you for subscribing to Mahdev Executive Dispatch.</span>
                 </div>
               ) : (
-                <form onSubmit={handleNewsletterSubmit} className="flex gap-2">
+                <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="email"
                     required
@@ -108,7 +108,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                     onChange={(e) => setNewsletterEmail(e.target.value)}
                     className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3.5 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0052FF]"
                   />
-                  <Button variant="electric" size="sm" type="submit">
+                  <Button variant="electric" size="sm" type="submit" className="shrink-0">
                     Subscribe
                   </Button>
                 </form>
@@ -118,10 +118,10 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         </div>
 
         {/* Main Footer Links */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 lg:gap-12">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-12 sm:py-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 lg:gap-12">
             {/* Brand Column */}
-            <div className="col-span-2 md:col-span-4 lg:col-span-1 space-y-4">
+            <div className="col-span-1 sm:col-span-2 md:col-span-4 lg:col-span-1 space-y-4">
               <div
                 onClick={() => onNavigate('/')}
                 className="cursor-pointer inline-block"
@@ -242,11 +242,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           </div>
 
           {/* Bottom Copyright and Socials */}
-          <div className="mt-14 pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+          <div className="mt-14 pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 text-center sm:text-left">
             <p>
               © {new Date().getFullYear()} {BRAND_CONFIG.legalName}. All rights reserved. {BRAND_CONFIG.domain}
             </p>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
               <span className="hover:text-slate-300 transition-colors">Colombo Office</span>
               <span>•</span>
               <span className="hover:text-slate-300 transition-colors">Trincomalee Office</span>

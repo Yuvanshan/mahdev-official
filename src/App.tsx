@@ -33,6 +33,7 @@ import { AdminLayout } from './views/admin/AdminLayout';
 import { CartDrawer } from './components/cart/CartDrawer';
 import { AnnouncementBanner } from './components/layout/AnnouncementBanner';
 import { testFirestoreConnection, initAppCheck } from './lib/firebase';
+import { analyticsService } from './services/analyticsService';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
@@ -93,6 +94,14 @@ export default function App() {
   const divisionKey = (Object.keys(DIVISIONS) as DivisionId[]).find(
     (key) => DIVISIONS[key].route === normalizedPath
   );
+
+  // Track page views and division views automatically
+  useEffect(() => {
+    analyticsService.trackPageView(normalizedPath, document.title, divisionKey);
+    if (divisionKey) {
+      analyticsService.trackDivisionView(divisionKey, DIVISIONS[divisionKey].name);
+    }
+  }, [normalizedPath, divisionKey]);
 
   // Determine if it's a legal page
   const legalRoutes: Record<string, LegalPolicyType> = {
@@ -315,7 +324,7 @@ export default function App() {
     <AuthProvider>
       <AdminAuthProvider>
         <CartProvider>
-          <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-[#0052FF] selection:text-white">
+          <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-[#0052FF] selection:text-white w-full max-w-full overflow-x-hidden">
             {/* Interactive Magnetic Custom Cursor for Desktop */}
             <CustomCursor />
 
@@ -329,7 +338,7 @@ export default function App() {
             <Navigation currentPath={normalizedPath} onNavigate={navigate} />
 
             {/* Main Content Area with Smooth View Transitions */}
-            <main className="flex-1 w-full overflow-hidden">
+            <main className="flex-1 w-full max-w-full min-w-0">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={normalizedPath}
@@ -337,7 +346,7 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                  className="w-full"
+                  className="w-full max-w-full min-w-0"
                 >
                   {renderCurrentView()}
                 </motion.div>

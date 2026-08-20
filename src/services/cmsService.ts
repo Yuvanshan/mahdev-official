@@ -55,6 +55,54 @@ class CmsService {
 
   constructor() {
     this.initializeAllEntities();
+    this.attachFirestoreSync();
+  }
+
+  private attachFirestoreSync(): void {
+    try {
+      firestoreSettingsService.subscribeCompanySettings(
+        (firestoreCompany) => {
+          if (firestoreCompany && firestoreCompany.name) {
+            const current = this.getCompanyInfo();
+            const colomboUpdate = firestoreCompany.offices?.colombo;
+            const trincoUpdate = firestoreCompany.offices?.trincomalee;
+
+            const merged: CompanyInformation = {
+              ...current,
+              ...firestoreCompany,
+              offices: {
+                colombo: {
+                  ...current.offices.colombo,
+                  ...(colomboUpdate || {}),
+                  fullAddress: colomboUpdate?.address || current.offices.colombo.fullAddress,
+                },
+                trincomalee: {
+                  ...current.offices.trincomalee,
+                  ...(trincoUpdate || {}),
+                  fullAddress: trincoUpdate?.address || current.offices.trincomalee.fullAddress,
+                },
+              },
+              socials: {
+                ...current.socials,
+                ...(firestoreCompany.socials || {}),
+              },
+              workingHours: {
+                ...current.workingHours,
+                ...(firestoreCompany.workingHours || {}),
+              },
+            };
+            const key = `${CMS_STORAGE_PREFIX}company_info`;
+            localStorage.setItem(key, JSON.stringify(merged));
+            this.notify('pages');
+          }
+        },
+        () => {
+          // Fallback gracefully if firestore is offline
+        }
+      );
+    } catch (e) {
+      console.warn('[CmsService] Firestore settings auto-sync initialization:', e);
+    }
   }
 
   private getStorageKey(entity: CmsEntityType): string {

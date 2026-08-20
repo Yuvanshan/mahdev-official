@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, ArrowRight, X, Megaphone, Tag } from 'lucide-react';
+import { Megaphone, ArrowRight, X } from 'lucide-react';
+import { useSiteSettings } from '../../hooks/useFirestoreData';
 import { CmsBanner } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
 
@@ -8,37 +9,51 @@ interface AnnouncementBannerProps {
 }
 
 export const AnnouncementBanner: React.FC<AnnouncementBannerProps> = ({ onNavigate }) => {
-  const [activeBanner, setActiveBanner] = useState<CmsBanner | null>(null);
+  const { data: siteSettings } = useSiteSettings();
+  const [cmsBanner, setCmsBanner] = useState<CmsBanner | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
-  const loadBanner = () => {
+  const loadCmsBanner = () => {
     const banners = cmsService.getAll<CmsBanner>('banners', { status: 'active' });
-    const announcement = banners.find(
-      (b) => b.placement === 'announcement_bar' && b.isActive && !b.isDeleted
-    ) || banners.find((b) => b.isActive && !b.isDeleted);
-
-    if (announcement) {
-      setActiveBanner(announcement);
-    } else {
-      setActiveBanner(null);
-    }
+    const announcement =
+      banners.find((b) => b.placement === 'announcement_bar' && b.isActive && !b.isDeleted) ||
+      banners.find((b) => b.isActive && !b.isDeleted);
+    setCmsBanner(announcement || null);
   };
 
   useEffect(() => {
-    loadBanner();
-    const unsub = cmsService.subscribe('banners', loadBanner);
+    loadCmsBanner();
+    const unsub = cmsService.subscribe('banners', loadCmsBanner);
     return () => unsub();
   }, []);
 
-  if (!activeBanner || dismissed) return null;
+  if (dismissed) return null;
+
+  // 1. First priority: Firestore site announcement
+  const firestoreAnnouncement = siteSettings?.announcement;
+  const isFirestoreActive = firestoreAnnouncement?.enabled && !!firestoreAnnouncement?.text;
+
+  // 2. Secondary: CMS Banner
+  const isCmsActive = cmsBanner && cmsBanner.isActive;
+
+  if (!isFirestoreActive && !isCmsActive) return null;
+
+  const displayText = isFirestoreActive
+    ? firestoreAnnouncement.text
+    : cmsBanner?.title || '';
+  const displaySubtitle = !isFirestoreActive && cmsBanner?.subtitle ? cmsBanner.subtitle : '';
+  const targetLink = isFirestoreActive
+    ? firestoreAnnouncement.link || '/contact'
+    : cmsBanner?.targetUrl || '';
+  const badgeText = isFirestoreActive ? 'Official' : cmsBanner?.badgeText || 'Notice';
 
   const handleClick = (e: React.MouseEvent) => {
-    if (!activeBanner.targetUrl) return;
-    if (activeBanner.targetUrl.startsWith('http')) {
-      window.open(activeBanner.targetUrl, '_blank');
+    if (!targetLink) return;
+    if (targetLink.startsWith('http')) {
+      window.open(targetLink, '_blank');
     } else if (onNavigate) {
       e.preventDefault();
-      onNavigate(activeBanner.targetUrl);
+      onNavigate(targetLink);
     }
   };
 
@@ -52,21 +67,21 @@ export const AnnouncementBanner: React.FC<AnnouncementBannerProps> = ({ onNaviga
           onClick={handleClick}
           className="flex-1 flex flex-wrap items-center justify-center gap-2.5 cursor-pointer hover:opacity-95 transition-opacity"
         >
-          {activeBanner.badgeText && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[11px] font-bold tracking-wide uppercase border border-white/20">
-              <Megaphone className="w-3 h-3" />
-              {activeBanner.badgeText}
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[11px] font-bold tracking-wide uppercase border border-white/20">
+            <Megaphone className="w-3 h-3" />
+            {badgeText}
+          </span>
+
+          <span className="font-semibold">{displayText}</span>
+          {displaySubtitle && (
+            <span className="hidden md:inline text-blue-100/80 font-normal">
+              — {displaySubtitle}
             </span>
           )}
 
-          <span className="font-semibold">{activeBanner.title}</span>
-          <span className="hidden md:inline text-blue-100/80 font-normal">
-            — {activeBanner.subtitle}
-          </span>
-
-          {activeBanner.buttonText && (
+          {targetLink && (
             <span className="inline-flex items-center gap-1 font-bold text-white underline underline-offset-2 ml-1 text-xs hover:text-blue-200">
-              {activeBanner.buttonText}
+              Learn More
               <ArrowRight className="w-3 h-3" />
             </span>
           )}

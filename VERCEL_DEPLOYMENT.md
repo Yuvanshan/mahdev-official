@@ -109,10 +109,28 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 
 ---
 
-## 6. Pre-Flight Deployment Checklist
+## 6. Pre-Flight Deployment Checklist & Quality Gates
 
+The production pipeline enforces mandatory CI checks before any build is promoted to `main`:
+
+```bash
+# Execute local pre-flight checks before pushing PR:
+npm run preflight
+```
+
+- [x] **Lint & Type Check**: `npm run lint` and `npm run typecheck` pass with zero errors.
+- [x] **Automated Test Matrix**: `npm test` passes all 11 automated test suites.
+- [x] **Security & Storage Protection**: `npm run test:security` and `npm run test:storage` verified.
+- [x] **Disaster Recovery Integrity**: `npm run test:recovery` SHA-256 snapshot drill verified.
 - [x] `vercel.json` exists at repository root with correct framework presets and security headers.
 - [x] `package.json` contains valid `build` script generating files to `dist/`.
 - [x] Client environment variables use the `VITE_` prefix and are defined in `.env.example`.
 - [x] No private secrets or API keys are committed to Git.
 - [x] All application routes resolve properly with SPA fallback rewrite rules.
+
+---
+
+## 7. Rollback Reference
+
+For detailed instant rollback instructions via the Vercel Dashboard or CLI, refer to [PIPELINE_AND_ROLLBACK.md](./PIPELINE_AND_ROLLBACK.md).
+

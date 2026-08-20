@@ -223,23 +223,25 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
 
               {/* Quantity & Add to Cart Controls */}
               <div className="pt-2 border-t border-slate-100 space-y-4">
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                   {/* Quantity Stepper */}
-                  <div className="flex items-center border border-slate-300 rounded-xl bg-white p-1">
+                  <div className="flex items-center justify-center border border-slate-300 rounded-xl bg-white p-1 shrink-0 self-center sm:self-auto">
                     <button
                       type="button"
                       onClick={handleDecrement}
-                      className="w-8 h-8 rounded-lg text-slate-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors"
+                      className="w-9 h-9 rounded-lg text-slate-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors"
+                      aria-label="Decrease quantity"
                     >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="w-10 text-center font-mono font-bold text-sm text-slate-900">
+                    <span className="w-12 text-center font-mono font-bold text-sm text-slate-900">
                       {quantity}
                     </span>
                     <button
                       type="button"
                       onClick={handleIncrement}
-                      className="w-8 h-8 rounded-lg text-slate-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors"
+                      className="w-9 h-9 rounded-lg text-slate-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer transition-colors"
+                      aria-label="Increase quantity"
                     >
                       <Plus className="w-3.5 h-3.5" />
                     </button>
@@ -251,8 +253,8 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                     size="lg"
                     onClick={handleAddToCart}
                     disabled={!product.inStock}
-                    leftIcon={<ShoppingCart className="w-4 h-4" />}
-                    className="flex-1 text-sm font-bold shadow-md shadow-blue-500/20 py-3"
+                    leftIcon={<ShoppingCart className="w-4 h-4 shrink-0" />}
+                    className="flex-1 w-full text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 py-3 min-h-[44px]"
                   >
                     Add {quantity} to Cart • ${(unitPrice * quantity).toFixed(2)}
                   </Button>

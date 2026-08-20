@@ -26,9 +26,11 @@ import {
 } from '../motion/MotionWrappers';
 import { CORPORATE_CONTACT_DETAILS } from '../../data/corporateData';
 import { COMPANY_INFO, getTelLink, getMailtoLink, getMapSearchUrl } from '../../config/company';
+import { useCompanySettings } from '../../hooks/useFirestoreData';
 import { DIVISION_LIST } from '../../config/divisions';
 import { evaluateBotRisk, checkActionThrottle } from '../../utils/securityProtection';
 import { notificationService } from '../../services/notificationService';
+import { analyticsService } from '../../services/analyticsService';
 
 interface ContactCorporateSectionProps {
   defaultDivision?: string;
@@ -39,6 +41,9 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
   defaultDivision = 'general',
   defaultSubject = '',
 }) => {
+  const { data: firestoreCompany } = useCompanySettings();
+  const company = firestoreCompany?.name ? firestoreCompany : COMPANY_INFO;
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -115,6 +120,11 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
 
       // Dispatch notifications safely
       if (formData.division !== 'general' || formData.serviceType) {
+        analyticsService.trackQuoteRequested(
+          formData.division,
+          formData.serviceType || 'General Enterprise Consultation'
+        );
+
         notificationService.notifyQuoteRequestReceived({
           name: formData.name,
           email: formData.email,
@@ -131,6 +141,8 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
           details: formData.message,
         }).catch(() => {});
       } else {
+        analyticsService.trackContactSubmitted('general', 'Corporate Contact Inquiry');
+
         notificationService.notifyAdminContactInquiry({
           name: formData.name,
           email: formData.email,
@@ -365,7 +377,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
               <div className="space-y-3.5">
                 {/* WhatsApp Direct */}
                 <a
-                  href={COMPANY_INFO.socials.whatsapp || `https://wa.me/94750928078`}
+                  href={company.socials?.whatsapp || `https://wa.me/94750928078`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-950/60 border border-emerald-500/40 hover:bg-emerald-900/80 transition-all text-white group"
@@ -377,7 +389,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                     <div>
                       <span className="text-xs font-bold block">WhatsApp Corporate</span>
                       <span className="text-xs text-emerald-300">
-                        {COMPANY_INFO.primaryPhone}
+                        {company.primaryPhone || COMPANY_INFO.primaryPhone}
                       </span>
                     </div>
                   </div>
@@ -397,24 +409,24 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                   </div>
                   <div className="pl-13 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                     <a
-                      href={getTelLink(COMPANY_INFO.primaryPhone)}
+                      href={getTelLink(company.primaryPhone || COMPANY_INFO.primaryPhone)}
                       className="font-medium text-white hover:text-blue-400 transition-colors"
                     >
-                      {COMPANY_INFO.primaryPhone}
+                      {company.primaryPhone || COMPANY_INFO.primaryPhone}
                     </a>
                     <span className="text-slate-600">•</span>
                     <a
-                      href={getTelLink(COMPANY_INFO.secondaryPhone)}
+                      href={getTelLink(company.secondaryPhone || COMPANY_INFO.secondaryPhone)}
                       className="font-medium text-white hover:text-blue-400 transition-colors"
                     >
-                      {COMPANY_INFO.secondaryPhone}
+                      {company.secondaryPhone || COMPANY_INFO.secondaryPhone}
                     </a>
                   </div>
                 </div>
 
                 {/* Email */}
                 <a
-                  href={getMailtoLink(COMPANY_INFO.email)}
+                  href={getMailtoLink(company.email || COMPANY_INFO.email)}
                   className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors group"
                 >
                   <div className="w-10 h-10 rounded-xl bg-blue-600/30 text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-colors flex items-center justify-center shrink-0">
@@ -423,7 +435,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                   <div className="min-w-0">
                     <span className="text-xs font-bold block">Official Corporate Email</span>
                     <span className="text-xs text-slate-300 break-all font-mono">
-                      {COMPANY_INFO.email}
+                      {company.email || COMPANY_INFO.email}
                     </span>
                   </div>
                 </a>
@@ -435,9 +447,9 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                   <Clock className="w-3.5 h-3.5 text-blue-400" />
                   <span className="font-semibold">Business Operating Hours</span>
                 </div>
-                <p className="pl-5.5">{COMPANY_INFO.workingHours.weekdays}</p>
-                <p className="pl-5.5">{COMPANY_INFO.workingHours.weekends}</p>
-                <p className="pl-5.5 text-blue-400 text-[11px] font-medium">{COMPANY_INFO.workingHours.support}</p>
+                <p className="pl-5.5">{company.workingHours?.weekdays || COMPANY_INFO.workingHours.weekdays}</p>
+                <p className="pl-5.5">{company.workingHours?.weekends || COMPANY_INFO.workingHours.weekends}</p>
+                <p className="pl-5.5 text-blue-400 text-[11px] font-medium">{company.workingHours?.support || COMPANY_INFO.workingHours.support}</p>
               </div>
             </div>
           </ScrollReveal>
@@ -454,7 +466,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                     </div>
                     <div>
                       <h4 className="font-display font-bold text-slate-900 text-sm">
-                        Colombo Office
+                        {company.offices?.colombo?.name || 'Colombo Office'}
                       </h4>
                       <Badge variant="electric" size="sm" className="text-[9px] py-0 px-1.5">
                         Corporate Headquarters
@@ -462,7 +474,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                     </div>
                   </div>
                   <a
-                    href={getMapSearchUrl(COMPANY_INFO.offices.colombo.mapQuery)}
+                    href={getMapSearchUrl(company.offices?.colombo?.mapQuery || COMPANY_INFO.offices.colombo.mapQuery)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
@@ -474,7 +486,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
 
                 <div className="text-xs text-slate-600 space-y-1">
                   <p className="font-medium text-slate-900 leading-relaxed">
-                    {COMPANY_INFO.offices.colombo.address}
+                    {company.offices?.colombo?.address || COMPANY_INFO.offices.colombo.address}
                   </p>
                 </div>
               </div>
@@ -488,7 +500,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                     </div>
                     <div>
                       <h4 className="font-display font-bold text-slate-900 text-sm">
-                        Trincomalee Office
+                        {company.offices?.trincomalee?.name || 'Trincomalee Office'}
                       </h4>
                       <Badge variant="default" size="sm" className="text-[9px] py-0 px-1.5">
                         Regional Operations & Studio
@@ -496,7 +508,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                     </div>
                   </div>
                   <a
-                    href={getMapSearchUrl(COMPANY_INFO.offices.trincomalee.mapQuery)}
+                    href={getMapSearchUrl(company.offices?.trincomalee?.mapQuery || COMPANY_INFO.offices.trincomalee.mapQuery)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
@@ -508,7 +520,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
 
                 <div className="text-xs text-slate-600 space-y-1">
                   <p className="font-medium text-slate-900 leading-relaxed">
-                    {COMPANY_INFO.offices.trincomalee.address}
+                    {company.offices?.trincomalee?.address || COMPANY_INFO.offices.trincomalee.address}
                   </p>
                 </div>
               </div>

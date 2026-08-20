@@ -14,8 +14,7 @@ import {
   AlertTriangle,
   Infinity as InfinityIcon,
   XCircle,
-  FileCode,
-  Calendar,
+  Check,
 } from 'lucide-react';
 import { CatalogProduct, ProductType, StockStatus } from '../../types/catalog';
 import { useCart } from '../../context/CartContext';
@@ -36,6 +35,7 @@ export const CatalogProductCard: React.FC<CatalogProductCardProps> = ({
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (product.stockStatus === 'out_of_stock') return;
     if (onAddToCart) {
       onAddToCart(product);
     } else {
@@ -67,29 +67,29 @@ export const CatalogProductCard: React.FC<CatalogProductCardProps> = ({
     switch (status) {
       case 'in_stock':
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-            <CheckCircle2 className="w-3 h-3" />
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">
+            <CheckCircle2 className="w-3 h-3 shrink-0" />
             <span>In Stock ({count})</span>
           </span>
         );
       case 'low_stock':
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 animate-pulse">
-            <AlertTriangle className="w-3 h-3" />
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 animate-pulse shrink-0">
+            <AlertTriangle className="w-3 h-3 shrink-0" />
             <span>Only {count} Left</span>
           </span>
         );
       case 'unlimited':
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-            <InfinityIcon className="w-3 h-3" />
-            <span>Instant Digital / Available</span>
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200 shrink-0">
+            <InfinityIcon className="w-3 h-3 shrink-0" />
+            <span>Digital / Instant</span>
           </span>
         );
       case 'out_of_stock':
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-red-700 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
-            <XCircle className="w-3 h-3" />
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-red-700 bg-red-50 px-2 py-0.5 rounded-full border border-red-200 shrink-0">
+            <XCircle className="w-3 h-3 shrink-0" />
             <span>Out of Stock</span>
           </span>
         );
@@ -103,75 +103,79 @@ export const CatalogProductCard: React.FC<CatalogProductCardProps> = ({
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="group bg-white rounded-xl border border-neutral-200/80 shadow-xs hover:shadow-lg hover:border-neutral-300 transition-all duration-300 flex flex-col overflow-hidden"
+      className="group bg-white rounded-xl border border-neutral-200/80 shadow-xs hover:shadow-lg hover:border-neutral-300 transition-all duration-300 flex flex-col justify-between h-full overflow-hidden"
     >
-      {/* Product Image & Badges */}
-      <div className="relative aspect-4/3 bg-neutral-100 overflow-hidden cursor-pointer" onClick={() => onSelect(product)}>
-        <img
-          src={product.imageUrl}
-          alt={product.name}
-          loading="lazy"
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-        />
+      {/* Top Section */}
+      <div className="flex flex-col flex-1">
+        {/* Product Image & Badges */}
+        <div className="relative aspect-4/3 bg-neutral-100 overflow-hidden cursor-pointer" onClick={() => onSelect(product)}>
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            loading="lazy"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+          />
 
-        {/* Division Badge Top Left */}
-        <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">
-          <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-neutral-900/90 text-white rounded-md backdrop-blur-md">
-            {product.divisionName}
-          </span>
-          <span className={`px-2 py-0.5 text-[10px] font-medium rounded-md border backdrop-blur-md ${typeBadge.bg}`}>
-            {typeBadge.label}
-          </span>
-        </div>
-
-        {/* Discount Tag Top Right */}
-        {product.discountPercent && product.discountPercent > 0 && (
-          <span className="absolute top-3 right-3 px-2 py-1 text-[11px] font-bold bg-red-600 text-white rounded-md shadow-xs">
-            -{product.discountPercent}%
-          </span>
-        )}
-
-        {/* Quick View Button Hover Overlay */}
-        <div className="absolute inset-0 bg-neutral-900/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect(product);
-            }}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-neutral-900 text-xs font-semibold rounded-lg shadow-md hover:bg-neutral-100 transition-colors transform translate-y-2 group-hover:translate-y-0 duration-200"
-          >
-            <Eye className="w-3.5 h-3.5" />
-            <span>Quick Specs & Details</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Card Body */}
-      <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
-        <div>
-          {/* SKU + Category Line */}
-          <div className="flex items-center justify-between text-xs text-neutral-400 mb-1.5 font-mono">
-            <span className="truncate pr-2">SKU: {product.sku}</span>
-            <span className="text-[11px] font-sans text-neutral-500 truncate max-w-[130px]">{product.categoryName}</span>
+          {/* Division Badge Top Left */}
+          <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">
+            <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-neutral-900/90 text-white rounded-md backdrop-blur-md">
+              {product.divisionName}
+            </span>
+            <span className={`px-2 py-0.5 text-[10px] font-medium rounded-md border backdrop-blur-md ${typeBadge.bg}`}>
+              {typeBadge.label}
+            </span>
           </div>
 
-          {/* Product Title */}
-          <h3
-            onClick={() => onSelect(product)}
-            className="font-medium text-neutral-900 text-base leading-snug group-hover:text-amber-600 transition-colors line-clamp-2 cursor-pointer mb-2"
-          >
-            {product.name}
-          </h3>
+          {/* Discount Tag Top Right */}
+          {product.discountPercent && product.discountPercent > 0 && (
+            <span className="absolute top-3 right-3 px-2 py-1 text-[11px] font-bold bg-red-600 text-white rounded-md shadow-xs">
+              -{product.discountPercent}%
+            </span>
+          )}
 
-          {/* Short Description */}
-          <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed mb-3">
-            {product.shortDescription}
-          </p>
+          {/* Quick View Button Hover Overlay */}
+          <div className="absolute inset-0 bg-neutral-900/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center p-4">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect(product);
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-neutral-900 text-xs font-semibold rounded-lg shadow-md hover:bg-neutral-100 transition-colors transform translate-y-2 group-hover:translate-y-0 duration-200 cursor-pointer"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>Quick Specs & Details</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Card Body */}
+        <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
+          <div>
+            {/* SKU + Category Line */}
+            <div className="flex items-center justify-between text-xs text-neutral-400 mb-1.5 font-mono gap-2">
+              <span className="truncate">SKU: {product.sku}</span>
+              <span className="text-[11px] font-sans text-neutral-500 truncate max-w-[130px] shrink-0 text-right">{product.categoryName}</span>
+            </div>
+
+            {/* Product Title (supports long titles with stable line clamping and min height) */}
+            <h3
+              onClick={() => onSelect(product)}
+              className="font-medium text-neutral-900 text-base leading-snug group-hover:text-amber-600 transition-colors line-clamp-2 cursor-pointer mb-2 min-h-[2.5rem]"
+              title={product.name}
+            >
+              {product.name}
+            </h3>
+
+            {/* Short Description */}
+            <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed mb-3">
+              {product.shortDescription}
+            </p>
+          </div>
 
           {/* Rating & Stock Status Row */}
-          <div className="flex items-center justify-between gap-2 mb-4 pt-2 border-t border-neutral-100">
-            <div className="flex items-center gap-1">
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-100 flex-wrap">
+            <div className="flex items-center gap-1 shrink-0">
+              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
               <span className="text-xs font-bold text-neutral-800">{product.rating}</span>
               <span className="text-[11px] text-neutral-400 font-sans">({product.reviewsCount})</span>
             </div>
@@ -179,54 +183,65 @@ export const CatalogProductCard: React.FC<CatalogProductCardProps> = ({
             <div>{getStockBadge(product.stockStatus, product.stockQuantity)}</div>
           </div>
         </div>
+      </div>
 
-        {/* Pricing & Primary CTA */}
-        <div className="pt-3 border-t border-neutral-100 flex items-center justify-between gap-2">
-          <div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-lg font-bold text-neutral-900">
-                ${product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </span>
-              {product.originalPrice && product.originalPrice > product.price && (
-                <span className="text-xs text-neutral-400 line-through">
-                  ${product.originalPrice.toFixed(2)}
-                </span>
-              )}
-            </div>
-            <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono">
-              {product.currency} • {product.brand}
+      {/* Pricing & Primary CTA Responsive Container */}
+      <div className="p-4 sm:p-5 pt-3 border-t border-neutral-100 bg-neutral-50/50 flex flex-col gap-3">
+        {/* Price Row */}
+        <div className="flex items-baseline justify-between gap-2 flex-wrap">
+          <div className="flex items-baseline gap-1.5 flex-wrap">
+            <span className="text-base sm:text-lg font-bold text-neutral-900 font-mono">
+              ${product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </span>
+            {product.originalPrice && product.originalPrice > product.price && (
+              <span className="text-xs text-neutral-400 line-through font-mono">
+                ${product.originalPrice.toFixed(2)}
+              </span>
+            )}
           </div>
+          <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono">
+            {product.currency} • {product.brand}
+          </span>
+        </div>
 
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => onSelect(product)}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-medium rounded-lg transition-colors cursor-pointer"
-            >
-              <span>View</span>
-            </button>
-            <button
-              onClick={handleQuickAdd}
-              disabled={product.stockStatus === 'out_of_stock'}
-              className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-all shadow-xs cursor-pointer ${
-                addedRecently
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-neutral-900 hover:bg-neutral-800 text-white disabled:opacity-50 disabled:cursor-not-allowed'
-              }`}
-            >
-              {addedRecently ? (
-                <>
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Added</span>
-                </>
-              ) : (
-                <>
-                  <ShoppingBag className="w-3.5 h-3.5" />
-                  <span>Add</span>
-                </>
-              )}
-            </button>
-          </div>
+        {/* Action Buttons: 100% width responsive layout */}
+        <div className="flex items-center gap-2 w-full">
+          <button
+            type="button"
+            onClick={() => onSelect(product)}
+            className="p-2.5 sm:px-3 sm:py-2.5 bg-white border border-neutral-200 hover:bg-neutral-100 hover:border-neutral-300 text-neutral-800 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center shrink-0 min-h-[40px] cursor-pointer"
+            title="View Details"
+            aria-label="View Details"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline ml-1.5">View</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleQuickAdd}
+            disabled={product.stockStatus === 'out_of_stock'}
+            className={`flex-1 w-full min-h-[40px] px-3.5 py-2.5 text-xs font-bold rounded-lg transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer select-none ${
+              addedRecently
+                ? 'bg-emerald-600 text-white shadow-emerald-600/20'
+                : product.stockStatus === 'out_of_stock'
+                ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed border border-neutral-300'
+                : 'bg-neutral-900 hover:bg-neutral-800 text-white active:scale-[0.98]'
+            }`}
+          >
+            {addedRecently ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-200 shrink-0" />
+                <span className="truncate">Added to Cart</span>
+              </>
+            ) : (
+              <>
+                <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">
+                  {product.stockStatus === 'out_of_stock' ? 'Out of Stock' : 'Add to Cart'}
+                </span>
+              </>
+            )}
+          </button>
         </div>
       </div>
     </motion.div>

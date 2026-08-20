@@ -21,6 +21,7 @@ import {
   TopServiceMetric,
   FunnelStage,
 } from '../types/analytics';
+import { CmsProduct, CmsService as CmsServiceEntity } from '../types/cms';
 import { orderService } from './orderService';
 import { bookingService } from './bookingService';
 import { cmsService } from './cmsService';
@@ -168,58 +169,113 @@ class AnalyticsService {
     this.trackEvent('division_view', `/${divisionId}`, { divisionName }, divisionId);
   }
 
-  public trackProductView(product: { id: string; name: string; sku: string; price: number; category?: string }): void {
-    this.trackEvent('product_view', `/mart/product/${product.id}`, {
-      productId: product.id,
-      productName: product.name,
-      sku: product.sku,
-      price: product.price,
-      category: product.category || 'General',
-    }, 'mart');
+  public trackProductView(
+    productOrId: { id: string; name: string; sku?: string; price: number; category?: string } | string,
+    name?: string,
+    price?: number
+  ): void {
+    if (typeof productOrId === 'object') {
+      this.trackEvent('product_view', `/mart/product/${productOrId.id}`, {
+        productId: productOrId.id,
+        productName: productOrId.name,
+        sku: productOrId.sku || '',
+        price: productOrId.price,
+        category: productOrId.category || 'General',
+      }, 'mart');
+    } else {
+      this.trackEvent('product_view', `/mart/product/${productOrId}`, {
+        productId: productOrId,
+        productName: name || '',
+        price: price || 0,
+      }, 'mart');
+    }
   }
 
-  public trackAddToCart(item: { id: string; name: string; price: number; quantity: number }): void {
-    this.trackEvent('add_to_cart', '/mart', {
-      productId: item.id,
-      productName: item.name,
-      price: item.price,
-      quantity: item.quantity,
-      itemTotal: item.price * item.quantity,
-    }, 'mart');
+  public trackAddToCart(
+    itemOrId: { id: string; name: string; price: number; quantity?: number } | string,
+    name?: string,
+    price?: number,
+    quantity: number = 1
+  ): void {
+    if (typeof itemOrId === 'object') {
+      const q = itemOrId.quantity || 1;
+      this.trackEvent('add_to_cart', '/mart', {
+        productId: itemOrId.id,
+        productName: itemOrId.name,
+        price: itemOrId.price,
+        quantity: q,
+        itemTotal: itemOrId.price * q,
+      }, 'mart');
+    } else {
+      this.trackEvent('add_to_cart', '/mart', {
+        productId: itemOrId,
+        productName: name || '',
+        price: price || 0,
+        quantity,
+        itemTotal: (price || 0) * quantity,
+      }, 'mart');
+    }
   }
 
-  public trackCheckoutStarted(cartTotal: number, itemCount: number, currency: string = 'USD'): void {
+  public trackCheckoutStarted(cartTotalOrQty: number, countOrTotal?: number, currency: string = 'USD'): void {
     this.trackEvent('checkout_started', '/checkout', {
-      cartTotal,
-      itemCount,
+      cartTotal: typeof countOrTotal === 'number' ? countOrTotal : cartTotalOrQty,
+      itemCount: typeof countOrTotal === 'number' ? cartTotalOrQty : countOrTotal || 1,
       currency,
     }, 'mart');
   }
 
-  public trackPurchaseCompleted(order: { id: string; total: number; currency: string; paymentMethod: string; itemCount: number }): void {
-    this.trackEvent('purchase_completed', '/order-confirmation', {
-      orderId: order.id,
-      total: order.total,
-      currency: order.currency,
-      paymentMethod: order.paymentMethod,
-      itemCount: order.itemCount,
-    }, 'mart');
+  public trackPurchaseCompleted(
+    orderOrId: { id: string; total: number; currency?: string; paymentMethod?: string; itemCount?: number } | string,
+    total?: number,
+    itemCount?: number,
+    currency: string = 'USD'
+  ): void {
+    if (typeof orderOrId === 'object') {
+      this.trackEvent('purchase_completed', '/order-confirmation', {
+        orderId: orderOrId.id,
+        total: orderOrId.total,
+        currency: orderOrId.currency || 'USD',
+        paymentMethod: orderOrId.paymentMethod || 'standard',
+        itemCount: orderOrId.itemCount || 1,
+      }, 'mart');
+    } else {
+      this.trackEvent('purchase_completed', '/order-confirmation', {
+        orderId: orderOrId,
+        total: total || 0,
+        currency,
+        itemCount: itemCount || 1,
+      }, 'mart');
+    }
   }
 
-  public trackBookingStarted(serviceId: string, serviceName: string, divisionId: string): void {
+  public trackBookingStarted(serviceIdOrDiv: string, serviceNameOrId?: string, divisionId?: string): void {
     this.trackEvent('booking_started', '/book', {
-      serviceId,
-      serviceName,
-    }, divisionId);
+      serviceId: serviceIdOrDiv,
+      serviceName: serviceNameOrId || serviceIdOrDiv,
+    }, divisionId || 'sws');
   }
 
-  public trackBookingCompleted(booking: { id: string; serviceId: string; serviceName: string; divisionId: string; price: number }): void {
-    this.trackEvent('booking_completed', '/book/success', {
-      bookingId: booking.id,
-      serviceId: booking.serviceId,
-      serviceName: booking.serviceName,
-      price: booking.price,
-    }, booking.divisionId);
+  public trackBookingCompleted(
+    bookingOrId: { id: string; serviceId?: string; serviceName?: string; divisionId?: string; price?: number } | string,
+    divisionId?: string,
+    serviceId?: string,
+    price?: number
+  ): void {
+    if (typeof bookingOrId === 'object') {
+      this.trackEvent('booking_completed', '/book/success', {
+        bookingId: bookingOrId.id,
+        serviceId: bookingOrId.serviceId || '',
+        serviceName: bookingOrId.serviceName || '',
+        price: bookingOrId.price || 0,
+      }, bookingOrId.divisionId || 'sws');
+    } else {
+      this.trackEvent('booking_completed', '/book/success', {
+        bookingId: bookingOrId,
+        serviceId: serviceId || '',
+        price: price || 0,
+      }, divisionId || 'sws');
+    }
   }
 
   public trackContactSubmitted(division: string, subject?: string): void {
@@ -254,8 +310,8 @@ class AnalyticsService {
     const rawEvents = this.getRawEvents();
     const allOrders = orderService.getAllOrders();
     const allBookings = bookingService.getAllBookings();
-    const allProducts = cmsService.getProducts();
-    const allServices = cmsService.getServices();
+    const allProducts = cmsService.getAll<CmsProduct>('products');
+    const allServices = cmsService.getAll<CmsServiceEntity>('services');
 
     // 1. Time Filtering Window
     const now = new Date();
@@ -382,7 +438,7 @@ class AnalyticsService {
       return {
         divisionId: div.id,
         name: div.name,
-        shortCode: div.shortCode || div.id.toUpperCase(),
+        shortCode: div.shortName || div.id.toUpperCase(),
         color: divisionColors[div.id] || '#0052FF',
         pageViews: pViews,
         inquiries: inq,
@@ -408,17 +464,21 @@ class AnalyticsService {
     });
 
     const topProducts: TopProductMetric[] = allProducts.map((p) => {
-      const sold = productSoldMap[p.id]?.units || (p.featured ? 12 : 3);
+      const sold = productSoldMap[p.id]?.units || (p.isFeatured ? 12 : 3);
       const rev = productSoldMap[p.id]?.rev || (sold * p.price);
       const pViews = filteredEvents.filter((e) => e.metadata?.productId === p.id).length + 38;
       const cartAdds = filteredEvents.filter((e) => e.metadata?.productId === p.id && e.type === 'add_to_cart').length + 15;
       const convRate = pViews > 0 ? parseFloat(((sold / pViews) * 100).toFixed(1)) : 4.5;
 
+      const currentStock = p.stockQuantity || 25;
+      const stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock' =
+        currentStock <= 0 ? 'out_of_stock' : currentStock <= 5 ? 'low_stock' : 'in_stock';
+
       return {
         id: p.id,
         name: p.name,
         sku: p.sku,
-        category: p.category,
+        category: p.categoryName || 'General',
         divisionId: 'mart',
         price: p.price,
         unitsSold: sold,
@@ -426,8 +486,8 @@ class AnalyticsService {
         views: pViews,
         cartAdds,
         conversionRate: convRate,
-        currentStock: p.stock || 25,
-        stockStatus: (p.stock || 25) <= 5 ? 'low_stock' : 'in_stock',
+        currentStock,
+        stockStatus,
       };
     }).sort((a, b) => b.revenue - a.revenue);
 
@@ -445,7 +505,7 @@ class AnalyticsService {
     });
 
     const topServices: TopServiceMetric[] = allServices.map((s) => {
-      const bData = serviceBookingMap[s.id] || { count: s.featured ? 6 : 2, rev: (s.featured ? 6 : 2) * (s.priceStartingFrom || 450), completed: 2 };
+      const bData = serviceBookingMap[s.id] || { count: s.popular ? 6 : 2, rev: (s.popular ? 6 : 2) * (s.startingPrice || 450), completed: 2 };
       const views = filteredEvents.filter((e) => e.metadata?.serviceId === s.id).length + 42;
       const convRate = views > 0 ? parseFloat(((bData.count / views) * 100).toFixed(1)) : 8.2;
 
@@ -458,7 +518,7 @@ class AnalyticsService {
         completedCount: bData.completed,
         revenue: bData.rev,
         views,
-        averageBookingValue: bData.count > 0 ? Math.round(bData.rev / bData.count) : (s.priceStartingFrom || 350),
+        averageBookingValue: bData.count > 0 ? Math.round(bData.rev / bData.count) : (s.startingPrice || 350),
         conversionRate: convRate,
       };
     }).sort((a, b) => b.revenue - a.revenue);

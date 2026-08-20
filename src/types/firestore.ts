@@ -264,13 +264,27 @@ export interface FirestoreCompanySettings {
 export interface FirestoreSiteSettings {
   siteName: string;
   maintenanceMode: boolean;
+  enableMaintenanceMode?: boolean;
   announcement?: {
     enabled: boolean;
     text: string;
     link?: string;
   };
   currency: string;
+  defaultCurrency?: string;
+  supportedCurrencies?: string[];
   taxRate: number;
+  vatTaxPercentage?: number;
+  bookingDepositPercent?: number;
+  legalRegistrationNumber?: string;
+  enableStockAlertEmails?: boolean;
+  dailyBackupEnabled?: boolean;
+  logoUrl?: string;
+  mobileLogoUrl?: string;
+  darkLogoUrl?: string;
+  faviconUrl?: string;
+  brandingUpdatedAt?: string;
+  brandingVersion?: number;
   updatedAt: string;
 }
 

@@ -733,6 +733,15 @@ export const LEGAL_POLICIES_CONTENT: Record<
           'You retain the right to request access to your personal data, request corrections, or request deletion of non-essential records.',
           `For any privacy inquiries or formal data access requests, please contact our Data Protection Officer at ${COMPANY_INFO.email} or write to ${COMPANY_INFO.offices.colombo.fullAddress}.`
         ]
+      },
+      {
+        heading: '6. Privacy-Preserving Analytics & Telemetry (Phase 36 Standard)',
+        content: [
+          'First-Party Processing: Mahdev operates a strictly in-house, privacy-safe analytics engine. We do not load external third-party tracking scripts, advertising beacons, or cross-site fingerprinting services.',
+          'PII Sanitization: All client telemetry data is automatically sanitized before transmission. Passwords, credit card numbers, personal phone numbers, and physical residential addresses are stripped from telemetry payloads.',
+          'Do-Not-Track (DNT) Respect: Our analytics architecture automatically honors browser Do-Not-Track (DNT: 1) signals and Global Privacy Control (GPC) headers, suppressing session recording when requested.',
+          'Non-Blocking Performance: Telemetry events use asynchronous browser idle scheduling (requestIdleCallback / navigator.sendBeacon) ensuring 0ms page rendering delay and zero website speed degradation.'
+        ]
       }
     ]
   },

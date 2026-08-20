@@ -133,10 +133,10 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
           </div>
         )}
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-18">
+        <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 sm:h-18">
             {/* Left: Brand Logo */}
-            <div className="flex items-center">
+            <div className="flex items-center shrink-0 min-w-0 mr-1 sm:mr-0">
               <BrandLogo
                 divisionLabel={currentDivision ? currentDivision.badge : undefined}
                 onClick={() => onNavigate('/')}
@@ -251,18 +251,18 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
             </nav>
 
             {/* Right: Cart, Customer Account & CTA */}
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
               {/* Universal Cart Trigger Button */}
               <button
                 type="button"
                 onClick={openCart}
-                className="relative inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all cursor-pointer border border-slate-200/80"
+                className="relative inline-flex items-center justify-center gap-1.5 p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all cursor-pointer border border-slate-200/80 shrink-0"
                 aria-label="View Shopping Cart"
               >
-                <ShoppingCart className="w-4 h-4 text-blue-600" />
-                <span className="hidden sm:inline">Cart</span>
+                <ShoppingCart className="w-4 h-4 text-blue-600 shrink-0" />
+                <span className="hidden md:inline">Cart</span>
                 {totalQuantity > 0 && (
-                  <span className="w-5 h-5 rounded-full bg-[#0052FF] text-white font-mono text-[10px] font-bold flex items-center justify-center animate-scaleIn">
+                  <span className="w-4.5 h-4.5 rounded-full bg-[#0052FF] text-white font-mono text-[9px] sm:text-[10px] font-bold flex items-center justify-center animate-scaleIn">
                     {totalQuantity}
                   </span>
                 )}
@@ -270,11 +270,12 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
               {/* Customer Account Button & Dropdown */}
               {isAuthenticated && user ? (
-                <div ref={accountDropdownRef} className="relative">
+                <div ref={accountDropdownRef} className="relative shrink-0">
                   <button
                     type="button"
                     onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}
-                    className="flex items-center gap-2 p-1.5 sm:px-3 sm:py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                    className="flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold transition-all cursor-pointer shadow-2xs shrink-0"
+                    aria-label="User account"
                   >
                     <img
                       src={
@@ -282,10 +283,10 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                         'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'
                       }
                       alt={user.fullName}
-                      className="w-6 h-6 rounded-full object-cover border border-slate-200"
+                      className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover border border-slate-200"
                     />
                     <span className="hidden md:inline max-w-[100px] truncate">{user.fullName.split(' ')[0]}</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:inline-block" />
                   </button>
 
                   {/* Dropdown Menu */}
@@ -358,9 +359,10 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                   size="sm"
                   onClick={() => onNavigate('/login')}
                   leftIcon={<User className="w-3.5 h-3.5" />}
-                  className="text-xs font-bold"
+                  className="text-xs font-bold p-2 sm:px-3 sm:py-2 shrink-0"
+                  aria-label="Sign In"
                 >
-                  Sign In
+                  <span className="hidden sm:inline">Sign In</span>
                 </Button>
               )}
 
@@ -369,14 +371,14 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                 size="sm"
                 onClick={() => {
                   if (currentPath === '/') {
-                    const el = document.getElementById('divisions-grid');
+                    const el = document.getElementById('divisions');
                     if (el) el.scrollIntoView({ behavior: 'smooth' });
                   } else {
                     onNavigate('/');
                   }
                 }}
                 rightIcon={<ArrowRight className="w-4 h-4" />}
-                className="hidden xl:inline-flex"
+                className="hidden xl:inline-flex shrink-0"
               >
                 Ecosystem
               </Button>
@@ -385,10 +387,10 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 lg:hidden focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
+                className="p-2 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 lg:hidden focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer shrink-0 border border-slate-200/80 bg-white"
                 aria-label="Toggle navigation menu"
               >
-                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                {isMobileMenuOpen ? <X className="w-5 h-5 text-slate-900" /> : <Menu className="w-5 h-5 text-slate-900" />}
               </button>
             </div>
           </div>
@@ -396,34 +398,34 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
         {/* Mobile Navigation Drawer */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 space-y-4 shadow-lg animate-in slide-in-from-top-2 duration-200">
+          <div className="lg:hidden border-t border-slate-200 bg-white px-3 sm:px-4 pt-3 pb-6 space-y-4 shadow-lg animate-in slide-in-from-top-2 duration-200 max-w-full overflow-hidden">
             {/* Account Quick Status on Mobile */}
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
               {isAuthenticated && user ? (
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5 min-w-0">
                   <img
                     src={user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'}
                     alt={user.fullName}
-                    className="w-8 h-8 rounded-full object-cover"
+                    className="w-8 h-8 rounded-full object-cover shrink-0"
                   />
-                  <div>
-                    <span className="text-xs font-bold text-slate-900 block">{user.fullName}</span>
-                    <span className="text-[10px] text-slate-500 block font-mono">{user.email}</span>
+                  <div className="min-w-0">
+                    <span className="text-xs font-bold text-slate-900 block truncate">{user.fullName}</span>
+                    <span className="text-[10px] text-slate-500 block font-mono truncate">{user.email}</span>
                   </div>
                 </div>
               ) : (
-                <div>
-                  <span className="text-xs font-bold text-slate-900 block">Mahdev Customer Portal</span>
-                  <span className="text-[10px] text-slate-500">Sign in to track orders and bookings</span>
+                <div className="min-w-0">
+                  <span className="text-xs font-bold text-slate-900 block truncate">Mahdev Customer Portal</span>
+                  <span className="text-[10px] text-slate-500 block truncate">Sign in to track orders & bookings</span>
                 </div>
               )}
 
               {isAuthenticated ? (
-                <Button variant="outline" size="sm" onClick={() => handleLinkClick('/account')} className="text-xs">
+                <Button variant="outline" size="sm" onClick={() => handleLinkClick('/account')} className="text-xs shrink-0">
                   Account Hub
                 </Button>
               ) : (
-                <Button variant="electric" size="sm" onClick={() => handleLinkClick('/login')} className="text-xs">
+                <Button variant="electric" size="sm" onClick={() => handleLinkClick('/login')} className="text-xs shrink-0">
                   Sign In
                 </Button>
               )}
@@ -443,11 +445,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                       : 'text-slate-700 hover:bg-slate-50'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <IconRenderer name={division.iconName} className="w-4 h-4 text-[#0052FF]" />
-                    <span>{division.name}</span>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <IconRenderer name={division.iconName} className="w-4 h-4 text-[#0052FF] shrink-0" />
+                    <span className="truncate">{division.name}</span>
                   </div>
-                  <Badge size="sm" variant="default">{division.badge}</Badge>
+                  <Badge size="sm" variant="default" className="shrink-0">{division.badge}</Badge>
                 </button>
               ))}
             </div>
@@ -486,7 +488,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
               >
                 <span>Shopping Cart & Checkout</span>
                 {totalQuantity > 0 && (
-                  <Badge size="sm" variant="default">
+                  <Badge size="sm" variant="default" className="shrink-0">
                     {totalQuantity} items
                   </Badge>
                 )}
@@ -501,10 +503,10 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
               {/* Call Hotline */}
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2">
                 <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-blue-600" />
+                  <Phone className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                   <span>Official Hotlines</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <a
                     href={getTelLink(COMPANY_INFO.primaryPhone)}
                     className="flex items-center justify-center gap-1.5 py-2 px-2.5 bg-white rounded-lg border border-slate-200 text-xs font-mono font-bold text-slate-900 hover:text-blue-600 hover:border-blue-300 transition-colors shadow-2xs"
@@ -521,14 +523,14 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
               </div>
 
               {/* WhatsApp & Email Actions */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <a
                   href={COMPANY_INFO.socials.whatsapp || 'https://wa.me/94750928078'}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 py-2 px-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold hover:bg-emerald-100 transition-colors"
                 >
-                  <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                  <MessageCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   <span>WhatsApp</span>
                 </a>
 
@@ -536,7 +538,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                   href={getMailtoLink(COMPANY_INFO.email)}
                   className="flex items-center justify-center gap-2 py-2 px-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors"
                 >
-                  <Mail className="w-3.5 h-3.5 text-blue-600" />
+                  <Mail className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                   <span>Email Mahdev</span>
                 </a>
               </div>

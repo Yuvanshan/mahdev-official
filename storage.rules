@@ -23,8 +23,13 @@ service firebase.storage {
     }
 
     // =========================================================================
-    // 1. PUBLIC MARKETING & CATALOG ASSETS
+    // 1. PUBLIC MARKETING, BRANDING & CATALOG ASSETS
     // =========================================================================
+    match /branding/{allPaths=**} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
     match /company/{allPaths=**} {
       allow read: if true;
       allow write: if isStaff();

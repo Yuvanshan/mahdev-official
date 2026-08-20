@@ -31,6 +31,7 @@ import {
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { SEOHead } from '../components/layout/SEOHead';
+import { analyticsService } from '../services/analyticsService';
 
 interface CheckoutViewProps {
   onNavigate: (path: string) => void;
@@ -39,6 +40,13 @@ interface CheckoutViewProps {
 export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
   const { cartItems, cartSummary, clearCart, appliedCoupon, applyCoupon, removeCoupon } =
     useCart();
+
+  // Track checkout initiated
+  React.useEffect(() => {
+    if (cartItems.length > 0) {
+      analyticsService.trackCheckoutStarted(cartSummary.totalQuantity, cartSummary.total);
+    }
+  }, []);
 
   // Customer Contact State
   const [customer, setCustomer] = useState<CustomerOrderDetails>({
@@ -165,6 +173,13 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
           appliedCouponCode: appliedCoupon?.code,
         },
         cartSummary
+      );
+
+      analyticsService.trackPurchaseCompleted(
+        createdOrder.id,
+        createdOrder.total,
+        createdOrder.items.length,
+        'USD'
       );
 
       clearCart();

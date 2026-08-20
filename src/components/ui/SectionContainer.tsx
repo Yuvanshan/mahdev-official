@@ -55,10 +55,10 @@ export const SectionContainer: React.FC<SectionContainerProps> = ({
 
   return (
     <Component
-      className={`w-full ${bgStyles[background]} ${paddingYStyles[paddingY]} ${borderTopStyle} ${borderBottomStyle} ${className}`}
+      className={`w-full max-w-full overflow-hidden ${bgStyles[background]} ${paddingYStyles[paddingY]} ${borderTopStyle} ${borderBottomStyle} ${className}`}
       {...props}
     >
-      <div className={`w-full ${maxWStyles[maxWidth]} mx-auto px-4 sm:px-6 lg:px-8 ${innerClassName}`}>
+      <div className={`w-full max-w-full min-w-0 ${maxWStyles[maxWidth]} mx-auto px-4 sm:px-6 lg:px-8 ${innerClassName}`}>
         {children}
       </div>
     </Component>

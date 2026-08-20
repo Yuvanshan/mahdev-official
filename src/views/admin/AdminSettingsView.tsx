@@ -14,44 +14,29 @@ import {
   Share2,
   Clock,
   Sparkles,
+  Megaphone,
+  Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
-import { COMPANY_INFO, CompanyInformation } from '../../config/company';
+import {
+  firestoreSettingsService,
+  getDefaultCompanySettings,
+  getDefaultSiteSettings,
+} from '../../services/firestore/settings';
+import { FirestoreCompanySettings, FirestoreSiteSettings } from '../../types/firestore';
 import { cmsService } from '../../services/cmsService';
-
-const SETTINGS_STORAGE_KEY = 'mahdev_cms_system_settings_v1';
 
 export const AdminSettingsView: React.FC = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'company' | 'commerce' | 'security'>('company');
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'company' | 'commerce' | 'announcement' | 'security'>('company');
 
-  // Company Information from CMS / Single Source of Truth
-  const [companyData, setCompanyData] = useState<CompanyInformation>(() => cmsService.getCompanyInfo());
-
-  // Platform System Settings
-  const [systemSettings, setSystemSettings] = useState(() => {
-    const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        // fallback
-      }
-    }
-    return {
-      legalRegistrationNumber: 'PV-00284912',
-      defaultCurrency: 'USD',
-      supportedCurrencies: ['USD', 'LKR', 'EUR', 'GBP'],
-      vatTaxPercentage: 8,
-      bookingDepositPercent: 30,
-      enableMaintenanceMode: false,
-      enablePublicRegistration: true,
-      enableStockAlertEmails: true,
-      dailyBackupEnabled: true,
-    };
-  });
+  // Firestore Live State
+  const [companyData, setCompanyData] = useState<FirestoreCompanySettings>(() => getDefaultCompanySettings());
+  const [systemSettings, setSystemSettings] = useState<FirestoreSiteSettings>(() => getDefaultSiteSettings());
 
   const addToast = (type: ToastMessage['type'], title: string, message: string) => {
     const id = Date.now().toString();
@@ -61,35 +46,129 @@ export const AdminSettingsView: React.FC = () => {
     }, 4000);
   };
 
-  const handleSave = () => {
+  // Subscribe to real-time updates from Firestore
+  useEffect(() => {
+    let mounted = true;
+    setIsLoading(true);
+
+    const unsubCompany = firestoreSettingsService.subscribeCompanySettings(
+      (data) => {
+        if (mounted) {
+          setCompanyData(data);
+          setIsLoading(false);
+        }
+      },
+      (err) => {
+        console.warn('[AdminSettings] Company subscription fallback:', err);
+        if (mounted) setIsLoading(false);
+      }
+    );
+
+    const unsubSite = firestoreSettingsService.subscribeSiteSettings(
+      (data) => {
+        if (mounted) {
+          setSystemSettings(data);
+        }
+      },
+      (err) => {
+        console.warn('[AdminSettings] Site settings subscription fallback:', err);
+      }
+    );
+
+    return () => {
+      mounted = false;
+      unsubCompany();
+      unsubSite();
+    };
+  }, []);
+
+  const handleSave = async () => {
     setIsSaving(true);
     try {
-      // 1. Save Company Information via CMS Service
-      cmsService.updateCompanyInfo(companyData);
+      // 1. Commit to Firestore database (Single Source of Truth)
+      await Promise.all([
+        firestoreSettingsService.updateCompanySettings(companyData),
+        firestoreSettingsService.updateSiteSettings({
+          ...systemSettings,
+          currency: systemSettings.defaultCurrency || systemSettings.currency || 'USD',
+        }),
+      ]);
 
-      // 2. Save System Settings
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(systemSettings));
+      // 2. Also keep CMS in-memory cache synchronized
+      cmsService.updateCompanyInfo(companyData as any);
 
-      addToast('success', 'Settings Saved', 'Official Mahdev company information and platform settings updated successfully.');
+      addToast(
+        'success',
+        'Settings Saved Successfully',
+        'Company information and system settings have been securely committed to Cloud Firestore in real-time.'
+      );
     } catch (err: any) {
-      addToast('error', 'Save Failed', err.message || 'Could not save settings.');
+      console.error('[AdminSettings] Save error:', err);
+      addToast(
+        'error',
+        'Save Failed',
+        err?.message || 'Could not commit settings to Firestore. Please verify your permissions.'
+      );
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleResetToDefaults = () => {
-    if (window.confirm('Reset company information to official Mahdev default values?')) {
-      setCompanyData(COMPANY_INFO);
-      cmsService.updateCompanyInfo(COMPANY_INFO);
-      addToast('info', 'Defaults Restored', 'Official Mahdev corporate details have been reloaded.');
+  const handleResetToDefaults = async () => {
+    if (
+      window.confirm(
+        'Are you sure you want to reset company and site settings to official Mahdev default values in Firestore?'
+      )
+    ) {
+      setIsSaving(true);
+      try {
+        const defaultCompany = getDefaultCompanySettings();
+        const defaultSite = getDefaultSiteSettings();
+
+        setCompanyData(defaultCompany);
+        setSystemSettings(defaultSite);
+
+        await Promise.all([
+          firestoreSettingsService.updateCompanySettings(defaultCompany),
+          firestoreSettingsService.updateSiteSettings(defaultSite),
+        ]);
+
+        cmsService.updateCompanyInfo(defaultCompany as any);
+
+        addToast(
+          'info',
+          'Defaults Restored',
+          'Official Mahdev corporate details and system settings have been restored in Cloud Firestore.'
+        );
+      } catch (err: any) {
+        addToast(
+          'error',
+          'Reset Failed',
+          err?.message || 'Could not reset default settings in Firestore.'
+        );
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-2xl border border-slate-200 p-8 space-y-4">
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        <p className="text-sm font-semibold text-slate-700">Connecting to Cloud Firestore...</p>
+        <p className="text-xs text-slate-400">Loading authoritative company & system configuration</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Toast Notification Container */}
-      <AdminToast toasts={toasts} onDismiss={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))} />
+      <AdminToast
+        toasts={toasts}
+        onDismiss={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))}
+      />
 
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
@@ -101,7 +180,7 @@ export const AdminSettingsView: React.FC = () => {
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Single source of truth for Mahdev corporate details, multi-office addresses, hotline numbers, and commerce settings.
+            Cloud Firestore Single Source of Truth • Real-time synchronization across all devices and public visitors.
           </p>
         </div>
 
@@ -110,6 +189,7 @@ export const AdminSettingsView: React.FC = () => {
             variant="ghost"
             size="sm"
             onClick={handleResetToDefaults}
+            disabled={isSaving}
             leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
             className="text-xs font-semibold text-slate-600 hover:text-slate-900"
           >
@@ -121,19 +201,19 @@ export const AdminSettingsView: React.FC = () => {
             size="sm"
             onClick={handleSave}
             disabled={isSaving}
-            leftIcon={<Save className="w-4 h-4" />}
+            leftIcon={isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             className="text-xs font-bold shrink-0"
           >
-            {isSaving ? 'Saving...' : 'Save All Settings'}
+            {isSaving ? 'Saving to Firestore...' : 'Save All Settings'}
           </Button>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-slate-200 gap-2">
+      <div className="flex border-b border-slate-200 gap-2 overflow-x-auto">
         <button
           onClick={() => setActiveTab('company')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
             activeTab === 'company'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-slate-600 hover:text-slate-900'
@@ -145,7 +225,7 @@ export const AdminSettingsView: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('commerce')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
             activeTab === 'commerce'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-slate-600 hover:text-slate-900'
@@ -156,8 +236,20 @@ export const AdminSettingsView: React.FC = () => {
         </button>
 
         <button
+          onClick={() => setActiveTab('announcement')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
+            activeTab === 'announcement'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Megaphone className="w-4 h-4" />
+          Announcement Banner
+        </button>
+
+        <button
           onClick={() => setActiveTab('security')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
             activeTab === 'security'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-slate-600 hover:text-slate-900'
@@ -185,7 +277,7 @@ export const AdminSettingsView: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  value={companyData.name}
+                  value={companyData.name || ''}
                   onChange={(e) => setCompanyData({ ...companyData, name: e.target.value })}
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none"
                 />
@@ -197,7 +289,7 @@ export const AdminSettingsView: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  value={companyData.legalName}
+                  value={companyData.legalName || ''}
                   onChange={(e) => setCompanyData({ ...companyData, legalName: e.target.value })}
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none"
                 />
@@ -209,7 +301,7 @@ export const AdminSettingsView: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  value={companyData.tagline}
+                  value={companyData.tagline || ''}
                   onChange={(e) => setCompanyData({ ...companyData, tagline: e.target.value })}
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none"
                 />
@@ -221,7 +313,7 @@ export const AdminSettingsView: React.FC = () => {
                 </label>
                 <textarea
                   rows={3}
-                  value={companyData.description}
+                  value={companyData.description || ''}
                   onChange={(e) => setCompanyData({ ...companyData, description: e.target.value })}
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none"
                 />
@@ -243,12 +335,12 @@ export const AdminSettingsView: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  value={companyData.primaryPhone}
+                  value={companyData.primaryPhone || ''}
                   onChange={(e) =>
                     setCompanyData({
                       ...companyData,
                       primaryPhone: e.target.value,
-                      phones: [e.target.value, companyData.secondaryPhone],
+                      phones: [e.target.value, companyData.secondaryPhone || ''],
                     })
                   }
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:bg-white focus:outline-none"
@@ -262,12 +354,12 @@ export const AdminSettingsView: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  value={companyData.secondaryPhone}
+                  value={companyData.secondaryPhone || ''}
                   onChange={(e) =>
                     setCompanyData({
                       ...companyData,
                       secondaryPhone: e.target.value,
-                      phones: [companyData.primaryPhone, e.target.value],
+                      phones: [companyData.primaryPhone || '', e.target.value],
                     })
                   }
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:bg-white focus:outline-none"
@@ -281,7 +373,7 @@ export const AdminSettingsView: React.FC = () => {
                 </label>
                 <input
                   type="email"
-                  value={companyData.email}
+                  value={companyData.email || ''}
                   onChange={(e) => setCompanyData({ ...companyData, email: e.target.value })}
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-blue-600 focus:bg-white focus:outline-none"
                   placeholder="info.mahdev.lk@gmail.com"
@@ -294,7 +386,7 @@ export const AdminSettingsView: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  value={companyData.domain}
+                  value={companyData.domain || ''}
                   onChange={(e) => setCompanyData({ ...companyData, domain: e.target.value })}
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
                   placeholder="mahdev.lk"
@@ -322,13 +414,13 @@ export const AdminSettingsView: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  value={companyData.offices.colombo.name}
+                  value={companyData.offices?.colombo?.name || ''}
                   onChange={(e) =>
                     setCompanyData({
                       ...companyData,
                       offices: {
                         ...companyData.offices,
-                        colombo: { ...companyData.offices.colombo, name: e.target.value },
+                        colombo: { ...companyData.offices?.colombo, name: e.target.value },
                       },
                     })
                   }
@@ -342,16 +434,15 @@ export const AdminSettingsView: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  value={companyData.offices.colombo.address}
+                  value={companyData.offices?.colombo?.address || ''}
                   onChange={(e) =>
                     setCompanyData({
                       ...companyData,
                       offices: {
                         ...companyData.offices,
                         colombo: {
-                          ...companyData.offices.colombo,
+                          ...companyData.offices?.colombo,
                           address: e.target.value,
-                          fullAddress: e.target.value,
                         },
                       },
                     })
@@ -368,13 +459,13 @@ export const AdminSettingsView: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    value={companyData.offices.colombo.city}
+                    value={companyData.offices?.colombo?.city || ''}
                     onChange={(e) =>
                       setCompanyData({
                         ...companyData,
                         offices: {
                           ...companyData.offices,
-                          colombo: { ...companyData.offices.colombo, city: e.target.value },
+                          colombo: { ...companyData.offices?.colombo, city: e.target.value },
                         },
                       })
                     }
@@ -387,13 +478,13 @@ export const AdminSettingsView: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    value={companyData.offices.colombo.country}
+                    value={companyData.offices?.colombo?.country || ''}
                     onChange={(e) =>
                       setCompanyData({
                         ...companyData,
                         offices: {
                           ...companyData.offices,
-                          colombo: { ...companyData.offices.colombo, country: e.target.value },
+                          colombo: { ...companyData.offices?.colombo, country: e.target.value },
                         },
                       })
                     }
@@ -423,13 +514,13 @@ export const AdminSettingsView: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  value={companyData.offices.trincomalee.name}
+                  value={companyData.offices?.trincomalee?.name || ''}
                   onChange={(e) =>
                     setCompanyData({
                       ...companyData,
                       offices: {
                         ...companyData.offices,
-                        trincomalee: { ...companyData.offices.trincomalee, name: e.target.value },
+                        trincomalee: { ...companyData.offices?.trincomalee, name: e.target.value },
                       },
                     })
                   }
@@ -443,16 +534,15 @@ export const AdminSettingsView: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  value={companyData.offices.trincomalee.address}
+                  value={companyData.offices?.trincomalee?.address || ''}
                   onChange={(e) =>
                     setCompanyData({
                       ...companyData,
                       offices: {
                         ...companyData.offices,
                         trincomalee: {
-                          ...companyData.offices.trincomalee,
+                          ...companyData.offices?.trincomalee,
                           address: e.target.value,
-                          fullAddress: e.target.value,
                         },
                       },
                     })
@@ -469,13 +559,13 @@ export const AdminSettingsView: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    value={companyData.offices.trincomalee.city}
+                    value={companyData.offices?.trincomalee?.city || ''}
                     onChange={(e) =>
                       setCompanyData({
                         ...companyData,
                         offices: {
                           ...companyData.offices,
-                          trincomalee: { ...companyData.offices.trincomalee, city: e.target.value },
+                          trincomalee: { ...companyData.offices?.trincomalee, city: e.target.value },
                         },
                       })
                     }
@@ -488,13 +578,13 @@ export const AdminSettingsView: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    value={companyData.offices.trincomalee.country}
+                    value={companyData.offices?.trincomalee?.country || ''}
                     onChange={(e) =>
                       setCompanyData({
                         ...companyData,
                         offices: {
                           ...companyData.offices,
-                          trincomalee: { ...companyData.offices.trincomalee, country: e.target.value },
+                          trincomalee: { ...companyData.offices?.trincomalee, country: e.target.value },
                         },
                       })
                     }
@@ -519,7 +609,7 @@ export const AdminSettingsView: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  value={companyData.socials.whatsapp || ''}
+                  value={companyData.socials?.whatsapp || ''}
                   onChange={(e) =>
                     setCompanyData({
                       ...companyData,
@@ -537,7 +627,7 @@ export const AdminSettingsView: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  value={companyData.socials.linkedin || ''}
+                  value={companyData.socials?.linkedin || ''}
                   onChange={(e) =>
                     setCompanyData({
                       ...companyData,
@@ -554,7 +644,7 @@ export const AdminSettingsView: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  value={companyData.socials.facebook || ''}
+                  value={companyData.socials?.facebook || ''}
                   onChange={(e) =>
                     setCompanyData({
                       ...companyData,
@@ -571,7 +661,7 @@ export const AdminSettingsView: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  value={companyData.socials.instagram || ''}
+                  value={companyData.socials?.instagram || ''}
                   onChange={(e) =>
                     setCompanyData({
                       ...companyData,
@@ -588,7 +678,7 @@ export const AdminSettingsView: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  value={companyData.socials.youtube || ''}
+                  value={companyData.socials?.youtube || ''}
                   onChange={(e) =>
                     setCompanyData({
                       ...companyData,
@@ -609,23 +699,31 @@ export const AdminSettingsView: React.FC = () => {
           <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
               <DollarSign className="w-4 h-4 text-blue-600" />
-              <h3 className="font-display text-sm font-bold text-slate-900">Commerce & Tax Setup</h3>
+              <h3 className="font-display text-sm font-bold text-slate-900">Commerce & Currency Setup</h3>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Default Currency
+                  Default Platform Currency
                 </label>
                 <select
-                  value={systemSettings.defaultCurrency}
-                  onChange={(e) => setSystemSettings({ ...systemSettings, defaultCurrency: e.target.value })}
+                  value={systemSettings.defaultCurrency || systemSettings.currency || 'USD'}
+                  onChange={(e) =>
+                    setSystemSettings({
+                      ...systemSettings,
+                      defaultCurrency: e.target.value,
+                      currency: e.target.value,
+                    })
+                  }
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:bg-white focus:outline-none"
                 >
                   <option value="USD">USD ($)</option>
-                  <option value="LKR">LKR (Rs)</option>
+                  <option value="LKR">LKR (Rs.)</option>
                   <option value="EUR">EUR (€)</option>
                   <option value="GBP">GBP (£)</option>
+                  <option value="AUD">AUD (A$)</option>
+                  <option value="SGD">SGD (S$)</option>
                 </select>
               </div>
 
@@ -637,9 +735,13 @@ export const AdminSettingsView: React.FC = () => {
                   type="number"
                   min="0"
                   max="100"
-                  value={systemSettings.vatTaxPercentage}
+                  value={systemSettings.vatTaxPercentage ?? 0}
                   onChange={(e) =>
-                    setSystemSettings({ ...systemSettings, vatTaxPercentage: parseFloat(e.target.value) || 0 })
+                    setSystemSettings({
+                      ...systemSettings,
+                      vatTaxPercentage: parseFloat(e.target.value) || 0,
+                      taxRate: parseFloat(e.target.value) || 0,
+                    })
                   }
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:bg-white focus:outline-none"
                 />
@@ -653,7 +755,7 @@ export const AdminSettingsView: React.FC = () => {
                   type="number"
                   min="10"
                   max="100"
-                  value={systemSettings.bookingDepositPercent}
+                  value={systemSettings.bookingDepositPercent ?? 30}
                   onChange={(e) =>
                     setSystemSettings({
                       ...systemSettings,
@@ -678,18 +780,101 @@ export const AdminSettingsView: React.FC = () => {
               </label>
               <input
                 type="text"
-                value={systemSettings.legalRegistrationNumber}
-                onChange={(e) =>
-                  setSystemSettings({ ...systemSettings, legalRegistrationNumber: e.target.value })
-                }
+                value={systemSettings.legalRegistrationNumber || companyData.registrationNumber || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSystemSettings({ ...systemSettings, legalRegistrationNumber: val });
+                  setCompanyData({ ...companyData, registrationNumber: val });
+                }}
                 className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
+                placeholder="PV-00289410"
               />
             </div>
           </div>
         </div>
       )}
 
-      {/* Tab 3: Security & Platform Controls */}
+      {/* Tab 3: Announcement Banner */}
+      {activeTab === 'announcement' && (
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4 max-w-2xl">
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+            <Megaphone className="w-4 h-4 text-blue-600" />
+            <h3 className="font-display text-sm font-bold text-slate-900">Public Announcement Bar</h3>
+          </div>
+
+          <div className="space-y-4">
+            <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer">
+              <div>
+                <span className="text-xs font-bold text-slate-800 block">Show Announcement Banner</span>
+                <span className="text-[11px] text-slate-500">
+                  Displays a prominent top banner across all public pages
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={systemSettings.announcement?.enabled ?? true}
+                onChange={(e) =>
+                  setSystemSettings({
+                    ...systemSettings,
+                    announcement: {
+                      enabled: e.target.checked,
+                      text: systemSettings.announcement?.text || '',
+                      link: systemSettings.announcement?.link || '',
+                    },
+                  })
+                }
+                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+              />
+            </label>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Banner Message Text
+              </label>
+              <input
+                type="text"
+                value={systemSettings.announcement?.text || ''}
+                onChange={(e) =>
+                  setSystemSettings({
+                    ...systemSettings,
+                    announcement: {
+                      enabled: systemSettings.announcement?.enabled ?? true,
+                      text: e.target.value,
+                      link: systemSettings.announcement?.link || '',
+                    },
+                  })
+                }
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none"
+                placeholder="Universal Enterprise Ecosystem Active • Colombo & Trincomalee Hotlines Online"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Target Link (Optional)
+              </label>
+              <input
+                type="text"
+                value={systemSettings.announcement?.link || ''}
+                onChange={(e) =>
+                  setSystemSettings({
+                    ...systemSettings,
+                    announcement: {
+                      enabled: systemSettings.announcement?.enabled ?? true,
+                      text: systemSettings.announcement?.text || '',
+                      link: e.target.value,
+                    },
+                  })
+                }
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
+                placeholder="/contact"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 4: Security & Platform Controls */}
       {activeTab === 'security' && (
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4 max-w-2xl">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
@@ -701,45 +886,55 @@ export const AdminSettingsView: React.FC = () => {
             <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer">
               <div>
                 <span className="text-xs font-bold text-slate-800 block">Maintenance Mode</span>
-                <span className="text-[11px] text-slate-500">Show maintenance landing screen to public visitors</span>
+                <span className="text-[11px] text-slate-500">
+                  Show maintenance landing notice to public visitors
+                </span>
               </div>
               <input
                 type="checkbox"
-                checked={systemSettings.enableMaintenanceMode}
+                checked={systemSettings.enableMaintenanceMode || systemSettings.maintenanceMode || false}
                 onChange={(e) =>
-                  setSystemSettings({ ...systemSettings, enableMaintenanceMode: e.target.checked })
+                  setSystemSettings({
+                    ...systemSettings,
+                    enableMaintenanceMode: e.target.checked,
+                    maintenanceMode: e.target.checked,
+                  })
                 }
-                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
               />
             </label>
 
             <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer">
               <div>
                 <span className="text-xs font-bold text-slate-800 block">Automated Stock Alerts</span>
-                <span className="text-[11px] text-slate-500">Notify operations team on low warehouse quantities</span>
+                <span className="text-[11px] text-slate-500">
+                  Notify operations team on low warehouse quantities
+                </span>
               </div>
               <input
                 type="checkbox"
-                checked={systemSettings.enableStockAlertEmails}
+                checked={systemSettings.enableStockAlertEmails ?? true}
                 onChange={(e) =>
                   setSystemSettings({ ...systemSettings, enableStockAlertEmails: e.target.checked })
                 }
-                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
               />
             </label>
 
             <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer">
               <div>
                 <span className="text-xs font-bold text-slate-800 block">Daily Audit Backup Snapshots</span>
-                <span className="text-[11px] text-slate-500">Generate encrypted snapshots of orders and bookings</span>
+                <span className="text-[11px] text-slate-500">
+                  Generate encrypted snapshots of orders and bookings
+                </span>
               </div>
               <input
                 type="checkbox"
-                checked={systemSettings.dailyBackupEnabled}
+                checked={systemSettings.dailyBackupEnabled ?? true}
                 onChange={(e) =>
                   setSystemSettings({ ...systemSettings, dailyBackupEnabled: e.target.checked })
                 }
-                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
               />
             </label>
           </div>
@@ -748,4 +943,3 @@ export const AdminSettingsView: React.FC = () => {
     </div>
   );
 };
-

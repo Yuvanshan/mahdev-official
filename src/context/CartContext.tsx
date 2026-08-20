@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { CartItem, CartSummary, CouponCode, CartVariantSelection, CartBookingDetails } from '../types/cart';
 import { CatalogProduct, ProductVariantOption } from '../types/catalog';
+import { analyticsService } from '../services/analyticsService';
 
 interface CartContextType {
   cartItems: CartItem[];
@@ -238,6 +239,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return [...prevItems, newItem];
       }
     });
+
+    analyticsService.trackAddToCart(
+      product.id,
+      product.name,
+      unitPrice,
+      quantity
+    );
 
     setIsCartDrawerOpen(true);
   };

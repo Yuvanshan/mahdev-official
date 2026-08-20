@@ -59,13 +59,21 @@ export function getDefaultSiteSettings(): FirestoreSiteSettings {
   return {
     siteName: 'Mahdev Pvt Ltd',
     maintenanceMode: false,
+    enableMaintenanceMode: false,
     announcement: {
       enabled: true,
       text: 'Universal Enterprise Ecosystem Active • Colombo & Trincomalee Hotlines Online',
       link: '/contact',
     },
     currency: 'USD',
+    defaultCurrency: 'USD',
+    supportedCurrencies: ['USD', 'LKR', 'EUR', 'GBP'],
     taxRate: 0,
+    vatTaxPercentage: 0,
+    bookingDepositPercent: 30,
+    legalRegistrationNumber: COMPANY_INFO.registrationNumber || 'PV-00289410',
+    enableStockAlertEmails: true,
+    dailyBackupEnabled: true,
     updatedAt: new Date().toISOString(),
   };
 }

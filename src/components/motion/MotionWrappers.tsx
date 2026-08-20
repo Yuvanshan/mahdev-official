@@ -156,7 +156,7 @@ export const ScrollReveal: React.FC<SlideInProps> = ({
   const { reducedMotion } = useDeviceMotion();
 
   if (reducedMotion) {
-    return <div className={className}>{children}</div>;
+    return <div className={`w-full max-w-full min-w-0 ${className}`}>{children}</div>;
   }
 
   const getInitialOffset = () => {
@@ -178,7 +178,7 @@ export const ScrollReveal: React.FC<SlideInProps> = ({
       whileInView={{ opacity: 1, x: 0, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
       transition={{ duration, delay, ease: [0.16, 1, 0.3, 1] }}
-      className={className}
+      className={`w-full max-w-full min-w-0 ${className}`}
       {...props}
     >
       {children}
@@ -228,7 +228,7 @@ export const TextReveal: React.FC<{
 
   if (reducedMotion) {
     const Component = as;
-    return <Component className={className}>{text}</Component>;
+    return <Component className={`max-w-full break-words ${className}`}>{text}</Component>;
   }
 
   const containerVariants = {
@@ -260,13 +260,13 @@ export const TextReveal: React.FC<{
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: '-20px' }}
-      className={`inline-flex flex-wrap gap-x-[0.3em] ${className}`}
+      className={`inline-flex flex-wrap max-w-full break-words gap-x-[0.3em] ${className}`}
     >
       {words.map((word, i) => (
         <motion.span
           key={i}
           variants={wordVariants}
-          className={`inline-block ${wordClassName}`}
+          className={`inline-block break-words ${wordClassName}`}
         >
           {word}
         </motion.span>
@@ -329,11 +329,11 @@ export const ParallaxContainer: React.FC<{
   const smoothY = useSpring(y, { stiffness: 80, damping: 20 });
 
   if (reducedMotion || isTouch) {
-    return <div className={className}>{children}</div>;
+    return <div className={`overflow-hidden w-full max-w-full ${className}`}>{children}</div>;
   }
 
   return (
-    <div ref={ref} className={`overflow-visible ${className}`}>
+    <div ref={ref} className={`overflow-hidden w-full max-w-full ${className}`}>
       <motion.div style={{ y: smoothY }}>{children}</motion.div>
     </div>
   );
@@ -400,7 +400,7 @@ export const TiltCard: React.FC<{
 
   if (reducedMotion || isTouch) {
     return (
-      <div id={id} onClick={onClick} className={className}>
+      <div id={id} onClick={onClick} className={`w-full max-w-full min-w-0 ${className}`}>
         {children}
       </div>
     );
@@ -420,9 +420,9 @@ export const TiltCard: React.FC<{
         transformStyle: 'preserve-3d',
         perspective: 1000,
       }}
-      className={`relative transform-gpu will-change-transform ${className}`}
+      className={`relative transform-gpu will-change-transform w-full max-w-full min-w-0 ${className}`}
     >
-      <div style={{ transform: 'translateZ(10px)' }} className="w-full h-full">
+      <div style={{ transform: 'translateZ(10px)' }} className="w-full h-full min-w-0">
         {children}
       </div>
 

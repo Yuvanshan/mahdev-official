@@ -16,6 +16,7 @@ import { BookingSuccessModal } from '../components/booking/BookingSuccessModal';
 import { BookingLookupModal } from '../components/booking/BookingLookupModal';
 import { Booking } from '../types/booking';
 import { bookingService } from '../services/bookingService';
+import { analyticsService } from '../services/analyticsService';
 
 interface BookingViewProps {
   initialDivision?: string;
@@ -32,7 +33,20 @@ export const BookingView: React.FC<BookingViewProps> = ({
     bookingService.getAllBookings().length
   );
 
+  React.useEffect(() => {
+    analyticsService.trackBookingStarted(
+      initialDivision || 'all_divisions',
+      initialServiceId || 'general_inquiry'
+    );
+  }, [initialDivision, initialServiceId]);
+
   const handleBookingCreated = (booking: Booking) => {
+    analyticsService.trackBookingCompleted(
+      booking.id,
+      booking.divisionId,
+      booking.serviceId,
+      booking.price || 0
+    );
     setCreatedBooking(booking);
     setAllBookingsCount(bookingService.getAllBookings().length);
   };

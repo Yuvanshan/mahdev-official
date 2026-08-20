@@ -133,6 +133,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
             onNavigateSite={onNavigate}
           />
         );
+      case 'analytics':
+        return (
+          <AdminAnalyticsView
+            onNavigateSection={(sec) => setActiveSection(sec as AdminSectionId)}
+            onNavigateSite={onNavigate}
+          />
+        );
       case 'homepage':
         return <AdminHomepageView />;
       case 'divisions':

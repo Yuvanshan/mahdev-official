@@ -69,18 +69,25 @@ service cloud.firestore {
     // PUBLIC CORPORATE & CATALOG CONTENT
     // =========================================================================
 
-    // 1. Company & Site Settings
+    // 1. Settings Collection (Company, Site, Navigation, SEO, Contact)
+    match /settings/{settingId} {
+      allow get: if isValidId(settingId);
+      allow list: if true;
+      allow create, update: if isStaff() || isAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
     match /companySettings/{settingId} {
       allow get: if isValidId(settingId);
       allow list: if true;
-      allow create, update: if isAdmin();
+      allow create, update: if isStaff() || isAdmin();
       allow delete: if isSuperAdmin();
     }
 
     match /siteSettings/{settingId} {
       allow get: if isValidId(settingId);
       allow list: if true;
-      allow create, update: if isAdmin();
+      allow create, update: if isStaff() || isAdmin();
       allow delete: if isSuperAdmin();
     }
 

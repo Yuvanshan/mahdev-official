@@ -265,19 +265,19 @@ export const CatalogProductModal: React.FC<CatalogProductModalProps> = ({
 
                 {/* Primary CTA & Interactive Feedback */}
                 <div className="space-y-2">
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2.5">
                     <button
                       onClick={handleAddToCart}
-                      className="flex-1 py-3.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all bg-slate-900 hover:bg-slate-800 text-white cursor-pointer"
+                      className="flex-1 w-full py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all bg-slate-900 hover:bg-slate-800 text-white cursor-pointer min-h-[44px]"
                     >
                       {actionSuccess ? (
                         <>
-                          <Check className="w-4 h-4 text-emerald-400" />
+                          <Check className="w-4 h-4 text-emerald-400 shrink-0" />
                           <span>Added to Cart!</span>
                         </>
                       ) : (
                         <>
-                          <ShoppingBag className="w-4 h-4" />
+                          <ShoppingBag className="w-4 h-4 shrink-0" />
                           <span>Add to Cart (${currentPrice.toFixed(2)})</span>
                         </>
                       )}
@@ -285,9 +285,9 @@ export const CatalogProductModal: React.FC<CatalogProductModalProps> = ({
 
                     <button
                       onClick={handleBuyNow}
-                      className="py-3.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all bg-[#0052FF] hover:bg-blue-700 text-white cursor-pointer"
+                      className="py-3.5 px-5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all bg-[#0052FF] hover:bg-blue-700 text-white cursor-pointer min-h-[44px] shrink-0"
                     >
-                      <ShoppingCart className="w-4 h-4" />
+                      <ShoppingCart className="w-4 h-4 shrink-0" />
                       <span>Checkout</span>
                     </button>
                   </div>
