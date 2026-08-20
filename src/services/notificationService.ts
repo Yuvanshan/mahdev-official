@@ -275,7 +275,7 @@ class NotificationService {
       'quote_request_received',
       { name: quoteData.name, email: quoteData.email, phone: quoteData.phone, role: 'customer' },
       `Enterprise RFP Received — ${quoteData.service}`,
-      `Thank you for your inquiry, ${quoteData.name}. Our enterprise solutions architect for Mahdev ${quoteData.division.toUpperCase()} has received your requirements and will return a custom quotation within 24 business hours.`,
+      `Thank you for your inquiry, ${quoteData.name}. Our enterprise solutions architect for Mahdev ${(quoteData.division || 'GROUP').toUpperCase()} has received your requirements and will return a custom quotation within 24 business hours.`,
       { service: quoteData.service, division: quoteData.division },
       '/#divisions'
     );
@@ -303,10 +303,11 @@ class NotificationService {
    * 2. Admin Alert: New Booking Submitted
    */
   async notifyAdminNewBooking(booking: Booking): Promise<void> {
+    const divIdStr = (booking.divisionId || 'sws').toUpperCase();
     await this.safeDispatch(
       'admin_new_booking',
       { name: 'Operations Team', email: 'operations@mahdev.lk', role: 'admin' },
-      `📅 New Booking: #${booking.id} (${booking.divisionId.toUpperCase()})`,
+      `📅 New Booking: #${booking.id} (${divIdStr})`,
       `${booking.customer.fullName} submitted a new booking for "${booking.serviceName}" on ${booking.date} (${booking.time}). Package: ${booking.packageName} ($${booking.price}).`,
       { bookingId: booking.id, divisionId: booking.divisionId, customer: booking.customer.fullName },
       '/admin'
@@ -376,7 +377,7 @@ class NotificationService {
     await this.safeDispatch(
       'admin_quote_request',
       { name: 'Sales Director', email: 'sales@mahdev.lk', role: 'admin' },
-      `📋 RFP Quote Request: ${quote.division.toUpperCase()}`,
+      `📋 RFP Quote Request: ${(quote.division || 'GROUP').toUpperCase()}`,
       `Custom proposal requested by ${quote.name} (${quote.email}, ${quote.phone || 'No phone'}). Details: ${quote.details.slice(0, 120)}...`,
       { name: quote.name, email: quote.email, division: quote.division },
       '/admin'

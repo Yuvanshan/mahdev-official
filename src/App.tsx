@@ -29,17 +29,45 @@ import { CustomCursor } from './components/motion/CustomCursor';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { AdminAuthProvider } from './context/AdminAuthContext';
+import { FirestoreDataProvider, useFirestoreDataContext } from './context/FirestoreDataContext';
 import { AdminLayout } from './views/admin/AdminLayout';
 import { CartDrawer } from './components/cart/CartDrawer';
 import { AnnouncementBanner } from './components/layout/AnnouncementBanner';
+import { AppBootLoader } from './components/ui/AppBootLoader';
+import { MaintenanceView } from './views/MaintenanceView';
 import { testFirestoreConnection, initAppCheck } from './lib/firebase';
 import { analyticsService } from './services/analyticsService';
 import { motion, AnimatePresence } from 'motion/react';
 
-export default function App() {
+function AppContent() {
+  const { siteSettings, isInitialLoading, error, refreshAll } = useFirestoreDataContext();
   const [currentPath, setCurrentPath] = useState<string>(() => {
     return window.location.pathname || '/';
   });
+
+  // Dynamic favicon and document title synchronization from Firestore
+  useEffect(() => {
+    if (siteSettings?.siteName) {
+      if (!document.title.includes(siteSettings.siteName)) {
+        document.title = `${siteSettings.siteName} | Enterprise Ecosystem`;
+      }
+    }
+
+    if (siteSettings?.faviconUrl) {
+      let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      link.href = siteSettings.faviconUrl;
+
+      let appleLink: HTMLLinkElement | null = document.querySelector("link[rel='apple-touch-icon']");
+      if (appleLink) {
+        appleLink.href = siteSettings.faviconUrl;
+      }
+    }
+  }, [siteSettings?.faviconUrl, siteSettings?.siteName]);
 
   // Verify Cloud Firestore connectivity and App Check on boot
   useEffect(() => {
@@ -90,6 +118,8 @@ export default function App() {
     ? new URLSearchParams(searchParamsString).get('redirect') || undefined
     : undefined;
 
+  const isAdminRoute = normalizedPath === '/admin' || normalizedPath.startsWith('/admin/');
+
   // Determine current division from path
   const divisionKey = (Object.keys(DIVISIONS) as DivisionId[]).find(
     (key) => DIVISIONS[key].route === normalizedPath
@@ -102,6 +132,24 @@ export default function App() {
       analyticsService.trackDivisionView(divisionKey, DIVISIONS[divisionKey].name);
     }
   }, [normalizedPath, divisionKey]);
+
+  // 1. Initial Loading Screen: Never render hard-coded business data before Firestore finishes bootstrapping
+  if (isInitialLoading && !isAdminRoute) {
+    return <AppBootLoader />;
+  }
+
+  // 2. Maintenance Mode Screen: Live Firestore switch
+  if (
+    (siteSettings?.maintenanceMode || siteSettings?.enableMaintenanceMode) &&
+    !isAdminRoute
+  ) {
+    return <MaintenanceView onAdminLogin={() => navigate('/admin')} />;
+  }
+
+  // Admin routes handle their own layout & auth flow
+  if (isAdminRoute) {
+    return <AdminLayout currentPath={normalizedPath} onNavigate={navigate} />;
+  }
 
   // Determine if it's a legal page
   const legalRoutes: Record<string, LegalPolicyType> = {
@@ -291,11 +339,6 @@ export default function App() {
       return <LegalPageView policyType={legalPolicyType} onNavigate={navigate} />;
     }
 
-    // Administrative Portal
-    if (normalizedPath === '/admin' || normalizedPath.startsWith('/admin/')) {
-      return <AdminLayout currentPath={normalizedPath} onNavigate={navigate} />;
-    }
-
     switch (normalizedPath) {
       case '/':
         return <HomeView onNavigate={navigate} />;
@@ -310,54 +353,52 @@ export default function App() {
     }
   };
 
-  const isAdminRoute = normalizedPath === '/admin' || normalizedPath.startsWith('/admin/');
-
-  if (isAdminRoute) {
-    return (
-      <AdminAuthProvider>
-        <AdminLayout currentPath={normalizedPath} onNavigate={navigate} />
-      </AdminAuthProvider>
-    );
-  }
-
   return (
-    <AuthProvider>
-      <AdminAuthProvider>
-        <CartProvider>
-          <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-[#0052FF] selection:text-white w-full max-w-full overflow-x-hidden">
-            {/* Interactive Magnetic Custom Cursor for Desktop */}
-            <CustomCursor />
+    <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-[#0052FF] selection:text-white w-full max-w-full overflow-x-hidden">
+      {/* Interactive Magnetic Custom Cursor for Desktop */}
+      <CustomCursor />
 
-            {/* Global Cart Slide-Over Drawer */}
-            <CartDrawer onNavigate={navigate} />
+      {/* Global Cart Slide-Over Drawer */}
+      <CartDrawer onNavigate={navigate} />
 
-            {/* Live CMS Top Announcement / Promotional Banner */}
-            <AnnouncementBanner onNavigate={navigate} />
+      {/* Live CMS Top Announcement / Promotional Banner */}
+      <AnnouncementBanner onNavigate={navigate} />
 
-            {/* Sticky Top Navigation */}
-            <Navigation currentPath={normalizedPath} onNavigate={navigate} />
+      {/* Sticky Top Navigation */}
+      <Navigation currentPath={normalizedPath} onNavigate={navigate} />
 
-            {/* Main Content Area with Smooth View Transitions */}
-            <main className="flex-1 w-full max-w-full min-w-0">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={normalizedPath}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                  className="w-full max-w-full min-w-0"
-                >
-                  {renderCurrentView()}
-                </motion.div>
-              </AnimatePresence>
-            </main>
+      {/* Main Content Area with Smooth View Transitions */}
+      <main className="flex-1 w-full max-w-full min-w-0">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={normalizedPath}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full max-w-full min-w-0"
+          >
+            {renderCurrentView()}
+          </motion.div>
+        </AnimatePresence>
+      </main>
 
-            {/* Reusable Global Footer */}
-            <Footer onNavigate={navigate} />
-          </div>
-        </CartProvider>
-      </AdminAuthProvider>
-    </AuthProvider>
+      {/* Reusable Global Footer */}
+      <Footer onNavigate={navigate} />
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <FirestoreDataProvider>
+      <AuthProvider>
+        <AdminAuthProvider>
+          <CartProvider>
+            <AppContent />
+          </CartProvider>
+        </AdminAuthProvider>
+      </AuthProvider>
+    </FirestoreDataProvider>
   );
 }

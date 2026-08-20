@@ -7,25 +7,25 @@ import { Modal } from '../ui/Modal';
 import { FOOTER_SECTIONS } from '../../config/navigation';
 import { BRAND_CONFIG } from '../../config/brand';
 import { COMPANY_INFO, getTelLink, getMailtoLink, getMapSearchUrl } from '../../config/company';
-import { useCompanySettings } from '../../hooks/useFirestoreData';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 interface FooterProps {
   onNavigate: (path: string) => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
-  const { data: dynamicSettings } = useCompanySettings();
-  const company = dynamicSettings && dynamicSettings.name ? {
+  const { companySettings } = useFirestoreDataContext();
+  const company = companySettings && companySettings.name ? {
     ...COMPANY_INFO,
-    ...dynamicSettings,
+    ...companySettings,
     offices: {
       colombo: {
         ...COMPANY_INFO.offices.colombo,
-        ...(dynamicSettings.offices?.colombo || {}),
+        ...(companySettings.offices?.colombo || {}),
       },
       trincomalee: {
         ...COMPANY_INFO.offices.trincomalee,
-        ...(dynamicSettings.offices?.trincomalee || {}),
+        ...(companySettings.offices?.trincomalee || {}),
       },
     },
   } : COMPANY_INFO;
@@ -122,24 +122,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 lg:gap-12">
             {/* Brand Column */}
             <div className="col-span-1 sm:col-span-2 md:col-span-4 lg:col-span-1 space-y-4">
-              <div
+              <BrandLogo
+                theme="dark"
+                size="md"
                 onClick={() => onNavigate('/')}
-                className="cursor-pointer inline-block"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-display font-extrabold text-white text-sm shadow-md">
-                    M
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="font-display font-bold text-white text-lg tracking-tight">
-                      MAHDEV
-                    </span>
-                    <span className="text-[10px] font-semibold text-slate-400 tracking-wider">
-                      PVT LTD
-                    </span>
-                  </div>
-                </div>
-              </div>
+              />
 
               <p className="text-xs text-slate-400 leading-relaxed">
                 Operating high-performance divisions across Sri Lanka and international partner networks.

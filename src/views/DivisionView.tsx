@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   ArrowRight,
   Sparkles,
@@ -18,10 +18,10 @@ import { Input } from '../components/ui/Input';
 import { Textarea } from '../components/ui/Textarea';
 import { IconRenderer } from '../components/ui/IconRenderer';
 import { SEOHead } from '../components/layout/SEOHead';
-import { FadeIn, SlideIn, ScrollReveal } from '../components/motion/MotionWrappers';
+import { SlideIn, ScrollReveal } from '../components/motion/MotionWrappers';
 import { DIVISIONS, DIVISION_LIST } from '../config/divisions';
 import { DivisionId } from '../types';
-import { cmsService } from '../services/cmsService';
+import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 
 interface DivisionViewProps {
   divisionId: DivisionId;
@@ -29,34 +29,24 @@ interface DivisionViewProps {
 }
 
 export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNavigate }) => {
+  const { divisions, services, companySettings } = useFirestoreDataContext();
   const baseDivision = DIVISIONS[divisionId] || DIVISIONS.sws;
-  const [cmsDiv, setCmsDiv] = useState(() => cmsService.getDivisionByKey(divisionId));
+  const firestoreDiv = divisions.find((d) => d.id === divisionId);
 
-  useEffect(() => {
-    const load = () => {
-      setCmsDiv(cmsService.getDivisionByKey(divisionId));
-    };
-    load();
-    const unsub = cmsService.subscribe('divisions', load);
-    return () => unsub();
-  }, [divisionId]);
-
-  // Merge CMS overrides with base structure
+  // Merge Firestore overrides with base structure
   const division = {
     ...baseDivision,
-    ...(cmsDiv
+    ...(firestoreDiv
       ? {
-          name: cmsDiv.name || baseDivision.name,
-          shortName: cmsDiv.shortName || baseDivision.shortName,
-          tagline: cmsDiv.tagline || baseDivision.tagline,
-          description: cmsDiv.description || baseDivision.description,
-          badge: cmsDiv.badge || baseDivision.badge,
-          route: cmsDiv.route || baseDivision.route,
-          accentColor: cmsDiv.accentColor || baseDivision.accentColor,
-          gradient: cmsDiv.gradient || baseDivision.gradient,
-          heroHeadline: cmsDiv.heroHeadline || baseDivision.heroHeadline,
-          heroSubheadline: cmsDiv.heroSubheadline || baseDivision.heroSubheadline,
-          contactEmail: cmsDiv.contactEmail || baseDivision.contactEmail,
+          name: firestoreDiv.name || baseDivision.name,
+          shortName: firestoreDiv.shortName || baseDivision.shortName,
+          tagline: firestoreDiv.hero?.subtitle || baseDivision.tagline,
+          description: firestoreDiv.description || baseDivision.description,
+          badge: firestoreDiv.hero?.badge || baseDivision.badge,
+          route: `/${firestoreDiv.slug || firestoreDiv.id}`,
+          accentColor: (firestoreDiv as any).accentColor || baseDivision.accentColor,
+          heroHeadline: (firestoreDiv as any).heroHeadline || baseDivision.heroHeadline,
+          heroSubheadline: firestoreDiv.description || baseDivision.heroSubheadline,
         }
       : {}),
   };

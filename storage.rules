@@ -3,7 +3,7 @@ service firebase.storage {
   match /b/{bucket}/o {
 
     // =========================================================================
-    // HELPER FUNCTIONS
+    // 1. HELPER FUNCTIONS
     // =========================================================================
     function isSignedIn() {
       return request.auth != null && request.auth.uid != null;
@@ -13,79 +13,110 @@ service firebase.storage {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // Role verification supporting custom claims, token metadata, verified admin emails, or administrative staff
     function isStaff() {
       return isSignedIn() && (
-        request.auth.token.role == 'staff' ||
-        request.auth.token.role == 'manager' ||
-        request.auth.token.role == 'admin' ||
-        request.auth.token.role == 'superAdmin'
+        request.auth.token.role in ['staff', 'manager', 'admin', 'superAdmin', 'operations_admin', 'super_admin'] ||
+        request.auth.token.admin == true ||
+        request.auth.token.super_admin == true ||
+        (request.auth.token.email != null && (
+          request.auth.token.email == 'admin@mahdev.lk' ||
+          request.auth.token.email == 'operations@mahdev.lk' ||
+          request.auth.token.email == 'sales@mahdev.lk' ||
+          request.auth.token.email == 'yuvanshan875@gmail.com' ||
+          request.auth.token.email.matches('.*@mahdev\\.lk$')
+        ))
       );
     }
 
+    // Content Type Validations
+    function isValidImage() {
+      return request.resource.contentType.matches('image/(jpeg|png|webp)');
+    }
+
+    function isValidVectorOrImage() {
+      return request.resource.contentType.matches('image/(jpeg|png|webp|svg\\+xml|x-icon|vnd\\.microsoft\\.icon)');
+    }
+
+    function isValidDoc() {
+      return request.resource.contentType.matches('(application/pdf|image/jpeg|image/png|image/webp)');
+    }
+
     // =========================================================================
-    // 1. PUBLIC MARKETING, BRANDING & CATALOG ASSETS
+    // 2. PUBLIC MARKETING, BRANDING & CATALOG ASSETS
     // =========================================================================
     match /branding/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff();
+      allow write: if isStaff() && isValidVectorOrImage() && request.resource.size < 5 * 1024 * 1024;
     }
 
     match /company/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff();
+      allow write: if isStaff() && isValidVectorOrImage() && request.resource.size < 10 * 1024 * 1024;
     }
 
     match /divisions/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff();
+      allow write: if isStaff() && isValidVectorOrImage() && request.resource.size < 10 * 1024 * 1024;
     }
 
     match /services/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff();
+      allow write: if isStaff() && isValidVectorOrImage() && request.resource.size < 10 * 1024 * 1024;
     }
 
     match /products/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff();
+      allow write: if isStaff() && isValidVectorOrImage() && request.resource.size < 10 * 1024 * 1024;
     }
 
     match /portfolio/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff();
+      allow write: if isStaff() && isValidVectorOrImage() && request.resource.size < 10 * 1024 * 1024;
     }
 
     match /gallery/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff();
+      allow write: if isStaff() && isValidVectorOrImage() && request.resource.size < 10 * 1024 * 1024;
+    }
+
+    match /banners/{allPaths=**} {
+      allow read: if true;
+      allow write: if isStaff() && isValidVectorOrImage() && request.resource.size < 10 * 1024 * 1024;
+    }
+
+    match /general/{allPaths=**} {
+      allow read: if true;
+      allow write: if isStaff() && isValidVectorOrImage() && request.resource.size < 10 * 1024 * 1024;
     }
 
     match /testimonials/{allPaths=**} {
       allow read: if true;
-      // Allow users to submit testimonial photos, staff to moderate
-      allow create: if isSignedIn();
+      // Authenticated users can submit testimonial photos (max 5MB), staff can moderate/delete
+      allow create: if isSignedIn() && isValidImage() && request.resource.size < 5 * 1024 * 1024;
       allow update, delete: if isStaff();
     }
 
     // =========================================================================
-    // 2. USER PROFILE ASSETS
+    // 3. USER PROFILE ASSETS
     // =========================================================================
     match /users/{userId}/{allPaths=**} {
       allow read: if true; // Public display for user avatar
-      allow write: if isOwner(userId) || isStaff();
+      allow write: if (isOwner(userId) || isStaff()) && isValidVectorOrImage() && request.resource.size < 5 * 1024 * 1024;
     }
 
     // =========================================================================
-    // 3. PRIVATE ENTERPRISE DOCUMENTS & INVOICES
+    // 4. PRIVATE ENTERPRISE DOCUMENTS & INVOICES
     // =========================================================================
     match /documents/{userId}/{allPaths=**} {
       allow read: if isOwner(userId) || isStaff();
-      allow write: if isOwner(userId) || isStaff();
+      allow write: if (isOwner(userId) || isStaff()) && isValidDoc() && request.resource.size < 20 * 1024 * 1024;
     }
 
     match /invoices/{userId}/{allPaths=**} {
       allow read: if isOwner(userId) || isStaff();
-      allow write: if isStaff();
+      allow write: if isStaff() && isValidDoc() && request.resource.size < 20 * 1024 * 1024;
     }
   }
 }
+

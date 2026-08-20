@@ -215,4 +215,39 @@ export const firestoreProductsService = {
   clearCache(): void {
     cachedProducts = null;
   },
+
+  /**
+   * Realtime listener for products
+   */
+  subscribeProducts(
+    onDataOrDivision: ((data: FirestoreProduct[]) => void) | DivisionId | undefined,
+    onDataCallback?: (data: FirestoreProduct[]) => void
+  ): Unsubscribe {
+    const division = typeof onDataOrDivision === 'string' ? onDataOrDivision : undefined;
+    const onData = typeof onDataOrDivision === 'function' ? onDataOrDivision : onDataCallback || (() => {});
+
+    const colRef = collection(db, 'products');
+    const q = division ? query(colRef, where('division', '==', division)) : colRef;
+
+    return onSnapshot(
+      q,
+      (snap) => {
+        if (!snap.empty) {
+          const data = snap.docs.map((d) => ({
+            ...d.data(),
+            id: d.id,
+          })) as FirestoreProduct[];
+          onData(data);
+        } else {
+          const defaults = getDefaultProducts();
+          onData(division ? defaults.filter((p) => p.division === division) : defaults);
+        }
+      },
+      (err) => {
+        console.warn('[Firestore Products] Listener fallback:', err);
+        const defaults = getDefaultProducts();
+        onData(division ? defaults.filter((p) => p.division === division) : defaults);
+      }
+    );
+  },
 };

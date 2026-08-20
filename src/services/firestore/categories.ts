@@ -91,9 +91,12 @@ export const firestoreCategoriesService = {
    * Realtime listener for categories
    */
   subscribeCategories(
-    division: DivisionId | undefined,
-    onData: (data: FirestoreCategory[]) => void
+    onDataOrDivision: ((data: FirestoreCategory[]) => void) | DivisionId | undefined,
+    onDataCallback?: (data: FirestoreCategory[]) => void
   ): Unsubscribe {
+    const division = typeof onDataOrDivision === 'string' ? onDataOrDivision : undefined;
+    const onData = typeof onDataOrDivision === 'function' ? onDataOrDivision : onDataCallback || (() => {});
+
     const colRef = collection(db, 'categories');
     const q = division ? query(colRef, where('division', '==', division)) : colRef;
 

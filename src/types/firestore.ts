@@ -24,6 +24,9 @@ export type DivisionId = 'sws' | 'u1' | 'it' | 'travels' | 'mart';
 export interface FirestoreDivision {
   id: DivisionId;
   name: string;
+  shortName?: string;
+  accentColor?: string;
+  heroHeadline?: string;
   slug: string;
   description: string;
   logo: string;
@@ -47,15 +50,24 @@ export interface FirestoreDivision {
 export interface FirestoreService {
   id: string;
   division: DivisionId | string;
+  divisionId?: DivisionId | string;
+  divisionName?: string;
   name: string;
+  title?: string;
   slug: string;
   description: string;
   images: string[];
   price: number;
+  startingPrice?: number;
   currency?: string;
   status: 'active' | 'inactive' | 'draft';
   bookingEnabled: boolean;
   quoteEnabled: boolean;
+  badge?: string;
+  features?: string[];
+  turnaroundTime?: string;
+  popular?: boolean;
+  iconName?: string;
   metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
@@ -234,9 +246,11 @@ export interface FirestoreCompanySettings {
   tagline: string;
   description: string;
   domain: string;
+  website?: string;
   email: string;
   primaryPhone: string;
   secondaryPhone: string;
+  phone?: string;
   phones: string[];
   offices: {
     colombo: {
@@ -257,6 +271,7 @@ export interface FirestoreCompanySettings {
     };
   };
   socials: Record<string, string>;
+  socialLinks?: Record<string, string>;
   workingHours: Record<string, string>;
   updatedAt: string;
 }
@@ -283,6 +298,8 @@ export interface FirestoreSiteSettings {
   mobileLogoUrl?: string;
   darkLogoUrl?: string;
   faviconUrl?: string;
+  ogImageUrl?: string;
+  metaDescription?: string;
   brandingUpdatedAt?: string;
   brandingVersion?: number;
   updatedAt: string;
@@ -352,14 +369,26 @@ export interface FirestoreQuoteRequest {
 export interface FirestorePortfolio {
   id: string;
   division: DivisionId | string;
+  divisionId?: DivisionId | string;
+  divisionName?: string;
   title: string;
   client: string;
   category: string;
   description: string;
+  summary?: string;
+  fullDescription?: string;
+  highlights?: string[];
+  deliverables?: string[];
+  galleryImages?: string[];
+  liveUrl?: string;
+  impactMetrics?: Array<{ label: string; value: string }>;
+  tags?: string[];
+  metric?: { label: string; value: string };
+  badge?: string;
   imageUrl: string;
   featured: boolean;
   year: string;
-  status: 'published' | 'draft';
+  status: 'published' | 'draft' | 'active' | 'archived';
 }
 
 export interface FirestoreGallery {
@@ -377,7 +406,12 @@ export interface FirestoreMilestone {
   year: string;
   title: string;
   description: string;
+  badge?: string;
+  keyOutcome?: string;
+  divisionId?: string;
+  imageUrl?: string;
   order: number;
+  status?: 'active' | 'archived';
 }
 
 export interface FirestoreTrustedCompany {
@@ -386,6 +420,9 @@ export interface FirestoreTrustedCompany {
   logoUrl: string;
   division?: string;
   tier?: string;
+  industry?: string;
+  partnershipType?: string;
+  description?: string;
   status: 'active' | 'inactive';
 }
 
@@ -395,8 +432,13 @@ export interface FirestoreTestimonial {
   role: string;
   company?: string;
   avatarUrl?: string;
+  photoUrl?: string;
+  avatarInitials?: string;
+  verified?: boolean;
   quote: string;
   division: string;
+  divisionId?: string;
+  divisionName?: string;
   rating: number;
   status: 'approved' | 'pending' | 'archived';
 }

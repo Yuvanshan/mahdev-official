@@ -78,7 +78,13 @@ export const firestoreTestimonialsService = {
     }
   },
 
-  subscribeTestimonials(division: DivisionId | 'all' | undefined, onData: (data: FirestoreTestimonial[]) => void): Unsubscribe {
+  subscribeTestimonials(
+    onDataOrDivision: ((data: FirestoreTestimonial[]) => void) | DivisionId | 'all' | undefined,
+    onDataCallback?: (data: FirestoreTestimonial[]) => void
+  ): Unsubscribe {
+    const division = typeof onDataOrDivision === 'string' ? onDataOrDivision : undefined;
+    const onData = typeof onDataOrDivision === 'function' ? onDataOrDivision : onDataCallback || (() => {});
+
     const colRef = collection(db, 'testimonials');
     return onSnapshot(
       colRef,

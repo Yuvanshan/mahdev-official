@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ExternalLink, Handshake, Building2, CheckCircle2, Globe, Shield, Sparkles } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body, Caption } from '../ui/Heading';
@@ -10,35 +10,20 @@ import {
   TiltCard,
   Magnetic,
 } from '../motion/MotionWrappers';
-import { cmsService } from '../../services/cmsService';
-import { CmsTrustedCompany, HomepageCmsConfig } from '../../types/cms';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { FirestoreTrustedCompany } from '../../types/firestore';
 
 export const TrustedCompaniesMatrix: React.FC = () => {
-  const [companies, setCompanies] = useState<CmsTrustedCompany[]>([]);
-  const [config, setConfig] = useState<HomepageCmsConfig>(() => cmsService.getHomepageConfig());
-  const [selectedCompany, setSelectedCompany] = useState<CmsTrustedCompany | null>(null);
+  const { trustedCompanies, homepageConfig } = useFirestoreDataContext();
+  const [selectedCompany, setSelectedCompany] = useState<FirestoreTrustedCompany | null>(null);
 
-  const loadData = () => {
-    const list = cmsService.getAll<CmsTrustedCompany>('companies', { status: 'active' });
-    setCompanies(list);
-    setConfig(cmsService.getHomepageConfig());
-  };
-
-  useEffect(() => {
-    loadData();
-    const unsubP = cmsService.subscribe('companies', loadData);
-    const unsubH = cmsService.subscribeHomepage(loadData);
-    return () => {
-      unsubP();
-      unsubH();
-    };
-  }, []);
-
-  if (config.companies && !config.companies.enabled) {
+  if (homepageConfig.companies && !homepageConfig.companies.enabled) {
     return null;
   }
 
-  const meta = config.companies || {
+  const activeCompanies = trustedCompanies.filter((c) => (c as any).status !== 'archived');
+
+  const meta = homepageConfig.companies || {
     badge: 'INSTITUTIONAL COLLABORATIONS',
     title: 'Trusted Enterprise Partners',
     subtitle: 'Powering hallmark productions, software architectures, luxury travel expeditions, and equipment deployments for industry leaders across Sri Lanka.',
@@ -62,7 +47,7 @@ export const TrustedCompaniesMatrix: React.FC = () => {
 
       {/* Enterprise Matrix Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {companies.map((company, idx) => {
+        {activeCompanies.map((company, idx) => {
           // Generate initials for company logo mark
           const initials = company.name
             .split(' ')

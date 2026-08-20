@@ -150,6 +150,7 @@ export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) =>
             <ImageUploader
               category="users"
               subfolder={user.id || user.uid}
+              targetUserId={user.id || user.uid}
               currentImageUrl={formData.avatarUrl}
               onUploadSuccess={(item) => {
                 setFormData((prev) => ({ ...prev, avatarUrl: item.url }));

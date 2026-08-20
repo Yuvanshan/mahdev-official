@@ -12,6 +12,7 @@ import {
   where,
   orderBy,
   limit as firestoreLimit,
+  onSnapshot,
   Unsubscribe,
 } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
@@ -141,5 +142,40 @@ export const firestorePortfolioService = {
         cachedPortfolio.data[idx] = { ...cachedPortfolio.data[idx], ...data } as FirestorePortfolio;
       }
     }
+  },
+
+  /**
+   * Realtime listener for portfolio items
+   */
+  subscribePortfolio(
+    onDataOrDivision: ((data: FirestorePortfolio[]) => void) | DivisionId | undefined,
+    onDataCallback?: (data: FirestorePortfolio[]) => void
+  ): Unsubscribe {
+    const division = typeof onDataOrDivision === 'string' ? onDataOrDivision : undefined;
+    const onData = typeof onDataOrDivision === 'function' ? onDataOrDivision : onDataCallback || (() => {});
+
+    const colRef = collection(db, 'portfolio');
+    const q = division ? query(colRef, where('division', '==', division)) : colRef;
+
+    return onSnapshot(
+      q,
+      (snap) => {
+        if (!snap.empty) {
+          const data = snap.docs.map((d) => ({
+            ...d.data(),
+            id: d.id,
+          })) as FirestorePortfolio[];
+          onData(data);
+        } else {
+          const defaults = getDefaultPortfolio();
+          onData(division ? defaults.filter((p) => p.division === division) : defaults);
+        }
+      },
+      (err) => {
+        console.warn('[Firestore Portfolio] Listener fallback:', err);
+        const defaults = getDefaultPortfolio();
+        onData(division ? defaults.filter((p) => p.division === division) : defaults);
+      }
+    );
   },
 };

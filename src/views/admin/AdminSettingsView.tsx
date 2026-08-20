@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Settings,
   Save,
@@ -17,6 +17,16 @@ import {
   Megaphone,
   Loader2,
   AlertTriangle,
+  Image as ImageIcon,
+  Upload,
+  Trash2,
+  Eye,
+  RefreshCw,
+  ExternalLink,
+  Check,
+  Smartphone,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
@@ -27,12 +37,23 @@ import {
 } from '../../services/firestore/settings';
 import { FirestoreCompanySettings, FirestoreSiteSettings } from '../../types/firestore';
 import { cmsService } from '../../services/cmsService';
+import { storageService } from '../../services/storageService';
+import { BrandLogo } from '../../components/layout/BrandLogo';
 
 export const AdminSettingsView: React.FC = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'company' | 'commerce' | 'announcement' | 'security'>('company');
+  const [activeTab, setActiveTab] = useState<'company' | 'branding' | 'commerce' | 'announcement' | 'security'>('company');
+
+  // Upload States
+  const [uploadingField, setUploadingField] = useState<'logo' | 'darkLogo' | 'mobileLogo' | 'favicon' | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  const fileInputRefLogo = useRef<HTMLInputElement>(null);
+  const fileInputRefDarkLogo = useRef<HTMLInputElement>(null);
+  const fileInputRefMobileLogo = useRef<HTMLInputElement>(null);
+  const fileInputRefFavicon = useRef<HTMLInputElement>(null);
 
   // Firestore Live State
   const [companyData, setCompanyData] = useState<FirestoreCompanySettings>(() => getDefaultCompanySettings());
@@ -82,6 +103,94 @@ export const AdminSettingsView: React.FC = () => {
     };
   }, []);
 
+  const handleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: 'logo' | 'darkLogo' | 'mobileLogo' | 'favicon'
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingField(field);
+    setUploadProgress(10);
+
+    try {
+      const isFavicon = field === 'favicon';
+      const result = await storageService.uploadFile(file, 'branding', field, {
+        maxWidth: isFavicon ? 128 : 800,
+        maxHeight: isFavicon ? 128 : 400,
+        quality: 0.95,
+        targetFormat: file.type.includes('svg') ? 'original' : 'image/png',
+        onProgress: (p) => setUploadProgress(p),
+      });
+
+      if (!result.success || !result.url) {
+        throw new Error(result.error || 'Upload failed. Please check file format and permissions.');
+      }
+
+      const updatedSettings: Partial<FirestoreSiteSettings> = {
+        ...systemSettings,
+        brandingUpdatedAt: new Date().toISOString(),
+        brandingVersion: (systemSettings.brandingVersion || 1) + 1,
+      };
+
+      if (field === 'logo') {
+        updatedSettings.logoUrl = result.url;
+        setCompanyData((prev) => ({ ...prev, logoUrl: result.url }));
+      } else if (field === 'darkLogo') {
+        updatedSettings.darkLogoUrl = result.url;
+      } else if (field === 'mobileLogo') {
+        updatedSettings.mobileLogoUrl = result.url;
+      } else if (field === 'favicon') {
+        updatedSettings.faviconUrl = result.url;
+      }
+
+      setSystemSettings(updatedSettings as FirestoreSiteSettings);
+
+      // Auto-save to Firestore immediately
+      await firestoreSettingsService.updateSiteSettings(updatedSettings);
+
+      addToast(
+        'success',
+        'Asset Uploaded & Saved',
+        `The ${field === 'favicon' ? 'favicon' : 'brand logo'} was optimized and deployed to Cloud Storage.`
+      );
+    } catch (err: any) {
+      console.error('[AdminSettings] Asset upload error:', err);
+      addToast(
+        'error',
+        'Upload Failed',
+        err?.message || 'Could not complete media upload. Check file size (max 5MB).'
+      );
+    } finally {
+      setUploadingField(null);
+      setUploadProgress(0);
+      e.target.value = '';
+    }
+  };
+
+  const handleClearAsset = async (field: 'logo' | 'darkLogo' | 'mobileLogo' | 'favicon') => {
+    const updatedSettings: Partial<FirestoreSiteSettings> = {
+      ...systemSettings,
+      brandingUpdatedAt: new Date().toISOString(),
+    };
+
+    if (field === 'logo') {
+      updatedSettings.logoUrl = '';
+      setCompanyData((prev) => ({ ...prev, logoUrl: '' }));
+    } else if (field === 'darkLogo') {
+      updatedSettings.darkLogoUrl = '';
+    } else if (field === 'mobileLogo') {
+      updatedSettings.mobileLogoUrl = '';
+    } else if (field === 'favicon') {
+      updatedSettings.faviconUrl = '';
+    }
+
+    setSystemSettings(updatedSettings as FirestoreSiteSettings);
+    await firestoreSettingsService.updateSiteSettings(updatedSettings);
+
+    addToast('info', 'Asset Cleared', `Reverted ${field} to default vector emblem.`);
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -100,7 +209,7 @@ export const AdminSettingsView: React.FC = () => {
       addToast(
         'success',
         'Settings Saved Successfully',
-        'Company information and system settings have been securely committed to Cloud Firestore in real-time.'
+        'Company information, brand media, and system settings have been securely committed to Cloud Firestore in real-time.'
       );
     } catch (err: any) {
       console.error('[AdminSettings] Save error:', err);
@@ -224,6 +333,18 @@ export const AdminSettingsView: React.FC = () => {
         </button>
 
         <button
+          onClick={() => setActiveTab('branding')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
+            activeTab === 'branding'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <ImageIcon className="w-4 h-4" />
+          Branding & Logo
+        </button>
+
+        <button
           onClick={() => setActiveTab('commerce')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
             activeTab === 'commerce'
@@ -259,6 +380,36 @@ export const AdminSettingsView: React.FC = () => {
           Security & Controls
         </button>
       </div>
+
+      {/* Hidden File Upload Inputs */}
+      <input
+        ref={fileInputRefLogo}
+        type="file"
+        accept="image/png,image/jpeg,image/svg+xml,image/webp"
+        className="hidden"
+        onChange={(e) => handleFileUpload(e, 'logo')}
+      />
+      <input
+        ref={fileInputRefDarkLogo}
+        type="file"
+        accept="image/png,image/jpeg,image/svg+xml,image/webp"
+        className="hidden"
+        onChange={(e) => handleFileUpload(e, 'darkLogo')}
+      />
+      <input
+        ref={fileInputRefMobileLogo}
+        type="file"
+        accept="image/png,image/jpeg,image/svg+xml,image/webp"
+        className="hidden"
+        onChange={(e) => handleFileUpload(e, 'mobileLogo')}
+      />
+      <input
+        ref={fileInputRefFavicon}
+        type="file"
+        accept="image/x-icon,image/png,image/svg+xml,image/vnd.microsoft.icon"
+        className="hidden"
+        onChange={(e) => handleFileUpload(e, 'favicon')}
+      />
 
       {/* Tab 1: Company & Offices */}
       {activeTab === 'company' && (
@@ -687,6 +838,422 @@ export const AdminSettingsView: React.FC = () => {
                   }
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
                 />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Branding & Logo Management */}
+      {activeTab === 'branding' && (
+        <div className="space-y-6">
+          {/* Main Grid: Upload Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* 1. Primary Brand Logo */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <Sun className="w-4 h-4 text-amber-500" />
+                    <h3 className="font-display text-sm font-bold text-slate-900">
+                      Primary Logo (Light Theme & Header)
+                    </h3>
+                  </div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full border border-blue-200">
+                    Main Nav
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-500">
+                  Used across the main website navigation bar, invoices, and light background views. Transparent PNG or SVG recommended.
+                </p>
+
+                {/* Upload & Progress UI */}
+                <div className="flex items-center gap-2 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRefLogo.current?.click()}
+                    disabled={uploadingField === 'logo'}
+                    leftIcon={
+                      uploadingField === 'logo' ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5" />
+                      )
+                    }
+                    className="text-xs font-semibold"
+                  >
+                    {uploadingField === 'logo'
+                      ? `Uploading (${uploadProgress}%)...`
+                      : 'Upload Image File'}
+                  </Button>
+
+                  {systemSettings.logoUrl && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleClearAsset('logo')}
+                      leftIcon={<Trash2 className="w-3.5 h-3.5 text-rose-500" />}
+                      className="text-xs text-rose-600 hover:bg-rose-50"
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+
+                {/* Direct URL Input */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Or Direct Image URL
+                  </label>
+                  <input
+                    type="text"
+                    value={systemSettings.logoUrl || ''}
+                    onChange={(e) => {
+                      const url = e.target.value;
+                      setSystemSettings({ ...systemSettings, logoUrl: url });
+                      setCompanyData({ ...companyData, logoUrl: url });
+                    }}
+                    placeholder="https://storage.googleapis.com/.../logo.png"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Preview Box */}
+              <div className="pt-3 border-t border-slate-100">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  Live Preview on Light Background
+                </span>
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center min-h-[70px]">
+                  <BrandLogo size="lg" logoUrl={systemSettings.logoUrl} theme="light" />
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Dark Mode / Contrast Logo */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <Moon className="w-4 h-4 text-indigo-500" />
+                    <h3 className="font-display text-sm font-bold text-slate-900">
+                      Dark / Footer Logo (Contrast Theme)
+                    </h3>
+                  </div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-slate-100 text-slate-700 rounded-full border border-slate-200">
+                    Footer & Drawers
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-500">
+                  Used inside the dark footer, mobile menu drawers, and dark backgrounds. White or light colored logo recommended.
+                </p>
+
+                {/* Upload & Progress UI */}
+                <div className="flex items-center gap-2 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRefDarkLogo.current?.click()}
+                    disabled={uploadingField === 'darkLogo'}
+                    leftIcon={
+                      uploadingField === 'darkLogo' ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5" />
+                      )
+                    }
+                    className="text-xs font-semibold"
+                  >
+                    {uploadingField === 'darkLogo'
+                      ? `Uploading (${uploadProgress}%)...`
+                      : 'Upload Image File'}
+                  </Button>
+
+                  {systemSettings.darkLogoUrl && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleClearAsset('darkLogo')}
+                      leftIcon={<Trash2 className="w-3.5 h-3.5 text-rose-500" />}
+                      className="text-xs text-rose-600 hover:bg-rose-50"
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+
+                {/* Direct URL Input */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Or Direct Image URL
+                  </label>
+                  <input
+                    type="text"
+                    value={systemSettings.darkLogoUrl || ''}
+                    onChange={(e) => setSystemSettings({ ...systemSettings, darkLogoUrl: e.target.value })}
+                    placeholder="https://storage.googleapis.com/.../dark_logo.png"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Preview Box */}
+              <div className="pt-3 border-t border-slate-100">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  Live Preview on Dark Canvas
+                </span>
+                <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center min-h-[70px]">
+                  <BrandLogo
+                    size="lg"
+                    logoUrl={systemSettings.darkLogoUrl || systemSettings.logoUrl}
+                    theme="dark"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Mobile / Compact Icon */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="w-4 h-4 text-emerald-600" />
+                    <h3 className="font-display text-sm font-bold text-slate-900">
+                      Mobile & Compact App Icon
+                    </h3>
+                  </div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200">
+                    Mobile View
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-500">
+                  Used for compact screen displays, mobile headers, and mobile PWA manifests. Square icon recommended.
+                </p>
+
+                {/* Upload & Progress UI */}
+                <div className="flex items-center gap-2 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRefMobileLogo.current?.click()}
+                    disabled={uploadingField === 'mobileLogo'}
+                    leftIcon={
+                      uploadingField === 'mobileLogo' ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5" />
+                      )
+                    }
+                    className="text-xs font-semibold"
+                  >
+                    {uploadingField === 'mobileLogo'
+                      ? `Uploading (${uploadProgress}%)...`
+                      : 'Upload Image File'}
+                  </Button>
+
+                  {systemSettings.mobileLogoUrl && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleClearAsset('mobileLogo')}
+                      leftIcon={<Trash2 className="w-3.5 h-3.5 text-rose-500" />}
+                      className="text-xs text-rose-600 hover:bg-rose-50"
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+
+                {/* Direct URL Input */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Or Direct Image URL
+                  </label>
+                  <input
+                    type="text"
+                    value={systemSettings.mobileLogoUrl || ''}
+                    onChange={(e) => setSystemSettings({ ...systemSettings, mobileLogoUrl: e.target.value })}
+                    placeholder="https://storage.googleapis.com/.../mobile_icon.png"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Preview Box */}
+              <div className="pt-3 border-t border-slate-100">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  Live Preview (Compact Mobile)
+                </span>
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden shadow-2xs">
+                    {systemSettings.mobileLogoUrl ? (
+                      <img
+                        src={systemSettings.mobileLogoUrl}
+                        alt="Mobile Icon"
+                        className="w-7 h-7 object-contain"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
+                        M
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-slate-800">
+                      {companyData.name || 'Mahdev Pvt Ltd'}
+                    </p>
+                    <p className="text-[10px] text-slate-400">Mobile Navigation Bar</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Favicon & Browser Tab */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-purple-600" />
+                    <h3 className="font-display text-sm font-bold text-slate-900">
+                      Browser Favicon (.ico / .png / .svg)
+                    </h3>
+                  </div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full border border-purple-200">
+                    Tab Icon
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-500">
+                  Displayed on user browser tabs, bookmarks, and mobile home screen shortcuts. Synchronized live in Firestore.
+                </p>
+
+                {/* Upload & Progress UI */}
+                <div className="flex items-center gap-2 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRefFavicon.current?.click()}
+                    disabled={uploadingField === 'favicon'}
+                    leftIcon={
+                      uploadingField === 'favicon' ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5" />
+                      )
+                    }
+                    className="text-xs font-semibold"
+                  >
+                    {uploadingField === 'favicon'
+                      ? `Uploading (${uploadProgress}%)...`
+                      : 'Upload Favicon File'}
+                  </Button>
+
+                  {systemSettings.faviconUrl && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleClearAsset('favicon')}
+                      leftIcon={<Trash2 className="w-3.5 h-3.5 text-rose-500" />}
+                      className="text-xs text-rose-600 hover:bg-rose-50"
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+
+                {/* Direct URL Input */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Or Direct Favicon URL
+                  </label>
+                  <input
+                    type="text"
+                    value={systemSettings.faviconUrl || ''}
+                    onChange={(e) => setSystemSettings({ ...systemSettings, faviconUrl: e.target.value })}
+                    placeholder="https://storage.googleapis.com/.../favicon.ico"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Browser Tab Simulation */}
+              <div className="pt-3 border-t border-slate-100">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  Browser Tab Simulation
+                </span>
+                <div className="bg-slate-200/70 p-2 rounded-xl border border-slate-300/80">
+                  <div className="inline-flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg shadow-2xs border border-slate-200 max-w-full">
+                    {systemSettings.faviconUrl ? (
+                      <img
+                        src={systemSettings.faviconUrl}
+                        alt="Favicon"
+                        className="w-4 h-4 object-contain rounded-xs"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-4 h-4 rounded-xs bg-blue-600 flex items-center justify-center text-[9px] text-white font-extrabold">
+                        M
+                      </div>
+                    )}
+                    <span className="text-xs font-medium text-slate-700 truncate max-w-[200px]">
+                      {companyData.name || 'Mahdev Pvt Ltd'} — Official Portal
+                    </span>
+                    <span className="text-slate-300 text-xs ml-1">×</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Full Navigation Bar Sandbox Simulation */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Eye className="w-4 h-4 text-blue-600" />
+                <h3 className="font-display text-sm font-bold text-slate-900">
+                  Live Navigation Bar Preview Sandbox
+                </h3>
+              </div>
+              <span className="text-xs text-slate-400">
+                Shows exact rendering in public visitor desktop header
+              </span>
+            </div>
+
+            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs bg-white">
+              <div className="px-6 py-4 flex items-center justify-between bg-white border-b border-slate-100">
+                <BrandLogo
+                  size="md"
+                  logoUrl={systemSettings.logoUrl}
+                  theme="light"
+                />
+
+                <div className="hidden sm:flex items-center gap-6 text-xs font-semibold text-slate-600">
+                  <span className="text-blue-600 font-bold">Home</span>
+                  <span>Divisions</span>
+                  <span>Catalog</span>
+                  <span>Portfolio</span>
+                  <span>About</span>
+                  <span>Contact</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg font-bold shadow-2xs">
+                    Client Portal
+                  </span>
+                </div>
               </div>
             </div>
           </div>

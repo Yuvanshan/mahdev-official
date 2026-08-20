@@ -9,8 +9,12 @@ import {
   Search,
   Plus,
   Trash2,
+  AlertCircle,
+  CheckCircle2,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { StorageCategory } from '../../types/storage';
+import { storageService } from '../../services/storageService';
 
 export interface MediaAssetPreset {
   id: string;
@@ -151,7 +155,25 @@ interface MediaPickerModalProps {
   currentUrl?: string;
   multiple?: boolean;
   title?: string;
+  category?: string;
+  storageCategory?: StorageCategory;
 }
+
+const VALID_STORAGE_CATEGORIES: StorageCategory[] = [
+  'branding',
+  'company',
+  'divisions',
+  'services',
+  'products',
+  'portfolio',
+  'gallery',
+  'testimonials',
+  'users',
+  'documents',
+  'invoices',
+  'banners',
+  'general',
+];
 
 export const MediaPickerModal: React.FC<MediaPickerModalProps> = ({
   isOpen,
@@ -161,13 +183,22 @@ export const MediaPickerModal: React.FC<MediaPickerModalProps> = ({
   currentUrl = '',
   multiple = false,
   title = 'Media Asset Manager',
+  category,
+  storageCategory,
 }) => {
+  const uploadCategory: StorageCategory =
+    storageCategory ||
+    (category && VALID_STORAGE_CATEGORIES.includes(category as StorageCategory)
+      ? (category as StorageCategory)
+      : 'products');
   const [activeTab, setActiveTab] = useState<'presets' | 'url' | 'upload'>('presets');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [customUrl, setCustomUrl] = useState(currentUrl);
   const [selectedUrls, setSelectedUrls] = useState<string[]>(currentUrl ? [currentUrl] : []);
-  const [uploadedBase64, setUploadedBase64] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -190,31 +221,44 @@ export const MediaPickerModal: React.FC<MediaPickerModalProps> = ({
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     setUploadError(null);
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setUploadError('Please select a valid image file (JPEG, PNG, WebP).');
+      setUploadError('Please select a valid image file (JPEG, PNG, WebP, SVG).');
       return;
     }
 
-    if (file.size > 2.5 * 1024 * 1024) {
-      setUploadError('File size exceeds 2.5MB limit. Please choose a smaller optimized image.');
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('Image is too large. Please choose a smaller image (maximum allowed is 10 MB).');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      setUploadedBase64(result);
-      setSelectedUrls([result]);
-    };
-    reader.onerror = () => {
-      setUploadError('Failed to process image upload.');
-    };
-    reader.readAsDataURL(file);
+    setIsUploading(true);
+    setUploadProgress(10);
+
+    const result = await storageService.uploadFile(
+      file,
+      uploadCategory,
+      undefined,
+      {
+        maxWidth: 1920,
+        maxHeight: 1920,
+        quality: 0.88,
+        onProgress: (p) => setUploadProgress(p),
+      }
+    );
+
+    setIsUploading(false);
+
+    if (result.success && result.url) {
+      setUploadedUrl(result.url);
+      setSelectedUrls([result.url]);
+    } else {
+      setUploadError(result.error || 'Failed to upload image to Firebase Storage.');
+    }
   };
 
   const handleConfirm = () => {
@@ -403,25 +447,71 @@ export const MediaPickerModal: React.FC<MediaPickerModalProps> = ({
             </div>
           )}
 
-          {/* Tab 3: Upload */}
+          {/* Tab 3: Upload to Firebase Storage */}
           {activeTab === 'upload' && (
             <div className="space-y-4 max-w-md mx-auto py-4 text-center">
-              <label className="border-2 border-dashed border-slate-200 hover:border-blue-500 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer bg-slate-50/50 hover:bg-blue-50/30 transition-colors">
-                <UploadCloud className="w-10 h-10 text-slate-400 mb-2" />
-                <span className="font-display font-bold text-slate-900 text-sm">
-                  Click to choose image file
-                </span>
-                <span className="text-xs text-slate-500 mt-1">PNG, JPG, WebP up to 2.5MB</span>
-                <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+              <label
+                className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                  isUploading
+                    ? 'border-blue-500 bg-blue-50/50 cursor-wait'
+                    : 'border-slate-200 hover:border-blue-500 bg-slate-50/50 hover:bg-blue-50/30'
+                }`}
+              >
+                {isUploading ? (
+                  <div className="space-y-3 w-full max-w-xs">
+                    <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
+                    <div className="space-y-1">
+                      <span className="font-display font-bold text-slate-900 text-sm block">
+                        Uploading to Firebase Storage ({uploadProgress}%)
+                      </span>
+                      <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                        <div
+                          className="bg-blue-600 h-full transition-all duration-200"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <UploadCloud className="w-10 h-10 text-slate-400 mb-2" />
+                    <span className="font-display font-bold text-slate-900 text-sm">
+                      Click to choose image file
+                    </span>
+                    <span className="text-xs text-slate-500 mt-1">
+                      PNG, JPG, WebP, SVG up to 10MB
+                    </span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                  onChange={handleFileUpload}
+                  disabled={isUploading}
+                  className="hidden"
+                />
               </label>
 
-              {uploadError && <p className="text-xs font-semibold text-red-600">{uploadError}</p>}
+              {uploadError && (
+                <div className="text-xs font-medium text-rose-600 bg-rose-50 p-3 rounded-xl flex items-start gap-2 border border-rose-200 text-left">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{uploadError}</span>
+                </div>
+              )}
 
-              {uploadedBase64 && (
-                <div className="space-y-2 text-left">
-                  <span className="text-xs font-semibold text-slate-700 block">Uploaded Asset Ready</span>
-                  <div className="h-44 rounded-xl border border-slate-200 overflow-hidden bg-slate-50 flex items-center justify-center">
-                    <img src={uploadedBase64} alt="Uploaded" className="max-h-full max-w-full object-contain" />
+              {uploadedUrl && (
+                <div className="space-y-2 text-left bg-emerald-50/60 p-3 rounded-xl border border-emerald-200">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Upload Successful! Asset ready to use.</span>
+                  </div>
+                  <div className="h-44 rounded-xl border border-slate-200 overflow-hidden bg-slate-900 flex items-center justify-center">
+                    <img
+                      src={uploadedUrl}
+                      alt="Uploaded asset"
+                      className="max-h-full max-w-full object-contain"
+                      referrerPolicy="no-referrer"
+                    />
                   </div>
                 </div>
               )}
@@ -439,14 +529,14 @@ export const MediaPickerModal: React.FC<MediaPickerModalProps> = ({
               : `${selectedUrls.length} image(s) selected`}
           </span>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={onClose}>
+            <Button variant="outline" size="sm" onClick={onClose} disabled={isUploading}>
               Cancel
             </Button>
             <Button
               variant="primary"
               size="sm"
               onClick={handleConfirm}
-              disabled={activeTab === 'url' ? !customUrl.trim() : selectedUrls.length === 0}
+              disabled={isUploading || (activeTab === 'url' ? !customUrl.trim() : selectedUrls.length === 0)}
             >
               Use Selected Asset
             </Button>

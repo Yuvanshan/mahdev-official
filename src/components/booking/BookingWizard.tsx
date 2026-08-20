@@ -629,7 +629,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
               <div className="flex items-start justify-between border-b border-neutral-800 pb-3">
                 <div>
                   <span className="text-[10px] font-mono uppercase text-amber-400 tracking-wider">
-                    {selectedService.divisionName} • {selectedService.bookingType.toUpperCase()}
+                    {selectedService.divisionName || (selectedService.divisionId ? String(selectedService.divisionId).toUpperCase() : 'ENTERPRISE')} • {(selectedService.bookingType || 'standard').toUpperCase()}
                   </span>
                   <h3 className="text-base font-bold text-white">{selectedService.name}</h3>
                   <p className="text-xs text-neutral-300">{selectedPackage.name} ({selectedPackage.duration})</p>

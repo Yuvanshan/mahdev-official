@@ -18,6 +18,7 @@ import { Button } from '../ui/Button';
 interface ImageUploaderProps {
   category: StorageCategory;
   subfolder?: string;
+  targetUserId?: string;
   currentImageUrl?: string;
   currentStoragePath?: string;
   onUploadSuccess: (item: UploadedMediaItem) => void;
@@ -32,6 +33,7 @@ interface ImageUploaderProps {
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
   category,
   subfolder,
+  targetUserId,
   currentImageUrl,
   currentStoragePath,
   onUploadSuccess,
@@ -69,7 +71,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       file,
       category,
       subfolder,
-      uploadOptions
+      uploadOptions,
+      targetUserId
     );
 
     setIsUploading(false);

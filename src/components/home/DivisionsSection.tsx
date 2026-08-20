@@ -7,16 +7,58 @@ import { IconRenderer } from '../ui/IconRenderer';
 import {
   ScrollReveal,
   TiltCard,
-  Magnetic,
-  BlurReveal,
 } from '../motion/MotionWrappers';
-import { DIVISION_LIST } from '../../config/divisions';
+import { DIVISIONS, DIVISION_LIST } from '../../config/divisions';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { DivisionId } from '../../types';
 
 interface DivisionsSectionProps {
   onNavigate: (route: string) => void;
 }
 
 export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }) => {
+  const { divisions, activeDivisions, companySettings } = useFirestoreDataContext();
+
+  // Merge Firestore division data with division route/icon configs
+  const displayDivisions = React.useMemo(() => {
+    if (divisions && divisions.length > 0) {
+      return divisions
+        .filter((d) => d.status !== 'inactive')
+        .map((d) => {
+          const config = DIVISIONS[d.id as DivisionId] || DIVISION_LIST.find((item) => item.id === d.id) || {
+            id: d.id,
+            name: d.name,
+            shortName: d.name,
+            tagline: d.hero?.subtitle || '',
+            description: d.description,
+            route: `/${d.slug || d.id}`,
+            badge: d.hero?.badge || 'Enterprise Division',
+            iconName: 'Building',
+            color: '#0052FF',
+            coreServices: [],
+            stats: [],
+          };
+
+          return {
+            id: d.id,
+            name: d.name || config.name,
+            shortName: (config as any).shortName || d.name,
+            tagline: d.hero?.subtitle || (config as any).tagline || '',
+            description: d.description || config.description,
+            route: (config as any).route || `/${d.slug || d.id}`,
+            badge: d.hero?.badge || (config as any).badge || 'Active Division',
+            iconName: (config as any).iconName || 'Building',
+            color: (config as any).color || '#0052FF',
+            coreServices: (config as any).coreServices || [],
+            stats: (config as any).stats || [{ label: 'Operational Status', value: 'Active' }],
+          };
+        });
+    }
+    return DIVISION_LIST;
+  }, [divisions]);
+
+  const totalCount = displayDivisions.length;
+
   return (
     <SectionContainer
       id="divisions"
@@ -30,20 +72,20 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
             <Caption className="text-[#0052FF] mb-2 block">Our Specialized Portfolio</Caption>
             <H2 className="text-slate-900 mb-3">Five Distinct Business Divisions</H2>
             <Body className="text-slate-600 text-base">
-              Each enterprise division operates with specialized domain mastery, offering distinct services while adhering to the core governance, technical precision, and reliability of Mahdev Pvt Ltd.
+              Each enterprise division operates with specialized domain mastery, offering distinct services while adhering to the core governance, technical precision, and reliability of {companySettings?.name || 'Mahdev Pvt Ltd'}.
             </Body>
           </div>
           <div className="mt-4 md:mt-0 flex items-center gap-2">
             <Badge variant="electric" size="md">
-              5 Operating Divisions
+              {totalCount} Operating Divisions
             </Badge>
           </div>
         </div>
       </ScrollReveal>
 
-      {/* Grid of the 5 Divisions with 3D Perspective Tilt Cards */}
+      {/* Grid of the Divisions with 3D Perspective Tilt Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-        {DIVISION_LIST.map((division, idx) => (
+        {displayDivisions.map((division, idx) => (
           <ScrollReveal key={division.id} direction="up" delay={idx * 0.08}>
             <TiltCard
               id={`division-card-${division.id}`}
@@ -81,28 +123,30 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
                   </p>
 
                   {/* Core Service Highlights Preview */}
-                  <div className="space-y-2 mb-6">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                      Core Capabilities:
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {division.coreServices.slice(0, 3).map((service, sIdx) => (
-                        <span
-                          key={sIdx}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200/80 text-[11px] font-medium text-slate-700 group-hover:border-blue-200 transition-colors"
-                        >
-                          <span className="w-1 h-1 rounded-full bg-[#0052FF]" />
-                          <span>{service.title.split('&')[0]}</span>
-                        </span>
-                      ))}
+                  {division.coreServices && division.coreServices.length > 0 && (
+                    <div className="space-y-2 mb-6">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                        Core Capabilities:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {division.coreServices.slice(0, 3).map((service: any, sIdx: number) => (
+                          <span
+                            key={sIdx}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200/80 text-[11px] font-medium text-slate-700 group-hover:border-blue-200 transition-colors"
+                          >
+                            <span className="w-1 h-1 rounded-full bg-[#0052FF]" />
+                            <span>{service.title ? service.title.split('&')[0] : (service.name || 'Service')}</span>
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Footer CTA & Stat Preview */}
                 <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                   <div className="text-xs font-semibold text-slate-500">
-                    {division.stats[0]?.value} {division.stats[0]?.label}
+                    {division.stats && division.stats[0] ? `${division.stats[0].value} ${division.stats[0].label}` : 'Enterprise'}
                   </div>
                   <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0052FF] group-hover:translate-x-1 transition-transform">
                     <span>Explore {division.shortName}</span>
@@ -114,7 +158,7 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
           </ScrollReveal>
         ))}
 
-        {/* 6th Card: Centralized Holding Governance in 3D */}
+        {/* Centralized Holding Governance Card */}
         <ScrollReveal direction="up" delay={0.4}>
           <TiltCard maxTilt={8} glareEffect className="h-full">
             <div className="flex flex-col justify-between rounded-2xl bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950 text-white border border-slate-800 p-7 shadow-xl h-full">
@@ -129,7 +173,7 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
                 </div>
 
                 <h3 className="font-display text-xl font-bold text-white mb-2">
-                  Mahdev Synergy & Governance
+                  {companySettings?.name || 'Mahdev'} Synergy & Governance
                 </h3>
                 <p className="text-xs font-semibold text-blue-400 mb-3">
                   Centralized Quality & Operational Support
@@ -141,7 +185,7 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
                 <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-300 space-y-1.5">
                   <div className="flex items-center justify-between font-medium">
                     <span>Headquarters</span>
-                    <span className="text-white">Colombo, Sri Lanka</span>
+                    <span className="text-white">{companySettings?.offices?.colombo?.city || 'Colombo'}, Sri Lanka</span>
                   </div>
                   <div className="flex items-center justify-between font-medium">
                     <span>Operational Scope</span>

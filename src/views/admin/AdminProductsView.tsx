@@ -533,7 +533,7 @@ export const AdminProductsView: React.FC = () => {
               >
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name} ({c.divisionId.toUpperCase()})
+                    {c.name} ({((c as any).divisionId || (c as any).division || 'mart').toUpperCase()})
                   </option>
                 ))}
               </select>

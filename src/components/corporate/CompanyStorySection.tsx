@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Target, Sparkles, Award, Shield, Layers, Heart, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Target, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body, Caption } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
@@ -8,17 +8,18 @@ import {
   ScrollReveal,
   TiltCard,
   Magnetic,
-  BlurReveal,
 } from '../motion/MotionWrappers';
 import { COMPANY_STORY, MISSION_VISION, COMPANY_VALUES } from '../../data/corporateData';
 import { IconRenderer } from '../ui/IconRenderer';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 interface CompanyStorySectionProps {
   onExploreDivisions?: () => void;
 }
 
 export const CompanyStorySection: React.FC<CompanyStorySectionProps> = ({ onExploreDivisions }) => {
-  const [activeTab, setActiveTab] = useState<'mission' | 'vision'>('mission');
+  const { companySettings } = useFirestoreDataContext();
+  const companyName = companySettings?.name || 'Mahdev Pvt Ltd';
 
   return (
     <SectionContainer id="story" background="white" paddingY="xl" hasBorderBottom>
@@ -28,15 +29,15 @@ export const CompanyStorySection: React.FC<CompanyStorySectionProps> = ({ onExpl
           <ScrollReveal direction="up">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#0052FF] text-xs font-semibold">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>The Mahdev Story</span>
+              <span>The {companyName} Story</span>
             </div>
 
             <H2 className="text-slate-900 mt-2 mb-4 font-display text-3xl sm:text-4xl lg:text-5xl tracking-tight">
-              {COMPANY_STORY.headline}
+              {companySettings?.tagline ? `${companySettings.name} — ${companySettings.tagline}` : COMPANY_STORY.headline}
             </H2>
 
             <p className="text-base sm:text-lg font-medium text-slate-700 leading-relaxed">
-              {COMPANY_STORY.subheadline}
+              {companySettings?.description || COMPANY_STORY.subheadline}
             </p>
 
             <div className="space-y-4 text-slate-600 text-sm sm:text-base leading-relaxed">

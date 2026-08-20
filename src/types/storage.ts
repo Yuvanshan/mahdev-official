@@ -3,6 +3,7 @@
  */
 
 export type StorageCategory =
+  | 'branding'
   | 'company'
   | 'divisions'
   | 'services'
@@ -12,7 +13,9 @@ export type StorageCategory =
   | 'testimonials'
   | 'users'
   | 'documents'
-  | 'invoices';
+  | 'invoices'
+  | 'banners'
+  | 'general';
 
 export interface StorageOptimizationOptions {
   maxWidth?: number;

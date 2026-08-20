@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ArrowRight, CheckCircle2, Filter, Sparkles } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body, Caption } from '../ui/Heading';
@@ -10,8 +10,7 @@ import {
   Magnetic,
 } from '../motion/MotionWrappers';
 import { DivisionId } from '../../types';
-import { cmsService } from '../../services/cmsService';
-import { CmsService as CmsServiceEntity, HomepageCmsConfig } from '../../types/cms';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { DIVISIONS } from '../../config/divisions';
 
 interface FeaturedServicesSectionProps {
@@ -24,33 +23,18 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
   onInquireService,
 }) => {
   const [activeTab, setActiveTab] = useState<DivisionId | 'all'>('all');
-  const [services, setServices] = useState<CmsServiceEntity[]>([]);
-  const [config, setConfig] = useState<HomepageCmsConfig>(() => cmsService.getHomepageConfig());
+  const { services, homepageConfig } = useFirestoreDataContext();
 
-  const loadData = () => {
-    const all = cmsService.getAll<CmsServiceEntity>('services', { status: 'active' });
-    setServices(all);
-    setConfig(cmsService.getHomepageConfig());
-  };
-
-  useEffect(() => {
-    loadData();
-    const unsubServices = cmsService.subscribe('services', loadData);
-    const unsubHome = cmsService.subscribeHomepage(loadData);
-    return () => {
-      unsubServices();
-      unsubHome();
-    };
-  }, []);
-
-  if (config.featuredServices && !config.featuredServices.enabled) {
+  if (homepageConfig.featuredServices && !homepageConfig.featuredServices.enabled) {
     return null;
   }
 
+  const activeServices = services.filter((s) => (s as any).status !== 'archived');
+
   const filteredServices =
     activeTab === 'all'
-      ? services
-      : services.filter((srv) => srv.divisionId === activeTab);
+      ? activeServices
+      : activeServices.filter((srv) => (srv.divisionId || srv.division) === activeTab);
 
   const filterTabs: { id: DivisionId | 'all'; label: string }[] = [
     { id: 'all', label: 'All Services' },
@@ -61,7 +45,7 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
     { id: 'mart', label: 'Online Hardware' },
   ];
 
-  const sectionMeta = config.featuredServices || {
+  const sectionMeta = homepageConfig.featuredServices || {
     badge: 'DYNAMIC SERVICE OFFERINGS',
     title: 'Featured Services & Solutions',
     subtitle: 'Explore key flagship services delivered across our 5 specialized enterprise divisions.',
@@ -110,10 +94,11 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
       {/* Reusable Service Cards Grid with 3D Tilt */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredServices.map((service, idx) => {
-          const divRoute =
-            (DIVISIONS[service.divisionId as DivisionId] &&
-              DIVISIONS[service.divisionId as DivisionId].route) ||
-            '/services';
+          const divId = (service.divisionId || service.division || 'sws') as DivisionId;
+          const divConfig = DIVISIONS[divId];
+          const divRoute = (divConfig && divConfig.route) || `/${divId}`;
+          const divisionBadgeText =
+            service.divisionName || (divConfig && divConfig.shortName) || (divId ? String(divId).toUpperCase() : 'ENTERPRISE');
 
           return (
             <ScrollReveal key={service.id} direction="up" delay={idx * 0.05}>
@@ -135,14 +120,14 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
                       </div>
                       <div>
                         <span className="text-[11px] font-bold uppercase tracking-wider text-[#0052FF] block">
-                          {service.divisionName || service.divisionId.toUpperCase()}
+                          {divisionBadgeText}
                         </span>
                         <span className="text-xs text-slate-500">{service.badge || 'Enterprise Grade'}</span>
                       </div>
                     </div>
 
                     <h3 className="font-display text-lg font-bold text-slate-900 mb-2 group-hover:text-[#0052FF] transition-colors">
-                      {service.title}
+                      {service.title || service.name}
                     </h3>
                     <p className="text-xs text-slate-600 leading-relaxed mb-5">
                       {service.description}
@@ -167,7 +152,7 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
                   {/* Card Action Footer */}
                   <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
                     <span className="text-[11px] font-medium text-slate-500">
-                      {service.turnaroundTime || (service.startingPrice ? `From LKR ${service.startingPrice.toLocaleString()}` : 'Custom SLA')}
+                      {service.turnaroundTime || (service.startingPrice || service.price ? `From LKR ${(service.startingPrice || service.price).toLocaleString()}` : 'Custom SLA')}
                     </span>
                     <Magnetic strength={0.2}>
                       <Button

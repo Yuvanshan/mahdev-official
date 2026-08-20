@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { SEOMetaData } from '../../types';
-import { BRAND_CONFIG } from '../../config/brand';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { COMPANY_INFO } from '../../config/company';
 
 const SEO_STORAGE_KEY = 'mahdev_cms_seo_configs_v1';
@@ -13,14 +13,34 @@ export const SEOHead: React.FC<SEOMetaData> = ({
   ogDescription,
   ogType = 'website',
 }) => {
+  const { siteSettings, companySettings } = useFirestoreDataContext();
+
   useEffect(() => {
+    // 1. Dynamic Favicon from Firestore
+    if (siteSettings?.faviconUrl) {
+      let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.getElementsByTagName('head')[0].appendChild(link);
+      }
+      link.href = siteSettings.faviconUrl;
+    }
+
+    // 2. Dynamic Title
+    const baseCompanyName = companySettings?.name || siteSettings?.siteName || 'Mahdev Pvt Ltd';
+    const dynamicFullTitle = title.includes(baseCompanyName)
+      ? title
+      : `${title} | ${baseCompanyName}`;
+    document.title = dynamicFullTitle;
+
     // Check if there is an admin-configured SEO override in CMS
-    let effectiveTitle = title;
-    let effectiveDesc = description;
-    let effectiveOgTitle = ogTitle || title;
-    let effectiveOgDesc = ogDescription || description;
+    let effectiveTitle = dynamicFullTitle;
+    let effectiveDesc = description || siteSettings?.metaDescription || COMPANY_INFO.description;
+    let effectiveOgTitle = ogTitle || dynamicFullTitle;
+    let effectiveOgDesc = ogDescription || effectiveDesc;
     let effectiveCanonical = canonicalUrl;
-    let effectiveOgImage = 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80';
+    let effectiveOgImage = siteSettings?.ogImageUrl || 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80';
 
     try {
       const stored = localStorage.getItem(SEO_STORAGE_KEY);
@@ -112,58 +132,43 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       document.head.appendChild(scriptTag);
     }
 
+    const companyName = companySettings?.legalName || companySettings?.name || COMPANY_INFO.legalName;
     const schema = {
       '@context': 'https://schema.org',
       '@type': 'Organization',
-      name: COMPANY_INFO.legalName,
-      alternateName: COMPANY_INFO.name,
-      url: `https://${COMPANY_INFO.domain}`,
-      logo: `https://${COMPANY_INFO.domain}/logo.png`,
-      description: COMPANY_INFO.description,
-      email: COMPANY_INFO.email,
-      telephone: [COMPANY_INFO.primaryPhone, COMPANY_INFO.secondaryPhone],
+      name: companyName,
+      alternateName: companySettings?.name || COMPANY_INFO.name,
+      url: `https://${companySettings?.website || COMPANY_INFO.domain}`,
+      logo: siteSettings?.logoUrl || `https://${COMPANY_INFO.domain}/logo.png`,
+      description: siteSettings?.metaDescription || COMPANY_INFO.description,
+      email: companySettings?.email || COMPANY_INFO.email,
+      telephone: [companySettings?.phone || COMPANY_INFO.primaryPhone, COMPANY_INFO.secondaryPhone].filter(Boolean),
       sameAs: [
-        COMPANY_INFO.socials.linkedin,
-        COMPANY_INFO.socials.facebook,
-        COMPANY_INFO.socials.instagram,
-        COMPANY_INFO.socials.youtube,
+        companySettings?.socialLinks?.linkedin || COMPANY_INFO.socials.linkedin,
+        companySettings?.socialLinks?.facebook || COMPANY_INFO.socials.facebook,
+        companySettings?.socialLinks?.instagram || COMPANY_INFO.socials.instagram,
+        companySettings?.socialLinks?.youtube || COMPANY_INFO.socials.youtube,
       ].filter(Boolean),
       address: [
         {
           '@type': 'PostalAddress',
-          streetAddress: COMPANY_INFO.offices.colombo.address,
-          addressLocality: COMPANY_INFO.offices.colombo.city,
+          streetAddress: companySettings?.offices?.colombo?.address || COMPANY_INFO.offices.colombo.address,
+          addressLocality: companySettings?.offices?.colombo?.city || COMPANY_INFO.offices.colombo.city,
           addressRegion: 'Western Province',
           addressCountry: 'LK',
         },
         {
           '@type': 'PostalAddress',
-          streetAddress: COMPANY_INFO.offices.trincomalee.address,
-          addressLocality: COMPANY_INFO.offices.trincomalee.city,
+          streetAddress: companySettings?.offices?.trincomalee?.address || COMPANY_INFO.offices.trincomalee.address,
+          addressLocality: companySettings?.offices?.trincomalee?.city || COMPANY_INFO.offices.trincomalee.city,
           addressRegion: 'Eastern Province',
           addressCountry: 'LK',
-        },
-      ],
-      contactPoint: [
-        {
-          '@type': 'ContactPoint',
-          telephone: COMPANY_INFO.primaryPhone,
-          contactType: 'customer service',
-          email: COMPANY_INFO.email,
-          availableLanguage: ['English', 'Tamil', 'Sinhala'],
-        },
-        {
-          '@type': 'ContactPoint',
-          telephone: COMPANY_INFO.secondaryPhone,
-          contactType: 'technical support',
-          email: COMPANY_INFO.email,
-          availableLanguage: ['English', 'Tamil', 'Sinhala'],
         },
       ],
     };
 
     scriptTag.textContent = JSON.stringify(schema);
-  }, [title, description, canonicalUrl, ogTitle, ogDescription, ogType]);
+  }, [title, description, canonicalUrl, ogTitle, ogDescription, ogType, siteSettings, companySettings]);
 
   return null;
 };

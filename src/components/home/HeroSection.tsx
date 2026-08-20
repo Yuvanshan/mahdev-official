@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { ArrowRight, Compass, Sparkles } from 'lucide-react';
 import { BodyLarge } from '../ui/Heading';
 import { Button } from '../ui/Button';
@@ -12,8 +12,7 @@ import {
   TiltCard,
 } from '../motion/MotionWrappers';
 import { DIVISION_LIST } from '../../config/divisions';
-import { cmsService } from '../../services/cmsService';
-import { HomepageCmsConfig } from '../../types/cms';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 interface HeroSectionProps {
   onNavigate: (route: string) => void;
@@ -26,17 +25,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onExploreMahdev,
   onExploreServices,
 }) => {
-  const [config, setConfig] = useState<HomepageCmsConfig>(() => cmsService.getHomepageConfig());
-
-  useEffect(() => {
-    const handleUpdate = () => {
-      setConfig(cmsService.getHomepageConfig());
-    };
-    const unsub = cmsService.subscribeHomepage(handleUpdate);
-    return () => unsub();
-  }, []);
-
-  const hero = config.hero;
+  const { homepageConfig } = useFirestoreDataContext();
+  const hero = homepageConfig.hero;
   const fullTitle = `${hero.titleLine1} ${hero.titleHighlight} ${hero.titleLine2}`.trim();
 
   return (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Calendar, CheckCircle2, ChevronRight, Sparkles, TrendingUp, Filter, Award } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body, Caption } from '../ui/Heading';
@@ -10,8 +10,7 @@ import {
   Magnetic,
   BlurReveal,
 } from '../motion/MotionWrappers';
-import { cmsService } from '../../services/cmsService';
-import { CmsMilestone, HomepageCmsConfig } from '../../types/cms';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { DivisionId } from '../../types';
 
 interface TimelineCinematicProps {
@@ -20,46 +19,30 @@ interface TimelineCinematicProps {
 
 export const TimelineCinematic: React.FC<TimelineCinematicProps> = ({ initialDivision = 'all' }) => {
   const [selectedDivision, setSelectedDivision] = useState<DivisionId | 'all'>(initialDivision);
-  const [milestones, setMilestones] = useState<CmsMilestone[]>([]);
-  const [config, setConfig] = useState<HomepageCmsConfig>(() => cmsService.getHomepageConfig());
+  const { milestones, homepageConfig } = useFirestoreDataContext();
   const [activeMilestoneId, setActiveMilestoneId] = useState<string>('');
 
-  const loadData = () => {
-    const list = cmsService.getAll<CmsMilestone>('milestones', { status: 'active' });
-    setMilestones(list);
-    setConfig(cmsService.getHomepageConfig());
-    if (list.length > 0 && !activeMilestoneId) {
-      setActiveMilestoneId(list[list.length - 1].id);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-    const unsubM = cmsService.subscribe('milestones', loadData);
-    const unsubH = cmsService.subscribeHomepage(loadData);
-    return () => {
-      unsubM();
-      unsubH();
-    };
-  }, []);
-
-  if (config.milestones && !config.milestones.enabled) {
+  if (homepageConfig.milestones && !homepageConfig.milestones.enabled) {
     return null;
   }
 
-  const filteredMilestones = milestones.filter(
-    (m) => selectedDivision === 'all' || m.divisionId === selectedDivision || !m.divisionId
-  );
+  const activeMilestones = milestones.filter((m) => (m as any).status !== 'archived');
+  const sortedMilestones = [...activeMilestones].sort((a, b) => (Number(a.year) || 0) - (Number(b.year) || 0));
+
+  const filteredMilestones = sortedMilestones.filter((m) => {
+    const div = (m as any).divisionId || (m as any).division;
+    return selectedDivision === 'all' || div === selectedDivision || !div || div === 'all';
+  });
 
   const activeMilestone =
     filteredMilestones.find((m) => m.id === activeMilestoneId) ||
-    filteredMilestones[0] ||
-    milestones[0];
+    filteredMilestones[filteredMilestones.length - 1] ||
+    sortedMilestones[0];
 
-  const meta = config.milestones || {
+  const meta = homepageConfig.milestones || {
     badge: 'VERIFIED TRACK RECORD',
     title: 'Milestones of Excellence',
-    subtitle: 'A chronological journey detailing key foundational chapters, division debuts, and institutional expansions from 2018 to the present.',
+    subtitle: 'A chronological journey detailing key foundational chapters, division debuts, and institutional expansions from our founding to the present.',
   };
 
   return (

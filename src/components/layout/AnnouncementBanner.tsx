@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Megaphone, ArrowRight, X } from 'lucide-react';
-import { useSiteSettings } from '../../hooks/useFirestoreData';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { CmsBanner } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
 
@@ -9,7 +9,7 @@ interface AnnouncementBannerProps {
 }
 
 export const AnnouncementBanner: React.FC<AnnouncementBannerProps> = ({ onNavigate }) => {
-  const { data: siteSettings } = useSiteSettings();
+  const { siteSettings } = useFirestoreDataContext();
   const [cmsBanner, setCmsBanner] = useState<CmsBanner | null>(null);
   const [dismissed, setDismissed] = useState(false);
 

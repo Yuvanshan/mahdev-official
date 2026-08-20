@@ -121,10 +121,13 @@ export const firestoreServicesService = {
    * Realtime listener for services
    */
   subscribeServices(
-    division: DivisionId | undefined,
-    onData: (data: FirestoreService[]) => void,
+    onDataOrDivision: ((data: FirestoreService[]) => void) | DivisionId | undefined,
+    onDataCallback?: (data: FirestoreService[]) => void,
     onError?: (error: Error) => void
   ): Unsubscribe {
+    const division = typeof onDataOrDivision === 'string' ? onDataOrDivision : undefined;
+    const onData = typeof onDataOrDivision === 'function' ? onDataOrDivision : onDataCallback || (() => {});
+
     const colRef = collection(db, 'services');
     const q = division ? query(colRef, where('division', '==', division)) : colRef;
 

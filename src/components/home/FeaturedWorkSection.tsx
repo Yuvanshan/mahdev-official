@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight, ExternalLink, Sparkles, TrendingUp, X } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body, Caption } from '../ui/Heading';
@@ -9,8 +9,8 @@ import {
   TiltCard,
   Magnetic,
 } from '../motion/MotionWrappers';
-import { cmsService } from '../../services/cmsService';
-import { CmsPortfolioProject, HomepageCmsConfig } from '../../types/cms';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { FirestorePortfolio } from '../../types/firestore';
 import { DIVISIONS } from '../../config/divisions';
 import { DivisionId } from '../../types';
 
@@ -19,30 +19,15 @@ interface FeaturedWorkSectionProps {
 }
 
 export const FeaturedWorkSection: React.FC<FeaturedWorkSectionProps> = ({ onNavigate }) => {
-  const [projects, setProjects] = useState<CmsPortfolioProject[]>([]);
-  const [config, setConfig] = useState<HomepageCmsConfig>(() => cmsService.getHomepageConfig());
-  const [selectedProject, setSelectedProject] = useState<CmsPortfolioProject | null>(null);
+  const { portfolio, homepageConfig } = useFirestoreDataContext();
+  const [selectedProject, setSelectedProject] = useState<FirestorePortfolio | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const loadData = () => {
-    const all = cmsService.getAll<CmsPortfolioProject>('portfolio', { status: 'active' });
-    setProjects(all);
-    setConfig(cmsService.getHomepageConfig());
-  };
-
-  useEffect(() => {
-    loadData();
-    const unsubPortfolio = cmsService.subscribe('portfolio', loadData);
-    const unsubHome = cmsService.subscribeHomepage(loadData);
-    return () => {
-      unsubPortfolio();
-      unsubHome();
-    };
-  }, []);
-
-  if (config.portfolio && !config.portfolio.enabled) {
+  if (homepageConfig.portfolio && !homepageConfig.portfolio.enabled) {
     return null;
   }
+
+  const activeProjects = portfolio.filter((p) => (p as any).status !== 'archived');
 
   const scrollHorizontal = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
@@ -51,7 +36,7 @@ export const FeaturedWorkSection: React.FC<FeaturedWorkSectionProps> = ({ onNavi
     }
   };
 
-  const sectionMeta = config.portfolio || {
+  const sectionMeta = homepageConfig.portfolio || {
     badge: 'PORTFOLIO & CASE STUDIES',
     title: 'Featured Work & Engagements',
     subtitle: 'A curated selection of hallmark productions, digital systems, expeditions, and media projects delivered across our enterprise divisions.',
@@ -109,7 +94,7 @@ export const FeaturedWorkSection: React.FC<FeaturedWorkSectionProps> = ({ onNavi
         className="flex gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none snap-x snap-mandatory scroll-smooth"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        {projects.map((project, idx) => (
+        {activeProjects.map((project, idx) => (
           <div
             key={project.id}
             className="w-[320px] sm:w-[380px] lg:w-[420px] shrink-0 snap-start"
