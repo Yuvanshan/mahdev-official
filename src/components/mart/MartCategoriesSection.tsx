@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Coffee,
   Utensils,
@@ -7,8 +7,10 @@ import {
   ShoppingBag,
   Home,
   ChevronRight,
+  Package,
 } from 'lucide-react';
-import { MART_CATEGORIES, MartCategory } from '../../data/martData';
+import { MART_CATEGORIES, MartCategory, mapFirestoreCategoryToMart } from '../../data/martData';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { ScrollReveal } from '../motion/MotionWrappers';
@@ -20,6 +22,20 @@ interface MartCategoriesSectionProps {
 export const MartCategoriesSection: React.FC<MartCategoriesSectionProps> = ({
   onSelectCategory,
 }) => {
+  const { categories: rawCategories } = useFirestoreDataContext();
+
+  const categories = useMemo<MartCategory[]>(() => {
+    if (rawCategories && rawCategories.length > 0) {
+      const martCats = rawCategories.filter(
+        (c) => !c.division || c.division === 'mart' || (c as any).divisionId === 'mart'
+      );
+      if (martCats.length > 0) {
+        return martCats.map(mapFirestoreCategoryToMart);
+      }
+    }
+    return MART_CATEGORIES;
+  }, [rawCategories]);
+
   const getCategoryIcon = (iconName: string) => {
     switch (iconName) {
       case 'Coffee':
@@ -32,6 +48,8 @@ export const MartCategoriesSection: React.FC<MartCategoriesSectionProps> = ({
         return <Smartphone className="w-5 h-5 text-blue-600" />;
       case 'ShoppingBag':
         return <ShoppingBag className="w-5 h-5 text-purple-600" />;
+      case 'Package':
+        return <Package className="w-5 h-5 text-indigo-600" />;
       case 'Home':
       default:
         return <Home className="w-5 h-5 text-sky-600" />;
@@ -53,7 +71,7 @@ export const MartCategoriesSection: React.FC<MartCategoriesSectionProps> = ({
 
       {/* Categories Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        {MART_CATEGORIES.map((cat) => (
+        {categories.map((cat) => (
           <div
             key={cat.id}
             onClick={() => onSelectCategory(cat.id)}

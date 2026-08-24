@@ -19,10 +19,11 @@ import { SectionContainer } from '../components/ui/SectionContainer';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { IconRenderer } from '../components/ui/IconRenderer';
-import { Product, ProductVariant, MART_PRODUCTS } from '../data/martData';
+import { Product, ProductVariant, MART_PRODUCTS, mapFirestoreProductToMart } from '../data/martData';
 import { DIVISION_LIST } from '../config/divisions';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useCart } from '../context/CartContext';
+import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 
 interface MartViewProps {
   onNavigate: (route: string) => void;
@@ -30,6 +31,7 @@ interface MartViewProps {
 
 export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
   const { addToCart, totalQuantity: totalCartCount, openCart } = useCart();
+  const { products: rawProducts, categories: rawCategories } = useFirestoreDataContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedProductForDetail, setSelectedProductForDetail] = useState<Product | null>(null);
@@ -40,13 +42,17 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
     const path = window.location.pathname;
     if (path.startsWith('/mart/product/')) {
       const prodId = path.replace('/mart/product/', '');
-      const matched = MART_PRODUCTS.find((p) => p.id === prodId || p.slug === prodId);
+      const liveList =
+        rawProducts && rawProducts.length > 0
+          ? rawProducts.map((p) => mapFirestoreProductToMart(p, rawCategories))
+          : MART_PRODUCTS;
+      const matched = liveList.find((p) => p.id === prodId || p.slug === prodId);
       if (matched) setSelectedProductForDetail(matched);
     } else if (path.startsWith('/mart/category/')) {
       const catId = path.replace('/mart/category/', '');
       setSelectedCategoryId(catId);
     }
-  }, []);
+  }, [rawProducts, rawCategories]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);

@@ -7,9 +7,14 @@ interface AdminModalProps {
   onClose: () => void;
   title: string;
   subtitle?: string;
+  description?: string;
+  footer?: React.ReactNode;
+  size?: string;
   isDirty?: boolean;
+  onSave?: () => Promise<void> | void;
+  isSaving?: boolean;
   children: React.ReactNode;
-  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | string;
 }
 
 export const AdminModal: React.FC<AdminModalProps> = ({
@@ -17,6 +22,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({
   onClose,
   title,
   subtitle,
+  description,
+  footer,
+  size,
   isDirty = false,
   children,
   maxWidth = '2xl',
@@ -48,21 +56,29 @@ export const AdminModal: React.FC<AdminModalProps> = ({
     onClose();
   };
 
-  const maxWidthClasses = {
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-xl',
-    '2xl': 'max-w-2xl',
-    '3xl': 'max-w-3xl',
-    '4xl': 'max-w-4xl',
-    '5xl': 'max-w-5xl',
-  }[maxWidth];
+  const resolvedWidth = size || maxWidth;
+  const cleanWidth = resolvedWidth.replace('max-w-', '');
+  const maxWidthClass =
+    cleanWidth === 'sm'
+      ? 'max-w-sm'
+      : cleanWidth === 'md'
+      ? 'max-w-md'
+      : cleanWidth === 'lg'
+      ? 'max-w-lg'
+      : cleanWidth === 'xl'
+      ? 'max-w-xl'
+      : cleanWidth === '3xl'
+      ? 'max-w-3xl'
+      : cleanWidth === '4xl'
+      ? 'max-w-4xl'
+      : cleanWidth === '5xl'
+      ? 'max-w-5xl'
+      : 'max-w-2xl';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs overflow-y-auto">
       <div
-        className={`bg-white rounded-2xl border border-slate-200 shadow-2xl w-full ${maxWidthClasses} my-8 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150 relative`}
+        className={`bg-white rounded-2xl border border-slate-200 shadow-2xl w-full ${maxWidthClass} my-8 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150 relative`}
       >
         {/* Header */}
         <div className="p-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white sticky top-0 z-10">
@@ -76,6 +92,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({
               )}
             </div>
             {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
+            {description && <p className="text-xs text-slate-500 mt-0.5">{description}</p>}
           </div>
 
           <button
@@ -89,6 +106,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({
 
         {/* Body */}
         <div className="p-6 overflow-y-auto grow custom-scrollbar">{children}</div>
+
+        {/* Optional Footer */}
+        {footer && <div className="p-4 bg-slate-50 border-t border-slate-100 shrink-0">{footer}</div>}
 
         {/* Unsaved Changes Confirmation Prompt Modal Overlay */}
         {showUnsavedPrompt && (

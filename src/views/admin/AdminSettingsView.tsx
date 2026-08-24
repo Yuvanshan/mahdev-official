@@ -50,7 +50,7 @@ import {
 import { cmsService } from '../../services/cmsService';
 import { storageService } from '../../services/storageService';
 import { BrandLogo } from '../../components/layout/BrandLogo';
-import { adminService } from '../../services/adminService';
+import { adminService, syncAdminFirebaseAuth } from '../../services/adminService';
 import { auth } from '../../lib/firebase';
 
 export const AdminSettingsView: React.FC = () => {
@@ -255,7 +255,13 @@ export const AdminSettingsView: React.FC = () => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // 1. Commit to Firestore database (Single Source of Truth)
+      if (currentAdmin) {
+        syncAdminFirebaseAuth(currentAdmin).catch((authErr) => {
+          console.warn('[AdminSettings] Background auth sync notice:', authErr);
+        });
+      }
+
+      // 1. Commit to Firestore database & multi-device sync channels
       await Promise.all([
         firestoreSettingsService.updateCompanySettings(companyData),
         firestoreSettingsService.updateSiteSettings({
@@ -270,14 +276,14 @@ export const AdminSettingsView: React.FC = () => {
       addToast(
         'success',
         'Settings Saved Successfully',
-        'Company information, brand media, and system settings have been securely committed to Cloud Firestore in real-time.'
+        'Company information, brand media, and system settings have been securely saved and synchronized in real-time across all devices.'
       );
     } catch (err: any) {
       console.error('[AdminSettings] Save error:', err);
       addToast(
         'error',
         'Save Failed',
-        err?.message || 'Could not commit settings to Firestore. Please verify your permissions.'
+        err?.message || 'Could not commit settings. Please verify your connection.'
       );
     } finally {
       setIsSaving(false);

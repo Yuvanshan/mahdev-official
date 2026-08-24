@@ -62,6 +62,7 @@ export interface CartSummary {
   freeShippingThreshold: number;
   tax: number;
   grandTotal: number;
+  total?: number;
   requiresShippingAddress: boolean;
   requiresBookingInfo: boolean;
 }

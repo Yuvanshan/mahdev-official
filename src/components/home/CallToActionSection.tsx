@@ -18,10 +18,16 @@ import { cmsService } from '../../services/cmsService';
 import { HomepageCmsConfig } from '../../types/cms';
 
 interface CallToActionSectionProps {
-  onExploreServices: () => void;
+  onExploreServices?: () => void;
+  onPrimaryClick?: () => void;
+  onSecondaryClick?: () => void;
 }
 
-export const CallToActionSection: React.FC<CallToActionSectionProps> = ({ onExploreServices }) => {
+export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
+  onExploreServices,
+  onPrimaryClick,
+  onSecondaryClick,
+}) => {
   const { data: firestoreCompany } = useCompanySettings();
   const company = firestoreCompany?.name ? firestoreCompany : COMPANY_INFO;
 

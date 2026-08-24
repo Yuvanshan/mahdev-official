@@ -71,7 +71,70 @@ export interface CartItem {
   itemTotal: number;
 }
 
-// Convert unified CatalogCategory to MartCategory
+export function mapFirestoreProductToMart(p: any, categories: any[] = []): Product {
+  const cat = categories.find((c) => c.id === p.categoryId || c.slug === p.categoryId);
+  const price = Number(p.price) || 0;
+  const originalPrice = p.compareAtPrice !== undefined ? Number(p.compareAtPrice) : price;
+  const discountPercent =
+    originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
+  const img = Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : (p.imageUrl || '');
+  const gallery = Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.gallery || (img ? [img] : []));
+  const stock = typeof p.stock === 'number' ? p.stock : (typeof p.stockQuantity === 'number' ? p.stockQuantity : 100);
+
+  return {
+    id: p.id,
+    name: p.name,
+    slug: p.slug || p.id,
+    category: p.categoryId || (cat ? cat.id : 'general'),
+    categoryName: p.categoryName || (cat ? cat.name : 'General Merchandise'),
+    price,
+    originalPrice,
+    discountPercent,
+    rating: Number(p.rating) || 5.0,
+    reviewsCount: Number(p.reviewsCount) || 0,
+    shortDescription: p.shortDescription || p.description?.slice(0, 150) || '',
+    description: p.description || '',
+    imageUrl: img,
+    gallery,
+    inStock: stock > 0 && p.stockStatus !== 'out_of_stock',
+    stockCount: stock,
+    isFeatured: p.isFeatured ?? true,
+    isBestSeller: p.isBestSeller,
+    isTrending: p.isTrending,
+    brand: p.brand || 'Mahdev',
+    sku: p.sku || `MD-${p.id?.toUpperCase().slice(0, 8) || '001'}`,
+    variants: p.variants
+      ? {
+          type: p.variants.type || 'Variant',
+          options: (p.variants.options || []).map((opt: any) => ({
+            id: opt.id,
+            name: opt.name,
+            sku: opt.sku || '',
+            priceModifier: opt.priceModifier || 0,
+            inStock: opt.inStock ?? true,
+            stockCount: opt.stockQuantity ?? opt.stockCount ?? 10,
+          })),
+        }
+      : undefined,
+    specifications: Array.isArray(p.specifications) ? p.specifications : [],
+    tags: Array.isArray(p.tags) ? p.tags : [],
+    reviews: Array.isArray(p.reviews) ? p.reviews : [],
+  };
+}
+
+export function mapFirestoreCategoryToMart(c: any): MartCategory {
+  return {
+    id: c.id,
+    name: c.name,
+    slug: c.slug || c.id,
+    description: c.description || '',
+    iconName: c.iconName || 'Package',
+    itemCount: c.itemCount || c.productCount || 0,
+    imageUrl: c.imageUrl || '',
+  };
+}
+
+// Convert unified CatalogCategory to MartCategory (fallback)
 export const MART_CATEGORIES: MartCategory[] = catalogService
   .getCategories('mart')
   .map((c) => ({
@@ -84,7 +147,7 @@ export const MART_CATEGORIES: MartCategory[] = catalogService
     imageUrl: c.imageUrl,
   }));
 
-// Convert unified CatalogProduct to Product interface for zero data duplication
+// Convert unified CatalogProduct to Product interface for zero data duplication (fallback)
 export const MART_PRODUCTS: Product[] = catalogService
   .queryProducts({ divisionId: 'mart' })
   .map((p) => ({

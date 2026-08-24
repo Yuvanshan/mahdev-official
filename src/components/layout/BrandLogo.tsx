@@ -20,14 +20,14 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
   logoUrl: propLogoUrl,
   showText = true,
 }) => {
-  const { siteSettings } = useFirestoreDataContext();
+  const { siteSettings, companySettings } = useFirestoreDataContext();
   const [imgError, setImgError] = useState(false);
 
   const customLogo =
     propLogoUrl ||
-    (theme === 'dark' && siteSettings?.darkLogoUrl
-      ? siteSettings.darkLogoUrl
-      : siteSettings?.logoUrl);
+    (theme === 'dark' && (siteSettings?.darkLogoUrl || companySettings?.darkLogoUrl)
+      ? siteSettings?.darkLogoUrl || companySettings?.darkLogoUrl
+      : siteSettings?.logoUrl || companySettings?.logoUrl);
 
   const sizeStyles = {
     sm: {

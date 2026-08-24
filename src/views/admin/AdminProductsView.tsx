@@ -64,7 +64,7 @@ export const AdminProductsView: React.FC = () => {
     imageUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80',
     galleryImages: [] as string[],
     stockQuantity: 25,
-    stockStatus: 'in_stock' as const,
+    stockStatus: 'in_stock' as CmsProduct['stockStatus'],
     lowStockThreshold: 10,
     isFeatured: false,
     tags: [] as string[],
@@ -208,7 +208,7 @@ export const AdminProductsView: React.FC = () => {
 
     setIsSaving(true);
     try {
-      const stockStatus =
+      const stockStatus: CmsProduct['stockStatus'] =
         formData.stockQuantity === 0
           ? 'out_of_stock'
           : formData.stockQuantity <= formData.lowStockThreshold

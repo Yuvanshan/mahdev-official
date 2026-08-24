@@ -44,7 +44,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
   // Track checkout initiated
   React.useEffect(() => {
     if (cartItems.length > 0) {
-      analyticsService.trackCheckoutStarted(cartSummary.totalQuantity, cartSummary.total);
+      analyticsService.trackCheckoutStarted(cartSummary.totalQuantity, cartSummary.grandTotal || (cartSummary as any).total || 0);
     }
   }, []);
 

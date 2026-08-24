@@ -45,7 +45,7 @@ export const AdminPackagesView: React.FC = () => {
     tagline: '',
     price: 3500,
     currency: 'USD',
-    billingCycle: 'one-time' as const,
+    billingCycle: 'one-time' as string,
     features: [''],
     popular: false,
     badge: 'Enterprise Signature',

@@ -8,7 +8,8 @@ export interface ModalProps {
   title?: string;
   description?: string;
   children: React.ReactNode;
-  maxWidth?: 'sm' | 'md' | 'lg' | 'xl';
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | string;
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | string;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -17,7 +18,8 @@ export const Modal: React.FC<ModalProps> = ({
   title,
   description,
   children,
-  maxWidth = 'md',
+  maxWidth,
+  size,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -39,12 +41,18 @@ export const Modal: React.FC<ModalProps> = ({
     };
   }, [isOpen, onClose]);
 
-  const maxWStyles = {
+  const effectiveWidth = size || maxWidth || 'md';
+  const cleanWidth = effectiveWidth.replace('max-w-', '');
+  const maxWStyles: Record<string, string> = {
     sm: 'max-w-md',
     md: 'max-w-lg',
     lg: 'max-w-2xl',
     xl: 'max-w-4xl',
+    '2xl': 'max-w-5xl',
+    '3xl': 'max-w-6xl',
+    '4xl': 'max-w-7xl',
   };
+  const widthClass = maxWStyles[cleanWidth] || 'max-w-lg';
 
   return (
     <AnimatePresence>
@@ -71,7 +79,7 @@ export const Modal: React.FC<ModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className={`relative w-full ${maxWStyles[maxWidth]} bg-white rounded-2xl p-6 sm:p-8 shadow-2xl border border-slate-200 z-10`}
+            className={`relative w-full ${widthClass} bg-white rounded-2xl p-6 sm:p-8 shadow-2xl border border-slate-200 z-10`}
           >
             <div className="flex items-start justify-between mb-4">
               <div>

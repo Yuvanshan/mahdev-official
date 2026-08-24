@@ -4,7 +4,7 @@ import { CheckCircle2, AlertTriangle, XCircle, Info, X } from 'lucide-react';
 export interface ToastMessage {
   id: string;
   type: 'success' | 'error' | 'warning' | 'info';
-  title: string;
+  title?: string;
   message: string;
 }
 
@@ -40,7 +40,7 @@ export const AdminToast: React.FC<AdminToastProps> = ({ toasts, onDismiss }) => 
           >
             {iconMap[toast.type]}
             <div className="grow space-y-0.5">
-              <h4 className="font-display font-bold text-xs">{toast.title}</h4>
+              {toast.title && <h4 className="font-display font-bold text-xs">{toast.title}</h4>}
               <p className="text-xs opacity-90 leading-tight">{toast.message}</p>
             </div>
             <button

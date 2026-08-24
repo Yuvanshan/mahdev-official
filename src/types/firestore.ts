@@ -190,11 +190,14 @@ export interface FirestoreOrderItem {
   orderId?: string;
   productId: string;
   productName: string;
+  name?: string; // backwards compatibility alias for productName
   sku: string;
   quantity: number;
   unitPrice: number;
+  price?: number; // backwards compatibility alias for unitPrice
   lineTotal: number;
   division?: DivisionId | string;
+  divisionId?: DivisionId | string;
   selectedVariant?: {
     id: string;
     name: string;
@@ -278,6 +281,8 @@ export interface FirestoreCompanySettings {
   domain: string;
   website?: string;
   logoUrl?: string;
+  darkLogoUrl?: string;
+  faviconUrl?: string;
   email: string;
   primaryPhone: string;
   secondaryPhone: string;

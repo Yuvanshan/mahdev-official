@@ -156,6 +156,7 @@ interface MediaPickerModalProps {
   multiple?: boolean;
   title?: string;
   category?: string;
+  initialCategory?: string;
   storageCategory?: StorageCategory;
 }
 
@@ -184,13 +185,15 @@ export const MediaPickerModal: React.FC<MediaPickerModalProps> = ({
   multiple = false,
   title = 'Media Asset Manager',
   category,
+  initialCategory,
   storageCategory,
 }) => {
+  const effectiveCategory = category || initialCategory;
   const uploadCategory: StorageCategory =
     storageCategory ||
-    (category && VALID_STORAGE_CATEGORIES.includes(category as StorageCategory)
-      ? (category as StorageCategory)
-      : 'products');
+    (effectiveCategory && VALID_STORAGE_CATEGORIES.includes(effectiveCategory as StorageCategory)
+      ? (effectiveCategory as StorageCategory)
+      : 'general');
   const [activeTab, setActiveTab] = useState<'presets' | 'url' | 'upload'>('presets');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');

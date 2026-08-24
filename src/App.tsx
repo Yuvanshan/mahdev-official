@@ -19,28 +19,28 @@ import { catalogService } from './services/catalogService';
 import { motion, AnimatePresence } from 'motion/react';
 
 // Dynamic Code Splitting for Secondary Views with Resilient Export Fallbacks
-const DivisionView = lazy(() => import('./views/DivisionView').then(m => ({ default: (m as any).default || m.DivisionView })));
-const SWSView = lazy(() => import('./views/SWSView').then(m => ({ default: (m as any).default || m.SWSView })));
-const U1View = lazy(() => import('./views/U1View').then(m => ({ default: (m as any).default || m.U1View })));
-const ITView = lazy(() => import('./views/ITView').then(m => ({ default: (m as any).default || m.ITView })));
-const TravelsView = lazy(() => import('./views/TravelsView').then(m => ({ default: (m as any).default || m.TravelsView })));
-const MartView = lazy(() => import('./views/MartView').then(m => ({ default: (m as any).default || m.MartView })));
-const CatalogView = lazy(() => import('./views/CatalogView').then(m => ({ default: (m as any).default || m.CatalogView })));
-const BookingView = lazy(() => import('./views/BookingView').then(m => ({ default: (m as any).default || m.BookingView })));
-const CheckoutView = lazy(() => import('./views/CheckoutView').then(m => ({ default: (m as any).default || m.CheckoutView })));
-const OrderConfirmationView = lazy(() => import('./views/OrderConfirmationView').then(m => ({ default: (m as any).default || m.OrderConfirmationView })));
-const OrderLookupView = lazy(() => import('./views/OrderLookupView').then(m => ({ default: (m as any).default || m.OrderLookupView })));
-const AboutView = lazy(() => import('./views/AboutView').then(m => ({ default: (m as any).default || m.AboutView })));
-const PortfolioView = lazy(() => import('./views/PortfolioView').then(m => ({ default: (m as any).default || m.PortfolioView })));
-const ContactView = lazy(() => import('./views/ContactView').then(m => ({ default: (m as any).default || m.ContactView })));
-const LegalPageView = lazy(() => import('./views/LegalPageView').then(m => ({ default: (m as any).default || m.LegalPageView })));
-const NotFoundView = lazy(() => import('./views/NotFoundView').then(m => ({ default: (m as any).default || m.NotFoundView })));
-const LoginView = lazy(() => import('./views/auth/LoginView').then(m => ({ default: (m as any).default || m.LoginView })));
-const RegisterView = lazy(() => import('./views/auth/RegisterView').then(m => ({ default: (m as any).default || m.RegisterView })));
-const ForgotPasswordView = lazy(() => import('./views/auth/ForgotPasswordView').then(m => ({ default: (m as any).default || m.ForgotPasswordView })));
-const AccountLayout = lazy(() => import('./views/account/AccountLayout').then(m => ({ default: (m as any).default || m.AccountLayout })));
-const AdminLayout = lazy(() => import('./views/admin/AdminLayout').then(m => ({ default: (m as any).default || m.AdminLayout })));
-const MaintenanceView = lazy(() => import('./views/MaintenanceView').then(m => ({ default: (m as any).default || m.MaintenanceView })));
+const DivisionView: React.ComponentType<any> = lazy(() => import('./views/DivisionView').then(m => ({ default: (m as any).default || m.DivisionView })));
+const SWSView: React.ComponentType<any> = lazy(() => import('./views/SWSView').then(m => ({ default: (m as any).default || m.SWSView })));
+const U1View: React.ComponentType<any> = lazy(() => import('./views/U1View').then(m => ({ default: (m as any).default || m.U1View })));
+const ITView: React.ComponentType<any> = lazy(() => import('./views/ITView').then(m => ({ default: (m as any).default || m.ITView })));
+const TravelsView: React.ComponentType<any> = lazy(() => import('./views/TravelsView').then(m => ({ default: (m as any).default || m.TravelsView })));
+const MartView: React.ComponentType<any> = lazy(() => import('./views/MartView').then(m => ({ default: (m as any).default || m.MartView })));
+const CatalogView: React.ComponentType<any> = lazy(() => import('./views/CatalogView').then(m => ({ default: (m as any).default || m.CatalogView })));
+const BookingView: React.ComponentType<any> = lazy(() => import('./views/BookingView').then(m => ({ default: (m as any).default || m.BookingView })));
+const CheckoutView: React.ComponentType<any> = lazy(() => import('./views/CheckoutView').then(m => ({ default: (m as any).default || m.CheckoutView })));
+const OrderConfirmationView: React.ComponentType<any> = lazy(() => import('./views/OrderConfirmationView').then(m => ({ default: (m as any).default || m.OrderConfirmationView })));
+const OrderLookupView: React.ComponentType<any> = lazy(() => import('./views/OrderLookupView').then(m => ({ default: (m as any).default || m.OrderLookupView })));
+const AboutView: React.ComponentType<any> = lazy(() => import('./views/AboutView').then(m => ({ default: (m as any).default || m.AboutView })));
+const PortfolioView: React.ComponentType<any> = lazy(() => import('./views/PortfolioView').then(m => ({ default: (m as any).default || m.PortfolioView })));
+const ContactView: React.ComponentType<any> = lazy(() => import('./views/ContactView').then(m => ({ default: (m as any).default || m.ContactView })));
+const LegalPageView: React.ComponentType<any> = lazy(() => import('./views/LegalPageView').then(m => ({ default: (m as any).default || m.LegalPageView })));
+const NotFoundView: React.ComponentType<any> = lazy(() => import('./views/NotFoundView').then(m => ({ default: (m as any).default || m.NotFoundView })));
+const LoginView: React.ComponentType<any> = lazy(() => import('./views/auth/LoginView').then(m => ({ default: (m as any).default || m.LoginView })));
+const RegisterView: React.ComponentType<any> = lazy(() => import('./views/auth/RegisterView').then(m => ({ default: (m as any).default || m.RegisterView })));
+const ForgotPasswordView: React.ComponentType<any> = lazy(() => import('./views/auth/ForgotPasswordView').then(m => ({ default: (m as any).default || m.ForgotPasswordView })));
+const AccountLayout: React.ComponentType<any> = lazy(() => import('./views/account/AccountLayout').then(m => ({ default: (m as any).default || m.AccountLayout })));
+const AdminLayout: React.ComponentType<any> = lazy(() => import('./views/admin/AdminLayout').then(m => ({ default: (m as any).default || m.AdminLayout })));
+const MaintenanceView: React.ComponentType<any> = lazy(() => import('./views/MaintenanceView').then(m => ({ default: (m as any).default || m.MaintenanceView })));
 
 const PageLoadingFallback: React.FC = () => (
   <div className="min-h-[50vh] flex flex-col items-center justify-center py-20 px-4">

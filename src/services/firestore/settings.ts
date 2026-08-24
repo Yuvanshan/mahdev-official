@@ -220,6 +220,45 @@ export function getDefaultSiteSettings(): FirestoreSiteSettings {
   };
 }
 
+// Real-time multi-device and multi-tab synchronization channels
+const SETTINGS_BROADCAST_CHANNEL = 'mahdev_settings_channel_v1';
+let broadcastChannel: BroadcastChannel | null = null;
+try {
+  if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+    broadcastChannel = new BroadcastChannel(SETTINGS_BROADCAST_CHANNEL);
+  }
+} catch {
+  broadcastChannel = null;
+}
+
+function broadcastUpdate(type: 'company' | 'site' | 'homepage', data: any) {
+  try {
+    if (broadcastChannel) {
+      broadcastChannel.postMessage({ type, data, timestamp: Date.now() });
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent(`mahdev_${type}_settings_updated`, { detail: data })
+      );
+    }
+  } catch (err) {
+    console.warn('[Firestore Settings] Broadcast notification warning:', err);
+  }
+}
+
+async function syncToServerApi(endpoint: string, payload: any): Promise<void> {
+  try {
+    await fetch(`/api/settings/${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    // Non-blocking server sync
+    console.warn(`[Firestore Settings] Server API sync notice (${endpoint}):`, err);
+  }
+}
+
 export const firestoreSettingsService = {
   /**
    * Fetch company settings with in-memory caching and offline fallback
@@ -232,13 +271,29 @@ export const firestoreSettingsService = {
 
     try {
       const docRef = doc(db, 'settings', 'company');
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
+      // Set 4s timeout for remote getDoc
+      const snapPromise = getDoc(docRef);
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000));
+      const snap = (await Promise.race([snapPromise, timeoutPromise])) as any;
+
+      if (snap && typeof snap.exists === 'function' && snap.exists()) {
         const data = snap.data() as FirestoreCompanySettings;
         cachedCompanySettings = { data, timestamp: now };
         return data;
       }
-      // If not present in Firestore yet, return standard defaults safely without executing write mutations
+
+      // Check server API fallback
+      try {
+        const serverRes = await fetch('/api/settings/company');
+        if (serverRes.ok) {
+          const json = await serverRes.json();
+          if (json.success && json.settings) {
+            cachedCompanySettings = { data: json.settings, timestamp: now };
+            return json.settings;
+          }
+        }
+      } catch {}
+
       const defaultSettings = getDefaultCompanySettings();
       cachedCompanySettings = { data: defaultSettings, timestamp: now };
       return defaultSettings;
@@ -249,18 +304,34 @@ export const firestoreSettingsService = {
   },
 
   /**
-   * Update company settings in Firestore
+   * Update company settings in Firestore and propagate instantly across all devices
    */
   async updateCompanySettings(data: Partial<FirestoreCompanySettings>): Promise<void> {
     const docRef = doc(db, 'settings', 'company');
-    const payload = sanitizeForFirestore({
+    const existing = cachedCompanySettings?.data || getDefaultCompanySettings();
+    const merged: FirestoreCompanySettings = {
+      ...existing,
       ...data,
       updatedAt: new Date().toISOString(),
-    });
-    await setDoc(docRef, payload, { merge: true });
-    if (cachedCompanySettings) {
-      cachedCompanySettings.data = { ...cachedCompanySettings.data, ...payload };
-      cachedCompanySettings.timestamp = Date.now();
+    };
+    const payload = sanitizeForFirestore(merged);
+
+    // 1. Instant local and in-memory cache update
+    cachedCompanySettings = { data: payload, timestamp: Date.now() };
+
+    // 2. Broadcast across tabs and window context immediately
+    broadcastUpdate('company', payload);
+
+    // 3. Sync to authoritative server endpoint
+    syncToServerApi('company', payload);
+
+    // 4. Commit to Firestore with a 5000ms safety race to prevent UI freeze
+    try {
+      const writePromise = setDoc(docRef, payload, { merge: true });
+      const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, 5000));
+      await Promise.race([writePromise, timeoutPromise]);
+    } catch (err) {
+      console.warn('[Firestore Settings] updateCompanySettings remote write notice:', err);
     }
   },
 
@@ -272,7 +343,31 @@ export const firestoreSettingsService = {
     onError?: (error: Error) => void
   ): Unsubscribe {
     const docRef = doc(db, 'settings', 'company');
-    return onSnapshot(
+
+    // BroadcastChannel listener
+    const handleBroadcast = (event: MessageEvent) => {
+      if (event.data?.type === 'company' && event.data?.data) {
+        cachedCompanySettings = { data: event.data.data, timestamp: Date.now() };
+        onData(event.data.data);
+      }
+    };
+
+    const handleCustomEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<FirestoreCompanySettings>;
+      if (customEvent.detail) {
+        cachedCompanySettings = { data: customEvent.detail, timestamp: Date.now() };
+        onData(customEvent.detail);
+      }
+    };
+
+    if (broadcastChannel) {
+      broadcastChannel.addEventListener('message', handleBroadcast);
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('mahdev_company_settings_updated', handleCustomEvent);
+    }
+
+    const firestoreUnsub = onSnapshot(
       docRef,
       (snap) => {
         if (snap.exists()) {
@@ -280,15 +375,25 @@ export const firestoreSettingsService = {
           cachedCompanySettings = { data, timestamp: Date.now() };
           onData(data);
         } else {
-          onData(getDefaultCompanySettings());
+          onData(cachedCompanySettings?.data || getDefaultCompanySettings());
         }
       },
       (err) => {
-        console.warn('[Firestore Settings] Realtime listener error:', err);
+        console.warn('[Firestore Settings] Realtime listener notice:', err);
         if (onError) onError(err);
         onData(cachedCompanySettings?.data || getDefaultCompanySettings());
       }
     );
+
+    return () => {
+      if (broadcastChannel) {
+        broadcastChannel.removeEventListener('message', handleBroadcast);
+      }
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('mahdev_company_settings_updated', handleCustomEvent);
+      }
+      firestoreUnsub();
+    };
   },
 
   /**
@@ -302,12 +407,28 @@ export const firestoreSettingsService = {
 
     try {
       const docRef = doc(db, 'settings', 'site');
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
+      const snapPromise = getDoc(docRef);
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000));
+      const snap = (await Promise.race([snapPromise, timeoutPromise])) as any;
+
+      if (snap && typeof snap.exists === 'function' && snap.exists()) {
         const data = snap.data() as FirestoreSiteSettings;
         cachedSiteSettings = { data, timestamp: now };
         return data;
       }
+
+      // Check server API fallback
+      try {
+        const serverRes = await fetch('/api/settings/site');
+        if (serverRes.ok) {
+          const json = await serverRes.json();
+          if (json.success && json.settings) {
+            cachedSiteSettings = { data: json.settings, timestamp: now };
+            return json.settings;
+          }
+        }
+      } catch {}
+
       const defaultSite = getDefaultSiteSettings();
       cachedSiteSettings = { data: defaultSite, timestamp: now };
       return defaultSite;
@@ -322,14 +443,30 @@ export const firestoreSettingsService = {
    */
   async updateSiteSettings(data: Partial<FirestoreSiteSettings>): Promise<void> {
     const docRef = doc(db, 'settings', 'site');
-    const payload = sanitizeForFirestore({
+    const existing = cachedSiteSettings?.data || getDefaultSiteSettings();
+    const merged: FirestoreSiteSettings = {
+      ...existing,
       ...data,
       updatedAt: new Date().toISOString(),
-    });
-    await setDoc(docRef, payload, { merge: true });
-    if (cachedSiteSettings) {
-      cachedSiteSettings.data = { ...cachedSiteSettings.data, ...payload };
-      cachedSiteSettings.timestamp = Date.now();
+    };
+    const payload = sanitizeForFirestore(merged);
+
+    // 1. Local cache update
+    cachedSiteSettings = { data: payload, timestamp: Date.now() };
+
+    // 2. Broadcast across all active tabs
+    broadcastUpdate('site', payload);
+
+    // 3. Sync to authoritative server endpoint
+    syncToServerApi('site', payload);
+
+    // 4. Commit to Firestore with a 5000ms safety race to prevent UI freeze
+    try {
+      const writePromise = setDoc(docRef, payload, { merge: true });
+      const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, 5000));
+      await Promise.race([writePromise, timeoutPromise]);
+    } catch (err) {
+      console.warn('[Firestore Settings] updateSiteSettings remote write notice:', err);
     }
   },
 
@@ -341,7 +478,30 @@ export const firestoreSettingsService = {
     onError?: (error: Error) => void
   ): Unsubscribe {
     const docRef = doc(db, 'settings', 'site');
-    return onSnapshot(
+
+    const handleBroadcast = (event: MessageEvent) => {
+      if (event.data?.type === 'site' && event.data?.data) {
+        cachedSiteSettings = { data: event.data.data, timestamp: Date.now() };
+        onData(event.data.data);
+      }
+    };
+
+    const handleCustomEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<FirestoreSiteSettings>;
+      if (customEvent.detail) {
+        cachedSiteSettings = { data: customEvent.detail, timestamp: Date.now() };
+        onData(customEvent.detail);
+      }
+    };
+
+    if (broadcastChannel) {
+      broadcastChannel.addEventListener('message', handleBroadcast);
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('mahdev_site_settings_updated', handleCustomEvent);
+    }
+
+    const firestoreUnsub = onSnapshot(
       docRef,
       (snap) => {
         if (snap.exists()) {
@@ -349,15 +509,25 @@ export const firestoreSettingsService = {
           cachedSiteSettings = { data, timestamp: Date.now() };
           onData(data);
         } else {
-          onData(getDefaultSiteSettings());
+          onData(cachedSiteSettings?.data || getDefaultSiteSettings());
         }
       },
       (err) => {
-        console.warn('[Firestore Settings] Site settings listener error:', err);
+        console.warn('[Firestore Settings] Site settings listener notice:', err);
         if (onError) onError(err);
         onData(cachedSiteSettings?.data || getDefaultSiteSettings());
       }
     );
+
+    return () => {
+      if (broadcastChannel) {
+        broadcastChannel.removeEventListener('message', handleBroadcast);
+      }
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('mahdev_site_settings_updated', handleCustomEvent);
+      }
+      firestoreUnsub();
+    };
   },
 
   /**
@@ -371,12 +541,28 @@ export const firestoreSettingsService = {
 
     try {
       const docRef = doc(db, 'settings', 'homepage');
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
+      const snapPromise = getDoc(docRef);
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000));
+      const snap = (await Promise.race([snapPromise, timeoutPromise])) as any;
+
+      if (snap && typeof snap.exists === 'function' && snap.exists()) {
         const data = snap.data() as HomepageCmsConfig;
         cachedHomepageSettings = { data, timestamp: now };
         return data;
       }
+
+      // Check server API fallback
+      try {
+        const serverRes = await fetch('/api/settings/homepage');
+        if (serverRes.ok) {
+          const json = await serverRes.json();
+          if (json.success && json.settings) {
+            cachedHomepageSettings = { data: json.settings, timestamp: now };
+            return json.settings;
+          }
+        }
+      } catch {}
+
       const defaultHome = getDefaultHomepageSettings();
       cachedHomepageSettings = { data: defaultHome, timestamp: now };
       return defaultHome;
@@ -391,14 +577,20 @@ export const firestoreSettingsService = {
    */
   async updateHomepageSettings(data: Partial<HomepageCmsConfig>): Promise<void> {
     const docRef = doc(db, 'settings', 'homepage');
-    const payload = sanitizeForFirestore({
-      ...data,
-      updatedAt: new Date().toISOString(),
-    });
-    await setDoc(docRef, payload, { merge: true });
-    if (cachedHomepageSettings) {
-      cachedHomepageSettings.data = { ...cachedHomepageSettings.data, ...payload };
-      cachedHomepageSettings.timestamp = Date.now();
+    const existing = cachedHomepageSettings?.data || getDefaultHomepageSettings();
+    const merged = { ...existing, ...data, updatedAt: new Date().toISOString() };
+    const payload = sanitizeForFirestore(merged);
+
+    cachedHomepageSettings = { data: payload, timestamp: Date.now() };
+    broadcastUpdate('homepage', payload);
+    syncToServerApi('homepage', payload);
+
+    try {
+      const writePromise = setDoc(docRef, payload, { merge: true });
+      const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, 5000));
+      await Promise.race([writePromise, timeoutPromise]);
+    } catch (err) {
+      console.warn('[Firestore Settings] updateHomepageSettings write notice:', err);
     }
   },
 
@@ -410,7 +602,19 @@ export const firestoreSettingsService = {
     onError?: (error: Error) => void
   ): Unsubscribe {
     const docRef = doc(db, 'settings', 'homepage');
-    return onSnapshot(
+
+    const handleBroadcast = (event: MessageEvent) => {
+      if (event.data?.type === 'homepage' && event.data?.data) {
+        cachedHomepageSettings = { data: event.data.data, timestamp: Date.now() };
+        onData(event.data.data);
+      }
+    };
+
+    if (broadcastChannel) {
+      broadcastChannel.addEventListener('message', handleBroadcast);
+    }
+
+    const firestoreUnsub = onSnapshot(
       docRef,
       (snap) => {
         if (snap.exists()) {
@@ -418,14 +622,21 @@ export const firestoreSettingsService = {
           cachedHomepageSettings = { data, timestamp: Date.now() };
           onData(data);
         } else {
-          onData(getDefaultHomepageSettings());
+          onData(cachedHomepageSettings?.data || getDefaultHomepageSettings());
         }
       },
       (err) => {
-        console.warn('[Firestore Settings] Homepage settings listener error:', err);
+        console.warn('[Firestore Settings] Homepage settings listener notice:', err);
         if (onError) onError(err);
         onData(cachedHomepageSettings?.data || getDefaultHomepageSettings());
       }
     );
+
+    return () => {
+      if (broadcastChannel) {
+        broadcastChannel.removeEventListener('message', handleBroadcast);
+      }
+      firestoreUnsub();
+    };
   },
 };

@@ -1,6 +1,6 @@
 import React, { ButtonHTMLAttributes } from 'react';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'electric';
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'electric' | 'danger' | 'destructive';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -43,7 +43,11 @@ export const Button: React.FC<ButtonProps> = ({
     outline:
       'bg-transparent text-slate-800 hover:bg-slate-50 border border-slate-300 hover:border-slate-400',
     ghost:
-      'bg-transparent text-slate-700 hover:bg-slate-100 hover:text-slate-900 border border-transparent',
+      'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 border border-transparent',
+    danger:
+      'bg-red-600 text-white hover:bg-red-700 shadow-sm border border-red-600 hover:border-red-700',
+    destructive:
+      'bg-red-600 text-white hover:bg-red-700 shadow-sm border border-red-600 hover:border-red-700',
   };
 
   const widthStyle = fullWidth ? 'w-full' : '';

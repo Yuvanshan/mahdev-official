@@ -16,7 +16,7 @@ import {
   updateProfile,
   signOut,
 } from 'firebase/auth';
-import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { FirestoreOrder, FirestoreBooking, FirestoreProduct, FirestoreUser } from '../types/firestore';
 
 const ADMIN_SESSION_STORAGE_KEY = 'mahdev_admin_session_v1';
@@ -64,35 +64,45 @@ export async function syncAdminFirebaseAuth(adminUser: AdminUser): Promise<boole
         } catch {}
       }
 
-      // Provision Firestore user and admin privilege records
+      // Provision Firestore user and admin privilege records only if missing or out of sync
       try {
         const userRef = doc(db, 'users', auth.currentUser.uid);
         const adminRef = doc(db, 'admins', auth.currentUser.uid);
-        await setDoc(
-          userRef,
-          {
-            uid: auth.currentUser.uid,
-            email: email,
-            displayName: adminUser.name,
-            role: 'superAdmin',
-            isAdmin: true,
-            status: 'active',
-            updatedAt: new Date().toISOString(),
-          },
-          { merge: true }
-        );
-        await setDoc(
-          adminRef,
-          {
-            uid: auth.currentUser.uid,
-            email: email,
-            name: adminUser.name,
-            role: adminUser.role || 'super_admin',
-            department: adminUser.department || 'Executive Enterprise Operations',
-            updatedAt: new Date().toISOString(),
-          },
-          { merge: true }
-        );
+        const [userSnap, adminSnap] = await Promise.all([
+          getDoc(userRef).catch(() => null),
+          getDoc(adminRef).catch(() => null),
+        ]);
+
+        if (!userSnap || !userSnap.exists()) {
+          await setDoc(
+            userRef,
+            {
+              uid: auth.currentUser.uid,
+              email: email,
+              displayName: adminUser.name,
+              role: 'superAdmin',
+              isAdmin: true,
+              status: 'active',
+              updatedAt: new Date().toISOString(),
+            },
+            { merge: true }
+          );
+        }
+
+        if (!adminSnap || !adminSnap.exists()) {
+          await setDoc(
+            adminRef,
+            {
+              uid: auth.currentUser.uid,
+              email: email,
+              name: adminUser.name,
+              role: adminUser.role || 'super_admin',
+              department: adminUser.department || 'Executive Enterprise Operations',
+              updatedAt: new Date().toISOString(),
+            },
+            { merge: true }
+          );
+        }
       } catch (dbErr) {
         console.warn('[AdminService] Firestore admin record registration notice:', dbErr);
       }

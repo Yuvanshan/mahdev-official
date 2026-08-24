@@ -369,8 +369,8 @@ export const AdminInventoryView: React.FC = () => {
                     </td>
 
                     <td className="p-4">
-                      <span className="text-slate-700 capitalize font-medium">{p.category || 'Commodities'}</span>
-                      <span className="text-[10px] text-slate-400 block">{p.productType}</span>
+                      <span className="text-slate-700 capitalize font-medium">{p.categoryName || (p as any).category || 'Commodities'}</span>
+                      <span className="text-[10px] text-slate-400 block">{p.divisionName || (p as any).productType || 'General'}</span>
                     </td>
 
                     <td className="p-4 text-center">

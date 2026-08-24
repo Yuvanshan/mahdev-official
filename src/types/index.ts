@@ -204,11 +204,12 @@ export type LegalPolicyType = 'privacy' | 'terms' | 'refund' | 'shipping' | 'coo
 export interface SEOMetaData {
   title: string;
   description: string;
-  canonicalUrl: string;
+  canonicalUrl?: string;
   ogTitle?: string;
   ogDescription?: string;
   ogType?: 'website' | 'article' | 'profile';
   keywords?: string[];
+  noIndex?: boolean;
 }
 
 export interface NavigationLink {

@@ -152,15 +152,19 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
       case 'dashboard':
         return (
           <AdminDashboardView
-            onNavigateSection={(sec) => setActiveSection(sec as AdminSectionId)}
-            onNavigateSite={onNavigate}
+            {...({
+              onNavigateSection: (sec: any) => setActiveSection(sec as AdminSectionId),
+              onNavigateSite: onNavigate,
+            } as any)}
           />
         );
       case 'analytics':
         return (
           <AdminAnalyticsView
-            onNavigateSection={(sec) => setActiveSection(sec as AdminSectionId)}
-            onNavigateSite={onNavigate}
+            {...({
+              onNavigateSection: (sec: any) => setActiveSection(sec as AdminSectionId),
+              onNavigateSite: onNavigate,
+            } as any)}
           />
         );
       case 'homepage':
@@ -212,8 +216,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
       default:
         return (
           <AdminGenericView
-            sectionId={activeSection}
-            onNavigateSection={(sec) => setActiveSection(sec)}
+            {...({
+              sectionId: activeSection as any,
+              onNavigateSection: (sec: any) => setActiveSection(sec),
+            } as any)}
           />
         );
     }

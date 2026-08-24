@@ -44,7 +44,7 @@ export const AdminGalleryView: React.FC = () => {
     caption: '',
     mediaUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
     thumbnailUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=400&q=80',
-    type: 'image' as const,
+    type: 'image' as 'image' | 'video',
     aspectRatio: '16:9',
     tags: ['Stage', 'Lighting'],
     sortOrder: 1,

@@ -392,6 +392,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       bookingRevenue,
       totalOrders: filteredOrders.length,
       paidOrders: paidOrders.length,
+      paidBookings: paidBookings.length,
       pendingOrders: pendingOrders.length,
       dispatchedOrders: dispatchedOrders.length,
       completedOrders: completedOrders.length,

@@ -8,12 +8,17 @@ interface AdminConfirmDialogProps {
   message: string;
   itemIdentifier?: string;
   confirmLabel?: string;
+  confirmText?: string;
   cancelLabel?: string;
+  cancelText?: string;
   isDestructive?: boolean;
+  isDangerous?: boolean;
+  variant?: string;
   allowSoftDelete?: boolean;
   isCurrentlyDeleted?: boolean;
-  onConfirm: (permanent: boolean) => void;
-  onCancel: () => void;
+  onConfirm: ((permanent: boolean) => void) | (() => Promise<void>) | (() => void);
+  onCancel?: () => void;
+  onClose?: () => void;
   requireKeywordConfirm?: boolean;
   confirmKeyword?: string;
 }
@@ -23,13 +28,17 @@ export const AdminConfirmDialog: React.FC<AdminConfirmDialogProps> = ({
   title,
   message,
   itemIdentifier,
-  confirmLabel = 'Confirm Action',
+  confirmLabel,
+  confirmText,
   cancelLabel = 'Cancel',
+  cancelText,
   isDestructive = true,
+  isDangerous,
   allowSoftDelete = true,
   isCurrentlyDeleted = false,
   onConfirm,
   onCancel,
+  onClose,
   requireKeywordConfirm = false,
   confirmKeyword = 'DELETE',
 }) => {
@@ -38,11 +47,16 @@ export const AdminConfirmDialog: React.FC<AdminConfirmDialogProps> = ({
 
   if (!isOpen) return null;
 
+  const actualConfirmLabel = confirmText || confirmLabel || 'Confirm Action';
+  const actualCancelLabel = cancelText || cancelLabel;
+  const actualIsDestructive = isDangerous !== undefined ? isDangerous : isDestructive;
+  const handleClose = onCancel || onClose || (() => {});
+
   const isConfirmed = !requireKeywordConfirm || inputKeyword.trim().toUpperCase() === confirmKeyword.toUpperCase();
 
   const handleConfirm = () => {
     if (!isConfirmed) return;
-    onConfirm(deleteMode === 'hard' || isCurrentlyDeleted);
+    (onConfirm as any)(deleteMode === 'hard' || isCurrentlyDeleted);
   };
 
   return (
@@ -64,7 +78,7 @@ export const AdminConfirmDialog: React.FC<AdminConfirmDialogProps> = ({
             </div>
           </div>
           <button
-            onClick={onCancel}
+            onClick={handleClose}
             className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
           >
             <X className="w-4 h-4" />
@@ -145,11 +159,11 @@ export const AdminConfirmDialog: React.FC<AdminConfirmDialogProps> = ({
 
         {/* Footer */}
         <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={onCancel}>
-            {cancelLabel}
+          <Button variant="outline" size="sm" onClick={handleClose}>
+            {actualCancelLabel}
           </Button>
           <Button
-            variant={isDestructive ? 'primary' : 'primary'}
+            variant={actualIsDestructive ? 'primary' : 'primary'}
             size="sm"
             onClick={handleConfirm}
             disabled={!isConfirmed}
@@ -164,7 +178,7 @@ export const AdminConfirmDialog: React.FC<AdminConfirmDialogProps> = ({
             ) : (
               <Archive className="w-3.5 h-3.5 mr-1.5" />
             )}
-            {deleteMode === 'hard' || isCurrentlyDeleted ? 'Permanently Delete' : confirmLabel}
+            {deleteMode === 'hard' || isCurrentlyDeleted ? 'Permanently Delete' : actualConfirmLabel}
           </Button>
         </div>
       </div>

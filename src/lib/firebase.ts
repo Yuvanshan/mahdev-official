@@ -7,7 +7,7 @@
  */
 
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, Firestore, doc, getDocFromServer } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import rawConfig from '../../firebase-applet-config.json';
@@ -42,9 +42,23 @@ export const app: FirebaseApp =
   getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 // Initialize Centralized Cloud Firestore Database connected to the production named database
-export const db: Firestore = activeFirestoreDatabaseId
-  ? getFirestore(app, activeFirestoreDatabaseId)
-  : getFirestore(app);
+// Configured with experimentalAutoDetectLongPolling to prevent write-stream stalls and queued-write exhaustion
+export const db: Firestore = (() => {
+  try {
+    return initializeFirestore(
+      app,
+      {
+        experimentalAutoDetectLongPolling: true,
+      },
+      activeFirestoreDatabaseId || undefined
+    );
+  } catch (err) {
+    console.warn('[Firebase] Fallback to getFirestore:', err);
+    return activeFirestoreDatabaseId
+      ? getFirestore(app, activeFirestoreDatabaseId)
+      : getFirestore(app);
+  }
+})();
 
 // Initialize Firebase Auth foundation
 export const auth: Auth = getAuth(app);

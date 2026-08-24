@@ -903,6 +903,107 @@ async function startServer() {
   });
 
   // ==========================================
+  // AUTHORITATIVE SYSTEM & COMPANY SETTINGS
+  // ==========================================
+  let serverCompanySettings: any = null;
+  let serverSiteSettings: any = null;
+  let serverHomepageSettings: any = null;
+
+  app.get('/api/settings/company', (req: Request, res: Response) => {
+    res.json({
+      success: true,
+      settings: serverCompanySettings,
+    });
+  });
+
+  app.post('/api/settings/company', (req: Request, res: Response) => {
+    const data = req.body;
+    if (!data || typeof data !== 'object') {
+      res.status(400).json({ success: false, error: 'Invalid company settings payload' });
+      return;
+    }
+    serverCompanySettings = {
+      ...(serverCompanySettings || {}),
+      ...data,
+      updatedAt: new Date().toISOString(),
+    };
+    serverAuditLogs.unshift({
+      id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+      timestamp: new Date().toISOString(),
+      adminEmail: sanitizeString(req.body?.adminEmail, 100) || 'admin@mahdev.lk',
+      adminName: sanitizeString(req.body?.adminName, 100) || 'System Administrator',
+      action: 'COMPANY_SETTINGS_UPDATED',
+      entityType: 'Settings',
+      entityId: 'settings/company',
+      details: `Updated company legal profile, phone numbers (${serverCompanySettings.primaryPhone || 'N/A'}), addresses and media branding.`,
+      status: 'success',
+    });
+    res.json({
+      success: true,
+      settings: serverCompanySettings,
+    });
+  });
+
+  app.get('/api/settings/site', (req: Request, res: Response) => {
+    res.json({
+      success: true,
+      settings: serverSiteSettings,
+    });
+  });
+
+  app.post('/api/settings/site', (req: Request, res: Response) => {
+    const data = req.body;
+    if (!data || typeof data !== 'object') {
+      res.status(400).json({ success: false, error: 'Invalid site settings payload' });
+      return;
+    }
+    serverSiteSettings = {
+      ...(serverSiteSettings || {}),
+      ...data,
+      updatedAt: new Date().toISOString(),
+    };
+    serverAuditLogs.unshift({
+      id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+      timestamp: new Date().toISOString(),
+      adminEmail: sanitizeString(req.body?.adminEmail, 100) || 'admin@mahdev.lk',
+      adminName: sanitizeString(req.body?.adminName, 100) || 'System Administrator',
+      action: 'SITE_SETTINGS_UPDATED',
+      entityType: 'Settings',
+      entityId: 'settings/site',
+      details: `Updated site settings: currency=${serverSiteSettings.currency || 'USD'}, maintenance=${Boolean(serverSiteSettings.maintenance?.enabled || serverSiteSettings.maintenanceMode)}.`,
+      status: 'success',
+    });
+    res.json({
+      success: true,
+      settings: serverSiteSettings,
+    });
+  });
+
+  app.get('/api/settings/homepage', (req: Request, res: Response) => {
+    res.json({
+      success: true,
+      settings: serverHomepageSettings,
+    });
+  });
+
+  app.post('/api/settings/homepage', (req: Request, res: Response) => {
+    const data = req.body;
+    if (!data || typeof data !== 'object') {
+      res.status(400).json({ success: false, error: 'Invalid homepage settings payload' });
+      return;
+    }
+    serverHomepageSettings = {
+      ...(serverHomepageSettings || {}),
+      ...data,
+      updatedAt: new Date().toISOString(),
+    };
+    res.json({
+      success: true,
+      settings: serverHomepageSettings,
+    });
+  });
+
+  // ==========================================
   // PHASE 28: SECURE TRUSTED BACKEND ENDPOINTS
   // ==========================================
 

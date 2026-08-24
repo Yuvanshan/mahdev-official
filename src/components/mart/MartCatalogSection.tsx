@@ -8,7 +8,8 @@ import {
   ArrowUpDown,
   Filter,
 } from 'lucide-react';
-import { Product, MART_PRODUCTS, MART_CATEGORIES } from '../../data/martData';
+import { Product, MART_PRODUCTS, MART_CATEGORIES, mapFirestoreProductToMart, mapFirestoreCategoryToMart } from '../../data/martData';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { MartProductCard } from './MartProductCard';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
@@ -35,11 +36,38 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
 }) => {
   const [sortBy, setSortBy] = useState<'featured' | 'price-low' | 'price-high' | 'rating'>('featured');
   const [inStockOnly, setInStockOnly] = useState(false);
-  const [maxPrice, setMaxPrice] = useState<number>(200);
+  const [maxPrice, setMaxPrice] = useState<number>(100000);
+
+  const { products: rawProducts, categories: rawCategories } = useFirestoreDataContext();
+
+  // Dynamically resolve products from Firestore (or fallback)
+  const allMartProducts = useMemo<Product[]>(() => {
+    if (rawProducts && rawProducts.length > 0) {
+      const martDivisionProducts = rawProducts.filter(
+        (p) => !p.division || p.division === 'mart' || (p as any).divisionId === 'mart'
+      );
+      if (martDivisionProducts.length > 0) {
+        return martDivisionProducts.map((p) => mapFirestoreProductToMart(p, rawCategories));
+      }
+    }
+    return MART_PRODUCTS;
+  }, [rawProducts, rawCategories]);
+
+  const allMartCategories = useMemo(() => {
+    if (rawCategories && rawCategories.length > 0) {
+      const martCats = rawCategories.filter(
+        (c) => !c.division || c.division === 'mart' || (c as any).divisionId === 'mart'
+      );
+      if (martCats.length > 0) {
+        return martCats.map(mapFirestoreCategoryToMart);
+      }
+    }
+    return MART_CATEGORIES;
+  }, [rawCategories]);
 
   // Filter & Sort Products
   const filteredProducts = useMemo(() => {
-    return MART_PRODUCTS.filter((product) => {
+    return allMartProducts.filter((product) => {
       // Category filter
       if (selectedCategoryId && product.category !== selectedCategoryId) {
         return false;
@@ -69,9 +97,9 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
       // Default: featured first, then best-seller
       return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
     });
-  }, [selectedCategoryId, searchQuery, inStockOnly, maxPrice, sortBy]);
+  }, [allMartProducts, selectedCategoryId, searchQuery, inStockOnly, maxPrice, sortBy]);
 
-  const activeCategoryName = MART_CATEGORIES.find((c) => c.id === selectedCategoryId)?.name || 'All Products';
+  const activeCategoryName = allMartCategories.find((c) => c.id === selectedCategoryId)?.name || 'All Products';
 
   const handleResetFilters = () => {
     onSelectCategory(null);

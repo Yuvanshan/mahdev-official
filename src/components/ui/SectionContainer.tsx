@@ -4,6 +4,7 @@ export interface SectionContainerProps extends React.HTMLAttributes<HTMLElement>
   children: React.ReactNode;
   as?: 'section' | 'div' | 'article' | 'main';
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '7xl' | 'full';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '7xl' | 'full' | string;
   background?: 'white' | 'subtle' | 'secondary' | 'electric-gradient' | 'none';
   hasBorderBottom?: boolean;
   hasBorderTop?: boolean;
@@ -15,7 +16,8 @@ export interface SectionContainerProps extends React.HTMLAttributes<HTMLElement>
 export const SectionContainer: React.FC<SectionContainerProps> = ({
   children,
   as: Component = 'section',
-  maxWidth = '7xl',
+  maxWidth,
+  size,
   background = 'none',
   hasBorderBottom = false,
   hasBorderTop = false,
@@ -24,6 +26,7 @@ export const SectionContainer: React.FC<SectionContainerProps> = ({
   innerClassName = '',
   ...props
 }) => {
+  const effectiveMaxWidth = (maxWidth || size || '7xl') as string;
   const maxWStyles: Record<string, string> = {
     sm: 'max-w-3xl',
     md: 'max-w-4xl',
@@ -58,7 +61,7 @@ export const SectionContainer: React.FC<SectionContainerProps> = ({
       className={`w-full max-w-full overflow-hidden ${bgStyles[background]} ${paddingYStyles[paddingY]} ${borderTopStyle} ${borderBottomStyle} ${className}`}
       {...props}
     >
-      <div className={`w-full max-w-full min-w-0 ${maxWStyles[maxWidth]} mx-auto px-4 sm:px-6 lg:px-8 ${innerClassName}`}>
+      <div className={`w-full max-w-full min-w-0 ${maxWStyles[effectiveMaxWidth] || 'max-w-7xl'} mx-auto px-4 sm:px-6 lg:px-8 ${innerClassName}`}>
         {children}
       </div>
     </Component>

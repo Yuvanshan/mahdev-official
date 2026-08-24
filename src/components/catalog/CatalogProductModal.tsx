@@ -294,7 +294,7 @@ export const CatalogProductModal: React.FC<CatalogProductModalProps> = ({
 
                   {['bookable_service', 'package', 'service'].includes(product.productType) && (
                     <a
-                      href={`/book?division=${product.division}`}
+                      href={`/book?division=${product.divisionId || (product as any).division}`}
                       className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-center flex items-center justify-center gap-1.5 border border-amber-500/40 bg-amber-50 text-amber-900 hover:bg-amber-100 transition-colors"
                     >
                       <Calendar className="w-3.5 h-3.5 text-amber-700" />

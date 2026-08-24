@@ -242,7 +242,7 @@ export const TextReveal: React.FC<{
     },
   };
 
-  const wordVariants = {
+  const wordVariants: any = {
     hidden: { opacity: 0, y: 18, filter: 'blur(6px)' },
     visible: {
       opacity: 1,
