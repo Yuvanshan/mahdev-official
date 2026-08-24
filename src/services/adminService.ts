@@ -41,9 +41,8 @@ export async function syncAdminFirebaseAuth(adminUser: AdminUser): Promise<boole
     }
 
     // Attempt sign in with standard executive credential
-    let userCredential;
     try {
-      userCredential = await signInWithEmailAndPassword(auth, email, defaultPassword);
+      await signInWithEmailAndPassword(auth, email, defaultPassword);
     } catch (signInErr: any) {
       if (
         signInErr.code === 'auth/user-not-found' ||
@@ -51,7 +50,7 @@ export async function syncAdminFirebaseAuth(adminUser: AdminUser): Promise<boole
         signInErr.code === 'auth/invalid-login-credentials'
       ) {
         try {
-          userCredential = await createUserWithEmailAndPassword(auth, email, defaultPassword);
+          await createUserWithEmailAndPassword(auth, email, defaultPassword);
         } catch (createErr: any) {
           console.warn('[AdminService] Firebase Auth creation notice:', createErr);
         }

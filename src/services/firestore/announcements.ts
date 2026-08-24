@@ -69,9 +69,6 @@ export const firestoreAnnouncementsService = {
       }
 
       const defaults = getDefaultAnnouncements();
-      for (const item of defaults) {
-        await setDoc(doc(db, 'announcements', item.id), item, { merge: true });
-      }
       cachedAnnouncements = { data: defaults, timestamp: now };
       return defaults;
     } catch (err) {

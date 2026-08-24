@@ -761,3 +761,5 @@ export const AdminMilestonesView: React.FC = () => {
     </div>
   );
 };
+
+export default AdminMilestonesView;

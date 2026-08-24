@@ -69,7 +69,7 @@ export interface FirestoreDataContextValue {
 const FirestoreDataContext = createContext<FirestoreDataContextValue | null>(null);
 
 export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(false);
   const [isReady, setIsReady] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 

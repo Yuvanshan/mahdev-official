@@ -238,9 +238,8 @@ export const firestoreSettingsService = {
         cachedCompanySettings = { data, timestamp: now };
         return data;
       }
-      // If not present in Firestore yet, auto-seed default
-      const defaultSettings = sanitizeForFirestore(getDefaultCompanySettings());
-      await setDoc(docRef, defaultSettings, { merge: true });
+      // If not present in Firestore yet, return standard defaults safely without executing write mutations
+      const defaultSettings = getDefaultCompanySettings();
       cachedCompanySettings = { data: defaultSettings, timestamp: now };
       return defaultSettings;
     } catch (err) {
@@ -309,8 +308,7 @@ export const firestoreSettingsService = {
         cachedSiteSettings = { data, timestamp: now };
         return data;
       }
-      const defaultSite = sanitizeForFirestore(getDefaultSiteSettings());
-      await setDoc(docRef, defaultSite, { merge: true });
+      const defaultSite = getDefaultSiteSettings();
       cachedSiteSettings = { data: defaultSite, timestamp: now };
       return defaultSite;
     } catch (err) {
@@ -379,8 +377,7 @@ export const firestoreSettingsService = {
         cachedHomepageSettings = { data, timestamp: now };
         return data;
       }
-      const defaultHome = sanitizeForFirestore(getDefaultHomepageSettings());
-      await setDoc(docRef, defaultHome, { merge: true });
+      const defaultHome = getDefaultHomepageSettings();
       cachedHomepageSettings = { data: defaultHome, timestamp: now };
       return defaultHome;
     } catch (err) {

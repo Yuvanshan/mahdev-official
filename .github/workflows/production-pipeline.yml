@@ -82,7 +82,7 @@ jobs:
       VITE_FIREBASE_PROJECT_ID: for-her-33ea9
       VITE_FIREBASE_AUTH_DOMAIN: for-her-33ea9.firebaseapp.com
       VITE_FIREBASE_STORAGE_BUCKET: for-her-33ea9.firebasestorage.app
-      VITE_FIREBASE_FIRESTORE_DATABASE_ID: ai-studio-mahdevpvtltd-b6505c20-1d3d-4de0-a4bb-a8fb7ae999dd
+      VITE_FIREBASE_FIRESTORE_DATABASE_ID: mahdev-pvt-ldt
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
