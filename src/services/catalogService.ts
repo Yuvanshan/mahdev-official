@@ -7,8 +7,84 @@ import {
   ProductType,
   StockStatus,
 } from '../types/catalog';
-import { MASTER_CATALOG_PRODUCTS } from '../data/catalog/products';
-import { MASTER_CATALOG_CATEGORIES } from '../data/catalog/categories';
+import { FirestoreProduct, FirestoreCategory } from '../types/firestore';
+
+export function mapFirestoreProductToCatalog(
+  fp: FirestoreProduct,
+  categories: (CatalogCategory | FirestoreCategory)[]
+): CatalogProduct {
+  const cat = categories.find((c) => c.id === fp.categoryId || (c as any).slug === fp.categoryId);
+  const divId = (fp.division || 'mart') as any;
+  const divName =
+    divId === 'mart'
+      ? 'Mahdev Online Mart'
+      : divId === 'sws'
+      ? 'SWS Event Management'
+      : divId === 'u1'
+      ? 'U1 Studio'
+      : divId === 'it'
+      ? 'Mahdev IT & Solutions'
+      : divId === 'travels'
+      ? 'Mahdev Travels'
+      : 'Mahdev Group';
+
+  const img = fp.images && fp.images.length > 0 ? fp.images[0] : '';
+  const gallery = fp.images || [];
+  const price = Number(fp.price) || 0;
+  const origPrice = fp.compareAtPrice !== undefined ? Number(fp.compareAtPrice) : price;
+  const discountPercent =
+    origPrice > price ? Math.round(((origPrice - price) / origPrice) * 100) : 0;
+
+  return {
+    id: fp.id,
+    sku: fp.sku || `MD-${fp.id.toUpperCase().slice(0, 8)}`,
+    name: fp.name,
+    slug: fp.slug || fp.id,
+    productType: (fp as any).productType || 'physical',
+    divisionId: divId,
+    divisionName: divName,
+    categoryId: fp.categoryId || (cat ? cat.id : 'general'),
+    categoryName: cat ? cat.name : 'General Merchandise',
+    categorySlug: (cat as any)?.slug || 'general',
+    shortDescription: fp.shortDescription || fp.description?.slice(0, 150) || '',
+    description: fp.description || '',
+    imageUrl: img,
+    gallery: gallery,
+    price: price,
+    originalPrice: origPrice,
+    currency: fp.currency || 'USD',
+    discountPercent: discountPercent,
+    stockQuantity: typeof fp.stock === 'number' ? fp.stock : 100,
+    lowStockThreshold: 10,
+    trackInventory: true,
+    stockStatus: fp.stock === 0 ? 'out_of_stock' : fp.stock <= 10 ? 'low_stock' : 'in_stock',
+    specifications: (fp as any).specifications || [],
+    tags: (fp as any).tags || [],
+    rating: (fp as any).rating || 5.0,
+    reviewsCount: (fp as any).reviewsCount || 0,
+    isFeatured: (fp as any).isFeatured ?? true,
+    brand: (fp as any).brand || 'Mahdev',
+    status: fp.isPublished === false || fp.status === 'draft' ? 'draft' : 'active',
+    createdAt: fp.createdAt || new Date().toISOString(),
+    updatedAt: fp.updatedAt || new Date().toISOString(),
+  };
+}
+
+export function mapFirestoreCategoryToCatalog(fc: FirestoreCategory): CatalogCategory {
+  const divId = ((fc as any).divisionId || fc.division || 'mart') as any;
+  return {
+    id: fc.id,
+    name: fc.name,
+    slug: fc.slug || fc.id,
+    divisionId: divId,
+    description: fc.description || '',
+    imageUrl: fc.imageUrl || '',
+    iconName: (fc as any).iconName || 'Package',
+    itemCount: (fc as any).itemCount || (fc as any).productCount || 0,
+    status: (fc.status === 'inactive' ? 'inactive' : 'active'),
+    sortOrder: fc.order || (fc as any).sortOrder || 0,
+  };
+}
 
 /**
  * Unified Catalog Service for the Mahdev Ecosystem
@@ -16,8 +92,8 @@ import { MASTER_CATALOG_CATEGORIES } from '../data/catalog/categories';
  * pagination, and Firestore database adapter compatibility.
  */
 class CatalogService {
-  private products: CatalogProduct[] = [...MASTER_CATALOG_PRODUCTS];
-  private categories: CatalogCategory[] = [...MASTER_CATALOG_CATEGORIES];
+  private products: CatalogProduct[] = [];
+  private categories: CatalogCategory[] = [];
 
   // ----------------------------------------------------
   // INVENTORY & STOCK HELPERS
@@ -39,7 +115,7 @@ class CatalogService {
   // CATEGORIES
   // ----------------------------------------------------
   public getCategories(divisionId?: string): CatalogCategory[] {
-    if (!divisionId) {
+    if (!divisionId || divisionId === 'all') {
       return this.categories.filter((c) => c.status === 'active');
     }
     return this.categories.filter(
@@ -138,11 +214,11 @@ class CatalogService {
         const inName = p.name.toLowerCase().includes(q);
         const inSku = p.sku.toLowerCase().includes(q);
         const inDesc = p.description.toLowerCase().includes(q) || p.shortDescription.toLowerCase().includes(q);
-        const inBrand = p.brand.toLowerCase().includes(q);
-        const inCategory = p.categoryName.toLowerCase().includes(q);
-        const inDivision = p.divisionName.toLowerCase().includes(q);
-        const inTags = p.tags.some((t) => t.toLowerCase().includes(q));
-        const inSpecs = p.specifications.some(
+        const inBrand = (p.brand || '').toLowerCase().includes(q);
+        const inCategory = (p.categoryName || '').toLowerCase().includes(q);
+        const inDivision = (p.divisionName || '').toLowerCase().includes(q);
+        const inTags = (p.tags || []).some((t) => t.toLowerCase().includes(q));
+        const inSpecs = (p.specifications || []).some(
           (s) => s.label.toLowerCase().includes(q) || s.value.toLowerCase().includes(q)
         );
         return inName || inSku || inDesc || inBrand || inCategory || inDivision || inTags || inSpecs;
@@ -213,12 +289,19 @@ class CatalogService {
   }
 
   // ----------------------------------------------------
-  // FIRESTORE / BACKEND ADAPTER READY HOOK
+  // FIRESTORE / BACKEND ADAPTER SYNC
   // ----------------------------------------------------
-  public async syncWithFirestore(firestoreSnapshot?: any): Promise<void> {
-    // Scaffolded for Phase 11+ remote data syncing
-    if (firestoreSnapshot && Array.isArray(firestoreSnapshot)) {
-      this.products = firestoreSnapshot;
+  public syncWithFirestore(
+    firestoreProducts?: FirestoreProduct[],
+    firestoreCategories?: FirestoreCategory[]
+  ): void {
+    if (firestoreCategories && Array.isArray(firestoreCategories)) {
+      this.categories = firestoreCategories.map(mapFirestoreCategoryToCatalog);
+    }
+    if (firestoreProducts && Array.isArray(firestoreProducts)) {
+      this.products = firestoreProducts.map((fp) =>
+        mapFirestoreProductToCatalog(fp, this.categories)
+      );
     }
   }
 }

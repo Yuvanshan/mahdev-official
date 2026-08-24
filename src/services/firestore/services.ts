@@ -15,38 +15,16 @@ import {
   onSnapshot,
   Unsubscribe,
 } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreService, DivisionId } from '../../types/firestore';
-import { MASTER_BOOKABLE_SERVICES } from '../../data/bookingServices';
 
 const CACHE_TTL_MS = 1000 * 60 * 15; // 15 min cache
 let cachedServices: { data: FirestoreService[]; timestamp: number } | null = null;
 
 export function getDefaultServices(): FirestoreService[] {
-  return MASTER_BOOKABLE_SERVICES.map((item) => ({
-    id: item.id,
-    division: item.divisionId as DivisionId,
-    name: item.name,
-    slug: item.id,
-    description: item.description,
-    images: [item.imageUrl],
-    price: item.packages[0]?.price || 100,
-    currency: item.packages[0]?.currency || 'USD',
-    status: 'active',
-    bookingEnabled: true,
-    quoteEnabled: true,
-    metadata: {
-      sku: item.sku,
-      bookingType: item.bookingType,
-      leadTimeDays: item.leadTimeDays,
-      maxBookingsPerDay: item.maxBookingsPerDay,
-      availableTimeSlots: item.availableTimeSlots,
-      packages: item.packages,
-      locationTypeDefault: item.locationTypeDefault,
-    },
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: new Date().toISOString(),
-  }));
+  // Phase 60: Real Data Architecture - Zero fake services by default.
+  // Services are created by Admin or pulled directly from Firestore.
+  return [];
 }
 
 export const firestoreServicesService = {
@@ -69,17 +47,12 @@ export const firestoreServicesService = {
           })) as FirestoreService[];
           cachedServices = { data: allServices, timestamp: now };
         } else {
-          // Auto-seed defaults if collection is empty
-          const defaults = getDefaultServices();
-          for (const s of defaults) {
-            await setDoc(doc(db, 'services', s.id), s, { merge: true });
-          }
-          allServices = defaults;
-          cachedServices = { data: defaults, timestamp: now };
+          allServices = [];
+          cachedServices = { data: [], timestamp: now };
         }
       } catch (err) {
-        console.warn('[Firestore Services] getServices fallback to local defaults:', err);
-        allServices = cachedServices?.data || getDefaultServices();
+        console.warn('[Firestore Services] getServices error:', err);
+        allServices = cachedServices?.data || [];
       }
     }
 
@@ -102,11 +75,11 @@ export const firestoreServicesService = {
    */
   async saveService(id: string, data: Partial<FirestoreService>): Promise<void> {
     const docRef = doc(db, 'services', id);
-    const payload = {
+    const payload = sanitizeForFirestore({
       ...data,
       id,
       updatedAt: new Date().toISOString(),
-    };
+    });
     await setDoc(docRef, payload, { merge: true });
     if (cachedServices) {
       const idx = cachedServices.data.findIndex((s) => s.id === id);
@@ -146,22 +119,17 @@ export const firestoreServicesService = {
     return onSnapshot(
       q,
       (snap) => {
-        if (!snap.empty) {
-          const data = snap.docs.map((d) => ({
-            ...d.data(),
-            id: d.id,
-          })) as FirestoreService[];
-          onData(data);
-        } else {
-          const defaults = getDefaultServices();
-          onData(division ? defaults.filter((d) => d.division === division) : defaults);
-        }
+        const data = snap.docs.map((d) => ({
+          ...d.data(),
+          id: d.id,
+        })) as FirestoreService[];
+        cachedServices = { data, timestamp: Date.now() };
+        onData(data);
       },
       (err) => {
         console.warn('[Firestore Services] Listener error:', err);
         if (onError) onError(err);
-        const defaults = getDefaultServices();
-        onData(division ? defaults.filter((d) => d.division === division) : defaults);
+        onData(cachedServices?.data || []);
       }
     );
   },

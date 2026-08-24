@@ -19,7 +19,7 @@ import {
   onSnapshot,
   Unsubscribe,
 } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreBooking, BookingStatus } from '../../types/firestore';
 
 export interface BookingQueryOptions {
@@ -120,11 +120,18 @@ export const firestoreBookingsService = {
   async createBooking(booking: FirestoreBooking): Promise<void> {
     const docRef = doc(db, 'bookings', booking.id);
     const now = new Date().toISOString();
-    await setDoc(docRef, {
+    const payload = sanitizeForFirestore({
       ...booking,
+      bookingDate: booking.bookingDate || booking.date,
+      bookingTime: booking.bookingTime || booking.time,
+      amount: booking.amount ?? booking.price ?? 0,
+      price: booking.price ?? booking.amount ?? 0,
+      date: booking.date || booking.bookingDate,
+      time: booking.time || booking.bookingTime,
       createdAt: booking.createdAt || now,
       updatedAt: now,
     });
+    await setDoc(docRef, payload);
   },
 
   /**
@@ -133,10 +140,11 @@ export const firestoreBookingsService = {
   async updateBooking(id: string, updates: Partial<FirestoreBooking>): Promise<void> {
     const docRef = doc(db, 'bookings', id);
     const now = new Date().toISOString();
-    await updateDoc(docRef, {
+    const payload = sanitizeForFirestore({
       ...updates,
       updatedAt: now,
     });
+    await updateDoc(docRef, payload);
   },
 
   /**
@@ -161,6 +169,28 @@ export const firestoreBookingsService = {
   },
 
   /**
+   * Realtime listener for all bookings (Admin dashboard and telemetry)
+   */
+  subscribeAllBookings(
+    onData: (bookings: FirestoreBooking[]) => void,
+    onError?: (err: Error) => void
+  ): Unsubscribe {
+    return onSnapshot(
+      collection(db, 'bookings'),
+      (snap) => {
+        const bookings = snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreBooking[];
+        bookings.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        onData(bookings);
+      },
+      (err) => {
+        console.warn('[Firestore Bookings] subscribeAllBookings error:', err);
+        if (onError) onError(err);
+        else onData([]);
+      }
+    );
+  },
+
+  /**
    * Realtime listener for recent bookings (Admin live operations only)
    */
   subscribeRecentBookings(limitCount = 10, onData: (bookings: FirestoreBooking[]) => void): Unsubscribe {
@@ -180,5 +210,19 @@ export const firestoreBookingsService = {
         onData([]);
       }
     );
+  },
+
+  /**
+   * Fetch all bookings from Firestore
+   */
+  async getAllBookings(): Promise<FirestoreBooking[]> {
+    try {
+      const q = query(collection(db, 'bookings'), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      return snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreBooking[];
+    } catch (err) {
+      console.warn('[Firestore Bookings] getAllBookings error:', err);
+      return [];
+    }
   },
 };

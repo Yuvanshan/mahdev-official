@@ -32,8 +32,8 @@ import {
   LocationType,
   Booking,
 } from '../../types/booking';
-import { MASTER_BOOKABLE_SERVICES } from '../../data/bookingServices';
 import { bookingService } from '../../services/bookingService';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { evaluateBotRisk, checkActionThrottle } from '../../utils/securityProtection';
 
 interface BookingWizardProps {
@@ -47,6 +47,9 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
   initialServiceId,
   onBookingCreated,
 }) => {
+  const { services: firestoreServices } = useFirestoreDataContext();
+  const bookableServices = bookingService.getServices();
+
   // Step State (1: Service & Package, 2: Schedule & Location, 3: Customer & Review)
   const [step, setStep] = useState<number>(1);
 
@@ -57,17 +60,28 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
   // Selected Service & Package
   const [selectedService, setSelectedService] = useState<BookableServiceItem | null>(() => {
     if (initialServiceId) {
-      return MASTER_BOOKABLE_SERVICES.find((s) => s.id === initialServiceId) || MASTER_BOOKABLE_SERVICES[0];
+      return bookableServices.find((s) => s.id === initialServiceId) || bookableServices[0] || null;
     }
-    return MASTER_BOOKABLE_SERVICES[0];
+    return bookableServices[0] || null;
   });
 
-  const [selectedPackage, setSelectedPackage] = useState<BookingPackageOption>(() => {
+  const [selectedPackage, setSelectedPackage] = useState<BookingPackageOption | null>(() => {
     const s = initialServiceId
-      ? MASTER_BOOKABLE_SERVICES.find((s) => s.id === initialServiceId) || MASTER_BOOKABLE_SERVICES[0]
-      : MASTER_BOOKABLE_SERVICES[0];
-    return s.packages[0];
+      ? bookableServices.find((s) => s.id === initialServiceId) || bookableServices[0] || null
+      : bookableServices[0] || null;
+    return s?.packages[0] || null;
   });
+
+  // Sync selected service if list changes or was initially empty
+  useEffect(() => {
+    if (!selectedService && bookableServices.length > 0) {
+      const found = initialServiceId
+        ? bookableServices.find((s) => s.id === initialServiceId) || bookableServices[0]
+        : bookableServices[0];
+      setSelectedService(found);
+      setSelectedPackage(found.packages[0] || null);
+    }
+  }, [bookableServices, initialServiceId, selectedService]);
 
   // Calculate default future date (e.g. today + 3 days)
   const getDefaultDate = (leadDays = 3) => {
@@ -243,7 +257,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
   };
 
   // Filtered Services List
-  const filteredServices = MASTER_BOOKABLE_SERVICES.filter((s) => {
+  const filteredServices = bookableServices.filter((s) => {
     if (selectedDivision !== 'all' && s.divisionId !== selectedDivision) return false;
     if (selectedType !== 'all' && s.bookingType !== selectedType) return false;
     return true;
@@ -331,54 +345,66 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
               <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
                 1. Select Mahdev Service ({filteredServices.length} Available):
               </label>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredServices.map((service) => {
-                  const isSelected = selectedService?.id === service.id;
-                  return (
-                    <div
-                      key={service.id}
-                      onClick={() => handleServiceSelect(service)}
-                      className={`relative rounded-xl border p-4 cursor-pointer transition-all duration-200 flex flex-col justify-between ${
-                        isSelected
-                          ? 'border-amber-600 bg-amber-50/40 ring-2 ring-amber-500/20 shadow-md'
-                          : 'border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
-                      }`}
-                    >
-                      <div className="aspect-16/9 rounded-lg overflow-hidden mb-3 bg-neutral-100 relative">
-                        <img
-                          src={service.imageUrl}
-                          alt={service.name}
-                          className="w-full h-full object-cover"
-                        />
-                        <span className="absolute top-2 left-2 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-neutral-900/90 text-white backdrop-blur-xs">
-                          {service.divisionName}
-                        </span>
-                        {isSelected && (
-                          <div className="absolute top-2 right-2 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center text-neutral-950 shadow-xs">
-                            <Check className="w-4 h-4 stroke-[3]" />
-                          </div>
-                        )}
-                      </div>
+              {filteredServices.length === 0 ? (
+                <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-8 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto">
+                    <Sparkles className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-semibold text-neutral-900 text-base">Custom Consultation Available</h3>
+                  <p className="text-xs text-neutral-500 max-w-md mx-auto">
+                    Online service scheduling for this division is currently managed via direct corporate dispatch. Contact our 24/7 executive hotline or request an instant bespoke quote.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredServices.map((service) => {
+                    const isSelected = selectedService?.id === service.id;
+                    return (
+                      <div
+                        key={service.id}
+                        onClick={() => handleServiceSelect(service)}
+                        className={`relative rounded-xl border p-4 cursor-pointer transition-all duration-200 flex flex-col justify-between ${
+                          isSelected
+                            ? 'border-amber-600 bg-amber-50/40 ring-2 ring-amber-500/20 shadow-md'
+                            : 'border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+                        }`}
+                      >
+                        <div className="aspect-16/9 rounded-lg overflow-hidden mb-3 bg-neutral-100 relative">
+                          <img
+                            src={service.imageUrl || 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80'}
+                            alt={service.name}
+                            className="w-full h-full object-cover"
+                          />
+                          <span className="absolute top-2 left-2 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-neutral-900/90 text-white backdrop-blur-xs">
+                            {service.divisionName}
+                          </span>
+                          {isSelected && (
+                            <div className="absolute top-2 right-2 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center text-neutral-950 shadow-xs">
+                              <Check className="w-4 h-4 stroke-[3]" />
+                            </div>
+                          )}
+                        </div>
 
-                      <div>
-                        <h4 className="font-semibold text-neutral-900 text-sm mb-1 leading-snug">
-                          {service.name}
-                        </h4>
-                        <p className="text-xs text-neutral-500 line-clamp-2 mb-3 leading-relaxed">
-                          {service.description}
-                        </p>
-                      </div>
+                        <div>
+                          <h4 className="font-semibold text-neutral-900 text-sm mb-1 leading-snug">
+                            {service.name}
+                          </h4>
+                          <p className="text-xs text-neutral-500 line-clamp-2 mb-3 leading-relaxed">
+                            {service.description}
+                          </p>
+                        </div>
 
-                      <div className="pt-2 border-t border-neutral-100 flex items-center justify-between text-[11px] text-neutral-400 font-mono">
-                        <span>Lead Time: {service.leadTimeDays}d</span>
-                        <span className="text-amber-700 font-bold font-sans">
-                          From ${service.packages[0]?.price}
-                        </span>
+                        <div className="pt-2 border-t border-neutral-100 flex items-center justify-between text-[11px] text-neutral-400 font-mono">
+                          <span>Lead Time: {service.leadTimeDays}d</span>
+                          <span className="text-amber-700 font-bold font-sans">
+                            From ${service.packages[0]?.price || 0}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Package Tier Selection for Selected Service */}

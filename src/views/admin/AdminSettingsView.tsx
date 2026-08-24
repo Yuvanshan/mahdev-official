@@ -32,9 +32,11 @@ import {
   Power,
   ShieldCheck,
   ArrowRight,
+  Database,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
+import { DatabaseDiagnosticsPanel } from '../../components/admin/DatabaseDiagnosticsPanel';
 import {
   firestoreSettingsService,
   getDefaultCompanySettings,
@@ -56,7 +58,7 @@ export const AdminSettingsView: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
-    'company' | 'branding' | 'commerce' | 'announcement' | 'maintenance' | 'security'
+    'company' | 'branding' | 'commerce' | 'announcement' | 'maintenance' | 'security' | 'database'
   >('company');
 
   // Upload States
@@ -456,6 +458,18 @@ export const AdminSettingsView: React.FC = () => {
         >
           <Shield className="w-4 h-4" />
           Security & Controls
+        </button>
+
+        <button
+          onClick={() => setActiveTab('database')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
+            activeTab === 'database'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Database className="w-4 h-4 text-blue-600" />
+          Database Architecture & Health
         </button>
       </div>
 
@@ -2222,6 +2236,17 @@ export const AdminSettingsView: React.FC = () => {
               />
             </label>
           </div>
+
+          <div className="pt-2">
+            <DatabaseDiagnosticsPanel />
+          </div>
+        </div>
+      )}
+
+      {/* Tab 6: Database Architecture & Live Health Diagnostics */}
+      {activeTab === 'database' && (
+        <div className="space-y-6">
+          <DatabaseDiagnosticsPanel />
         </div>
       )}
     </div>

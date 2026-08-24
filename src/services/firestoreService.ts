@@ -17,7 +17,7 @@ import {
   DocumentData,
   QueryConstraint,
 } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, sanitizeForFirestore } from '../lib/firebase';
 import {
   FirestoreUser,
   FirestoreDivision,
@@ -83,7 +83,7 @@ class FirestoreServiceRepository {
     const ref = doc(db, COLLECTIONS.USERS, uid);
     const existing = await this.getUser(uid);
     const now = new Date().toISOString();
-    const payload: FirestoreUser = {
+    const payload: FirestoreUser = sanitizeForFirestore({
       uid,
       name: user.name || existing?.name || 'Mahdev User',
       email: user.email || existing?.email || '',
@@ -93,7 +93,7 @@ class FirestoreServiceRepository {
       status: user.status || existing?.status || 'active',
       createdAt: existing?.createdAt || now,
       updatedAt: now,
-    };
+    });
     await setDoc(ref, payload, { merge: true });
   }
 
@@ -129,7 +129,7 @@ class FirestoreServiceRepository {
   async setDivision(id: DivisionId, data: Partial<FirestoreDivision>): Promise<void> {
     const ref = doc(db, COLLECTIONS.DIVISIONS, id);
     const now = new Date().toISOString();
-    await setDoc(ref, { ...data, id, updatedAt: now }, { merge: true });
+    await setDoc(ref, sanitizeForFirestore({ ...data, id, updatedAt: now }), { merge: true });
   }
 
   // ==========================================
@@ -153,7 +153,7 @@ class FirestoreServiceRepository {
   async saveService(service: FirestoreService): Promise<void> {
     const ref = doc(db, COLLECTIONS.SERVICES, service.id);
     const now = new Date().toISOString();
-    await setDoc(ref, { ...service, updatedAt: now }, { merge: true });
+    await setDoc(ref, sanitizeForFirestore({ ...service, updatedAt: now }), { merge: true });
   }
 
   // ==========================================
@@ -177,7 +177,7 @@ class FirestoreServiceRepository {
   async saveProduct(product: FirestoreProduct): Promise<void> {
     const ref = doc(db, COLLECTIONS.PRODUCTS, product.id);
     const now = new Date().toISOString();
-    await setDoc(ref, { ...product, updatedAt: now }, { merge: true });
+    await setDoc(ref, sanitizeForFirestore({ ...product, updatedAt: now }), { merge: true });
   }
 
   async getCategories(division?: DivisionId): Promise<FirestoreCategory[]> {
@@ -197,7 +197,7 @@ class FirestoreServiceRepository {
 
   async saveCategory(category: FirestoreCategory): Promise<void> {
     const ref = doc(db, COLLECTIONS.CATEGORIES, category.id);
-    await setDoc(ref, category, { merge: true });
+    await setDoc(ref, sanitizeForFirestore(category), { merge: true });
   }
 
   // ==========================================
@@ -231,17 +231,17 @@ class FirestoreServiceRepository {
   async createBooking(booking: FirestoreBooking): Promise<void> {
     const ref = doc(db, COLLECTIONS.BOOKINGS, booking.id);
     const now = new Date().toISOString();
-    await setDoc(ref, {
+    await setDoc(ref, sanitizeForFirestore({
       ...booking,
       createdAt: booking.createdAt || now,
       updatedAt: now,
-    });
+    }));
   }
 
   async updateBooking(id: string, updates: Partial<FirestoreBooking>): Promise<void> {
     const ref = doc(db, COLLECTIONS.BOOKINGS, id);
     const now = new Date().toISOString();
-    await updateDoc(ref, { ...updates, updatedAt: now });
+    await updateDoc(ref, sanitizeForFirestore({ ...updates, updatedAt: now }));
   }
 
   // ==========================================
@@ -275,17 +275,17 @@ class FirestoreServiceRepository {
   async createOrder(order: FirestoreOrder): Promise<void> {
     const ref = doc(db, COLLECTIONS.ORDERS, order.id);
     const now = new Date().toISOString();
-    await setDoc(ref, {
+    await setDoc(ref, sanitizeForFirestore({
       ...order,
       createdAt: order.createdAt || now,
       updatedAt: now,
-    });
+    }));
   }
 
   async updateOrder(id: string, updates: Partial<FirestoreOrder>): Promise<void> {
     const ref = doc(db, COLLECTIONS.ORDERS, id);
     const now = new Date().toISOString();
-    await updateDoc(ref, { ...updates, updatedAt: now });
+    await updateDoc(ref, sanitizeForFirestore({ ...updates, updatedAt: now }));
   }
 
   // ==========================================
@@ -339,7 +339,7 @@ class FirestoreServiceRepository {
   async setCompanySettings(data: Partial<FirestoreCompanySettings>): Promise<void> {
     const ref = doc(db, COLLECTIONS.SETTINGS, 'company');
     const now = new Date().toISOString();
-    await setDoc(ref, { ...data, updatedAt: now }, { merge: true });
+    await setDoc(ref, sanitizeForFirestore({ ...data, updatedAt: now }), { merge: true });
   }
 
   async getSiteSettings(): Promise<FirestoreSiteSettings> {
@@ -367,7 +367,7 @@ class FirestoreServiceRepository {
   async setSiteSettings(data: Partial<FirestoreSiteSettings>): Promise<void> {
     const ref = doc(db, COLLECTIONS.SETTINGS, 'site');
     const now = new Date().toISOString();
-    await setDoc(ref, { ...data, updatedAt: now }, { merge: true });
+    await setDoc(ref, sanitizeForFirestore({ ...data, updatedAt: now }), { merge: true });
   }
 
   // ==========================================
@@ -376,12 +376,12 @@ class FirestoreServiceRepository {
   async submitContact(inquiry: Omit<FirestoreContactSubmission, 'id' | 'createdAt' | 'status'>): Promise<string> {
     const id = `INQ-${Date.now()}`;
     const ref = doc(db, COLLECTIONS.CONTACT_SUBMISSIONS, id);
-    const payload: FirestoreContactSubmission = {
+    const payload: FirestoreContactSubmission = sanitizeForFirestore({
       id,
       ...inquiry,
       status: 'new',
       createdAt: new Date().toISOString(),
-    };
+    });
     await setDoc(ref, payload);
     return id;
   }
@@ -389,12 +389,12 @@ class FirestoreServiceRepository {
   async submitQuoteRequest(quote: Omit<FirestoreQuoteRequest, 'id' | 'createdAt' | 'status'>): Promise<string> {
     const id = `QTE-${Date.now()}`;
     const ref = doc(db, COLLECTIONS.QUOTE_REQUESTS, id);
-    const payload: FirestoreQuoteRequest = {
+    const payload: FirestoreQuoteRequest = sanitizeForFirestore({
       id,
       ...quote,
       status: 'pending',
       createdAt: new Date().toISOString(),
-    };
+    });
     await setDoc(ref, payload);
     return id;
   }
@@ -403,11 +403,11 @@ class FirestoreServiceRepository {
     try {
       const id = `LOG-${Date.now()}`;
       const ref = doc(db, COLLECTIONS.AUDIT_LOGS, id);
-      await setDoc(ref, {
+      await setDoc(ref, sanitizeForFirestore({
         id,
         ...log,
         timestamp: new Date().toISOString(),
-      });
+      }));
     } catch (err) {
       console.warn('[Firestore] logAudit non-fatal error:', err);
     }
@@ -423,7 +423,7 @@ class FirestoreServiceRepository {
       const companySnap = await getDoc(companyRef);
       if (!companySnap.exists()) {
         const companySettings = await this.getCompanySettings();
-        await setDoc(companyRef, companySettings);
+        await setDoc(companyRef, sanitizeForFirestore(companySettings));
       }
 
       // 2. Seed Site Settings
@@ -431,7 +431,7 @@ class FirestoreServiceRepository {
       const siteSnap = await getDoc(siteRef);
       if (!siteSnap.exists()) {
         const siteSettings = await this.getSiteSettings();
-        await setDoc(siteRef, siteSettings);
+        await setDoc(siteRef, sanitizeForFirestore(siteSettings));
       }
 
       // 3. Seed Divisions
@@ -439,7 +439,7 @@ class FirestoreServiceRepository {
         const divRef = doc(db, COLLECTIONS.DIVISIONS, division.id);
         const divSnap = await getDoc(divRef);
         if (!divSnap.exists()) {
-          await setDoc(divRef, division);
+          await setDoc(divRef, sanitizeForFirestore(division));
         }
       }
 

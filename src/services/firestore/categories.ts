@@ -15,24 +15,16 @@ import {
   onSnapshot,
   Unsubscribe,
 } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreCategory, DivisionId } from '../../types/firestore';
-import { MASTER_CATALOG_CATEGORIES } from '../../data/catalog/categories';
 
 const CACHE_TTL_MS = 1000 * 60 * 20; // 20 min cache
 let cachedCategories: { data: FirestoreCategory[]; timestamp: number } | null = null;
 
 export function getDefaultCategories(): FirestoreCategory[] {
-  return MASTER_CATALOG_CATEGORIES.map((c) => ({
-    id: c.id,
-    division: (c.divisionId || 'mart') as DivisionId,
-    name: c.name,
-    slug: c.slug,
-    description: c.description,
-    imageUrl: c.imageUrl,
-    order: c.sortOrder || 0,
-    status: c.status === 'active' ? 'active' : 'inactive',
-  }));
+  // Phase 60: Real Data Architecture - Zero fake categories by default.
+  // Categories are populated dynamically from Firestore or created via Admin Portal.
+  return [];
 }
 
 export const firestoreCategoriesService = {
@@ -55,16 +47,12 @@ export const firestoreCategoriesService = {
           })) as FirestoreCategory[];
           cachedCategories = { data: allCategories, timestamp: now };
         } else {
-          const defaults = getDefaultCategories();
-          for (const cat of defaults) {
-            await setDoc(doc(db, 'categories', cat.id), cat, { merge: true });
-          }
-          allCategories = defaults;
-          cachedCategories = { data: defaults, timestamp: now };
+          allCategories = [];
+          cachedCategories = { data: [], timestamp: now };
         }
       } catch (err) {
-        console.warn('[Firestore Categories] getCategories fallback to defaults:', err);
-        allCategories = cachedCategories?.data || getDefaultCategories();
+        console.warn('[Firestore Categories] getCategories error:', err);
+        allCategories = cachedCategories?.data || [];
       }
     }
 
@@ -79,11 +67,12 @@ export const firestoreCategoriesService = {
    */
   async saveCategory(id: string, data: Partial<FirestoreCategory>): Promise<void> {
     const docRef = doc(db, 'categories', id);
-    await setDoc(docRef, { ...data, id }, { merge: true });
+    const payload = sanitizeForFirestore({ ...data, id });
+    await setDoc(docRef, payload, { merge: true });
     if (cachedCategories) {
       const idx = cachedCategories.data.findIndex((c) => c.id === id);
       if (idx >= 0) {
-        cachedCategories.data[idx] = { ...cachedCategories.data[idx], ...data } as FirestoreCategory;
+        cachedCategories.data[idx] = { ...cachedCategories.data[idx], ...payload } as FirestoreCategory;
       }
     }
   },
@@ -115,20 +104,16 @@ export const firestoreCategoriesService = {
     return onSnapshot(
       q,
       (snap) => {
-        if (!snap.empty) {
-          const data = snap.docs.map((d) => ({
-            ...d.data(),
-            id: d.id,
-          })) as FirestoreCategory[];
-          onData(data);
-        } else {
-          const defaults = getDefaultCategories();
-          onData(division ? defaults.filter((c) => c.division === division) : defaults);
-        }
+        const data = snap.docs.map((d) => ({
+          ...d.data(),
+          id: d.id,
+        })) as FirestoreCategory[];
+        cachedCategories = { data, timestamp: Date.now() };
+        onData(data);
       },
-      () => {
-        const defaults = getDefaultCategories();
-        onData(division ? defaults.filter((c) => c.division === division) : defaults);
+      (err) => {
+        console.warn('[Firestore Categories] Listener error:', err);
+        onData(cachedCategories?.data || []);
       }
     );
   },

@@ -1,6 +1,6 @@
 /**
- * Mahdev Cloud Firestore Modular Data Access Layer (Phase 23)
- * Central export of all domain-specific Firestore services.
+ * Mahdev Cloud Firestore Modular Data Access Layer
+ * Central export of all domain-specific Firestore services (Phase 57 Compliant).
  */
 
 export * from './settings';
@@ -16,3 +16,7 @@ export * from './testimonials';
 export * from './bookings';
 export * from './orders';
 export * from './users';
+export * from './payments';
+export * from './contacts';
+export * from './announcements';
+export * from './auditLogs';

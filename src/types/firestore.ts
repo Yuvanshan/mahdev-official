@@ -9,36 +9,44 @@ export type AccountStatus = 'active' | 'suspended' | 'pending';
 
 export interface FirestoreUser {
   uid: string;
-  name: string;
+  displayName?: string;
+  name?: string; // backwards compatibility
   email: string;
   phone?: string;
-  photoURL?: string;
-  role: UserRole;
-  status: AccountStatus;
+  photoUrl?: string;
+  photoURL?: string; // backwards compatibility
+  role: UserRole | string;
+  status: AccountStatus | string;
   createdAt: string;
   updatedAt: string;
 }
 
-export type DivisionId = 'sws' | 'u1' | 'it' | 'travels' | 'mart';
+export type DivisionId = 'sws' | 'u1-studio' | 'it-solutions' | 'travels' | 'online-mart' | 'u1' | 'it' | 'mart';
 
 export interface FirestoreDivision {
-  id: DivisionId;
+  id: DivisionId | string;
   name: string;
+  slug: string;
+  shortDescription?: string;
+  description: string;
+  imageUrl?: string;
+  logoUrl?: string;
+  logo?: string; // backwards compatibility
+  route?: string;
+  isPublished?: boolean;
+  order?: number;
   shortName?: string;
   accentColor?: string;
   heroHeadline?: string;
-  slug: string;
-  description: string;
-  logo: string;
-  hero: {
+  hero?: {
     title: string;
     subtitle: string;
     badge: string;
     bgImage: string;
     ctaText?: string;
   };
-  status: 'active' | 'inactive' | 'maintenance';
-  seo: {
+  status?: 'active' | 'inactive' | 'maintenance';
+  seo?: {
     metaTitle: string;
     metaDescription: string;
     keywords: string[];
@@ -49,20 +57,23 @@ export interface FirestoreDivision {
 
 export interface FirestoreService {
   id: string;
-  division: DivisionId | string;
-  divisionId?: DivisionId | string;
-  divisionName?: string;
   name: string;
-  title?: string;
   slug: string;
+  divisionId: DivisionId | string;
+  division?: DivisionId | string; // backwards compatibility
+  divisionName?: string;
+  title?: string;
   description: string;
-  images: string[];
+  imageUrl?: string;
+  images?: string[]; // backwards compatibility
   price: number;
   startingPrice?: number;
   currency?: string;
-  status: 'active' | 'inactive' | 'draft';
   bookingEnabled: boolean;
-  quoteEnabled: boolean;
+  quoteEnabled?: boolean;
+  isPublished?: boolean;
+  order?: number;
+  status?: 'active' | 'inactive' | 'draft';
   badge?: string;
   features?: string[];
   turnaroundTime?: string;
@@ -75,13 +86,16 @@ export interface FirestoreService {
 
 export interface FirestoreCategory {
   id: string;
-  division: DivisionId | string;
   name: string;
   slug: string;
   description?: string;
   imageUrl?: string;
+  isPublished?: boolean;
   order: number;
-  status: 'active' | 'inactive';
+  division?: DivisionId | string;
+  status?: 'active' | 'inactive';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface FirestoreProductVariant {
@@ -96,18 +110,23 @@ export interface FirestoreProductVariant {
 
 export interface FirestoreProduct {
   id: string;
-  division: DivisionId | string;
   name: string;
   slug: string;
-  sku: string;
-  categoryId: string;
   description: string;
+  shortDescription?: string;
   price: number;
+  currency?: string;
+  discountPrice?: number;
   compareAtPrice?: number;
   images: string[];
+  categoryId: string;
   stock: number;
-  status: 'active' | 'draft' | 'out_of_stock' | 'archived';
-  hasVariants: boolean;
+  sku: string;
+  isAvailable?: boolean;
+  isPublished?: boolean;
+  division?: DivisionId | string;
+  status?: 'active' | 'draft' | 'out_of_stock' | 'archived';
+  hasVariants?: boolean;
   variants?: FirestoreProductVariant[];
   createdAt: string;
   updatedAt: string;
@@ -144,21 +163,24 @@ export type BookingPaymentStatus = 'unpaid' | 'deposit_paid' | 'paid' | 'refunde
 export interface FirestoreBooking {
   id: string;
   customerId: string;
-  customer: FirestoreBookingCustomer;
-  divisionId: DivisionId | string;
-  divisionName?: string;
   serviceId: string;
+  divisionId: DivisionId | string;
+  bookingDate?: string;
+  bookingTime?: string;
+  date?: string; // backwards compatibility
+  time?: string; // backwards compatibility
+  status: BookingStatus | string;
+  notes?: string;
+  amount?: number;
+  price?: number; // backwards compatibility
+  currency: string;
+  paymentStatus: BookingPaymentStatus | string;
+  customer?: FirestoreBookingCustomer;
+  divisionName?: string;
   serviceName?: string;
   packageId?: string;
   packageName?: string;
-  date: string;
-  time: string;
-  location: FirestoreBookingLocation;
-  status: BookingStatus;
-  paymentStatus: BookingPaymentStatus;
-  price: number;
-  currency: string;
-  notes?: string;
+  location?: FirestoreBookingLocation;
   createdAt: string;
   updatedAt: string;
 }
@@ -172,7 +194,7 @@ export interface FirestoreOrderItem {
   quantity: number;
   unitPrice: number;
   lineTotal: number;
-  division: DivisionId | string;
+  division?: DivisionId | string;
   selectedVariant?: {
     id: string;
     name: string;
@@ -185,23 +207,25 @@ export type OrderPaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 export interface FirestoreOrder {
   id: string;
   customerId: string;
-  customer: {
+  items: FirestoreOrderItem[];
+  subtotal: number;
+  discount: number;
+  total: number;
+  currency: string;
+  paymentStatus: OrderPaymentStatus | string;
+  orderStatus?: OrderStatus | string;
+  status?: OrderStatus | string; // backwards compatibility
+  shippingAddress?: Record<string, unknown> | string;
+  customer?: {
     fullName: string;
     email: string;
     phone: string;
     company?: string;
     preferredContact?: string;
   };
-  items: FirestoreOrderItem[];
-  totalQuantity: number;
-  subtotal: number;
-  discount: number;
-  shippingFee: number;
-  tax: number;
-  total: number;
-  currency: string;
-  status: OrderStatus;
-  paymentStatus: OrderPaymentStatus;
+  totalQuantity?: number;
+  shippingFee?: number;
+  tax?: number;
   shipping?: {
     methodId?: string;
     methodName?: string;
@@ -230,13 +254,19 @@ export interface FirestorePayment {
   id: string;
   orderId?: string;
   bookingId?: string;
-  gatewayId: string;
-  gatewayName: string;
+  customerId?: string;
   amount: number;
   currency: string;
-  paymentStatus: 'pending' | 'paid' | 'failed' | 'cancelled' | 'refunded';
+  gateway?: string;
+  gatewayId?: string; // backwards compatibility
+  gatewayName?: string;
+  transactionId?: string;
+  status: 'pending' | 'paid' | 'failed' | 'cancelled' | 'refunded' | string;
+  paymentStatus?: 'pending' | 'paid' | 'failed' | 'cancelled' | 'refunded'; // backwards compatibility
   verificationResult?: Record<string, unknown>;
-  timestamp: string;
+  createdAt?: string;
+  updatedAt?: string;
+  timestamp?: string;
 }
 
 export interface FirestoreCompanySettings {
@@ -291,8 +321,27 @@ export interface FirestoreMaintenanceSettings {
 }
 
 export interface FirestoreSiteSettings {
-  siteName: string;
+  // Phase 57 Site Settings Fields
+  companyName?: string;
+  legalName?: string;
+  tagline?: string;
+  description?: string;
+  logoUrl?: string;
+  faviconUrl?: string;
+  currencyCode?: string;
+  currencySymbol?: string;
+  phoneNumbers?: string[] | string;
+  email?: string;
+  addresses?: Array<{ name: string; address: string; city: string; country?: string }> | Record<string, unknown>;
   maintenanceMode: boolean;
+  maintenanceTitle?: string;
+  maintenanceMessage?: string;
+  maintenanceImageUrl?: string;
+  updatedAt: string;
+  version?: string | number;
+
+  // Backwards compatibility fields
+  siteName?: string;
   enableMaintenanceMode?: boolean;
   maintenance?: FirestoreMaintenanceSettings;
   announcement?: {
@@ -300,23 +349,35 @@ export interface FirestoreSiteSettings {
     text: string;
     link?: string;
   };
-  currency: string;
+  currency?: string;
   defaultCurrency?: string;
   supportedCurrencies?: string[];
-  taxRate: number;
+  taxRate?: number;
   vatTaxPercentage?: number;
   bookingDepositPercent?: number;
   legalRegistrationNumber?: string;
   enableStockAlertEmails?: boolean;
   dailyBackupEnabled?: boolean;
-  logoUrl?: string;
   mobileLogoUrl?: string;
   darkLogoUrl?: string;
-  faviconUrl?: string;
   ogImageUrl?: string;
   metaDescription?: string;
   brandingUpdatedAt?: string;
   brandingVersion?: number;
+}
+
+export interface FirestoreAnnouncement {
+  id: string;
+  title: string;
+  message: string;
+  imageUrl?: string;
+  link?: string;
+  order?: number;
+  type: 'info' | 'warning' | 'promotion' | 'update' | string;
+  isPublished: boolean;
+  startAt?: string;
+  endAt?: string;
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -325,45 +386,56 @@ export interface FirestoreCoupon {
   code: string;
   discountType: 'percentage' | 'fixed';
   discountValue: number;
-  minimumSpend: number;
-  expiryDate?: string;
-  usageLimit: number;
-  usageCount: number;
+  minSpend?: number;
+  maxDiscount?: number;
+  expiresAt?: string;
+  usageLimit?: number;
+  usedCount: number;
   status: 'active' | 'expired' | 'disabled';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface FirestoreNotification {
   id: string;
   userId: string;
   title: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'order' | 'booking';
-  read: boolean;
+  body: string;
   link?: string;
+  read: boolean;
+  type?: string;
   createdAt: string;
 }
 
 export interface FirestoreAuditLog {
   id: string;
-  actorId?: string;
-  actorName: string;
+  userId?: string;
+  actorId?: string; // backwards compatibility
+  actorName?: string;
   action: string;
-  resourceType: string;
-  resourceId?: string;
+  collection?: string;
+  resourceType?: string; // backwards compatibility
+  documentId?: string;
+  resourceId?: string; // backwards compatibility
+  before?: Record<string, unknown> | null;
+  after?: Record<string, unknown> | null;
   details?: Record<string, unknown>;
-  timestamp: string;
+  createdAt?: string;
+  timestamp?: string;
 }
 
 export interface FirestoreContactSubmission {
   id: string;
-  fullName: string;
+  name?: string;
+  fullName?: string; // backwards compatibility
   email: string;
   phone?: string;
-  division: string;
   subject: string;
   message: string;
-  status: 'new' | 'in_review' | 'replied' | 'archived';
+  division?: string;
+  status: 'new' | 'in_review' | 'replied' | 'archived' | string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface FirestoreQuoteRequest {
@@ -379,17 +451,23 @@ export interface FirestoreQuoteRequest {
   specifications: string;
   status: 'pending' | 'assessing' | 'quoted' | 'accepted' | 'declined';
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface FirestorePortfolio {
   id: string;
-  division: DivisionId | string;
-  divisionId?: DivisionId | string;
-  divisionName?: string;
   title: string;
-  client: string;
-  category: string;
+  slug: string;
   description: string;
+  divisionId: DivisionId | string;
+  division?: DivisionId | string; // backwards compatibility
+  divisionName?: string;
+  images?: string[];
+  category: string;
+  location?: string;
+  date?: string;
+  isPublished?: boolean;
+  client?: string;
   summary?: string;
   fullDescription?: string;
   highlights?: string[];
@@ -401,9 +479,11 @@ export interface FirestorePortfolio {
   metric?: { label: string; value: string };
   badge?: string;
   imageUrl: string;
-  featured: boolean;
-  year: string;
-  status: 'published' | 'draft' | 'active' | 'archived';
+  featured?: boolean;
+  year?: string;
+  status?: 'published' | 'draft' | 'active' | 'archived';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface FirestoreGallery {
@@ -414,6 +494,8 @@ export interface FirestoreGallery {
   type: 'image' | 'video';
   tag?: string;
   status: 'published' | 'hidden';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface FirestoreMilestone {
@@ -421,41 +503,61 @@ export interface FirestoreMilestone {
   year: string;
   title: string;
   description: string;
+  imageUrl?: string;
+  icon?: string;
+  iconName?: string;
+  order: number;
+  isPublished?: boolean;
+  date?: string;
   badge?: string;
   keyOutcome?: string;
+  metric?: string;
   divisionId?: string;
-  imageUrl?: string;
-  order: number;
-  status?: 'active' | 'archived';
+  status?: 'active' | 'published' | 'draft' | 'archived';
+  highlight?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface FirestoreTrustedCompany {
   id: string;
   name: string;
   logoUrl: string;
+  website?: string;
+  description?: string;
+  order?: number;
+  isPublished?: boolean;
   division?: string;
   tier?: string;
   industry?: string;
   partnershipType?: string;
-  description?: string;
-  status: 'active' | 'inactive';
+  status?: 'active' | 'inactive' | string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface FirestoreTestimonial {
   id: string;
-  author: string;
-  role: string;
+  customerName?: string;
+  author?: string; // backwards compatibility
+  role?: string;
   company?: string;
-  avatarUrl?: string;
+  message?: string;
+  quote?: string; // backwards compatibility
+  rating: number;
+  imageUrl?: string;
+  avatarUrl?: string; // backwards compatibility
   photoUrl?: string;
   avatarInitials?: string;
   verified?: boolean;
-  quote: string;
-  division: string;
+  division?: string;
   divisionId?: string;
   divisionName?: string;
-  rating: number;
-  status: 'approved' | 'pending' | 'archived';
+  isPublished?: boolean;
+  order?: number;
+  status?: 'approved' | 'pending' | 'archived' | string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface FirestorePage {

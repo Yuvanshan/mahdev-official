@@ -356,13 +356,14 @@ export const TiltCard: React.FC<{
   id,
 }) => {
   const ref = useRef<HTMLDivElement>(null);
+  const rectRef = useRef<{ left: number; top: number; width: number; height: number } | null>(null);
   const { reducedMotion, isTouch } = useDeviceMotion();
 
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  const mouseXSpring = useSpring(x, { stiffness: 120, damping: 15 });
-  const mouseYSpring = useSpring(y, { stiffness: 120, damping: 15 });
+  const mouseXSpring = useSpring(x, { stiffness: 140, damping: 18 });
+  const mouseYSpring = useSpring(y, { stiffness: 140, damping: 18 });
 
   const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], [maxTilt, -maxTilt]);
   const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], [-maxTilt, maxTilt]);
@@ -370,30 +371,52 @@ export const TiltCard: React.FC<{
   const [isHovered, setIsHovered] = useState(false);
   const [glarePosition, setGlarePosition] = useState({ x: 50, y: 50 });
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseEnter = () => {
     if (!ref.current || isTouch || reducedMotion) return;
     const rect = ref.current.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
+    rectRef.current = {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width || 1,
+      height: rect.height || 1,
+    };
+    setIsHovered(true);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!ref.current || isTouch || reducedMotion) return;
+    let rect = rectRef.current;
+    if (!rect) {
+      const domRect = ref.current.getBoundingClientRect();
+      rect = {
+        left: domRect.left,
+        top: domRect.top,
+        width: domRect.width || 1,
+        height: domRect.height || 1,
+      };
+      rectRef.current = rect;
+    }
 
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    const xPct = mouseX / width - 0.5;
-    const yPct = mouseY / height - 0.5;
+    const xPct = mouseX / rect.width - 0.5;
+    const yPct = mouseY / rect.height - 0.5;
 
     x.set(xPct);
     y.set(yPct);
 
-    setGlarePosition({
-      x: (mouseX / width) * 100,
-      y: (mouseY / height) * 100,
-    });
+    if (glareEffect) {
+      setGlarePosition({
+        x: (mouseX / rect.width) * 100,
+        y: (mouseY / rect.height) * 100,
+      });
+    }
   };
 
-  const handleMouseEnter = () => setIsHovered(true);
   const handleMouseLeave = () => {
     setIsHovered(false);
+    rectRef.current = null;
     x.set(0);
     y.set(0);
   };
@@ -428,7 +451,7 @@ export const TiltCard: React.FC<{
 
       {glareEffect && isHovered && (
         <div
-          className="pointer-events-none absolute inset-0 rounded-2xl transition-opacity duration-300 z-30"
+          className="pointer-events-none absolute inset-0 rounded-2xl transition-opacity duration-300 z-30 transform-gpu"
           style={{
             background: `radial-gradient(circle 240px at ${glarePosition.x}% ${glarePosition.y}%, rgba(255,255,255,0.18), transparent 70%)`,
           }}
@@ -445,26 +468,49 @@ export const Magnetic: React.FC<{
   className?: string;
 }> = ({ children, strength = 0.25, className = '' }) => {
   const ref = useRef<HTMLDivElement>(null);
+  const rectRef = useRef<{ left: number; top: number; width: number; height: number } | null>(null);
   const { reducedMotion, isTouch } = useDeviceMotion();
 
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  const springConfig = { stiffness: 150, damping: 15, mass: 0.1 };
+  const springConfig = { stiffness: 180, damping: 18, mass: 0.1 };
   const springX = useSpring(x, springConfig);
   const springY = useSpring(y, springConfig);
 
+  const handleMouseEnter = () => {
+    if (!ref.current || isTouch || reducedMotion) return;
+    const rect = ref.current.getBoundingClientRect();
+    rectRef.current = {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width || 1,
+      height: rect.height || 1,
+    };
+  };
+
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!ref.current || isTouch || reducedMotion) return;
-    const { clientX, clientY } = e;
-    const { left, top, width, height } = ref.current.getBoundingClientRect();
-    const middleX = clientX - (left + width / 2);
-    const middleY = clientY - (top + height / 2);
+    let rect = rectRef.current;
+    if (!rect) {
+      const domRect = ref.current.getBoundingClientRect();
+      rect = {
+        left: domRect.left,
+        top: domRect.top,
+        width: domRect.width || 1,
+        height: domRect.height || 1,
+      };
+      rectRef.current = rect;
+    }
+
+    const middleX = e.clientX - (rect.left + rect.width / 2);
+    const middleY = e.clientY - (rect.top + rect.height / 2);
     x.set(middleX * strength);
     y.set(middleY * strength);
   };
 
   const handleMouseLeave = () => {
+    rectRef.current = null;
     x.set(0);
     y.set(0);
   };
@@ -477,9 +523,10 @@ export const Magnetic: React.FC<{
     <motion.div
       ref={ref}
       onMouseMove={handleMouseMove}
+      onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       style={{ x: springX, y: springY }}
-      className={`inline-block will-change-transform ${className}`}
+      className={`inline-block will-change-transform transform-gpu ${className}`}
     >
       {children}
     </motion.div>

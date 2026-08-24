@@ -7,119 +7,70 @@ import {
   PaymentStatus,
   BookingType,
 } from '../types/booking';
-import { MASTER_BOOKABLE_SERVICES } from '../data/bookingServices';
+import { FirestoreService } from '../types/firestore';
 import { notificationService } from './notificationService';
+import { db, sanitizeForFirestore } from '../lib/firebase';
+import { doc, setDoc, getDocs, collection } from 'firebase/firestore';
+
+export function mapFirestoreServiceToBookable(fs: FirestoreService): BookableServiceItem {
+  const meta = (fs.metadata || {}) as any;
+  const divId = (fs.divisionId || fs.division || 'sws') as any;
+  const divName =
+    divId === 'sws'
+      ? 'SWS Event Management'
+      : divId === 'u1'
+      ? 'U1 Studio'
+      : divId === 'it'
+      ? 'Mahdev IT & Solutions'
+      : divId === 'travels'
+      ? 'Mahdev Travels'
+      : 'Mahdev Online Mart';
+
+  return {
+    id: fs.id,
+    sku: meta.sku || `SRV-${fs.id.toUpperCase().slice(0, 8)}`,
+    name: fs.name,
+    bookingType: (meta.bookingType as any) || 'event',
+    divisionId: (['sws', 'u1', 'travels', 'it', 'consulting'].includes(divId) ? divId : 'other') as any,
+    divisionName: divName,
+    description: fs.description || '',
+    imageUrl: fs.imageUrl || (fs.images && fs.images[0]) || 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80',
+    locationTypeDefault: meta.locationTypeDefault || 'venue',
+    availableTimeSlots: meta.availableTimeSlots && meta.availableTimeSlots.length > 0
+      ? meta.availableTimeSlots
+      : ['09:00 AM - 12:00 PM', '01:00 PM - 04:00 PM', '05:00 PM - 08:00 PM'],
+    maxBookingsPerDay: meta.maxBookingsPerDay || 5,
+    packages: meta.packages && meta.packages.length > 0
+      ? meta.packages
+      : [
+          {
+            id: `${fs.id}-standard`,
+            name: 'Standard Package',
+            description: fs.description || 'Comprehensive turnkey execution package',
+            duration: meta.duration || 'Full Session',
+            price: fs.price || 0,
+            currency: fs.currency || 'USD',
+            features: ['Professional consultation', 'Execution SLA', 'Dedicated management'],
+          },
+        ],
+    leadTimeDays: meta.leadTimeDays || 1,
+  };
+}
 
 const STORAGE_KEY = 'mahdev_bookings_store_v1';
 
-// Seed sample initial bookings for demonstration & testing
-const INITIAL_SEED_BOOKINGS: Booking[] = [
-  {
-    id: 'BK-2026-1042',
-    customerId: 'CUST-8821',
-    divisionId: 'sws',
-    divisionName: 'SWS Event Management',
-    bookingType: 'event',
-    serviceId: 'sws-royal-mandap-decor',
-    serviceName: 'SWS Luxury Mandap & Ceremonial Stage Production',
-    packageId: 'pkg-mandap-gold',
-    packageName: 'Imperial Grand Palace Mandap',
-    date: '2026-09-15',
-    time: 'Full Day Production (08:00 AM - 11:00 PM)',
-    location: {
-      type: 'venue',
-      address: 'Shangri-La Ballroom, Galle Face Center Road',
-      city: 'Colombo 03',
-      venueName: 'Shangri-La Hotel Colombo',
-    },
-    customer: {
-      fullName: 'Aarav Jayasinghe',
-      email: 'aarav.j@gmail.com',
-      phone: '+94 77 123 4567',
-      company: 'Jayasinghe Holdings',
-      preferredContactMethod: 'whatsapp',
-    },
-    notes: 'Require low-fog dry ice machine for grand entrance at 7:00 PM sharp.',
-    price: 3200,
-    currency: 'USD',
-    paymentStatus: 'deposit_paid',
-    status: 'confirmed',
-    createdAt: '2026-08-10T10:30:00.000Z',
-    updatedAt: '2026-08-11T14:20:00.000Z',
-    adminNotes: 'Assigned Senior Event Lead Niluka. Deposit of $1,000 received via Wire.',
-  },
-  {
-    id: 'BK-2026-1088',
-    customerId: 'CUST-3910',
-    divisionId: 'u1',
-    divisionName: 'U1 Studio',
-    bookingType: 'photography',
-    serviceId: 'u1-pre-wedding-cinematic-session',
-    serviceName: 'U1 Cinema Pre-Wedding Scenic Love-Story Shoot',
-    packageId: 'pkg-u1-pre-classic',
-    packageName: 'Artisan Story Session (1 Day / 2 Locations)',
-    date: '2026-08-28',
-    time: 'Sunrise Golden Hour (05:30 AM - 11:30 AM)',
-    location: {
-      type: 'travel_destination',
-      address: 'Little Adam’s Peak & Nine Arches Bridge',
-      city: 'Ella',
-      venueName: 'Ella Heritage Hilltop',
-    },
-    customer: {
-      fullName: 'Elena Rostova',
-      email: 'elena.rostova@creative.co',
-      phone: '+44 7911 123456',
-      preferredContactMethod: 'email',
-    },
-    notes: 'Drone permits required for aerial flyover near tea estate bungalows.',
-    price: 850,
-    currency: 'USD',
-    paymentStatus: 'paid',
-    status: 'scheduled',
-    createdAt: '2026-08-14T09:15:00.000Z',
-    updatedAt: '2026-08-15T11:00:00.000Z',
-  },
-  {
-    id: 'BK-2026-1120',
-    customerId: 'CUST-5519',
-    divisionId: 'travels',
-    divisionName: 'Mahdev Travels',
-    bookingType: 'travel',
-    serviceId: 'travels-yala-vip-safari',
-    serviceName: 'Yala National Park VIP Private Leopard Safari',
-    packageId: 'pkg-trv-safari-full',
-    packageName: 'Full Day Wilderness Immersion',
-    date: '2026-09-02',
-    time: 'Full-Day Deep Wilderness Safari (05:30 AM - 06:00 PM)',
-    location: {
-      type: 'travel_destination',
-      address: 'Yala National Park Gate, Tissamaharama',
-      city: 'Hambantota',
-      venueName: 'Cinnamon Wild Resort Pickup',
-    },
-    customer: {
-      fullName: 'Dr. Marcus Vance',
-      email: 'marcus.vance@stanford.edu',
-      phone: '+1 415 555 0192',
-      preferredContactMethod: 'whatsapp',
-    },
-    notes: '2 adults and 2 children. Please prepare 2 vegetarian breakfast baskets.',
-    price: 305,
-    currency: 'USD',
-    paymentStatus: 'paid',
-    status: 'confirmed',
-    createdAt: '2026-08-16T14:45:00.000Z',
-    updatedAt: '2026-08-16T16:00:00.000Z',
-  },
-];
-
 class UniversalBookingService {
-  private services: BookableServiceItem[] = [...MASTER_BOOKABLE_SERVICES];
+  private services: BookableServiceItem[] = [];
   private bookings: Booking[] = [];
 
   constructor() {
     this.loadFromStorage();
+  }
+
+  public syncWithFirestore(firestoreServices: FirestoreService[]): void {
+    if (Array.isArray(firestoreServices)) {
+      this.services = firestoreServices.map(mapFirestoreServiceToBookable);
+    }
   }
 
   private loadFromStorage(): void {
@@ -128,11 +79,10 @@ class UniversalBookingService {
       if (stored) {
         this.bookings = JSON.parse(stored);
       } else {
-        this.bookings = [...INITIAL_SEED_BOOKINGS];
-        this.saveToStorage();
+        this.bookings = [];
       }
     } catch {
-      this.bookings = [...INITIAL_SEED_BOOKINGS];
+      this.bookings = [];
     }
   }
 
@@ -371,6 +321,34 @@ class UniversalBookingService {
     // Prepend to bookings array
     this.bookings = [newBooking, ...this.bookings];
     this.saveToStorage();
+
+    // Persist to Cloud Firestore bookings collection
+    try {
+      const docRef = doc(db, 'bookings', newBooking.id);
+      setDoc(docRef, sanitizeForFirestore({
+        ...newBooking,
+        id: newBooking.id,
+        customerId: newBooking.customerId,
+        serviceId: newBooking.serviceId,
+        divisionId: newBooking.divisionId,
+        bookingDate: newBooking.date,
+        bookingTime: newBooking.time,
+        status: newBooking.status,
+        amount: newBooking.price,
+        currency: newBooking.currency,
+        paymentStatus: newBooking.paymentStatus,
+        customer: newBooking.customer,
+        divisionName: newBooking.divisionName,
+        serviceName: newBooking.serviceName,
+        packageId: newBooking.packageId,
+        packageName: newBooking.packageName,
+        location: newBooking.location,
+        createdAt: newBooking.createdAt,
+        updatedAt: newBooking.updatedAt,
+      }), { merge: true }).catch((err) => console.warn('[Firestore] Booking write error:', err));
+    } catch (e) {
+      console.warn('[Firestore] Booking sync error:', e);
+    }
 
     // Trigger non-blocking customer confirmation email and admin alert
     notificationService.notifyBookingConfirmation(newBooking).catch(() => {});

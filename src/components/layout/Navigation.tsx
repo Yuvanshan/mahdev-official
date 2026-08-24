@@ -61,15 +61,26 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
   const currentDivision = currentDivisionKey ? DIVISIONS[currentDivisionKey] : null;
 
-  // Handle scroll detection for glass navbar effect
+  // Handle throttled scroll detection for glass navbar effect
   useEffect(() => {
+    let ticking = false;
+    let lastScrolled = window.scrollY > 20;
+    setIsScrolled(lastScrolled);
+
     const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const shouldScroll = window.scrollY > 20;
+          if (shouldScroll !== lastScrolled) {
+            lastScrolled = shouldScroll;
+            setIsScrolled(shouldScroll);
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);

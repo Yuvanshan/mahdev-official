@@ -19,7 +19,7 @@ import {
   onSnapshot,
   Unsubscribe,
 } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreOrder, OrderStatus } from '../../types/firestore';
 
 export interface OrderQueryOptions {
@@ -115,11 +115,15 @@ export const firestoreOrdersService = {
   async createOrder(order: FirestoreOrder): Promise<void> {
     const docRef = doc(db, 'orders', order.id);
     const now = new Date().toISOString();
-    await setDoc(docRef, {
+    const payload = sanitizeForFirestore({
       ...order,
+      orderStatus: order.orderStatus || order.status || 'pending',
+      status: order.status || order.orderStatus || 'pending',
+      shippingAddress: order.shippingAddress || order.shipping?.address || {},
       createdAt: order.createdAt || now,
       updatedAt: now,
     });
+    await setDoc(docRef, payload);
   },
 
   /**
@@ -128,10 +132,11 @@ export const firestoreOrdersService = {
   async updateOrder(id: string, updates: Partial<FirestoreOrder>): Promise<void> {
     const docRef = doc(db, 'orders', id);
     const now = new Date().toISOString();
-    await updateDoc(docRef, {
+    const payload = sanitizeForFirestore({
       ...updates,
       updatedAt: now,
     });
+    await updateDoc(docRef, payload);
   },
 
   /**
@@ -156,6 +161,29 @@ export const firestoreOrdersService = {
   },
 
   /**
+   * Realtime listener for all orders (Admin dashboard and telemetry)
+   */
+  subscribeAllOrders(
+    onData: (orders: FirestoreOrder[]) => void,
+    onError?: (err: Error) => void
+  ): Unsubscribe {
+    return onSnapshot(
+      collection(db, 'orders'),
+      (snap) => {
+        const orders = snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreOrder[];
+        // Sort in memory by createdAt descending
+        orders.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        onData(orders);
+      },
+      (err) => {
+        console.warn('[Firestore Orders] subscribeAllOrders error:', err);
+        if (onError) onError(err);
+        else onData([]);
+      }
+    );
+  },
+
+  /**
    * Realtime listener for recent orders (Admin dashboard only)
    */
   subscribeRecentOrders(limitCount = 10, onData: (orders: FirestoreOrder[]) => void): Unsubscribe {
@@ -175,5 +203,19 @@ export const firestoreOrdersService = {
         onData([]);
       }
     );
+  },
+
+  /**
+   * Fetch all orders from Firestore
+   */
+  async getAllOrders(): Promise<FirestoreOrder[]> {
+    try {
+      const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      return snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreOrder[];
+    } catch (err) {
+      console.warn('[Firestore Orders] getAllOrders error:', err);
+      return [];
+    }
   },
 };

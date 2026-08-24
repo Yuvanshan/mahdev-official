@@ -23,8 +23,7 @@ import {
 } from 'lucide-react';
 import { AdminSectionId } from '../../types/admin';
 import { DIVISIONS } from '../../config/divisions';
-import { MASTER_CATALOG_CATEGORIES } from '../../data/catalog/categories';
-import { MASTER_BOOKABLE_SERVICES } from '../../data/bookingServices';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { authService } from '../../services/authService';
 import { Button } from '../../components/ui/Button';
 
@@ -38,6 +37,7 @@ export const AdminGenericView: React.FC<AdminGenericViewProps> = ({
   onNavigateSection,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const { services, categories } = useFirestoreDataContext();
   const customers = authService.getAllCustomers();
 
   // 1. DIVISIONS VIEW
@@ -86,51 +86,69 @@ export const AdminGenericView: React.FC<AdminGenericViewProps> = ({
   if (sectionId === 'services') {
     return (
       <div className="space-y-6">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <h2 className="font-display text-lg font-bold text-slate-900">
-            Universal Service Offerings ({MASTER_BOOKABLE_SERVICES.length})
-          </h2>
-          <p className="text-xs text-slate-500">
-            Managed service catalog for client booking and package tiers.
-          </p>
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
+          <div>
+            <h2 className="font-display text-lg font-bold text-slate-900">
+              Universal Service Offerings ({services.length})
+            </h2>
+            <p className="text-xs text-slate-500">
+              Managed service catalog for client booking and package tiers.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => onNavigateSection('services')}
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs gap-1.5"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Manage Services
+          </Button>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-mono font-bold">
-              <tr>
-                <th className="py-3 px-4">Service ID</th>
-                <th className="py-3 px-4">Division</th>
-                <th className="py-3 px-4">Name</th>
-                <th className="py-3 px-4">Starting Price</th>
-                <th className="py-3 px-4">Package Count</th>
-                <th className="py-3 px-4 text-right">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-mono">
-              {MASTER_BOOKABLE_SERVICES.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-50/80">
-                  <td className="py-3 px-4 font-bold text-slate-900">{s.sku || s.id}</td>
-                  <td className="py-3 px-4 uppercase text-[10px] text-blue-600 font-bold">
-                    {s.divisionName}
-                  </td>
-                  <td className="py-3 px-4 font-sans font-semibold text-slate-900">{s.name}</td>
-                  <td className="py-3 px-4 font-bold text-slate-900">
-                    ${s.packages[0]?.price.toFixed(2) || '0.00'} {s.packages[0]?.currency || 'USD'}
-                  </td>
-                  <td className="py-3 px-4 font-sans text-slate-600">
-                    {s.packages?.length || 1} Tiers
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded font-bold">
-                      ACTIVE
-                    </span>
-                  </td>
+        {services.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-8 text-center space-y-3 shadow-2xs">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+              <Briefcase className="w-6 h-6" />
+            </div>
+            <h3 className="font-display text-base font-bold text-slate-900">No Services in Catalog</h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              Real service offerings are synchronized from Firestore. Use the Admin Services manager to create verified services.
+            </p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-mono font-bold">
+                <tr>
+                  <th className="py-3 px-4">Service ID</th>
+                  <th className="py-3 px-4">Division</th>
+                  <th className="py-3 px-4">Name</th>
+                  <th className="py-3 px-4">Price</th>
+                  <th className="py-3 px-4 text-right">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-mono">
+                {services.map((s) => (
+                  <tr key={s.id} className="hover:bg-slate-50/80">
+                    <td className="py-3 px-4 font-bold text-slate-900">{s.id}</td>
+                    <td className="py-3 px-4 uppercase text-[10px] text-blue-600 font-bold">
+                      {s.divisionId || s.division}
+                    </td>
+                    <td className="py-3 px-4 font-sans font-semibold text-slate-900">{s.name}</td>
+                    <td className="py-3 px-4 font-bold text-slate-900">
+                      ${s.price || 0} {s.currency || 'USD'}
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded font-bold">
+                        {s.status || 'ACTIVE'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     );
   }
@@ -139,32 +157,54 @@ export const AdminGenericView: React.FC<AdminGenericViewProps> = ({
   if (sectionId === 'categories') {
     return (
       <div className="space-y-6">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <h2 className="font-display text-lg font-bold text-slate-900">
-            Taxonomy & Catalog Categories ({MASTER_CATALOG_CATEGORIES.length})
-          </h2>
-          <p className="text-xs text-slate-500">
-            Hierarchy grouping for physical goods, media equipment, and software.
-          </p>
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
+          <div>
+            <h2 className="font-display text-lg font-bold text-slate-900">
+              Taxonomy & Catalog Categories ({categories.length})
+            </h2>
+            <p className="text-xs text-slate-500">
+              Hierarchy grouping for physical goods, media equipment, and software.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => onNavigateSection('categories')}
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs gap-1.5"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Manage Categories
+          </Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {MASTER_CATALOG_CATEGORIES.map((cat) => (
-            <div
-              key={cat.id}
-              className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-2"
-            >
-              <div className="flex items-center justify-between">
-                <h4 className="font-display text-sm font-bold text-slate-900">{cat.name}</h4>
-                <span className="text-[10px] font-mono text-blue-600 bg-blue-50 px-2 py-0.5 rounded font-bold">
-                  {cat.itemCount} SKUs
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 line-clamp-2">{cat.description}</p>
-              <div className="pt-2 text-[10px] font-mono text-slate-400">Slug: /{cat.slug}</div>
+        {categories.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-8 text-center space-y-3 shadow-2xs">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
+              <Layers className="w-6 h-6" />
             </div>
-          ))}
-        </div>
+            <h3 className="font-display text-base font-bold text-slate-900">No Categories Found</h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              No categories have been added yet in Firestore. Create taxonomy categories to organize your product inventory.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {categories.map((cat) => (
+              <div
+                key={cat.id}
+                className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <h4 className="font-display text-sm font-bold text-slate-900">{cat.name}</h4>
+                  <span className="text-[10px] font-mono text-blue-600 bg-blue-50 px-2 py-0.5 rounded font-bold">
+                    {cat.division}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 line-clamp-2">{cat.description}</p>
+                <div className="pt-2 text-[10px] font-mono text-slate-400">Slug: /{cat.slug}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   }

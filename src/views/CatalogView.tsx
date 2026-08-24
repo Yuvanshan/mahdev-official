@@ -9,6 +9,7 @@ import {
   CatalogProduct,
 } from '../types/catalog';
 import { catalogService } from '../services/catalogService';
+import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 
 interface CatalogViewProps {
   initialDivision?: string;
@@ -23,6 +24,9 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   initialProductId,
   onNavigate,
 }) => {
+  const { products: firestoreProducts, categories: firestoreCategories, isInitialLoading } =
+    useFirestoreDataContext();
+
   const [filters, setFilters] = useState<CatalogFilterOptions>({
     divisionId: initialDivision,
     categoryId: initialCategory,
@@ -50,17 +54,17 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   // Query categories for active filters
   const categories = useMemo(() => {
     return catalogService.getCategories(filters.divisionId);
-  }, [filters.divisionId]);
+  }, [filters.divisionId, firestoreCategories]);
 
   // Master product count
   const allMasterProducts = useMemo(() => {
     return catalogService.queryProducts();
-  }, []);
+  }, [firestoreProducts]);
 
   // Paginated and filtered results
   const paginatedResult = useMemo(() => {
     return catalogService.getProductsPaginated(filters, sortBy, currentPage, pageSize);
-  }, [filters, sortBy, currentPage, pageSize]);
+  }, [filters, sortBy, currentPage, pageSize, firestoreProducts, firestoreCategories]);
 
   // Handle filter changes (resets page to 1)
   const handleFilterChange = (newFilters: CatalogFilterOptions) => {

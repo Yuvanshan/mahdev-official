@@ -8,9 +8,6 @@ import {
 import { orderService } from './orderService';
 import { bookingService } from './bookingService';
 import { paymentService } from './paymentService';
-import { MASTER_CATALOG_PRODUCTS } from '../data/catalog/products';
-import { MASTER_CATALOG_CATEGORIES } from '../data/catalog/categories';
-import { MASTER_BOOKABLE_SERVICES } from '../data/bookingServices';
 import { authService } from './authService';
 import { auth, db } from '../lib/firebase';
 import {
@@ -19,7 +16,8 @@ import {
   updateProfile,
   signOut,
 } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { FirestoreOrder, FirestoreBooking, FirestoreProduct, FirestoreUser } from '../types/firestore';
 
 const ADMIN_SESSION_STORAGE_KEY = 'mahdev_admin_session_v1';
 const ADMIN_AUDIT_STORAGE_KEY = 'mahdev_admin_audit_logs_v1';
@@ -246,108 +244,167 @@ class AdminService {
   }
 
   public async getDashboardStats(): Promise<AdminDashboardStats> {
-    const allOrders = orderService.getAllOrders();
-    const allBookings = bookingService.getAllBookings();
-    const allCustomers = authService.getAllCustomers();
+    try {
+      // Query genuine Firestore collections
+      const [ordersSnap, bookingsSnap, productsSnap, usersSnap] = await Promise.all([
+        getDocs(collection(db, 'orders')).catch(() => ({ docs: [] as any[] })),
+        getDocs(collection(db, 'bookings')).catch(() => ({ docs: [] as any[] })),
+        getDocs(collection(db, 'products')).catch(() => ({ docs: [] as any[] })),
+        getDocs(collection(db, 'users')).catch(() => ({ docs: [] as any[] })),
+      ]);
 
-    // 1. Calculate Revenue
-    const martRevenue = allOrders
-      .filter((o) => o.paymentStatus === 'paid')
-      .reduce((sum, o) => sum + o.total, 0);
+      const allOrders: FirestoreOrder[] = ordersSnap.docs.map((d: any) => ({ ...d.data(), id: d.id }));
+      const allBookings: FirestoreBooking[] = bookingsSnap.docs.map((d: any) => ({ ...d.data(), id: d.id }));
+      const allProducts: FirestoreProduct[] = productsSnap.docs.map((d: any) => ({ ...d.data(), id: d.id }));
+      const allUsers: FirestoreUser[] = usersSnap.docs.map((d: any) => ({ ...d.data(), uid: d.id }));
 
-    const bookingRevenue = allBookings
-      .filter((b) => b.paymentStatus === 'paid' || b.paymentStatus === 'deposit_paid')
-      .reduce((sum, b) => sum + b.price, 0);
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
-    const totalRevenue = martRevenue + bookingRevenue;
+      // 1. Calculate Revenue genuinely
+      const paidOrders = allOrders.filter(
+        (o) => (o.paymentStatus as string) === 'paid' || (o.status as string) === 'completed' || (o.status as string) === 'delivered'
+      );
+      const paidBookings = allBookings.filter(
+        (b) => (b.paymentStatus as string) === 'paid' || (b.paymentStatus as string) === 'deposit_paid' || (b.status as string) === 'completed'
+      );
 
-    // Today's estimated slice & month slice
-    const todayRevenue = totalRevenue * 0.18;
-    const thisMonthRevenue = totalRevenue;
+      const martRevenue = paidOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+      const bookingRevenue = paidBookings.reduce((sum, b) => sum + (Number(b.price) || 0), 0);
+      const totalRevenue = martRevenue + bookingRevenue;
 
-    // 2. Order Breakdown
-    const pendingOrders = allOrders.filter((o) => o.paymentStatus === 'payment_pending' || o.status === 'pending_payment');
-    const paidOrders = allOrders.filter((o) => o.paymentStatus === 'paid');
-    const dispatchedOrders = allOrders.filter((o) => o.status === 'dispatched');
-    const completedOrders = allOrders.filter((o) => o.status === 'completed');
+      // Real today revenue
+      const todayOrdersRevenue = paidOrders
+        .filter((o) => new Date(o.createdAt || 0).getTime() >= startOfToday)
+        .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+      const todayBookingsRevenue = paidBookings
+        .filter((b) => new Date(b.createdAt || 0).getTime() >= startOfToday)
+        .reduce((sum, b) => sum + (Number(b.price) || 0), 0);
+      const todayRevenue = todayOrdersRevenue + todayBookingsRevenue;
 
-    // 3. Booking Breakdown
-    const pendingApprovalBookings = allBookings.filter((b) => b.status === 'pending' || b.paymentStatus === 'unpaid');
-    const scheduledBookings = allBookings.filter((b) => b.status === 'scheduled' || b.status === 'confirmed');
-    const inProgressBookings = allBookings.filter((b) => b.status === 'in_progress');
-    const completedBookings = allBookings.filter((b) => b.status === 'completed');
+      // Real this month revenue
+      const monthOrdersRevenue = paidOrders
+        .filter((o) => new Date(o.createdAt || 0).getTime() >= startOfMonth)
+        .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+      const monthBookingsRevenue = paidBookings
+        .filter((b) => new Date(b.createdAt || 0).getTime() >= startOfMonth)
+        .reduce((sum, b) => sum + (Number(b.price) || 0), 0);
+      const thisMonthRevenue = monthOrdersRevenue + monthBookingsRevenue;
 
-    // 4. Customers Breakdown
-    const corporateCustomers = allCustomers.filter((c) => c.accountType === 'corporate').length;
-    const individualCustomers = allCustomers.filter((c) => c.accountType === 'individual').length;
+      // 2. Orders breakdown
+      const pendingOrders = allOrders.filter(
+        (o) => (o.paymentStatus as string) === 'pending' || (o.paymentStatus as string) === 'unpaid' || (o.status as string) === 'pending' || (o.status as string) === 'pending_payment'
+      );
+      const dispatchedOrders = allOrders.filter(
+        (o) => (o.status as string) === 'shipped' || (o.status as string) === 'dispatched' || (o.status as string) === 'out_for_delivery'
+      );
+      const completedOrders = allOrders.filter(
+        (o) => (o.status as string) === 'delivered' || (o.status as string) === 'completed'
+      );
 
-    // 5. Products & Inventory
-    const inStock = MASTER_CATALOG_PRODUCTS.filter((p) => p.stockStatus === 'in_stock').length;
-    const lowStock = MASTER_CATALOG_PRODUCTS.filter((p) => p.stockStatus === 'low_stock' || p.stockQuantity < 10).length;
-    const outOfStock = MASTER_CATALOG_PRODUCTS.filter((p) => p.stockStatus === 'out_of_stock' || p.stockQuantity === 0).length;
+      // 3. Bookings breakdown
+      const pendingApprovalBookings = allBookings.filter(
+        (b) => (b.status as string) === 'pending' || (b.paymentStatus as string) === 'unpaid' || (b.paymentStatus as string) === 'pending'
+      );
+      const scheduledBookings = allBookings.filter(
+        (b) => (b.status as string) === 'confirmed' || (b.status as string) === 'scheduled'
+      );
+      const inProgressBookings = allBookings.filter(
+        (b) => (b.status as string) === 'in_progress'
+      );
+      const completedBookings = allBookings.filter(
+        (b) => (b.status as string) === 'completed'
+      );
 
-    // 6. Pending Payments
-    const pendingPaymentsCount = pendingOrders.length + pendingApprovalBookings.length;
-    const pendingPaymentsTotal = pendingOrders.reduce((sum, o) => sum + o.total, 0) + pendingApprovalBookings.reduce((sum, b) => sum + b.price, 0);
+      // 4. Customers breakdown
+      const corporateCustomers = allUsers.filter(
+        (u) => (u as any).accountType === 'corporate' || (u as any).corporateDetails != null
+      ).length;
+      const individualCustomers = allUsers.length - corporateCustomers;
 
-    // 7. Inventory Alerts (< 15 threshold)
-    const inventoryAlerts: InventoryAlertItem[] = MASTER_CATALOG_PRODUCTS
-      .filter((p) => p.stockQuantity <= (p.lowStockThreshold || 10))
-      .map((p) => ({
-        id: p.id,
-        name: p.name,
-        sku: p.sku,
-        divisionId: p.divisionId,
-        divisionName: p.divisionName,
-        currentStock: p.stockQuantity,
-        threshold: p.lowStockThreshold || 10,
-        unitPrice: p.price,
-        status: p.stockQuantity === 0 ? 'out_of_stock' : 'low_stock',
-      }));
+      // 5. Products & Inventory breakdown
+      const inStock = allProducts.filter((p) => (p.stock || 0) > 10).length;
+      const lowStock = allProducts.filter((p) => (p.stock || 0) > 0 && (p.stock || 0) <= 10).length;
+      const outOfStock = allProducts.filter((p) => (p.stock || 0) === 0).length;
 
-    return {
-      revenue: {
-        total: totalRevenue,
-        today: todayRevenue,
-        thisMonth: thisMonthRevenue,
-        currency: 'USD',
-        growthPercent: 28.4,
-      },
-      orders: {
-        total: allOrders.length,
-        pending: pendingOrders.length,
-        paid: paidOrders.length,
-        dispatched: dispatchedOrders.length,
-        completed: completedOrders.length,
-      },
-      bookings: {
-        total: allBookings.length,
-        pendingApproval: pendingApprovalBookings.length,
-        scheduled: scheduledBookings.length,
-        inProgress: inProgressBookings.length,
-        completed: completedBookings.length,
-      },
-      customers: {
-        total: allCustomers.length,
-        corporate: corporateCustomers,
-        individual: individualCustomers,
-      },
-      products: {
-        total: MASTER_CATALOG_PRODUCTS.length,
-        inStock,
-        lowStock,
-        outOfStock,
-      },
-      pendingPayments: {
-        count: pendingPaymentsCount,
-        totalAmount: pendingPaymentsTotal,
-      },
-      pendingBookings: {
-        count: pendingApprovalBookings.length,
-        services: pendingApprovalBookings.map((b) => b.serviceName),
-      },
-      inventoryAlerts,
-    };
+      // 6. Pending Payments
+      const pendingPaymentsCount = pendingOrders.length + pendingApprovalBookings.length;
+      const pendingPaymentsTotal =
+        pendingOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0) +
+        pendingApprovalBookings.reduce((sum, b) => sum + (Number(b.price) || 0), 0);
+
+      // 7. Inventory Alerts
+      const inventoryAlerts: InventoryAlertItem[] = allProducts
+        .filter((p) => (p.stock || 0) <= 10)
+        .map((p) => ({
+          id: p.id,
+          name: p.name,
+          sku: p.sku || p.id,
+          divisionId: String(p.division || 'mart'),
+          divisionName: String(p.division || 'mart').toUpperCase(),
+          currentStock: p.stock || 0,
+          threshold: 10,
+          unitPrice: p.price || 0,
+          status: (p.stock || 0) === 0 ? 'out_of_stock' : 'low_stock',
+        }));
+
+      return {
+        revenue: {
+          total: totalRevenue,
+          today: todayRevenue,
+          thisMonth: thisMonthRevenue,
+          currency: 'LKR',
+          growthPercent: 0,
+        },
+        orders: {
+          total: allOrders.length,
+          pending: pendingOrders.length,
+          paid: paidOrders.length,
+          dispatched: dispatchedOrders.length,
+          completed: completedOrders.length,
+        },
+        bookings: {
+          total: allBookings.length,
+          pendingApproval: pendingApprovalBookings.length,
+          scheduled: scheduledBookings.length,
+          inProgress: inProgressBookings.length,
+          completed: completedBookings.length,
+        },
+        customers: {
+          total: allUsers.length,
+          corporate: corporateCustomers,
+          individual: Math.max(0, individualCustomers),
+        },
+        products: {
+          total: allProducts.length,
+          inStock,
+          lowStock,
+          outOfStock,
+        },
+        pendingPayments: {
+          count: pendingPaymentsCount,
+          totalAmount: pendingPaymentsTotal,
+        },
+        pendingBookings: {
+          count: pendingApprovalBookings.length,
+          services: pendingApprovalBookings.map((b) => b.serviceName || b.serviceId || 'Service Booking'),
+        },
+        inventoryAlerts,
+      };
+    } catch (err) {
+      console.warn('[AdminService] getDashboardStats error:', err);
+      return {
+        revenue: { total: 0, today: 0, thisMonth: 0, currency: 'LKR', growthPercent: 0 },
+        orders: { total: 0, pending: 0, paid: 0, dispatched: 0, completed: 0 },
+        bookings: { total: 0, pendingApproval: 0, scheduled: 0, inProgress: 0, completed: 0 },
+        customers: { total: 0, corporate: 0, individual: 0 },
+        products: { total: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
+        pendingPayments: { count: 0, totalAmount: 0 },
+        pendingBookings: { count: 0, services: [] },
+        inventoryAlerts: [],
+      };
+    }
   }
 
   public async getAuditLogs(): Promise<AuditLogEntry[]> {

@@ -6,6 +6,7 @@ export interface ImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   aspectRatio?: '16/9' | '4/3' | '1/1' | '21/9' | 'auto';
   className?: string;
   fallbackSrc?: string;
+  priority?: boolean;
 }
 
 export const Image: React.FC<ImageProps> = ({
@@ -14,6 +15,7 @@ export const Image: React.FC<ImageProps> = ({
   aspectRatio = 'auto',
   className = '',
   fallbackSrc,
+  priority = false,
   ...props
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -31,12 +33,12 @@ export const Image: React.FC<ImageProps> = ({
 
   return (
     <div
-      className={`relative overflow-hidden bg-slate-100 rounded-xl ${aspectStyles[aspectRatio]} ${className}`}
+      className={`relative overflow-hidden bg-slate-100 rounded-xl transform-gpu will-change-transform ${aspectStyles[aspectRatio]} ${className}`}
     >
       {/* Premium Shimmer Skeleton while loading */}
       {!isLoaded && !hasError && (
         <div className="absolute inset-0 bg-slate-200/70 overflow-hidden z-10">
-          <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/50 to-transparent animate-[shimmer_1.5s_infinite]" />
+          <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent animate-[shimmer_1.5s_infinite]" />
         </div>
       )}
 
@@ -51,11 +53,13 @@ export const Image: React.FC<ImageProps> = ({
         <img
           src={imageSrc}
           alt={alt}
-          loading="lazy"
+          loading={priority ? 'eager' : 'lazy'}
+          decoding="async"
+          {...(priority ? { fetchPriority: 'high' as any } : { fetchPriority: 'auto' as any })}
           referrerPolicy="no-referrer"
           onLoad={() => setIsLoaded(true)}
           onError={() => setHasError(true)}
-          className={`w-full h-full object-cover transition-all duration-500 ease-out ${
+          className={`w-full h-full object-cover transition-all duration-500 ease-out transform-gpu will-change-transform ${
             isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.98]'
           }`}
           {...props}

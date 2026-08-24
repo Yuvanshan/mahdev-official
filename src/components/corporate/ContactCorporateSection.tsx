@@ -29,6 +29,7 @@ import { COMPANY_INFO, getTelLink, getMailtoLink, getMapSearchUrl } from '../../
 import { useCompanySettings } from '../../hooks/useFirestoreData';
 import { DIVISION_LIST } from '../../config/divisions';
 import { evaluateBotRisk, checkActionThrottle } from '../../utils/securityProtection';
+import { firestoreContactsService } from '../../services/firestore/contacts';
 import { notificationService } from '../../services/notificationService';
 import { analyticsService } from '../../services/analyticsService';
 
@@ -117,6 +118,16 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
       setSubmitted(true);
       const ref = `MDV-${Math.floor(100000 + Math.random() * 900000)}`;
       setInquiryRef(ref);
+
+      // Persist directly to Firestore contactSubmissions collection
+      firestoreContactsService.submitContact({
+        fullName: formData.name,
+        email: formData.email,
+        phone: formData.phone || '',
+        division: formData.division,
+        subject: formData.serviceType || 'Corporate Contact Inquiry',
+        message: formData.message,
+      }).catch((err) => console.warn('[Contact] Firestore save notice:', err));
 
       // Dispatch notifications safely
       if (formData.division !== 'general' || formData.serviceType) {

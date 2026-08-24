@@ -40,6 +40,8 @@ import { firestoreTestimonialsService } from '../services/firestore/testimonials
 import { firestorePortfolioService } from '../services/firestore/portfolio';
 import { firestoreGalleryService } from '../services/firestore/gallery';
 import { cmsService } from '../services/cmsService';
+import { catalogService } from '../services/catalogService';
+import { bookingService } from '../services/bookingService';
 
 export interface FirestoreDataContextValue {
   isInitialLoading: boolean;
@@ -84,7 +86,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   const [portfolio, setPortfolio] = useState<FirestorePortfolio[]>([]);
   const [gallery, setGallery] = useState<FirestoreGallery[]>([]);
 
-  // Initial Bootstrap: load all collections concurrently from Firestore
+  // Explicit Manual Refresh: loads all collections concurrently from Firestore
   const refreshAll = useCallback(async () => {
     try {
       setError(null);
@@ -129,10 +131,12 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       setPortfolio(port);
       setGallery(gal);
 
-      // Sync with cmsService cache
+      // Sync with catalogService, bookingService, and cmsService cache
+      catalogService.syncWithFirestore(prods, cats);
+      bookingService.syncWithFirestore(srvs);
       cmsService.updateHomepageConfig(home);
     } catch (err) {
-      console.error('[FirestoreDataContext] Hydration error:', err);
+      console.error('[FirestoreDataContext] Refresh error:', err);
       setError(err instanceof Error ? err : new Error(String(err)));
     } finally {
       setIsInitialLoading(false);
@@ -142,42 +146,78 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     let isMounted = true;
+    let initialCount = 0;
+    const requiredSources = 7; // core collections needed for initial readiness
 
-    // 1. Initial async fetch
-    refreshAll();
+    const checkInitialReady = () => {
+      initialCount++;
+      if (initialCount >= requiredSources && isMounted) {
+        setIsInitialLoading(false);
+        setIsReady(true);
+      }
+    };
 
-    // 2. Realtime centralized listeners (Single Source of Truth, zero duplicate listeners)
+    // 1. Core Realtime Centralized Listeners (Single Source of Truth, zero duplicate listeners)
     const unsubCompany = firestoreSettingsService.subscribeCompanySettings((data) => {
-      if (isMounted) setCompanySettings(data);
+      if (isMounted) {
+        setCompanySettings(data);
+        checkInitialReady();
+      }
     });
 
     const unsubSite = firestoreSettingsService.subscribeSiteSettings((data) => {
-      if (isMounted) setSiteSettings(data);
+      if (isMounted) {
+        setSiteSettings(data);
+        checkInitialReady();
+      }
     });
 
     const unsubHome = firestoreSettingsService.subscribeHomepageSettings((data) => {
       if (isMounted) {
         setHomepageConfig(data);
         cmsService.updateHomepageConfig(data);
+        checkInitialReady();
       }
     });
 
     const unsubDivs = firestoreDivisionsService.subscribeDivisions((data) => {
-      if (isMounted) setDivisions(data);
+      if (isMounted) {
+        setDivisions(data);
+        checkInitialReady();
+      }
     });
 
     const unsubCats = firestoreCategoriesService.subscribeCategories((data) => {
-      if (isMounted) setCategories(data);
+      if (isMounted) {
+        setCategories(data);
+        setProducts((currentProds) => {
+          catalogService.syncWithFirestore(currentProds, data);
+          return currentProds;
+        });
+        checkInitialReady();
+      }
     });
 
     const unsubSrvs = firestoreServicesService.subscribeServices((data) => {
-      if (isMounted) setServices(data);
+      if (isMounted) {
+        setServices(data);
+        bookingService.syncWithFirestore(data);
+        checkInitialReady();
+      }
     });
 
     const unsubProds = firestoreProductsService.subscribeProducts((data) => {
-      if (isMounted) setProducts(data);
+      if (isMounted) {
+        setProducts(data);
+        setCategories((currentCats) => {
+          catalogService.syncWithFirestore(data, currentCats);
+          return currentCats;
+        });
+        checkInitialReady();
+      }
     });
 
+    // 2. Secondary Collections (Streamlined Snapshot Listeners)
     const unsubMs = firestoreMilestonesService.subscribeMilestones((data) => {
       if (isMounted) setMilestones(data);
     });
@@ -198,8 +238,17 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       if (isMounted) setGallery(data);
     });
 
+    // Fallback safety timer: ensure loader never hangs if network is slow
+    const safetyTimer = setTimeout(() => {
+      if (isMounted) {
+        setIsInitialLoading(false);
+        setIsReady(true);
+      }
+    }, 2000);
+
     return () => {
       isMounted = false;
+      clearTimeout(safetyTimer);
       unsubCompany();
       unsubSite();
       unsubHome();
@@ -213,7 +262,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       unsubPort();
       unsubGal();
     };
-  }, [refreshAll]);
+  }, []);
 
   const activeDivisions = useMemo(() => {
     return divisions.filter((d) => d.status === 'active');

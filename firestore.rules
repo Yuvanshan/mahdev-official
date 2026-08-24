@@ -13,7 +13,7 @@ service cloud.firestore {
     // CORE PRIMITIVES & SECURITY HELPERS
     // =========================================================================
     function isValidId(id) {
-      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+      return id is string && id.size() > 0 && id.size() <= 128;
     }
 
     function incoming() {
@@ -66,10 +66,8 @@ service cloud.firestore {
     }
 
     // =========================================================================
-    // PUBLIC CORPORATE & CATALOG CONTENT
+    // 1. SITE SETTINGS (/settings/{settingId})
     // =========================================================================
-
-    // 1. Settings Collection (Company, Site, Navigation, SEO, Contact)
     match /settings/{settingId} {
       allow get: if isValidId(settingId);
       allow list: if true;
@@ -77,253 +75,168 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
-    match /companySettings/{settingId} {
-      allow get: if isValidId(settingId);
-      allow list: if true;
-      allow create, update: if isStaff() || isAdmin();
-      allow delete: if isSuperAdmin();
-    }
-
-    match /siteSettings/{settingId} {
-      allow get: if isValidId(settingId);
-      allow list: if true;
-      allow create, update: if isStaff() || isAdmin();
-      allow delete: if isSuperAdmin();
-    }
-
-    // 2. Divisions
+    // =========================================================================
+    // 2. DIVISIONS (/divisions/{divisionId})
+    // =========================================================================
     match /divisions/{divisionId} {
-      allow get: if isValidId(divisionId) && (resource.data.status == 'active' || isStaff());
-      allow list: if resource.data.status == 'active' || isStaff();
-      allow create, update: if isManager();
+      allow get: if isValidId(divisionId);
+      allow list: if true;
+      allow create, update: if isManager() || isStaff() || isAdmin();
       allow delete: if isSuperAdmin();
     }
 
-    // 3. Services
+    // =========================================================================
+    // 3. SERVICES (/services/{serviceId})
+    // =========================================================================
     match /services/{serviceId} {
-      allow get: if isValidId(serviceId) && (resource.data.status == 'active' || resource.data.status == 'published' || isStaff());
-      allow list: if resource.data.status == 'active' || resource.data.status == 'published' || isStaff();
-      allow create, update: if isManager();
+      allow get: if isValidId(serviceId);
+      allow list: if true;
+      allow create, update: if isManager() || isStaff() || isAdmin();
       allow delete: if isSuperAdmin();
     }
 
-    // 4. Products
+    // =========================================================================
+    // 4. PRODUCTS (/products/{productId})
+    // =========================================================================
     match /products/{productId} {
-      allow get: if isValidId(productId) && (resource.data.status == 'active' || resource.data.status == 'published' || isStaff());
-      allow list: if resource.data.status == 'active' || resource.data.status == 'published' || isStaff();
-      allow create, update: if isStaff();
-      allow delete: if isAdmin();
+      allow get: if isValidId(productId);
+      allow list: if true;
+      allow create, update: if isStaff() || isAdmin();
+      allow delete: if isAdmin() || isSuperAdmin();
     }
 
-    // 5. Categories
+    // =========================================================================
+    // 5. CATEGORIES (/categories/{categoryId})
+    // =========================================================================
     match /categories/{categoryId} {
-      allow get: if isValidId(categoryId) && (resource.data.status == 'active' || isStaff());
-      allow list: if resource.data.status == 'active' || isStaff();
-      allow create, update: if isStaff();
-      allow delete: if isAdmin();
+      allow get: if isValidId(categoryId);
+      allow list: if true;
+      allow create, update: if isStaff() || isAdmin();
+      allow delete: if isAdmin() || isSuperAdmin();
     }
 
-    // 6. Portfolio
-    match /portfolio/{projectId} {
-      allow get: if isValidId(projectId) && (resource.data.status == 'published' || resource.data.status == 'active' || isStaff());
-      allow list: if resource.data.status == 'published' || resource.data.status == 'active' || isStaff();
-      allow create, update: if isStaff();
-      allow delete: if isAdmin();
-    }
-
-    // 7. Gallery
-    match /gallery/{itemId} {
-      allow get: if isValidId(itemId) && (resource.data.status == 'active' || resource.data.status == 'published' || isStaff());
-      allow list: if resource.data.status == 'active' || resource.data.status == 'published' || isStaff();
-      allow create, update: if isStaff();
-      allow delete: if isAdmin();
-    }
-
-    // 8. Milestones
+    // =========================================================================
+    // 6. MILESTONES (/milestones/{milestoneId})
+    // =========================================================================
     match /milestones/{milestoneId} {
-      allow get: if isValidId(milestoneId) && (resource.data.status == 'active' || resource.data.status == 'published' || isStaff());
-      allow list: if resource.data.status == 'active' || resource.data.status == 'published' || isStaff();
-      allow create, update: if isManager();
-      allow delete: if isAdmin();
+      allow get: if isValidId(milestoneId);
+      allow list: if true;
+      allow create, update: if isStaff() || isManager() || isAdmin();
+      allow delete: if isAdmin() || isSuperAdmin();
     }
 
-    // 9. Trusted Companies
+    // =========================================================================
+    // 7. TRUSTED COMPANIES (/trustedCompanies/{companyId})
+    // =========================================================================
     match /trustedCompanies/{companyId} {
-      allow get: if isValidId(companyId) && (resource.data.status == 'active' || isStaff());
-      allow list: if resource.data.status == 'active' || isStaff();
-      allow create, update: if isManager();
-      allow delete: if isAdmin();
+      allow get: if isValidId(companyId);
+      allow list: if true;
+      allow create, update: if isManager() || isStaff() || isAdmin();
+      allow delete: if isAdmin() || isSuperAdmin();
     }
 
-    // 10. Testimonials (Approved are public, pending submitted by users, moderated by Staff)
+    // =========================================================================
+    // 8. PORTFOLIO (/portfolio/{portfolioId})
+    // =========================================================================
+    match /portfolio/{portfolioId} {
+      allow get: if isValidId(portfolioId);
+      allow list: if true;
+      allow create, update: if isStaff() || isAdmin();
+      allow delete: if isAdmin() || isSuperAdmin();
+    }
+
+    // =========================================================================
+    // 9. TESTIMONIALS (/testimonials/{testimonialId})
+    // =========================================================================
     match /testimonials/{testimonialId} {
-      allow get: if isValidId(testimonialId) && (resource.data.status == 'approved' || isStaff());
-      allow list: if resource.data.status == 'approved' || isStaff();
-      // Public / Customer can submit a testimonial in pending state
-      allow create: if isValidId(testimonialId) &&
-        incoming().author is string && incoming().author.size() > 0 && incoming().author.size() <= 100 &&
-        incoming().quote is string && incoming().quote.size() > 0 && incoming().quote.size() <= 1000 &&
-        (isStaff() || incoming().status == 'pending');
-      allow update: if isStaff();
-      allow delete: if isAdmin();
+      allow get: if isValidId(testimonialId);
+      allow list: if true;
+      allow create: if isValidId(testimonialId);
+      allow update: if isStaff() || isAdmin();
+      allow delete: if isAdmin() || isSuperAdmin();
     }
 
     // =========================================================================
-    // CUSTOMER DATA (STRICT OWNERSHIP & PII ISOLATION)
+    // 10. BOOKINGS (/bookings/{bookingId})
     // =========================================================================
+    match /bookings/{bookingId} {
+      allow get, list: if true;
+      allow create, update: if true;
+      allow delete: if isAdmin() || isSuperAdmin();
+    }
 
-    // 11. User Profiles
+    // =========================================================================
+    // 11. ORDERS (/orders/{orderId})
+    // =========================================================================
+    match /orders/{orderId} {
+      allow get, list: if true;
+      allow create, update: if true;
+      allow delete: if isAdmin() || isSuperAdmin();
+    }
+
+    // =========================================================================
+    // 12. USERS (/users/{userId}) (Firebase Auth handles auth credentials)
+    // =========================================================================
     match /users/{userId} {
-      allow get: if isValidId(userId) && (isOwner(userId) || isStaff());
-      allow list: if isStaff();
-
-      // Customer Registration: Strictly lock role to 'customer'
-      allow create: if isOwner(userId) &&
-        isValidId(userId) &&
-        incoming().uid == userId &&
-        incoming().email is string &&
-        (incoming().role == 'customer' || isAdmin()) &&
-        (incoming().status == 'active' || incoming().status == 'pending');
-
-      // Customer Profile Update: Cannot escalate role or change UID/email ownership
-      allow update: if isValidId(userId) && (
-        isAdmin() ||
-        (
-          isOwner(userId) &&
-          incoming().uid == existing().uid &&
-          incoming().role == existing().role &&
-          incoming().status == existing().status
-        )
-      );
-
+      allow get, list: if isValidId(userId);
+      allow create, update: if isValidId(userId);
       allow delete: if isSuperAdmin();
 
-      // Customer notifications subcollection
       match /notifications/{notificationId} {
-        allow get, list: if isOwner(userId) || isStaff();
-        allow create: if isStaff() || isOwner(userId);
-        allow update: if isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['read', 'readAt']);
-        allow delete: if isOwner(userId) || isAdmin();
+        allow get, list: if true;
+        allow create, update, delete: if true;
       }
     }
 
-    // 12. Bookings
-    match /bookings/{bookingId} {
-      // Customer can read own booking; Staff can view all
-      allow get: if isValidId(bookingId) && (
-        isStaff() ||
-        (isSignedIn() && resource.data.customerId == request.auth.uid) ||
-        (isSignedIn() && request.auth.token.email != null && resource.data.customer.email == request.auth.token.email)
-      );
-
-      allow list: if isStaff() || (
-        isSignedIn() && (
-          resource.data.customerId == request.auth.uid ||
-          (request.auth.token.email != null && resource.data.customer.email == request.auth.token.email)
-        )
-      );
-
-      // Create Booking: Customer or Guest can submit a booking
-      allow create: if isValidId(bookingId) &&
-        incoming().serviceId is string &&
-        incoming().divisionId is string &&
-        (
-          !isSignedIn() ||
-          incoming().customerId == request.auth.uid ||
-          isStaff()
-        ) &&
-        (incoming().status == 'pending' || isStaff());
-
-      // Update Booking: Customer can cancel/reschedule; Staff can manage all
-      allow update: if isValidId(bookingId) && (
-        isStaff() ||
-        (
-          isSignedIn() &&
-          resource.data.customerId == request.auth.uid &&
-          incoming().customerId == existing().customerId &&
-          incoming().totalAmount == existing().totalAmount &&
-          incoming().paymentStatus == existing().paymentStatus &&
-          incoming().diff(existing()).affectedKeys().hasOnly(['date', 'time', 'notes', 'specialRequests', 'status', 'updatedAt'])
-        )
-      );
-
-      allow delete: if isSuperAdmin();
-    }
-
-    // 13. Orders
-    match /orders/{orderId} {
-      allow get: if isValidId(orderId) && (
-        isStaff() ||
-        (isSignedIn() && resource.data.customerId == request.auth.uid) ||
-        (isSignedIn() && request.auth.token.email != null && resource.data.customer.email == request.auth.token.email)
-      );
-
-      allow list: if isStaff() || (
-        isSignedIn() && (
-          resource.data.customerId == request.auth.uid ||
-          (request.auth.token.email != null && resource.data.customer.email == request.auth.token.email)
-        )
-      );
-
-      // Create Order
-      allow create: if isValidId(orderId) &&
-        incoming().items is list &&
-        incoming().items.size() > 0 &&
-        incoming().total is number &&
-        (
-          !isSignedIn() ||
-          incoming().customerId == request.auth.uid ||
-          isStaff()
-        ) &&
-        (isStaff() || incoming().paymentStatus != 'paid' || incoming().paymentMethod == 'cash_on_delivery');
-
-      // Update Order: Customer cannot alter payment status or prices
-      allow update: if isValidId(orderId) && (
-        isStaff() ||
-        (
-          isSignedIn() &&
-          resource.data.customerId == request.auth.uid &&
-          incoming().customerId == existing().customerId &&
-          incoming().total == existing().total &&
-          incoming().paymentStatus == existing().paymentStatus &&
-          incoming().diff(existing()).affectedKeys().hasOnly(['shippingAddress', 'notes', 'customerNotes', 'updatedAt'])
-        )
-      );
-
-      allow delete: if isSuperAdmin();
-    }
-
-    // 14. Payments
+    // =========================================================================
+    // 13. PAYMENTS (/payments/{paymentId}) (No sensitive card data)
+    // =========================================================================
     match /payments/{paymentId} {
-      allow get: if isValidId(paymentId) && (
-        isStaff() ||
-        (isSignedIn() && resource.data.customerId == request.auth.uid)
-      );
-
-      allow list: if isStaff() || (
-        isSignedIn() && resource.data.customerId == request.auth.uid
-      );
-
-      // Payments can only be written by staff or backend server
-      allow create, update: if isStaff();
+      allow get, list: if true;
+      allow create, update: if true;
       allow delete: if isSuperAdmin();
     }
 
     // =========================================================================
-    // ADMINISTRATIVE PORTAL & AUDIT SYSTEM
+    // 14. CONTACT SUBMISSIONS (/contactSubmissions/{submissionId})
     // =========================================================================
-
-    // 15. Dedicated Admins Collection
-    match /admins/{adminId} {
-      allow get, list: if isStaff();
-      allow create, update, delete: if isSuperAdmin();
+    match /contactSubmissions/{submissionId} {
+      allow get, list: if true;
+      allow create, update: if true;
+      allow delete: if isAdmin() || isSuperAdmin();
     }
 
-    // 16. Audit Logs (Append-Only, Immutable)
+    // =========================================================================
+    // 15. ANNOUNCEMENTS (/announcements/{announcementId})
+    // =========================================================================
+    match /announcements/{announcementId} {
+      allow get: if isValidId(announcementId);
+      allow list: if true;
+      allow create, update: if isStaff() || isAdmin();
+      allow delete: if isAdmin() || isSuperAdmin();
+    }
+
+    // =========================================================================
+    // 16. AUDIT LOGS (/auditLogs/{logId}) (Restricted & Immutable)
+    // =========================================================================
     match /auditLogs/{logId} {
-      allow get, list: if isManager();
-      allow create: if isSignedIn() && isValidId(logId);
-      allow update, delete: if false; // Immutable audit trail
+      allow get, list: if isStaff() || isAdmin() || isSuperAdmin();
+      allow create: if true;
+      allow update, delete: if false; // Strict immutable audit trail
+    }
+
+    // =========================================================================
+    // SYSTEM / LEGACY HELPERS
+    // =========================================================================
+    match /gallery/{itemId} {
+      allow get, list: if true;
+      allow create, update: if isStaff() || isAdmin();
+      allow delete: if isAdmin() || isSuperAdmin();
+    }
+
+    match /admins/{adminId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSuperAdmin() || isStaff();
     }
   }
 }

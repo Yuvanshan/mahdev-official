@@ -12,21 +12,16 @@ import {
   onSnapshot,
   Unsubscribe,
 } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreTrustedCompany } from '../../types/firestore';
-import { TRUSTED_COMPANIES } from '../../data/homeData';
 
 const CACHE_TTL_MS = 1000 * 60 * 30;
 let cachedCompanies: { data: FirestoreTrustedCompany[]; timestamp: number } | null = null;
 
 export function getDefaultTrustedCompanies(): FirestoreTrustedCompany[] {
-  return TRUSTED_COMPANIES.map((c, idx) => ({
-    id: c.id || `co-${idx + 1}`,
-    name: c.name,
-    logoUrl: c.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=0f172a&color=38bdf8`,
-    tier: 'enterprise',
-    status: 'active',
-  }));
+  // Phase 60: Real Data Architecture - Zero fake companies by default.
+  // Partner companies are managed dynamically via Firestore or Admin Portal.
+  return [];
 }
 
 export const firestoreTrustedCompaniesService = {
@@ -43,25 +38,22 @@ export const firestoreTrustedCompaniesService = {
         cachedCompanies = { data, timestamp: now };
         return data;
       }
-      const defaults = getDefaultTrustedCompanies();
-      for (const item of defaults) {
-        await setDoc(doc(db, 'trustedCompanies', item.id), item, { merge: true });
-      }
-      cachedCompanies = { data: defaults, timestamp: now };
-      return defaults;
+      cachedCompanies = { data: [], timestamp: now };
+      return [];
     } catch (err) {
-      console.warn('[Firestore TrustedCompanies] getTrustedCompanies fallback:', err);
-      return cachedCompanies?.data || getDefaultTrustedCompanies();
+      console.warn('[Firestore TrustedCompanies] getTrustedCompanies error:', err);
+      return cachedCompanies?.data || [];
     }
   },
 
   async saveTrustedCompany(id: string, data: Partial<FirestoreTrustedCompany>): Promise<void> {
     const docRef = doc(db, 'trustedCompanies', id);
-    await setDoc(docRef, { ...data, id }, { merge: true });
+    const payload = sanitizeForFirestore({ ...data, id });
+    await setDoc(docRef, payload, { merge: true });
     if (cachedCompanies) {
       const idx = cachedCompanies.data.findIndex((c) => c.id === id);
       if (idx >= 0) {
-        cachedCompanies.data[idx] = { ...cachedCompanies.data[idx], ...data } as FirestoreTrustedCompany;
+        cachedCompanies.data[idx] = { ...cachedCompanies.data[idx], ...payload } as FirestoreTrustedCompany;
       }
     }
   },
@@ -78,14 +70,13 @@ export const firestoreTrustedCompaniesService = {
     return onSnapshot(
       collection(db, 'trustedCompanies'),
       (snap) => {
-        if (!snap.empty) {
-          onData(snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreTrustedCompany[]);
-        } else {
-          onData(getDefaultTrustedCompanies());
-        }
+        const data = snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreTrustedCompany[];
+        cachedCompanies = { data, timestamp: Date.now() };
+        onData(data);
       },
-      () => {
-        onData(getDefaultTrustedCompanies());
+      (err) => {
+        console.warn('[Firestore TrustedCompanies] Listener error:', err);
+        onData(cachedCompanies?.data || []);
       }
     );
   },

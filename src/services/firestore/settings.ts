@@ -10,7 +10,7 @@ import {
   onSnapshot,
   Unsubscribe,
 } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreCompanySettings, FirestoreSiteSettings } from '../../types/firestore';
 import { HomepageCmsConfig } from '../../types/cms';
 import { COMPANY_INFO } from '../../config/company';
@@ -154,9 +154,43 @@ export function getDefaultCompanySettings(): FirestoreCompanySettings {
 }
 
 export function getDefaultSiteSettings(): FirestoreSiteSettings {
+  const now = new Date().toISOString();
   return {
-    siteName: 'Mahdev Pvt Ltd',
+    // Phase 57 Site Settings Fields
+    companyName: COMPANY_INFO.name || 'Mahdev Pvt Ltd',
+    legalName: COMPANY_INFO.legalName || 'Mahdev Private Limited',
+    tagline: COMPANY_INFO.tagline || 'Excellence Across Every Horizon',
+    description: COMPANY_INFO.description || 'Premier South Asian enterprise uniting 5 specialized business divisions.',
+    logoUrl: '/assets/images/logo.png',
+    faviconUrl: '/favicon.ico',
+    currencyCode: 'USD',
+    currencySymbol: '$',
+    phoneNumbers: [COMPANY_INFO.primaryPhone || '+94 77 000 0000', COMPANY_INFO.secondaryPhone || '+94 11 200 0000'].filter(Boolean),
+    email: COMPANY_INFO.email || 'info@mahdev.lk',
+    addresses: [
+      {
+        name: COMPANY_INFO.offices.colombo.name,
+        address: COMPANY_INFO.offices.colombo.address,
+        city: COMPANY_INFO.offices.colombo.city,
+        country: COMPANY_INFO.offices.colombo.country,
+      },
+      {
+        name: COMPANY_INFO.offices.trincomalee.name,
+        address: COMPANY_INFO.offices.trincomalee.address,
+        city: COMPANY_INFO.offices.trincomalee.city,
+        country: COMPANY_INFO.offices.trincomalee.country,
+      },
+    ],
     maintenanceMode: false,
+    maintenanceTitle: 'Systems Upgrade in Progress',
+    maintenanceMessage:
+      'Our digital platforms, client portals, and division infrastructure are undergoing planned architectural maintenance to ensure maximum reliability, security, and performance.',
+    maintenanceImageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
+    updatedAt: now,
+    version: '1.0.0',
+
+    // Backwards compatibility fields
+    siteName: 'Mahdev Pvt Ltd',
     enableMaintenanceMode: false,
     maintenance: {
       enabled: false,
@@ -183,7 +217,6 @@ export function getDefaultSiteSettings(): FirestoreSiteSettings {
     legalRegistrationNumber: COMPANY_INFO.registrationNumber || 'PV-00289410',
     enableStockAlertEmails: true,
     dailyBackupEnabled: true,
-    updatedAt: new Date().toISOString(),
   };
 }
 
@@ -206,7 +239,7 @@ export const firestoreSettingsService = {
         return data;
       }
       // If not present in Firestore yet, auto-seed default
-      const defaultSettings = getDefaultCompanySettings();
+      const defaultSettings = sanitizeForFirestore(getDefaultCompanySettings());
       await setDoc(docRef, defaultSettings, { merge: true });
       cachedCompanySettings = { data: defaultSettings, timestamp: now };
       return defaultSettings;
@@ -221,10 +254,10 @@ export const firestoreSettingsService = {
    */
   async updateCompanySettings(data: Partial<FirestoreCompanySettings>): Promise<void> {
     const docRef = doc(db, 'settings', 'company');
-    const payload = {
+    const payload = sanitizeForFirestore({
       ...data,
       updatedAt: new Date().toISOString(),
-    };
+    });
     await setDoc(docRef, payload, { merge: true });
     if (cachedCompanySettings) {
       cachedCompanySettings.data = { ...cachedCompanySettings.data, ...payload };
@@ -276,7 +309,7 @@ export const firestoreSettingsService = {
         cachedSiteSettings = { data, timestamp: now };
         return data;
       }
-      const defaultSite = getDefaultSiteSettings();
+      const defaultSite = sanitizeForFirestore(getDefaultSiteSettings());
       await setDoc(docRef, defaultSite, { merge: true });
       cachedSiteSettings = { data: defaultSite, timestamp: now };
       return defaultSite;
@@ -291,10 +324,10 @@ export const firestoreSettingsService = {
    */
   async updateSiteSettings(data: Partial<FirestoreSiteSettings>): Promise<void> {
     const docRef = doc(db, 'settings', 'site');
-    const payload = {
+    const payload = sanitizeForFirestore({
       ...data,
       updatedAt: new Date().toISOString(),
-    };
+    });
     await setDoc(docRef, payload, { merge: true });
     if (cachedSiteSettings) {
       cachedSiteSettings.data = { ...cachedSiteSettings.data, ...payload };
@@ -346,7 +379,7 @@ export const firestoreSettingsService = {
         cachedHomepageSettings = { data, timestamp: now };
         return data;
       }
-      const defaultHome = getDefaultHomepageSettings();
+      const defaultHome = sanitizeForFirestore(getDefaultHomepageSettings());
       await setDoc(docRef, defaultHome, { merge: true });
       cachedHomepageSettings = { data: defaultHome, timestamp: now };
       return defaultHome;
@@ -361,10 +394,10 @@ export const firestoreSettingsService = {
    */
   async updateHomepageSettings(data: Partial<HomepageCmsConfig>): Promise<void> {
     const docRef = doc(db, 'settings', 'homepage');
-    const payload = {
+    const payload = sanitizeForFirestore({
       ...data,
       updatedAt: new Date().toISOString(),
-    };
+    });
     await setDoc(docRef, payload, { merge: true });
     if (cachedHomepageSettings) {
       cachedHomepageSettings.data = { ...cachedHomepageSettings.data, ...payload };

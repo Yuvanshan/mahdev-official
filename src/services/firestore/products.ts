@@ -20,40 +20,17 @@ import {
   onSnapshot,
   Unsubscribe,
 } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreProduct, DivisionId } from '../../types/firestore';
-import { MASTER_CATALOG_PRODUCTS } from '../../data/catalog/products';
 
 const CACHE_TTL_MS = 1000 * 60 * 15; // 15-minute memoized cache
 let cachedProducts: { data: FirestoreProduct[]; timestamp: number } | null = null;
 let inFlightProductsPromise: Promise<FirestoreProduct[]> | null = null;
 
 export function getDefaultProducts(): FirestoreProduct[] {
-  return MASTER_CATALOG_PRODUCTS.map((p) => ({
-    id: p.id,
-    division: (p.divisionId || 'mart') as DivisionId,
-    name: p.name,
-    slug: p.slug,
-    sku: p.sku,
-    categoryId: p.categoryId,
-    description: p.description,
-    price: p.price,
-    compareAtPrice: p.originalPrice,
-    images: p.gallery && p.gallery.length > 0 ? p.gallery : [p.imageUrl],
-    stock: p.stockQuantity,
-    status: p.status === 'active' ? 'active' : 'draft',
-    hasVariants: Boolean(p.variants && p.variants.options && p.variants.options.length > 0),
-    variants: p.variants?.options?.map((opt) => ({
-      id: opt.id,
-      productId: p.id,
-      name: opt.name,
-      sku: opt.sku,
-      price: p.price + (opt.priceModifier || 0),
-      stock: opt.stockQuantity || 10,
-    })),
-    createdAt: p.createdAt || '2026-01-01T00:00:00Z',
-    updatedAt: p.updatedAt || new Date().toISOString(),
-  }));
+  // Phase 60: Real Data Architecture - Zero fake products by default.
+  // Real catalog items are populated through Admin Portal or Firestore collection.
+  return [];
 }
 
 export interface ProductQueryOptions {
@@ -101,20 +78,12 @@ export const firestoreProductsService = {
           cachedProducts = { data: loaded, timestamp: Date.now() };
           return loaded;
         } else {
-          // Auto-seed defaults in background
-          const defaults = getDefaultProducts();
-          cachedProducts = { data: defaults, timestamp: Date.now() };
-          // Background asynchronous seed
-          (async () => {
-            for (const item of defaults) {
-              await setDoc(doc(db, 'products', item.id), item, { merge: true }).catch(() => {});
-            }
-          })();
-          return defaults;
+          cachedProducts = { data: [], timestamp: Date.now() };
+          return [];
         }
       } catch (err) {
         console.warn('[Firestore Products] Optimized fetch fallback:', err);
-        const fallback = cachedProducts?.data || getDefaultProducts();
+        const fallback = cachedProducts?.data || [];
         cachedProducts = { data: fallback, timestamp: Date.now() };
         return fallback;
       } finally {
@@ -194,11 +163,11 @@ export const firestoreProductsService = {
    */
   async saveProduct(id: string, data: Partial<FirestoreProduct>): Promise<void> {
     const docRef = doc(db, 'products', id);
-    const payload = {
+    const payload = sanitizeForFirestore({
       ...data,
       id,
       updatedAt: new Date().toISOString(),
-    };
+    });
     await setDoc(docRef, payload, { merge: true });
     if (cachedProducts) {
       const idx = cachedProducts.data.findIndex((p) => p.id === id);
@@ -244,21 +213,16 @@ export const firestoreProductsService = {
     return onSnapshot(
       q,
       (snap) => {
-        if (!snap.empty) {
-          const data = snap.docs.map((d) => ({
-            ...d.data(),
-            id: d.id,
-          })) as FirestoreProduct[];
-          onData(data);
-        } else {
-          const defaults = getDefaultProducts();
-          onData(division ? defaults.filter((p) => p.division === division) : defaults);
-        }
+        const data = snap.docs.map((d) => ({
+          ...d.data(),
+          id: d.id,
+        })) as FirestoreProduct[];
+        cachedProducts = { data, timestamp: Date.now() };
+        onData(data);
       },
       (err) => {
-        console.warn('[Firestore Products] Listener fallback:', err);
-        const defaults = getDefaultProducts();
-        onData(division ? defaults.filter((p) => p.division === division) : defaults);
+        console.warn('[Firestore Products] Listener fallback error:', err);
+        onData(cachedProducts?.data || []);
       }
     );
   },

@@ -12,8 +12,10 @@ import {
   updateDoc,
   query,
   limit as firestoreLimit,
+  onSnapshot,
+  Unsubscribe,
 } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreUser, UserRole } from '../../types/firestore';
 
 export interface PaginatedUsersResult {
@@ -45,17 +47,19 @@ export const firestoreUsersService = {
     const docRef = doc(db, 'users', uid);
     const existing = await this.getUser(uid);
     const now = new Date().toISOString();
-    const payload: FirestoreUser = {
+    const payload: FirestoreUser = sanitizeForFirestore({
       uid,
-      name: data.name || existing?.name || 'Mahdev Customer',
+      displayName: data.displayName || data.name || existing?.displayName || existing?.name || 'Mahdev Customer',
+      name: data.name || data.displayName || existing?.name || existing?.displayName || 'Mahdev Customer',
       email: data.email || existing?.email || '',
       phone: data.phone || existing?.phone || '',
-      photoURL: data.photoURL || existing?.photoURL || '',
+      photoUrl: data.photoUrl || data.photoURL || existing?.photoUrl || existing?.photoURL || '',
+      photoURL: data.photoURL || data.photoUrl || existing?.photoURL || existing?.photoUrl || '',
       role: data.role || existing?.role || 'customer',
       status: data.status || existing?.status || 'active',
       createdAt: existing?.createdAt || now,
       updatedAt: now,
-    };
+    });
     await setDoc(docRef, payload, { merge: true });
   },
 
@@ -98,5 +102,37 @@ export const firestoreUsersService = {
       totalPages,
       hasMore: page < totalPages,
     };
+  },
+
+  /**
+   * Realtime listener for users
+   */
+  subscribeUsers(onData: (users: FirestoreUser[]) => void, onError?: (err: Error) => void) {
+    const q = query(collection(db, 'users'));
+    return onSnapshot(
+      q,
+      (snap) => {
+        onData(snap.docs.map((d) => ({ ...d.data(), uid: d.id })) as FirestoreUser[]);
+      },
+      (err) => {
+        console.warn('[Firestore Users] subscribeUsers error:', err);
+        if (onError) onError(err);
+        else onData([]);
+      }
+    );
+  },
+
+  /**
+   * Fetch all users from Firestore
+   */
+  async getAllUsers(): Promise<FirestoreUser[]> {
+    try {
+      const q = query(collection(db, 'users'));
+      const snap = await getDocs(q);
+      return snap.docs.map((d) => ({ ...d.data(), uid: d.id })) as FirestoreUser[];
+    } catch (err) {
+      console.warn('[Firestore Users] getAllUsers error:', err);
+      return [];
+    }
   },
 };

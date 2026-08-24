@@ -16,11 +16,7 @@ import {
   HomepageCmsConfig,
 } from '../types/cms';
 import { DIVISIONS } from '../config/divisions';
-import { FEATURED_SERVICES, COMPANY_MILESTONES, TRUSTED_COMPANIES } from '../data/homeData';
-import { MASTER_CATALOG_PRODUCTS } from '../data/catalog/products';
-import { MASTER_CATALOG_CATEGORIES } from '../data/catalog/categories';
-import { MASTER_BOOKABLE_SERVICES } from '../data/bookingServices';
-import { PORTFOLIO_PROJECTS_DATA, TESTIMONIALS_DATA } from '../data/corporateData';
+import { COMPANY_MILESTONES } from '../data/homeData';
 import { adminService } from './adminService';
 import { DivisionId } from '../types';
 import { COMPANY_INFO, CompanyInformation } from '../config/company';
@@ -223,230 +219,28 @@ class CmsService {
         }));
 
       case 'services':
-        return FEATURED_SERVICES.map((s, idx) => ({
-          id: s.id || `srv-${idx + 1}`,
-          divisionId: s.divisionId,
-          divisionName: s.divisionName,
-          title: s.title,
-          description: s.description,
-          features: s.features || [],
-          iconName: s.iconName || 'Sparkles',
-          popular: !!s.popular,
-          badge: s.badge || 'Enterprise Service',
-          startingPrice: s.divisionId === 'sws' ? 1800 : s.divisionId === 'u1' ? 750 : s.divisionId === 'it' ? 2500 : 950,
-          currency: 'USD',
-          turnaroundTime: s.turnaroundTime || '2-3 Weeks',
-          isActive: true,
-          isDeleted: false,
-          createdAt: now,
-          updatedAt: now,
-        }));
+        // Real services populated via Firestore / Admin Portal
+        return [];
 
       case 'products':
-        return MASTER_CATALOG_PRODUCTS.map((p: any) => ({
-          id: p.id,
-          sku: p.sku,
-          name: p.name,
-          slug: p.slug,
-          divisionId: p.divisionId,
-          divisionName: p.divisionName,
-          categoryId: p.categoryId,
-          categoryName: p.categoryName,
-          price: p.price,
-          compareAtPrice: p.compareAtPrice,
-          currency: p.currency,
-          shortDescription: p.shortDescription,
-          description: p.description,
-          imageUrl: p.imageUrl,
-          galleryImages: p.galleryImages || [p.imageUrl],
-          stockQuantity: p.stockQuantity,
-          stockStatus: p.stockStatus,
-          lowStockThreshold: p.lowStockThreshold || 10,
-          isFeatured: !!p.isFeatured,
-          tags: p.tags || [],
-          specifications: p.specifications || {},
-          warrantyInfo: p.warrantyInfo || '1-Year Official Manufacturer Warranty',
-          isActive: true,
-          isDeleted: false,
-          createdAt: now,
-          updatedAt: now,
-        }));
+        // Real products populated via Firestore / Admin Portal
+        return [];
 
       case 'categories':
-        return MASTER_CATALOG_CATEGORIES.map((c: any, idx) => ({
-          id: c.id,
-          slug: c.slug,
-          name: c.name,
-          divisionId: c.divisionId,
-          description: c.description || `High caliber offerings for ${c.name}`,
-          iconName: c.icon || 'Layers',
-          bannerUrl: c.bannerImage || 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
-          itemCount: c.itemCount || 12,
-          displayOrder: idx + 1,
-          isActive: true,
-          isDeleted: false,
-          createdAt: now,
-          updatedAt: now,
-        }));
+        // Real categories populated via Firestore / Admin Portal
+        return [];
 
-      case 'packages': {
-        const pkgs: CmsPackage[] = [];
-        MASTER_BOOKABLE_SERVICES.forEach((service) => {
-          service.packages.forEach((pkg, pIdx) => {
-            pkgs.push({
-              id: pkg.id || `pkg-${service.id}-${pIdx + 1}`,
-              serviceId: service.id,
-              serviceTitle: service.name,
-              divisionId: service.divisionId as DivisionId,
-              name: pkg.name,
-              tagline: pkg.description,
-              price: pkg.price,
-              currency: pkg.currency || 'USD',
-              duration: pkg.duration || 'Full Session',
-              features: pkg.features || [],
-              popular: pIdx === 1,
-              isCustomQuote: pkg.price === 0,
-              isActive: true,
-              isDeleted: false,
-              createdAt: now,
-              updatedAt: now,
-            });
-          });
-        });
-        return pkgs;
-      }
+      case 'packages':
+        // Real packages populated via Firestore / Admin Portal
+        return [];
 
       case 'portfolio':
-        return PORTFOLIO_PROJECTS_DATA.map((proj) => ({
-          id: proj.id,
-          divisionId: proj.divisionId,
-          title: proj.title,
-          category: proj.category,
-          client: proj.client,
-          year: proj.year,
-          summary: proj.summary,
-          fullDescription: proj.fullDescription || proj.summary,
-          highlights: proj.highlights || [],
-          deliverables: proj.deliverables || [],
-          imageUrl: proj.imageUrl,
-          galleryImages: proj.galleryImages || [proj.imageUrl],
-          liveUrl: proj.liveUrl || 'https://mahdev.lk',
-          impactMetrics: proj.impactMetrics || [{ label: 'Satisfaction', value: '100%' }],
-          tags: proj.tags || ['Enterprise', 'Production'],
-          isFeatured: true,
-          isDeleted: false,
-          createdAt: now,
-          updatedAt: now,
-        }));
+        // Real portfolio projects populated via Firestore / Admin Portal
+        return [];
 
       case 'gallery':
-        return [
-          {
-            id: 'gal-sws-01',
-            divisionId: 'sws',
-            title: 'BMICH Grand Gala Main Stage',
-            category: 'Stage & Lighting',
-            mediaType: 'image',
-            url: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
-            caption: '40m curved 4K LED volume matrix with line-array acoustic trusses.',
-            tags: ['Concert', 'LED Matrix', 'BMICH'],
-            isFeatured: true,
-            location: 'Colombo, Sri Lanka',
-            isDeleted: false,
-            createdAt: now,
-            updatedAt: now,
-          },
-          {
-            id: 'gal-sws-02',
-            divisionId: 'sws',
-            title: 'Royal Mandap Floral Installation',
-            category: 'Luxury Wedding',
-            mediaType: 'image',
-            url: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80',
-            caption: 'Carved teakwood mandap with imported cascading white orchids.',
-            tags: ['Wedding', 'Floral Architecture', 'Bentota'],
-            isFeatured: true,
-            location: 'Bentota Estate',
-            isDeleted: false,
-            createdAt: now,
-            updatedAt: now,
-          },
-          {
-            id: 'gal-u1-01',
-            divisionId: 'u1',
-            title: 'Cinema 8K RED V-Raptor Rig',
-            category: 'Cinematography',
-            mediaType: 'image',
-            url: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1200&q=80',
-            caption: 'Filming on location across misty Nuwara Eliya tea hills.',
-            tags: ['8K Cinema', 'Documentary', 'Anamorphic'],
-            isFeatured: true,
-            location: 'Central Highlands',
-            isDeleted: false,
-            createdAt: now,
-            updatedAt: now,
-          },
-          {
-            id: 'gal-u1-02',
-            divisionId: 'u1',
-            title: 'Fine-Art Bridal Portrait',
-            category: 'Fashion & Bridal',
-            mediaType: 'image',
-            url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80',
-            caption: 'Studio lighting masterclass and medium format digital capture.',
-            tags: ['Fashion', 'Portrait', 'Studio'],
-            isFeatured: true,
-            location: 'U1 Flagship Studio',
-            isDeleted: false,
-            createdAt: now,
-            updatedAt: now,
-          },
-          {
-            id: 'gal-it-01',
-            divisionId: 'it',
-            title: 'Cloud Telemetry & Operations Center',
-            category: 'Enterprise IT',
-            mediaType: 'image',
-            url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80',
-            caption: 'Real-time microservices monitoring dashboard with sub-50ms sync.',
-            tags: ['Cloud', 'DevOps', 'React'],
-            isFeatured: true,
-            location: 'Mahdev HQ',
-            isDeleted: false,
-            createdAt: now,
-            updatedAt: now,
-          },
-          {
-            id: 'gal-travels-01',
-            divisionId: 'travels',
-            title: 'Ceylon Highland Helicopter Expedition',
-            category: 'Luxury Travel',
-            mediaType: 'image',
-            url: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=80',
-            caption: 'Chartered aerial transfers over Sigiriya Rock Fortress.',
-            tags: ['Helicopter', 'Sigiriya', 'VIP Concierge'],
-            isFeatured: true,
-            location: 'Sigiriya, Sri Lanka',
-            isDeleted: false,
-            createdAt: now,
-            updatedAt: now,
-          },
-          {
-            id: 'gal-mart-01',
-            divisionId: 'mart',
-            title: 'Authorized Sony FX9 Broadcast Fleet',
-            category: 'Hardware & Procurement',
-            mediaType: 'image',
-            url: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=1200&q=80',
-            caption: 'Calibrated broadcast equipment warehouse ready for island dispatch.',
-            tags: ['Sony', 'Broadcast', 'Hardware'],
-            isFeatured: true,
-            location: 'Colombo Fulfillment Center',
-            isDeleted: false,
-            createdAt: now,
-            updatedAt: now,
-          },
-        ];
+        // Real gallery items populated via Firestore / Admin Portal
+        return [];
 
       case 'milestones':
         return COMPANY_MILESTONES.map((m, idx) => ({
@@ -466,40 +260,12 @@ class CmsService {
         }));
 
       case 'companies':
-        return TRUSTED_COMPANIES.map((c, idx) => ({
-          id: c.id,
-          name: c.name,
-          industry: c.industry,
-          partnershipType: c.partnershipType,
-          logoUrl: c.logo || 'https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?auto=format&fit=crop&w=200&q=80',
-          website: c.website || 'https://example.com',
-          description: c.description || `Key collaborative partner for ${c.industry} excellence.`,
-          featured: !!c.featured,
-          order: idx + 1,
-          isDeleted: false,
-          createdAt: now,
-          updatedAt: now,
-        }));
+        // Real enterprise partners populated via Firestore / Admin Portal
+        return [];
 
       case 'testimonials':
-        return TESTIMONIALS_DATA.map((t, idx) => ({
-          id: t.id || `test-${idx + 1}`,
-          author: t.author,
-          role: t.role,
-          company: t.company,
-          quote: t.quote,
-          rating: t.rating,
-          divisionId: t.divisionId,
-          divisionName: t.divisionName || 'Mahdev Group',
-          avatarInitials: t.avatarInitials || t.author.split(' ').map((n) => n[0]).join(''),
-          photoUrl: t.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
-          date: t.date || '2026',
-          verified: t.verified ?? true,
-          isFeatured: true,
-          isDeleted: false,
-          createdAt: now,
-          updatedAt: now,
-        }));
+        // Real client testimonials populated via Firestore / Admin Portal
+        return [];
 
       case 'pages':
         return [

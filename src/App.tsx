@@ -1,27 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Navigation } from './components/layout/Navigation';
 import { Footer } from './components/layout/Footer';
 import { HomeView } from './views/HomeView';
-import { DivisionView } from './views/DivisionView';
-import { SWSView } from './views/SWSView';
-import { U1View } from './views/U1View';
-import { ITView } from './views/ITView';
-import { TravelsView } from './views/TravelsView';
-import { MartView } from './views/MartView';
-import { CatalogView } from './views/CatalogView';
-import { BookingView } from './views/BookingView';
-import { CheckoutView } from './views/CheckoutView';
-import { OrderConfirmationView } from './views/OrderConfirmationView';
-import { OrderLookupView } from './views/OrderLookupView';
-import { AboutView } from './views/AboutView';
-import { PortfolioView } from './views/PortfolioView';
-import { ContactView } from './views/ContactView';
-import { LegalPageView } from './views/LegalPageView';
-import { NotFoundView } from './views/NotFoundView';
-import { LoginView } from './views/auth/LoginView';
-import { RegisterView } from './views/auth/RegisterView';
-import { ForgotPasswordView } from './views/auth/ForgotPasswordView';
-import { AccountLayout } from './views/account/AccountLayout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { DivisionId, LegalPolicyType } from './types';
 import { DIVISIONS } from './config/divisions';
@@ -30,15 +10,46 @@ import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { AdminAuthProvider } from './context/AdminAuthContext';
 import { FirestoreDataProvider, useFirestoreDataContext } from './context/FirestoreDataContext';
-import { AdminLayout } from './views/admin/AdminLayout';
 import { CartDrawer } from './components/cart/CartDrawer';
 import { AnnouncementBanner } from './components/layout/AnnouncementBanner';
 import { AppBootLoader } from './components/ui/AppBootLoader';
-import { MaintenanceView } from './views/MaintenanceView';
 import { testFirestoreConnection, initAppCheck } from './lib/firebase';
 import { analyticsService } from './services/analyticsService';
 import { catalogService } from './services/catalogService';
 import { motion, AnimatePresence } from 'motion/react';
+
+// Dynamic Code Splitting for Secondary Views
+const DivisionView = lazy(() => import('./views/DivisionView').then(m => ({ default: m.DivisionView })));
+const SWSView = lazy(() => import('./views/SWSView').then(m => ({ default: m.SWSView })));
+const U1View = lazy(() => import('./views/U1View').then(m => ({ default: m.U1View })));
+const ITView = lazy(() => import('./views/ITView').then(m => ({ default: m.ITView })));
+const TravelsView = lazy(() => import('./views/TravelsView').then(m => ({ default: m.TravelsView })));
+const MartView = lazy(() => import('./views/MartView').then(m => ({ default: m.MartView })));
+const CatalogView = lazy(() => import('./views/CatalogView').then(m => ({ default: m.CatalogView })));
+const BookingView = lazy(() => import('./views/BookingView').then(m => ({ default: m.BookingView })));
+const CheckoutView = lazy(() => import('./views/CheckoutView').then(m => ({ default: m.CheckoutView })));
+const OrderConfirmationView = lazy(() => import('./views/OrderConfirmationView').then(m => ({ default: m.OrderConfirmationView })));
+const OrderLookupView = lazy(() => import('./views/OrderLookupView').then(m => ({ default: m.OrderLookupView })));
+const AboutView = lazy(() => import('./views/AboutView').then(m => ({ default: m.AboutView })));
+const PortfolioView = lazy(() => import('./views/PortfolioView').then(m => ({ default: m.PortfolioView })));
+const ContactView = lazy(() => import('./views/ContactView').then(m => ({ default: m.ContactView })));
+const LegalPageView = lazy(() => import('./views/LegalPageView').then(m => ({ default: m.LegalPageView })));
+const NotFoundView = lazy(() => import('./views/NotFoundView').then(m => ({ default: m.NotFoundView })));
+const LoginView = lazy(() => import('./views/auth/LoginView').then(m => ({ default: m.LoginView })));
+const RegisterView = lazy(() => import('./views/auth/RegisterView').then(m => ({ default: m.RegisterView })));
+const ForgotPasswordView = lazy(() => import('./views/auth/ForgotPasswordView').then(m => ({ default: m.ForgotPasswordView })));
+const AccountLayout = lazy(() => import('./views/account/AccountLayout').then(m => ({ default: m.AccountLayout })));
+const AdminLayout = lazy(() => import('./views/admin/AdminLayout').then(m => ({ default: m.AdminLayout })));
+const MaintenanceView = lazy(() => import('./views/MaintenanceView').then(m => ({ default: m.MaintenanceView })));
+
+const PageLoadingFallback: React.FC = () => (
+  <div className="min-h-[50vh] flex flex-col items-center justify-center py-20 px-4">
+    <div className="relative w-10 h-10 mb-4">
+      <div className="w-10 h-10 rounded-full border-2 border-blue-100 border-t-[#0052FF] animate-spin" />
+    </div>
+    <p className="text-xs font-mono text-slate-400">Loading experience...</p>
+  </div>
+);
 
 function AppContent() {
   const { siteSettings, isInitialLoading, error, refreshAll, products, services, divisions } =
@@ -622,7 +633,9 @@ function AppContent() {
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className="w-full max-w-full min-w-0"
           >
-            {renderCurrentView()}
+            <Suspense fallback={<PageLoadingFallback />}>
+              {renderCurrentView()}
+            </Suspense>
           </motion.div>
         </AnimatePresence>
       </main>

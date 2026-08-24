@@ -14,25 +14,16 @@ import {
   onSnapshot,
   Unsubscribe,
 } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreTestimonial, DivisionId } from '../../types/firestore';
-import { TESTIMONIALS_DATA } from '../../data/corporateData';
 
 const CACHE_TTL_MS = 1000 * 60 * 20;
 let cachedTestimonials: { data: FirestoreTestimonial[]; timestamp: number } | null = null;
 
 export function getDefaultTestimonials(): FirestoreTestimonial[] {
-  return TESTIMONIALS_DATA.map((t) => ({
-    id: t.id,
-    author: t.author,
-    role: t.role,
-    company: t.company,
-    avatarUrl: t.photoUrl,
-    quote: t.quote,
-    division: t.divisionId || 'all',
-    rating: t.rating || 5,
-    status: 'approved',
-  }));
+  // Phase 60: Real Data Architecture - Zero fake testimonials by default.
+  // Testimonials are populated directly through Firestore or Admin Portal.
+  return [];
 }
 
 export const firestoreTestimonialsService = {
@@ -49,16 +40,12 @@ export const firestoreTestimonialsService = {
           allTestimonials = snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreTestimonial[];
           cachedTestimonials = { data: allTestimonials, timestamp: now };
         } else {
-          const defaults = getDefaultTestimonials();
-          for (const item of defaults) {
-            await setDoc(doc(db, 'testimonials', item.id), item, { merge: true });
-          }
-          allTestimonials = defaults;
-          cachedTestimonials = { data: defaults, timestamp: now };
+          allTestimonials = [];
+          cachedTestimonials = { data: [], timestamp: now };
         }
       } catch (err) {
-        console.warn('[Firestore Testimonials] getTestimonials fallback:', err);
-        allTestimonials = cachedTestimonials?.data || getDefaultTestimonials();
+        console.warn('[Firestore Testimonials] getTestimonials error:', err);
+        allTestimonials = cachedTestimonials?.data || [];
       }
     }
 
@@ -70,11 +57,12 @@ export const firestoreTestimonialsService = {
 
   async saveTestimonial(id: string, data: Partial<FirestoreTestimonial>): Promise<void> {
     const docRef = doc(db, 'testimonials', id);
-    await setDoc(docRef, { ...data, id }, { merge: true });
+    const payload = sanitizeForFirestore({ ...data, id });
+    await setDoc(docRef, payload, { merge: true });
     if (cachedTestimonials) {
       const idx = cachedTestimonials.data.findIndex((t) => t.id === id);
       if (idx >= 0) {
-        cachedTestimonials.data[idx] = { ...cachedTestimonials.data[idx], ...data } as FirestoreTestimonial;
+        cachedTestimonials.data[idx] = { ...cachedTestimonials.data[idx], ...payload } as FirestoreTestimonial;
       }
     }
   },
@@ -98,20 +86,16 @@ export const firestoreTestimonialsService = {
     return onSnapshot(
       colRef,
       (snap) => {
-        if (!snap.empty) {
-          let data = snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreTestimonial[];
-          if (division && division !== 'all') {
-            data = data.filter((t) => t.division === division || t.division === 'all');
-          }
-          onData(data);
-        } else {
-          const defaults = getDefaultTestimonials();
-          onData(division && division !== 'all' ? defaults.filter((t) => t.division === division || t.division === 'all') : defaults);
+        let data = snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreTestimonial[];
+        if (division && division !== 'all') {
+          data = data.filter((t) => t.division === division || t.division === 'all');
         }
+        cachedTestimonials = { data, timestamp: Date.now() };
+        onData(data);
       },
-      () => {
-        const defaults = getDefaultTestimonials();
-        onData(division && division !== 'all' ? defaults.filter((t) => t.division === division || t.division === 'all') : defaults);
+      (err) => {
+        console.warn('[Firestore Testimonials] Listener error:', err);
+        onData(cachedTestimonials?.data || []);
       }
     );
   },

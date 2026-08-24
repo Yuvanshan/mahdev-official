@@ -16,27 +16,17 @@ import {
   onSnapshot,
   Unsubscribe,
 } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestorePortfolio, DivisionId } from '../../types/firestore';
-import { PORTFOLIO_PROJECTS_DATA } from '../../data/corporateData';
 
 const CACHE_TTL_MS = 1000 * 60 * 30; // 30-minute memoized cache for static portfolio
 let cachedPortfolio: { data: FirestorePortfolio[]; timestamp: number } | null = null;
 let inFlightPortfolioPromise: Promise<FirestorePortfolio[]> | null = null;
 
 export function getDefaultPortfolio(): FirestorePortfolio[] {
-  return PORTFOLIO_PROJECTS_DATA.map((p) => ({
-    id: p.id,
-    division: (p.divisionId || 'sws') as DivisionId,
-    title: p.title,
-    client: p.client || 'Mahdev Enterprise Client',
-    category: p.category || 'Production',
-    description: p.fullDescription || p.summary || '',
-    imageUrl: p.imageUrl || 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80',
-    featured: Boolean(p.highlights && p.highlights.length > 0),
-    year: p.year ? String(p.year) : '2025',
-    status: 'published',
-  }));
+  // Phase 60: Real Data Architecture - Zero fake portfolio items by default.
+  // Portfolio projects are populated via Admin Portal or Firestore collection.
+  return [];
 }
 
 export interface PortfolioQueryOptions {
@@ -81,19 +71,12 @@ export const firestorePortfolioService = {
           cachedPortfolio = { data: loaded, timestamp: Date.now() };
           return loaded;
         } else {
-          const defaults = getDefaultPortfolio();
-          cachedPortfolio = { data: defaults, timestamp: Date.now() };
-          // Background seed
-          (async () => {
-            for (const item of defaults) {
-              await setDoc(doc(db, 'portfolio', item.id), item, { merge: true }).catch(() => {});
-            }
-          })();
-          return defaults;
+          cachedPortfolio = { data: [], timestamp: Date.now() };
+          return [];
         }
       } catch (err) {
-        console.warn('[Firestore Portfolio] Optimized fetch fallback:', err);
-        const fallback = cachedPortfolio?.data || getDefaultPortfolio();
+        console.warn('[Firestore Portfolio] Optimized fetch error:', err);
+        const fallback = cachedPortfolio?.data || [];
         cachedPortfolio = { data: fallback, timestamp: Date.now() };
         return fallback;
       } finally {
@@ -136,11 +119,12 @@ export const firestorePortfolioService = {
    */
   async savePortfolio(id: string, data: Partial<FirestorePortfolio>): Promise<void> {
     const docRef = doc(db, 'portfolio', id);
-    await setDoc(docRef, { ...data, id }, { merge: true });
+    const payload = sanitizeForFirestore({ ...data, id });
+    await setDoc(docRef, payload, { merge: true });
     if (cachedPortfolio) {
       const idx = cachedPortfolio.data.findIndex((p) => p.id === id);
       if (idx >= 0) {
-        cachedPortfolio.data[idx] = { ...cachedPortfolio.data[idx], ...data } as FirestorePortfolio;
+        cachedPortfolio.data[idx] = { ...cachedPortfolio.data[idx], ...payload } as FirestorePortfolio;
       }
     }
   },
@@ -169,21 +153,16 @@ export const firestorePortfolioService = {
     return onSnapshot(
       q,
       (snap) => {
-        if (!snap.empty) {
-          const data = snap.docs.map((d) => ({
-            ...d.data(),
-            id: d.id,
-          })) as FirestorePortfolio[];
-          onData(data);
-        } else {
-          const defaults = getDefaultPortfolio();
-          onData(division ? defaults.filter((p) => p.division === division) : defaults);
-        }
+        const data = snap.docs.map((d) => ({
+          ...d.data(),
+          id: d.id,
+        })) as FirestorePortfolio[];
+        cachedPortfolio = { data, timestamp: Date.now() };
+        onData(data);
       },
       (err) => {
-        console.warn('[Firestore Portfolio] Listener fallback:', err);
-        const defaults = getDefaultPortfolio();
-        onData(division ? defaults.filter((p) => p.division === division) : defaults);
+        console.warn('[Firestore Portfolio] Listener fallback error:', err);
+        onData(cachedPortfolio?.data || []);
       }
     );
   },

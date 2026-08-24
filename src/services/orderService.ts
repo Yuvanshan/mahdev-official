@@ -14,6 +14,8 @@ import {
 } from '../types/order';
 import { CartSummary, CartItem } from '../types/cart';
 import { notificationService } from './notificationService';
+import { db, sanitizeForFirestore } from '../lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 const ORDERS_STORAGE_KEY = 'mahdev_orders_v1';
 
@@ -327,11 +329,10 @@ class OrderService {
       if (stored) {
         this.orders = JSON.parse(stored);
       } else {
-        this.orders = [...SEED_ORDERS];
-        this.saveOrders();
+        this.orders = [];
       }
     } catch {
-      this.orders = [...SEED_ORDERS];
+      this.orders = [];
     }
   }
 
@@ -421,6 +422,28 @@ class OrderService {
 
     this.orders.unshift(newOrder);
     this.saveOrders();
+
+    // Persist to Cloud Firestore orders collection
+    try {
+      const docRef = doc(db, 'orders', newOrder.id);
+      setDoc(docRef, sanitizeForFirestore({
+        ...newOrder,
+        id: newOrder.id,
+        items: newOrder.items,
+        total: newOrder.total,
+        status: newOrder.status,
+        paymentStatus: newOrder.paymentStatus,
+        paymentMethod: newOrder.paymentMethod,
+        currency: newOrder.currency,
+        customer: newOrder.customer,
+        deliveryInfo: newOrder.deliveryInfo,
+        bookingInfo: newOrder.bookingInfo,
+        createdAt: newOrder.createdAt,
+        updatedAt: newOrder.updatedAt,
+      }), { merge: true }).catch((err) => console.warn('[Firestore] Order write error:', err));
+    } catch (e) {
+      console.warn('[Firestore] Order sync error:', e);
+    }
 
     // Trigger non-blocking customer confirmation email and admin alert
     notificationService.notifyOrderConfirmation(newOrder).catch(() => {});
