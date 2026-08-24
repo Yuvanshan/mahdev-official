@@ -8,6 +8,7 @@ import {
   doc,
   getDocs,
   setDoc,
+  deleteDoc,
   query,
   where,
   orderBy,
@@ -141,6 +142,14 @@ export const firestorePortfolioService = {
       if (idx >= 0) {
         cachedPortfolio.data[idx] = { ...cachedPortfolio.data[idx], ...data } as FirestorePortfolio;
       }
+    }
+  },
+
+  async deletePortfolio(id: string): Promise<void> {
+    const docRef = doc(db, 'portfolio', id);
+    await deleteDoc(docRef);
+    if (cachedPortfolio) {
+      cachedPortfolio.data = cachedPortfolio.data.filter((p) => p.id !== id);
     }
   },
 

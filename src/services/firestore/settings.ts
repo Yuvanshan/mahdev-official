@@ -158,6 +158,17 @@ export function getDefaultSiteSettings(): FirestoreSiteSettings {
     siteName: 'Mahdev Pvt Ltd',
     maintenanceMode: false,
     enableMaintenanceMode: false,
+    maintenance: {
+      enabled: false,
+      title: 'Systems Upgrade in Progress',
+      message:
+        'Our digital platforms, client portals, and division infrastructure are undergoing planned architectural maintenance to ensure maximum reliability, security, and performance.',
+      imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
+      estimatedReturn: 'Within 2 hours',
+      contactPhone: COMPANY_INFO.primaryPhone || '+94 77 000 0000',
+      contactEmail: COMPANY_INFO.email || 'info@mahdev.lk',
+      allowedRoles: ['admin', 'superAdmin'],
+    },
     announcement: {
       enabled: true,
       text: 'Universal Enterprise Ecosystem Active • Colombo & Trincomalee Hotlines Online',

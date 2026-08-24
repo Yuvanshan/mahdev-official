@@ -789,28 +789,54 @@ class CmsService {
 
   private async syncEntityItemToFirestore(entity: CmsEntityType, item: any): Promise<void> {
     try {
-      if (entity === 'divisions' && item.divisionKey) {
-        await firestoreDivisionsService.saveDivision(item.divisionKey, item);
+      if (entity === 'divisions') {
+        const divKey = item.divisionKey || item.id?.replace('div-', '') || item.id;
+        await firestoreDivisionsService.saveDivision(divKey, {
+          name: item.name,
+          description: item.description,
+          status: item.isDeleted ? 'inactive' : (item.status || 'active'),
+          hero: item.hero,
+          seo: item.seo,
+          logo: item.logo,
+        });
       } else if (entity === 'services') {
         await firestoreServicesService.saveService(item.id, {
           division: item.divisionId,
-          name: item.title,
-          description: item.description,
-          price: item.startingPrice || 100,
+          name: item.name || item.title,
+          slug: item.slug || item.id,
+          description: item.description || item.shortDescription,
+          images: item.imageUrl ? [item.imageUrl] : item.images || [],
+          price: item.startingPrice || item.price || 100,
+          currency: item.currency || 'USD',
+          status: item.isDeleted ? 'draft' : (item.isActive === false ? 'draft' : 'active'),
+          bookingEnabled: item.bookingEnabled !== false,
+          quoteEnabled: item.quoteEnabled !== false,
         });
       } else if (entity === 'products') {
         await firestoreProductsService.saveProduct(item.id, {
           division: item.divisionId,
           name: item.name,
-          price: item.price,
-          description: item.description,
+          slug: item.slug || item.id,
           sku: item.sku,
+          categoryId: item.categoryId,
+          description: item.description || item.shortDescription,
+          price: item.price,
+          compareAtPrice: item.compareAtPrice || item.originalPrice,
+          images: item.galleryImages && item.galleryImages.length > 0 ? item.galleryImages : item.imageUrl ? [item.imageUrl] : [],
+          stock: item.stockQuantity,
+          status: item.isDeleted ? 'draft' : (item.isActive === false ? 'draft' : 'active'),
+          hasVariants: Boolean(item.variants && item.variants.options && item.variants.options.length > 0),
+          variants: item.variants?.options,
         });
       } else if (entity === 'categories') {
         await firestoreCategoriesService.saveCategory(item.id, {
           division: item.divisionId,
           name: item.name,
-          slug: item.slug,
+          slug: item.slug || item.id,
+          description: item.description,
+          imageUrl: item.imageUrl,
+          order: item.order || item.sortOrder || 0,
+          status: item.isDeleted ? 'inactive' : (item.status || 'active'),
         });
       } else if (entity === 'portfolio') {
         await firestorePortfolioService.savePortfolio(item.id, item);
@@ -825,6 +851,32 @@ class CmsService {
       }
     } catch (err) {
       console.warn(`[Firestore Sync] Failed to sync ${entity}/${item.id}:`, err);
+    }
+  }
+
+  private async deleteEntityItemFromFirestore(entity: CmsEntityType, id: string): Promise<void> {
+    try {
+      if (entity === 'products') {
+        await firestoreProductsService.deleteProduct(id);
+      } else if (entity === 'services') {
+        await firestoreServicesService.deleteService(id);
+      } else if (entity === 'divisions') {
+        await firestoreDivisionsService.deleteDivision(id as any);
+      } else if (entity === 'categories') {
+        await firestoreCategoriesService.deleteCategory(id);
+      } else if (entity === 'portfolio') {
+        await firestorePortfolioService.deletePortfolio(id);
+      } else if (entity === 'gallery') {
+        await firestoreGalleryService.deleteGallery(id);
+      } else if (entity === 'milestones') {
+        await firestoreMilestonesService.deleteMilestone(id);
+      } else if (entity === 'companies') {
+        await firestoreTrustedCompaniesService.deleteTrustedCompany(id);
+      } else if (entity === 'testimonials') {
+        await firestoreTestimonialsService.deleteTestimonial(id);
+      }
+    } catch (err) {
+      console.warn(`[Firestore Delete Sync] Failed to delete ${entity}/${id}:`, err);
     }
   }
 
@@ -888,6 +940,10 @@ class CmsService {
     });
 
     this.notify(entity);
+
+    // Sync soft deletion state to Firestore
+    this.syncEntityItemToFirestore(entity, current[index]);
+
     return true;
   }
 
@@ -910,6 +966,10 @@ class CmsService {
     });
 
     this.notify(entity);
+
+    // Sync permanent deletion to Firestore
+    this.deleteEntityItemFromFirestore(entity, id);
+
     return true;
   }
 
@@ -944,6 +1004,10 @@ class CmsService {
     });
 
     this.notify(entity);
+
+    // Sync restoration to Firestore
+    this.syncEntityItemToFirestore(entity, current[index]);
+
     return true;
   }
 
@@ -1047,6 +1111,12 @@ class CmsService {
 
     // Notify listeners
     this.notifyHomepage();
+
+    // Async sync to Cloud Firestore
+    firestoreSettingsService.updateHomepageSettings(updated).catch((err) => {
+      console.warn('[Firestore Sync] Homepage settings sync error:', err);
+    });
+
     return updated;
   }
 
@@ -1064,6 +1134,12 @@ class CmsService {
     });
 
     this.notifyHomepage();
+
+    // Async sync to Cloud Firestore
+    firestoreSettingsService.updateHomepageSettings(defaultConf).catch((err) => {
+      console.warn('[Firestore Sync] Homepage reset sync error:', err);
+    });
+
     return defaultConf;
   }
 
@@ -1240,6 +1316,40 @@ class CmsService {
 
     // Notify listeners
     this.notify('pages');
+
+    // Async sync to Cloud Firestore
+    firestoreSettingsService.updateCompanySettings({
+      name: merged.name,
+      legalName: merged.legalName,
+      tagline: merged.tagline,
+      phones: merged.phones,
+      email: merged.email,
+      primaryPhone: merged.primaryPhone,
+      secondaryPhone: merged.secondaryPhone,
+      offices: {
+        colombo: {
+          name: merged.offices.colombo.name,
+          address: merged.offices.colombo.fullAddress,
+          city: merged.offices.colombo.city || 'Colombo',
+          country: merged.offices.colombo.country || 'Sri Lanka',
+          isHeadquarters: Boolean(merged.offices.colombo.isHeadquarters),
+          mapQuery: merged.offices.colombo.mapQuery || 'Colombo, Sri Lanka',
+        },
+        trincomalee: {
+          name: merged.offices.trincomalee.name,
+          address: merged.offices.trincomalee.fullAddress,
+          city: merged.offices.trincomalee.city || 'Trincomalee',
+          country: merged.offices.trincomalee.country || 'Sri Lanka',
+          isHeadquarters: false,
+          mapQuery: merged.offices.trincomalee.mapQuery || 'Trincomalee, Sri Lanka',
+        },
+      },
+      socials: merged.socials,
+      workingHours: merged.workingHours,
+    }).catch((err) => {
+      console.warn('[Firestore Sync] Company settings sync error:', err);
+    });
+
     return merged;
   }
 }

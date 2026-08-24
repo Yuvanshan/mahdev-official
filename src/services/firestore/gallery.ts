@@ -8,6 +8,7 @@ import {
   doc,
   getDocs,
   setDoc,
+  deleteDoc,
   query,
   where,
   onSnapshot,
@@ -110,6 +111,14 @@ export const firestoreGalleryService = {
       if (idx >= 0) {
         cachedGallery.data[idx] = { ...cachedGallery.data[idx], ...data } as FirestoreGallery;
       }
+    }
+  },
+
+  async deleteGallery(id: string): Promise<void> {
+    const docRef = doc(db, 'gallery', id);
+    await deleteDoc(docRef);
+    if (cachedGallery) {
+      cachedGallery.data = cachedGallery.data.filter((g) => g.id !== id);
     }
   },
 

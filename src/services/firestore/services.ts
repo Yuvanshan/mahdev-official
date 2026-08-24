@@ -9,6 +9,7 @@ import {
   getDocs,
   getDoc,
   setDoc,
+  deleteDoc,
   query,
   where,
   onSnapshot,
@@ -114,6 +115,17 @@ export const firestoreServicesService = {
       } else {
         cachedServices.data.push(payload as FirestoreService);
       }
+    }
+  },
+
+  /**
+   * Permanently delete service from Firestore
+   */
+  async deleteService(id: string): Promise<void> {
+    const docRef = doc(db, 'services', id);
+    await deleteDoc(docRef);
+    if (cachedServices) {
+      cachedServices.data = cachedServices.data.filter((s) => s.id !== id);
     }
   },
 

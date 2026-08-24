@@ -1,22 +1,11 @@
 /**
- * React Hooks for Firestore Data Access (Phase 23)
- * Provides Loading, Error, Empty, and Success state management with caching and realtime sync.
+ * React Hooks for Firestore Data Access (Phase 52 Single Source of Truth)
+ * Consumes the central FirestoreDataContext to provide unified realtime sync,
+ * single socket/listener management, and zero duplicate fetches.
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import {
-  firestoreSettingsService,
-  firestoreDivisionsService,
-  firestoreServicesService,
-  firestoreProductsService,
-  firestoreCategoriesService,
-  firestorePortfolioService,
-  firestoreGalleryService,
-  firestoreMilestonesService,
-  firestoreTrustedCompaniesService,
-  firestoreTestimonialsService,
-  ProductQueryOptions,
-} from '../services/firestore';
+import { useMemo } from 'react';
+import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import {
   FirestoreCompanySettings,
   FirestoreSiteSettings,
@@ -40,512 +29,214 @@ export interface AsyncState<T> {
   refresh: () => Promise<void>;
 }
 
+export interface ProductQueryOptions {
+  division?: string;
+  category?: string;
+  categoryId?: string;
+  isFeatured?: boolean;
+}
+
 /**
- * Hook for Company Settings (with realtime updates)
+ * Hook for Company Settings (Realtime from central context)
  */
 export function useCompanySettings(): AsyncState<FirestoreCompanySettings> {
-  const [data, setData] = useState<FirestoreCompanySettings>(() =>
-    firestoreSettingsService.getCompanySettings ? firestoreSettingsService.getCompanySettings.length > 0 ? {} as any : {} as any : {} as any
-  );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const refresh = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await firestoreSettingsService.getCompanySettings(true);
-      setData(res);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const unsub = firestoreSettingsService.subscribeCompanySettings(
-      (newSettings) => {
-        setData(newSettings);
-        setLoading(false);
-        setError(null);
-      },
-      (err) => {
-        setError(err);
-        setLoading(false);
-      }
-    );
-    return () => unsub();
-  }, []);
+  const { companySettings, isInitialLoading, error, refreshAll } = useFirestoreDataContext();
 
   return {
-    data,
-    loading,
-    error,
-    isEmpty: !data || !data.name,
-    refresh,
+    data: (companySettings || {}) as FirestoreCompanySettings,
+    loading: isInitialLoading,
+    error: error ? (error instanceof Error ? error : new Error(String(error))) : null,
+    isEmpty: !companySettings || !companySettings.name,
+    refresh: refreshAll,
   };
 }
 
 /**
- * Hook for Site Settings (with realtime announcement bar)
+ * Hook for Site Settings (Realtime from central context)
  */
 export function useSiteSettings(): AsyncState<FirestoreSiteSettings> {
-  const [data, setData] = useState<FirestoreSiteSettings>({} as any);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const refresh = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await firestoreSettingsService.getSiteSettings(true);
-      setData(res);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const unsub = firestoreSettingsService.subscribeSiteSettings(
-      (newSettings) => {
-        setData(newSettings);
-        setLoading(false);
-        setError(null);
-      },
-      (err) => {
-        setError(err);
-        setLoading(false);
-      }
-    );
-    return () => unsub();
-  }, []);
+  const { siteSettings, isInitialLoading, error, refreshAll } = useFirestoreDataContext();
 
   return {
-    data,
-    loading,
-    error,
-    isEmpty: !data || !data.siteName,
-    refresh,
+    data: (siteSettings || {}) as FirestoreSiteSettings,
+    loading: isInitialLoading,
+    error: error ? (error instanceof Error ? error : new Error(String(error))) : null,
+    isEmpty: !siteSettings || !siteSettings.siteName,
+    refresh: refreshAll,
   };
 }
 
 /**
- * Hook for Divisions
+ * Hook for Divisions (Realtime from central context)
  */
 export function useDivisions(): AsyncState<FirestoreDivision[]> {
-  const [data, setData] = useState<FirestoreDivision[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const refresh = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await firestoreDivisionsService.getDivisions(true);
-      setData(res);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-    firestoreDivisionsService
-      .getDivisions()
-      .then((res) => {
-        if (isMounted) {
-          setData(res);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setError(err);
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { divisions, isInitialLoading, error, refreshAll } = useFirestoreDataContext();
 
   return {
-    data,
-    loading,
-    error,
-    isEmpty: data.length === 0,
-    refresh,
+    data: divisions || [],
+    loading: isInitialLoading,
+    error: error ? (error instanceof Error ? error : new Error(String(error))) : null,
+    isEmpty: !divisions || divisions.length === 0,
+    refresh: refreshAll,
   };
 }
 
 /**
- * Hook for Services
+ * Hook for Services (Realtime from central context, optional division filter)
  */
-export function useServices(divisionId?: DivisionId): AsyncState<FirestoreService[]> {
-  const [data, setData] = useState<FirestoreService[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+export function useServices(divisionId?: DivisionId | 'all'): AsyncState<FirestoreService[]> {
+  const { services, isInitialLoading, error, refreshAll } = useFirestoreDataContext();
 
-  const refresh = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await firestoreServicesService.getServices(divisionId, true);
-      setData(res);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
-    } finally {
-      setLoading(false);
-    }
-  }, [divisionId]);
-
-  useEffect(() => {
-    let isMounted = true;
-    firestoreServicesService
-      .getServices(divisionId)
-      .then((res) => {
-        if (isMounted) {
-          setData(res);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setError(err);
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [divisionId]);
+  const filtered = useMemo(() => {
+    if (!services) return [];
+    if (!divisionId || divisionId === 'all') return services;
+    return services.filter((s) => s.division === divisionId);
+  }, [services, divisionId]);
 
   return {
-    data,
-    loading,
-    error,
-    isEmpty: data.length === 0,
-    refresh,
+    data: filtered,
+    loading: isInitialLoading,
+    error: error ? (error instanceof Error ? error : new Error(String(error))) : null,
+    isEmpty: filtered.length === 0,
+    refresh: refreshAll,
   };
 }
 
 /**
- * Hook for Products with filtering and pagination
+ * Hook for Products (Realtime from central context, optional query options)
  */
 export function useProducts(options?: ProductQueryOptions): AsyncState<FirestoreProduct[]> {
-  const [data, setData] = useState<FirestoreProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const { products, isInitialLoading, error, refreshAll } = useFirestoreDataContext();
 
-  const optionsKey = JSON.stringify(options || {});
-
-  const refresh = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await firestoreProductsService.getProducts(options, true);
-      setData(res);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
-    } finally {
-      setLoading(false);
-    }
-  }, [optionsKey]);
-
-  useEffect(() => {
-    let isMounted = true;
-    firestoreProductsService
-      .getProducts(options)
-      .then((res) => {
-        if (isMounted) {
-          setData(res);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setError(err);
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [optionsKey]);
+  const filtered = useMemo(() => {
+    if (!products) return [];
+    return products.filter((p) => {
+      if (options?.division && p.division !== options.division) return false;
+      const targetCategory = options?.categoryId || options?.category;
+      if (targetCategory && p.categoryId !== targetCategory) return false;
+      return true;
+    });
+  }, [products, options?.division, options?.category, options?.categoryId]);
 
   return {
-    data,
-    loading,
-    error,
-    isEmpty: data.length === 0,
-    refresh,
+    data: filtered,
+    loading: isInitialLoading,
+    error: error ? (error instanceof Error ? error : new Error(String(error))) : null,
+    isEmpty: filtered.length === 0,
+    refresh: refreshAll,
   };
 }
 
 /**
- * Hook for Categories
+ * Hook for Categories (Realtime from central context, optional division filter)
  */
-export function useCategories(divisionId?: DivisionId): AsyncState<FirestoreCategory[]> {
-  const [data, setData] = useState<FirestoreCategory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+export function useCategories(divisionId?: DivisionId | 'all'): AsyncState<FirestoreCategory[]> {
+  const { categories, isInitialLoading, error, refreshAll } = useFirestoreDataContext();
 
-  const refresh = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await firestoreCategoriesService.getCategories(divisionId, true);
-      setData(res);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
-    } finally {
-      setLoading(false);
-    }
-  }, [divisionId]);
-
-  useEffect(() => {
-    let isMounted = true;
-    firestoreCategoriesService
-      .getCategories(divisionId)
-      .then((res) => {
-        if (isMounted) {
-          setData(res);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setError(err);
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [divisionId]);
+  const filtered = useMemo(() => {
+    if (!categories) return [];
+    if (!divisionId || divisionId === 'all') return categories;
+    return categories.filter((c) => c.division === divisionId);
+  }, [categories, divisionId]);
 
   return {
-    data,
-    loading,
-    error,
-    isEmpty: data.length === 0,
-    refresh,
+    data: filtered,
+    loading: isInitialLoading,
+    error: error ? (error instanceof Error ? error : new Error(String(error))) : null,
+    isEmpty: filtered.length === 0,
+    refresh: refreshAll,
   };
 }
 
 /**
- * Hook for Portfolio
+ * Hook for Portfolio Projects (Realtime from central context, optional division filter)
  */
-export function usePortfolio(divisionId?: DivisionId): AsyncState<FirestorePortfolio[]> {
-  const [data, setData] = useState<FirestorePortfolio[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+export function usePortfolio(divisionId?: DivisionId | 'all'): AsyncState<FirestorePortfolio[]> {
+  const { portfolio, isInitialLoading, error, refreshAll } = useFirestoreDataContext();
 
-  const refresh = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await firestorePortfolioService.getPortfolio(divisionId, true);
-      setData(res);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
-    } finally {
-      setLoading(false);
-    }
-  }, [divisionId]);
-
-  useEffect(() => {
-    let isMounted = true;
-    firestorePortfolioService
-      .getPortfolio(divisionId)
-      .then((res) => {
-        if (isMounted) {
-          setData(res);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setError(err);
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [divisionId]);
+  const filtered = useMemo(() => {
+    if (!portfolio) return [];
+    if (!divisionId || divisionId === 'all') return portfolio;
+    return portfolio.filter((p) => p.division === divisionId);
+  }, [portfolio, divisionId]);
 
   return {
-    data,
-    loading,
-    error,
-    isEmpty: data.length === 0,
-    refresh,
+    data: filtered,
+    loading: isInitialLoading,
+    error: error ? (error instanceof Error ? error : new Error(String(error))) : null,
+    isEmpty: filtered.length === 0,
+    refresh: refreshAll,
   };
 }
 
 /**
- * Hook for Milestones
+ * Hook for Gallery Items (Realtime from central context, optional division filter)
+ */
+export function useGallery(divisionId?: DivisionId | 'all'): AsyncState<FirestoreGallery[]> {
+  const { gallery, isInitialLoading, error, refreshAll } = useFirestoreDataContext();
+
+  const filtered = useMemo(() => {
+    if (!gallery) return [];
+    if (!divisionId || divisionId === 'all') return gallery;
+    return gallery.filter((g) => g.division === divisionId);
+  }, [gallery, divisionId]);
+
+  return {
+    data: filtered,
+    loading: isInitialLoading,
+    error: error ? (error instanceof Error ? error : new Error(String(error))) : null,
+    isEmpty: filtered.length === 0,
+    refresh: refreshAll,
+  };
+}
+
+/**
+ * Hook for Milestones (Realtime from central context)
  */
 export function useMilestones(): AsyncState<FirestoreMilestone[]> {
-  const [data, setData] = useState<FirestoreMilestone[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const refresh = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await firestoreMilestonesService.getMilestones(true);
-      setData(res);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-    firestoreMilestonesService
-      .getMilestones()
-      .then((res) => {
-        if (isMounted) {
-          setData(res);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setError(err);
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { milestones, isInitialLoading, error, refreshAll } = useFirestoreDataContext();
 
   return {
-    data,
-    loading,
-    error,
-    isEmpty: data.length === 0,
-    refresh,
+    data: milestones || [],
+    loading: isInitialLoading,
+    error: error ? (error instanceof Error ? error : new Error(String(error))) : null,
+    isEmpty: !milestones || milestones.length === 0,
+    refresh: refreshAll,
   };
 }
 
 /**
- * Hook for Trusted Companies
+ * Hook for Trusted Enterprise Companies (Realtime from central context)
  */
 export function useTrustedCompanies(): AsyncState<FirestoreTrustedCompany[]> {
-  const [data, setData] = useState<FirestoreTrustedCompany[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const refresh = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await firestoreTrustedCompaniesService.getTrustedCompanies(true);
-      setData(res);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-    firestoreTrustedCompaniesService
-      .getTrustedCompanies()
-      .then((res) => {
-        if (isMounted) {
-          setData(res);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setError(err);
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { trustedCompanies, isInitialLoading, error, refreshAll } = useFirestoreDataContext();
 
   return {
-    data,
-    loading,
-    error,
-    isEmpty: data.length === 0,
-    refresh,
+    data: trustedCompanies || [],
+    loading: isInitialLoading,
+    error: error ? (error instanceof Error ? error : new Error(String(error))) : null,
+    isEmpty: !trustedCompanies || trustedCompanies.length === 0,
+    refresh: refreshAll,
   };
 }
 
 /**
- * Hook for Testimonials
+ * Hook for Testimonials (Realtime from central context, optional division filter)
  */
 export function useTestimonials(divisionId?: DivisionId | 'all'): AsyncState<FirestoreTestimonial[]> {
-  const [data, setData] = useState<FirestoreTestimonial[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const { testimonials, isInitialLoading, error, refreshAll } = useFirestoreDataContext();
 
-  const refresh = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await firestoreTestimonialsService.getTestimonials(divisionId, true);
-      setData(res);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
-    } finally {
-      setLoading(false);
-    }
-  }, [divisionId]);
-
-  useEffect(() => {
-    let isMounted = true;
-    firestoreTestimonialsService
-      .getTestimonials(divisionId)
-      .then((res) => {
-        if (isMounted) {
-          setData(res);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setError(err);
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [divisionId]);
+  const filtered = useMemo(() => {
+    if (!testimonials) return [];
+    if (!divisionId || divisionId === 'all') return testimonials;
+    return testimonials.filter((t) => t.division === divisionId);
+  }, [testimonials, divisionId]);
 
   return {
-    data,
-    loading,
-    error,
-    isEmpty: data.length === 0,
-    refresh,
+    data: filtered,
+    loading: isInitialLoading,
+    error: error ? (error instanceof Error ? error : new Error(String(error))) : null,
+    isEmpty: filtered.length === 0,
+    refresh: refreshAll,
   };
 }

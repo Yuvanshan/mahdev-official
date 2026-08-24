@@ -247,6 +247,7 @@ export interface FirestoreCompanySettings {
   description: string;
   domain: string;
   website?: string;
+  logoUrl?: string;
   email: string;
   primaryPhone: string;
   secondaryPhone: string;
@@ -276,10 +277,24 @@ export interface FirestoreCompanySettings {
   updatedAt: string;
 }
 
+export interface FirestoreMaintenanceSettings {
+  enabled: boolean;
+  title: string;
+  message: string;
+  imageUrl?: string;
+  estimatedReturn?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  allowedRoles?: string[];
+  lastActivatedAt?: string;
+  lastDeactivatedAt?: string;
+}
+
 export interface FirestoreSiteSettings {
   siteName: string;
   maintenanceMode: boolean;
   enableMaintenanceMode?: boolean;
+  maintenance?: FirestoreMaintenanceSettings;
   announcement?: {
     enabled: boolean;
     text: string;

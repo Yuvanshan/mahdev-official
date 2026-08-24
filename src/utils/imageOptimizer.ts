@@ -8,9 +8,12 @@ import { StorageOptimizationOptions } from '../types/storage';
 
 export const DEFAULT_ALLOWED_IMAGE_TYPES = [
   'image/jpeg',
+  'image/jpg',
   'image/png',
   'image/webp',
   'image/svg+xml',
+  'image/x-icon',
+  'image/vnd.microsoft.icon',
   'image/gif',
 ];
 
@@ -28,6 +31,72 @@ export interface ValidationResult {
 }
 
 /**
+ * Validates SVG content to ensure XML validity and detect malicious embedded scripts / event handlers.
+ */
+export async function validateSvgSecurity(file: File): Promise<ValidationResult> {
+  if (file.type !== 'image/svg+xml' && !file.name.toLowerCase().endsWith('.svg')) {
+    return { valid: true };
+  }
+
+  try {
+    const text = await file.text();
+    
+    // Check basic length
+    if (!text || text.trim().length === 0) {
+      return { valid: false, error: 'SVG file is empty.' };
+    }
+
+    // Check for dangerous script tags or inline handlers
+    const lower = text.toLowerCase();
+    const dangerousPatterns = [
+      /<script[\s>]/i,
+      /<\/script>/i,
+      /javascript:/i,
+      /data:\s*text\/html/i,
+      /\bon\w+\s*=/i, // onload=, onerror=, onclick=, etc.
+      /<iframe[\s>]/i,
+      /<object[\s>]/i,
+      /<embed[\s>]/i,
+    ];
+
+    for (const pattern of dangerousPatterns) {
+      if (pattern.test(lower)) {
+        return {
+          valid: false,
+          error: 'Security validation failed: SVG contains disallowed script elements or executable event attributes.',
+        };
+      }
+    }
+
+    // Verify XML syntax parseability
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, 'image/svg+xml');
+    const parserError = doc.querySelector('parsererror');
+    if (parserError) {
+      return {
+        valid: false,
+        error: 'Invalid SVG structure: XML syntax error detected in SVG file.',
+      };
+    }
+
+    const rootTag = doc.documentElement?.nodeName?.toLowerCase();
+    if (rootTag !== 'svg') {
+      return {
+        valid: false,
+        error: 'Invalid SVG file: root element is not an <svg> tag.',
+      };
+    }
+
+    return { valid: true };
+  } catch (err: any) {
+    return {
+      valid: false,
+      error: `Failed to validate SVG: ${err?.message || 'Unknown XML parse error.'}`,
+    };
+  }
+}
+
+/**
  * Validates file type and size constraints
  */
 export function validateFile(
@@ -35,7 +104,7 @@ export function validateFile(
   options?: StorageOptimizationOptions,
   isDocument = false
 ): ValidationResult {
-  const maxSize = options?.maxSizeBytes || (isDocument ? 15 * 1024 * 1024 : 8 * 1024 * 1024); // 8MB for images, 15MB for docs
+  const maxSize = options?.maxSizeBytes || (isDocument ? 15 * 1024 * 1024 : 5 * 1024 * 1024); // 5MB for images, 15MB for docs
   const allowedTypes = options?.allowedMimeTypes || (isDocument ? [...DEFAULT_ALLOWED_DOC_TYPES, ...DEFAULT_ALLOWED_IMAGE_TYPES] : DEFAULT_ALLOWED_IMAGE_TYPES);
 
   if (file.size > maxSize) {
@@ -46,10 +115,20 @@ export function validateFile(
     };
   }
 
-  if (!allowedTypes.includes(file.type)) {
+  // Handle extension matching for icon files where MIME might be empty or generic application/octet-stream
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  const isIco = ext === 'ico';
+  const isSvg = ext === 'svg';
+
+  const typeMatches =
+    allowedTypes.includes(file.type) ||
+    (isIco && allowedTypes.some((t) => t.includes('icon') || t.includes('ico'))) ||
+    (isSvg && allowedTypes.includes('image/svg+xml'));
+
+  if (!typeMatches && file.type) {
     return {
       valid: false,
-      error: `Unsupported file format (${file.type || 'unknown'}). Allowed: ${allowedTypes.map((t) => t.split('/')[1] || t).join(', ')}.`,
+      error: `Unsupported file format (${file.type || 'unknown'}). Allowed formats: ${allowedTypes.map((t) => t.split('/')[1] || t).join(', ')}.`,
     };
   }
 

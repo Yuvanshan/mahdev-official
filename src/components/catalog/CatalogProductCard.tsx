@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { CatalogProduct, ProductType, StockStatus } from '../../types/catalog';
 import { useCart } from '../../context/CartContext';
+import { Image } from '../ui/Image';
 
 interface CatalogProductCardProps {
   product: CatalogProduct;
@@ -109,11 +110,11 @@ export const CatalogProductCard: React.FC<CatalogProductCardProps> = ({
       <div className="flex flex-col flex-1">
         {/* Product Image & Badges */}
         <div className="relative aspect-4/3 bg-neutral-100 overflow-hidden cursor-pointer" onClick={() => onSelect(product)}>
-          <img
+          <Image
             src={product.imageUrl}
             alt={product.name}
-            loading="lazy"
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+            aspectRatio="4/3"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out rounded-none"
           />
 
           {/* Division Badge Top Left */}

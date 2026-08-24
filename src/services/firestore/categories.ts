@@ -9,6 +9,7 @@ import {
   getDocs,
   getDoc,
   setDoc,
+  deleteDoc,
   query,
   where,
   onSnapshot,
@@ -84,6 +85,17 @@ export const firestoreCategoriesService = {
       if (idx >= 0) {
         cachedCategories.data[idx] = { ...cachedCategories.data[idx], ...data } as FirestoreCategory;
       }
+    }
+  },
+
+  /**
+   * Permanently delete category from Firestore
+   */
+  async deleteCategory(id: string): Promise<void> {
+    const docRef = doc(db, 'categories', id);
+    await deleteDoc(docRef);
+    if (cachedCategories) {
+      cachedCategories.data = cachedCategories.data.filter((c) => c.id !== id);
     }
   },
 

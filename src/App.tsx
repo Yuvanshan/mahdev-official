@@ -37,10 +37,12 @@ import { AppBootLoader } from './components/ui/AppBootLoader';
 import { MaintenanceView } from './views/MaintenanceView';
 import { testFirestoreConnection, initAppCheck } from './lib/firebase';
 import { analyticsService } from './services/analyticsService';
+import { catalogService } from './services/catalogService';
 import { motion, AnimatePresence } from 'motion/react';
 
 function AppContent() {
-  const { siteSettings, isInitialLoading, error, refreshAll } = useFirestoreDataContext();
+  const { siteSettings, isInitialLoading, error, refreshAll, products, services, divisions } =
+    useFirestoreDataContext();
   const [currentPath, setCurrentPath] = useState<string>(() => {
     return window.location.pathname || '/';
   });
@@ -133,16 +135,19 @@ function AppContent() {
     }
   }, [normalizedPath, divisionKey]);
 
-  // 1. Initial Loading Screen: Never render hard-coded business data before Firestore finishes bootstrapping
-  if (isInitialLoading && !isAdminRoute) {
-    return <AppBootLoader />;
+  // 1. Initial Loading Screen & Firestore Error Protection
+  if ((isInitialLoading || error) && !isAdminRoute) {
+    return <AppBootLoader error={error} onRetry={refreshAll} />;
   }
 
   // 2. Maintenance Mode Screen: Live Firestore switch
-  if (
-    (siteSettings?.maintenanceMode || siteSettings?.enableMaintenanceMode) &&
-    !isAdminRoute
-  ) {
+  const isMaintenanceActive = Boolean(
+    siteSettings?.maintenance?.enabled ??
+      siteSettings?.maintenanceMode ??
+      siteSettings?.enableMaintenanceMode
+  );
+
+  if (isMaintenanceActive && !isAdminRoute) {
     return <MaintenanceView onAdminLogin={() => navigate('/admin')} />;
   }
 
@@ -268,16 +273,117 @@ function AppContent() {
       return <SWSView onNavigate={navigate} />;
     }
 
+    if (normalizedPath.startsWith('/sws/')) {
+      const subSlug = normalizedPath.replace('/sws/', '').trim();
+      const validSubsections = [
+        'services',
+        'packages',
+        'gallery',
+        'portfolio',
+        'process',
+        'quote',
+        'booking',
+        'contact',
+      ];
+      if (validSubsections.includes(subSlug)) {
+        return <SWSView onNavigate={navigate} />;
+      }
+
+      // Check if matches a service under SWS
+      const swsService = services.find(
+        (s) => s.division === 'sws' && (s.slug === subSlug || s.id === subSlug)
+      );
+      if (swsService) {
+        return <BookingView initialDivision="sws" initialServiceId={swsService.id} />;
+      }
+
+      return (
+        <NotFoundView
+          onNavigate={navigate}
+          resourceType="service"
+          attemptedSlug={`sws/${subSlug}`}
+        />
+      );
+    }
+
     if (normalizedPath === '/u1' || divisionKey === 'u1') {
       return <U1View onNavigate={navigate} />;
+    }
+
+    if (normalizedPath.startsWith('/u1/')) {
+      const subSlug = normalizedPath.replace('/u1/', '').trim();
+      const validSubsections = [
+        'cinema',
+        'media',
+        'production',
+        'services',
+        'packages',
+        'portfolio',
+        'quote',
+        'booking',
+      ];
+      if (validSubsections.includes(subSlug)) {
+        return <U1View onNavigate={navigate} />;
+      }
+
+      const u1Service = services.find(
+        (s) => s.division === 'u1' && (s.slug === subSlug || s.id === subSlug)
+      );
+      if (u1Service) {
+        return <BookingView initialDivision="u1" initialServiceId={u1Service.id} />;
+      }
+
+      return (
+        <NotFoundView
+          onNavigate={navigate}
+          resourceType="service"
+          attemptedSlug={`u1/${subSlug}`}
+        />
+      );
     }
 
     if (normalizedPath === '/it' || divisionKey === 'it') {
       return <ITView onNavigate={navigate} />;
     }
 
+    if (normalizedPath.startsWith('/it/')) {
+      const subSlug = normalizedPath.replace('/it/', '').trim();
+      const itService = services.find(
+        (s) => s.division === 'it' && (s.slug === subSlug || s.id === subSlug)
+      );
+      if (itService) {
+        return <BookingView initialDivision="it" initialServiceId={itService.id} />;
+      }
+
+      return (
+        <NotFoundView
+          onNavigate={navigate}
+          resourceType="service"
+          attemptedSlug={`it/${subSlug}`}
+        />
+      );
+    }
+
     if (normalizedPath === '/travels' || divisionKey === 'travels') {
       return <TravelsView onNavigate={navigate} />;
+    }
+
+    if (normalizedPath.startsWith('/travels/')) {
+      const subSlug = normalizedPath.replace('/travels/', '').trim();
+      const travelsService = services.find(
+        (s) => s.division === 'travels' && (s.slug === subSlug || s.id === subSlug)
+      );
+      if (travelsService) {
+        return <BookingView initialDivision="travels" initialServiceId={travelsService.id} />;
+      }
+
+      return (
+        <NotFoundView
+          onNavigate={navigate}
+          resourceType="service"
+          attemptedSlug={`travels/${subSlug}`}
+        />
+      );
     }
 
     if (
@@ -285,7 +391,118 @@ function AppContent() {
       normalizedPath.startsWith('/mart/') ||
       divisionKey === 'mart'
     ) {
+      if (normalizedPath.startsWith('/mart/') && normalizedPath !== '/mart') {
+        const subSlug = normalizedPath.replace('/mart/', '').trim();
+        const martProduct =
+          products.find(
+            (p) => p.division === 'mart' && (p.slug === subSlug || p.id === subSlug)
+          ) ||
+          catalogService.getProductBySlug(subSlug) ||
+          catalogService.getProductById(subSlug);
+
+        if (martProduct) {
+          return (
+            <CatalogView
+              initialProductId={martProduct.id}
+              initialDivision="mart"
+              onNavigate={navigate}
+            />
+          );
+        }
+
+        return (
+          <NotFoundView
+            onNavigate={navigate}
+            resourceType="product"
+            attemptedSlug={`mart/${subSlug}`}
+          />
+        );
+      }
       return <MartView onNavigate={navigate} />;
+    }
+
+    // Dynamic Direct Product Routes (/products/{slug} or /product/{slug})
+    if (normalizedPath.startsWith('/products/') || normalizedPath.startsWith('/product/')) {
+      const slug = normalizedPath.replace(/^\/(products|product)\//, '').trim();
+      const foundProduct =
+        products.find((p) => p.slug === slug || p.id === slug) ||
+        catalogService.getProductBySlug(slug) ||
+        catalogService.getProductById(slug);
+
+      if (!foundProduct) {
+        return (
+          <NotFoundView
+            onNavigate={navigate}
+            resourceType="product"
+            attemptedSlug={slug}
+          />
+        );
+      }
+
+      const productDivision =
+        'division' in foundProduct
+          ? (foundProduct.division as string)
+          : (foundProduct as any).divisionId;
+
+      return (
+        <CatalogView
+          initialProductId={foundProduct.id}
+          initialDivision={typeof productDivision === 'string' ? productDivision : undefined}
+          onNavigate={navigate}
+        />
+      );
+    }
+
+    // Dynamic Direct Service Routes (/services/{slug} or /service/{slug})
+    if (normalizedPath.startsWith('/services/') || normalizedPath.startsWith('/service/')) {
+      const slug = normalizedPath.replace(/^\/(services|service)\//, '').trim();
+      const foundService = services.find((s) => s.slug === slug || s.id === slug);
+
+      if (!foundService) {
+        return (
+          <NotFoundView
+            onNavigate={navigate}
+            resourceType="service"
+            attemptedSlug={slug}
+          />
+        );
+      }
+
+      return (
+        <BookingView
+          initialDivision={
+            typeof foundService.division === 'string' ? foundService.division : undefined
+          }
+          initialServiceId={foundService.id}
+        />
+      );
+    }
+
+    // Dynamic Divisions Routes (/divisions/{id} or /division/{id})
+    if (normalizedPath.startsWith('/divisions/') || normalizedPath.startsWith('/division/')) {
+      const divSlug = normalizedPath.replace(/^\/(divisions|division)\//, '').trim();
+      const matchedDiv =
+        (Object.keys(DIVISIONS) as DivisionId[]).find((key) => key === divSlug) ||
+        divisions.find((d) => d.slug === divSlug || d.id === divSlug);
+
+      if (matchedDiv) {
+        const divId =
+          typeof matchedDiv === 'string' ? matchedDiv : (matchedDiv.id as DivisionId);
+        if (divId === 'sws') return <SWSView onNavigate={navigate} />;
+        if (divId === 'u1') return <U1View onNavigate={navigate} />;
+        if (divId === 'it') return <ITView onNavigate={navigate} />;
+        if (divId === 'travels') return <TravelsView onNavigate={navigate} />;
+        if (divId === 'mart') return <MartView onNavigate={navigate} />;
+        return <DivisionView divisionId={divId} onNavigate={navigate} />;
+      }
+
+      return (
+        <NotFoundView
+          onNavigate={navigate}
+          resourceType="division"
+          attemptedSlug={divSlug}
+        />
+      );
     }
 
     if (normalizedPath === '/catalog' || normalizedPath.startsWith('/catalog/')) {
@@ -295,7 +512,22 @@ function AppContent() {
       let initialDivision: string | undefined;
 
       if (parts[1] === 'product' && parts[2]) {
-        initialProductId = parts[2];
+        const prodId = parts[2];
+        const found =
+          products.find((p) => p.id === prodId || p.slug === prodId) ||
+          catalogService.getProductById(prodId) ||
+          catalogService.getProductBySlug(prodId);
+
+        if (!found) {
+          return (
+            <NotFoundView
+              onNavigate={navigate}
+              resourceType="product"
+              attemptedSlug={prodId}
+            />
+          );
+        }
+        initialProductId = found.id;
       } else if (parts[1] === 'category' && parts[2]) {
         initialCategory = parts[2];
       } else if (parts[1] === 'division' && parts[2]) {
@@ -318,7 +550,19 @@ function AppContent() {
       let initialServiceId: string | undefined;
 
       if (parts[1] === 'service' && parts[2]) {
-        initialServiceId = parts[2];
+        const srvId = parts[2];
+        const found = services.find((s) => s.id === srvId || s.slug === srvId);
+        if (!found) {
+          return (
+            <NotFoundView
+              onNavigate={navigate}
+              resourceType="service"
+              attemptedSlug={srvId}
+            />
+          );
+        }
+        initialServiceId = found.id;
+        initialDivision = typeof found.division === 'string' ? found.division : undefined;
       } else if (parts[1]) {
         initialDivision = parts[1];
       }

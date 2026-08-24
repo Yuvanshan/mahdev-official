@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { SEOMetaData } from '../../types';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
-import { COMPANY_INFO } from '../../config/company';
 
 const SEO_STORAGE_KEY = 'mahdev_cms_seo_configs_v1';
 
@@ -16,15 +15,18 @@ export const SEOHead: React.FC<SEOMetaData> = ({
   const { siteSettings, companySettings } = useFirestoreDataContext();
 
   useEffect(() => {
-    // 1. Dynamic Favicon from Firestore
+    // 1. Dynamic Favicon synchronization from Firestore
     if (siteSettings?.faviconUrl) {
-      let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'icon';
-        document.getElementsByTagName('head')[0].appendChild(link);
-      }
-      link.href = siteSettings.faviconUrl;
+      const rels = ['icon', 'shortcut icon', 'apple-touch-icon'];
+      rels.forEach((rel) => {
+        let link: HTMLLinkElement | null = document.querySelector(`link[rel='${rel}']`);
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = rel;
+          document.head.appendChild(link);
+        }
+        link.href = siteSettings.faviconUrl!;
+      });
     }
 
     // 2. Dynamic Title
@@ -36,7 +38,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
 
     // Check if there is an admin-configured SEO override in CMS
     let effectiveTitle = dynamicFullTitle;
-    let effectiveDesc = description || siteSettings?.metaDescription || COMPANY_INFO.description;
+    let effectiveDesc = description || siteSettings?.metaDescription || companySettings?.description || 'Mahdev Pvt Ltd — Multi-sector corporate ecosystem.';
     let effectiveOgTitle = ogTitle || dynamicFullTitle;
     let effectiveOgDesc = ogDescription || effectiveDesc;
     let effectiveCanonical = canonicalUrl;
@@ -132,35 +134,36 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       document.head.appendChild(scriptTag);
     }
 
-    const companyName = companySettings?.legalName || companySettings?.name || COMPANY_INFO.legalName;
+    const domain = companySettings?.domain || 'mahdev.lk';
+    const compName = companySettings?.name || siteSettings?.siteName || 'Mahdev Pvt Ltd';
     const schema = {
       '@context': 'https://schema.org',
       '@type': 'Organization',
-      name: companyName,
-      alternateName: companySettings?.name || COMPANY_INFO.name,
-      url: `https://${companySettings?.website || COMPANY_INFO.domain}`,
-      logo: siteSettings?.logoUrl || `https://${COMPANY_INFO.domain}/logo.png`,
-      description: siteSettings?.metaDescription || COMPANY_INFO.description,
-      email: companySettings?.email || COMPANY_INFO.email,
-      telephone: [companySettings?.phone || COMPANY_INFO.primaryPhone, COMPANY_INFO.secondaryPhone].filter(Boolean),
+      name: compName,
+      alternateName: compName,
+      url: `https://${domain}`,
+      logo: siteSettings?.logoUrl || `https://${domain}/logo.png`,
+      description: siteSettings?.metaDescription || companySettings?.description || 'Mahdev Pvt Ltd — Multi-sector corporate ecosystem.',
+      email: companySettings?.email || 'info@mahdev.lk',
+      telephone: [companySettings?.primaryPhone || '+94 77 000 0000', companySettings?.secondaryPhone].filter(Boolean),
       sameAs: [
-        companySettings?.socialLinks?.linkedin || COMPANY_INFO.socials.linkedin,
-        companySettings?.socialLinks?.facebook || COMPANY_INFO.socials.facebook,
-        companySettings?.socialLinks?.instagram || COMPANY_INFO.socials.instagram,
-        companySettings?.socialLinks?.youtube || COMPANY_INFO.socials.youtube,
+        companySettings?.socials?.linkedin,
+        companySettings?.socials?.facebook,
+        companySettings?.socials?.instagram,
+        companySettings?.socials?.youtube,
       ].filter(Boolean),
       address: [
         {
           '@type': 'PostalAddress',
-          streetAddress: companySettings?.offices?.colombo?.address || COMPANY_INFO.offices.colombo.address,
-          addressLocality: companySettings?.offices?.colombo?.city || COMPANY_INFO.offices.colombo.city,
+          streetAddress: companySettings?.offices?.colombo?.address || 'No. 128, Galle Road, Colombo 03, Sri Lanka',
+          addressLocality: companySettings?.offices?.colombo?.city || 'Colombo',
           addressRegion: 'Western Province',
           addressCountry: 'LK',
         },
         {
           '@type': 'PostalAddress',
-          streetAddress: companySettings?.offices?.trincomalee?.address || COMPANY_INFO.offices.trincomalee.address,
-          addressLocality: companySettings?.offices?.trincomalee?.city || COMPANY_INFO.offices.trincomalee.city,
+          streetAddress: companySettings?.offices?.trincomalee?.address || 'No. 45, Main Street, Trincomalee, Sri Lanka',
+          addressLocality: companySettings?.offices?.trincomalee?.city || 'Trincomalee',
           addressRegion: 'Eastern Province',
           addressCountry: 'LK',
         },

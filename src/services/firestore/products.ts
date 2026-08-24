@@ -9,6 +9,7 @@ import {
   getDocs,
   getDoc,
   setDoc,
+  deleteDoc,
   query,
   where,
   limit as firestoreLimit,
@@ -206,6 +207,17 @@ export const firestoreProductsService = {
       } else {
         cachedProducts.data.push(payload as FirestoreProduct);
       }
+    }
+  },
+
+  /**
+   * Permanently delete product from Firestore and update memory cache
+   */
+  async deleteProduct(id: string): Promise<void> {
+    const docRef = doc(db, 'products', id);
+    await deleteDoc(docRef);
+    if (cachedProducts) {
+      cachedProducts.data = cachedProducts.data.filter((p) => p.id !== id);
     }
   },
 

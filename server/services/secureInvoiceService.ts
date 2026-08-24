@@ -102,11 +102,11 @@ export function generateSecureFiscalInvoice(input: GenerateInvoiceInput): Genera
     dueAt: due.toISOString(),
     issuer: {
       name: 'Mahdev Pvt Ltd',
-      registrationNumber: 'PV-00298412-LK',
+      registrationNumber: 'PV-00289410',
       vatNumber: 'VAT-LK-998821034',
-      address: 'Level 28, World Trade Center, West Tower, Echelon Square, Colombo 00100, Sri Lanka',
-      phone: '+94 11 234 5678',
-      email: 'finance@mahdev.lk',
+      address: '41/22, Pickerings Road, Kotahena, Colombo 13, Sri Lanka',
+      phone: '076 898 8970 / 075 092 8078',
+      email: 'info.mahdev.lk@gmail.com',
     },
     client: {
       name: input.customerName,

@@ -9,6 +9,7 @@ import {
   getDocs,
   getDoc,
   setDoc,
+  deleteDoc,
   onSnapshot,
   Unsubscribe,
 } from 'firebase/firestore';
@@ -102,6 +103,17 @@ export const firestoreDivisionsService = {
       if (idx >= 0) {
         cachedDivisions.data[idx] = { ...cachedDivisions.data[idx], ...payload } as FirestoreDivision;
       }
+    }
+  },
+
+  /**
+   * Delete division document
+   */
+  async deleteDivision(id: DivisionId): Promise<void> {
+    const docRef = doc(db, 'divisions', id);
+    await deleteDoc(docRef);
+    if (cachedDivisions) {
+      cachedDivisions.data = cachedDivisions.data.filter((d) => d.id !== id);
     }
   },
 

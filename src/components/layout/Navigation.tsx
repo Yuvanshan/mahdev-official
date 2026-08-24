@@ -27,7 +27,8 @@ import { DIVISIONS } from '../../config/divisions';
 import { DivisionId } from '../../types';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
-import { COMPANY_INFO, getTelLink, getMailtoLink } from '../../config/company';
+import { getTelLink, getMailtoLink } from '../../config/company';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 interface NavigationProps {
   currentPath: string;
@@ -37,6 +38,13 @@ interface NavigationProps {
 export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate }) => {
   const { totalQuantity, openCart } = useCart();
   const { user, isAuthenticated, logout } = useAuth();
+  const { companySettings, siteSettings } = useFirestoreDataContext();
+
+  const primaryPhone = companySettings?.primaryPhone || '076 898 8970';
+  const secondaryPhone = companySettings?.secondaryPhone || '075 092 8078';
+  const email = companySettings?.email || 'info.mahdev.lk@gmail.com';
+  const whatsappUrl = companySettings?.socials?.whatsapp || 'https://wa.me/94750928078';
+  const companyName = companySettings?.name || siteSettings?.siteName || 'Mahdev';
 
   const [isServicesOpen, setIsServicesOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
@@ -497,7 +505,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
             <div className="border-t border-slate-100 pt-3 space-y-2">
               <div className="px-3 py-1 text-xs font-bold uppercase tracking-wider text-slate-400">
-                Contact Mahdev
+                Contact {companyName}
               </div>
 
               {/* Call Hotline */}
@@ -508,24 +516,26 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <a
-                    href={getTelLink(COMPANY_INFO.primaryPhone)}
+                    href={getTelLink(primaryPhone)}
                     className="flex items-center justify-center gap-1.5 py-2 px-2.5 bg-white rounded-lg border border-slate-200 text-xs font-mono font-bold text-slate-900 hover:text-blue-600 hover:border-blue-300 transition-colors shadow-2xs"
                   >
-                    <span>{COMPANY_INFO.primaryPhone}</span>
+                    <span>{primaryPhone}</span>
                   </a>
-                  <a
-                    href={getTelLink(COMPANY_INFO.secondaryPhone)}
-                    className="flex items-center justify-center gap-1.5 py-2 px-2.5 bg-white rounded-lg border border-slate-200 text-xs font-mono font-bold text-slate-900 hover:text-blue-600 hover:border-blue-300 transition-colors shadow-2xs"
-                  >
-                    <span>{COMPANY_INFO.secondaryPhone}</span>
-                  </a>
+                  {secondaryPhone && (
+                    <a
+                      href={getTelLink(secondaryPhone)}
+                      className="flex items-center justify-center gap-1.5 py-2 px-2.5 bg-white rounded-lg border border-slate-200 text-xs font-mono font-bold text-slate-900 hover:text-blue-600 hover:border-blue-300 transition-colors shadow-2xs"
+                    >
+                      <span>{secondaryPhone}</span>
+                    </a>
+                  )}
                 </div>
               </div>
 
               {/* WhatsApp & Email Actions */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <a
-                  href={COMPANY_INFO.socials.whatsapp || 'https://wa.me/94750928078'}
+                  href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 py-2 px-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold hover:bg-emerald-100 transition-colors"
@@ -535,11 +545,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                 </a>
 
                 <a
-                  href={getMailtoLink(COMPANY_INFO.email)}
+                  href={getMailtoLink(email)}
                   className="flex items-center justify-center gap-2 py-2 px-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors"
                 >
                   <Mail className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                  <span>Email Mahdev</span>
+                  <span>Email {companyName}</span>
                 </a>
               </div>
             </div>

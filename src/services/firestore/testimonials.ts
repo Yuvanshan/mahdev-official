@@ -8,6 +8,7 @@ import {
   doc,
   getDocs,
   setDoc,
+  deleteDoc,
   query,
   where,
   onSnapshot,
@@ -75,6 +76,14 @@ export const firestoreTestimonialsService = {
       if (idx >= 0) {
         cachedTestimonials.data[idx] = { ...cachedTestimonials.data[idx], ...data } as FirestoreTestimonial;
       }
+    }
+  },
+
+  async deleteTestimonial(id: string): Promise<void> {
+    const docRef = doc(db, 'testimonials', id);
+    await deleteDoc(docRef);
+    if (cachedTestimonials) {
+      cachedTestimonials.data = cachedTestimonials.data.filter((t) => t.id !== id);
     }
   },
 

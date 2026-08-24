@@ -8,6 +8,7 @@ import {
   doc,
   getDocs,
   setDoc,
+  deleteDoc,
   onSnapshot,
   Unsubscribe,
 } from 'firebase/firestore';
@@ -63,6 +64,14 @@ export const firestoreMilestonesService = {
       if (idx >= 0) {
         cachedMilestones.data[idx] = { ...cachedMilestones.data[idx], ...data } as FirestoreMilestone;
       }
+    }
+  },
+
+  async deleteMilestone(id: string): Promise<void> {
+    const docRef = doc(db, 'milestones', id);
+    await deleteDoc(docRef);
+    if (cachedMilestones) {
+      cachedMilestones.data = cachedMilestones.data.filter((m) => m.id !== id);
     }
   },
 

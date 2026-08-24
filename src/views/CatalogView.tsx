@@ -14,12 +14,14 @@ interface CatalogViewProps {
   initialDivision?: string;
   initialCategory?: string;
   initialProductId?: string;
+  onNavigate?: (path: string) => void;
 }
 
 export const CatalogView: React.FC<CatalogViewProps> = ({
   initialDivision,
   initialCategory,
   initialProductId,
+  onNavigate,
 }) => {
   const [filters, setFilters] = useState<CatalogFilterOptions>({
     divisionId: initialDivision,
@@ -36,7 +38,11 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   // Selected product for modal inspection
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(() => {
     if (initialProductId) {
-      return catalogService.getProductById(initialProductId) || null;
+      return (
+        catalogService.getProductById(initialProductId) ||
+        catalogService.getProductBySlug(initialProductId) ||
+        null
+      );
     }
     return null;
   });

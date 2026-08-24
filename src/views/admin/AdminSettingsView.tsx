@@ -27,6 +27,11 @@ import {
   Smartphone,
   Sun,
   Moon,
+  Wrench,
+  Radio,
+  Power,
+  ShieldCheck,
+  ArrowRight,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
@@ -35,29 +40,42 @@ import {
   getDefaultCompanySettings,
   getDefaultSiteSettings,
 } from '../../services/firestore/settings';
-import { FirestoreCompanySettings, FirestoreSiteSettings } from '../../types/firestore';
+import {
+  FirestoreCompanySettings,
+  FirestoreSiteSettings,
+  FirestoreMaintenanceSettings,
+} from '../../types/firestore';
 import { cmsService } from '../../services/cmsService';
 import { storageService } from '../../services/storageService';
 import { BrandLogo } from '../../components/layout/BrandLogo';
+import { adminService } from '../../services/adminService';
+import { auth } from '../../lib/firebase';
 
 export const AdminSettingsView: React.FC = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'company' | 'branding' | 'commerce' | 'announcement' | 'security'>('company');
+  const [activeTab, setActiveTab] = useState<
+    'company' | 'branding' | 'commerce' | 'announcement' | 'maintenance' | 'security'
+  >('company');
 
   // Upload States
-  const [uploadingField, setUploadingField] = useState<'logo' | 'darkLogo' | 'mobileLogo' | 'favicon' | null>(null);
+  const [uploadingField, setUploadingField] = useState<
+    'logo' | 'darkLogo' | 'mobileLogo' | 'favicon' | 'maintenanceImage' | null
+  >(null);
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const fileInputRefLogo = useRef<HTMLInputElement>(null);
   const fileInputRefDarkLogo = useRef<HTMLInputElement>(null);
   const fileInputRefMobileLogo = useRef<HTMLInputElement>(null);
   const fileInputRefFavicon = useRef<HTMLInputElement>(null);
+  const fileInputRefMaintenanceImage = useRef<HTMLInputElement>(null);
 
   // Firestore Live State
   const [companyData, setCompanyData] = useState<FirestoreCompanySettings>(() => getDefaultCompanySettings());
   const [systemSettings, setSystemSettings] = useState<FirestoreSiteSettings>(() => getDefaultSiteSettings());
+
+  const currentAdmin = adminService.getCurrentAdmin();
 
   const addToast = (type: ToastMessage['type'], title: string, message: string) => {
     const id = Date.now().toString();
@@ -105,7 +123,7 @@ export const AdminSettingsView: React.FC = () => {
 
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    field: 'logo' | 'darkLogo' | 'mobileLogo' | 'favicon'
+    field: 'logo' | 'darkLogo' | 'mobileLogo' | 'favicon' | 'maintenanceImage'
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -116,15 +134,15 @@ export const AdminSettingsView: React.FC = () => {
     try {
       const isFavicon = field === 'favicon';
       const result = await storageService.uploadFile(file, 'branding', field, {
-        maxWidth: isFavicon ? 128 : 800,
-        maxHeight: isFavicon ? 128 : 400,
+        maxWidth: isFavicon ? 128 : 1200,
+        maxHeight: isFavicon ? 128 : 800,
         quality: 0.95,
-        targetFormat: file.type.includes('svg') ? 'original' : 'image/png',
+        targetFormat: file.type.includes('svg') || file.name.toLowerCase().endsWith('.ico') ? 'original' : 'image/png',
         onProgress: (p) => setUploadProgress(p),
       });
 
       if (!result.success || !result.url) {
-        throw new Error(result.error || 'Upload failed. Please check file format and permissions.');
+        throw new Error(result.error || 'Upload failed. Please check file format and administrator privileges.');
       }
 
       const updatedSettings: Partial<FirestoreSiteSettings> = {
@@ -136,12 +154,27 @@ export const AdminSettingsView: React.FC = () => {
       if (field === 'logo') {
         updatedSettings.logoUrl = result.url;
         setCompanyData((prev) => ({ ...prev, logoUrl: result.url }));
+        await firestoreSettingsService.updateCompanySettings({ logoUrl: result.url });
+        cmsService.updateCompanyInfo({ ...companyData, logoUrl: result.url } as any);
       } else if (field === 'darkLogo') {
         updatedSettings.darkLogoUrl = result.url;
       } else if (field === 'mobileLogo') {
         updatedSettings.mobileLogoUrl = result.url;
       } else if (field === 'favicon') {
         updatedSettings.faviconUrl = result.url;
+      } else if (field === 'maintenanceImage') {
+        updatedSettings.maintenance = {
+          ...(systemSettings.maintenance || {
+            enabled: systemSettings.enableMaintenanceMode || systemSettings.maintenanceMode || false,
+            title: 'Systems Upgrade in Progress',
+            message:
+              'Our digital platforms, client portals, and division infrastructure are undergoing planned architectural maintenance to ensure maximum reliability, security, and performance.',
+            estimatedReturn: 'Within 2 hours',
+            contactPhone: companyData.primaryPhone,
+            contactEmail: companyData.email,
+          }),
+          imageUrl: result.url,
+        };
       }
 
       setSystemSettings(updatedSettings as FirestoreSiteSettings);
@@ -149,17 +182,31 @@ export const AdminSettingsView: React.FC = () => {
       // Auto-save to Firestore immediately
       await firestoreSettingsService.updateSiteSettings(updatedSettings);
 
+      adminService.logAudit({
+        action: 'ADMIN_BRANDING_UPLOAD',
+        entityType: 'StorageAsset',
+        entityId: field,
+        details: `Administrator updated ${field} with asset ${file.name} in Firebase Storage repository.`,
+        status: 'success',
+      });
+
       addToast(
         'success',
-        'Asset Uploaded & Saved',
-        `The ${field === 'favicon' ? 'favicon' : 'brand logo'} was optimized and deployed to Cloud Storage.`
+        'Asset Uploaded & Live',
+        `The ${
+          field === 'favicon'
+            ? 'favicon'
+            : field === 'maintenanceImage'
+            ? 'maintenance cover image'
+            : 'brand logo'
+        } was verified, stored in Firebase Storage, and published live across the site.`
       );
     } catch (err: any) {
       console.error('[AdminSettings] Asset upload error:', err);
       addToast(
         'error',
         'Upload Failed',
-        err?.message || 'Could not complete media upload. Check file size (max 5MB).'
+        err?.message || 'Could not complete media upload. Please verify file size and administrator privileges.'
       );
     } finally {
       setUploadingField(null);
@@ -168,27 +215,39 @@ export const AdminSettingsView: React.FC = () => {
     }
   };
 
-  const handleClearAsset = async (field: 'logo' | 'darkLogo' | 'mobileLogo' | 'favicon') => {
+  const handleClearAsset = async (
+    field: 'logo' | 'darkLogo' | 'mobileLogo' | 'favicon' | 'maintenanceImage'
+  ) => {
     const updatedSettings: Partial<FirestoreSiteSettings> = {
       ...systemSettings,
       brandingUpdatedAt: new Date().toISOString(),
+      brandingVersion: (systemSettings.brandingVersion || 1) + 1,
     };
 
     if (field === 'logo') {
       updatedSettings.logoUrl = '';
       setCompanyData((prev) => ({ ...prev, logoUrl: '' }));
+      await firestoreSettingsService.updateCompanySettings({ logoUrl: '' });
+      cmsService.updateCompanyInfo({ ...companyData, logoUrl: '' } as any);
     } else if (field === 'darkLogo') {
       updatedSettings.darkLogoUrl = '';
     } else if (field === 'mobileLogo') {
       updatedSettings.mobileLogoUrl = '';
     } else if (field === 'favicon') {
       updatedSettings.faviconUrl = '';
+    } else if (field === 'maintenanceImage') {
+      if (updatedSettings.maintenance) {
+        updatedSettings.maintenance = {
+          ...updatedSettings.maintenance,
+          imageUrl: '',
+        };
+      }
     }
 
     setSystemSettings(updatedSettings as FirestoreSiteSettings);
     await firestoreSettingsService.updateSiteSettings(updatedSettings);
 
-    addToast('info', 'Asset Cleared', `Reverted ${field} to default vector emblem.`);
+    addToast('info', 'Asset Cleared', `Reverted ${field} to default state.`);
   };
 
   const handleSave = async () => {
@@ -369,6 +428,25 @@ export const AdminSettingsView: React.FC = () => {
         </button>
 
         <button
+          onClick={() => setActiveTab('maintenance')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
+            activeTab === 'maintenance'
+              ? 'border-amber-500 text-amber-600 bg-amber-50/50'
+              : 'border-transparent text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Wrench className="w-4 h-4 text-amber-500" />
+          <span>Maintenance Mode</span>
+          {(systemSettings.maintenance?.enabled ??
+            systemSettings.enableMaintenanceMode ??
+            systemSettings.maintenanceMode) && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500 text-slate-950 animate-pulse">
+              LIVE
+            </span>
+          )}
+        </button>
+
+        <button
           onClick={() => setActiveTab('security')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
             activeTab === 'security'
@@ -409,6 +487,13 @@ export const AdminSettingsView: React.FC = () => {
         accept="image/x-icon,image/png,image/svg+xml,image/vnd.microsoft.icon"
         className="hidden"
         onChange={(e) => handleFileUpload(e, 'favicon')}
+      />
+      <input
+        ref={fileInputRefMaintenanceImage}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        className="hidden"
+        onChange={(e) => handleFileUpload(e, 'maintenanceImage')}
       />
 
       {/* Tab 1: Company & Offices */}
@@ -599,7 +684,7 @@ export const AdminSettingsView: React.FC = () => {
                     })
                   }
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none"
-                  placeholder="41/22, Pickings Road, Colombo 13, Sri Lanka"
+                  placeholder="41/22, Pickerings Road, Kotahena, Colombo 13, Sri Lanka"
                 />
               </div>
 
@@ -847,6 +932,33 @@ export const AdminSettingsView: React.FC = () => {
       {/* Tab: Branding & Logo Management */}
       {activeTab === 'branding' && (
         <div className="space-y-6">
+          {/* Executive Storage Authorization Status Banner */}
+          <div className="p-4 bg-gradient-to-r from-blue-50 via-indigo-50/40 to-slate-50 border border-blue-200/80 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 bg-blue-600 text-white rounded-xl shadow-xs">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-slate-900">
+                    Firebase Storage Authorization: Active & Synchronized
+                  </h4>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    <Check className="w-3 h-3" /> Verified Admin
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  Logged in as <span className="font-semibold text-slate-800">{currentAdmin?.name || 'Administrator'}</span> ({currentAdmin?.email || 'admin@mahdev.lk'}) • Write access enabled for <code className="text-blue-700 bg-blue-100/60 px-1 py-0.5 rounded font-mono text-[11px]">branding/</code> repository.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 self-end sm:self-center">
+              <span className="text-[11px] font-mono text-slate-500 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs">
+                v{systemSettings.brandingVersion || 1} • {systemSettings.brandingUpdatedAt ? new Date(systemSettings.brandingUpdatedAt).toLocaleDateString() : 'Active'}
+              </span>
+            </div>
+          </div>
+
           {/* Main Grid: Upload Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* 1. Primary Brand Logo */}
@@ -1441,7 +1553,576 @@ export const AdminSettingsView: React.FC = () => {
         </div>
       )}
 
-      {/* Tab 4: Security & Platform Controls */}
+      {/* Tab 4: Maintenance Mode (Phase 50) */}
+      {activeTab === 'maintenance' && (
+        <div className="space-y-6">
+          {/* 1. Status Indicator & Quick Activation Bar */}
+          {(() => {
+            const isMaintActive = Boolean(
+              systemSettings.maintenance?.enabled ??
+                systemSettings.enableMaintenanceMode ??
+                systemSettings.maintenanceMode
+            );
+            const currentMaint = systemSettings.maintenance || {
+              enabled: isMaintActive,
+              title: 'Systems Upgrade in Progress',
+              message:
+                'Our digital platforms, client portals, and division infrastructure are undergoing planned architectural maintenance to ensure maximum reliability, security, and performance.',
+              imageUrl:
+                'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
+              estimatedReturn: 'Within 2 hours',
+              contactPhone: companyData.primaryPhone || '+94 77 000 0000',
+              contactEmail: companyData.email || 'info@mahdev.lk',
+            };
+
+            const handleToggleQuick = async () => {
+              const nextState = !isMaintActive;
+              const now = new Date().toISOString();
+              const updatedMaintenance: FirestoreMaintenanceSettings = {
+                ...currentMaint,
+                enabled: nextState,
+                ...(nextState ? { lastActivatedAt: now } : { lastDeactivatedAt: now }),
+              };
+
+              const updatedSettings: Partial<FirestoreSiteSettings> = {
+                ...systemSettings,
+                maintenanceMode: nextState,
+                enableMaintenanceMode: nextState,
+                maintenance: updatedMaintenance,
+              };
+
+              setSystemSettings(updatedSettings as FirestoreSiteSettings);
+              setIsSaving(true);
+              try {
+                await firestoreSettingsService.updateSiteSettings(updatedSettings);
+                addToast(
+                  nextState ? 'warning' : 'success',
+                  nextState ? 'Maintenance Mode Enabled' : 'Maintenance Mode Disabled',
+                  nextState
+                    ? 'Public visitors are now redirected to the Maintenance Landing Page in real-time.'
+                    : 'System is back ONLINE. Public visitors can access all pages and portals.'
+                );
+              } catch (err: any) {
+                addToast('error', 'Error updating maintenance mode', err?.message || 'Firestore error');
+              } finally {
+                setIsSaving(false);
+              }
+            };
+
+            const imagePresets = [
+              {
+                label: 'Tech Infrastructure',
+                url: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1200&q=80',
+              },
+              {
+                label: 'Cinema Studio',
+                url: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
+              },
+              {
+                label: 'Corporate HQ',
+                url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80',
+              },
+              {
+                label: 'Dark Luxury Gradient',
+                url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
+              },
+            ];
+
+            const returnTimePresets = [
+              'Within 1 Hour',
+              'Within 2 Hours',
+              'Today by 6:00 PM',
+              'Tonight by 11:59 PM',
+              'Tomorrow by 9:00 AM',
+            ];
+
+            return (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Left Column: Form Controls */}
+                <div className="lg:col-span-7 space-y-5">
+                  {/* Status Banner */}
+                  <div
+                    className={`p-5 rounded-2xl border transition-all ${
+                      isMaintActive
+                        ? 'bg-amber-500/10 border-amber-500/30'
+                        : 'bg-emerald-500/10 border-emerald-500/30'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-start gap-3.5">
+                        <div
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                            isMaintActive
+                              ? 'bg-amber-500/20 text-amber-600 border border-amber-500/30'
+                              : 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30'
+                          }`}
+                        >
+                          {isMaintActive ? (
+                            <Wrench className="w-5 h-5 animate-pulse" />
+                          ) : (
+                            <CheckCircle2 className="w-5 h-5" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                                isMaintActive
+                                  ? 'bg-amber-500 text-slate-950 font-mono'
+                                  : 'bg-emerald-600 text-white font-mono'
+                              }`}
+                            >
+                              {isMaintActive ? 'MAINTENANCE MODE ACTIVE' : 'SYSTEM ONLINE'}
+                            </span>
+                            {isMaintActive && (
+                              <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-600 mt-1">
+                            {isMaintActive
+                              ? 'Public traffic is currently locked and presented with the maintenance notice.'
+                              : 'All web portals, commerce stores, and booking engines are operating normally.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <Button
+                        variant={isMaintActive ? 'outline' : 'electric'}
+                        size="sm"
+                        onClick={handleToggleQuick}
+                        disabled={isSaving}
+                        leftIcon={
+                          isSaving ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Power className="w-3.5 h-3.5" />
+                          )
+                        }
+                        className={`text-xs font-bold shrink-0 ${
+                          isMaintActive
+                            ? 'border-amber-500 text-amber-700 hover:bg-amber-100/50'
+                            : ''
+                        }`}
+                      >
+                        {isMaintActive ? 'Deactivate Maintenance' : 'Activate Maintenance'}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Settings Card */}
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-5">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <Wrench className="w-4 h-4 text-amber-500" />
+                        <h3 className="font-display text-sm font-bold text-slate-900">
+                          Maintenance Mode Configuration
+                        </h3>
+                      </div>
+                      <span className="text-[11px] font-mono text-slate-400">
+                        Path: settings/site.maintenance
+                      </span>
+                    </div>
+
+                    {/* 1. Switch Enable/Disable */}
+                    <label className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 cursor-pointer hover:bg-slate-100/60 transition-colors">
+                      <div className="pr-4">
+                        <span className="text-xs font-bold text-slate-900 block">
+                          Enable Maintenance Mode
+                        </span>
+                        <span className="text-[11px] text-slate-500">
+                          When checked, any non-administrator visiting public pages will see this maintenance view.
+                        </span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={isMaintActive}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          setSystemSettings({
+                            ...systemSettings,
+                            enableMaintenanceMode: val,
+                            maintenanceMode: val,
+                            maintenance: {
+                              ...currentMaint,
+                              enabled: val,
+                            },
+                          });
+                        }}
+                        className="rounded border-slate-300 text-amber-500 focus:ring-amber-400 w-5 h-5 shrink-0"
+                      />
+                    </label>
+
+                    {/* 2. Notice Title */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                          Notice Headline / Title
+                        </label>
+                        <span className="text-[11px] text-slate-400">Display heading on page</span>
+                      </div>
+                      <input
+                        type="text"
+                        value={currentMaint.title || ''}
+                        onChange={(e) =>
+                          setSystemSettings({
+                            ...systemSettings,
+                            maintenance: {
+                              ...currentMaint,
+                              title: e.target.value,
+                            },
+                          })
+                        }
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none"
+                        placeholder="Mahdev Pvt Ltd Systems Upgrade in Progress"
+                      />
+                    </div>
+
+                    {/* 3. Notice Message */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                          Explanation Message
+                        </label>
+                        <span className="text-[11px] text-slate-400">Visitor details & rationale</span>
+                      </div>
+                      <textarea
+                        rows={3}
+                        value={currentMaint.message || ''}
+                        onChange={(e) =>
+                          setSystemSettings({
+                            ...systemSettings,
+                            maintenance: {
+                              ...currentMaint,
+                              message: e.target.value,
+                            },
+                          })
+                        }
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none leading-relaxed"
+                        placeholder="Our digital platforms, client portals, and division infrastructure are undergoing planned architectural maintenance to ensure maximum reliability, security, and performance."
+                      />
+                    </div>
+
+                    {/* 4. Cover / Banner Image */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                          Maintenance Cover Image
+                        </label>
+                        <span className="text-[11px] text-slate-400">Optional hero banner</span>
+                      </div>
+
+                      <div className="flex gap-2 mb-2">
+                        <input
+                          type="text"
+                          value={currentMaint.imageUrl || ''}
+                          onChange={(e) =>
+                            setSystemSettings({
+                              ...systemSettings,
+                              maintenance: {
+                                ...currentMaint,
+                                imageUrl: e.target.value,
+                              },
+                            })
+                          }
+                          className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
+                          placeholder="https://images.unsplash.com/..."
+                        />
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => fileInputRefMaintenanceImage.current?.click()}
+                          disabled={uploadingField === 'maintenanceImage'}
+                          leftIcon={
+                            uploadingField === 'maintenanceImage' ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Upload className="w-3.5 h-3.5" />
+                            )
+                          }
+                          className="text-xs shrink-0"
+                        >
+                          {uploadingField === 'maintenanceImage' ? 'Uploading...' : 'Upload'}
+                        </Button>
+                        {currentMaint.imageUrl && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleClearAsset('maintenanceImage')}
+                            className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                      </div>
+
+                      {/* Image Presets */}
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+                          Presets:
+                        </span>
+                        {imagePresets.map((preset) => (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() =>
+                              setSystemSettings({
+                                ...systemSettings,
+                                maintenance: {
+                                  ...currentMaint,
+                                  imageUrl: preset.url,
+                                },
+                              })
+                            }
+                            className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${
+                              currentMaint.imageUrl === preset.url
+                                ? 'bg-amber-50 border-amber-400 text-amber-800 font-bold'
+                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                            }`}
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 5. Estimated Return Time */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                          Estimated Return
+                        </label>
+                        <span className="text-[11px] text-slate-400">Target completion time</span>
+                      </div>
+
+                      <div className="flex gap-2 mb-2">
+                        <input
+                          type="text"
+                          value={currentMaint.estimatedReturn || ''}
+                          onChange={(e) =>
+                            setSystemSettings({
+                              ...systemSettings,
+                              maintenance: {
+                                ...currentMaint,
+                                estimatedReturn: e.target.value,
+                              },
+                            })
+                          }
+                          className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none"
+                          placeholder="Within 2 hours / Tonight by 11:59 PM"
+                        />
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+                          Quick Picks:
+                        </span>
+                        {returnTimePresets.map((preset) => (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() =>
+                              setSystemSettings({
+                                ...systemSettings,
+                                maintenance: {
+                                  ...currentMaint,
+                                  estimatedReturn: preset,
+                                },
+                              })
+                            }
+                            className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${
+                              currentMaint.estimatedReturn === preset
+                                ? 'bg-amber-50 border-amber-400 text-amber-800 font-bold'
+                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                            }`}
+                          >
+                            {preset}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 6. Contact Information (Hotline & Email) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                            Emergency Hotline Phone
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSystemSettings({
+                                ...systemSettings,
+                                maintenance: {
+                                  ...currentMaint,
+                                  contactPhone: companyData.primaryPhone || '+94 77 000 0000',
+                                },
+                              })
+                            }
+                            className="text-[10px] font-bold text-blue-600 hover:underline"
+                          >
+                            Use Group Phone
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          value={currentMaint.contactPhone || ''}
+                          onChange={(e) =>
+                            setSystemSettings({
+                              ...systemSettings,
+                              maintenance: {
+                                ...currentMaint,
+                                contactPhone: e.target.value,
+                              },
+                            })
+                          }
+                          className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
+                          placeholder="+94 77 000 0000"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                            Corporate Inquiries Email
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSystemSettings({
+                                ...systemSettings,
+                                maintenance: {
+                                  ...currentMaint,
+                                  contactEmail: companyData.email || 'info@mahdev.lk',
+                                },
+                              })
+                            }
+                            className="text-[10px] font-bold text-blue-600 hover:underline"
+                          >
+                            Use Group Email
+                          </button>
+                        </div>
+                        <input
+                          type="email"
+                          value={currentMaint.contactEmail || ''}
+                          onChange={(e) =>
+                            setSystemSettings({
+                              ...systemSettings,
+                              maintenance: {
+                                ...currentMaint,
+                                contactEmail: e.target.value,
+                              },
+                            })
+                          }
+                          className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
+                          placeholder="info@mahdev.lk"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Live Interactive Preview */}
+                <div className="lg:col-span-5 space-y-4">
+                  <div className="bg-slate-900 p-4 sm:p-5 rounded-3xl border border-slate-800 text-white shadow-xl">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80 inline-block" />
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block" />
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block" />
+                        </div>
+                        <span className="text-[11px] font-mono text-slate-400 ml-2">
+                          Live Public Visitor Preview
+                        </span>
+                      </div>
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                        Viewport Simulation
+                      </span>
+                    </div>
+
+                    {/* Preview Screen Body */}
+                    <div className="bg-slate-950/90 rounded-2xl p-5 border border-slate-800 text-center relative overflow-hidden">
+                      {currentMaint.imageUrl ? (
+                        <div className="relative w-full h-32 rounded-xl overflow-hidden mb-4 border border-slate-800">
+                          <img
+                            src={currentMaint.imageUrl}
+                            alt="Banner Preview"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                          <div className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-950/80 text-amber-300 text-[9px] font-bold">
+                            <Wrench className="w-2.5 h-2.5" />
+                            <span>MAINTENANCE</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto mb-4">
+                          <Wrench className="w-6 h-6 text-amber-400" />
+                        </div>
+                      )}
+
+                      <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[10px] font-bold mb-2">
+                        <Shield className="w-3 h-3" />
+                        <span>System Maintenance</span>
+                      </div>
+
+                      <h4 className="text-sm font-bold text-white font-display leading-snug mb-2">
+                        {currentMaint.title || 'Systems Upgrade in Progress'}
+                      </h4>
+
+                      <p className="text-[11px] text-slate-400 line-clamp-3 mb-3 leading-relaxed">
+                        {currentMaint.message || 'System maintenance is active.'}
+                      </p>
+
+                      {currentMaint.estimatedReturn && (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] text-slate-300 mb-4">
+                          <Clock className="w-3 h-3 text-amber-400" />
+                          <span>Return:</span>
+                          <span className="font-bold text-amber-300">
+                            {currentMaint.estimatedReturn}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-2 text-left p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-[10px]">
+                        <div className="truncate">
+                          <span className="text-slate-500 block text-[9px] uppercase font-bold">
+                            Hotline
+                          </span>
+                          <span className="text-slate-200 font-mono">
+                            {currentMaint.contactPhone || companyData.primaryPhone}
+                          </span>
+                        </div>
+                        <div className="truncate">
+                          <span className="text-slate-500 block text-[9px] uppercase font-bold">
+                            Email
+                          </span>
+                          <span className="text-slate-200 font-mono">
+                            {currentMaint.contactEmail || companyData.email}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 flex items-start gap-3">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="block font-bold">Admin Portal Bypass:</strong>
+                      <span>
+                        Even while Maintenance Mode is enabled, authenticated staff and administrators can continue accessing the Admin Portal without interruption.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* Tab 5: Security & Platform Controls */}
       {activeTab === 'security' && (
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4 max-w-2xl">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
@@ -1450,26 +2131,62 @@ export const AdminSettingsView: React.FC = () => {
           </div>
 
           <div className="space-y-3">
-            <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer">
+            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-slate-800 block">Maintenance Mode</span>
-                <span className="text-[11px] text-slate-500">
-                  Show maintenance landing notice to public visitors
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-800">Maintenance Mode</span>
+                  {Boolean(
+                    systemSettings.maintenance?.enabled ??
+                      systemSettings.enableMaintenanceMode ??
+                      systemSettings.maintenanceMode
+                  ) && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-mono">
+                      ACTIVE
+                    </span>
+                  )}
+                </div>
+                <span className="text-[11px] text-slate-500 block mt-0.5">
+                  Redirect all public visitors to the maintenance landing view.
                 </span>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('maintenance')}
+                  className="text-[11px] font-bold text-blue-600 hover:underline mt-1 inline-flex items-center gap-1"
+                >
+                  <span>Configure titles, messages, banner & return timer</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
               </div>
               <input
                 type="checkbox"
-                checked={systemSettings.enableMaintenanceMode || systemSettings.maintenanceMode || false}
-                onChange={(e) =>
+                checked={Boolean(
+                  systemSettings.maintenance?.enabled ??
+                    systemSettings.enableMaintenanceMode ??
+                    systemSettings.maintenanceMode
+                )}
+                onChange={(e) => {
+                  const val = e.target.checked;
                   setSystemSettings({
                     ...systemSettings,
-                    enableMaintenanceMode: e.target.checked,
-                    maintenanceMode: e.target.checked,
-                  })
-                }
-                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                    enableMaintenanceMode: val,
+                    maintenanceMode: val,
+                    maintenance: {
+                      ...(systemSettings.maintenance || {
+                        enabled: val,
+                        title: 'Systems Upgrade in Progress',
+                        message:
+                          'Our digital platforms, client portals, and division infrastructure are undergoing planned architectural maintenance to ensure maximum reliability, security, and performance.',
+                        estimatedReturn: 'Within 2 hours',
+                        contactPhone: companyData.primaryPhone,
+                        contactEmail: companyData.email,
+                      }),
+                      enabled: val,
+                    },
+                  });
+                }}
+                className="rounded border-slate-300 text-amber-500 focus:ring-amber-500 w-4 h-4 cursor-pointer"
               />
-            </label>
+            </div>
 
             <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer">
               <div>

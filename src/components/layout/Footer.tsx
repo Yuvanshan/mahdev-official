@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, ArrowRight, Shield, FileText, Check, ExternalLink } from 'lucide-react';
+import { Mail, Phone, MapPin, ArrowRight, Shield, FileText, Check, ExternalLink, Globe } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Modal } from '../ui/Modal';
 import { FOOTER_SECTIONS } from '../../config/navigation';
-import { BRAND_CONFIG } from '../../config/brand';
-import { COMPANY_INFO, getTelLink, getMailtoLink, getMapSearchUrl } from '../../config/company';
+import { getTelLink, getMailtoLink, getMapSearchUrl } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 interface FooterProps {
@@ -14,21 +13,20 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
-  const { companySettings } = useFirestoreDataContext();
-  const company = companySettings && companySettings.name ? {
-    ...COMPANY_INFO,
-    ...companySettings,
-    offices: {
-      colombo: {
-        ...COMPANY_INFO.offices.colombo,
-        ...(companySettings.offices?.colombo || {}),
-      },
-      trincomalee: {
-        ...COMPANY_INFO.offices.trincomalee,
-        ...(companySettings.offices?.trincomalee || {}),
-      },
-    },
-  } : COMPANY_INFO;
+  const { companySettings, siteSettings } = useFirestoreDataContext();
+
+  const companyName = companySettings?.name || siteSettings?.siteName || 'Mahdev Pvt Ltd';
+  const tagline = companySettings?.tagline || 'Pioneering Creative Artistry & Modern Technology';
+  const description = companySettings?.description || 'A unified multi-division powerhouse driving creative entertainment, visual storytelling, cloud engineering, luxury travel, and verified commerce.';
+  const email = companySettings?.email || 'info.mahdev.lk@gmail.com';
+  const primaryPhone = companySettings?.primaryPhone || '076 898 8970';
+  const secondaryPhone = companySettings?.secondaryPhone || '075 092 8078';
+  const domain = companySettings?.domain || 'mahdev.lk';
+
+  const colomboAddress = companySettings?.offices?.colombo?.address || '41/22, Pickerings Road, Kotahena, Colombo 13, Sri Lanka';
+  const colomboMapQuery = companySettings?.offices?.colombo?.mapQuery || '41/22 Pickerings Road, Kotahena, Colombo 13, Sri Lanka';
+  const trincomaleeAddress = companySettings?.offices?.trincomalee?.address || '95/15, Iluppaikkulam, Kanniya Road, Trincomalee, Sri Lanka';
+  const trincomaleeMapQuery = companySettings?.offices?.trincomalee?.mapQuery || '95/15 Iluppaikkulam, Kanniya Road, Trincomalee, Sri Lanka';
 
   const [activeLegalModal, setActiveLegalModal] = useState<{
     title: string;
@@ -42,9 +40,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
     e.preventDefault();
     const legalContentMap: Record<string, string> = {
       'Privacy Policy':
-        'Mahdev Pvt Ltd values your privacy. This policy outlines how we collect, safeguard, and use information across our parent enterprise and all child divisions (SWS Event Management, U1 Studio, IT & Solutions, Mahdev Travels, and Mahdev Online Mart). We never sell your personal data.',
+        `${companyName} values your privacy. This policy outlines how we collect, safeguard, and use information across our parent enterprise and all child divisions (SWS Event Management, U1 Studio, IT & Solutions, Mahdev Travels, and Mahdev Online Mart). We never sell your personal data.`,
       'Terms & Conditions':
-        'By utilizing Mahdev Pvt Ltd digital services, consulting divisions, or commercial portals, you agree to our standard corporate terms of service, intellectual property standards, and lawful engagement guidelines.',
+        `By utilizing ${companyName} digital services, consulting divisions, or commercial portals, you agree to our standard corporate terms of service, intellectual property standards, and lawful engagement guidelines.`,
       'Refund Policy':
         'Service cancellations and commercial product returns adhere to division-specific terms. Event management and studio productions follow staged milestone retainer agreements, while e-commerce orders qualify for standard 7-day verified returns.',
       'Shipping Policy':
@@ -55,7 +53,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
     setActiveLegalModal({
       title: label,
-      content: legalContentMap[label] || `Official legal disclosure for ${label} — Mahdev Pvt Ltd.`,
+      content: legalContentMap[label] || `Official legal disclosure for ${label} — ${companyName}.`,
     });
   };
 
@@ -75,13 +73,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <div className="lg:col-span-7">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-900/40 border border-blue-500/30 text-blue-400 text-xs font-semibold mb-3">
                 <Shield className="w-3.5 h-3.5" />
-                <span>The Mahdev Corporate Ecosystem</span>
+                <span>The {companyName} Ecosystem</span>
               </div>
               <h3 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                {BRAND_CONFIG.tagline}
+                {tagline}
               </h3>
               <p className="text-slate-400 text-sm mt-2 max-w-xl">
-                A unified multi-division powerhouse driving creative entertainment, visual storytelling, cloud engineering, luxury travel, and verified commerce.
+                {description}
               </p>
             </div>
 
@@ -96,7 +94,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               {newsletterSubscribed ? (
                 <div className="flex items-center gap-2 text-emerald-400 text-xs font-medium py-2">
                   <Check className="w-4 h-4" />
-                  <span>Thank you for subscribing to Mahdev Executive Dispatch.</span>
+                  <span>Thank you for subscribing to {companyName} Executive Dispatch.</span>
                 </div>
               ) : (
                 <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-2">
@@ -135,11 +133,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               {/* Direct Contact Anchors */}
               <div className="space-y-3 pt-2 text-xs text-slate-300">
                 <a
-                  href={getMailtoLink(company.email)}
+                  href={getMailtoLink(email)}
                   className="flex items-center gap-2 text-slate-300 hover:text-blue-400 transition-colors group"
                 >
                   <Mail className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                  <span className="break-all">{company.email}</span>
+                  <span className="break-all">{email}</span>
                 </a>
                 
                 <div className="space-y-1">
@@ -147,25 +145,29 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                     <Phone className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                       <a
-                        href={getTelLink(company.primaryPhone)}
+                        href={getTelLink(primaryPhone)}
                         className="hover:text-blue-400 transition-colors font-medium"
                       >
-                        {company.primaryPhone}
+                        {primaryPhone}
                       </a>
-                      <span className="text-slate-600">/</span>
-                      <a
-                        href={getTelLink(company.secondaryPhone)}
-                        className="hover:text-blue-400 transition-colors font-medium"
-                      >
-                        {company.secondaryPhone}
-                      </a>
+                      {secondaryPhone && (
+                        <>
+                          <span className="text-slate-600">/</span>
+                          <a
+                            href={getTelLink(secondaryPhone)}
+                            className="hover:text-blue-400 transition-colors font-medium"
+                          >
+                            {secondaryPhone}
+                          </a>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 <div className="pt-1 space-y-2 border-t border-slate-800/80">
                   <a
-                    href={getMapSearchUrl(company.offices.colombo.mapQuery)}
+                    href={getMapSearchUrl(colomboMapQuery)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-start gap-2 hover:text-blue-400 transition-colors group"
@@ -173,12 +175,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                     <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
                     <div>
                       <span className="font-semibold text-slate-200 block text-[11px]">Colombo Office:</span>
-                      <span className="text-[11px] text-slate-400">{company.offices.colombo.address}</span>
+                      <span className="text-[11px] text-slate-400">{colomboAddress}</span>
                     </div>
                   </a>
 
                   <a
-                    href={getMapSearchUrl(company.offices.trincomalee.mapQuery)}
+                    href={getMapSearchUrl(trincomaleeMapQuery)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-start gap-2 hover:text-blue-400 transition-colors group"
@@ -186,7 +188,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                     <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
                     <div>
                       <span className="font-semibold text-slate-200 block text-[11px]">Trincomalee Office:</span>
-                      <span className="text-[11px] text-slate-400">{company.offices.trincomalee.address}</span>
+                      <span className="text-[11px] text-slate-400">{trincomaleeAddress}</span>
                     </div>
                   </a>
                 </div>
@@ -231,7 +233,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           {/* Bottom Copyright and Socials */}
           <div className="mt-14 pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 text-center sm:text-left">
             <p>
-              © {new Date().getFullYear()} {BRAND_CONFIG.legalName}. All rights reserved. {BRAND_CONFIG.domain}
+              © {new Date().getFullYear()} {companyName}. All rights reserved. {domain}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
               <span className="hover:text-slate-300 transition-colors">Colombo Office</span>
@@ -254,7 +256,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <p>{activeLegalModal?.content}</p>
           <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-500 flex items-center gap-2">
             <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
-            <span>Mahdev Corporate Legal Registry • Document Ref: MDV-2026-LEG</span>
+            <span>{companyName} Corporate Legal Registry • Document Ref: MDV-2026-LEG</span>
           </div>
           <div className="pt-2 flex justify-end">
             <Button size="sm" variant="primary" onClick={() => setActiveLegalModal(null)}>

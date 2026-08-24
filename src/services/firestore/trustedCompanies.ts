@@ -8,6 +8,7 @@ import {
   doc,
   getDocs,
   setDoc,
+  deleteDoc,
   onSnapshot,
   Unsubscribe,
 } from 'firebase/firestore';
@@ -62,6 +63,14 @@ export const firestoreTrustedCompaniesService = {
       if (idx >= 0) {
         cachedCompanies.data[idx] = { ...cachedCompanies.data[idx], ...data } as FirestoreTrustedCompany;
       }
+    }
+  },
+
+  async deleteTrustedCompany(id: string): Promise<void> {
+    const docRef = doc(db, 'trustedCompanies', id);
+    await deleteDoc(docRef);
+    if (cachedCompanies) {
+      cachedCompanies.data = cachedCompanies.data.filter((c) => c.id !== id);
     }
   },
 
