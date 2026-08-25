@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Calendar,
   Clock,
@@ -12,6 +12,7 @@ import {
   Compass,
 } from 'lucide-react';
 import { TRAVEL_PACKAGES, TravelPackage } from '../../data/travelsData';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
@@ -27,6 +28,46 @@ export const TravelsPackagesSection: React.FC<TravelsPackagesSectionProps> = ({
   onSelectPackage,
   onBookPackageDirect,
 }) => {
+  const { services: rawServices } = useFirestoreDataContext();
+
+  const packages = useMemo<TravelPackage[]>(() => {
+    if (rawServices && rawServices.length > 0) {
+      const travelServices = rawServices.filter(
+        (s) => s.division === 'travels' || (s as any).divisionId === 'travels'
+      );
+      if (travelServices.length > 0) {
+        return travelServices.map((s) => ({
+          id: s.id,
+          title: s.name,
+          destination: (s as any).destination || 'Sri Lanka',
+          duration: (s as any).duration || (s as any).leadTime || '7 Days / 6 Nights',
+          tagline: (s as any).tagline || s.description?.slice(0, 60) || '',
+          description: s.description || '',
+          heroImage: s.images && s.images.length > 0 ? s.images[0] : (s as any).imageUrl || '',
+          gallery: s.images || [],
+          highlights: s.features || ['Private Air-Conditioned Vehicle', 'Chauffeur Guide', 'Daily Breakfast'],
+          price: typeof s.price === 'number' ? `$${s.price.toLocaleString()}` : String(s.price || '$850'),
+          pricePerPerson: typeof s.price === 'number' ? s.price : 850,
+          priceNote: (s as any).priceNote || 'Per Person Sharing',
+          availability: (s as any).availability || 'Year-round daily departures',
+          difficulty: 'Moderate',
+          tourType: 'Private Tour',
+          badge: s.badge || 'Signature Itinerary',
+          overview: (s as any).overview || s.description || '',
+          itinerary: (s as any).itinerary || [
+            { day: 1, title: 'Arrival & Welcome', location: 'Negombo', description: 'Airport pickup and relaxation', meals: 'Dinner', stay: 'Luxury Beach Resort' },
+            { day: 2, title: 'Cultural Triangle', location: 'Sigiriya', description: 'Climb Lion Rock fortress', meals: 'Breakfast, Dinner', stay: 'Eco Luxury Resort' },
+          ],
+          included: s.features || ['Air-conditioned vehicle with fuel and tolls', 'English-speaking tourist driver guide'],
+          excluded: (s as any).excluded || ['International flights and visa fees', 'Entrance tickets to historical monuments'],
+          pricingTiers: (s as any).pricingTiers || [{ tier: 'Standard (3-4 Star)', price: '$850 / person', description: 'Comfortable hotels' }],
+          faqs: (s as any).faqs || [{ question: 'Can this itinerary be customized?', answer: 'Yes, all itineraries can be personalized.' }],
+        }));
+      }
+    }
+    return TRAVEL_PACKAGES;
+  }, [rawServices]);
+
   return (
     <SectionContainer id="packages" background="subtle" paddingY="xl" hasBorderBottom>
       {/* Header */}
@@ -46,7 +87,7 @@ export const TravelsPackagesSection: React.FC<TravelsPackagesSectionProps> = ({
 
       {/* Package Cards Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {TRAVEL_PACKAGES.map((pkg) => (
+        {packages.map((pkg) => (
           <div
             key={pkg.id}
             className="group rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-2xl transition-all duration-300 flex flex-col justify-between"

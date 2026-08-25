@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Camera,
   Film,
@@ -14,6 +14,7 @@ import {
   Frame,
 } from 'lucide-react';
 import { U1_SERVICES, U1Service } from '../../data/u1Data';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { U1ServiceDetailModal } from './U1ServiceDetailModal';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
@@ -30,19 +31,46 @@ type U1FilterCategory = 'all' | 'media' | 'portrait' | 'commercial' | 'print';
 export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
   onBookService,
 }) => {
+  const { services: rawServices } = useFirestoreDataContext();
   const [selectedCategory, setSelectedCategory] = useState<U1FilterCategory>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeModalService, setActiveModalService] = useState<U1Service | null>(null);
 
+  const allServices = useMemo<U1Service[]>(() => {
+    if (rawServices && rawServices.length > 0) {
+      const u1Services = rawServices.filter(
+        (s) => s.division === 'u1' || (s as any).divisionId === 'u1'
+      );
+      if (u1Services.length > 0) {
+        return u1Services.map((s) => ({
+          id: s.id,
+          name: s.name,
+          category: (((s as any).category && (s as any).category !== 'all' ? (s as any).category : 'media') as 'media' | 'portrait' | 'commercial' | 'print'),
+          tagline: (s as any).tagline || s.description?.slice(0, 60) || '',
+          description: s.description || '',
+          detailedDescription: (s as any).detailedDescription || s.description || '',
+          startingPrice: typeof s.price === 'number' ? `$${s.price.toLocaleString()}` : String(s.price || '$800'),
+          turnaround: (s as any).turnaround || (s as any).leadTime || '7-10 Days',
+          deliverables: (s as any).deliverables || s.features || ['High-Res Digital Master Gallery'],
+          imageUrl: s.images && s.images.length > 0 ? s.images[0] : (s as any).imageUrl || '',
+          gallery: s.images || [],
+          badge: s.badge || 'Popular Studio Package',
+          popular: (s as any).popular ?? true,
+        }));
+      }
+    }
+    return U1_SERVICES;
+  }, [rawServices]);
+
   const categories: { id: U1FilterCategory; label: string; count: number; icon: React.ReactNode }[] = [
-    { id: 'all', label: 'All 11 Services', count: U1_SERVICES.length, icon: <Layers className="w-3.5 h-3.5" /> },
-    { id: 'media', label: 'Cinema & Coverage', count: U1_SERVICES.filter((s) => s.category === 'media').length, icon: <Film className="w-3.5 h-3.5" /> },
-    { id: 'portrait', label: 'Portraits & Studio', count: U1_SERVICES.filter((s) => s.category === 'portrait').length, icon: <Camera className="w-3.5 h-3.5" /> },
-    { id: 'commercial', label: 'Commercial & Product', count: U1_SERVICES.filter((s) => s.category === 'commercial').length, icon: <Sparkles className="w-3.5 h-3.5" /> },
-    { id: 'print', label: 'Albums & Frames', count: U1_SERVICES.filter((s) => s.category === 'print').length, icon: <Frame className="w-3.5 h-3.5" /> },
+    { id: 'all', label: `All ${allServices.length} Services`, count: allServices.length, icon: <Layers className="w-3.5 h-3.5" /> },
+    { id: 'media', label: 'Cinema & Coverage', count: allServices.filter((s) => s.category === 'media').length, icon: <Film className="w-3.5 h-3.5" /> },
+    { id: 'portrait', label: 'Portraits & Studio', count: allServices.filter((s) => s.category === 'portrait').length, icon: <Camera className="w-3.5 h-3.5" /> },
+    { id: 'commercial', label: 'Commercial & Product', count: allServices.filter((s) => s.category === 'commercial').length, icon: <Sparkles className="w-3.5 h-3.5" /> },
+    { id: 'print', label: 'Albums & Frames', count: allServices.filter((s) => s.category === 'print').length, icon: <Frame className="w-3.5 h-3.5" /> },
   ];
 
-  const filteredServices = U1_SERVICES.filter((s) => {
+  const filteredServices = allServices.filter((s) => {
     const matchesCategory = selectedCategory === 'all' || s.category === selectedCategory;
     const matchesSearch =
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

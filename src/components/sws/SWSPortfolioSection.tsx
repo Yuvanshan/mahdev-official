@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Sparkles,
   MapPin,
@@ -11,6 +11,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { SWS_PORTFOLIO_ITEMS, SWSPortfolioItem } from '../../data/swsData';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
@@ -24,7 +25,40 @@ interface SWSPortfolioSectionProps {
 export const SWSPortfolioSection: React.FC<SWSPortfolioSectionProps> = ({
   onConsultationClick,
 }) => {
-  const [selectedCase, setSelectedCase] = useState<SWSPortfolioItem>(SWS_PORTFOLIO_ITEMS[0]);
+  const { portfolio: rawPortfolio } = useFirestoreDataContext();
+
+  const portfolioItems = useMemo<SWSPortfolioItem[]>(() => {
+    if (rawPortfolio && rawPortfolio.length > 0) {
+      const swsItems = rawPortfolio.filter(
+        (p) => p.division === 'sws' || (p as any).divisionId === 'sws'
+      );
+      if (swsItems.length > 0) {
+        return swsItems.map((p) => ({
+          id: p.id,
+          title: p.title,
+          client: p.client || 'Distinguished Client',
+          eventType: (p as any).eventType || (p as any).category || 'Signature Event',
+          date: (p as any).date || (p as any).completionDate || '2024',
+          location: (p as any).location || 'Colombo, Sri Lanka',
+          guestCount: (p as any).guestCount || '350+ Guests',
+          summary: p.description || '',
+          detailedCase: (p as any).detailedCase || (p as any).challenge || p.description || '',
+          imageUrl: p.images && p.images.length > 0 ? p.images[0] : (p as any).imageUrl || '',
+          gallery: p.images || [],
+          servicesDelivered: (p as any).servicesDelivered || (p as any).highlights || ['Event Architecture', 'Production Management'],
+          highlights: (p as any).results || (p as any).highlights || ['Bespoke Aesthetic Lighting Architecture', 'Flawless Live Orchestration'],
+          metrics: (p as any).metrics || [
+            { label: 'Setup Time', value: '14 Hours' },
+            { label: 'Guests', value: '350+' },
+            { label: 'Client Rating', value: '5.0 / 5.0' },
+          ],
+        }));
+      }
+    }
+    return SWS_PORTFOLIO_ITEMS;
+  }, [rawPortfolio]);
+
+  const [selectedCase, setSelectedCase] = useState<SWSPortfolioItem>(() => portfolioItems[0] || SWS_PORTFOLIO_ITEMS[0]);
 
   return (
     <SectionContainer id="portfolio" background="subtle" paddingY="xl" hasBorderBottom>

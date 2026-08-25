@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Camera,
   Maximize2,
@@ -13,6 +13,7 @@ import {
   Info,
 } from 'lucide-react';
 import { U1_PORTFOLIO_ITEMS, U1PortfolioItem } from '../../data/u1Data';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
@@ -27,8 +28,33 @@ type PortfolioCategory =
   | 'Events & Cinema';
 
 export const U1PortfolioSection: React.FC = () => {
+  const { portfolio: rawPortfolio } = useFirestoreDataContext();
   const [activeCategory, setActiveCategory] = useState<PortfolioCategory>('All');
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
+
+  const portfolioItems = useMemo<U1PortfolioItem[]>(() => {
+    if (rawPortfolio && rawPortfolio.length > 0) {
+      const u1Items = rawPortfolio.filter(
+        (p) => p.division === 'u1' || (p as any).divisionId === 'u1'
+      );
+      if (u1Items.length > 0) {
+        return u1Items.map((p) => ({
+          id: p.id,
+          title: p.title,
+          category: (((p as any).category && (p as any).category !== 'All' ? (p as any).category : 'Portraits') as 'Weddings' | 'Commercial & Product' | 'Portraits' | 'Pre-Shoots' | 'Events & Cinema'),
+          imageUrl: p.images && p.images.length > 0 ? p.images[0] : (p as any).imageUrl || '',
+          location: (p as any).location || 'Colombo, Sri Lanka',
+          date: (p as any).date || '2024',
+          year: (p as any).year || (p as any).date?.slice(-4) || '2024',
+          description: p.description || '',
+          client: p.client || 'Creative Client',
+          gearUsed: (p as any).gearUsed || 'Sony FX3 Cinema & Prime G-Master',
+          tags: (p as any).tags || ['Cinema', 'Studio'],
+        }));
+      }
+    }
+    return U1_PORTFOLIO_ITEMS;
+  }, [rawPortfolio]);
 
   const categories: PortfolioCategory[] = [
     'All',
@@ -39,7 +65,7 @@ export const U1PortfolioSection: React.FC = () => {
     'Events & Cinema',
   ];
 
-  const filteredItems = U1_PORTFOLIO_ITEMS.filter((item) => {
+  const filteredItems = portfolioItems.filter((item) => {
     return activeCategory === 'All' || item.category === activeCategory;
   });
 

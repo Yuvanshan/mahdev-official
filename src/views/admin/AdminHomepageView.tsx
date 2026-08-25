@@ -26,9 +26,11 @@ import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
 import { cmsService } from '../../services/cmsService';
 import { HomepageCmsConfig, CmsService as CmsServiceEntity, CmsProduct, CmsPortfolioProject } from '../../types/cms';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 export const AdminHomepageView: React.FC = () => {
-  const [config, setConfig] = useState<HomepageCmsConfig>(() => cmsService.getHomepageConfig());
+  const { homepageConfig, updateHomepageConfig } = useFirestoreDataContext();
+  const [config, setConfig] = useState<HomepageCmsConfig>(() => homepageConfig || cmsService.getHomepageConfig());
   const [activeTab, setActiveTab] = useState<
     'hero' | 'intro' | 'services' | 'products' | 'portfolio' | 'milestones' | 'companies' | 'cta' | 'seo'
   >('hero');
@@ -52,19 +54,23 @@ export const AdminHomepageView: React.FC = () => {
   };
 
   useEffect(() => {
-    const loaded = cmsService.getHomepageConfig();
-    setConfig(loaded);
+    if (homepageConfig) {
+      setConfig(homepageConfig);
+    } else {
+      const loaded = cmsService.getHomepageConfig();
+      setConfig(loaded);
+    }
     setAllServices(cmsService.getAll<CmsServiceEntity>('services'));
     setAllProducts(cmsService.getAll<CmsProduct>('products'));
     setAllProjects(cmsService.getAll<CmsPortfolioProject>('portfolio'));
-  }, []);
+  }, [homepageConfig]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
     try {
-      cmsService.updateHomepageConfig(config);
+      await updateHomepageConfig(config);
       setIsDirty(false);
-      addToast('success', 'Homepage Published', 'Homepage configuration updated and live on public site.');
+      addToast('success', 'Homepage Published', 'Homepage configuration updated and live across all public pages.');
     } catch (err: any) {
       addToast('error', 'Save Failed', err.message || 'Could not update homepage configuration.');
     } finally {
@@ -72,10 +78,11 @@ export const AdminHomepageView: React.FC = () => {
     }
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (window.confirm('Reset all homepage content and layout settings to factory corporate defaults?')) {
       const resetConf = cmsService.resetHomepageConfig();
       setConfig(resetConf);
+      await updateHomepageConfig(resetConf);
       setIsDirty(false);
       addToast('info', 'Factory Reset', 'Homepage content restored to corporate defaults.');
     }

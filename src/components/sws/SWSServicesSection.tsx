@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Sparkles,
   Search,
@@ -11,6 +11,7 @@ import {
   Package,
 } from 'lucide-react';
 import { SWS_SERVICES, SWSService } from '../../data/swsData';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SWSServiceCard } from './SWSServiceCard';
 import { SWSServiceDetailModal } from './SWSServiceDetailModal';
 import { SectionContainer } from '../ui/SectionContainer';
@@ -28,21 +29,49 @@ export const SWSServicesSection: React.FC<SWSServicesSectionProps> = ({
   onBookNow,
   onRequestQuote,
 }) => {
+  const { services: rawServices } = useFirestoreDataContext();
   const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeModalService, setActiveModalService] = useState<SWSService | null>(null);
 
+  // Dynamically resolve services from Firestore if available
+  const allServices = useMemo<SWSService[]>(() => {
+    if (rawServices && rawServices.length > 0) {
+      const swsServices = rawServices.filter(
+        (s) => s.division === 'sws' || (s as any).divisionId === 'sws'
+      );
+      if (swsServices.length > 0) {
+        return swsServices.map((s) => ({
+          id: s.id,
+          name: s.name,
+          category: (((s as any).category && (s as any).category !== 'all' ? (s as any).category : 'decor') as 'decor' | 'production' | 'media' | 'hospitality' | 'rentals' | 'packages'),
+          tagline: (s as any).tagline || s.description?.slice(0, 60) || '',
+          description: s.description || '',
+          detailedDescription: (s as any).detailedDescription || s.description || '',
+          startingPrice: typeof s.price === 'number' ? `$${s.price.toLocaleString()}` : String(s.price || '$1,500'),
+          priceNote: (s as any).priceNote || 'Customized to event scale',
+          imageUrl: s.images && s.images.length > 0 ? s.images[0] : (s as any).imageUrl || '',
+          gallery: s.images || [],
+          features: s.features || ['Professional Consultation', 'Dedicated Stage Crew'],
+          specs: (s as any).specs || [],
+          badge: s.badge || 'Featured Service',
+        }));
+      }
+    }
+    return SWS_SERVICES;
+  }, [rawServices]);
+
   const categories: { id: FilterCategory; label: string; count: number; icon: React.ReactNode }[] = [
-    { id: 'all', label: 'All 13 Services', count: SWS_SERVICES.length, icon: <Layers className="w-3.5 h-3.5" /> },
-    { id: 'decor', label: 'Decorations & Theming', count: SWS_SERVICES.filter((s) => s.category === 'decor').length, icon: <Heart className="w-3.5 h-3.5" /> },
-    { id: 'production', label: 'Stage & Production', count: SWS_SERVICES.filter((s) => s.category === 'production').length, icon: <Building2 className="w-3.5 h-3.5" /> },
-    { id: 'media', label: 'Photo & Video', count: SWS_SERVICES.filter((s) => s.category === 'media').length, icon: <Camera className="w-3.5 h-3.5" /> },
-    { id: 'hospitality', label: 'Buffet & Makeup', count: SWS_SERVICES.filter((s) => s.category === 'hospitality').length, icon: <Utensils className="w-3.5 h-3.5" /> },
-    { id: 'rentals', label: 'Furniture Rentals', count: SWS_SERVICES.filter((s) => s.category === 'rentals').length, icon: <Layers className="w-3.5 h-3.5" /> },
-    { id: 'packages', label: 'Turnkey Packages', count: SWS_SERVICES.filter((s) => s.category === 'packages').length, icon: <Package className="w-3.5 h-3.5" /> },
+    { id: 'all', label: `All ${allServices.length} Services`, count: allServices.length, icon: <Layers className="w-3.5 h-3.5" /> },
+    { id: 'decor', label: 'Decorations & Theming', count: allServices.filter((s) => s.category === 'decor').length, icon: <Heart className="w-3.5 h-3.5" /> },
+    { id: 'production', label: 'Stage & Production', count: allServices.filter((s) => s.category === 'production').length, icon: <Building2 className="w-3.5 h-3.5" /> },
+    { id: 'media', label: 'Photo & Video', count: allServices.filter((s) => s.category === 'media').length, icon: <Camera className="w-3.5 h-3.5" /> },
+    { id: 'hospitality', label: 'Buffet & Makeup', count: allServices.filter((s) => s.category === 'hospitality').length, icon: <Utensils className="w-3.5 h-3.5" /> },
+    { id: 'rentals', label: 'Furniture Rentals', count: allServices.filter((s) => s.category === 'rentals').length, icon: <Layers className="w-3.5 h-3.5" /> },
+    { id: 'packages', label: 'Turnkey Packages', count: allServices.filter((s) => s.category === 'packages').length, icon: <Package className="w-3.5 h-3.5" /> },
   ];
 
-  const filteredServices = SWS_SERVICES.filter((service) => {
+  const filteredServices = allServices.filter((service) => {
     const matchesCategory = selectedCategory === 'all' || service.category === selectedCategory;
     const matchesSearch =
       service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Globe,
   Smartphone,
@@ -19,6 +19,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { IT_SERVICES, ITService } from '../../data/itData';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
@@ -62,17 +63,63 @@ export const ITServicesSection: React.FC<ITServicesSectionProps> = ({
   onRequestQuote,
   onStartProject,
 }) => {
+  const { services: rawServices } = useFirestoreDataContext();
   const [activeFilter, setActiveFilter] = useState<'all' | 'software' | 'enterprise' | 'infrastructure'>('all');
 
-  const filteredServices = IT_SERVICES.filter((svc) => {
+  const allServices = useMemo<ITService[]>(() => {
+    if (rawServices && rawServices.length > 0) {
+      const itServices = rawServices.filter(
+        (s) => s.division === 'it' || (s as any).divisionId === 'it'
+      );
+      if (itServices.length > 0) {
+        return itServices.map((s) => ({
+          id: s.id,
+          name: s.name,
+          tagline: (s as any).tagline || s.description?.slice(0, 60) || '',
+          iconName: (s as any).iconName || 'Code2',
+          shortDescription: s.description || '',
+          fullDescription: (s as any).detailedDescription || s.description || '',
+          badge: s.badge || 'Enterprise Architecture',
+          problemsSolved: (s as any).problemsSolved || ['Legacy technical debt', 'Scalability bottlenecks'],
+          features: s.features || ['High-availability microservices', 'Automated CI/CD pipelines'],
+          process: (s as any).process || [
+            { step: '01', title: 'Architecture Review', desc: 'Comprehensive blueprint design' },
+            { step: '02', title: 'Agile Sprints', desc: 'Bi-weekly builds with testing' },
+            { step: '03', title: 'Production Deploy', desc: 'Zero-downtime cutover & monitoring' },
+          ],
+          technologies: (s as any).technologies || [
+            { name: 'TypeScript', category: 'Core Language' },
+            { name: 'React', category: 'Frontend' },
+            { name: 'Node.js', category: 'Backend' },
+            { name: 'PostgreSQL', category: 'Database' },
+          ],
+          caseStudy: (s as any).caseStudy || {
+            title: `${s.name} Implementation`,
+            client: 'Enterprise Client',
+            impact: '99.99% Uptime & 4x Throughput',
+            techSummary: 'Engineered for high concurrency and zero latency.',
+            metrics: [
+              { label: 'Speed', value: '<50ms' },
+              { label: 'Uptime', value: '99.99%' },
+            ],
+          },
+          startingTimeline: (s as any).startingTimeline || (s as any).turnaround || (s as any).leadTime || '2-4 Weeks',
+          recommendedFor: (s as any).recommendedFor || 'Enterprises needing high reliability',
+        }));
+      }
+    }
+    return IT_SERVICES;
+  }, [rawServices]);
+
+  const filteredServices = allServices.filter((svc) => {
     if (activeFilter === 'software') {
-      return ['web-development', 'mobile-development', 'business-software'].includes(svc.id);
+      return ['web-development', 'mobile-development', 'business-software'].includes(svc.id) || (svc as any).category === 'software';
     }
     if (activeFilter === 'enterprise') {
-      return ['erp', 'pos', 'automation', 'it-consulting'].includes(svc.id);
+      return ['erp', 'pos', 'automation', 'it-consulting'].includes(svc.id) || (svc as any).category === 'enterprise';
     }
     if (activeFilter === 'infrastructure') {
-      return ['cloud-solutions', 'ai-solutions', 'maintenance-support'].includes(svc.id);
+      return ['cloud-solutions', 'ai-solutions', 'maintenance-support'].includes(svc.id) || (svc as any).category === 'infrastructure';
     }
     return true;
   });

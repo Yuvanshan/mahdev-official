@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Sparkles,
   MapPin,
@@ -10,6 +10,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { SWS_GALLERY_ITEMS, SWSGalleryItem } from '../../data/swsData';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
@@ -18,8 +19,30 @@ import { ScrollReveal } from '../motion/MotionWrappers';
 type GalleryFilter = 'All' | 'Weddings' | 'Corporate' | 'Birthdays & Socials' | 'Stage & Lighting' | 'Dining & Decor';
 
 export const SWSGallerySection: React.FC = () => {
+  const { gallery: rawGallery } = useFirestoreDataContext();
   const [selectedCategory, setSelectedCategory] = useState<GalleryFilter>('All');
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
+
+  const galleryItems = useMemo<SWSGalleryItem[]>(() => {
+    if (rawGallery && rawGallery.length > 0) {
+      const swsGal = rawGallery.filter(
+        (g) => g.division === 'sws' || (g as any).divisionId === 'sws'
+      );
+      if (swsGal.length > 0) {
+        return swsGal.map((g) => ({
+          id: g.id,
+          title: g.title,
+          category: (((g as any).category && (g as any).category !== 'All' ? (g as any).category : 'Weddings') as SWSGalleryItem['category']),
+          imageUrl: (g as any).imageUrl || (g as any).url || (g as any).image || '',
+          location: (g as any).location || 'Colombo, Sri Lanka',
+          year: (g as any).year || '2024',
+          description: (g as any).description || (g as any).caption || '',
+          tags: (g as any).tags || [(g as any).tag || 'Weddings'],
+        }));
+      }
+    }
+    return SWS_GALLERY_ITEMS;
+  }, [rawGallery]);
 
   const categories: GalleryFilter[] = [
     'All',
@@ -30,7 +53,7 @@ export const SWSGallerySection: React.FC = () => {
     'Dining & Decor',
   ];
 
-  const filteredItems = SWS_GALLERY_ITEMS.filter((item) => {
+  const filteredItems = galleryItems.filter((item) => {
     return selectedCategory === 'All' || item.category === selectedCategory;
   });
 
