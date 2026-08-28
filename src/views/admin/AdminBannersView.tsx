@@ -150,7 +150,7 @@ export const AdminBannersView: React.FC = () => {
 
     try {
       if (editingBanner) {
-        await cmsService.update<CmsBanner>('banners', editingBanner.id, {
+        await cmsService.updateAsync<CmsBanner>('banners', editingBanner.id, {
           title: formData.title,
           subtitle: formData.subtitle,
           placement: formData.placement,
@@ -165,9 +165,9 @@ export const AdminBannersView: React.FC = () => {
           isActive: formData.isActive,
           priority: Number(formData.priority),
         });
-        addToast('success', 'Banner Updated', `"${formData.title}" was successfully updated.`);
+        addToast('success', 'Banner Updated', `"${formData.title}" was saved to Firestore.`);
       } else {
-        await cmsService.create<CmsBanner>('banners', {
+        await cmsService.createAsync<CmsBanner>('banners', {
           title: formData.title,
           subtitle: formData.subtitle,
           placement: formData.placement,
@@ -182,7 +182,7 @@ export const AdminBannersView: React.FC = () => {
           isActive: formData.isActive,
           priority: Number(formData.priority),
         });
-        addToast('success', 'Banner Created', `"${formData.title}" is now active in banner roster.`);
+        addToast('success', 'Banner Created', `"${formData.title}" is now active in Firestore.`);
       }
 
       setIsEditorOpen(false);
@@ -198,11 +198,11 @@ export const AdminBannersView: React.FC = () => {
     if (!deletingBanner) return;
     try {
       if (permanent) {
-        await cmsService.permanentDelete('banners', deletingBanner.id);
-        addToast('success', 'Banner Purged', `"${deletingBanner.title}" permanently erased.`);
+        await cmsService.hardDeleteAsync('banners', deletingBanner.id);
+        addToast('success', 'Banner Purged', `"${deletingBanner.title}" permanently erased from Firestore.`);
       } else {
-        await cmsService.softDelete('banners', deletingBanner.id);
-        addToast('success', 'Banner Archived', `"${deletingBanner.title}" was archived.`);
+        await cmsService.softDeleteAsync('banners', deletingBanner.id);
+        addToast('success', 'Banner Archived', `"${deletingBanner.title}" was archived in Firestore.`);
       }
       setDeletingBanner(null);
     } catch (err: any) {
@@ -212,8 +212,8 @@ export const AdminBannersView: React.FC = () => {
 
   const handleRestore = async (banner: CmsBanner) => {
     try {
-      await cmsService.restore('banners', banner.id);
-      addToast('success', 'Banner Restored', `"${banner.title}" restored to active rotation.`);
+      await cmsService.restoreAsync('banners', banner.id);
+      addToast('success', 'Banner Restored', `"${banner.title}" restored in Firestore.`);
     } catch (err: any) {
       addToast('error', 'Restore Error', err.message || 'Could not restore banner.');
     }

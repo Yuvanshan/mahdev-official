@@ -205,6 +205,17 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
           </TiltCard>
         </ScrollReveal>
       </div>
+
+      {/* Clean Quick Link to Master Catalog */}
+      <div className="mt-12 text-center">
+        <button
+          onClick={() => onNavigate('/catalog')}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs sm:text-sm font-semibold hover:border-blue-500 hover:text-blue-600 hover:shadow-md transition-all cursor-pointer"
+        >
+          <span>Looking for specific products, packages or pricing? View Master Catalog</span>
+          <ArrowRight className="w-4 h-4 text-blue-600" />
+        </button>
+      </div>
     </SectionContainer>
   );
 };

@@ -11,6 +11,7 @@ import {
   BlurReveal,
 } from '../motion/MotionWrappers';
 import { BRAND_CONFIG } from '../../config/brand';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 interface AboutMahdevSectionProps {
   onExploreDivisions: () => void;
@@ -18,6 +19,12 @@ interface AboutMahdevSectionProps {
 
 export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExploreDivisions }) => {
   const [showCharterModal, setShowCharterModal] = useState(false);
+  const { companySettings, siteSettings, homepageConfig } = useFirestoreDataContext();
+
+  const companyName = companySettings?.name || siteSettings?.siteName || 'Mahdev Pvt Ltd';
+  const tagline = companySettings?.tagline || 'A Forward-Looking Enterprise Driven By Purpose & Precision';
+  const description = companySettings?.description || 'Mahdev Pvt Ltd is a dynamic holding company headquartered in Colombo, Sri Lanka. Founded with a vision to integrate artistic craftsmanship with advanced engineering, we operate across five core industry pillars.';
+  const foundedYear = (companySettings as any)?.foundedYear || (companySettings as any)?.establishedYear || BRAND_CONFIG.establishedYear || '2018';
 
   return (
     <SectionContainer id="about" background="white" paddingY="xl" hasBorderBottom>
@@ -25,12 +32,12 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
         {/* Left Narrative Column with Sticky Storytelling */}
         <div className="lg:col-span-6 lg:sticky lg:top-28 space-y-6">
           <ScrollReveal direction="up">
-            <Caption className="text-[#0052FF]">About Mahdev Pvt Ltd</Caption>
+            <Caption className="text-[#0052FF]">About {companyName}</Caption>
             <H2 className="text-slate-900 mt-2 mb-4">
-              A Forward-Looking Enterprise Driven By Purpose & Precision
+              {tagline}
             </H2>
             <Body className="text-slate-600 text-base leading-relaxed">
-              Mahdev Pvt Ltd is a dynamic holding company headquartered in Colombo, Sri Lanka. Founded with a vision to integrate artistic craftsmanship with advanced engineering, we operate across five core industry pillars.
+              {description}
             </Body>
             <Body className="text-slate-600 text-base leading-relaxed">
               Our philosophy combines bold innovation with institutional reliability. Whether producing nationwide cultural events, capturing life milestones in cinema format, architecting cloud solutions, curating island-wide journeys, or supplying modern tech gear—we deliver exceptional value.
@@ -97,7 +104,7 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
                     <Award className="w-5 h-5" />
                   </div>
                   <div className="font-display text-3xl font-bold text-slate-900 mb-1">
-                    {BRAND_CONFIG.establishedYear}
+                    {foundedYear}
                   </div>
                   <h4 className="font-semibold text-sm text-slate-800 mb-2">
                     Founded & Incorporated

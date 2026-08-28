@@ -176,39 +176,47 @@ export const AdminPortfolioView: React.FC = () => {
       };
 
       if (editingItem) {
-        cmsService.update<CmsPortfolioProject>('portfolio', editingItem.id, payload);
-        addToast('success', 'Case Study Saved', `"${formData.title}" updated.`);
+        await cmsService.updateAsync<CmsPortfolioProject>('portfolio', editingItem.id, payload);
+        addToast('success', 'Case Study Saved', `"${formData.title}" saved in Firestore.`);
       } else {
-        cmsService.create<CmsPortfolioProject>('portfolio', payload);
-        addToast('success', 'Case Study Created', `"${formData.title}" added to portfolio.`);
+        await cmsService.createAsync<CmsPortfolioProject>('portfolio', payload);
+        addToast('success', 'Case Study Created', `"${formData.title}" created in Firestore.`);
       }
       setIsDirty(false);
       setIsEditorOpen(false);
       loadData();
     } catch (err: any) {
-      addToast('error', 'Error Saving Portfolio', err.message || 'Operation failed.');
+      addToast('error', 'Error Saving Portfolio', err.message || 'Operation failed. Please check network.');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleDeleteConfirm = (permanent: boolean) => {
+  const handleDeleteConfirm = async (permanent: boolean) => {
     if (!deletingItem) return;
-    if (permanent) {
-      cmsService.hardDelete('portfolio', deletingItem.id);
-      addToast('warning', 'Permanent Deletion', `"${deletingItem.title}" removed permanently.`);
-    } else {
-      cmsService.softDelete('portfolio', deletingItem.id);
-      addToast('info', 'Case Study Archived', `"${deletingItem.title}" archived.`);
+    try {
+      if (permanent) {
+        await cmsService.hardDeleteAsync('portfolio', deletingItem.id);
+        addToast('warning', 'Permanent Deletion', `"${deletingItem.title}" removed from Firestore.`);
+      } else {
+        await cmsService.softDeleteAsync('portfolio', deletingItem.id);
+        addToast('info', 'Case Study Archived', `"${deletingItem.title}" archived in Firestore.`);
+      }
+      setDeletingItem(null);
+      loadData();
+    } catch (err: any) {
+      addToast('error', 'Delete Failed', err.message || 'Failed to delete item.');
     }
-    setDeletingItem(null);
-    loadData();
   };
 
-  const handleRestore = (item: CmsPortfolioProject) => {
-    cmsService.restore('portfolio', item.id);
-    addToast('success', 'Case Study Restored', `"${item.title}" restored.`);
-    loadData();
+  const handleRestore = async (item: CmsPortfolioProject) => {
+    try {
+      await cmsService.restoreAsync('portfolio', item.id);
+      addToast('success', 'Case Study Restored', `"${item.title}" restored in Firestore.`);
+      loadData();
+    } catch (err: any) {
+      addToast('error', 'Restore Failed', err.message || 'Failed to restore item.');
+    }
   };
 
   return (

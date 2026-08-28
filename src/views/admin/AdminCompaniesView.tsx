@@ -125,7 +125,7 @@ export const AdminCompaniesView: React.FC = () => {
 
     try {
       if (editingCompany) {
-        await cmsService.update<CmsTrustedCompany>('companies', editingCompany.id, {
+        await cmsService.updateAsync<CmsTrustedCompany>('companies', editingCompany.id, {
           name: formData.name,
           industry: formData.industry,
           partnershipType: formData.partnershipType,
@@ -135,9 +135,9 @@ export const AdminCompaniesView: React.FC = () => {
           featured: formData.featured,
           order: Number(formData.order),
         });
-        addToast('success', 'Partner Updated', `"${formData.name}" has been successfully updated.`);
+        addToast('success', 'Partner Updated', `"${formData.name}" has been successfully updated in Firestore.`);
       } else {
-        await cmsService.create<CmsTrustedCompany>('companies', {
+        await cmsService.createAsync<CmsTrustedCompany>('companies', {
           name: formData.name,
           industry: formData.industry,
           partnershipType: formData.partnershipType,
@@ -147,7 +147,7 @@ export const AdminCompaniesView: React.FC = () => {
           featured: formData.featured,
           order: Number(formData.order),
         });
-        addToast('success', 'Partner Created', `"${formData.name}" has been added to trusted enterprise partners.`);
+        addToast('success', 'Partner Created', `"${formData.name}" has been added to trusted enterprise partners in Firestore.`);
       }
 
       setIsEditorOpen(false);
@@ -163,11 +163,11 @@ export const AdminCompaniesView: React.FC = () => {
     if (!deletingCompany) return;
     try {
       if (permanent) {
-        await cmsService.permanentDelete('companies', deletingCompany.id);
-        addToast('success', 'Partner Removed', `"${deletingCompany.name}" was permanently deleted.`);
+        await cmsService.hardDeleteAsync('companies', deletingCompany.id);
+        addToast('success', 'Partner Removed', `"${deletingCompany.name}" was permanently deleted from Firestore.`);
       } else {
-        await cmsService.softDelete('companies', deletingCompany.id);
-        addToast('success', 'Partner Archived', `"${deletingCompany.name}" was archived (soft deleted).`);
+        await cmsService.softDeleteAsync('companies', deletingCompany.id);
+        addToast('success', 'Partner Archived', `"${deletingCompany.name}" was archived in Firestore.`);
       }
       setDeletingCompany(null);
     } catch (err: any) {
@@ -177,8 +177,8 @@ export const AdminCompaniesView: React.FC = () => {
 
   const handleRestore = async (company: CmsTrustedCompany) => {
     try {
-      await cmsService.restore('companies', company.id);
-      addToast('success', 'Partner Restored', `"${company.name}" has been restored to active partners.`);
+      await cmsService.restoreAsync('companies', company.id);
+      addToast('success', 'Partner Restored', `"${company.name}" has been restored to active partners in Firestore.`);
     } catch (err: any) {
       addToast('error', 'Restore Error', err.message || 'Could not restore partner.');
     }

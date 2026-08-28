@@ -157,7 +157,7 @@ export const AdminInventoryView: React.FC = () => {
       const delta = adjustQty - adjustingProduct.stockQuantity;
       const author = admin ? admin.name : 'Operations Admin';
 
-      await cmsService.update<CmsProduct>('products', adjustingProduct.id, {
+      await cmsService.updateAsync<CmsProduct>('products', adjustingProduct.id, {
         sku: adjustSku.trim() || adjustingProduct.sku,
         stockQuantity: Math.max(0, adjustQty),
         stockStatus: derivedStatus,

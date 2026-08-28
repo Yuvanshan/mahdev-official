@@ -292,12 +292,64 @@
         "createdAt": { "type": "string", "format": "date-time", "description": "Log entry timestamp" }
       },
       "required": ["userId", "action", "collection", "documentId", "createdAt"]
+    },
+    "Package": {
+      "title": "Package",
+      "description": "Service or product bundle package",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Package title" },
+        "slug": { "type": "string", "description": "Package URL slug" },
+        "divisionId": { "type": "string", "description": "Associated division ID" },
+        "price": { "type": "number", "description": "Package cost" },
+        "currency": { "type": "string", "description": "Currency code" },
+        "features": { "type": "array", "description": "List of included features" },
+        "isPopular": { "type": "boolean", "description": "Popular badge flag" },
+        "isPublished": { "type": "boolean", "description": "Publish status" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "slug", "divisionId", "price", "isPublished", "createdAt", "updatedAt"]
+    },
+    "Coupon": {
+      "title": "Coupon",
+      "description": "Promotional discount coupon code",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string", "description": "Coupon promo code string" },
+        "discountType": { "type": "string", "enum": ["percentage", "fixed"] },
+        "discountValue": { "type": "number", "description": "Discount value" },
+        "isActive": { "type": "boolean", "description": "Active state" },
+        "validFrom": { "type": "string", "format": "date-time" },
+        "validUntil": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["code", "discountType", "discountValue", "isActive", "createdAt", "updatedAt"]
+    },
+    "Page": {
+      "title": "Page",
+      "description": "Custom content or legal page",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Page title" },
+        "slug": { "type": "string", "description": "Page route slug" },
+        "content": { "type": "string", "description": "Page markdown or HTML content" },
+        "isPublished": { "type": "boolean", "description": "Publish visibility status" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "slug", "content", "isPublished", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
     "/settings/site": {
       "schema": "SiteSettings",
       "description": "Global website configuration, branding, contact info, and maintenance mode"
+    },
+    "/companySettings/{settingId}": {
+      "schema": "SiteSettings",
+      "description": "Company corporate settings profiles"
     },
     "/divisions/{divisionId}": {
       "schema": "Division",
@@ -314,6 +366,18 @@
     "/categories/{categoryId}": {
       "schema": "Category",
       "description": "Taxonomy categories for products and services"
+    },
+    "/packages/{packageId}": {
+      "schema": "Package",
+      "description": "Service and bundled tier packages"
+    },
+    "/coupons/{couponId}": {
+      "schema": "Coupon",
+      "description": "Promotional discount vouchers and coupons"
+    },
+    "/pages/{pageId}": {
+      "schema": "Page",
+      "description": "Custom and CMS-managed content pages"
     },
     "/milestones/{milestoneId}": {
       "schema": "Milestone",

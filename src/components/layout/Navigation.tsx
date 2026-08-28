@@ -165,7 +165,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
             {/* Middle: Desktop Navigation Links */}
             <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
               {MAIN_NAV_ITEMS.map((item) => {
-                if (item.id === 'services') {
+                if (item.children && item.children.length > 0) {
                   return (
                     <div
                       key={item.id}
@@ -182,7 +182,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                         }`}
                         aria-expanded={isServicesOpen}
                       >
-                        <span>Services & Divisions</span>
+                        <span>{item.label}</span>
                         <ChevronDown
                           className={`w-4 h-4 transition-transform duration-200 ${
                             isServicesOpen ? 'rotate-180 text-[#0052FF]' : 'text-slate-400'

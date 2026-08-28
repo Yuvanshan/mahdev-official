@@ -222,17 +222,17 @@ export const AdminProductsView: React.FC = () => {
       };
 
       if (editingProduct) {
-        cmsService.update<CmsProduct>('products', editingProduct.id, payload);
-        addToast('success', 'Product Updated', `SKU ${payload.sku} "${payload.name}" saved.`);
+        await cmsService.updateAsync<CmsProduct>('products', editingProduct.id, payload);
+        addToast('success', 'Product Updated', `SKU ${payload.sku} "${payload.name}" saved to Firestore.`);
       } else {
-        cmsService.create<CmsProduct>('products', payload);
-        addToast('success', 'Product Created', `"${payload.name}" added to catalog.`);
+        await cmsService.createAsync<CmsProduct>('products', payload);
+        addToast('success', 'Product Created', `"${payload.name}" added to Firestore catalog.`);
       }
       setIsDirty(false);
       setIsEditorOpen(false);
       loadData();
     } catch (err: any) {
-      addToast('error', 'Error Saving Product', err.message || 'Operation failed.');
+      addToast('error', 'Error Saving Product', err.message || 'Operation failed. Please check network.');
     } finally {
       setIsSaving(false);
     }
@@ -244,7 +244,7 @@ export const AdminProductsView: React.FC = () => {
     setIsStockModalOpen(true);
   };
 
-  const handleSaveQuickStock = () => {
+  const handleSaveQuickStock = async () => {
     if (!stockEditingProduct) return;
     const stockStatus =
       quickStockValue === 0
@@ -253,33 +253,45 @@ export const AdminProductsView: React.FC = () => {
         ? 'low_stock'
         : 'in_stock';
 
-    cmsService.update<CmsProduct>('products', stockEditingProduct.id, {
-      stockQuantity: quickStockValue,
-      stockStatus,
-    });
-    addToast('success', 'Stock Adjusted', `Stock for SKU ${stockEditingProduct.sku} set to ${quickStockValue}.`);
-    setIsStockModalOpen(false);
-    setStockEditingProduct(null);
-    loadData();
-  };
-
-  const handleDeleteConfirm = (permanent: boolean) => {
-    if (!deletingProduct) return;
-    if (permanent) {
-      cmsService.hardDelete('products', deletingProduct.id);
-      addToast('warning', 'Permanent Deletion', `Product "${deletingProduct.name}" removed from inventory.`);
-    } else {
-      cmsService.softDelete('products', deletingProduct.id);
-      addToast('info', 'Product Archived', `Product "${deletingProduct.name}" archived.`);
+    try {
+      await cmsService.updateAsync<CmsProduct>('products', stockEditingProduct.id, {
+        stockQuantity: quickStockValue,
+        stockStatus,
+      });
+      addToast('success', 'Stock Adjusted', `Stock for SKU ${stockEditingProduct.sku} updated in Firestore.`);
+      setIsStockModalOpen(false);
+      setStockEditingProduct(null);
+      loadData();
+    } catch (err: any) {
+      addToast('error', 'Stock Update Failed', err.message || 'Failed to update stock.');
     }
-    setDeletingProduct(null);
-    loadData();
   };
 
-  const handleRestore = (prod: CmsProduct) => {
-    cmsService.restore('products', prod.id);
-    addToast('success', 'Product Restored', `"${prod.name}" restored to active inventory.`);
-    loadData();
+  const handleDeleteConfirm = async (permanent: boolean) => {
+    if (!deletingProduct) return;
+    try {
+      if (permanent) {
+        await cmsService.hardDeleteAsync('products', deletingProduct.id);
+        addToast('warning', 'Permanent Deletion', `Product "${deletingProduct.name}" removed from Firestore.`);
+      } else {
+        await cmsService.softDeleteAsync('products', deletingProduct.id);
+        addToast('info', 'Product Archived', `Product "${deletingProduct.name}" archived in Firestore.`);
+      }
+      setDeletingProduct(null);
+      loadData();
+    } catch (err: any) {
+      addToast('error', 'Delete Failed', err.message || 'Failed to delete product.');
+    }
+  };
+
+  const handleRestore = async (prod: CmsProduct) => {
+    try {
+      await cmsService.restoreAsync('products', prod.id);
+      addToast('success', 'Product Restored', `"${prod.name}" restored in Firestore.`);
+      loadData();
+    } catch (err: any) {
+      addToast('error', 'Restore Failed', err.message || 'Failed to restore product.');
+    }
   };
 
   return (

@@ -149,7 +149,7 @@ export const AdminCouponsView: React.FC = () => {
       const codeFormatted = formData.code.toUpperCase().trim().replace(/\s+/g, '');
 
       if (editingCoupon) {
-        await cmsService.update<CmsCoupon>('coupons', editingCoupon.id, {
+        await cmsService.updateAsync<CmsCoupon>('coupons', editingCoupon.id, {
           code: codeFormatted,
           description: formData.description,
           discountType: formData.discountType,
@@ -163,9 +163,9 @@ export const AdminCouponsView: React.FC = () => {
           divisionRestriction: formData.divisionRestriction,
           isActive: formData.isActive,
         });
-        addToast('success', 'Coupon Updated', `Coupon code "${codeFormatted}" successfully updated.`);
+        addToast('success', 'Coupon Updated', `Coupon code "${codeFormatted}" saved to Firestore.`);
       } else {
-        await cmsService.create<CmsCoupon>('coupons', {
+        await cmsService.createAsync<CmsCoupon>('coupons', {
           code: codeFormatted,
           description: formData.description,
           discountType: formData.discountType,
@@ -180,7 +180,7 @@ export const AdminCouponsView: React.FC = () => {
           divisionRestriction: formData.divisionRestriction,
           isActive: formData.isActive,
         });
-        addToast('success', 'Coupon Created', `Coupon "${codeFormatted}" is now active.`);
+        addToast('success', 'Coupon Created', `Coupon "${codeFormatted}" is now active in Firestore.`);
       }
 
       setIsEditorOpen(false);
@@ -196,11 +196,11 @@ export const AdminCouponsView: React.FC = () => {
     if (!deletingCoupon) return;
     try {
       if (permanent) {
-        await cmsService.permanentDelete('coupons', deletingCoupon.id);
-        addToast('success', 'Coupon Purged', `Coupon "${deletingCoupon.code}" permanently deleted.`);
+        await cmsService.hardDeleteAsync('coupons', deletingCoupon.id);
+        addToast('success', 'Coupon Purged', `Coupon "${deletingCoupon.code}" permanently deleted from Firestore.`);
       } else {
-        await cmsService.softDelete('coupons', deletingCoupon.id);
-        addToast('success', 'Coupon Archived', `Coupon "${deletingCoupon.code}" archived.`);
+        await cmsService.softDeleteAsync('coupons', deletingCoupon.id);
+        addToast('success', 'Coupon Archived', `Coupon "${deletingCoupon.code}" archived in Firestore.`);
       }
       setDeletingCoupon(null);
     } catch (err: any) {
@@ -210,8 +210,8 @@ export const AdminCouponsView: React.FC = () => {
 
   const handleRestore = async (coupon: CmsCoupon) => {
     try {
-      await cmsService.restore('coupons', coupon.id);
-      addToast('success', 'Coupon Restored', `Coupon "${coupon.code}" restored.`);
+      await cmsService.restoreAsync('coupons', coupon.id);
+      addToast('success', 'Coupon Restored', `Coupon "${coupon.code}" restored in Firestore.`);
     } catch (err: any) {
       addToast('error', 'Restore Error', err.message || 'Could not restore coupon.');
     }

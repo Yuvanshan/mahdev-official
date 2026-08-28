@@ -135,11 +135,11 @@ export const AdminGalleryView: React.FC = () => {
       };
 
       if (editingItem) {
-        cmsService.update<CmsGalleryItem>('gallery', editingItem.id, payload);
-        addToast('success', 'Gallery Item Saved', `"${formData.title}" updated.`);
+        await cmsService.updateAsync<CmsGalleryItem>('gallery', editingItem.id, payload);
+        addToast('success', 'Gallery Item Saved', `"${formData.title}" saved to Firestore.`);
       } else {
-        cmsService.create<CmsGalleryItem>('gallery', payload);
-        addToast('success', 'Gallery Item Created', `"${formData.title}" added.`);
+        await cmsService.createAsync<CmsGalleryItem>('gallery', payload);
+        addToast('success', 'Gallery Item Created', `"${formData.title}" created in Firestore.`);
       }
       setIsDirty(false);
       setIsEditorOpen(false);
@@ -151,23 +151,31 @@ export const AdminGalleryView: React.FC = () => {
     }
   };
 
-  const handleDeleteConfirm = (permanent: boolean) => {
+  const handleDeleteConfirm = async (permanent: boolean) => {
     if (!deletingItem) return;
-    if (permanent) {
-      cmsService.hardDelete('gallery', deletingItem.id);
-      addToast('warning', 'Permanent Deletion', `"${deletingItem.title}" permanently removed.`);
-    } else {
-      cmsService.softDelete('gallery', deletingItem.id);
-      addToast('info', 'Gallery Item Archived', `"${deletingItem.title}" archived.`);
+    try {
+      if (permanent) {
+        await cmsService.hardDeleteAsync('gallery', deletingItem.id);
+        addToast('warning', 'Permanent Deletion', `"${deletingItem.title}" permanently removed from Firestore.`);
+      } else {
+        await cmsService.softDeleteAsync('gallery', deletingItem.id);
+        addToast('info', 'Gallery Item Archived', `"${deletingItem.title}" archived in Firestore.`);
+      }
+      setDeletingItem(null);
+      loadData();
+    } catch (err: any) {
+      addToast('error', 'Delete Failed', err.message || 'Operation failed.');
     }
-    setDeletingItem(null);
-    loadData();
   };
 
-  const handleRestore = (item: CmsGalleryItem) => {
-    cmsService.restore('gallery', item.id);
-    addToast('success', 'Gallery Item Restored', `"${item.title}" restored.`);
-    loadData();
+  const handleRestore = async (item: CmsGalleryItem) => {
+    try {
+      await cmsService.restoreAsync('gallery', item.id);
+      addToast('success', 'Gallery Item Restored', `"${item.title}" restored in Firestore.`);
+      loadData();
+    } catch (err: any) {
+      addToast('error', 'Restore Failed', err.message || 'Operation failed.');
+    }
   };
 
   return (

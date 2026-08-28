@@ -25,12 +25,12 @@ const ADMIN_AUDIT_STORAGE_KEY = 'mahdev_admin_audit_logs_v1';
 /**
  * Synchronizes the executive administrator session with Firebase Authentication.
  * Ensures the client has an authenticated Firebase user matching the admin email and claims,
- * satisfying Firebase Storage and Firestore security rule constraints (e.g., isStaff()).
+ * satisfying Firebase Storage and Firestore security rule constraints (e.g., isStaff() / isAdmin()).
  */
-export async function syncAdminFirebaseAuth(adminUser: AdminUser): Promise<boolean> {
+export async function syncAdminFirebaseAuth(adminUser: AdminUser, passwordAttempt?: string): Promise<boolean> {
   try {
-    const email = (adminUser.email || 'admin@mahdev.lk').toLowerCase().trim();
-    const defaultPassword = 'MahdevExecutive#2026';
+    const email = (adminUser.email || '').toLowerCase().trim();
+    if (!email) return false;
 
     // If current firebase user already matches this admin email, refresh token and return
     if (auth.currentUser && auth.currentUser.email?.toLowerCase() === email) {
@@ -40,19 +40,23 @@ export async function syncAdminFirebaseAuth(adminUser: AdminUser): Promise<boole
       } catch {}
     }
 
-    // Attempt sign in with standard executive credential
-    try {
-      await signInWithEmailAndPassword(auth, email, defaultPassword);
-    } catch (signInErr: any) {
-      if (
-        signInErr.code === 'auth/user-not-found' ||
-        signInErr.code === 'auth/invalid-credential' ||
-        signInErr.code === 'auth/invalid-login-credentials'
-      ) {
-        try {
-          await createUserWithEmailAndPassword(auth, email, defaultPassword);
-        } catch (createErr: any) {
-          console.warn('[AdminService] Firebase Auth creation notice:', createErr);
+    // If a password was provided during active login, authenticate with Firebase Auth
+    if (passwordAttempt) {
+      try {
+        await signInWithEmailAndPassword(auth, email, passwordAttempt);
+      } catch (signInErr: any) {
+        if (
+          signInErr.code === 'auth/user-not-found' ||
+          signInErr.code === 'auth/invalid-credential' ||
+          signInErr.code === 'auth/invalid-login-credentials'
+        ) {
+          try {
+            await createUserWithEmailAndPassword(auth, email, passwordAttempt);
+          } catch (createErr: any) {
+            console.warn('[AdminService] Firebase Auth creation response:', createErr);
+          }
+        } else {
+          throw signInErr;
         }
       }
     }
@@ -79,7 +83,7 @@ export async function syncAdminFirebaseAuth(adminUser: AdminUser): Promise<boole
             {
               uid: auth.currentUser.uid,
               email: email,
-              displayName: adminUser.name,
+              displayName: adminUser.name || 'Executive Administrator',
               role: 'superAdmin',
               isAdmin: true,
               status: 'active',
@@ -95,7 +99,7 @@ export async function syncAdminFirebaseAuth(adminUser: AdminUser): Promise<boole
             {
               uid: auth.currentUser.uid,
               email: email,
-              name: adminUser.name,
+              name: adminUser.name || 'Executive Administrator',
               role: adminUser.role || 'super_admin',
               department: adminUser.department || 'Executive Enterprise Operations',
               updatedAt: new Date().toISOString(),
@@ -109,7 +113,7 @@ export async function syncAdminFirebaseAuth(adminUser: AdminUser): Promise<boole
 
       // Force refresh of ID token for instant security rule evaluation
       await auth.currentUser.getIdToken(true);
-      console.log(`[AdminService] Firebase Auth synchronized for ${email} (UID: ${auth.currentUser.uid})`);
+      console.log(`[AdminService] Firebase Auth session active for ${email} (UID: ${auth.currentUser.uid})`);
       return true;
     }
     return false;
@@ -159,11 +163,35 @@ class AdminService {
 
   public async login(email: string, password?: string, pin?: string): Promise<{ success: boolean; session?: AdminSession; error?: string }> {
     try {
+      const emailClean = (email || '').trim().toLowerCase();
+
+      // Authenticate directly with Firebase Authentication if password provided
+      let firebaseAuthSuccess = false;
+      if (password) {
+        try {
+          await signInWithEmailAndPassword(auth, emailClean, password);
+          firebaseAuthSuccess = true;
+        } catch (fbErr: any) {
+          if (
+            fbErr.code === 'auth/user-not-found' ||
+            fbErr.code === 'auth/invalid-credential' ||
+            fbErr.code === 'auth/invalid-login-credentials'
+          ) {
+            try {
+              await createUserWithEmailAndPassword(auth, emailClean, password);
+              firebaseAuthSuccess = true;
+            } catch (createErr) {
+              console.warn('[AdminService] Firebase Auth create:', createErr);
+            }
+          }
+        }
+      }
+
       // Call server-side admin authentication endpoint
       const response = await fetch('/api/admin/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, pin }),
+        body: JSON.stringify({ email: emailClean, password, pin }),
       });
 
       const data = await response.json();
@@ -179,7 +207,7 @@ class AdminService {
         localStorage.setItem(ADMIN_SESSION_STORAGE_KEY, JSON.stringify(session));
 
         // Synchronize Firebase Auth for Storage & Firestore rules
-        await syncAdminFirebaseAuth(session.user);
+        await syncAdminFirebaseAuth(session.user, password);
 
         this.logAudit({
           action: 'ADMIN_PORTAL_SIGNIN',
@@ -224,8 +252,8 @@ class AdminService {
         this.currentSession = session;
         localStorage.setItem(ADMIN_SESSION_STORAGE_KEY, JSON.stringify(session));
 
-        // Synchronize Firebase Auth in background
-        syncAdminFirebaseAuth(adminUser).catch(() => {});
+        // Synchronize Firebase Auth in background with password
+        syncAdminFirebaseAuth(adminUser, password).catch(() => {});
 
         return { success: true, session };
       }
