@@ -520,18 +520,6 @@ class CmsService {
     return (item as T) || null;
   }
 
-  /**
-   * Synchronize authoritative Firestore snapshot stream into local CMS cache and notify subscribers
-   */
-  public syncFromFirestore(entity: CmsEntityType, items: any[]): void {
-    if (!items || !Array.isArray(items)) return;
-    this.cache[entity] = items;
-    try {
-      localStorage.setItem(this.getStorageKey(entity), JSON.stringify(items));
-    } catch {}
-    this.notify(entity);
-  }
-
   public create<T = any>(entity: CmsEntityType, data: Partial<T>): T {
     const now = new Date().toISOString();
     const id = (data as any).id || `${entity.slice(0, 3)}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;

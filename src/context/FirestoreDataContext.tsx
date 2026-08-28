@@ -161,7 +161,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubCompany = firestoreSettingsService.subscribeCompanySettings((data) => {
       if (isMounted) {
         setCompanySettings(data);
-        cmsService.updateCompanyInfo(data as any);
         checkInitialReady();
       }
     });
@@ -184,32 +183,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubDivs = firestoreDivisionsService.subscribeDivisions((data) => {
       if (isMounted) {
         setDivisions(data);
-        if (data.length > 0) {
-          const cmsDivs = data.map((d) => ({
-            id: `div-${d.id}`,
-            divisionKey: d.id,
-            name: d.name,
-            shortName: d.shortName || d.name,
-            tagline: d.hero?.subtitle || '',
-            description: d.description || '',
-            badge: d.hero?.badge || '',
-            route: d.route || `/${d.slug || d.id}`,
-            logoUrl: d.logoUrl || '',
-            accentColor: d.accentColor || '#0052FF',
-            gradient: 'from-blue-600 to-indigo-700',
-            heroHeadline: d.hero?.title || d.name,
-            heroSubheadline: d.hero?.subtitle || '',
-            heroImageUrl: d.imageUrl || d.hero?.bgImage || '',
-            contactEmail: (d as any).contactEmail || 'contact@mahdev.lk',
-            iconName: 'Building',
-            isActive: d.status === 'active',
-            isDeleted: false,
-            seo: d.seo,
-            createdAt: d.createdAt || new Date().toISOString(),
-            updatedAt: d.updatedAt || new Date().toISOString(),
-          }));
-          cmsService.syncFromFirestore('divisions', cmsDivs);
-        }
         checkInitialReady();
       }
     });
@@ -217,23 +190,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubCats = firestoreCategoriesService.subscribeCategories((data) => {
       if (isMounted) {
         setCategories(data);
-        if (data.length > 0) {
-          const cmsCats = data.map((c) => ({
-            id: c.id,
-            divisionId: c.division || 'mart',
-            name: c.name,
-            slug: c.slug || c.id,
-            description: c.description || '',
-            imageUrl: c.imageUrl || '',
-            order: c.order || 0,
-            status: c.status || 'active',
-            isActive: c.status === 'active',
-            isDeleted: false,
-            createdAt: c.createdAt || new Date().toISOString(),
-            updatedAt: c.updatedAt || new Date().toISOString(),
-          }));
-          cmsService.syncFromFirestore('categories', cmsCats);
-        }
         setProducts((currentProds) => {
           catalogService.syncWithFirestore(currentProds, data);
           return currentProds;
@@ -245,31 +201,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubSrvs = firestoreServicesService.subscribeServices((data) => {
       if (isMounted) {
         setServices(data);
-        if (data.length > 0) {
-          const cmsSrvs = data.map((s) => ({
-            id: s.id,
-            divisionId: s.division || (s as any).divisionId || 'sws',
-            title: s.name,
-            name: s.name,
-            slug: s.slug || s.id,
-            description: s.description,
-            imageUrl: s.images && s.images[0] ? s.images[0] : '',
-            images: s.images || [],
-            startingPrice: s.price,
-            price: s.price,
-            currency: s.currency || 'USD',
-            isActive: s.status === 'active',
-            isDeleted: s.status === 'draft' ? false : false,
-            bookingEnabled: s.bookingEnabled !== false,
-            quoteEnabled: s.quoteEnabled !== false,
-            features: s.features || [],
-            badge: s.badge || '',
-            turnaroundTime: (s as any).leadTime || '',
-            createdAt: s.createdAt || new Date().toISOString(),
-            updatedAt: s.updatedAt || new Date().toISOString(),
-          }));
-          cmsService.syncFromFirestore('services', cmsSrvs);
-        }
         bookingService.syncWithFirestore(data);
         checkInitialReady();
       }
@@ -278,33 +209,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubProds = firestoreProductsService.subscribeProducts((data) => {
       if (isMounted) {
         setProducts(data);
-        if (data.length > 0) {
-          const cmsProds = data.map((p) => ({
-            id: p.id,
-            divisionId: p.division || 'mart',
-            name: p.name,
-            slug: p.slug || p.id,
-            sku: p.sku || p.id,
-            categoryId: p.categoryId || '',
-            categoryName: (p as any).categoryName || '',
-            description: p.description,
-            price: p.price,
-            compareAtPrice: p.compareAtPrice,
-            imageUrl: p.images && p.images[0] ? p.images[0] : '',
-            galleryImages: p.images || [],
-            stockQuantity: p.stock ?? 100,
-            stockStatus: (p.stock ?? 100) > 10 ? 'in_stock' : (p.stock ?? 100) > 0 ? 'low_stock' : 'out_of_stock',
-            isActive: p.status === 'active',
-            isDeleted: false,
-            isFeatured: (p as any).isFeatured || false,
-            rating: (p as any).rating || 5,
-            reviewsCount: (p as any).reviewsCount || 0,
-            tags: (p as any).tags || [],
-            createdAt: p.createdAt || new Date().toISOString(),
-            updatedAt: p.updatedAt || new Date().toISOString(),
-          }));
-          cmsService.syncFromFirestore('products', cmsProds);
-        }
         setCategories((currentCats) => {
           catalogService.syncWithFirestore(data, currentCats);
           return currentCats;
@@ -315,38 +219,23 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // 2. Secondary Collections (Streamlined Snapshot Listeners)
     const unsubMs = firestoreMilestonesService.subscribeMilestones((data) => {
-      if (isMounted) {
-        setMilestones(data);
-        if (data.length > 0) cmsService.syncFromFirestore('milestones', data);
-      }
+      if (isMounted) setMilestones(data);
     });
 
     const unsubPartners = firestoreTrustedCompaniesService.subscribeTrustedCompanies((data) => {
-      if (isMounted) {
-        setTrustedCompanies(data);
-        if (data.length > 0) cmsService.syncFromFirestore('companies', data);
-      }
+      if (isMounted) setTrustedCompanies(data);
     });
 
     const unsubReviews = firestoreTestimonialsService.subscribeTestimonials((data) => {
-      if (isMounted) {
-        setTestimonials(data);
-        if (data.length > 0) cmsService.syncFromFirestore('testimonials', data);
-      }
+      if (isMounted) setTestimonials(data);
     });
 
     const unsubPort = firestorePortfolioService.subscribePortfolio((data) => {
-      if (isMounted) {
-        setPortfolio(data);
-        if (data.length > 0) cmsService.syncFromFirestore('portfolio', data);
-      }
+      if (isMounted) setPortfolio(data);
     });
 
     const unsubGal = firestoreGalleryService.subscribeGallery(undefined, (data) => {
-      if (isMounted) {
-        setGallery(data);
-        if (data.length > 0) cmsService.syncFromFirestore('gallery', data);
-      }
+      if (isMounted) setGallery(data);
     });
 
     // 3. Central Local Sync Listener (Immediate UI response when Admin saves via CMS Service)
@@ -358,35 +247,37 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         type: 'divisions',
         updater: () => {
           const cmsDivs = cmsService.getAll<import('../types/cms').CmsDivision>('divisions');
-          if (isMounted) {
-            const mapped: FirestoreDivision[] = cmsDivs.map((d, idx) => ({
-              id: d.id.replace('div-', ''),
-              name: d.name,
-              shortName: d.shortName,
-              slug: d.route?.replace('/', '') || d.id,
-              description: d.description,
-              status: (d.isActive ? 'active' : 'inactive') as 'active' | 'inactive',
-              route: d.route,
-              logoUrl: d.logoUrl,
-              imageUrl: d.heroImageUrl,
-              accentColor: d.accentColor,
-              contactEmail: d.contactEmail,
-              order: (d as any).order || idx + 1,
-              hero: {
-                title: d.heroHeadline || d.name,
-                subtitle: d.heroSubheadline || d.tagline,
-                badge: d.badge || 'Division Excellence',
-                bgImage: d.heroImageUrl || '',
-              },
-              seo: {
-                metaTitle: d.seo?.metaTitle || d.name,
-                metaDescription: d.seo?.metaDescription || d.description,
-                keywords: (d.seo as any)?.keywords || ['Mahdev', d.name],
-              },
-              createdAt: (d as any).createdAt || new Date().toISOString(),
-              updatedAt: (d as any).updatedAt || new Date().toISOString(),
-            }));
-            setDivisions(mapped);
+          if (cmsDivs.length > 0 && isMounted) {
+            setDivisions((prev) => {
+              const mapped: FirestoreDivision[] = cmsDivs.map((d, idx) => ({
+                id: d.id.replace('div-', ''),
+                name: d.name,
+                shortName: d.shortName,
+                slug: d.route?.replace('/', '') || d.id,
+                description: d.description,
+                status: (d.isActive ? 'active' : 'inactive') as 'active' | 'inactive',
+                route: d.route,
+                logoUrl: d.logoUrl,
+                imageUrl: d.heroImageUrl,
+                accentColor: d.accentColor,
+                contactEmail: d.contactEmail,
+                order: (d as any).order || idx + 1,
+                hero: {
+                  title: d.heroHeadline || d.name,
+                  subtitle: d.heroSubheadline || d.tagline,
+                  badge: d.badge || 'Division Excellence',
+                  bgImage: d.heroImageUrl || '',
+                },
+                seo: {
+                  metaTitle: d.seo?.metaTitle || d.name,
+                  metaDescription: d.seo?.metaDescription || d.description,
+                  keywords: (d.seo as any)?.keywords || ['Mahdev', d.name],
+                },
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              }));
+              return mapped;
+            });
           }
         },
       },
@@ -394,7 +285,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         type: 'services',
         updater: () => {
           const cmsSrvs = cmsService.getAll<import('../types/cms').CmsService>('services');
-          if (isMounted) {
+          if (cmsSrvs.length > 0 && isMounted) {
             const mapped: FirestoreService[] = cmsSrvs.map((s) => ({
               id: s.id,
               division: s.divisionId as any,
@@ -412,8 +303,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
               features: s.features || [],
               badge: s.badge,
               leadTime: (s as any).turnaroundTime || (s as any).leadTime,
-              createdAt: (s as any).createdAt || new Date().toISOString(),
-              updatedAt: (s as any).updatedAt || new Date().toISOString(),
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
             }));
             setServices(mapped);
             bookingService.syncWithFirestore(mapped);
@@ -424,7 +315,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         type: 'products',
         updater: () => {
           const cmsProds = cmsService.getAll<import('../types/cms').CmsProduct>('products');
-          if (isMounted) {
+          if (cmsProds.length > 0 && isMounted) {
             const mapped: FirestoreProduct[] = cmsProds.map((p) => ({
               id: p.id,
               division: p.divisionId as any,
@@ -444,14 +335,10 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
               rating: (p as any).rating || 5,
               reviewsCount: (p as any).reviewsCount || 0,
               tags: p.tags,
-              createdAt: (p as any).createdAt || new Date().toISOString(),
-              updatedAt: (p as any).updatedAt || new Date().toISOString(),
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
             }));
             setProducts(mapped);
-            setCategories((currentCats) => {
-              catalogService.syncWithFirestore(mapped, currentCats);
-              return currentCats;
-            });
           }
         },
       },
@@ -459,7 +346,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         type: 'categories',
         updater: () => {
           const cmsCats = cmsService.getAll<import('../types/cms').CmsCategory>('categories');
-          if (isMounted) {
+          if (cmsCats.length > 0 && isMounted) {
             const mapped: FirestoreCategory[] = cmsCats.map((c) => ({
               id: c.id,
               division: c.divisionId as any,
@@ -469,8 +356,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
               imageUrl: (c as any).imageUrl || '',
               order: (c as any).order || (c as any).sortOrder || 0,
               status: (c.isActive ? 'active' : 'inactive') as 'active' | 'inactive',
-              createdAt: (c as any).createdAt || new Date().toISOString(),
-              updatedAt: (c as any).updatedAt || new Date().toISOString(),
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
             }));
             setCategories(mapped);
           }
@@ -480,35 +367,35 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         type: 'portfolio',
         updater: () => {
           const cmsPort = cmsService.getAll<import('../types/cms').CmsPortfolioProject>('portfolio');
-          if (isMounted) setPortfolio(cmsPort as any);
+          if (cmsPort.length > 0 && isMounted) setPortfolio(cmsPort as any);
         },
       },
       {
         type: 'gallery',
         updater: () => {
           const cmsGal = cmsService.getAll<import('../types/cms').CmsGalleryItem>('gallery');
-          if (isMounted) setGallery(cmsGal as any);
+          if (cmsGal.length > 0 && isMounted) setGallery(cmsGal as any);
         },
       },
       {
         type: 'milestones',
         updater: () => {
           const cmsMs = cmsService.getAll<import('../types/cms').CmsMilestone>('milestones');
-          if (isMounted) setMilestones(cmsMs as any);
+          if (cmsMs.length > 0 && isMounted) setMilestones(cmsMs as any);
         },
       },
       {
         type: 'companies',
         updater: () => {
           const cmsCompanies = cmsService.getAll<import('../types/cms').CmsTrustedCompany>('companies');
-          if (isMounted) setTrustedCompanies(cmsCompanies as any);
+          if (cmsCompanies.length > 0 && isMounted) setTrustedCompanies(cmsCompanies as any);
         },
       },
       {
         type: 'testimonials',
         updater: () => {
           const cmsReviews = cmsService.getAll<import('../types/cms').CmsTestimonial>('testimonials');
-          if (isMounted) setTestimonials(cmsReviews as any);
+          if (cmsReviews.length > 0 && isMounted) setTestimonials(cmsReviews as any);
         },
       },
     ];
