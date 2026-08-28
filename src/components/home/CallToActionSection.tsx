@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ArrowRight, CheckCircle2, Compass, Mail, Phone, Send, Sparkles, MapPin } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body } from '../ui/Heading';
@@ -12,10 +12,8 @@ import {
 } from '../motion/MotionWrappers';
 import { BRAND_CONFIG } from '../../config/brand';
 import { COMPANY_INFO, getTelLink, getMailtoLink, getMapSearchUrl } from '../../config/company';
-import { useCompanySettings } from '../../hooks/useFirestoreData';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { DIVISION_LIST } from '../../config/divisions';
-import { cmsService } from '../../services/cmsService';
-import { HomepageCmsConfig } from '../../types/cms';
 
 interface CallToActionSectionProps {
   onExploreServices?: () => void;
@@ -28,10 +26,9 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
   onPrimaryClick,
   onSecondaryClick,
 }) => {
-  const { data: firestoreCompany } = useCompanySettings();
-  const company = firestoreCompany?.name ? firestoreCompany : COMPANY_INFO;
+  const { homepageConfig, companySettings } = useFirestoreDataContext();
+  const company = companySettings?.name ? companySettings : COMPANY_INFO;
 
-  const [config, setConfig] = useState<HomepageCmsConfig>(() => cmsService.getHomepageConfig());
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -42,15 +39,7 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const handleUpdate = () => {
-      setConfig(cmsService.getHomepageConfig());
-    };
-    const unsub = cmsService.subscribeHomepage(handleUpdate);
-    return () => unsub();
-  }, []);
-
-  const cta = config.ctaSection || {
+  const cta = homepageConfig?.ctaSection || {
     badge: "LET'S BUILD TOGETHER",
     headline: "Let's Create Something Remarkable.",
     subheadline: 'Connect with Mahdev Pvt Ltd corporate headquarters or route your project directly to one of our specialized divisions.',

@@ -29,21 +29,27 @@ export const AnnouncementBanner: React.FC<AnnouncementBannerProps> = ({ onNaviga
 
   if (dismissed) return null;
 
-  // 1. First priority: Firestore site announcement
+  // 1. Authoritative Firestore site announcement
   const firestoreAnnouncement = siteSettings?.announcement;
-  const isFirestoreActive = firestoreAnnouncement?.enabled && !!firestoreAnnouncement?.text;
+  
+  // If Firestore explicitly disabled the announcement banner, do not show any banner
+  if (firestoreAnnouncement && firestoreAnnouncement.enabled === false) {
+    return null;
+  }
 
-  // 2. Secondary: CMS Banner
-  const isCmsActive = cmsBanner && cmsBanner.isActive;
+  const isFirestoreActive = Boolean(firestoreAnnouncement?.enabled && firestoreAnnouncement?.text?.trim());
+
+  // 2. Secondary: CMS Banner (only when Firestore announcement is not configured)
+  const isCmsActive = !firestoreAnnouncement && Boolean(cmsBanner && cmsBanner.isActive);
 
   if (!isFirestoreActive && !isCmsActive) return null;
 
   const displayText = isFirestoreActive
-    ? firestoreAnnouncement.text
+    ? firestoreAnnouncement!.text
     : cmsBanner?.title || '';
   const displaySubtitle = !isFirestoreActive && cmsBanner?.subtitle ? cmsBanner.subtitle : '';
   const targetLink = isFirestoreActive
-    ? firestoreAnnouncement.link || '/contact'
+    ? firestoreAnnouncement?.link || '/contact'
     : cmsBanner?.targetUrl || '';
   const badgeText = isFirestoreActive ? 'Official' : cmsBanner?.badgeText || 'Notice';
 

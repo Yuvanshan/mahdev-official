@@ -886,6 +886,16 @@ class CmsService {
     return updated;
   }
 
+  public syncHomepageConfig(config: HomepageCmsConfig): void {
+    const key = `${CMS_STORAGE_PREFIX}homepage_config`;
+    try {
+      localStorage.setItem(key, JSON.stringify(config));
+      this.notifyHomepage();
+    } catch (e) {
+      console.warn('[cmsService] Failed to sync homepage config to localStorage:', e);
+    }
+  }
+
   public resetHomepageConfig(): HomepageCmsConfig {
     const defaultConf = this.getDefaultHomepageConfig();
     const key = `${CMS_STORAGE_PREFIX}homepage_config`;

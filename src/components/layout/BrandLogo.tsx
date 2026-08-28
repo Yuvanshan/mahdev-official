@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 interface BrandLogoProps {
@@ -28,6 +28,11 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
     (theme === 'dark' && (siteSettings?.darkLogoUrl || companySettings?.darkLogoUrl)
       ? siteSettings?.darkLogoUrl || companySettings?.darkLogoUrl
       : siteSettings?.logoUrl || companySettings?.logoUrl);
+
+  // Reset imgError whenever customLogo source changes
+  useEffect(() => {
+    setImgError(false);
+  }, [customLogo]);
 
   const sizeStyles = {
     sm: {
@@ -64,11 +69,11 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
       className={`inline-flex items-center gap-2 sm:gap-2.5 cursor-pointer select-none group shrink-0 ${className}`}
       role="banner"
     >
-      {customLogo && !imgError ? (
+      {customLogo && customLogo.trim() !== '' && !imgError ? (
         <div className="flex items-center gap-2">
           <img
             src={customLogo}
-            alt={siteSettings?.siteName || 'Mahdev Pvt Ltd'}
+            alt={siteSettings?.siteName || companySettings?.name || 'Mahdev Pvt Ltd'}
             className={`${sizeStyles[size].imgHeight} w-auto object-contain transition-transform duration-200 group-hover:scale-105`}
             referrerPolicy="no-referrer"
             onError={() => setImgError(true)}
@@ -108,6 +113,8 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
                 >
                   {siteSettings?.siteName
                     ? siteSettings.siteName.split(' ')[0].toUpperCase()
+                    : companySettings?.name
+                    ? companySettings.name.split(' ')[0].toUpperCase()
                     : 'MAHDEV'}
                 </span>
                 <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-[#0052FF] shrink-0" />
@@ -128,6 +135,8 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
                 >
                   {siteSettings?.siteName && siteSettings.siteName.includes(' ')
                     ? siteSettings.siteName.substring(siteSettings.siteName.indexOf(' ') + 1).toUpperCase()
+                    : companySettings?.name && companySettings.name.includes(' ')
+                    ? companySettings.name.substring(companySettings.name.indexOf(' ') + 1).toUpperCase()
                     : 'PVT LTD'}
                 </span>
               )}

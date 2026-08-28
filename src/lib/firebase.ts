@@ -7,7 +7,15 @@
  */
 
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { initializeFirestore, getFirestore, Firestore, doc, getDocFromServer } from 'firebase/firestore';
+import {
+  initializeFirestore,
+  getFirestore,
+  Firestore,
+  doc,
+  getDocFromServer,
+  memoryLocalCache,
+  memoryEagerGarbageCollector,
+} from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import rawConfig from '../../firebase-applet-config.json';
@@ -42,12 +50,16 @@ export const app: FirebaseApp =
   getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 // Initialize Centralized Cloud Firestore Database connected to the production named database
-// Configured with experimentalAutoDetectLongPolling to prevent write-stream stalls and queued-write exhaustion
+// Configured with memoryLocalCache to eliminate IndexedDB "Database is closing/hidden" errors in iframe & sandbox environments
+// and experimentalAutoDetectLongPolling to prevent write-stream stalls and queued-write exhaustion
 export const db: Firestore = (() => {
   try {
     return initializeFirestore(
       app,
       {
+        localCache: memoryLocalCache({
+          garbageCollector: memoryEagerGarbageCollector(),
+        }),
         experimentalAutoDetectLongPolling: true,
       },
       activeFirestoreDatabaseId || undefined

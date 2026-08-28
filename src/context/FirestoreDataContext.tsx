@@ -69,7 +69,7 @@ export interface FirestoreDataContextValue {
 const FirestoreDataContext = createContext<FirestoreDataContextValue | null>(null);
 
 export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(false);
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
   const [isReady, setIsReady] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -134,7 +134,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       // Sync with catalogService, bookingService, and cmsService cache
       catalogService.syncWithFirestore(prods, cats);
       bookingService.syncWithFirestore(srvs);
-      cmsService.updateHomepageConfig(home);
+      cmsService.syncHomepageConfig(home);
     } catch (err) {
       console.error('[FirestoreDataContext] Refresh error:', err);
       setError(err instanceof Error ? err : new Error(String(err)));
@@ -175,7 +175,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubHome = firestoreSettingsService.subscribeHomepageSettings((data) => {
       if (isMounted) {
         setHomepageConfig(data);
-        cmsService.updateHomepageConfig(data);
+        cmsService.syncHomepageConfig(data);
         checkInitialReady();
       }
     });
@@ -190,10 +190,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubCats = firestoreCategoriesService.subscribeCategories((data) => {
       if (isMounted) {
         setCategories(data);
-        setProducts((currentProds) => {
-          catalogService.syncWithFirestore(currentProds, data);
-          return currentProds;
-        });
         checkInitialReady();
       }
     });
@@ -209,10 +205,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubProds = firestoreProductsService.subscribeProducts((data) => {
       if (isMounted) {
         setProducts(data);
-        setCategories((currentCats) => {
-          catalogService.syncWithFirestore(data, currentCats);
-          return currentCats;
-        });
         checkInitialReady();
       }
     });
@@ -447,8 +439,11 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const updateHomepageConfig = useCallback(async (data: Partial<HomepageCmsConfig>) => {
     await firestoreSettingsService.updateHomepageSettings(data);
-    setHomepageConfig((prev) => ({ ...prev, ...data }));
-    cmsService.updateHomepageConfig(data);
+    setHomepageConfig((prev) => {
+      const merged = { ...prev, ...data };
+      cmsService.syncHomepageConfig(merged);
+      return merged;
+    });
   }, []);
 
   const value = useMemo<FirestoreDataContextValue>(

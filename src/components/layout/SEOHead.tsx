@@ -16,7 +16,8 @@ export const SEOHead: React.FC<SEOMetaData> = ({
 
   useEffect(() => {
     // 1. Dynamic Favicon synchronization from Firestore
-    if (siteSettings?.faviconUrl) {
+    const favicon = siteSettings?.faviconUrl || companySettings?.faviconUrl;
+    if (favicon && favicon.trim()) {
       const rels = ['icon', 'shortcut icon', 'apple-touch-icon'];
       rels.forEach((rel) => {
         let link: HTMLLinkElement | null = document.querySelector(`link[rel='${rel}']`);
@@ -25,7 +26,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
           link.rel = rel;
           document.head.appendChild(link);
         }
-        link.href = siteSettings.faviconUrl!;
+        link.href = favicon;
       });
     }
 

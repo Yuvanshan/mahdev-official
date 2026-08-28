@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Compass,
   Plane,
@@ -8,13 +8,17 @@ import {
   Zap,
   CheckCircle2,
   ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { ScrollReveal } from '../motion/MotionWrappers';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 export const TravelsServicesSection: React.FC = () => {
-  const services = [
+  const { services: rawServices } = useFirestoreDataContext();
+
+  const defaultServices = [
     {
       title: 'Custom Itinerary Design',
       desc: 'Bespoke route planning mapped around your exact interests—photography, culinary, wellness, surfing, architecture, or wildlife.',
@@ -47,6 +51,25 @@ export const TravelsServicesSection: React.FC = () => {
     },
   ];
 
+  const travelServices = useMemo(() => {
+    if (rawServices && rawServices.length > 0) {
+      const filtered = rawServices.filter(
+        (s) =>
+          (s.division === 'travels' || (s as any).divisionId === 'travels') &&
+          (s as any).category !== 'packages' &&
+          (s as any).type !== 'package'
+      );
+      if (filtered.length > 0) {
+        return filtered.map((s) => ({
+          title: s.name,
+          desc: s.description || (s as any).detailedDescription || '',
+          icon: <Compass className="w-5 h-5 text-blue-600" />,
+        }));
+      }
+    }
+    return defaultServices;
+  }, [rawServices]);
+
   return (
     <SectionContainer id="services" background="white" paddingY="xl" hasBorderBottom>
       {/* Header */}
@@ -64,9 +87,9 @@ export const TravelsServicesSection: React.FC = () => {
         </ScrollReveal>
       </div>
 
-      {/* Grid of 6 Services */}
+      {/* Grid of Services */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {services.map((svc, idx) => (
+        {travelServices.map((svc, idx) => (
           <div
             key={idx}
             className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-md transition-all space-y-3 flex flex-col justify-between"
