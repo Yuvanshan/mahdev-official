@@ -2,9 +2,9 @@ import { NavigationLink, FooterSection } from '../types';
 
 export const MAIN_NAV_ITEMS: NavigationLink[] = [
   {
-    id: 'divisions',
-    label: 'Divisions & Services',
-    href: '#divisions',
+    id: 'services',
+    label: 'Services',
+    href: '#services',
     children: [
       {
         id: 'sws',
@@ -54,42 +54,66 @@ export const MAIN_NAV_ITEMS: NavigationLink[] = [
     href: '/catalog',
   },
   {
-    id: 'portfolio',
-    label: 'Portfolio',
-    href: '/portfolio',
+    id: 'booking',
+    label: 'Book a Service',
+    href: '/book',
+  },
+  {
+    id: 'account',
+    label: 'Customer Portal',
+    href: '/account',
   },
   {
     id: 'about',
-    label: 'About Mahdev',
-    href: '/about',
+    label: 'About',
+    href: '#about',
+  },
+  {
+    id: 'milestones',
+    label: 'Milestones',
+    href: '#milestones',
+  },
+  {
+    id: 'portfolio',
+    label: 'Portfolio',
+    href: '#portfolio',
+  },
+  {
+    id: 'companies',
+    label: 'Companies',
+    href: '#companies',
   },
   {
     id: 'contact',
     label: 'Contact',
-    href: '/contact',
+    href: '#contact',
   },
 ];
 
 export const FOOTER_SECTIONS: FooterSection[] = [
   {
-    title: 'Customer Hub',
+    title: 'Customer Portal',
     links: [
       { label: 'Customer Sign In', href: '/login' },
-      { label: 'Account Dashboard', href: '/account' },
+      { label: 'Create Account', href: '/register' },
+      { label: 'Account Hub', href: '/account' },
       { label: 'My Orders & Deliveries', href: '/account/orders' },
       { label: 'My Service Bookings', href: '/account/bookings' },
-      { label: 'Invoices & Billing', href: '/account/invoices' },
+      { label: 'Payment Transactions', href: '/account/payments' },
+      { label: 'Commercial Tax Invoices', href: '/account/invoices' },
+      { label: 'Profile & Preferences', href: '/account/profile' },
     ],
   },
   {
     title: 'Company',
     links: [
       { label: 'About Mahdev', href: '/about' },
-      { label: 'Corporate Leadership', href: '/about' },
-      { label: 'Historical Milestones', href: '/about' },
+      { label: 'Corporate Leadership', href: '/about#leadership' },
+      { label: 'Our Milestones', href: '/#milestones' },
       { label: 'Portfolio & Case Studies', href: '/portfolio' },
-      { label: 'Corporate Inquiries', href: '/contact' },
-      { label: 'Admin Portal', href: '/admin', badge: 'Secure' },
+      { label: 'Partner Companies', href: '/#companies' },
+      { label: 'Careers & Culture', href: '/contact', badge: 'Hiring' },
+      { label: 'Administrative Console', href: '/admin', badge: 'Secure' },
     ],
   },
   {
@@ -103,21 +127,23 @@ export const FOOTER_SECTIONS: FooterSection[] = [
     ],
   },
   {
-    title: 'Services & Store',
+    title: 'Resources',
     links: [
-      { label: 'Master Catalog & Pricing', href: '/catalog' },
-      { label: 'Universal Service Booking', href: '/book' },
-      { label: 'Shopping Cart', href: '/checkout' },
-      { label: 'Track Order Status', href: '/orders' },
+      { label: 'Universal Booking & Reservations', href: '/book' },
+      { label: 'Master Enterprise Catalog', href: '/catalog' },
+      { label: 'Cart & Checkout', href: '/checkout' },
+      { label: 'Track Order & Status', href: '/orders' },
+      { label: 'Security & Compliance', href: '/privacy-policy' },
     ],
   },
   {
-    title: 'Legal & Compliance',
+    title: 'Legal & Policies',
     links: [
       { label: 'Privacy Policy', href: '/privacy-policy' },
       { label: 'Terms & Conditions', href: '/terms-and-conditions' },
       { label: 'Refund Policy', href: '/refund-policy' },
       { label: 'Shipping Policy', href: '/shipping-policy' },
+      { label: 'Cookie Policy', href: '/cookie-policy' },
     ],
   },
 ];
