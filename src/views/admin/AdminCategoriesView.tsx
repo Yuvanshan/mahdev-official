@@ -121,47 +121,39 @@ export const AdminCategoriesView: React.FC = () => {
       const payload = { ...formData, slug };
 
       if (editingCategory) {
-        await cmsService.updateAsync<CmsCategory>('categories', editingCategory.id, payload);
-        addToast('success', 'Category Updated', `Category "${formData.name}" saved in Firestore.`);
+        cmsService.update<CmsCategory>('categories', editingCategory.id, payload);
+        addToast('success', 'Category Updated', `Category "${formData.name}" saved.`);
       } else {
-        await cmsService.createAsync<CmsCategory>('categories', payload);
-        addToast('success', 'Category Created', `Category "${formData.name}" created in Firestore.`);
+        cmsService.create<CmsCategory>('categories', payload);
+        addToast('success', 'Category Created', `Category "${formData.name}" created.`);
       }
       setIsDirty(false);
       setIsEditorOpen(false);
       loadCategories();
     } catch (err: any) {
-      addToast('error', 'Error Saving Category', err.message || 'Operation failed. Please check network.');
+      addToast('error', 'Error Saving Category', err.message || 'Operation failed.');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleDeleteConfirm = async (permanent: boolean) => {
+  const handleDeleteConfirm = (permanent: boolean) => {
     if (!deletingCategory) return;
-    try {
-      if (permanent) {
-        await cmsService.hardDeleteAsync('categories', deletingCategory.id);
-        addToast('warning', 'Permanent Deletion', `Category "${deletingCategory.name}" removed from Firestore.`);
-      } else {
-        await cmsService.softDeleteAsync('categories', deletingCategory.id);
-        addToast('info', 'Category Archived', `Category "${deletingCategory.name}" archived in Firestore.`);
-      }
-      setDeletingCategory(null);
-      loadCategories();
-    } catch (err: any) {
-      addToast('error', 'Delete Failed', err.message || 'Failed to delete category.');
+    if (permanent) {
+      cmsService.hardDelete('categories', deletingCategory.id);
+      addToast('warning', 'Permanent Deletion', `Category "${deletingCategory.name}" removed permanently.`);
+    } else {
+      cmsService.softDelete('categories', deletingCategory.id);
+      addToast('info', 'Category Archived', `Category "${deletingCategory.name}" archived.`);
     }
+    setDeletingCategory(null);
+    loadCategories();
   };
 
-  const handleRestore = async (cat: CmsCategory) => {
-    try {
-      await cmsService.restoreAsync('categories', cat.id);
-      addToast('success', 'Category Restored', `"${cat.name}" restored in Firestore.`);
-      loadCategories();
-    } catch (err: any) {
-      addToast('error', 'Restore Failed', err.message || 'Failed to restore category.');
-    }
+  const handleRestore = (cat: CmsCategory) => {
+    cmsService.restore('categories', cat.id);
+    addToast('success', 'Category Restored', `"${cat.name}" restored.`);
+    loadCategories();
   };
 
   return (

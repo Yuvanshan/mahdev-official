@@ -10,27 +10,12 @@ import {
   ParallaxContainer,
 } from '../motion/MotionWrappers';
 import { BRAND_CONFIG } from '../../config/brand';
-import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 interface IntroSectionProps {
   onLearnMore?: () => void;
 }
 
 export const IntroSection: React.FC<IntroSectionProps> = () => {
-  const { homepageConfig } = useFirestoreDataContext();
-  const intro = homepageConfig.intro || {
-    badge: 'Parent Company Architecture',
-    headline: 'A Unified Ecosystem of Specialized Industry Leaders',
-    subheadline: 'Mahdev Pvt Ltd acts as the strategic and operational holding foundation behind five distinguished business divisions.',
-    description: 'From landmark corporate galas and cinematic storytelling to cloud infrastructure, island expeditions, and hardware commerce, Mahdev bridges diverse disciplines into one dependable partner.',
-    pillars: [],
-  };
-
-  const badgeText = intro.badge || 'Parent Company Architecture';
-  const headline = intro.headline || 'A Unified Ecosystem of Specialized Industry Leaders';
-  const subheadline = intro.subheadline || 'Mahdev Pvt Ltd acts as the strategic and operational holding foundation behind five distinguished business divisions. While each division functions with autonomous creative and technical mastery, they share a collective standard of precision, financial resilience, and client devotion.';
-  const description = intro.description || 'From landmark corporate galas and cinematic storytelling to cloud infrastructure, island expeditions, and hardware commerce, Mahdev bridges diverse disciplines into one dependable partner.';
-
   return (
     <SectionContainer id="intro" background="white" paddingY="xl" hasBorderBottom>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
@@ -39,17 +24,17 @@ export const IntroSection: React.FC<IntroSectionProps> = () => {
           <ScrollReveal direction="up">
             <div className="inline-flex items-center gap-2">
               <Badge variant="electric" size="sm">
-                {badgeText}
+                Parent Company Architecture
               </Badge>
             </div>
             <H2 className="text-slate-900 mt-2 mb-4">
-              {headline}
+              A Unified Ecosystem of Specialized Industry Leaders
             </H2>
             <Body className="text-slate-600 text-base leading-relaxed">
-              {subheadline}
+              Mahdev Pvt Ltd acts as the strategic and operational holding foundation behind five distinguished business divisions. While each division functions with autonomous creative and technical mastery, they share a collective standard of precision, financial resilience, and client devotion.
             </Body>
             <Body className="text-slate-600 text-base leading-relaxed">
-              {description}
+              From landmark corporate galas and cinematic storytelling to cloud infrastructure, island expeditions, and hardware commerce, Mahdev bridges diverse disciplines into one dependable partner.
             </Body>
 
             {/* Key Pillars Checklist with Blur-to-Sharp effect */}

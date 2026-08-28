@@ -74,17 +74,19 @@ service cloud.firestore {
     }
 
     // =========================================================================
-    // 1. SITE & COMPANY SETTINGS (/settings/{settingId}, /companySettings/{settingId})
+    // 1. SITE SETTINGS (/settings/{settingId})
     // =========================================================================
     match /settings/{settingId} {
-      allow get, list: if true;
-      allow create, update: if isAdmin() || isStaff();
+      allow get: if isValidId(settingId);
+      allow list: if true;
+      allow create, update: if isSignedIn() || isStaff() || isAdmin();
       allow delete: if isSuperAdmin();
     }
 
     match /companySettings/{settingId} {
-      allow get, list: if true;
-      allow create, update: if isAdmin() || isStaff();
+      allow get: if isValidId(settingId);
+      allow list: if true;
+      allow create, update: if isSignedIn() || isStaff() || isAdmin();
       allow delete: if isSuperAdmin();
     }
 
@@ -92,26 +94,29 @@ service cloud.firestore {
     // 2. DIVISIONS (/divisions/{divisionId})
     // =========================================================================
     match /divisions/{divisionId} {
-      allow get, list: if true;
-      allow create, update: if isAdmin() || isManager() || isStaff();
-      allow delete: if isSuperAdmin() || isAdmin();
+      allow get: if isValidId(divisionId);
+      allow list: if true;
+      allow create, update: if isManager() || isStaff() || isAdmin();
+      allow delete: if isSuperAdmin();
     }
 
     // =========================================================================
     // 3. SERVICES (/services/{serviceId})
     // =========================================================================
     match /services/{serviceId} {
-      allow get, list: if true;
-      allow create, update: if isAdmin() || isManager() || isStaff();
-      allow delete: if isSuperAdmin() || isAdmin();
+      allow get: if isValidId(serviceId);
+      allow list: if true;
+      allow create, update: if isManager() || isStaff() || isAdmin();
+      allow delete: if isSuperAdmin();
     }
 
     // =========================================================================
     // 4. PRODUCTS (/products/{productId})
     // =========================================================================
     match /products/{productId} {
-      allow get, list: if true;
-      allow create, update: if isAdmin() || isStaff();
+      allow get: if isValidId(productId);
+      allow list: if true;
+      allow create, update: if isStaff() || isAdmin();
       allow delete: if isAdmin() || isSuperAdmin();
     }
 
@@ -119,164 +124,134 @@ service cloud.firestore {
     // 5. CATEGORIES (/categories/{categoryId})
     // =========================================================================
     match /categories/{categoryId} {
-      allow get, list: if true;
-      allow create, update: if isAdmin() || isStaff();
+      allow get: if isValidId(categoryId);
+      allow list: if true;
+      allow create, update: if isStaff() || isAdmin();
       allow delete: if isAdmin() || isSuperAdmin();
     }
 
     // =========================================================================
-    // 6. PACKAGES (/packages/{packageId})
-    // =========================================================================
-    match /packages/{packageId} {
-      allow get, list: if true;
-      allow create, update: if isAdmin() || isStaff();
-      allow delete: if isAdmin() || isSuperAdmin();
-    }
-
-    // =========================================================================
-    // 7. COUPONS (/coupons/{couponId})
-    // =========================================================================
-    match /coupons/{couponId} {
-      allow get, list: if true;
-      allow create, update: if isAdmin() || isStaff();
-      allow delete: if isAdmin() || isSuperAdmin();
-    }
-
-    // =========================================================================
-    // 8. CUSTOM PAGES (/pages/{pageId})
-    // =========================================================================
-    match /pages/{pageId} {
-      allow get, list: if true;
-      allow create, update: if isAdmin() || isStaff();
-      allow delete: if isAdmin() || isSuperAdmin();
-    }
-
-    // =========================================================================
-    // 9. MILESTONES (/milestones/{milestoneId})
+    // 6. MILESTONES (/milestones/{milestoneId})
     // =========================================================================
     match /milestones/{milestoneId} {
-      allow get, list: if true;
-      allow create, update: if isAdmin() || isStaff() || isManager();
+      allow get: if isValidId(milestoneId);
+      allow list: if true;
+      allow create, update: if isStaff() || isManager() || isAdmin();
       allow delete: if isAdmin() || isSuperAdmin();
     }
 
     // =========================================================================
-    // 10. TRUSTED COMPANIES (/trustedCompanies/{companyId})
+    // 7. TRUSTED COMPANIES (/trustedCompanies/{companyId})
     // =========================================================================
     match /trustedCompanies/{companyId} {
-      allow get, list: if true;
-      allow create, update: if isAdmin() || isStaff() || isManager();
+      allow get: if isValidId(companyId);
+      allow list: if true;
+      allow create, update: if isManager() || isStaff() || isAdmin();
       allow delete: if isAdmin() || isSuperAdmin();
     }
 
     // =========================================================================
-    // 11. PORTFOLIO (/portfolio/{portfolioId})
+    // 8. PORTFOLIO (/portfolio/{portfolioId})
     // =========================================================================
     match /portfolio/{portfolioId} {
-      allow get, list: if true;
-      allow create, update: if isAdmin() || isStaff();
+      allow get: if isValidId(portfolioId);
+      allow list: if true;
+      allow create, update: if isStaff() || isAdmin();
       allow delete: if isAdmin() || isSuperAdmin();
     }
 
     // =========================================================================
-    // 12. TESTIMONIALS (/testimonials/{testimonialId})
+    // 9. TESTIMONIALS (/testimonials/{testimonialId})
     // =========================================================================
     match /testimonials/{testimonialId} {
-      allow get, list: if true;
-      allow create: if true;
-      allow update: if isAdmin() || isStaff();
+      allow get: if isValidId(testimonialId);
+      allow list: if true;
+      allow create: if isValidId(testimonialId);
+      allow update: if isStaff() || isAdmin();
       allow delete: if isAdmin() || isSuperAdmin();
     }
 
     // =========================================================================
-    // 13. GALLERY (/gallery/{itemId})
-    // =========================================================================
-    match /gallery/{itemId} {
-      allow get, list: if true;
-      allow create, update: if isAdmin() || isStaff();
-      allow delete: if isAdmin() || isSuperAdmin();
-    }
-
-    // =========================================================================
-    // 14. ANNOUNCEMENTS & BANNERS (/announcements/{announcementId})
-    // =========================================================================
-    match /announcements/{announcementId} {
-      allow get, list: if true;
-      allow create, update: if isAdmin() || isStaff();
-      allow delete: if isAdmin() || isSuperAdmin();
-    }
-
-    // =========================================================================
-    // 15. BOOKINGS (/bookings/{bookingId})
+    // 10. BOOKINGS (/bookings/{bookingId})
     // =========================================================================
     match /bookings/{bookingId} {
-      allow get: if true;
-      allow list: if isAdmin() || isStaff();
-      allow create: if true;
-      allow update: if true;
+      allow get, list: if true;
+      allow create, update: if true;
       allow delete: if isAdmin() || isSuperAdmin();
     }
 
     // =========================================================================
-    // 16. ORDERS (/orders/{orderId})
+    // 11. ORDERS (/orders/{orderId})
     // =========================================================================
     match /orders/{orderId} {
-      allow get: if true;
-      allow list: if isAdmin() || isStaff();
-      allow create: if true;
-      allow update: if true;
+      allow get, list: if true;
+      allow create, update: if true;
       allow delete: if isAdmin() || isSuperAdmin();
     }
 
     // =========================================================================
-    // 17. USERS (/users/{userId}) (Firebase Auth handles auth credentials)
+    // 12. USERS (/users/{userId}) (Firebase Auth handles auth credentials)
     // =========================================================================
     match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin() || isStaff();
-      allow list: if isAdmin() || isStaff();
-      allow create, update: if isOwner(userId) || isAdmin();
+      allow get, list: if isValidId(userId);
+      allow create, update: if isValidId(userId);
       allow delete: if isSuperAdmin();
 
       match /notifications/{notificationId} {
-        allow get, list: if isOwner(userId) || isAdmin();
-        allow create, update, delete: if isOwner(userId) || isAdmin();
+        allow get, list: if true;
+        allow create, update, delete: if true;
       }
     }
 
     // =========================================================================
-    // 18. PAYMENTS (/payments/{paymentId}) (No sensitive card data)
+    // 13. PAYMENTS (/payments/{paymentId}) (No sensitive card data)
     // =========================================================================
     match /payments/{paymentId} {
-      allow get: if isSignedIn() || isAdmin();
-      allow list: if isAdmin() || isStaff();
+      allow get, list: if true;
       allow create, update: if true;
       allow delete: if isSuperAdmin();
     }
 
     // =========================================================================
-    // 19. CONTACT SUBMISSIONS (/contactSubmissions/{submissionId})
+    // 14. CONTACT SUBMISSIONS (/contactSubmissions/{submissionId})
     // =========================================================================
     match /contactSubmissions/{submissionId} {
-      allow get, list: if isAdmin() || isStaff();
-      allow create: if true;
-      allow update, delete: if isAdmin() || isSuperAdmin();
+      allow get, list: if true;
+      allow create, update: if true;
+      allow delete: if isAdmin() || isSuperAdmin();
     }
 
     // =========================================================================
-    // 20. AUDIT LOGS (/auditLogs/{logId}) (Restricted & Immutable)
+    // 15. ANNOUNCEMENTS (/announcements/{announcementId})
+    // =========================================================================
+    match /announcements/{announcementId} {
+      allow get: if isValidId(announcementId);
+      allow list: if true;
+      allow create, update: if isStaff() || isAdmin();
+      allow delete: if isAdmin() || isSuperAdmin();
+    }
+
+    // =========================================================================
+    // 16. AUDIT LOGS (/auditLogs/{logId}) (Restricted & Immutable)
     // =========================================================================
     match /auditLogs/{logId} {
-      allow get, list: if isAdmin() || isStaff();
+      allow get, list: if isStaff() || isAdmin() || isSuperAdmin();
       allow create: if true;
       allow update, delete: if false; // Strict immutable audit trail
     }
 
     // =========================================================================
-    // 21. DEDICATED ADMINS (/admins/{adminId})
+    // SYSTEM / LEGACY HELPERS
     // =========================================================================
+    match /gallery/{itemId} {
+      allow get, list: if true;
+      allow create, update: if isStaff() || isAdmin();
+      allow delete: if isAdmin() || isSuperAdmin();
+    }
+
     match /admins/{adminId} {
-      allow get, list: if isAdmin() || isSuperAdmin();
-      allow create, update, delete: if isSuperAdmin();
+      allow get, list: if true;
+      allow create, update, delete: if isSuperAdmin() || isStaff();
     }
   }
 }

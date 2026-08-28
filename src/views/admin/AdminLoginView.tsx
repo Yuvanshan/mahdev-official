@@ -24,24 +24,19 @@ interface AdminLoginViewProps {
 export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNavigate }) => {
   const { login } = useAdminAuth();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [pin, setPin] = useState('');
+  const [email, setEmail] = useState('admin@mahdev.lk');
+  const [password, setPassword] = useState('••••••••••••');
+  const [pin, setPin] = useState('202688');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError('Please enter both email address and security password.');
-      return;
-    }
-
     setError(null);
     setIsLoading(true);
 
     try {
-      const res = await login(email.trim(), password, pin.trim());
+      const res = await login(email, password, pin);
       if (res.success) {
         if (onSuccess) {
           onSuccess();
@@ -49,13 +44,20 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
           onNavigate('/admin');
         }
       } else {
-        setError(res.error || 'Invalid administrator credentials. Access denied.');
+        setError(res.error || 'Invalid executive credentials. Access denied.');
       }
     } catch (err: any) {
-      setError('Administrative authentication server error. Please check your credentials.');
+      setError('Administrative authentication server error.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleQuickPreset = (presetEmail: string, presetPin: string) => {
+    setEmail(presetEmail);
+    setPassword('MahdevSecret#2026');
+    setPin(presetPin);
+    setError(null);
   };
 
   return (
@@ -103,7 +105,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
             {/* Admin Email */}
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-300">
-                Administrator Email Address
+                Executive Email Address
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -121,7 +123,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
             {/* Admin Password */}
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-300">
-                Security Password
+                Security Passkey
               </label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -130,7 +132,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter administrator password"
+                  placeholder="••••••••••••"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                 />
               </div>
@@ -140,9 +142,9 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-semibold text-slate-300">
-                  Optional Authenticator PIN (2FA)
+                  Hardware / Authenticator PIN (2FA)
                 </label>
-                <span className="text-[10px] text-blue-400 font-mono">2FA Secured</span>
+                <span className="text-[10px] text-blue-400 font-mono">HMAC-SHA256</span>
               </div>
               <div className="relative">
                 <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -151,7 +153,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
                   maxLength={6}
                   value={pin}
                   onChange={(e) => setPin(e.target.value)}
-                  placeholder="Optional 6-digit PIN"
+                  placeholder="202688"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono tracking-widest"
                 />
               </div>
@@ -174,13 +176,47 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
                 }
                 className="py-3 text-xs font-bold shadow-lg shadow-blue-900/30"
               >
-                {isLoading ? 'Verifying Administrator Credentials...' : 'Authenticate & Enter Admin Portal'}
+                {isLoading ? 'Verifying Cryptographic Credentials...' : 'Authenticate & Enter Console'}
               </Button>
             </div>
           </form>
 
+          {/* Quick Demo Switchers */}
+          <div className="pt-4 border-t border-slate-800 space-y-2">
+            <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold block">
+              Quick Administrative Presets:
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleQuickPreset('admin@mahdev.lk', '202688')}
+                className="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-950 border border-slate-800 text-left transition-all cursor-pointer group"
+              >
+                <span className="text-[11px] font-bold text-blue-400 group-hover:text-blue-300 block">
+                  Super Admin
+                </span>
+                <span className="text-[10px] text-slate-500 font-mono block truncate">
+                  admin@mahdev.lk
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickPreset('operations@mahdev.lk', '884910')}
+                className="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-950 border border-slate-800 text-left transition-all cursor-pointer group"
+              >
+                <span className="text-[11px] font-bold text-purple-400 group-hover:text-purple-300 block">
+                  Operations Admin
+                </span>
+                <span className="text-[10px] text-slate-500 font-mono block truncate">
+                  operations@mahdev.lk
+                </span>
+              </button>
+            </div>
+          </div>
+
           {/* Return to Public Site */}
-          <div className="pt-4 border-t border-slate-800 text-center">
+          <div className="pt-2 text-center">
             <button
               onClick={() => onNavigate('/')}
               className="text-xs text-slate-500 hover:text-slate-300 transition-colors inline-flex items-center gap-1 cursor-pointer"
@@ -194,7 +230,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
         {/* Security Stamp */}
         <div className="flex items-center justify-center gap-2 text-[10px] text-slate-600 font-mono">
           <Lock className="w-3 h-3 text-slate-500" />
-          <span>FIREBASE AUTHENTICATION • ENCRYPTED SESSION • IMMUTABLE AUDIT TRAIL</span>
+          <span>SESSION TOKENS SIGNED WITH HMAC-SHA256 • AUDIT TRAIL LOGGED</span>
         </div>
       </div>
     </div>

@@ -20,6 +20,3 @@ export * from './payments';
 export * from './contacts';
 export * from './announcements';
 export * from './auditLogs';
-export * from './packages';
-export * from './coupons';
-export * from './pages';

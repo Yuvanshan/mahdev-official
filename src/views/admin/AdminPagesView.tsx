@@ -138,7 +138,7 @@ export const AdminPagesView: React.FC = () => {
       const slugFormatted = formData.slug.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
       if (editingPage) {
-        await cmsService.updateAsync<CmsPage>('pages', editingPage.id, {
+        await cmsService.update<CmsPage>('pages', editingPage.id, {
           slug: slugFormatted,
           title: formData.title,
           category: formData.category,
@@ -150,9 +150,9 @@ export const AdminPagesView: React.FC = () => {
           isPublished: formData.isPublished,
           publishedAt: formData.isPublished ? (editingPage.publishedAt || now) : undefined,
         });
-        addToast('success', 'Page Updated', `"${formData.title}" saved to Firestore.`);
+        addToast('success', 'Page Updated', `"${formData.title}" was successfully updated.`);
       } else {
-        await cmsService.createAsync<CmsPage>('pages', {
+        await cmsService.create<CmsPage>('pages', {
           slug: slugFormatted,
           title: formData.title,
           category: formData.category,
@@ -164,7 +164,7 @@ export const AdminPagesView: React.FC = () => {
           isPublished: formData.isPublished,
           publishedAt: formData.isPublished ? now : undefined,
         });
-        addToast('success', 'Page Created', `"${formData.title}" published to Firestore.`);
+        addToast('success', 'Page Created', `"${formData.title}" was published to custom pages.`);
       }
 
       setIsEditorOpen(false);
@@ -180,11 +180,11 @@ export const AdminPagesView: React.FC = () => {
     if (!deletingPage) return;
     try {
       if (permanent) {
-        await cmsService.hardDeleteAsync('pages', deletingPage.id);
-        addToast('success', 'Page Purged', `"${deletingPage.title}" was permanently purged from Firestore.`);
+        await cmsService.permanentDelete('pages', deletingPage.id);
+        addToast('success', 'Page Purged', `"${deletingPage.title}" was permanently purged.`);
       } else {
-        await cmsService.softDeleteAsync('pages', deletingPage.id);
-        addToast('success', 'Page Archived', `"${deletingPage.title}" was archived in Firestore.`);
+        await cmsService.softDelete('pages', deletingPage.id);
+        addToast('success', 'Page Archived', `"${deletingPage.title}" was archived.`);
       }
       setDeletingPage(null);
     } catch (err: any) {
@@ -194,8 +194,8 @@ export const AdminPagesView: React.FC = () => {
 
   const handleRestore = async (page: CmsPage) => {
     try {
-      await cmsService.restoreAsync('pages', page.id);
-      addToast('success', 'Page Restored', `"${page.title}" was restored in Firestore.`);
+      await cmsService.restore('pages', page.id);
+      addToast('success', 'Page Restored', `"${page.title}" was restored to active pages.`);
     } catch (err: any) {
       addToast('error', 'Restore Error', err.message || 'Could not restore page.');
     }

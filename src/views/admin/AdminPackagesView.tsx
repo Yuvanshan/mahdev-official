@@ -158,11 +158,11 @@ export const AdminPackagesView: React.FC = () => {
       };
 
       if (editingPackage) {
-        await cmsService.updateAsync<CmsPackage>('packages', editingPackage.id, payload);
-        addToast('success', 'Package Updated', `Package "${formData.name}" saved to Firestore.`);
+        cmsService.update<CmsPackage>('packages', editingPackage.id, payload);
+        addToast('success', 'Package Updated', `Package "${formData.name}" updated.`);
       } else {
-        await cmsService.createAsync<CmsPackage>('packages', payload);
-        addToast('success', 'Package Created', `Package "${formData.name}" created in Firestore.`);
+        cmsService.create<CmsPackage>('packages', payload);
+        addToast('success', 'Package Created', `Package "${formData.name}" created.`);
       }
       setIsDirty(false);
       setIsEditorOpen(false);
@@ -174,31 +174,23 @@ export const AdminPackagesView: React.FC = () => {
     }
   };
 
-  const handleDeleteConfirm = async (permanent: boolean) => {
+  const handleDeleteConfirm = (permanent: boolean) => {
     if (!deletingPackage) return;
-    try {
-      if (permanent) {
-        await cmsService.hardDeleteAsync('packages', deletingPackage.id);
-        addToast('warning', 'Permanent Deletion', `Package "${deletingPackage.name}" removed from Firestore.`);
-      } else {
-        await cmsService.softDeleteAsync('packages', deletingPackage.id);
-        addToast('info', 'Package Archived', `Package "${deletingPackage.name}" archived in Firestore.`);
-      }
-      setDeletingPackage(null);
-      loadPackages();
-    } catch (err: any) {
-      addToast('error', 'Delete Failed', err.message || 'Operation failed.');
+    if (permanent) {
+      cmsService.hardDelete('packages', deletingPackage.id);
+      addToast('warning', 'Permanent Deletion', `Package "${deletingPackage.name}" removed.`);
+    } else {
+      cmsService.softDelete('packages', deletingPackage.id);
+      addToast('info', 'Package Archived', `Package "${deletingPackage.name}" archived.`);
     }
+    setDeletingPackage(null);
+    loadPackages();
   };
 
-  const handleRestore = async (pkg: CmsPackage) => {
-    try {
-      await cmsService.restoreAsync('packages', pkg.id);
-      addToast('success', 'Package Restored', `"${pkg.name}" restored in Firestore.`);
-      loadPackages();
-    } catch (err: any) {
-      addToast('error', 'Restore Failed', err.message || 'Operation failed.');
-    }
+  const handleRestore = (pkg: CmsPackage) => {
+    cmsService.restore('packages', pkg.id);
+    addToast('success', 'Package Restored', `"${pkg.name}" restored.`);
+    loadPackages();
   };
 
   return (

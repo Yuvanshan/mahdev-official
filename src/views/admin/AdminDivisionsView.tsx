@@ -181,50 +181,42 @@ export const AdminDivisionsView: React.FC = () => {
     setIsSaving(true);
     try {
       if (editingDivision) {
-        await cmsService.updateAsync<CmsDivision>('divisions', editingDivision.id, formData);
-        addToast('success', 'Division Updated', `"${formData.name}" has been successfully saved to Firestore.`);
+        cmsService.update<CmsDivision>('divisions', editingDivision.id, formData);
+        addToast('success', 'Division Updated', `"${formData.name}" has been successfully saved.`);
       } else {
-        await cmsService.createAsync<CmsDivision>('divisions', {
+        cmsService.create<CmsDivision>('divisions', {
           ...formData,
           stats: [{ label: 'Engagements', value: '100+' }],
         });
-        addToast('success', 'Division Created', `"${formData.name}" has been registered in Firestore.`);
+        addToast('success', 'Division Created', `"${formData.name}" has been registered.`);
       }
       setIsDirty(false);
       setIsEditorOpen(false);
       loadDivisions();
     } catch (err: any) {
-      addToast('error', 'Save Failed', err.message || 'An error occurred during save.');
+      addToast('error', 'Save Failed', err.message || 'An error occurred.');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleDeleteConfirm = async (permanent: boolean) => {
+  const handleDeleteConfirm = (permanent: boolean) => {
     if (!deletingDivision) return;
-    try {
-      if (permanent) {
-        await cmsService.hardDeleteAsync('divisions', deletingDivision.id);
-        addToast('warning', 'Permanent Deletion', `"${deletingDivision.name}" was permanently removed from Firestore.`);
-      } else {
-        await cmsService.softDeleteAsync('divisions', deletingDivision.id);
-        addToast('info', 'Division Archived', `"${deletingDivision.name}" was moved to archive in Firestore.`);
-      }
-      setDeletingDivision(null);
-      loadDivisions();
-    } catch (err: any) {
-      addToast('error', 'Delete Failed', err.message || 'Failed to delete division.');
+    if (permanent) {
+      cmsService.hardDelete('divisions', deletingDivision.id);
+      addToast('warning', 'Permanent Deletion', `"${deletingDivision.name}" was permanently removed.`);
+    } else {
+      cmsService.softDelete('divisions', deletingDivision.id);
+      addToast('info', 'Division Archived', `"${deletingDivision.name}" was moved to archive.`);
     }
+    setDeletingDivision(null);
+    loadDivisions();
   };
 
-  const handleRestore = async (div: CmsDivision) => {
-    try {
-      await cmsService.restoreAsync('divisions', div.id);
-      addToast('success', 'Division Restored', `"${div.name}" is now active in Firestore.`);
-      loadDivisions();
-    } catch (err: any) {
-      addToast('error', 'Restore Failed', err.message || 'Failed to restore division.');
-    }
+  const handleRestore = (div: CmsDivision) => {
+    cmsService.restore('divisions', div.id);
+    addToast('success', 'Division Restored', `"${div.name}" is now active again.`);
+    loadDivisions();
   };
 
   return (

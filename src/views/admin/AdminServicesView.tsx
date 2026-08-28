@@ -179,47 +179,39 @@ export const AdminServicesView: React.FC = () => {
       };
 
       if (editingService) {
-        await cmsService.updateAsync<CmsService>('services', editingService.id, payload);
-        addToast('success', 'Service Updated', `"${formData.title}" has been saved to Firestore.`);
+        cmsService.update<CmsService>('services', editingService.id, payload);
+        addToast('success', 'Service Updated', `"${formData.title}" has been saved.`);
       } else {
-        await cmsService.createAsync<CmsService>('services', payload);
-        addToast('success', 'Service Created', `"${formData.title}" is now available live.`);
+        cmsService.create<CmsService>('services', payload);
+        addToast('success', 'Service Created', `"${formData.title}" is now available.`);
       }
       setIsDirty(false);
       setIsEditorOpen(false);
       loadServices();
     } catch (err: any) {
-      addToast('error', 'Error Saving Service', err.message || 'Operation failed. Please check network.');
+      addToast('error', 'Error Saving Service', err.message || 'Operation failed.');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleDeleteConfirm = async (permanent: boolean) => {
+  const handleDeleteConfirm = (permanent: boolean) => {
     if (!deletingService) return;
-    try {
-      if (permanent) {
-        await cmsService.hardDeleteAsync('services', deletingService.id);
-        addToast('warning', 'Permanent Deletion', `"${deletingService.title}" was permanently removed from Firestore.`);
-      } else {
-        await cmsService.softDeleteAsync('services', deletingService.id);
-        addToast('info', 'Service Archived', `"${deletingService.title}" was archived in Firestore.`);
-      }
-      setDeletingService(null);
-      loadServices();
-    } catch (err: any) {
-      addToast('error', 'Delete Failed', err.message || 'Failed to delete service.');
+    if (permanent) {
+      cmsService.hardDelete('services', deletingService.id);
+      addToast('warning', 'Permanent Deletion', `"${deletingService.title}" was permanently removed.`);
+    } else {
+      cmsService.softDelete('services', deletingService.id);
+      addToast('info', 'Service Archived', `"${deletingService.title}" was archived.`);
     }
+    setDeletingService(null);
+    loadServices();
   };
 
-  const handleRestore = async (srv: CmsService) => {
-    try {
-      await cmsService.restoreAsync('services', srv.id);
-      addToast('success', 'Service Restored', `"${srv.title}" is restored live.`);
-      loadServices();
-    } catch (err: any) {
-      addToast('error', 'Restore Failed', err.message || 'Failed to restore service.');
-    }
+  const handleRestore = (srv: CmsService) => {
+    cmsService.restore('services', srv.id);
+    addToast('success', 'Service Restored', `"${srv.title}" is restored.`);
+    loadServices();
   };
 
   return (

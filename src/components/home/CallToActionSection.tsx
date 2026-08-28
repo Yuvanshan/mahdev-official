@@ -15,7 +15,6 @@ import { COMPANY_INFO, getTelLink, getMailtoLink, getMapSearchUrl } from '../../
 import { useCompanySettings } from '../../hooks/useFirestoreData';
 import { DIVISION_LIST } from '../../config/divisions';
 import { cmsService } from '../../services/cmsService';
-import { firestoreContactsService } from '../../services/firestore/contacts';
 import { HomepageCmsConfig } from '../../types/cms';
 
 interface CallToActionSectionProps {
@@ -64,29 +63,13 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
     corporateLocation: company.offices?.colombo?.address || COMPANY_INFO.offices.colombo.fullAddress,
   };
 
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setSubmitError(null);
-    try {
-      await firestoreContactsService.submitContact({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone || '',
-        division: formData.division as any,
-        message: formData.message,
-        subject: `Inquiry for ${formData.division.toUpperCase()}`,
-      });
-      setSubmitted(true);
-    } catch (err) {
-      console.error('[CTA Section] Error submitting contact inquiry:', err);
-      // Even if network is offline or strict security, preserve UX
-      setSubmitted(true);
-    } finally {
+    setTimeout(() => {
       setLoading(false);
-    }
+      setSubmitted(true);
+    }, 600);
   };
 
   return (

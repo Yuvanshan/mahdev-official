@@ -31,10 +31,6 @@ import {
   firestoreMilestonesService,
   firestoreTrustedCompaniesService,
   firestoreTestimonialsService,
-  firestoreAnnouncementsService,
-  firestorePackagesService,
-  firestoreCouponsService,
-  firestorePagesService,
 } from './firestore';
 
 const CMS_STORAGE_PREFIX = 'mahdev_cms_v1_';
@@ -564,67 +560,23 @@ class CmsService {
     this.notify(entity);
 
     // Asynchronously synchronize to Firestore
-    this.syncEntityItemToFirestore(entity, newItem).catch((err) => {
-      console.warn(`[Firestore Sync Warning] create(${entity}):`, err);
-    });
+    this.syncEntityItemToFirestore(entity, newItem);
 
     return newItem as T;
   }
 
-  public async createAsync<T = any>(entity: CmsEntityType, data: Partial<T>): Promise<T> {
-    const now = new Date().toISOString();
-    const id = (data as any).id || `${entity.slice(0, 3)}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
-    const newItem: any = {
-      ...data,
-      id,
-      createdAt: now,
-      updatedAt: now,
-      isDeleted: false,
-      deletedAt: null,
-    };
-
-    // Authoritatively write to Firestore (throws if fails)
-    await this.syncEntityItemToFirestore(entity, newItem, true);
-
-    const current = this.cache[entity] || [];
-    const updated = [newItem, ...current.filter((i) => i.id !== id)];
-    this.cache[entity] = updated;
-    try {
-      localStorage.setItem(this.getStorageKey(entity), JSON.stringify(updated));
-    } catch {}
-
-    adminService.logAudit({
-      action: `CMS_CREATE_${entity.toUpperCase()}`,
-      entityType: entity,
-      entityId: id,
-      details: `Created new ${entity.slice(0, -1)}: "${newItem.title || newItem.name || newItem.code || id}".`,
-      status: 'success',
-    });
-
-    this.notify(entity);
-    return newItem as T;
-  }
-
-  private async syncEntityItemToFirestore(entity: CmsEntityType, item: any, throwOnError = false): Promise<void> {
+  private async syncEntityItemToFirestore(entity: CmsEntityType, item: any): Promise<void> {
     try {
       if (entity === 'divisions') {
         const divKey = item.divisionKey || item.id?.replace('div-', '') || item.id;
         await firestoreDivisionsService.saveDivision(divKey, {
           name: item.name,
           description: item.description,
-          status: item.isDeleted ? 'inactive' : (item.isActive === false ? 'inactive' : item.status || 'active'),
-          hero: item.hero || {
-            title: item.heroHeadline || item.name,
-            subtitle: item.heroSubheadline || item.tagline || '',
-            badge: item.badge || 'Division Excellence',
-            bgImage: item.heroImageUrl || '',
-          },
+          status: item.isDeleted ? 'inactive' : (item.status || 'active'),
+          hero: item.hero,
           seo: item.seo,
-          logoUrl: item.logoUrl,
-          imageUrl: item.heroImageUrl,
-          accentColor: item.accentColor,
-          contactEmail: item.contactEmail,
-        } as any);
+          logo: item.logo,
+        });
       } else if (entity === 'services') {
         await firestoreServicesService.saveService(item.id, {
           division: item.divisionId,
@@ -637,8 +589,6 @@ class CmsService {
           status: item.isDeleted ? 'draft' : (item.isActive === false ? 'draft' : 'active'),
           bookingEnabled: item.bookingEnabled !== false,
           quoteEnabled: item.quoteEnabled !== false,
-          features: item.features || [],
-          badge: item.badge,
         });
       } else if (entity === 'products') {
         await firestoreProductsService.saveProduct(item.id, {
@@ -647,7 +597,6 @@ class CmsService {
           slug: item.slug || item.id,
           sku: item.sku,
           categoryId: item.categoryId,
-          categoryName: item.categoryName,
           description: item.description || item.shortDescription,
           price: item.price,
           compareAtPrice: item.compareAtPrice || item.originalPrice,
@@ -656,8 +605,7 @@ class CmsService {
           status: item.isDeleted ? 'draft' : (item.isActive === false ? 'draft' : 'active'),
           hasVariants: Boolean(item.variants && item.variants.options && item.variants.options.length > 0),
           variants: item.variants?.options,
-          tags: item.tags,
-        } as any);
+        });
       } else if (entity === 'categories') {
         await firestoreCategoriesService.saveCategory(item.id, {
           division: item.divisionId,
@@ -668,8 +616,6 @@ class CmsService {
           order: item.order || item.sortOrder || 0,
           status: item.isDeleted ? 'inactive' : (item.status || 'active'),
         });
-      } else if (entity === 'packages') {
-        await firestorePackagesService.savePackage(item.id, item);
       } else if (entity === 'portfolio') {
         await firestorePortfolioService.savePortfolio(item.id, item);
       } else if (entity === 'gallery') {
@@ -680,20 +626,13 @@ class CmsService {
         await firestoreTrustedCompaniesService.saveTrustedCompany(item.id, item);
       } else if (entity === 'testimonials') {
         await firestoreTestimonialsService.saveTestimonial(item.id, item);
-      } else if (entity === 'banners') {
-        await firestoreAnnouncementsService.saveAnnouncement(item.id, item);
-      } else if (entity === 'coupons') {
-        await firestoreCouponsService.saveCoupon(item.id, item);
-      } else if (entity === 'pages') {
-        await firestorePagesService.savePage(item.id, item);
       }
     } catch (err) {
       console.warn(`[Firestore Sync] Failed to sync ${entity}/${item.id}:`, err);
-      if (throwOnError) throw err;
     }
   }
 
-  private async deleteEntityItemFromFirestore(entity: CmsEntityType, id: string, throwOnError = false): Promise<void> {
+  private async deleteEntityItemFromFirestore(entity: CmsEntityType, id: string): Promise<void> {
     try {
       if (entity === 'products') {
         await firestoreProductsService.deleteProduct(id);
@@ -703,8 +642,6 @@ class CmsService {
         await firestoreDivisionsService.deleteDivision(id as any);
       } else if (entity === 'categories') {
         await firestoreCategoriesService.deleteCategory(id);
-      } else if (entity === 'packages') {
-        await firestorePackagesService.deletePackage(id);
       } else if (entity === 'portfolio') {
         await firestorePortfolioService.deletePortfolio(id);
       } else if (entity === 'gallery') {
@@ -715,16 +652,9 @@ class CmsService {
         await firestoreTrustedCompaniesService.deleteTrustedCompany(id);
       } else if (entity === 'testimonials') {
         await firestoreTestimonialsService.deleteTestimonial(id);
-      } else if (entity === 'banners') {
-        await firestoreAnnouncementsService.deleteAnnouncement(id);
-      } else if (entity === 'coupons') {
-        await firestoreCouponsService.deleteCoupon(id);
-      } else if (entity === 'pages') {
-        await firestorePagesService.deletePage(id);
       }
     } catch (err) {
       console.warn(`[Firestore Delete Sync] Failed to delete ${entity}/${id}:`, err);
-      if (throwOnError) throw err;
     }
   }
 
@@ -757,47 +687,8 @@ class CmsService {
     this.notify(entity);
 
     // Asynchronously synchronize update to Firestore
-    this.syncEntityItemToFirestore(entity, updatedItem).catch((err) => {
-      console.warn(`[Firestore Sync Warning] update(${entity}, ${id}):`, err);
-    });
+    this.syncEntityItemToFirestore(entity, updatedItem);
 
-    return updatedItem as T;
-  }
-
-  public async updateAsync<T = any>(entity: CmsEntityType, id: string, data: Partial<T>): Promise<T | null> {
-    const current: any[] = this.cache[entity] || [];
-    const existing = current.find((i) => i.id === id) || (data as any);
-    const now = new Date().toISOString();
-    const updatedItem: any = {
-      ...existing,
-      ...data,
-      id,
-      updatedAt: now,
-    };
-
-    // Authoritative write to Firestore (throws if fails)
-    await this.syncEntityItemToFirestore(entity, updatedItem, true);
-
-    const index = current.findIndex((i) => i.id === id);
-    if (index !== -1) {
-      current[index] = updatedItem;
-      this.cache[entity] = [...current];
-    } else {
-      this.cache[entity] = [updatedItem, ...current];
-    }
-    try {
-      localStorage.setItem(this.getStorageKey(entity), JSON.stringify(this.cache[entity]));
-    } catch {}
-
-    adminService.logAudit({
-      action: `CMS_UPDATE_${entity.toUpperCase()}`,
-      entityType: entity,
-      entityId: id,
-      details: `Updated ${entity.slice(0, -1)}: "${updatedItem.title || updatedItem.name || updatedItem.code || id}".`,
-      status: 'success',
-    });
-
-    this.notify(entity);
     return updatedItem as T;
   }
 
@@ -829,44 +720,8 @@ class CmsService {
     this.notify(entity);
 
     // Sync soft deletion state to Firestore
-    this.syncEntityItemToFirestore(entity, current[index]).catch((err) => {
-      console.warn(`[Firestore Sync Warning] softDelete(${entity}, ${id}):`, err);
-    });
+    this.syncEntityItemToFirestore(entity, current[index]);
 
-    return true;
-  }
-
-  public async softDeleteAsync(entity: CmsEntityType, id: string): Promise<boolean> {
-    const current: any[] = this.cache[entity] || [];
-    const index = current.findIndex((i) => i.id === id);
-    if (index === -1) return false;
-
-    const now = new Date().toISOString();
-    const updated = {
-      ...current[index],
-      isDeleted: true,
-      deletedAt: now,
-      updatedAt: now,
-    };
-
-    // Authoritative update to Firestore
-    await this.syncEntityItemToFirestore(entity, updated, true);
-
-    current[index] = updated;
-    this.cache[entity] = [...current];
-    try {
-      localStorage.setItem(this.getStorageKey(entity), JSON.stringify(this.cache[entity]));
-    } catch {}
-
-    adminService.logAudit({
-      action: `CMS_SOFT_DELETE_${entity.toUpperCase()}`,
-      entityType: entity,
-      entityId: id,
-      details: `Soft deleted ${entity.slice(0, -1)} (ID: ${id}) into archive.`,
-      status: 'warning',
-    });
-
-    this.notify(entity);
     return true;
   }
 
@@ -891,36 +746,8 @@ class CmsService {
     this.notify(entity);
 
     // Sync permanent deletion to Firestore
-    this.deleteEntityItemFromFirestore(entity, id).catch((err) => {
-      console.warn(`[Firestore Sync Warning] hardDelete(${entity}, ${id}):`, err);
-    });
+    this.deleteEntityItemFromFirestore(entity, id);
 
-    return true;
-  }
-
-  public async hardDeleteAsync(entity: CmsEntityType, id: string): Promise<boolean> {
-    const current: any[] = this.cache[entity] || [];
-    const item = current.find((i) => i.id === id);
-    if (!item) return false;
-
-    // Authoritative deletion in Firestore (throws if fails)
-    await this.deleteEntityItemFromFirestore(entity, id, true);
-
-    const filtered = current.filter((i) => i.id !== id);
-    this.cache[entity] = filtered;
-    try {
-      localStorage.setItem(this.getStorageKey(entity), JSON.stringify(filtered));
-    } catch {}
-
-    adminService.logAudit({
-      action: `CMS_HARD_DELETE_${entity.toUpperCase()}`,
-      entityType: entity,
-      entityId: id,
-      details: `Permanently removed ${entity.slice(0, -1)} "${item.title || item.name || item.code || id}" from database.`,
-      status: 'warning',
-    });
-
-    this.notify(entity);
     return true;
   }
 
@@ -957,44 +784,8 @@ class CmsService {
     this.notify(entity);
 
     // Sync restoration to Firestore
-    this.syncEntityItemToFirestore(entity, current[index]).catch((err) => {
-      console.warn(`[Firestore Sync Warning] restore(${entity}, ${id}):`, err);
-    });
+    this.syncEntityItemToFirestore(entity, current[index]);
 
-    return true;
-  }
-
-  public async restoreAsync(entity: CmsEntityType, id: string): Promise<boolean> {
-    const current: any[] = this.cache[entity] || [];
-    const index = current.findIndex((i) => i.id === id);
-    if (index === -1) return false;
-
-    const now = new Date().toISOString();
-    const updated = {
-      ...current[index],
-      isDeleted: false,
-      deletedAt: null,
-      updatedAt: now,
-    };
-
-    // Authoritative update to Firestore (throws if fails)
-    await this.syncEntityItemToFirestore(entity, updated, true);
-
-    current[index] = updated;
-    this.cache[entity] = [...current];
-    try {
-      localStorage.setItem(this.getStorageKey(entity), JSON.stringify(this.cache[entity]));
-    } catch {}
-
-    adminService.logAudit({
-      action: `CMS_RESTORE_${entity.toUpperCase()}`,
-      entityType: entity,
-      entityId: id,
-      details: `Restored archived ${entity.slice(0, -1)} (ID: ${id}) back to active status.`,
-      status: 'success',
-    });
-
-    this.notify(entity);
     return true;
   }
 

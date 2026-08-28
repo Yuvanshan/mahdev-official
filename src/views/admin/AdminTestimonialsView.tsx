@@ -141,7 +141,7 @@ export const AdminTestimonialsView: React.FC = () => {
       const initials = formData.avatarInitials.trim() || formData.author.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
 
       if (editingTestimonial) {
-        await cmsService.updateAsync<CmsTestimonial>('testimonials', editingTestimonial.id, {
+        await cmsService.update<CmsTestimonial>('testimonials', editingTestimonial.id, {
           author: formData.author,
           role: formData.role,
           company: formData.company,
@@ -155,9 +155,9 @@ export const AdminTestimonialsView: React.FC = () => {
           verified: formData.verified,
           isFeatured: formData.isFeatured,
         });
-        addToast('success', 'Testimonial Updated', `Review from ${formData.author} was saved to Firestore.`);
+        addToast('success', 'Testimonial Updated', `Review from ${formData.author} was successfully updated.`);
       } else {
-        await cmsService.createAsync<CmsTestimonial>('testimonials', {
+        await cmsService.create<CmsTestimonial>('testimonials', {
           author: formData.author,
           role: formData.role,
           company: formData.company,
@@ -171,7 +171,7 @@ export const AdminTestimonialsView: React.FC = () => {
           verified: formData.verified,
           isFeatured: formData.isFeatured,
         });
-        addToast('success', 'Testimonial Created', `New review from ${formData.author} has been added to Firestore.`);
+        addToast('success', 'Testimonial Created', `New review from ${formData.author} has been added.`);
       }
 
       setIsEditorOpen(false);
@@ -187,11 +187,11 @@ export const AdminTestimonialsView: React.FC = () => {
     if (!deletingTestimonial) return;
     try {
       if (permanent) {
-        await cmsService.hardDeleteAsync('testimonials', deletingTestimonial.id);
-        addToast('success', 'Testimonial Purged', `Review from "${deletingTestimonial.author}" permanently deleted from Firestore.`);
+        await cmsService.permanentDelete('testimonials', deletingTestimonial.id);
+        addToast('success', 'Testimonial Purged', `Review from "${deletingTestimonial.author}" permanently deleted.`);
       } else {
-        await cmsService.softDeleteAsync('testimonials', deletingTestimonial.id);
-        addToast('success', 'Testimonial Archived', `Review from "${deletingTestimonial.author}" archived in Firestore.`);
+        await cmsService.softDelete('testimonials', deletingTestimonial.id);
+        addToast('success', 'Testimonial Archived', `Review from "${deletingTestimonial.author}" archived.`);
       }
       setDeletingTestimonial(null);
     } catch (err: any) {
@@ -201,8 +201,8 @@ export const AdminTestimonialsView: React.FC = () => {
 
   const handleRestore = async (testimonial: CmsTestimonial) => {
     try {
-      await cmsService.restoreAsync('testimonials', testimonial.id);
-      addToast('success', 'Testimonial Restored', `Review from "${testimonial.author}" restored in Firestore.`);
+      await cmsService.restore('testimonials', testimonial.id);
+      addToast('success', 'Testimonial Restored', `Review from "${testimonial.author}" restored.`);
     } catch (err: any) {
       addToast('error', 'Restore Error', err.message || 'Could not restore testimonial.');
     }

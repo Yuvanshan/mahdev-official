@@ -94,21 +94,6 @@ class UniversalBookingService {
     }
   }
 
-  public async persistToFirestore(booking: Booking): Promise<void> {
-    try {
-      const docRef = doc(db, 'bookings', booking.id);
-      await setDoc(docRef, sanitizeForFirestore({
-        ...booking,
-        id: booking.id,
-        bookingDate: booking.date,
-        bookingTime: booking.time,
-        amount: booking.price,
-      }), { merge: true });
-    } catch (e) {
-      console.warn('[Firestore] Booking persist error:', e);
-    }
-  }
-
   // ----------------------------------------------------
   // SERVICE CATALOG LOOKUPS
   // ----------------------------------------------------
@@ -442,7 +427,6 @@ class UniversalBookingService {
     booking.rejectionReason = reason;
     booking.updatedAt = new Date().toISOString();
     this.saveToStorage();
-    this.persistToFirestore(booking);
     return { success: true, booking };
   }
 
@@ -469,7 +453,6 @@ class UniversalBookingService {
     }
     booking.updatedAt = new Date().toISOString();
     this.saveToStorage();
-    this.persistToFirestore(booking);
 
     // Dispatch update notification
     notificationService.notifyBookingUpdate(booking, `Rescheduled to ${newDate} (${newTime})`).catch(() => {});
@@ -485,7 +468,6 @@ class UniversalBookingService {
     booking.cancellationReason = reason;
     booking.updatedAt = new Date().toISOString();
     this.saveToStorage();
-    this.persistToFirestore(booking);
 
     // Dispatch cancellation notification
     notificationService.notifyBookingCancellation(booking, reason).catch(() => {});
@@ -503,7 +485,6 @@ class UniversalBookingService {
     }
     booking.updatedAt = new Date().toISOString();
     this.saveToStorage();
-    this.persistToFirestore(booking);
     return { success: true, booking };
   }
 
@@ -514,7 +495,6 @@ class UniversalBookingService {
     booking.paymentStatus = paymentStatus;
     booking.updatedAt = new Date().toISOString();
     this.saveToStorage();
-    this.persistToFirestore(booking);
     return { success: true, booking };
   }
 
@@ -532,7 +512,6 @@ class UniversalBookingService {
     }
     booking.updatedAt = new Date().toISOString();
     this.saveToStorage();
-    this.persistToFirestore(booking);
     return { success: true, booking };
   }
 }

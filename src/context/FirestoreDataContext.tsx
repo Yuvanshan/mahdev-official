@@ -39,10 +39,6 @@ import { firestoreTrustedCompaniesService } from '../services/firestore/trustedC
 import { firestoreTestimonialsService } from '../services/firestore/testimonials';
 import { firestorePortfolioService } from '../services/firestore/portfolio';
 import { firestoreGalleryService } from '../services/firestore/gallery';
-import { firestoreAnnouncementsService } from '../services/firestore/announcements';
-import { firestorePackagesService } from '../services/firestore/packages';
-import { firestoreCouponsService } from '../services/firestore/coupons';
-import { firestorePagesService } from '../services/firestore/pages';
 import { cmsService } from '../services/cmsService';
 import { catalogService } from '../services/catalogService';
 import { bookingService } from '../services/bookingService';
@@ -353,30 +349,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     });
 
-    const unsubPackages = firestorePackagesService.subscribePackages((data) => {
-      if (isMounted && data.length > 0) {
-        cmsService.syncFromFirestore('packages', data);
-      }
-    });
-
-    const unsubCoupons = firestoreCouponsService.subscribeCoupons((data) => {
-      if (isMounted && data.length > 0) {
-        cmsService.syncFromFirestore('coupons', data);
-      }
-    });
-
-    const unsubAnnouncements = firestoreAnnouncementsService.subscribeAnnouncements((data) => {
-      if (isMounted && data.length > 0) {
-        cmsService.syncFromFirestore('banners', data);
-      }
-    });
-
-    const unsubPages = firestorePagesService.subscribePages((data) => {
-      if (isMounted && data.length > 0) {
-        cmsService.syncFromFirestore('pages', data);
-      }
-    });
-
     // 3. Central Local Sync Listener (Immediate UI response when Admin saves via CMS Service)
     const entitiesToListen: Array<{
       type: import('../types/cms').CmsEntityType;
@@ -568,10 +540,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       unsubReviews();
       unsubPort();
       unsubGal();
-      unsubPackages();
-      unsubCoupons();
-      unsubAnnouncements();
-      unsubPages();
       cmsUnsubscribers.forEach((u) => u());
     };
   }, []);
