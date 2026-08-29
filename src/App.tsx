@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { Navigation } from './components/layout/Navigation';
 import { Footer } from './components/layout/Footer';
 import { HomeView } from './views/HomeView';
@@ -653,6 +654,7 @@ export default function App() {
         <AdminAuthProvider>
           <CartProvider>
             <AppContent />
+            <Analytics />
           </CartProvider>
         </AdminAuthProvider>
       </AuthProvider>
