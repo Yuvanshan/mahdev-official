@@ -108,8 +108,12 @@ export const ITServicesSection: React.FC<ITServicesSectionProps> = ({
         }));
       }
     }
-    return IT_SERVICES;
+    return [];
   }, [rawServices]);
+
+  if (allServices.length === 0) {
+    return null;
+  }
 
   const filteredServices = allServices.filter((svc) => {
     if (activeFilter === 'software') {

@@ -23,128 +23,161 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
   const { siteSettings, companySettings } = useFirestoreDataContext();
   const [imgError, setImgError] = useState(false);
 
-  const customLogo =
+  const isDark = theme === 'dark';
+
+  // Determine active uploaded logo URL from Admin Portal / Firestore
+  const uploadedLogo =
     propLogoUrl ||
-    (theme === 'dark' && (siteSettings?.darkLogoUrl || companySettings?.darkLogoUrl)
+    (isDark && (siteSettings?.darkLogoUrl || companySettings?.darkLogoUrl)
       ? siteSettings?.darkLogoUrl || companySettings?.darkLogoUrl
       : siteSettings?.logoUrl || companySettings?.logoUrl);
 
-  // Reset imgError whenever customLogo source changes
+  const brandName = companySettings?.name || siteSettings?.siteName || 'Mahdev';
+  const legalNameSuffix = companySettings?.legalName?.includes('Pvt') ? 'Pvt Ltd' : 'Pvt Ltd';
+  const brandInitial = brandName.trim().charAt(0).toUpperCase() || 'M';
+
+  // Reset imgError whenever uploaded logo source changes
   useEffect(() => {
     setImgError(false);
-  }, [customLogo]);
+  }, [uploadedLogo]);
+
+  const hasValidUploadedImage = Boolean(
+    uploadedLogo && uploadedLogo.trim() !== '' && !imgError
+  );
 
   const sizeStyles = {
     sm: {
-      mark: 'w-6 h-6 sm:w-7 sm:h-7 text-xs',
-      text: 'text-base sm:text-lg',
+      mark: 'w-7 h-7 sm:w-8 sm:h-8 text-xs',
+      imgHeight: 'h-7 sm:h-8',
+      title: 'text-sm font-bold',
+      subtitle: 'text-[9px]',
       tag: 'text-[8px] sm:text-[9px]',
-      imgHeight: 'h-6 sm:h-7 max-w-[140px]',
     },
     md: {
-      mark: 'w-7 h-7 sm:w-8 sm:h-8 text-xs sm:text-sm',
-      text: 'text-lg sm:text-xl',
+      mark: 'w-8 h-8 sm:w-10 sm:h-10 text-sm',
+      imgHeight: 'h-8 sm:h-10',
+      title: 'text-base sm:text-lg font-bold',
+      subtitle: 'text-[10px]',
       tag: 'text-[9px] sm:text-[10px]',
-      imgHeight: 'h-8 sm:h-9 max-w-[180px]',
     },
     lg: {
-      mark: 'w-8 h-8 sm:w-10 sm:h-10 text-sm sm:text-base',
-      text: 'text-xl sm:text-2xl',
+      mark: 'w-10 h-10 sm:w-12 sm:h-12 text-base',
+      imgHeight: 'h-11 sm:h-13',
+      title: 'text-lg sm:text-xl font-bold',
+      subtitle: 'text-xs',
       tag: 'text-[10px] sm:text-xs',
-      imgHeight: 'h-10 sm:h-12 max-w-[220px]',
     },
     xl: {
-      mark: 'w-10 h-10 sm:w-12 sm:h-12 text-base sm:text-lg',
-      text: 'text-2xl sm:text-3xl',
+      mark: 'w-12 h-12 sm:w-16 sm:h-16 text-lg',
+      imgHeight: 'h-14 sm:h-18',
+      title: 'text-xl sm:text-2xl font-bold',
+      subtitle: 'text-xs sm:text-sm',
       tag: 'text-xs sm:text-sm',
-      imgHeight: 'h-12 sm:h-14 max-w-[260px]',
     },
   };
 
-  const isDark = theme === 'dark';
+  const currentSize = sizeStyles[size];
+
+  // Vector dynamic monogram emblem (used when no uploaded logo or as standalone symbol)
+  const renderVectorEmblem = () => (
+    <div
+      className={`relative ${currentSize.mark} rounded-xl bg-gradient-to-br from-[#0052FF] to-[#0038B8] p-[1px] shadow-sm flex items-center justify-center shrink-0 select-none group-hover:shadow-md transition-shadow`}
+    >
+      <div
+        className={`w-full h-full ${
+          isDark ? 'bg-[#0B1528]' : 'bg-[#0F172A]'
+        } rounded-[11px] flex items-center justify-center relative overflow-hidden`}
+      >
+        {/* Subtle geometric light reflection */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-[#0052FF]/30 to-transparent" />
+        <span className="relative z-10 font-black tracking-tight text-white font-serif">
+          {brandInitial}
+        </span>
+      </div>
+    </div>
+  );
 
   return (
     <div
       onClick={onClick}
-      className={`inline-flex items-center gap-2 sm:gap-2.5 cursor-pointer select-none group shrink-0 ${className}`}
+      className={`inline-flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none group shrink-0 ${className}`}
       role="banner"
     >
-      {customLogo && customLogo.trim() !== '' && !imgError ? (
-        <div className="flex items-center gap-2">
+      {hasValidUploadedImage ? (
+        // 1. Live Uploaded Logo from Admin Portal (Firestore)
+        <div className="flex items-center gap-2.5">
           <img
-            src={customLogo}
-            alt={siteSettings?.siteName || companySettings?.name || 'Mahdev Pvt Ltd'}
-            className={`${sizeStyles[size].imgHeight} w-auto object-contain transition-transform duration-200 group-hover:scale-105`}
+            src={uploadedLogo}
+            alt={brandName}
+            className={`${currentSize.imgHeight} w-auto max-w-[280px] object-contain transition-transform duration-200 group-hover:scale-[1.02] filter drop-shadow-xs`}
             referrerPolicy="no-referrer"
             onError={() => setImgError(true)}
           />
           {divisionLabel && (
             <span
-              className={`font-semibold tracking-wider uppercase px-2 py-0.5 rounded-md ${
+              className={`font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full shadow-xs shrink-0 ${
                 isDark
-                  ? 'bg-blue-900/60 text-blue-300 border border-blue-700/40'
-                  : 'bg-blue-50 text-[#0052FF] border border-blue-100'
-              } ${sizeStyles[size].tag}`}
+                  ? 'bg-blue-900/80 text-blue-200 border border-blue-600/50'
+                  : 'bg-blue-50 text-[#0052FF] border border-blue-200'
+              } ${currentSize.tag}`}
+            >
+              {divisionLabel}
+            </span>
+          )}
+        </div>
+      ) : showText ? (
+        // 2. High-Craft Vector Monogram & Wordmark (Zero dependence on PNG)
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          {renderVectorEmblem()}
+          <div className="flex flex-col text-left justify-center">
+            <div className="flex items-center gap-1.5 leading-none">
+              <span
+                className={`tracking-tight font-display ${currentSize.title} ${
+                  isDark ? 'text-white' : 'text-slate-900'
+                }`}
+              >
+                {brandName}
+              </span>
+              <span className="text-[#0052FF] font-bold text-xs">.</span>
+            </div>
+            <span
+              className={`font-medium tracking-wider uppercase ${currentSize.subtitle} ${
+                isDark ? 'text-slate-400' : 'text-slate-500'
+              } mt-0.5`}
+            >
+              {legalNameSuffix}
+            </span>
+          </div>
+
+          {divisionLabel && (
+            <span
+              className={`ml-1 font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full shadow-xs shrink-0 ${
+                isDark
+                  ? 'bg-blue-900/80 text-blue-200 border border-blue-600/50'
+                  : 'bg-blue-50 text-[#0052FF] border border-blue-200'
+              } ${currentSize.tag}`}
             >
               {divisionLabel}
             </span>
           )}
         </div>
       ) : (
-        <>
-          {/* Monogram Mark */}
-          <div
-            className={`relative flex items-center justify-center font-display font-extrabold rounded-lg ${
-              isDark ? 'bg-blue-600 text-white' : 'bg-slate-900 text-white'
-            } transition-transform duration-200 group-hover:scale-105 ${sizeStyles[size].mark} shadow-sm overflow-hidden shrink-0`}
-          >
-            <div className="absolute inset-0 bg-gradient-to-tr from-[#0038B8] to-[#0052FF] opacity-90" />
-            <span className="relative z-10 text-white tracking-tighter">M</span>
-          </div>
-
-          {/* Wordmark */}
-          {showText && (
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1 sm:gap-1.5 leading-none">
-                <span
-                  className={`font-display font-extrabold tracking-tight ${
-                    isDark ? 'text-white' : 'text-slate-900'
-                  } ${sizeStyles[size].text}`}
-                >
-                  {siteSettings?.siteName
-                    ? siteSettings.siteName.split(' ')[0].toUpperCase()
-                    : companySettings?.name
-                    ? companySettings.name.split(' ')[0].toUpperCase()
-                    : 'MAHDEV'}
-                </span>
-                <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-[#0052FF] shrink-0" />
-              </div>
-              {divisionLabel ? (
-                <span
-                  className={`font-semibold tracking-wider uppercase ${
-                    isDark ? 'text-blue-400' : 'text-[#0052FF]'
-                  } mt-0.5 truncate ${sizeStyles[size].tag}`}
-                >
-                  {divisionLabel}
-                </span>
-              ) : (
-                <span
-                  className={`font-medium tracking-wider uppercase ${
-                    isDark ? 'text-slate-400' : 'text-slate-400'
-                  } mt-0.5 tracking-widest ${sizeStyles[size].tag}`}
-                >
-                  {siteSettings?.siteName && siteSettings.siteName.includes(' ')
-                    ? siteSettings.siteName.substring(siteSettings.siteName.indexOf(' ') + 1).toUpperCase()
-                    : companySettings?.name && companySettings.name.includes(' ')
-                    ? companySettings.name.substring(companySettings.name.indexOf(' ') + 1).toUpperCase()
-                    : 'PVT LTD'}
-                </span>
-              )}
-            </div>
+        // 3. Standalone Vector Mark
+        <div className="relative flex items-center justify-center shrink-0">
+          {renderVectorEmblem()}
+          {divisionLabel && (
+            <span
+              className={`ml-2 font-bold tracking-wider uppercase px-2 py-0.5 rounded-full shrink-0 ${
+                isDark
+                  ? 'bg-blue-900/80 text-blue-200 border border-blue-600/50'
+                  : 'bg-blue-50 text-[#0052FF] border border-blue-200'
+              } ${currentSize.tag}`}
+            >
+              {divisionLabel}
+            </span>
           )}
-        </>
+        </div>
       )}
     </div>
   );
 };
-

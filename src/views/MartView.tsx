@@ -45,7 +45,7 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
       const liveList =
         rawProducts && rawProducts.length > 0
           ? rawProducts.map((p) => mapFirestoreProductToMart(p, rawCategories))
-          : MART_PRODUCTS;
+          : [];
       const matched = liveList.find((p) => p.id === prodId || p.slug === prodId);
       if (matched) setSelectedProductForDetail(matched);
     } else if (path.startsWith('/mart/category/')) {

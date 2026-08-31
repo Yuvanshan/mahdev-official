@@ -44,9 +44,9 @@ export const COMPANY_INFO: CompanyInformation = {
   name: 'Mahdev',
   legalName: 'Mahdev Pvt Ltd',
   registrationNumber: 'PV-00289410',
-  tagline: 'Creating Moments. Capturing Memories. Delivering Innovation.',
+  tagline: 'Creating Moments... Capturing Memories... & Delivering Innovation...',
   description:
-    'Premier multi-division enterprise ecosystem delivering 360° event engineering, cinema studio production, software architectures, luxury travel expeditions, and curated e-commerce.',
+    'Premier multi-division enterprise ecosystem delivering luxury event decorations, fine-art photography, scalable IT solutions, luxury travel expeditions, and verified tech commerce.',
   domain: 'mahdev.lk',
   email: 'info.mahdev.lk@gmail.com',
   phones: ['076 898 8970', '075 092 8078'],

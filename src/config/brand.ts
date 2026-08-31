@@ -6,7 +6,7 @@ export const BRAND_CONFIG: BrandConfig = {
   legalName: COMPANY_INFO.legalName,
   tagline: COMPANY_INFO.tagline,
   domain: COMPANY_INFO.domain,
-  establishedYear: 2018,
+  establishedYear: 2022,
   headquarters: 'Colombo, Sri Lanka',
   contactEmail: COMPANY_INFO.email,
   contactPhone: COMPANY_INFO.primaryPhone,

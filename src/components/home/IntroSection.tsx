@@ -73,91 +73,99 @@ export const IntroSection: React.FC<IntroSectionProps> = () => {
           </ScrollReveal>
         </div>
 
-        {/* Right Column: 3D Perspective Corporate Synergy Cards */}
-        <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <ScrollReveal direction="up" delay={0.1}>
-            <TiltCard maxTilt={7} className="h-full">
-              <div className="p-6 sm:p-7 rounded-2xl bg-slate-50/90 border border-slate-200/90 h-full flex flex-col justify-between hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/5 transition-all">
-                <div>
-                  <div className="w-11 h-11 rounded-xl bg-blue-100/90 text-[#0052FF] flex items-center justify-center mb-4 shadow-xs">
-                    <Layers className="w-5 h-5" />
+        {/* Right Column: 3D Perspective Corporate Synergy Cards - Horizontal Scroll Track on Mobile */}
+        <div className="lg:col-span-6 flex sm:grid overflow-x-auto sm:overflow-visible no-scrollbar snap-x snap-mandatory gap-4 sm:gap-5 pb-3 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid-cols-2">
+          <div className="min-w-[80vw] sm:min-w-0 snap-center shrink-0 sm:shrink">
+            <ScrollReveal direction="up" delay={0.1}>
+              <TiltCard maxTilt={7} className="h-full">
+                <div className="p-6 sm:p-7 rounded-2xl bg-slate-50/90 border border-slate-200/90 h-full flex flex-col justify-between hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/5 transition-all">
+                  <div>
+                    <div className="w-11 h-11 rounded-xl bg-blue-100/90 text-[#0052FF] flex items-center justify-center mb-4 shadow-xs">
+                      <Layers className="w-5 h-5" />
+                    </div>
+                    <h4 className="font-display text-lg font-bold text-slate-900 mb-2">
+                      5 Specialized Units
+                    </h4>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      Deep domain specialization in Events, Visual Cinema, Cloud Systems, Luxury Travel, and E-commerce.
+                    </p>
                   </div>
-                  <h4 className="font-display text-lg font-bold text-slate-900 mb-2">
-                    5 Specialized Units
-                  </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Deep domain specialization in Events, Visual Cinema, Cloud Systems, Luxury Travel, and E-commerce.
-                  </p>
+                  <div className="mt-4 pt-3 border-t border-slate-200 text-xs font-semibold text-slate-500">
+                    100% In-house Execution
+                  </div>
                 </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 text-xs font-semibold text-slate-500">
-                  100% In-house Execution
-                </div>
-              </div>
-            </TiltCard>
-          </ScrollReveal>
+              </TiltCard>
+            </ScrollReveal>
+          </div>
 
-          <ScrollReveal direction="up" delay={0.2}>
-            <TiltCard maxTilt={7} className="h-full">
-              <div className="p-6 sm:p-7 rounded-2xl bg-slate-50/90 border border-slate-200/90 h-full flex flex-col justify-between hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/5 transition-all">
-                <div>
-                  <div className="w-11 h-11 rounded-xl bg-blue-100/90 text-[#0052FF] flex items-center justify-center mb-4 shadow-xs">
-                    <ShieldCheck className="w-5 h-5" />
+          <div className="min-w-[80vw] sm:min-w-0 snap-center shrink-0 sm:shrink">
+            <ScrollReveal direction="up" delay={0.2}>
+              <TiltCard maxTilt={7} className="h-full">
+                <div className="p-6 sm:p-7 rounded-2xl bg-slate-50/90 border border-slate-200/90 h-full flex flex-col justify-between hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/5 transition-all">
+                  <div>
+                    <div className="w-11 h-11 rounded-xl bg-blue-100/90 text-[#0052FF] flex items-center justify-center mb-4 shadow-xs">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <h4 className="font-display text-lg font-bold text-slate-900 mb-2">
+                      Enterprise Governance
+                    </h4>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      Unified financial stability, legal compliance, and strict SLA guarantees backed by parent governance.
+                    </p>
                   </div>
-                  <h4 className="font-display text-lg font-bold text-slate-900 mb-2">
-                    Enterprise Governance
-                  </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Unified financial stability, legal compliance, and strict SLA guarantees backed by parent governance.
-                  </p>
+                  <div className="mt-4 pt-3 border-t border-slate-200 text-xs font-semibold text-slate-500">
+                    Established {BRAND_CONFIG.establishedYear}
+                  </div>
                 </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 text-xs font-semibold text-slate-500">
-                  Established {BRAND_CONFIG.establishedYear}
-                </div>
-              </div>
-            </TiltCard>
-          </ScrollReveal>
+              </TiltCard>
+            </ScrollReveal>
+          </div>
 
-          <ScrollReveal direction="up" delay={0.3}>
-            <TiltCard maxTilt={7} className="h-full">
-              <div className="p-6 sm:p-7 rounded-2xl bg-slate-50/90 border border-slate-200/90 h-full flex flex-col justify-between hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/5 transition-all">
-                <div>
-                  <div className="w-11 h-11 rounded-xl bg-blue-100/90 text-[#0052FF] flex items-center justify-center mb-4 shadow-xs">
-                    <Sparkles className="w-5 h-5" />
+          <div className="min-w-[80vw] sm:min-w-0 snap-center shrink-0 sm:shrink">
+            <ScrollReveal direction="up" delay={0.3}>
+              <TiltCard maxTilt={7} className="h-full">
+                <div className="p-6 sm:p-7 rounded-2xl bg-slate-50/90 border border-slate-200/90 h-full flex flex-col justify-between hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/5 transition-all">
+                  <div>
+                    <div className="w-11 h-11 rounded-xl bg-blue-100/90 text-[#0052FF] flex items-center justify-center mb-4 shadow-xs">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <h4 className="font-display text-lg font-bold text-slate-900 mb-2">
+                      Creative & Technical Rigor
+                    </h4>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      Equipped with 8K cinema gear, concert-grade acoustic arrays, and modern type-safe cloud platforms.
+                    </p>
                   </div>
-                  <h4 className="font-display text-lg font-bold text-slate-900 mb-2">
-                    Creative & Technical Rigor
-                  </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Equipped with 8K cinema gear, concert-grade acoustic arrays, and modern type-safe cloud platforms.
-                  </p>
+                  <div className="mt-4 pt-3 border-t border-slate-200 text-xs font-semibold text-slate-500">
+                    High-Fidelity Assets
+                  </div>
                 </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 text-xs font-semibold text-slate-500">
-                  High-Fidelity Assets
-                </div>
-              </div>
-            </TiltCard>
-          </ScrollReveal>
+              </TiltCard>
+            </ScrollReveal>
+          </div>
 
-          <ScrollReveal direction="up" delay={0.4}>
-            <TiltCard maxTilt={7} className="h-full">
-              <div className="p-6 sm:p-7 rounded-2xl bg-slate-50/90 border border-slate-200/90 h-full flex flex-col justify-between hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/5 transition-all">
-                <div>
-                  <div className="w-11 h-11 rounded-xl bg-blue-100/90 text-[#0052FF] flex items-center justify-center mb-4 shadow-xs">
-                    <TrendingUp className="w-5 h-5" />
+          <div className="min-w-[80vw] sm:min-w-0 snap-center shrink-0 sm:shrink">
+            <ScrollReveal direction="up" delay={0.4}>
+              <TiltCard maxTilt={7} className="h-full">
+                <div className="p-6 sm:p-7 rounded-2xl bg-slate-50/90 border border-slate-200/90 h-full flex flex-col justify-between hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/5 transition-all">
+                  <div>
+                    <div className="w-11 h-11 rounded-xl bg-blue-100/90 text-[#0052FF] flex items-center justify-center mb-4 shadow-xs">
+                      <TrendingUp className="w-5 h-5" />
+                    </div>
+                    <h4 className="font-display text-lg font-bold text-slate-900 mb-2">
+                      Proven Track Record
+                    </h4>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      Thousands of satisfied attendees, corporate delegates, travelers, and platform users nationwide.
+                    </p>
                   </div>
-                  <h4 className="font-display text-lg font-bold text-slate-900 mb-2">
-                    Proven Track Record
-                  </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Thousands of satisfied attendees, corporate delegates, travelers, and platform users nationwide.
-                  </p>
+                  <div className="mt-4 pt-3 border-t border-slate-200 text-xs font-semibold text-slate-500">
+                    99.6% Retention
+                  </div>
                 </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 text-xs font-semibold text-slate-500">
-                  99.6% Retention
-                </div>
-              </div>
-            </TiltCard>
-          </ScrollReveal>
+              </TiltCard>
+            </ScrollReveal>
+          </div>
         </div>
       </div>
     </SectionContainer>

@@ -75,6 +75,18 @@ export const firestoreTestimonialsService = {
     }
   },
 
+  async toggleFeature(id: string, isFeatured: boolean): Promise<void> {
+    await this.saveTestimonial(id, { isFeatured });
+  },
+
+  async toggleHide(id: string, isHidden: boolean): Promise<void> {
+    await this.saveTestimonial(id, { isHidden });
+  },
+
+  async assignDivision(id: string, divisionId: string, divisionName?: string): Promise<void> {
+    await this.saveTestimonial(id, { divisionId, division: divisionId, divisionName });
+  },
+
   subscribeTestimonials(
     onDataOrDivision: ((data: FirestoreTestimonial[]) => void) | DivisionId | 'all' | undefined,
     onDataCallback?: (data: FirestoreTestimonial[]) => void

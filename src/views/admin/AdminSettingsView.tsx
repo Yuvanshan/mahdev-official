@@ -290,6 +290,75 @@ export const AdminSettingsView: React.FC = () => {
     }
   };
 
+  const handleSaveBrandingAssets = async () => {
+    setIsSaving(true);
+    try {
+      const updatedSite: FirestoreSiteSettings = {
+        ...systemSettings,
+        brandingUpdatedAt: new Date().toISOString(),
+        brandingVersion: (systemSettings.brandingVersion || 1) + 1,
+      };
+      await Promise.all([
+        firestoreSettingsService.updateCompanySettings({
+          ...companyData,
+          logoUrl: systemSettings.logoUrl || companyData.logoUrl,
+          darkLogoUrl: systemSettings.darkLogoUrl || companyData.darkLogoUrl,
+          faviconUrl: systemSettings.faviconUrl || companyData.faviconUrl,
+        }),
+        firestoreSettingsService.updateSiteSettings(updatedSite),
+      ]);
+      addToast(
+        'success',
+        'Branding & Logo Assets Published',
+        'Your custom logos and favicon are now updated and synchronized live across all public portals.'
+      );
+    } catch (err: any) {
+      addToast('error', 'Error Publishing Branding', err?.message || 'Firestore error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveAnnouncement = async () => {
+    setIsSaving(true);
+    try {
+      await firestoreSettingsService.updateSiteSettings({
+        ...systemSettings,
+        announcement: systemSettings.announcement,
+      });
+      addToast(
+        'success',
+        'Announcement Banner Published',
+        'The top announcement banner is now broadcasted in real-time to all website visitors.'
+      );
+    } catch (err: any) {
+      addToast('error', 'Error Saving Banner', err?.message || 'Firestore error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveMaintenance = async () => {
+    setIsSaving(true);
+    try {
+      await firestoreSettingsService.updateSiteSettings({
+        ...systemSettings,
+        maintenance: systemSettings.maintenance,
+        enableMaintenanceMode: systemSettings.enableMaintenanceMode ?? systemSettings.maintenance?.enabled,
+        maintenanceMode: systemSettings.maintenanceMode ?? systemSettings.maintenance?.enabled,
+      });
+      addToast(
+        'success',
+        'Maintenance Settings Saved',
+        'Maintenance configuration parameters have been synchronized with Firestore.'
+      );
+    } catch (err: any) {
+      addToast('error', 'Error Saving Maintenance', err?.message || 'Firestore error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleResetToDefaults = async () => {
     if (
       window.confirm(
@@ -968,7 +1037,7 @@ export const AdminSettingsView: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-xs text-slate-600 mt-0.5">
-                  Logged in as <span className="font-semibold text-slate-800">{currentAdmin?.name || 'Administrator'}</span> ({currentAdmin?.email || 'admin@mahdev.lk'}) • Write access enabled for <code className="text-blue-700 bg-blue-100/60 px-1 py-0.5 rounded font-mono text-[11px]">branding/</code> repository.
+                  Logged in as <span className="font-semibold text-slate-800">{currentAdmin?.name || 'Yuvanshan Prabakaran'}</span> ({currentAdmin?.email || 'info.mahdev.lk@gmail.com'}) • Write access enabled for <code className="text-blue-700 bg-blue-100/60 px-1 py-0.5 rounded font-mono text-[11px]">branding/</code> repository.
                 </p>
               </div>
             </div>
@@ -1336,8 +1405,8 @@ export const AdminSettingsView: React.FC = () => {
                         referrerPolicy="no-referrer"
                       />
                     ) : (
-                      <div className="w-4 h-4 rounded-xs bg-blue-600 flex items-center justify-center text-[9px] text-white font-extrabold">
-                        M
+                      <div className="w-4 h-4 bg-blue-600 rounded-xs flex items-center justify-center text-white font-bold text-[9px]">
+                        {(companyData.name || 'M').charAt(0).toUpperCase()}
                       </div>
                     )}
                     <span className="text-xs font-medium text-slate-700 truncate max-w-[200px]">
@@ -1388,6 +1457,29 @@ export const AdminSettingsView: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Dedicated Instant Publish Bar for Branding */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-900 text-white rounded-2xl shadow-md border border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+                <Check className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold font-display text-white">Publish Branding & Logo Assets</h4>
+                <p className="text-[11px] text-slate-400">Save and sync all logo assets, favicon, and dark themes across all public views immediately.</p>
+              </div>
+            </div>
+            <Button
+              variant="electric"
+              size="sm"
+              onClick={handleSaveBrandingAssets}
+              disabled={isSaving}
+              leftIcon={isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              className="text-xs font-bold shrink-0 self-end sm:self-center"
+            >
+              {isSaving ? 'Publishing...' : 'Save & Publish Branding'}
+            </Button>
           </div>
         </div>
       )}
@@ -1568,6 +1660,29 @@ export const AdminSettingsView: React.FC = () => {
                 className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
                 placeholder="/contact"
               />
+            </div>
+
+            {/* Instant Save Bar for Announcement Banner */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-gradient-to-r from-blue-900 to-indigo-950 text-white rounded-2xl shadow-md border border-blue-800 mt-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0">
+                  <Megaphone className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold font-display text-white">Publish Announcement Banner</h4>
+                  <p className="text-[11px] text-blue-200">Broadcast banner message and target URL to all public portal visitors in real-time.</p>
+                </div>
+              </div>
+              <Button
+                variant="electric"
+                size="sm"
+                onClick={handleSaveAnnouncement}
+                disabled={isSaving}
+                leftIcon={isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                className="text-xs font-bold shrink-0 self-end sm:self-center"
+              >
+                {isSaving ? 'Publishing...' : 'Save & Broadcast Banner'}
+              </Button>
             </div>
           </div>
         </div>
@@ -2038,6 +2153,29 @@ export const AdminSettingsView: React.FC = () => {
                           placeholder="info@mahdev.lk"
                         />
                       </div>
+                    </div>
+
+                    {/* Instant Save Bar for Maintenance Details */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-900 text-white rounded-2xl shadow-md border border-slate-800 mt-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                          <Wrench className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold font-display text-white">Save Maintenance Configuration</h4>
+                          <p className="text-[11px] text-slate-400">Commit headline, explanation copy, cover image, and emergency contacts to Firestore.</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="electric"
+                        size="sm"
+                        onClick={handleSaveMaintenance}
+                        disabled={isSaving}
+                        leftIcon={isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                        className="text-xs font-bold shrink-0 self-end sm:self-center bg-amber-500 hover:bg-amber-400 text-slate-950"
+                      >
+                        {isSaving ? 'Saving...' : 'Save Configuration'}
+                      </Button>
                     </div>
                   </div>
                 </div>

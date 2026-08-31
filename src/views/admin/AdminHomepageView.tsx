@@ -20,25 +20,39 @@ import {
   Star,
   Globe,
   Tag,
+  Video,
+  Plus,
+  Trash2,
+  Award,
+  Film,
+  Briefcase,
+  Building2,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
 import { cmsService } from '../../services/cmsService';
-import { HomepageCmsConfig, CmsService as CmsServiceEntity, CmsProduct, CmsPortfolioProject } from '../../types/cms';
+import {
+  HomepageCmsConfig,
+  CmsService as CmsServiceEntity,
+  CmsProduct,
+  CmsPortfolioProject,
+  DecorationShowcaseVideo,
+  AchievementItem,
+} from '../../types/cms';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 export const AdminHomepageView: React.FC = () => {
   const { homepageConfig, updateHomepageConfig } = useFirestoreDataContext();
   const [config, setConfig] = useState<HomepageCmsConfig>(() => homepageConfig || cmsService.getHomepageConfig());
   const [activeTab, setActiveTab] = useState<
-    'hero' | 'intro' | 'services' | 'products' | 'portfolio' | 'milestones' | 'companies' | 'cta' | 'seo'
+    'hero' | 'intro' | 'services' | 'products' | 'portfolio' | 'showcase' | 'milestones' | 'companies' | 'cta' | 'seo'
   >('hero');
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
-  const [mediaPickerTarget, setMediaPickerTarget] = useState<'hero' | 'seo'>('hero');
+  const [mediaPickerTarget, setMediaPickerTarget] = useState<'hero' | 'seo' | string>('hero');
 
   // Available entities for multi-selectors
   const [allServices, setAllServices] = useState<CmsServiceEntity[]>([]);
@@ -155,10 +169,11 @@ export const AdminHomepageView: React.FC = () => {
           { id: 'services', label: '3. Featured Services', icon: Layers },
           { id: 'products', label: '4. Featured Hardware', icon: Tag },
           { id: 'portfolio', label: '5. Portfolio & Cases', icon: Star },
-          { id: 'milestones', label: '6. Milestones Matrix', icon: TrendingUp },
-          { id: 'companies', label: '7. Corporate Partners', icon: Globe },
-          { id: 'cta', label: '8. Global CTA Bar', icon: Phone },
-          { id: 'seo', label: '9. Homepage SEO', icon: Globe },
+          { id: 'showcase', label: '6. Event Showcase', icon: Video },
+          { id: 'milestones', label: '7. Milestones & Achievements', icon: TrendingUp },
+          { id: 'companies', label: '8. Corporate Partners', icon: Globe },
+          { id: 'cta', label: '9. Global CTA Bar', icon: Phone },
+          { id: 'seo', label: '10. Homepage SEO', icon: Globe },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -520,13 +535,375 @@ export const AdminHomepageView: React.FC = () => {
           </div>
         )}
 
-        {/* ===================== TAB 6: MILESTONES ===================== */}
+        {/* ===================== TAB 6: EVENT & DECORATION SHOWCASE ===================== */}
+        {activeTab === 'showcase' && (
+          <div className="space-y-6 text-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="font-display text-base font-bold text-slate-900">
+                  Cinematic Event & Decoration Showcase
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Manage the video reel cards, categories, video links, thumbnails, venue types, and highlights.
+                </p>
+              </div>
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={config.decorationShowcase?.enabled !== false}
+                  onChange={(e) => {
+                    const current = config.decorationShowcase || {
+                      badge: 'SWS Precision Event Engineering',
+                      title: 'Cinematic Event & Decoration Showcase',
+                      subtitle: 'Experience the craftsmanship, lighting architectures, kinetic florals, and multi-camera live production engineered by Mahdev Event Management (SWS).',
+                      enabled: true,
+                      videos: [],
+                    };
+                    setConfig((prev) => ({
+                      ...prev,
+                      decorationShowcase: { ...current, enabled: e.target.checked },
+                    }));
+                    setIsDirty(true);
+                  }}
+                  className="w-4 h-4 rounded text-blue-600"
+                />
+                <span className="font-bold text-slate-800">Show Event Showcase Reel</span>
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Section Badge</label>
+                <input
+                  type="text"
+                  value={config.decorationShowcase?.badge || 'SWS Precision Event Engineering'}
+                  onChange={(e) => {
+                    const current = config.decorationShowcase || {
+                      badge: '',
+                      title: 'Cinematic Event & Decoration Showcase',
+                      subtitle: '',
+                      enabled: true,
+                      videos: [],
+                    };
+                    setConfig((prev) => ({
+                      ...prev,
+                      decorationShowcase: { ...current, badge: e.target.value },
+                    }));
+                    setIsDirty(true);
+                  }}
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Section Title</label>
+                <input
+                  type="text"
+                  value={config.decorationShowcase?.title || 'Cinematic Event & Decoration Showcase'}
+                  onChange={(e) => {
+                    const current = config.decorationShowcase || {
+                      badge: 'SWS Precision Event Engineering',
+                      title: '',
+                      subtitle: '',
+                      enabled: true,
+                      videos: [],
+                    };
+                    setConfig((prev) => ({
+                      ...prev,
+                      decorationShowcase: { ...current, title: e.target.value },
+                    }));
+                    setIsDirty(true);
+                  }}
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Subtitle</label>
+                <textarea
+                  rows={2}
+                  value={config.decorationShowcase?.subtitle || ''}
+                  onChange={(e) => {
+                    const current = config.decorationShowcase || {
+                      badge: 'SWS Precision Event Engineering',
+                      title: 'Cinematic Event & Decoration Showcase',
+                      subtitle: '',
+                      enabled: true,
+                      videos: [],
+                    };
+                    setConfig((prev) => ({
+                      ...prev,
+                      decorationShowcase: { ...current, subtitle: e.target.value },
+                    }));
+                    setIsDirty(true);
+                  }}
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Video Cards Management */}
+            <div className="pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <Film className="w-4 h-4 text-blue-600" />
+                    Showcase Videos & Deliverables
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    Add or modify video reels displayed in the spotlight player and interactive selector.
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  leftIcon={<Plus className="w-3.5 h-3.5 text-blue-600" />}
+                  onClick={() => {
+                    const current = config.decorationShowcase?.videos || [];
+                    const newVideo: DecorationShowcaseVideo = {
+                      id: `decor-vid-${Date.now()}`,
+                      title: 'New Luxury Event Production',
+                      category: 'Weddings',
+                      location: 'Colombo, Sri Lanka',
+                      duration: '0:45',
+                      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-wedding-table-with-flower-decorations-and-cutlery-42797-large.mp4',
+                      thumbnailUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80',
+                      description: 'Custom engineered stagecraft and lighting production.',
+                      venueType: '5-Star Luxury Ballroom',
+                      divisionName: 'SWS Event Management',
+                      highlights: ['Bespoke Decor', 'Lighting Staging'],
+                    };
+                    setConfig((prev) => ({
+                      ...prev,
+                      decorationShowcase: {
+                        ...(prev.decorationShowcase || {
+                          badge: 'SWS Precision Event Engineering',
+                          title: 'Cinematic Event & Decoration Showcase',
+                          subtitle: '',
+                          enabled: true,
+                        }),
+                        videos: [newVideo, ...current],
+                      },
+                    }));
+                    setIsDirty(true);
+                  }}
+                  className="text-xs font-semibold cursor-pointer"
+                >
+                  Add Video
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                {(config.decorationShowcase?.videos || []).map((video, idx) => (
+                  <div
+                    key={video.id || idx}
+                    className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 relative group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 font-bold text-slate-800">
+                        <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px]">
+                          {idx + 1}
+                        </span>
+                        <span>{video.title || `Video #${idx + 1}`}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = (config.decorationShowcase?.videos || []).filter((_, i) => i !== idx);
+                          setConfig((prev) => ({
+                            ...prev,
+                            decorationShowcase: {
+                              ...(prev.decorationShowcase as any),
+                              videos: updated,
+                            },
+                          }));
+                          setIsDirty(true);
+                        }}
+                        className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 cursor-pointer"
+                        title="Remove Video"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">Title</label>
+                        <input
+                          type="text"
+                          value={video.title}
+                          onChange={(e) => {
+                            const updated = [...(config.decorationShowcase?.videos || [])];
+                            updated[idx] = { ...updated[idx], title: e.target.value };
+                            setConfig((prev) => ({
+                              ...prev,
+                              decorationShowcase: { ...(prev.decorationShowcase as any), videos: updated },
+                            }));
+                            setIsDirty(true);
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">Category</label>
+                        <select
+                          value={video.category}
+                          onChange={(e) => {
+                            const updated = [...(config.decorationShowcase?.videos || [])];
+                            updated[idx] = { ...updated[idx], category: e.target.value };
+                            setConfig((prev) => ({
+                              ...prev,
+                              decorationShowcase: { ...(prev.decorationShowcase as any), videos: updated },
+                            }));
+                            setIsDirty(true);
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+                        >
+                          <option value="Weddings">Weddings</option>
+                          <option value="Floral & Canopy">Floral & Canopy</option>
+                          <option value="Lighting & Truss">Lighting & Truss</option>
+                          <option value="Corporate Galas">Corporate Galas</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">Location</label>
+                        <input
+                          type="text"
+                          value={video.location}
+                          onChange={(e) => {
+                            const updated = [...(config.decorationShowcase?.videos || [])];
+                            updated[idx] = { ...updated[idx], location: e.target.value };
+                            setConfig((prev) => ({
+                              ...prev,
+                              decorationShowcase: { ...(prev.decorationShowcase as any), videos: updated },
+                            }));
+                            setIsDirty(true);
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">
+                          Video MP4 URL
+                        </label>
+                        <input
+                          type="url"
+                          value={video.videoUrl}
+                          onChange={(e) => {
+                            const updated = [...(config.decorationShowcase?.videos || [])];
+                            updated[idx] = { ...updated[idx], videoUrl: e.target.value };
+                            setConfig((prev) => ({
+                              ...prev,
+                              decorationShowcase: { ...(prev.decorationShowcase as any), videos: updated },
+                            }));
+                            setIsDirty(true);
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">Duration</label>
+                        <input
+                          type="text"
+                          value={video.duration}
+                          onChange={(e) => {
+                            const updated = [...(config.decorationShowcase?.videos || [])];
+                            updated[idx] = { ...updated[idx], duration: e.target.value };
+                            setConfig((prev) => ({
+                              ...prev,
+                              decorationShowcase: { ...(prev.decorationShowcase as any), videos: updated },
+                            }));
+                            setIsDirty(true);
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+                          placeholder="0:45"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">
+                          Thumbnail Image URL
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="url"
+                            value={video.thumbnailUrl}
+                            onChange={(e) => {
+                              const updated = [...(config.decorationShowcase?.videos || [])];
+                              updated[idx] = { ...updated[idx], thumbnailUrl: e.target.value };
+                              setConfig((prev) => ({
+                                ...prev,
+                                decorationShowcase: { ...(prev.decorationShowcase as any), videos: updated },
+                              }));
+                              setIsDirty(true);
+                            }}
+                            className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">Venue Type</label>
+                        <input
+                          type="text"
+                          value={video.venueType || ''}
+                          onChange={(e) => {
+                            const updated = [...(config.decorationShowcase?.videos || [])];
+                            updated[idx] = { ...updated[idx], venueType: e.target.value };
+                            setConfig((prev) => ({
+                              ...prev,
+                              decorationShowcase: { ...(prev.decorationShowcase as any), videos: updated },
+                            }));
+                            setIsDirty(true);
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+                          placeholder="5-Star Luxury Ballroom"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-3">
+                        <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">
+                          Description
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={video.description}
+                          onChange={(e) => {
+                            const updated = [...(config.decorationShowcase?.videos || [])];
+                            updated[idx] = { ...updated[idx], description: e.target.value };
+                            setConfig((prev) => ({
+                              ...prev,
+                              decorationShowcase: { ...(prev.decorationShowcase as any), videos: updated },
+                            }));
+                            setIsDirty(true);
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ===================== TAB 7: MILESTONES & KEY ACHIEVEMENTS ===================== */}
         {activeTab === 'milestones' && (
           <div className="space-y-6 text-xs">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="font-display text-base font-bold text-slate-900">Milestones of Excellence (2018 - Present)</h3>
-                <p className="text-xs text-slate-500">Control the verified track record chronological timeline visibility and copy.</p>
+                <h3 className="font-display text-base font-bold text-slate-900">
+                  Milestones of Excellence & Key Verified Achievements
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Control the timeline headlines and customize the Key Verified Achievements / By the Numbers grid cards.
+                </p>
               </div>
 
               <label className="flex items-center gap-2 cursor-pointer">
@@ -542,7 +919,7 @@ export const AdminHomepageView: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Section Badge</label>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Timeline Badge</label>
                 <input
                   type="text"
                   value={config.milestones.badge}
@@ -552,7 +929,7 @@ export const AdminHomepageView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Section Title</label>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Timeline Title</label>
                 <input
                   type="text"
                   value={config.milestones.title}
@@ -562,13 +939,206 @@ export const AdminHomepageView: React.FC = () => {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Subtitle</label>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Timeline Subtitle</label>
                 <textarea
                   rows={2}
                   value={config.milestones.subtitle}
                   onChange={(e) => updateNested('milestones', 'subtitle', e.target.value)}
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
                 />
+              </div>
+            </div>
+
+            {/* KEY VERIFIED ACHIEVEMENTS CUSTOMIZATION */}
+            <div className="pt-6 border-t border-slate-200">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-blue-600" />
+                    Key Verified Achievements Cards (Editable)
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    Edit the metrics, labels, descriptions, and badge indicators shown below the trajectory timeline.
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  leftIcon={<Plus className="w-3.5 h-3.5 text-blue-600" />}
+                  onClick={() => {
+                    const current = config.milestones.achievements || [];
+                    const newAchievement: AchievementItem = {
+                      id: `achieve-${Date.now()}`,
+                      metric: '100+',
+                      label: 'New Milestone Metric',
+                      description: 'Certified deliverable benchmark achieved by Mahdev Group.',
+                      badge: 'Verified Benchmark',
+                      iconName: 'Sparkles',
+                      highlight: false,
+                    };
+                    updateNested('milestones', 'achievements', [...current, newAchievement]);
+                  }}
+                  className="text-xs font-semibold cursor-pointer"
+                >
+                  Add Metric Card
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Achievements Heading Title
+                  </label>
+                  <input
+                    type="text"
+                    value={config.milestones.achievementsTitle || 'Key Verified Achievements'}
+                    onChange={(e) => updateNested('milestones', 'achievementsTitle', e.target.value)}
+                    className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Achievements Subtitle
+                  </label>
+                  <input
+                    type="text"
+                    value={config.milestones.achievementsSubtitle || 'Official Company Metrics'}
+                    onChange={(e) => updateNested('milestones', 'achievementsSubtitle', e.target.value)}
+                    className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {(config.milestones.achievements || []).map((item, idx) => (
+                  <div
+                    key={item.id || idx}
+                    className={`p-4 rounded-xl border space-y-2.5 transition-all ${
+                      item.highlight ? 'bg-blue-50/60 border-blue-200' : 'bg-slate-50 border-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                        <Award className="w-3.5 h-3.5 text-blue-600" />
+                        Card #{idx + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = (config.milestones.achievements || []).filter((_, i) => i !== idx);
+                          updateNested('milestones', 'achievements', updated);
+                        }}
+                        className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 cursor-pointer"
+                        title="Remove Metric"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">
+                          Metric (e.g. 1,800+)
+                        </label>
+                        <input
+                          type="text"
+                          value={item.metric}
+                          onChange={(e) => {
+                            const updated = [...(config.milestones.achievements || [])];
+                            updated[idx] = { ...updated[idx], metric: e.target.value };
+                            updateNested('milestones', 'achievements', updated);
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">Label</label>
+                        <input
+                          type="text"
+                          value={item.label}
+                          onChange={(e) => {
+                            const updated = [...(config.milestones.achievements || [])];
+                            updated[idx] = { ...updated[idx], label: e.target.value };
+                            updateNested('milestones', 'achievements', updated);
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">
+                          Badge Tag
+                        </label>
+                        <input
+                          type="text"
+                          value={item.badge}
+                          onChange={(e) => {
+                            const updated = [...(config.milestones.achievements || [])];
+                            updated[idx] = { ...updated[idx], badge: e.target.value };
+                            updateNested('milestones', 'achievements', updated);
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">Icon</label>
+                        <select
+                          value={item.iconName || 'Sparkles'}
+                          onChange={(e) => {
+                            const updated = [...(config.milestones.achievements || [])];
+                            updated[idx] = { ...updated[idx], iconName: e.target.value };
+                            updateNested('milestones', 'achievements', updated);
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+                        >
+                          <option value="Briefcase">Briefcase</option>
+                          <option value="CheckCircle2">CheckCircle2</option>
+                          <option value="TrendingUp">TrendingUp</option>
+                          <option value="Layers">Layers</option>
+                          <option value="MapPin">MapPin</option>
+                          <option value="Sparkles">Sparkles</option>
+                          <option value="Award">Award</option>
+                          <option value="ShieldCheck">ShieldCheck</option>
+                          <option value="Building2">Building2</option>
+                        </select>
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">
+                          Description
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={item.description}
+                          onChange={(e) => {
+                            const updated = [...(config.milestones.achievements || [])];
+                            updated[idx] = { ...updated[idx], description: e.target.value };
+                            updateNested('milestones', 'achievements', updated);
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+                        />
+                      </div>
+
+                      <div className="col-span-2 flex items-center gap-2 pt-1">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={!!item.highlight}
+                            onChange={(e) => {
+                              const updated = [...(config.milestones.achievements || [])];
+                              updated[idx] = { ...updated[idx], highlight: e.target.checked };
+                              updateNested('milestones', 'achievements', updated);
+                            }}
+                            className="w-3.5 h-3.5 rounded text-blue-600"
+                          />
+                          Highlight card with blue emphasis border
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

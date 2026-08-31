@@ -41,8 +41,12 @@ export const SWSGallerySection: React.FC = () => {
         }));
       }
     }
-    return SWS_GALLERY_ITEMS;
+    return [];
   }, [rawGallery]);
+
+  if (galleryItems.length === 0) {
+    return null;
+  }
 
   const categories: GalleryFilter[] = [
     'All',

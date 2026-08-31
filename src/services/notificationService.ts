@@ -334,7 +334,7 @@ class NotificationService {
   async notifyAdminNewCustomer(user: { name: string; email: string; phone?: string }): Promise<void> {
     await this.safeDispatch(
       'admin_new_customer',
-      { name: 'Admin Staff', email: 'admin@mahdev.lk', role: 'admin' },
+      { name: 'Yuvanshan Prabakaran', email: 'info.mahdev.lk@gmail.com', role: 'admin' },
       `👤 New Customer Registration: ${user.name}`,
       `New user account registered: ${user.name} (${user.email}). Phone: ${user.phone || 'Not provided'}.`,
       { name: user.name, email: user.email },

@@ -29,6 +29,10 @@ export const FeaturedWorkSection: React.FC<FeaturedWorkSectionProps> = ({ onNavi
 
   const activeProjects = portfolio.filter((p) => (p as any).status !== 'archived');
 
+  if (activeProjects.length === 0) {
+    return null;
+  }
+
   const scrollHorizontal = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
       const scrollAmount = direction === 'left' ? -380 : 380;
@@ -97,7 +101,7 @@ export const FeaturedWorkSection: React.FC<FeaturedWorkSectionProps> = ({ onNavi
         {activeProjects.map((project, idx) => (
           <div
             key={project.id}
-            className="w-[320px] sm:w-[380px] lg:w-[420px] shrink-0 snap-start"
+            className="w-[calc(100vw-2.5rem)] max-w-[360px] sm:w-[380px] lg:w-[420px] shrink-0 snap-start"
           >
             <ScrollReveal direction="up" delay={idx * 0.08}>
               <TiltCard
@@ -147,7 +151,7 @@ export const FeaturedWorkSection: React.FC<FeaturedWorkSectionProps> = ({ onNavi
                         </div>
                       )}
                       <span className="text-xs font-semibold text-blue-400 group-hover:translate-x-1 transition-transform inline-flex items-center gap-1 ml-auto">
-                        Details <ArrowRight className="w-3.5 h-3.5" />
+                        View Project <ArrowRight className="w-3.5 h-3.5" />
                       </span>
                     </div>
                   </div>
@@ -156,6 +160,17 @@ export const FeaturedWorkSection: React.FC<FeaturedWorkSectionProps> = ({ onNavi
             </ScrollReveal>
           </div>
         ))}
+      </div>
+
+      {/* View All Projects Button */}
+      <div className="mt-8 text-center">
+        <button
+          onClick={() => onNavigate('/projects')}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 font-semibold text-sm hover:border-[#0052FF] hover:text-[#0052FF] hover:shadow-md transition-all cursor-pointer group"
+        >
+          <span>View All Projects & Case Studies</span>
+          <ArrowRight className="w-4 h-4 text-[#0052FF] group-hover:translate-x-1 transition-transform" />
+        </button>
       </div>
 
       {/* Interactive Case Study Detail Modal */}

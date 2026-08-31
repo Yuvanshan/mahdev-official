@@ -59,8 +59,12 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
         }));
       }
     }
-    return U1_SERVICES;
+    return [];
   }, [rawServices]);
+
+  if (allServices.length === 0) {
+    return null;
+  }
 
   const categories: { id: U1FilterCategory; label: string; count: number; icon: React.ReactNode }[] = [
     { id: 'all', label: `All ${allServices.length} Services`, count: allServices.length, icon: <Layers className="w-3.5 h-3.5" /> },

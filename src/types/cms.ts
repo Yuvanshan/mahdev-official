@@ -263,7 +263,33 @@ export interface CmsCoupon extends BaseCmsEntity {
   isActive: boolean;
 }
 
-// 14. Homepage CMS Configuration
+// 14. Achievement & Decoration Showcase Sub-types
+export interface AchievementItem {
+  id: string;
+  metric: string;
+  label: string;
+  description: string;
+  badge: string;
+  iconName?: string;
+  highlight?: boolean;
+  order?: number;
+}
+
+export interface DecorationShowcaseVideo {
+  id: string;
+  title: string;
+  category: 'Weddings' | 'Floral & Canopy' | 'Lighting & Truss' | 'Corporate Galas' | string;
+  location: string;
+  duration: string;
+  videoUrl: string;
+  thumbnailUrl: string;
+  description: string;
+  venueType: string;
+  divisionName: string;
+  highlights: string[];
+}
+
+// 15. Homepage CMS Configuration
 export interface HomepageCmsConfig {
   hero: {
     badgeText: string;
@@ -309,11 +335,21 @@ export interface HomepageCmsConfig {
     selectedProjectIds: string[];
     enabled: boolean;
   };
+  decorationShowcase?: {
+    badge: string;
+    title: string;
+    subtitle: string;
+    enabled: boolean;
+    videos: DecorationShowcaseVideo[];
+  };
   milestones: {
     badge: string;
     title: string;
     subtitle: string;
     enabled: boolean;
+    achievementsTitle?: string;
+    achievementsSubtitle?: string;
+    achievements?: AchievementItem[];
   };
   companies: {
     badge: string;

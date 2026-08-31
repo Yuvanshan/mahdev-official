@@ -13,7 +13,11 @@ import {
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { FirestoreTrustedCompany } from '../../types/firestore';
 
-export const TrustedCompaniesMatrix: React.FC = () => {
+interface TrustedCompaniesMatrixProps {
+  onExplorePartners?: () => void;
+}
+
+export const TrustedCompaniesMatrix: React.FC<TrustedCompaniesMatrixProps> = ({ onExplorePartners }) => {
   const { trustedCompanies, homepageConfig } = useFirestoreDataContext();
   const [selectedCompany, setSelectedCompany] = useState<FirestoreTrustedCompany | null>(null);
 
@@ -22,6 +26,10 @@ export const TrustedCompaniesMatrix: React.FC = () => {
   }
 
   const activeCompanies = trustedCompanies.filter((c) => (c as any).status !== 'archived');
+
+  if (activeCompanies.length === 0) {
+    return null;
+  }
 
   const meta = homepageConfig.companies || {
     badge: 'INSTITUTIONAL COLLABORATIONS',
@@ -45,8 +53,8 @@ export const TrustedCompaniesMatrix: React.FC = () => {
         </div>
       </ScrollReveal>
 
-      {/* Enterprise Matrix Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Enterprise Matrix Cards - Horizontal Scroll on Mobile */}
+      <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 sm:overflow-visible">
         {activeCompanies.map((company, idx) => {
           // Generate initials for company logo mark
           const initials = company.name
@@ -56,56 +64,75 @@ export const TrustedCompaniesMatrix: React.FC = () => {
             .join('');
 
           return (
-            <ScrollReveal key={company.id} direction="up" delay={idx * 0.06}>
-              <TiltCard maxTilt={5} glareEffect className="h-full">
-                <div
-                  onClick={() => setSelectedCompany(company)}
-                  className="group h-full p-6 rounded-2xl bg-slate-50/80 border border-slate-200/90 hover:border-[#0052FF] hover:bg-white hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer"
-                >
-                  <div>
-                    {/* Header: Monogram Logo & Industry Badge */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 shadow-2xs flex items-center justify-center font-display font-bold text-slate-800 text-sm group-hover:bg-[#0052FF] group-hover:text-white group-hover:border-[#0052FF] transition-all duration-300">
-                        {company.logoUrl ? (
-                          <img src={company.logoUrl} alt={company.name} className="w-8 h-8 object-contain" />
-                        ) : (
-                          initials
-                        )}
+            <div
+              key={company.id}
+              className="min-w-[80vw] sm:min-w-0 snap-center shrink-0 sm:shrink"
+            >
+              <ScrollReveal direction="up" delay={idx * 0.06}>
+                <TiltCard maxTilt={5} glareEffect className="h-full">
+                  <div
+                    onClick={() => setSelectedCompany(company)}
+                    className="group h-full p-6 rounded-2xl bg-slate-50/80 border border-slate-200/90 hover:border-[#0052FF] hover:bg-white hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer"
+                  >
+                    <div>
+                      {/* Header: Monogram Logo & Industry Badge */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 shadow-2xs flex items-center justify-center font-display font-bold text-slate-800 text-sm group-hover:bg-[#0052FF] group-hover:text-white group-hover:border-[#0052FF] transition-all duration-300">
+                          {company.logoUrl ? (
+                            <img src={company.logoUrl} alt={company.name} className="w-8 h-8 object-contain" />
+                          ) : (
+                            initials
+                          )}
+                        </div>
+                        <Badge variant="outline" size="sm" className="text-slate-600 bg-white">
+                          {(company.industry || '').split('&')[0].trim()}
+                        </Badge>
                       </div>
-                      <Badge variant="outline" size="sm" className="text-slate-600 bg-white">
-                        {(company.industry || '').split('&')[0].trim()}
-                      </Badge>
+
+                      <h3 className="font-display text-lg font-bold text-slate-900 mb-1 group-hover:text-[#0052FF] transition-colors">
+                        {company.name}
+                      </h3>
+                      <p className="text-xs font-semibold text-blue-600 mb-3">
+                        {company.partnershipType || 'Enterprise Partner'}
+                      </p>
+
+                      {company.description && (
+                        <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
+                          {company.description}
+                        </p>
+                      )}
                     </div>
 
-                    <h3 className="font-display text-lg font-bold text-slate-900 mb-1 group-hover:text-[#0052FF] transition-colors">
-                      {company.name}
-                    </h3>
-                    <p className="text-xs font-semibold text-blue-600 mb-3">
-                      {company.partnershipType || 'Enterprise Partner'}
-                    </p>
-
-                    {company.description && (
-                      <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
-                        {company.description}
-                      </p>
-                    )}
+                    {/* Card Footer */}
+                    <div className="mt-5 pt-3 border-t border-slate-200/80 flex items-center justify-between text-xs text-slate-500">
+                      <span className="text-[11px] font-medium text-[#0052FF] group-hover:underline flex items-center gap-1">
+                        Partnership Scope <ExternalLink className="w-3 h-3" />
+                      </span>
+                      <span className="text-[10px] uppercase tracking-wider text-slate-400 font-mono">
+                        Verified Client
+                      </span>
+                    </div>
                   </div>
-
-                  {/* Card Footer */}
-                  <div className="mt-5 pt-3 border-t border-slate-200/80 flex items-center justify-between text-xs text-slate-500">
-                    <span className="text-[11px] font-medium text-[#0052FF] group-hover:underline flex items-center gap-1">
-                      Partnership Scope <ExternalLink className="w-3 h-3" />
-                    </span>
-                    <span className="text-[10px] uppercase tracking-wider text-slate-400 font-mono">
-                      Verified Client
-                    </span>
-                  </div>
-                </div>
-              </TiltCard>
-            </ScrollReveal>
+                </TiltCard>
+              </ScrollReveal>
+            </div>
           );
         })}
       </div>
+
+      {/* Optional CTA to dedicated clients page */}
+      {onExplorePartners && (
+        <div className="mt-8 text-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onExplorePartners}
+            className="text-xs font-semibold hover:border-[#0052FF] hover:text-[#0052FF]"
+          >
+            Explore Client Case Studies & Testimonials →
+          </Button>
+        </div>
+      )}
 
       {/* Partnership Detail Modal for CMS Readiness */}
       <Modal

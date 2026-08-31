@@ -2,9 +2,14 @@ import { NavigationLink, FooterSection } from '../types';
 
 export const MAIN_NAV_ITEMS: NavigationLink[] = [
   {
-    id: 'services',
-    label: 'Services',
-    href: '#services',
+    id: 'home',
+    label: 'Home',
+    href: '/',
+  },
+  {
+    id: 'divisions',
+    label: 'Divisions',
+    href: '/divisions',
     children: [
       {
         id: 'sws',
@@ -16,7 +21,7 @@ export const MAIN_NAV_ITEMS: NavigationLink[] = [
       },
       {
         id: 'u1',
-        label: 'U1 Studio',
+        label: 'Studio U2 Photography',
         href: '/u1',
         description: 'Cinematography, editorial photography, and aerial filming.',
         badge: 'Media',
@@ -49,44 +54,19 @@ export const MAIN_NAV_ITEMS: NavigationLink[] = [
     ],
   },
   {
-    id: 'catalog',
-    label: 'Master Catalog',
-    href: '/catalog',
-  },
-  {
-    id: 'booking',
-    label: 'Book a Service',
-    href: '/book',
-  },
-  {
-    id: 'account',
-    label: 'Customer Portal',
-    href: '/account',
+    id: 'projects',
+    label: 'Projects',
+    href: '/projects',
   },
   {
     id: 'about',
     label: 'About',
-    href: '#about',
-  },
-  {
-    id: 'milestones',
-    label: 'Milestones',
-    href: '#milestones',
-  },
-  {
-    id: 'portfolio',
-    label: 'Portfolio',
-    href: '#portfolio',
-  },
-  {
-    id: 'companies',
-    label: 'Companies',
-    href: '#companies',
+    href: '/about',
   },
   {
     id: 'contact',
     label: 'Contact',
-    href: '#contact',
+    href: '/contact',
   },
 ];
 

@@ -435,8 +435,8 @@ export const AdminGenericView: React.FC<AdminGenericViewProps> = ({
             </thead>
             <tbody className="divide-y divide-slate-100 font-mono">
               <tr className="hover:bg-slate-50/80">
-                <td className="py-3 px-4 font-sans font-bold text-slate-900">Yuvanshan Perera</td>
-                <td className="py-3 px-4 text-slate-600">admin@mahdev.lk</td>
+                <td className="py-3 px-4 font-sans font-bold text-slate-900">Yuvanshan Prabakaran</td>
+                <td className="py-3 px-4 text-slate-600">info.mahdev.lk@gmail.com</td>
                 <td className="py-3 px-4 text-purple-700 font-bold">SUPER_ADMIN</td>
                 <td className="py-3 px-4 text-slate-600">All (Root)</td>
                 <td className="py-3 px-4 text-right">

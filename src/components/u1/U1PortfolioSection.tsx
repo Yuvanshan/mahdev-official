@@ -53,8 +53,12 @@ export const U1PortfolioSection: React.FC = () => {
         }));
       }
     }
-    return U1_PORTFOLIO_ITEMS;
+    return [];
   }, [rawPortfolio]);
+
+  if (portfolioItems.length === 0) {
+    return null;
+  }
 
   const categories: PortfolioCategory[] = [
     'All',

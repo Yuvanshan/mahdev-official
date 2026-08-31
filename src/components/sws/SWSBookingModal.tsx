@@ -13,8 +13,16 @@ import {
   ShieldCheck,
   MessageSquare,
   DollarSign,
+  Layers,
 } from 'lucide-react';
-import { SWS_SERVICES, SWS_PACKAGES, SWSService, SWSPackage } from '../../data/swsData';
+import {
+  SWS_SERVICES,
+  SWS_PACKAGES,
+  SWS_RENTAL_INVENTORY,
+  SWSService,
+  SWSPackage,
+  SWSRentalItem,
+} from '../../data/swsData';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
@@ -26,6 +34,7 @@ interface SWSBookingModalProps {
   onClose: () => void;
   initialService?: SWSService | null;
   initialPackage?: SWSPackage | null;
+  initialRentalItem?: SWSRentalItem | null;
   isQuoteMode?: boolean;
 }
 
@@ -34,11 +43,13 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
   onClose,
   initialService,
   initialPackage,
+  initialRentalItem,
   isQuoteMode = false,
 }) => {
   const [eventType, setEventType] = useState('Wedding');
   const [selectedServiceId, setSelectedServiceId] = useState(initialService?.id || '');
   const [selectedPackageId, setSelectedPackageId] = useState(initialPackage?.id || '');
+  const [selectedRentalId, setSelectedRentalId] = useState(initialRentalItem?.id || '');
   const [eventDate, setEventDate] = useState('');
   const [alternateDate, setAlternateDate] = useState('');
   const [venueLocation, setVenueLocation] = useState('Colombo / Western Province');
@@ -56,6 +67,7 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
     if (initialService) {
       setSelectedServiceId(initialService.id);
       setSelectedPackageId('');
+      setSelectedRentalId('');
       if (initialService.id.includes('wedding')) setEventType('Wedding');
       else if (initialService.id.includes('birthday')) setEventType('Birthday');
       else if (initialService.id.includes('corporate')) setEventType('Corporate');
@@ -63,10 +75,18 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
     } else if (initialPackage) {
       setSelectedPackageId(initialPackage.id);
       setSelectedServiceId('');
+      setSelectedRentalId('');
       if (initialPackage.name.includes('Corporate')) setEventType('Corporate');
       else setEventType('Wedding');
+    } else if (initialRentalItem) {
+      setSelectedRentalId(initialRentalItem.id);
+      setSelectedServiceId('');
+      setSelectedPackageId('');
+      setSpecialRequirements(
+        `Rental Item: ${initialRentalItem.name} (${initialRentalItem.categoryLabel})\nRate: ${initialRentalItem.dailyRate} ${initialRentalItem.unit}\nEstimated Quantity: ${initialRentalItem.minOrderQuantity || 1} units`
+      );
     }
-  }, [initialService, initialPackage]);
+  }, [initialService, initialPackage, initialRentalItem]);
 
   if (!isOpen) return null;
 
@@ -220,18 +240,40 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
                     Interested Service / Package
                   </label>
                   <select
-                    value={selectedPackageId ? `pkg:${selectedPackageId}` : selectedServiceId ? `svc:${selectedServiceId}` : 'custom'}
+                    value={
+                      selectedPackageId
+                        ? `pkg:${selectedPackageId}`
+                        : selectedServiceId
+                        ? `svc:${selectedServiceId}`
+                        : selectedRentalId
+                        ? `rnt:${selectedRentalId}`
+                        : 'custom'
+                    }
                     onChange={(e) => {
                       const val = e.target.value;
                       if (val.startsWith('pkg:')) {
                         setSelectedPackageId(val.replace('pkg:', ''));
                         setSelectedServiceId('');
+                        setSelectedRentalId('');
                       } else if (val.startsWith('svc:')) {
                         setSelectedServiceId(val.replace('svc:', ''));
                         setSelectedPackageId('');
+                        setSelectedRentalId('');
+                      } else if (val.startsWith('rnt:')) {
+                        const rId = val.replace('rnt:', '');
+                        setSelectedRentalId(rId);
+                        setSelectedServiceId('');
+                        setSelectedPackageId('');
+                        const found = SWS_RENTAL_INVENTORY.find((r) => r.id === rId);
+                        if (found) {
+                          setSpecialRequirements(
+                            `Rental Item: ${found.name} (${found.categoryLabel})\nRate: ${found.dailyRate} ${found.unit}\nEstimated Quantity: ${found.minOrderQuantity || 1} units`
+                          );
+                        }
                       } else {
                         setSelectedServiceId('');
                         setSelectedPackageId('');
+                        setSelectedRentalId('');
                       }
                     }}
                     className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
@@ -243,14 +285,21 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
                         </option>
                       ))}
                     </optgroup>
-                    <optgroup label="Individual 13 Services">
+                    <optgroup label="Individual Core Services">
                       {SWS_SERVICES.map((s) => (
                         <option key={s.id} value={`svc:${s.id}`}>
                           {s.name} (from {s.startingPrice})
                         </option>
                       ))}
                     </optgroup>
-                    <option value="custom">Custom Multi-Service Scope</option>
+                    <optgroup label="Rental Equipment & Furniture">
+                      {SWS_RENTAL_INVENTORY.map((r) => (
+                        <option key={r.id} value={`rnt:${r.id}`}>
+                          {r.name} ({r.dailyRate} {r.unit})
+                        </option>
+                      ))}
+                    </optgroup>
+                    <option value="custom">Custom Multi-Service / Multi-Equipment Scope</option>
                   </select>
                 </div>
               </div>

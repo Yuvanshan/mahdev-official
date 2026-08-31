@@ -143,7 +143,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       name: compName,
       alternateName: compName,
       url: `https://${domain}`,
-      logo: siteSettings?.logoUrl || `https://${domain}/logo.png`,
+      logo: siteSettings?.logoUrl || companySettings?.logoUrl || `https://${domain}/logo.svg`,
       description: siteSettings?.metaDescription || companySettings?.description || 'Mahdev Pvt Ltd — Multi-sector corporate ecosystem.',
       email: companySettings?.email || 'info@mahdev.lk',
       telephone: [companySettings?.primaryPhone || '+94 77 000 0000', companySettings?.secondaryPhone].filter(Boolean),

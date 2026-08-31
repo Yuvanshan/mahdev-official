@@ -17,19 +17,37 @@ import { COMPANY_INFO } from '../../config/company';
 
 const CACHE_TTL_MS = 1000 * 60 * 15; // 15 minutes cache
 
-let cachedCompanySettings: { data: FirestoreCompanySettings; timestamp: number } | null = null;
-let cachedSiteSettings: { data: FirestoreSiteSettings; timestamp: number } | null = null;
+function getInitialCachedCompany(): { data: FirestoreCompanySettings; timestamp: number } | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem('mahdev_cached_company_settings');
+    if (raw) return { data: JSON.parse(raw), timestamp: Date.now() };
+  } catch {}
+  return null;
+}
+
+function getInitialCachedSite(): { data: FirestoreSiteSettings; timestamp: number } | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem('mahdev_cached_site_settings');
+    if (raw) return { data: JSON.parse(raw), timestamp: Date.now() };
+  } catch {}
+  return null;
+}
+
+let cachedCompanySettings: { data: FirestoreCompanySettings; timestamp: number } | null = getInitialCachedCompany();
+let cachedSiteSettings: { data: FirestoreSiteSettings; timestamp: number } | null = getInitialCachedSite();
 let cachedHomepageSettings: { data: HomepageCmsConfig; timestamp: number } | null = null;
 
 export function getDefaultHomepageSettings(): HomepageCmsConfig {
   return {
     hero: {
-      badgeText: 'CORPORATE SYNERGY • EST. 2018',
-      titleLine1: 'Engineering Next-Gen',
-      titleHighlight: 'Experiences & Technologies',
-      titleLine2: 'Across South Asia',
+      badgeText: 'CORPORATE SYNERGY • EST. 2022',
+      titleLine1: 'Creating Moments...',
+      titleHighlight: 'Capturing Memories...',
+      titleLine2: '& Delivering Innovation...',
       description:
-        'Mahdev Pvt Ltd is an integrated parent enterprise uniting hallmark event management, high-end cinema production, cloud software engineering, bespoke luxury travel, and professional tech procurement under a singular standard of perfection.',
+        'Mahdev Pvt Ltd is an integrated parent enterprise uniting luxury event and wedding decorations, fine-art photography and 8K cinema, scalable IT solutions, bespoke luxury travel, and verified tech commerce under a singular standard of perfection.',
       mediaType: 'image',
       mediaUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1920&q=85',
       primaryCtaLabel: 'Explore Ecosystem',
@@ -48,11 +66,11 @@ export function getDefaultHomepageSettings(): HomepageCmsConfig {
       headline: 'A Unified Ecosystem of Specialized Excellence',
       subheadline: 'Eliminating friction across multi-vendor logistics with a single trusted corporate partner.',
       description:
-        'Founded with a bold vision to elevate creative production, computational engineering, and luxury hospitality across Sri Lanka, Mahdev Pvt Ltd operates as an integrated group with five specialized divisions.',
+        'Founded with a bold vision to elevate creative event decorations, photographic mastery, IT engineering, and luxury hospitality across Sri Lanka, Mahdev Pvt Ltd operates as an integrated group with five specialized divisions.',
       pillars: [
-        { title: 'Turnkey Integration', desc: 'Seamless single-point coordination from stage setup to software and aerial VIP travel.', icon: 'Layers' },
-        { title: 'Enterprise Rigor', desc: 'ISO-aligned quality standards, calibrated hardware fleets, and SLA guarantees.', icon: 'ShieldCheck' },
-        { title: 'Bespoke Craftsmanship', desc: 'Tailored solutions whether engineering a custom wedding or building high-traffic cloud infrastructure.', icon: 'Sparkles' },
+        { title: 'Turnkey Integration', desc: 'Seamless single-point coordination from event decor to photography, software systems, and luxury travel.', icon: 'Layers' },
+        { title: 'Enterprise Rigor', desc: 'ISO-aligned quality standards, calibrated camera and stage gear, and enterprise SLA guarantees.', icon: 'ShieldCheck' },
+        { title: 'Bespoke Craftsmanship', desc: 'Tailored solutions whether styling an opulent wedding decor, capturing 8K cinema, or engineering cloud IT infrastructure.', icon: 'Sparkles' },
       ],
     },
     featuredServices: {
@@ -65,7 +83,7 @@ export function getDefaultHomepageSettings(): HomepageCmsConfig {
     featuredProducts: {
       badge: 'HARDWARE & COMMERCE',
       title: 'Enterprise Hardware & Procurement',
-      subtitle: 'Calibrated cinema cameras, high-output lighting, pro audio, and certified Ceylon goods.',
+      subtitle: 'Calibrated cinema cameras, high-output lighting, pro audio, and certified electronics.',
       selectedProductIds: ['prod-001', 'prod-002', 'prod-003', 'prod-004'],
       spotlightBannerText: 'Official Sony FX9, RED V-Raptor, and Sennheiser dealer in Sri Lanka.',
       enabled: true,
@@ -73,13 +91,13 @@ export function getDefaultHomepageSettings(): HomepageCmsConfig {
     portfolio: {
       badge: 'FEATURED WORK',
       title: 'Signature Portfolios & Case Studies',
-      subtitle: 'Explore our latest high-impact deliverables across music concerts, cinema films, and cloud software.',
+      subtitle: 'Explore our latest high-impact deliverables across luxury event decor, cinema photography, and scalable IT solutions.',
       selectedProjectIds: ['proj-1', 'proj-2', 'proj-3', 'proj-4'],
       enabled: true,
     },
     milestones: {
       badge: 'OUR TRAJECTORY',
-      title: 'Milestones of Excellence (2018 - Present)',
+      title: 'Milestones of Excellence (2022 - Present)',
       subtitle: 'Key historical chapters shaping the expansion of Mahdev Pvt Ltd.',
       enabled: true,
     },
@@ -109,7 +127,7 @@ export function getDefaultHomepageSettings(): HomepageCmsConfig {
     },
     seo: {
       pageTitle: 'Corporate Ecosystem | Mahdev Pvt Ltd',
-      metaDescription: 'Creating Moments. Capturing Memories. Delivering Innovation. Integrated enterprise spanning Event Management, Studio Cinema, IT & Cloud, Travels, and E-Commerce.',
+      metaDescription: 'Creating Moments... Capturing Memories... & Delivering Innovation... Integrated enterprise spanning Event Decorations & Management, Photography & Studio Cinema, IT Solutions & Software, Travels, and Online Mart.',
       ogImage: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
       canonicalUrl: 'https://mahdev.lk/',
     },
@@ -162,9 +180,10 @@ export function getDefaultSiteSettings(): FirestoreSiteSettings {
     tagline: COMPANY_INFO.tagline || 'Excellence Across Every Horizon',
     description: COMPANY_INFO.description || 'Premier South Asian enterprise uniting 5 specialized business divisions.',
     logoUrl: '',
+    darkLogoUrl: '',
     faviconUrl: '',
-    currencyCode: 'USD',
-    currencySymbol: '$',
+    currencyCode: 'LKR',
+    currencySymbol: 'Rs. ',
     phoneNumbers: [COMPANY_INFO.primaryPhone || '+94 77 000 0000', COMPANY_INFO.secondaryPhone || '+94 11 200 0000'].filter(Boolean),
     email: COMPANY_INFO.email || 'info@mahdev.lk',
     addresses: [
@@ -208,9 +227,9 @@ export function getDefaultSiteSettings(): FirestoreSiteSettings {
       text: 'Universal Enterprise Ecosystem Active • Colombo & Trincomalee Hotlines Online',
       link: '/contact',
     },
-    currency: 'USD',
-    defaultCurrency: 'USD',
-    supportedCurrencies: ['USD', 'LKR', 'EUR', 'GBP'],
+    currency: 'LKR',
+    defaultCurrency: 'LKR',
+    supportedCurrencies: ['LKR', 'USD', 'EUR', 'GBP'],
     taxRate: 0,
     vatTaxPercentage: 0,
     bookingDepositPercent: 30,
@@ -318,6 +337,11 @@ export const firestoreSettingsService = {
 
     // 1. Instant local and in-memory cache update
     cachedCompanySettings = { data: payload, timestamp: Date.now() };
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('mahdev_cached_company_settings', JSON.stringify(payload));
+      } catch {}
+    }
 
     // 2. Broadcast across tabs and window context immediately
     broadcastUpdate('company', payload);
@@ -373,6 +397,11 @@ export const firestoreSettingsService = {
         if (snap.exists()) {
           const data = snap.data() as FirestoreCompanySettings;
           cachedCompanySettings = { data, timestamp: Date.now() };
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('mahdev_cached_company_settings', JSON.stringify(data));
+            } catch {}
+          }
           onData(data);
         } else {
           onData(cachedCompanySettings?.data || getDefaultCompanySettings());
@@ -453,6 +482,11 @@ export const firestoreSettingsService = {
 
     // 1. Local cache update
     cachedSiteSettings = { data: payload, timestamp: Date.now() };
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('mahdev_cached_site_settings', JSON.stringify(payload));
+      } catch {}
+    }
 
     // 2. Broadcast across all active tabs
     broadcastUpdate('site', payload);
@@ -507,6 +541,11 @@ export const firestoreSettingsService = {
         if (snap.exists()) {
           const data = snap.data() as FirestoreSiteSettings;
           cachedSiteSettings = { data, timestamp: Date.now() };
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('mahdev_cached_site_settings', JSON.stringify(data));
+            } catch {}
+          }
           onData(data);
         } else {
           onData(cachedSiteSettings?.data || getDefaultSiteSettings());

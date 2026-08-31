@@ -29,7 +29,7 @@ const ADMIN_AUDIT_STORAGE_KEY = 'mahdev_admin_audit_logs_v1';
  */
 export async function syncAdminFirebaseAuth(adminUser: AdminUser): Promise<boolean> {
   try {
-    const email = (adminUser.email || 'admin@mahdev.lk').toLowerCase().trim();
+    const email = (adminUser.email || 'info.mahdev.lk@gmail.com').toLowerCase().trim();
     const defaultPassword = 'MahdevExecutive#2026';
 
     // If current firebase user already matches this admin email, refresh token and return
@@ -197,16 +197,18 @@ class AdminService {
       // Fallback for offline or static container execution
       const emailClean = (email || '').trim().toLowerCase();
       if (
+        emailClean === 'info.mahdev.lk@gmail.com' ||
         emailClean === 'admin@mahdev.lk' ||
         emailClean === 'yuvanshan875@gmail.com' ||
         emailClean.includes('admin') ||
         emailClean.includes('operations@mahdev.lk')
       ) {
+        const isSuperAdmin = !emailClean.includes('operations');
         const adminUser: AdminUser = {
-          id: emailClean === 'admin@mahdev.lk' ? 'ADM-ROOT-01' : 'ADM-OPS-02',
-          name: emailClean.includes('yuvanshan') || emailClean === 'admin@mahdev.lk' ? 'Yuvanshan Perera (Super Admin)' : 'Executive Operations Director',
-          email: emailClean,
-          role: emailClean.includes('operations') ? 'operations_admin' : 'super_admin',
+          id: isSuperAdmin ? 'ADM-ROOT-01' : 'ADM-OPS-02',
+          name: isSuperAdmin ? 'Yuvanshan Prabakaran' : 'Executive Operations Director',
+          email: isSuperAdmin ? 'info.mahdev.lk@gmail.com' : emailClean,
+          role: isSuperAdmin ? 'super_admin' : 'operations_admin',
           department: 'Executive Enterprise Operations & Digital Systems',
           divisionAccess: ['all'],
           avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
@@ -442,8 +444,8 @@ class AdminService {
       {
         id: 'AUD-2026-0001',
         timestamp: new Date().toISOString(),
-        adminEmail: 'admin@mahdev.lk',
-        adminName: 'Yuvanshan Perera (Super Admin)',
+        adminEmail: 'info.mahdev.lk@gmail.com',
+        adminName: 'Yuvanshan Prabakaran',
         action: 'SYSTEM_BOOTSTRAP',
         entityType: 'System',
         entityId: 'SYS-ROOT',
@@ -458,8 +460,8 @@ class AdminService {
     const newEntry: AuditLogEntry = {
       id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
       timestamp: new Date().toISOString(),
-      adminEmail: currentAdmin ? currentAdmin.email : 'admin@mahdev.lk',
-      adminName: currentAdmin ? currentAdmin.name : 'System Admin',
+      adminEmail: currentAdmin ? currentAdmin.email : 'info.mahdev.lk@gmail.com',
+      adminName: currentAdmin ? currentAdmin.name : 'Yuvanshan Prabakaran',
       ...entry,
     };
 
@@ -488,7 +490,13 @@ class AdminService {
     const stored = localStorage.getItem(key);
     if (stored) {
       try {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        // Ensure super admin displays as Yuvanshan Prabakaran
+        return parsed.map((u: AdminUser) =>
+          u.username === 'yuvanshan' || u.role === 'super_admin'
+            ? { ...u, name: 'Yuvanshan Prabakaran', email: 'info.mahdev.lk@gmail.com' }
+            : u
+        );
       } catch {}
     }
 
@@ -496,8 +504,8 @@ class AdminService {
       {
         id: 'ADM-ROOT-01',
         username: 'yuvanshan',
-        name: 'Yuvanshan Perera',
-        email: 'admin@mahdev.lk',
+        name: 'Yuvanshan Prabakaran',
+        email: 'info.mahdev.lk@gmail.com',
         role: 'super_admin',
         department: 'Executive Board',
         divisionAccess: ['all'],

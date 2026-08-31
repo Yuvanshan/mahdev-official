@@ -14,6 +14,9 @@ import { BRAND_CONFIG } from '../../config/brand';
 import { COMPANY_INFO, getTelLink, getMailtoLink, getMapSearchUrl } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { DIVISION_LIST } from '../../config/divisions';
+import { firestoreContactsService } from '../../services/firestore/contacts';
+import { notificationService } from '../../services/notificationService';
+import { analyticsService } from '../../services/analyticsService';
 
 interface CallToActionSectionProps {
   onExploreServices?: () => void;
@@ -54,11 +57,36 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.email || !formData.message) return;
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setSubmitted(true);
-    }, 600);
+
+    // Persist to Firestore and dispatch email to info.mahdev.lk@gmail.com
+    firestoreContactsService
+      .submitContact({
+        fullName: formData.name || 'Corporate Inquirer',
+        email: formData.email,
+        phone: formData.phone || '',
+        division: formData.division,
+        subject: `Direct Corporate Inquiry - ${formData.division.toUpperCase()}`,
+        message: formData.message,
+      })
+      .then(() => {
+        notificationService.notifyAdminContactInquiry({
+          name: formData.name || 'Corporate Inquirer',
+          email: formData.email,
+          subject: `Direct Corporate Inquiry - ${formData.division.toUpperCase()}`,
+          message: formData.message,
+        }).catch(() => {});
+
+        analyticsService.trackContactSubmitted(formData.division, 'Direct Corporate Inquiry');
+      })
+      .catch((err) => {
+        console.warn('[CTA Submit] Notice:', err);
+      })
+      .finally(() => {
+        setLoading(false);
+        setSubmitted(true);
+      });
   };
 
   return (

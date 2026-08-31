@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   CheckCircle2,
   Calendar,
@@ -11,7 +11,8 @@ import {
   Star,
   Info,
 } from 'lucide-react';
-import { SWS_PACKAGES, SWSPackage } from '../../data/swsData';
+import { SWSPackage } from '../../data/swsData';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
@@ -23,7 +24,41 @@ interface SWSPackagesSectionProps {
 }
 
 export const SWSPackagesSection: React.FC<SWSPackagesSectionProps> = ({ onBookPackage }) => {
+  const { services: rawServices } = useFirestoreDataContext();
   const [activeImageIndices, setActiveImageIndices] = useState<Record<string, number>>({});
+
+  const packages = useMemo<SWSPackage[]>(() => {
+    if (rawServices && rawServices.length > 0) {
+      const swsPackages = rawServices.filter(
+        (s) =>
+          (s.division === 'sws' || (s as any).divisionId === 'sws') &&
+          ((s as any).category === 'packages' || (s as any).type === 'package')
+      );
+      if (swsPackages.length > 0) {
+        return swsPackages.map((s) => ({
+          id: s.id,
+          name: s.name,
+          tier: (s as any).tier || 'Premium Suite',
+          tagline: (s as any).tagline || s.description?.slice(0, 60) || '',
+          price: typeof s.price === 'number' ? `$${s.price.toLocaleString()}` : String(s.price || ''),
+          priceSubtext: (s as any).priceNote || (s as any).priceSubtext || 'Turnkey rate',
+          guestEstimate: (s as any).guestRange || (s as any).guestEstimate || 'All scales',
+          idealFor: (s as any).idealFor || 'Corporate & Social Events',
+          availability: (s as any).availability || 'Available on request',
+          popular: !!(s as any).popular,
+          badge: s.badge || 'Package Suite',
+          description: s.description || '',
+          images: s.images && s.images.length > 0 ? s.images : [(s as any).imageUrl || ''],
+          includedServices: s.features || [],
+        }));
+      }
+    }
+    return [];
+  }, [rawServices]);
+
+  if (packages.length === 0) {
+    return null;
+  }
 
   const nextImage = (pkgId: string, max: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -58,7 +93,7 @@ export const SWSPackagesSection: React.FC<SWSPackagesSectionProps> = ({ onBookPa
 
       {/* Package Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-6">
-        {SWS_PACKAGES.map((pkg) => {
+        {packages.map((pkg) => {
           const currentIndex = activeImageIndices[pkg.id] || 0;
           const currentImage = pkg.images[currentIndex] || pkg.images[0];
 
@@ -206,7 +241,7 @@ export const SWSPackagesSection: React.FC<SWSPackagesSectionProps> = ({ onBookPa
         <Button
           variant="electric"
           size="lg"
-          onClick={() => onBookPackage(SWS_PACKAGES[1])}
+          onClick={() => onBookPackage(packages[0])}
           className="shrink-0 text-xs font-bold px-6"
         >
           Draft Custom Scope

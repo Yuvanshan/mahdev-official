@@ -58,16 +58,16 @@ export const SWSServicesSection: React.FC<SWSServicesSectionProps> = ({
         }));
       }
     }
-    return SWS_SERVICES;
+    return [];
   }, [rawServices]);
 
   const categories: { id: FilterCategory; label: string; count: number; icon: React.ReactNode }[] = [
     { id: 'all', label: `All ${allServices.length} Services`, count: allServices.length, icon: <Layers className="w-3.5 h-3.5" /> },
     { id: 'decor', label: 'Decorations & Theming', count: allServices.filter((s) => s.category === 'decor').length, icon: <Heart className="w-3.5 h-3.5" /> },
     { id: 'production', label: 'Stage & Production', count: allServices.filter((s) => s.category === 'production').length, icon: <Building2 className="w-3.5 h-3.5" /> },
+    { id: 'rentals', label: 'Equipment & Furniture Rentals', count: allServices.filter((s) => s.category === 'rentals').length, icon: <Layers className="w-3.5 h-3.5" /> },
     { id: 'media', label: 'Photo & Video', count: allServices.filter((s) => s.category === 'media').length, icon: <Camera className="w-3.5 h-3.5" /> },
     { id: 'hospitality', label: 'Buffet & Makeup', count: allServices.filter((s) => s.category === 'hospitality').length, icon: <Utensils className="w-3.5 h-3.5" /> },
-    { id: 'rentals', label: 'Furniture Rentals', count: allServices.filter((s) => s.category === 'rentals').length, icon: <Layers className="w-3.5 h-3.5" /> },
     { id: 'packages', label: 'Turnkey Packages', count: allServices.filter((s) => s.category === 'packages').length, icon: <Package className="w-3.5 h-3.5" /> },
   ];
 
@@ -87,7 +87,7 @@ export const SWSServicesSection: React.FC<SWSServicesSectionProps> = ({
         <div>
           <ScrollReveal direction="up">
             <Caption className="text-[#0052FF] mb-2 block">
-              13 Comprehensive Event Management Capabilities
+              {allServices.length} Comprehensive Event Management & Rental Capabilities
             </Caption>
             <H2 className="text-slate-900">
               End-to-End Production & Creative Services

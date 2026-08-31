@@ -248,43 +248,33 @@ export const FEATURED_WORK: FeaturedWorkItem[] = [
 
 export const COMPANY_MILESTONES: (MilestoneItem & { id: string; badge: string; keyOutcome: string })[] = [
   {
-    id: 'ms-2018',
-    year: '2018',
-    title: 'Founding & SWS Event Management Debut',
-    description: 'Mahdev established corporate headquarters in Colombo, launching SWS Event Management with a focus on luxury wedding productions and high-profile corporate galas.',
-    divisionId: 'sws',
-    badge: 'Inception',
-    keyOutcome: 'Established nationwide reputation for flawless event execution and sound engineering.',
-    highlight: false
-  },
-  {
-    id: 'ms-2020',
-    year: '2020',
-    title: 'U1 Studio Establishment',
-    description: 'Expanded creative capabilities with a dedicated visual production wing, investing in 8K cinematography, fine-art photography, and state-of-the-art editing suites.',
-    divisionId: 'u1',
-    badge: 'Creative Expansion',
-    keyOutcome: 'Delivered national brand commercials and acclaimed cultural photo documentaries.',
-    highlight: false
-  },
-  {
     id: 'ms-2022',
     year: '2022',
-    title: 'IT & Solutions Division Launch',
-    description: 'Recognizing the demand for robust software systems, Mahdev IT was formed to build mission-critical enterprise applications, cloud infrastructure, and automated portals.',
-    divisionId: 'it',
-    badge: 'Tech Engineering',
-    keyOutcome: 'Engineered high-scale digital platforms for leading Sri Lankan logistics and commercial enterprises.',
+    title: 'Founding & Core Trilateral Launch',
+    description: 'Mahdev established corporate headquarters in Colombo, launching SWS Event Management & Decorations, U1 Studio Photography & Cinema, and Mahdev IT Solutions as foundational pillars.',
+    divisionId: 'sws',
+    badge: 'Inception',
+    keyOutcome: 'Delivered 80+ luxury wedding decors, 8K photo/cinema projects, and enterprise cloud portals in year one.',
     highlight: true
+  },
+  {
+    id: 'ms-2023',
+    year: '2023',
+    title: '8K Cinema Rigs, Enterprise Software & Grand Stage Scale',
+    description: 'Expanded creative and engineering wings with licensed aerial drone fleets, studio color suites, and scalable enterprise SaaS portals.',
+    divisionId: 'u1',
+    badge: 'Creative & Tech Expansion',
+    keyOutcome: 'Produced national brand campaigns, high-scale wedding documentaries, and high-concurrency enterprise logistics software.',
+    highlight: false
   },
   {
     id: 'ms-2024',
     year: '2024',
-    title: 'Mahdev Travels & Online Mart Expansion',
-    description: 'Completed the foundational 5-division ecosystem by launching bespoke luxury travel curation and an authenticated tech hardware commerce storefront.',
+    title: 'Mahdev Travels & Online Mart Launch',
+    description: 'Completed the foundational 5-division ecosystem by launching bespoke luxury island expeditions and an authenticated tech hardware commerce storefront.',
     divisionId: 'travels',
     badge: 'Ecosystem Completion',
-    keyOutcome: 'Formed a unified multi-service ecosystem spanning lifestyle, digital, and logistics.',
+    keyOutcome: 'Formed a unified multi-service ecosystem spanning creative decorations, photography, digital engineering, luxury travel, and verified commerce.',
     highlight: false
   },
   {

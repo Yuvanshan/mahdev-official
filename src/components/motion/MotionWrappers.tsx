@@ -147,9 +147,9 @@ export const ScaleIn: React.FC<BaseMotionProps> = ({
 export const ScrollReveal: React.FC<SlideInProps> = ({
   children,
   direction = 'up',
-  distance = 24,
+  distance = 20,
   delay = 0,
-  duration = 0.5,
+  duration = 0.45,
   className = '',
   ...props
 }) => {
@@ -176,7 +176,7 @@ export const ScrollReveal: React.FC<SlideInProps> = ({
     <motion.div
       initial={{ opacity: 0, ...getInitialOffset() }}
       whileInView={{ opacity: 1, x: 0, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
+      viewport={{ once: true, amount: 'some' }}
       transition={{ duration, delay, ease: [0.16, 1, 0.3, 1] }}
       className={`w-full max-w-full min-w-0 ${className}`}
       {...props}

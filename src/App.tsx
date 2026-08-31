@@ -13,75 +13,89 @@ import { AdminAuthProvider } from './context/AdminAuthContext';
 import { FirestoreDataProvider, useFirestoreDataContext } from './context/FirestoreDataContext';
 import { CartDrawer } from './components/cart/CartDrawer';
 import { AnnouncementBanner } from './components/layout/AnnouncementBanner';
-import { AppBootLoader } from './components/ui/AppBootLoader';
+import { BottomNavigation } from './components/layout/BottomNavigation';
 import { testFirestoreConnection, initAppCheck } from './lib/firebase';
 import { analyticsService } from './services/analyticsService';
 import { catalogService } from './services/catalogService';
 import { motion, AnimatePresence } from 'motion/react';
 
-// Dynamic Code Splitting for Secondary Views with Resilient Export Fallbacks
-const DivisionView: React.ComponentType<any> = lazy(() => import('./views/DivisionView').then(m => ({ default: (m as any).default || m.DivisionView })));
-const SWSView: React.ComponentType<any> = lazy(() => import('./views/SWSView').then(m => ({ default: (m as any).default || m.SWSView })));
-const U1View: React.ComponentType<any> = lazy(() => import('./views/U1View').then(m => ({ default: (m as any).default || m.U1View })));
-const ITView: React.ComponentType<any> = lazy(() => import('./views/ITView').then(m => ({ default: (m as any).default || m.ITView })));
-const TravelsView: React.ComponentType<any> = lazy(() => import('./views/TravelsView').then(m => ({ default: (m as any).default || m.TravelsView })));
-const MartView: React.ComponentType<any> = lazy(() => import('./views/MartView').then(m => ({ default: (m as any).default || m.MartView })));
-const CatalogView: React.ComponentType<any> = lazy(() => import('./views/CatalogView').then(m => ({ default: (m as any).default || m.CatalogView })));
-const BookingView: React.ComponentType<any> = lazy(() => import('./views/BookingView').then(m => ({ default: (m as any).default || m.BookingView })));
-const CheckoutView: React.ComponentType<any> = lazy(() => import('./views/CheckoutView').then(m => ({ default: (m as any).default || m.CheckoutView })));
-const OrderConfirmationView: React.ComponentType<any> = lazy(() => import('./views/OrderConfirmationView').then(m => ({ default: (m as any).default || m.OrderConfirmationView })));
-const OrderLookupView: React.ComponentType<any> = lazy(() => import('./views/OrderLookupView').then(m => ({ default: (m as any).default || m.OrderLookupView })));
-const AboutView: React.ComponentType<any> = lazy(() => import('./views/AboutView').then(m => ({ default: (m as any).default || m.AboutView })));
-const PortfolioView: React.ComponentType<any> = lazy(() => import('./views/PortfolioView').then(m => ({ default: (m as any).default || m.PortfolioView })));
-const ContactView: React.ComponentType<any> = lazy(() => import('./views/ContactView').then(m => ({ default: (m as any).default || m.ContactView })));
-const LegalPageView: React.ComponentType<any> = lazy(() => import('./views/LegalPageView').then(m => ({ default: (m as any).default || m.LegalPageView })));
-const NotFoundView: React.ComponentType<any> = lazy(() => import('./views/NotFoundView').then(m => ({ default: (m as any).default || m.NotFoundView })));
-const LoginView: React.ComponentType<any> = lazy(() => import('./views/auth/LoginView').then(m => ({ default: (m as any).default || m.LoginView })));
-const RegisterView: React.ComponentType<any> = lazy(() => import('./views/auth/RegisterView').then(m => ({ default: (m as any).default || m.RegisterView })));
-const ForgotPasswordView: React.ComponentType<any> = lazy(() => import('./views/auth/ForgotPasswordView').then(m => ({ default: (m as any).default || m.ForgotPasswordView })));
-const AccountLayout: React.ComponentType<any> = lazy(() => import('./views/account/AccountLayout').then(m => ({ default: (m as any).default || m.AccountLayout })));
-const AdminLayout: React.ComponentType<any> = lazy(() => import('./views/admin/AdminLayout').then(m => ({ default: (m as any).default || m.AdminLayout })));
-const MaintenanceView: React.ComponentType<any> = lazy(() => import('./views/MaintenanceView').then(m => ({ default: (m as any).default || m.MaintenanceView })));
+import { DivisionView } from './views/DivisionView';
+import { SWSView } from './views/SWSView';
+import { U1View } from './views/U1View';
+import { ITView } from './views/ITView';
+import { TravelsView } from './views/TravelsView';
+import { MartView } from './views/MartView';
+import { CatalogView } from './views/CatalogView';
+import { BookingView } from './views/BookingView';
+import { CheckoutView } from './views/CheckoutView';
+import { OrderConfirmationView } from './views/OrderConfirmationView';
+import { OrderLookupView } from './views/OrderLookupView';
+import { AboutView } from './views/AboutView';
+import { PortfolioView } from './views/PortfolioView';
+import { ContactView } from './views/ContactView';
+import { ServicesView } from './views/ServicesView';
+import { ClientsView } from './views/ClientsView';
+import { MilestonesView } from './views/MilestonesView';
+import { DivisionsPageView } from './views/DivisionsPageView';
+import { TestimonialsView } from './views/TestimonialsView';
+import { CareersView } from './views/CareersView';
+import { LegalPageView } from './views/LegalPageView';
+import { NotFoundView } from './views/NotFoundView';
+import { LoginView } from './views/auth/LoginView';
+import { RegisterView } from './views/auth/RegisterView';
+import { ForgotPasswordView } from './views/auth/ForgotPasswordView';
+import { AccountLayout } from './views/account/AccountLayout';
+import { AdminLayout } from './views/admin/AdminLayout';
+import { MaintenanceView } from './views/MaintenanceView';
+import { InitialAppLoader } from './components/common/InitialAppLoader';
 
-const PageLoadingFallback: React.FC = () => (
-  <div className="min-h-[50vh] flex flex-col items-center justify-center py-20 px-4">
-    <div className="relative w-10 h-10 mb-4">
-      <div className="w-10 h-10 rounded-full border-2 border-blue-100 border-t-[#0052FF] animate-spin" />
-    </div>
-    <p className="text-xs font-mono text-slate-400">Loading experience...</p>
-  </div>
-);
+const PageLoadingFallback: React.FC = () => null;
 
 function AppContent() {
-  const { siteSettings, isInitialLoading, error, refreshAll, products, services, divisions } =
-    useFirestoreDataContext();
+  const {
+    siteSettings,
+    companySettings,
+    isInitialLoading,
+    isReady,
+    error,
+    refreshAll,
+    products,
+    services,
+    divisions,
+  } = useFirestoreDataContext();
   const [currentPath, setCurrentPath] = useState<string>(() => {
     return window.location.pathname || '/';
   });
 
   // Dynamic favicon and document title synchronization from Firestore
   useEffect(() => {
-    if (siteSettings?.siteName) {
-      if (!document.title.includes(siteSettings.siteName)) {
-        document.title = `${siteSettings.siteName} | Enterprise Ecosystem`;
-      }
+    const brandName = companySettings?.name || siteSettings?.siteName || 'Mahdev';
+    if (brandName && !document.title.includes(brandName)) {
+      document.title = `${brandName} | Enterprise Ecosystem`;
     }
 
-    if (siteSettings?.faviconUrl) {
-      let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+    const uploadedFavicon = siteSettings?.faviconUrl || companySettings?.faviconUrl;
+    const effectiveFavicon =
+      uploadedFavicon && uploadedFavicon.trim() !== ''
+        ? uploadedFavicon
+        : 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="%230052FF"/><text x="50%" y="55%" dominant-baseline="central" text-anchor="middle" fill="white" font-family="sans-serif" font-weight="900" font-size="18">M</text></svg>';
+
+    const rels = ['icon', 'shortcut icon', 'apple-touch-icon'];
+    rels.forEach((rel) => {
+      let link: HTMLLinkElement | null = document.querySelector(`link[rel='${rel}']`);
       if (!link) {
         link = document.createElement('link');
-        link.rel = 'icon';
+        link.rel = rel;
         document.head.appendChild(link);
       }
-      link.href = siteSettings.faviconUrl;
-
-      let appleLink: HTMLLinkElement | null = document.querySelector("link[rel='apple-touch-icon']");
-      if (appleLink) {
-        appleLink.href = siteSettings.faviconUrl;
-      }
-    }
-  }, [siteSettings?.faviconUrl, siteSettings?.siteName]);
+      link.href = effectiveFavicon;
+    });
+  }, [
+    siteSettings?.faviconUrl,
+    companySettings?.faviconUrl,
+    siteSettings?.siteName,
+    companySettings?.name,
+  ]);
 
   // Verify Cloud Firestore connectivity and App Check on boot
   useEffect(() => {
@@ -147,12 +161,7 @@ function AppContent() {
     }
   }, [normalizedPath, divisionKey]);
 
-  // 1. Firestore Error Protection Screen
-  if (error && !isAdminRoute) {
-    return <AppBootLoader error={error} onRetry={refreshAll} />;
-  }
-
-  // 2. Maintenance Mode Screen: Live Firestore switch
+  // 1. Maintenance Mode Screen: Live Firestore switch
   const isMaintenanceActive = Boolean(
     siteSettings?.maintenance?.enabled ??
       siteSettings?.maintenanceMode ??
@@ -166,6 +175,16 @@ function AppContent() {
   // Admin routes handle their own layout & auth flow
   if (isAdminRoute) {
     return <AdminLayout currentPath={normalizedPath} onNavigate={navigate} />;
+  }
+
+  // 2. Initial Data Hydration Loader for public pages (prevents flash of empty/default data)
+  if (isInitialLoading && !isReady) {
+    return (
+      <InitialAppLoader
+        message="Welcome to Mahdev"
+        subMessage="Retrieving live corporate records, services & product catalog from Cloud Firestore..."
+      />
+    );
   }
 
   // Determine if it's a legal page
@@ -598,10 +617,29 @@ function AppContent() {
     switch (normalizedPath) {
       case '/':
         return <HomeView onNavigate={navigate} />;
+      case '/divisions':
+        return <DivisionsPageView onNavigate={navigate} />;
+      case '/services':
+      case '/featured-services':
+        return <ServicesView onNavigate={navigate} />;
       case '/about':
         return <AboutView onNavigate={navigate} />;
+      case '/projects':
       case '/portfolio':
         return <PortfolioView onNavigate={navigate} />;
+      case '/milestones':
+      case '/journey':
+        return <MilestonesView onNavigate={navigate} />;
+      case '/testimonials':
+      case '/reviews':
+        return <TestimonialsView onNavigate={navigate} />;
+      case '/careers':
+      case '/jobs':
+        return <CareersView onNavigate={navigate} />;
+      case '/clients':
+      case '/partners':
+      case '/companies':
+        return <ClientsView onNavigate={navigate} />;
       case '/contact':
         return <ContactView onNavigate={navigate} />;
       default:
@@ -640,6 +678,9 @@ function AppContent() {
           </motion.div>
         </AnimatePresence>
       </main>
+
+      {/* Mobile Ergonomic Bottom Navigation Bar */}
+      <BottomNavigation currentPath={normalizedPath} onNavigate={navigate} />
 
       {/* Reusable Global Footer */}
       <Footer onNavigate={navigate} />

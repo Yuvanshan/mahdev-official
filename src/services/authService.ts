@@ -24,98 +24,8 @@ import { Booking } from '../types/booking';
 const SESSION_STORAGE_KEY = 'mahdev_customer_session_v1';
 const ACCOUNTS_STORAGE_KEY = 'mahdev_customer_accounts_v1';
 
-// Initial pre-seeded demo accounts
-const INITIAL_DEMO_ACCOUNTS: CustomerUser[] = [
-  {
-    id: 'CUST-2026-8821',
-    uid: 'demo-user-yuvanshan',
-    fullName: 'Yuvanshan Perera',
-    email: 'yuvanshan875@gmail.com',
-    phone: '+94 77 912 3456',
-    company: 'Ceylon Horizon Ventures PLC',
-    accountType: 'corporate',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-    role: 'customer',
-    corporateTier: 'Enterprise VIP',
-    address: {
-      street: '42 Gregory Road',
-      apartment: 'Suite 8B, Tower One',
-      city: 'Colombo',
-      state: 'Western Province',
-      postalCode: '00700',
-      country: 'Sri Lanka',
-    },
-    preferences: {
-      currency: 'USD',
-      preferredContactMethod: 'whatsapp',
-      orderNotifications: true,
-      promotionalUpdates: true,
-      smsAlerts: true,
-      twoFactorEnabled: true,
-    },
-    createdAt: '2026-01-15T08:00:00.000Z',
-    lastLogin: '2026-08-18T00:30:00.000Z',
-  },
-  {
-    id: 'CUST-2026-3910',
-    uid: 'demo-user-ruwan',
-    fullName: 'Dr. Ruwan Wickremasinghe',
-    email: 'ruwan.wick@ceyloncorp.lk',
-    phone: '+94 71 889 0012',
-    company: 'Wickremasinghe Tech & Trading Ltd',
-    accountType: 'corporate',
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-    role: 'corporate_partner',
-    corporateTier: 'Platinum',
-    address: {
-      street: '15/2 Alfred House Gardens',
-      apartment: 'Penthouse A',
-      city: 'Colombo',
-      state: 'Western Province',
-      postalCode: '00300',
-      country: 'Sri Lanka',
-    },
-    preferences: {
-      currency: 'USD',
-      preferredContactMethod: 'email',
-      orderNotifications: true,
-      promotionalUpdates: false,
-      smsAlerts: true,
-      twoFactorEnabled: false,
-    },
-    createdAt: '2026-02-01T10:15:00.000Z',
-    lastLogin: '2026-08-17T18:45:00.000Z',
-  },
-  {
-    id: 'CUST-2026-1088',
-    uid: 'demo-user-elena',
-    fullName: 'Elena Rostova',
-    email: 'elena.rostova@creative.co',
-    phone: '+44 7911 123456',
-    company: 'Lumière International Studios',
-    accountType: 'individual',
-    avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
-    role: 'customer',
-    corporateTier: 'Gold',
-    address: {
-      street: '77 Kensington High Street',
-      city: 'London',
-      state: 'Greater London',
-      postalCode: 'W8 5SF',
-      country: 'United Kingdom',
-    },
-    preferences: {
-      currency: 'USD',
-      preferredContactMethod: 'email',
-      orderNotifications: true,
-      promotionalUpdates: true,
-      smsAlerts: false,
-      twoFactorEnabled: true,
-    },
-    createdAt: '2026-03-10T14:20:00.000Z',
-    lastLogin: '2026-08-16T12:10:00.000Z',
-  },
-];
+// Initial pre-seeded accounts - strictly real, no fake placeholder customers
+const INITIAL_DEMO_ACCOUNTS: CustomerUser[] = [];
 
 type AuthListener = (user: CustomerUser | null) => void;
 
@@ -131,30 +41,56 @@ class AuthService {
   }
 
   private init() {
-    // Load local accounts
+    // Load local accounts and purge any legacy fake customer data
     try {
       const stored = localStorage.getItem(ACCOUNTS_STORAGE_KEY);
       if (stored) {
-        this.accounts = JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          // Filter out legacy fake demo accounts
+          this.accounts = parsed.filter(
+            (a: any) =>
+              a.id !== 'CUST-2026-3910' &&
+              a.id !== 'CUST-2026-1088' &&
+              a.uid !== 'demo-user-ruwan' &&
+              a.uid !== 'demo-user-elena' &&
+              !a.email?.includes('ruwan.wick') &&
+              !a.email?.includes('elena.rostova') &&
+              !a.email?.includes('creative.co') &&
+              !a.email?.includes('ceyloncorp.lk')
+          );
+          this.saveAccounts();
+        } else {
+          this.accounts = [];
+        }
       } else {
-        this.accounts = [...INITIAL_DEMO_ACCOUNTS];
-        this.saveAccounts();
+        this.accounts = [];
       }
     } catch {
-      this.accounts = [...INITIAL_DEMO_ACCOUNTS];
+      this.accounts = [];
     }
 
-    // Load active local session
+    // Load active local session and ensure no fake customer remains
     try {
       const activeSession = localStorage.getItem(SESSION_STORAGE_KEY);
       if (activeSession) {
-        this.currentUser = JSON.parse(activeSession);
+        const parsed = JSON.parse(activeSession);
+        if (
+          parsed.uid === 'demo-user-ruwan' ||
+          parsed.uid === 'demo-user-elena' ||
+          parsed.email?.includes('ruwan.wick') ||
+          parsed.email?.includes('elena.rostova')
+        ) {
+          this.currentUser = null;
+          localStorage.removeItem(SESSION_STORAGE_KEY);
+        } else {
+          this.currentUser = parsed;
+        }
       } else {
-        this.currentUser = this.accounts[0];
-        this.saveSession();
+        this.currentUser = this.accounts[0] || null;
       }
     } catch {
-      this.currentUser = this.accounts[0];
+      this.currentUser = null;
     }
   }
 

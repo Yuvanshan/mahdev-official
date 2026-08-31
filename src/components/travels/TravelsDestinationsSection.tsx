@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   MapPin,
   Calendar,
@@ -7,7 +7,8 @@ import {
   ChevronRight,
   CheckCircle2,
 } from 'lucide-react';
-import { TRAVEL_DESTINATIONS, TravelDestination } from '../../data/travelsData';
+import { TravelDestination } from '../../data/travelsData';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
@@ -20,8 +21,38 @@ interface TravelsDestinationsSectionProps {
 export const TravelsDestinationsSection: React.FC<TravelsDestinationsSectionProps> = ({
   onPlanTripForDestination,
 }) => {
-  const [activeDestId, setActiveDestId] = useState(TRAVEL_DESTINATIONS[0].id);
-  const activeDest = TRAVEL_DESTINATIONS.find((d) => d.id === activeDestId) || TRAVEL_DESTINATIONS[0];
+  const { services: rawServices, portfolio: rawPortfolio } = useFirestoreDataContext();
+  const [activeDestId, setActiveDestId] = useState<string | null>(null);
+
+  const destinations = useMemo<TravelDestination[]>(() => {
+    const list: TravelDestination[] = [];
+    if (rawPortfolio && rawPortfolio.length > 0) {
+      const travelPort = rawPortfolio.filter(
+        (p) => p.division === 'travels' || (p as any).divisionId === 'travels'
+      );
+      travelPort.forEach((p) => {
+        list.push({
+          id: p.id,
+          name: p.title,
+          region: (p as any).region || (p as any).location || 'Sri Lanka',
+          bestTimeToVisit: (p as any).bestTimeToVisit || 'Year-round',
+          recommendedDays: (p as any).recommendedDays || '2-3 Days',
+          tagline: (p as any).tagline || p.description?.slice(0, 60) || '',
+          description: p.description || '',
+          imageUrl: p.images && p.images.length > 0 ? p.images[0] : (p as any).imageUrl || '',
+          gallery: p.images || [],
+          highlights: (p as any).highlights || p.tags || ['Iconic Destination'],
+        });
+      });
+    }
+    return list;
+  }, [rawPortfolio, rawServices]);
+
+  if (destinations.length === 0) {
+    return null;
+  }
+
+  const activeDest = destinations.find((d) => d.id === activeDestId) || destinations[0];
 
   return (
     <SectionContainer id="destinations" background="white" paddingY="xl" hasBorderBottom>
@@ -42,10 +73,10 @@ export const TravelsDestinationsSection: React.FC<TravelsDestinationsSectionProp
 
       {/* Destination Grid with Interactive Visual Spotlight */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: List of 6 Destinations */}
+        {/* Left Column: List of Destinations */}
         <div className="lg:col-span-5 space-y-3">
-          {TRAVEL_DESTINATIONS.map((dest) => {
-            const isSelected = dest.id === activeDestId;
+          {destinations.map((dest) => {
+            const isSelected = dest.id === activeDest.id;
             return (
               <div
                 key={dest.id}

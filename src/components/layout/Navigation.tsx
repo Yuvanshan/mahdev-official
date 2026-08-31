@@ -165,7 +165,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
             {/* Middle: Desktop Navigation Links */}
             <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
               {MAIN_NAV_ITEMS.map((item) => {
-                if (item.id === 'services') {
+                if (item.id === 'services' || item.id === 'divisions' || item.children) {
                   return (
                     <div
                       key={item.id}
@@ -182,7 +182,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                         }`}
                         aria-expanded={isServicesOpen}
                       >
-                        <span>Services & Divisions</span>
+                        <span>Divisions</span>
                         <ChevronDown
                           className={`w-4 h-4 transition-transform duration-200 ${
                             isServicesOpen ? 'rotate-180 text-[#0052FF]' : 'text-slate-400'
@@ -209,19 +209,26 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                               >
                                 <div className="flex items-center gap-2.5">
                                   <div
-                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0"
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 shadow-xs"
                                     style={{ backgroundColor: division.accentColor }}
                                   >
                                     <IconRenderer name={division.iconName} className="w-4 h-4" />
                                   </div>
                                   <div>
-                                    <div className="text-sm font-semibold">{division.name}</div>
+                                    <div className="text-sm font-semibold flex items-center gap-1.5">
+                                      <span>{division.name}</span>
+                                      {division.isPrimary && (
+                                        <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                                          PRIMARY
+                                        </span>
+                                      )}
+                                    </div>
                                     <div className="text-xs text-slate-500 line-clamp-1">
                                       {division.tagline}
                                     </div>
                                   </div>
                                 </div>
-                                <Badge size="sm" variant="default">
+                                <Badge size="sm" variant={division.isPrimary ? 'electric' : 'default'}>
                                   {division.badge}
                                 </Badge>
                               </button>
@@ -467,8 +474,15 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                   <div className="flex items-center gap-2.5 min-w-0">
                     <IconRenderer name={division.iconName} className="w-4 h-4 text-[#0052FF] shrink-0" />
                     <span className="truncate">{division.name}</span>
+                    {division.isPrimary && (
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 shrink-0">
+                        PRIMARY
+                      </span>
+                    )}
                   </div>
-                  <Badge size="sm" variant="default" className="shrink-0">{division.badge}</Badge>
+                  <Badge size="sm" variant={division.isPrimary ? 'electric' : 'default'} className="shrink-0">
+                    {division.badge}
+                  </Badge>
                 </button>
               ))}
             </div>

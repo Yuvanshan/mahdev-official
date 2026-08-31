@@ -545,22 +545,38 @@ export interface FirestoreTestimonial {
   id: string;
   customerName?: string;
   author?: string; // backwards compatibility
+  authorName?: string;
   role?: string;
   company?: string;
   message?: string;
   quote?: string; // backwards compatibility
+  text?: string;
   rating: number;
   imageUrl?: string;
   avatarUrl?: string; // backwards compatibility
   photoUrl?: string;
+  authorPhotoUrl?: string;
+  authorUrl?: string;
   avatarInitials?: string;
   verified?: boolean;
   division?: string;
   divisionId?: string;
   divisionName?: string;
   isPublished?: boolean;
+  isFeatured?: boolean;
+  isHidden?: boolean; // admin hide toggle without altering Google review
   order?: number;
   status?: 'approved' | 'pending' | 'archived' | string;
+  
+  // Google Reviews specific attributes
+  source?: 'google' | 'direct' | 'verified_partner';
+  sourceBadge?: string;
+  googleReviewId?: string;
+  placeId?: string;
+  relativePublishTimeDescription?: string;
+  publishTime?: string;
+  date?: string;
+
   createdAt?: string;
   updatedAt?: string;
 }

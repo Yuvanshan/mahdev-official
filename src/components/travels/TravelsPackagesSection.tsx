@@ -65,8 +65,12 @@ export const TravelsPackagesSection: React.FC<TravelsPackagesSectionProps> = ({
         }));
       }
     }
-    return TRAVEL_PACKAGES;
+    return [];
   }, [rawServices]);
+
+  if (packages.length === 0) {
+    return null;
+  }
 
   return (
     <SectionContainer id="packages" background="subtle" paddingY="xl" hasBorderBottom>

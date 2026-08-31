@@ -30,10 +30,10 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
               A Forward-Looking Enterprise Driven By Purpose & Precision
             </H2>
             <Body className="text-slate-600 text-base leading-relaxed">
-              Mahdev Pvt Ltd is a dynamic holding company headquartered in Colombo, Sri Lanka. Founded with a vision to integrate artistic craftsmanship with advanced engineering, we operate across five core industry pillars.
+              Mahdev Pvt Ltd is a dynamic holding company headquartered in Colombo, Sri Lanka. Founded in 2022 with a vision to unite luxury event decorations, photographic mastery, and scalable IT solutions under one roof, we operate across five core industry pillars.
             </Body>
             <Body className="text-slate-600 text-base leading-relaxed">
-              Our philosophy combines bold innovation with institutional reliability. Whether producing nationwide cultural events, capturing life milestones in cinema format, architecting cloud solutions, curating island-wide journeys, or supplying modern tech gear—we deliver exceptional value.
+              Our philosophy combines bold artistic innovation with institutional reliability. Whether designing luxury wedding decor, capturing life milestones in 8K cinema, architecting cloud IT platforms, curating island-wide journeys, or supplying modern tech gear—we deliver exceptional value.
             </Body>
 
             {/* Core Values / Mission Pillars */}
@@ -103,7 +103,7 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
                     Founded & Incorporated
                   </h4>
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    Over 8 years of operational excellence, steady scaling, and sustainable multi-sector growth.
+                    Over 4 years of operational excellence, steady scaling, and sustainable multi-sector growth.
                   </p>
                 </div>
                 <div className="mt-4 pt-3 border-t border-slate-200 text-xs font-semibold text-slate-500">

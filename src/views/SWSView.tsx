@@ -13,6 +13,7 @@ import {
 import { SEOHead } from '../components/layout/SEOHead';
 import { SWSHeroSection } from '../components/sws/SWSHeroSection';
 import { SWSServicesSection } from '../components/sws/SWSServicesSection';
+import { SWSRentalsSection } from '../components/sws/SWSRentalsSection';
 import { SWSPackagesSection } from '../components/sws/SWSPackagesSection';
 import { SWSGallerySection } from '../components/sws/SWSGallerySection';
 import { SWSPortfolioSection } from '../components/sws/SWSPortfolioSection';
@@ -22,7 +23,7 @@ import { SectionContainer } from '../components/ui/SectionContainer';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { IconRenderer } from '../components/ui/IconRenderer';
-import { SWSService, SWSPackage } from '../data/swsData';
+import { SWSService, SWSPackage, SWSRentalItem } from '../data/swsData';
 import { DIVISION_LIST } from '../config/divisions';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 
@@ -35,16 +36,35 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
   const [isQuoteMode, setIsQuoteMode] = useState(false);
   const [activeServiceForBooking, setActiveServiceForBooking] = useState<SWSService | null>(null);
   const [activePackageForBooking, setActivePackageForBooking] = useState<SWSPackage | null>(null);
+  const [activeRentalForBooking, setActiveRentalForBooking] = useState<SWSRentalItem | null>(null);
 
   const handleBookNow = (service?: SWSService) => {
     setActiveServiceForBooking(service || null);
     setActivePackageForBooking(null);
+    setActiveRentalForBooking(null);
     setIsQuoteMode(false);
     setBookingModalOpen(true);
   };
 
   const handleRequestQuote = (service?: SWSService) => {
     setActiveServiceForBooking(service || null);
+    setActivePackageForBooking(null);
+    setActiveRentalForBooking(null);
+    setIsQuoteMode(true);
+    setBookingModalOpen(true);
+  };
+
+  const handleBookRental = (rentalItem?: SWSRentalItem) => {
+    setActiveRentalForBooking(rentalItem || null);
+    setActiveServiceForBooking(null);
+    setActivePackageForBooking(null);
+    setIsQuoteMode(false);
+    setBookingModalOpen(true);
+  };
+
+  const handleRequestRentalQuote = (rentalItem?: SWSRentalItem) => {
+    setActiveRentalForBooking(rentalItem || null);
+    setActiveServiceForBooking(null);
     setActivePackageForBooking(null);
     setIsQuoteMode(true);
     setBookingModalOpen(true);
@@ -53,6 +73,7 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
   const handleBookPackage = (pkg: SWSPackage) => {
     setActivePackageForBooking(pkg);
     setActiveServiceForBooking(null);
+    setActiveRentalForBooking(null);
     setIsQuoteMode(false);
     setBookingModalOpen(true);
   };
@@ -69,8 +90,8 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
   return (
     <div className="w-full flex flex-col">
       <SEOHead
-        title="SWS Event Management | Luxury Weddings, Decor & Stage Productions"
-        description="SWS Event Management by Mahdev Pvt Ltd. Comprehensive event design, wedding decorations, corporate summits, stage engineering, photography, catering, and complete packages in Sri Lanka."
+        title="SWS Event Management | Luxury Weddings, Decor, Stage Productions & Equipment Rentals"
+        description="SWS Event Management by Mahdev Pvt Ltd (Est. 2022). Comprehensive event design, wedding decorations, corporate summits, stage engineering, 5,000+ rental inventory units, photography, catering, and complete packages in Sri Lanka."
         canonicalUrl="https://mahdev.lk/sws"
       />
 
@@ -93,7 +114,13 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
                 onClick={() => scrollToAnchor('services')}
                 className="hover:text-[#0052FF] transition-colors cursor-pointer"
               >
-                13 Core Services
+                Services
+              </button>
+              <button
+                onClick={() => scrollToAnchor('rentals')}
+                className="hover:text-[#0052FF] transition-colors cursor-pointer text-blue-600 font-bold"
+              >
+                Rentals & Equipment (5,000+)
               </button>
               <button
                 onClick={() => scrollToAnchor('packages')}
@@ -142,27 +169,34 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
         onBookNow={() => handleBookNow()}
         onRequestQuote={() => handleRequestQuote()}
         onExploreServices={() => scrollToAnchor('services')}
+        onExploreRentals={() => scrollToAnchor('rentals')}
       />
 
-      {/* 2. ALL 13 SERVICES SHOWCASE WITH VIEW DETAILS / BOOK NOW / REQUEST QUOTE */}
+      {/* 2. ALL SERVICES SHOWCASE WITH VIEW DETAILS / BOOK NOW / REQUEST QUOTE */}
       <SWSServicesSection
         onBookNow={handleBookNow}
         onRequestQuote={handleRequestQuote}
       />
 
-      {/* 3. TURNKEY PACKAGES SECTION */}
+      {/* 3. EVENT FURNITURE, STAGING & AV RENTALS INVENTORY SECTION */}
+      <SWSRentalsSection
+        onBookRental={handleBookRental}
+        onRequestQuote={handleRequestRentalQuote}
+      />
+
+      {/* 4. TURNKEY PACKAGES SECTION */}
       <SWSPackagesSection onBookPackage={handleBookPackage} />
 
-      {/* 4. CINEMATIC GALLERY WITH CATEGORY TABS & LIGHTBOX */}
+      {/* 5. CINEMATIC GALLERY WITH CATEGORY TABS & LIGHTBOX */}
       <SWSGallerySection />
 
-      {/* 5. EVENT PORTFOLIO & REAL CASE STUDIES */}
+      {/* 6. EVENT PORTFOLIO & REAL CASE STUDIES */}
       <SWSPortfolioSection onConsultationClick={() => handleBookNow()} />
 
-      {/* 6. 4-STEP EVENT ORCHESTRATION PROCESS */}
+      {/* 7. 4-STEP EVENT ORCHESTRATION PROCESS */}
       <SWSProcessSection />
 
-      {/* 7. CROSS-ECOSYSTEM SISTER DIVISIONS */}
+      {/* 8. CROSS-ECOSYSTEM SISTER DIVISIONS */}
       <SectionContainer background="subtle" paddingY="lg" hasBorderBottom>
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
           <div>
@@ -214,12 +248,13 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
         </div>
       </SectionContainer>
 
-      {/* 8. INTERACTIVE BOOKING FOUNDATION MODAL */}
+      {/* 9. INTERACTIVE BOOKING FOUNDATION MODAL */}
       <SWSBookingModal
         isOpen={bookingModalOpen}
         onClose={() => setBookingModalOpen(false)}
         initialService={activeServiceForBooking}
         initialPackage={activePackageForBooking}
+        initialRentalItem={activeRentalForBooking}
         isQuoteMode={isQuoteMode}
       />
     </div>

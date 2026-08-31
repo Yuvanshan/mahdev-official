@@ -12,14 +12,14 @@ import { COMPANY_INFO } from '../config/company';
 
 export const COMPANY_STORY = {
   headline: 'From Visionary Foundations to an Integrated Enterprise',
-  subheadline: 'Crafting Moments, Capturing Memories, and Delivering Modern Innovation across Sri Lanka and Beyond.',
+  subheadline: 'Creating Moments... Capturing Memories... & Delivering Innovation... across Sri Lanka and Beyond.',
   paragraphs: [
-    'Founded in 2018 in Colombo, Sri Lanka, Mahdev Pvt Ltd was conceived on a singular premise: that exceptional artistry and rigorous engineering should not exist in isolation. Starting as a boutique high-concept event staging and production agency (SWS Event Management), the founding team rapidly recognized that clients needed seamless continuity across media production, software technology, and logistical execution.',
-    'Over eight years of disciplined organic growth, Mahdev purposefully expanded into five autonomous yet deeply synchronized business pillars. In 2020, U1 Studio was established to pioneer 8K cinematography and fine-art visual documentation. In 2022, Mahdev IT & Solutions was formed to build resilient cloud software, enterprise platforms, and automated workflow systems.',
-    'By 2024, the enterprise established Mahdev Travels for bespoke luxury expeditions and Mahdev Online Mart for authenticated hardware procurement. Today, Mahdev Pvt Ltd stands as a modern holding ecosystem where corporate governance, artistic mastery, and technological precision converge under one trusted roof.'
+    'Founded in 2022 in Colombo, Sri Lanka, Mahdev Pvt Ltd was conceived on a singular premise: that exceptional event decoration artistry, photographic mastery, and rigorous IT solutions should unite seamlessly under one trusted parent company. Starting with core pillars in luxury event management, stage decorations, fine-art cinema photography, and software engineering, our leadership established an uncompromising benchmark of quality.',
+    'Across four years of disciplined high-velocity growth, Mahdev purposefully expanded into five autonomous yet deeply synchronized business divisions. SWS Event Management elevated luxury wedding stage decor and floral spatial design; U1 Studio pioneered 8K cinematography and timeless photojournalism; Mahdev IT Solutions engineered mission-critical cloud software and enterprise platforms.',
+    'Complementing these foundational services, Mahdev Travels curates bespoke luxury island expeditions, and Mahdev Online Mart supplies verified cinema equipment and tech hardware. Today, Mahdev Pvt Ltd stands as a premier holding ecosystem where creative mastery and technological innovation converge under one trusted roof.'
   ],
   stats: [
-    { label: 'Founded', value: '2018', subtext: '8+ Years of Growth' },
+    { label: 'Founded', value: '2022', subtext: '4+ Years of Growth' },
     { label: 'Autonomous Units', value: '5 Divisions', subtext: 'Unified Governance' },
     { label: 'Island-wide Reach', value: '9 Provinces', subtext: 'Sri Lanka & Global' },
     { label: 'Client Satisfaction', value: '99.4%', subtext: 'Institutional SLAs' },
@@ -98,7 +98,7 @@ export const LEADERSHIP_TEAM: LeadershipMember[] = [
     name: 'Yuvanshan S.',
     title: 'Founder & Managing Director',
     role: 'Executive Leadership & Strategic Direction',
-    bio: 'Pioneered Mahdev Pvt Ltd from its inception in 2018, steering the group\'s multi-sector vision, corporate capital strategy, and high-standard operational culture across Sri Lanka.',
+    bio: 'Pioneered Mahdev Pvt Ltd from its inception in 2022, steering the group\'s multi-sector vision, corporate capital strategy, and high-standard operational culture across Sri Lanka.',
     photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop',
     divisionFocus: 'Group Executive Board',
     linkedin: 'https://linkedin.com',
@@ -162,46 +162,35 @@ export const LEADERSHIP_TEAM: LeadershipMember[] = [
 
 export const VERIFIED_MILESTONES: MilestoneItem[] = [
   {
-    id: 'ms-2018',
-    year: '2018',
-    title: 'Corporate Inception & SWS Event Management Debut',
-    description: 'Mahdev established headquarters in Colombo, launching SWS Event Management with a focus on luxury wedding productions, sound engineering, and corporate galas.',
+    id: 'ms-2022',
+    year: '2022',
+    title: 'Corporate Inception & Core Trilateral Launch',
+    description: 'Mahdev established headquarters in Colombo, launching SWS Event Management & Decorations, U1 Studio Photography & Cinema, and Mahdev IT Solutions as foundational pillars.',
     divisionId: 'sws',
     badge: 'Inception',
-    keyOutcome: 'Delivered 35+ landmark wedding and corporate stage productions in year one with 100% on-time execution.',
-    highlight: false,
+    keyOutcome: 'Delivered 80+ luxury wedding decors, 8K photo/cinema projects, and enterprise cloud portals in year one.',
+    highlight: true,
     imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=800&auto=format&fit=crop'
   },
   {
-    id: 'ms-2020',
-    year: '2020',
-    title: 'U1 Studio Establishment & 8K Cinema Wing',
-    description: 'Expanded creative capabilities with a dedicated visual production wing, investing in 8K cinematography, licensed aerial drone fleets, and state-of-the-art grading suites.',
+    id: 'ms-2023',
+    year: '2023',
+    title: '8K Cinema Rigs, Enterprise Software & Grand Stage Scale',
+    description: 'Expanded creative and engineering wings with licensed aerial drone fleets, studio color suites, and scalable enterprise SaaS portals.',
     divisionId: 'u1',
-    badge: 'Creative Expansion',
-    keyOutcome: 'Produced national broadcast commercials, documentary films, and award-winning cultural visual series.',
+    badge: 'Creative & Tech Expansion',
+    keyOutcome: 'Produced national brand campaigns, high-scale wedding documentaries, and high-concurrency enterprise logistics software.',
     highlight: false,
     imageUrl: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=800&auto=format&fit=crop'
   },
   {
-    id: 'ms-2022',
-    year: '2022',
-    title: 'IT & Solutions Division Launch',
-    description: 'Formed Mahdev IT & Solutions to build mission-critical enterprise software, real-time logistics portals, scalable web apps, and automated cloud infrastructure.',
-    divisionId: 'it',
-    badge: 'Tech Engineering',
-    keyOutcome: 'Engineered high-concurrency digital platforms for leading Sri Lankan logistics and commercial enterprises.',
-    highlight: true,
-    imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=800&auto=format&fit=crop'
-  },
-  {
     id: 'ms-2024',
     year: '2024',
-    title: 'Mahdev Travels & Online Mart Expansion',
+    title: 'Mahdev Travels & Online Mart Launch',
     description: 'Completed the foundational 5-division ecosystem by launching bespoke luxury island expeditions and an authenticated tech hardware commerce storefront.',
     divisionId: 'travels',
     badge: 'Ecosystem Completion',
-    keyOutcome: 'Formed a unified multi-service ecosystem spanning creative lifestyle, digital engineering, and commerce.',
+    keyOutcome: 'Formed a unified multi-service ecosystem spanning creative decorations, photography, digital engineering, luxury travel, and verified commerce.',
     highlight: false,
     imageUrl: 'https://images.unsplash.com/photo-1546708973-b339540b5162?q=80&w=800&auto=format&fit=crop'
   },

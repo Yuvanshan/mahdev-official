@@ -33,8 +33,12 @@ export const MartCategoriesSection: React.FC<MartCategoriesSectionProps> = ({
         return martCats.map(mapFirestoreCategoryToMart);
       }
     }
-    return MART_CATEGORIES;
+    return [];
   }, [rawCategories]);
+
+  if (categories.length === 0) {
+    return null;
+  }
 
   const getCategoryIcon = (iconName: string) => {
     switch (iconName) {

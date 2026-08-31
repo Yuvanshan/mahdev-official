@@ -17,12 +17,14 @@ interface SWSHeroSectionProps {
   onBookNow: () => void;
   onRequestQuote: () => void;
   onExploreServices: () => void;
+  onExploreRentals?: () => void;
 }
 
 export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
   onBookNow,
   onRequestQuote,
   onExploreServices,
+  onExploreRentals,
 }) => {
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-slate-950 text-white pt-24 pb-20 sm:pt-28 sm:pb-24">
@@ -30,7 +32,7 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
       <div className="absolute inset-0 z-0">
         <img
           src="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85"
-          alt="SWS Luxury Event Decor & Stage"
+          alt="SWS Luxury Event Decor, Stage & Equipment Rentals"
           className="w-full h-full object-cover object-center opacity-35 scale-105 transform animate-pulse duration-10000"
           style={{ animationDuration: '20s' }}
         />
@@ -45,14 +47,15 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
         {/* Top Badges */}
         <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
           <FadeIn delay={0.1}>
-            <Badge variant="electric" size="md" className="px-3.5 py-1 text-xs tracking-wide">
-              SWS Event Management
-            </Badge>
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25 border border-blue-400/30">
+              <Award className="w-3.5 h-3.5 text-amber-300" />
+              Primary Flagship Division
+            </span>
           </FadeIn>
           <FadeIn delay={0.15}>
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/15">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300 bg-white/10 backdrop-blur-md px-3.5 py-1 rounded-full border border-white/15">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              A Division of Mahdev Pvt Ltd
+              Mahdev Pvt Ltd Core Enterprise Pillar
             </span>
           </FadeIn>
         </div>
@@ -70,7 +73,7 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
 
           <SlideIn direction="up" delay={0.3}>
             <p className="text-lg sm:text-xl text-slate-300 font-normal max-w-2xl mx-auto leading-relaxed">
-              Sri Lanka’s premier turnkey event production house. From bespoke floral weddings and high-tech corporate summits to concert-grade audio-visual staging and luxury banquets.
+              Mahdev’s primary division for turnkey event management, luxury wedding stage & mandap decor, concert-grade audio-visual production, and complete furniture & equipment rentals across Sri Lanka.
             </p>
           </SlideIn>
 
@@ -91,19 +94,20 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
               <Button
                 variant="outline"
                 size="lg"
+                onClick={onExploreRentals || onRequestQuote}
+                className="bg-white/10 hover:bg-white/20 text-white border-white/25 backdrop-blur-md px-7 py-3.5 text-sm font-semibold"
+              >
+                Explore Rental Catalog (5,000+ Items)
+              </Button>
+
+              <Button
+                variant="outline"
+                size="lg"
                 onClick={onRequestQuote}
-                className="bg-white/10 hover:bg-white/20 text-white border-white/25 backdrop-blur-md px-7 py-3.5 text-sm"
+                className="bg-slate-900/60 hover:bg-slate-800 text-slate-200 border-white/15 px-6 py-3.5 text-sm"
               >
                 Request Custom Quote
               </Button>
-
-              <button
-                type="button"
-                onClick={onExploreServices}
-                className="text-xs font-semibold text-slate-300 hover:text-white underline underline-offset-4 cursor-pointer transition-colors px-3 py-2"
-              >
-                Explore 13 Core Services ↓
-              </button>
             </div>
           </SlideIn>
         </div>
@@ -126,6 +130,16 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
                 <Users className="w-5 h-5" />
               </div>
               <div>
+                <div className="font-display text-2xl font-bold text-white">5,000+</div>
+                <div className="text-xs text-slate-400">Rental Units in Stock</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-400/30 text-indigo-400 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
                 <div className="font-display text-2xl font-bold text-white">120k+</div>
                 <div className="text-xs text-slate-400">Guests Hosted</div>
               </div>
@@ -133,21 +147,11 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
 
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-400/30 text-emerald-400 flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-5 h-5" />
+                <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
                 <div className="font-display text-2xl font-bold text-white">99.4%</div>
                 <div className="text-xs text-slate-400">Client Satisfaction</div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-400/30 text-amber-400 flex items-center justify-center shrink-0">
-                <PhoneCall className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="font-display text-2xl font-bold text-white">24/7</div>
-                <div className="text-xs text-slate-400">On-Site Coordination</div>
               </div>
             </div>
           </div>

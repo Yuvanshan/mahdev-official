@@ -50,7 +50,32 @@ export const firestoreContactsService = {
       status: 'new',
       createdAt: new Date().toISOString(),
     });
-    await setDoc(docRef, payload);
+    
+    // Save to Firestore
+    try {
+      await setDoc(docRef, payload);
+    } catch (err) {
+      console.warn('[Firestore Contacts] setDoc notice:', err);
+    }
+
+    // Trigger backend notification and email routing to info.mahdev.lk@gmail.com
+    try {
+      await fetch('/api/contact/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: data.fullName,
+          email: data.email,
+          phone: data.phone,
+          division: data.division,
+          subject: data.subject,
+          message: data.message,
+        }),
+      });
+    } catch (apiErr) {
+      console.warn('[Contact Submit] Backend email dispatch notice:', apiErr);
+    }
+
     return id;
   },
 

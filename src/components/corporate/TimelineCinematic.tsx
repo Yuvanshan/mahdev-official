@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, Sparkles, Layers, Clock } from 'lucide-react';
+import { CheckCircle2, Sparkles, Layers, Clock, Building2, MapPin, Code2 } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body, Caption } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
@@ -15,22 +15,74 @@ interface TimelineCinematicProps {
   initialDivision?: DivisionId | 'all';
 }
 
+// Fallback official 2022-2026 milestones
+const DEFAULT_MILESTONES = [
+  {
+    id: 'ms-2022',
+    year: '2022',
+    title: 'The Beginning',
+    description: 'Started SWS Event Management, marking the beginning of our journey in event management and creative experiences.',
+    divisionId: 'sws',
+    badge: 'Foundational Debut',
+    keyOutcome: 'Established SWS Event Management brand.',
+  },
+  {
+    id: 'ms-2023',
+    year: '2023',
+    title: 'U1 Studio',
+    description: 'Launched U1 Studio, expanding our services into professional photography and creative media.',
+    divisionId: 'u1',
+    badge: 'Creative Media',
+    keyOutcome: 'Expanded into cinema media & photography.',
+  },
+  {
+    id: 'ms-2024',
+    year: '2024',
+    title: 'Islandwide Expansion',
+    description: 'Expanded our services across Sri Lanka, bringing our expertise and services to clients nationwide.',
+    divisionId: 'all',
+    badge: 'National Reach',
+    keyOutcome: 'Operations scaled to cover all provinces.',
+  },
+  {
+    id: 'ms-2025',
+    year: '2025',
+    title: 'IT & Solutions',
+    description: 'Introduced IT & Solutions, expanding our capabilities into technology, software, and digital business solutions.',
+    divisionId: 'it',
+    badge: 'Digital Innovation',
+    keyOutcome: 'Launched full-stack IT & software solutions.',
+  },
+  {
+    id: 'ms-2026',
+    year: '2026',
+    title: 'Mahdev Pvt Ltd',
+    description: 'Officially registered Mahdev Pvt Ltd as a private company, bringing our growing services and ventures under one organization.',
+    divisionId: 'all',
+    badge: 'Corporate Holding',
+    keyOutcome: 'Incorporated as a unified private enterprise.',
+  },
+];
+
 export const TimelineCinematic: React.FC<TimelineCinematicProps> = ({ initialDivision = 'all' }) => {
   const [selectedDivision, setSelectedDivision] = useState<DivisionId | 'all'>(initialDivision);
-  const { milestones, homepageConfig, isInitialLoading } = useFirestoreDataContext();
-  const [activeMilestoneId, setActiveMilestoneId] = useState<string>('');
+  const { milestones, homepageConfig } = useFirestoreDataContext();
+  const [activeMilestoneId, setActiveMilestoneId] = useState<string>('ms-2026');
 
   if (homepageConfig.milestones && !homepageConfig.milestones.enabled) {
     return null;
   }
 
-  // Filter ONLY published, non-archived milestones directly from Firestore
-  const publishedMilestones = milestones.filter(
-    (m) => m.isPublished !== false && m.status !== 'draft' && m.status !== 'archived'
-  );
-
-  // Sort strictly by order index ascending
-  const sortedMilestones = [...publishedMilestones].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  // Filter ONLY published, non-archived milestones directly from Firestore, or fallback to official
+  const sortedMilestones = React.useMemo(() => {
+    const published = milestones.filter(
+      (m) => m.isPublished !== false && m.status !== 'draft' && m.status !== 'archived' && m.year
+    );
+    if (published.length >= 3) {
+      return [...published].sort((a, b) => (Number(a.year) || 0) - (Number(b.year) || 0));
+    }
+    return DEFAULT_MILESTONES;
+  }, [milestones]);
 
   // Filter by division if selected
   const filteredMilestones = sortedMilestones.filter((m) => {
@@ -45,8 +97,8 @@ export const TimelineCinematic: React.FC<TimelineCinematicProps> = ({ initialDiv
 
   const meta = homepageConfig.milestones || {
     badge: 'VERIFIED TRACK RECORD',
-    title: 'Milestones of Excellence',
-    subtitle: 'A chronological journey detailing foundational chapters, division debuts, and institutional expansions from our founding to the present.',
+    title: 'Our Milestones & Trajectory',
+    subtitle: 'A chronological journey detailing foundational chapters, division debuts, and institutional expansions from our founding in 2022 to the present.',
   };
 
   return (
@@ -57,10 +109,10 @@ export const TimelineCinematic: React.FC<TimelineCinematicProps> = ({ initialDiv
             <Caption className="text-[#0052FF] mb-2 block font-bold uppercase tracking-wider">
               {meta.badge || 'Verified Track Record'}
             </Caption>
-            <H2 className="text-slate-900 mb-3">{meta.title || 'Milestones of Excellence'}</H2>
+            <H2 className="text-slate-900 mb-3">{meta.title || 'Our Milestones & Trajectory'}</H2>
             <Body className="text-slate-600 text-base">
               {meta.subtitle ||
-                'A chronological journey detailing key foundational chapters, division debuts, and institutional expansions from our founding to the present.'}
+                'A chronological journey detailing key foundational chapters, division debuts, and institutional expansions from our founding in 2022 to the present.'}
             </Body>
           </div>
 
@@ -110,150 +162,100 @@ export const TimelineCinematic: React.FC<TimelineCinematicProps> = ({ initialDiv
         </div>
       </ScrollReveal>
 
-      {/* Loading Skeleton State */}
-      {isInitialLoading && sortedMilestones.length === 0 ? (
-        <div className="max-w-5xl mx-auto space-y-6 animate-pulse">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-28 bg-slate-200 rounded-2xl" />
-            ))}
-          </div>
-          <div className="h-80 bg-slate-200 rounded-3xl" />
-        </div>
-      ) : sortedMilestones.length === 0 ? (
-        /* Empty State */
-        <div className="max-w-md mx-auto py-16 text-center bg-white rounded-3xl border border-slate-200/80 p-8 shadow-xs">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 mx-auto flex items-center justify-center mb-4">
-            <Clock className="w-6 h-6" />
-          </div>
-          <h3 className="font-display text-lg font-bold text-slate-900 mb-2">
-            Timeline Updating
-          </h3>
-          <p className="text-sm text-slate-500 leading-relaxed">
-            Corporate milestones are currently being synchronized by the administration. Please check back shortly.
-          </p>
-        </div>
-      ) : (
-        <>
-          {/* Interactive Milestone Scrubber Rail */}
-          <div className="relative max-w-5xl mx-auto mb-10">
-            {/* Visual connecting gradient line */}
-            <div className="hidden md:block absolute top-10 left-6 right-6 h-0.5 bg-gradient-to-r from-blue-200 via-[#0052FF] to-blue-300 z-0" />
+      {/* Interactive Milestone Scrubber Rail */}
+      <div className="relative max-w-5xl mx-auto mb-10">
+        {/* Visual connecting gradient line */}
+        <div className="hidden md:block absolute top-10 left-6 right-6 h-0.5 bg-gradient-to-r from-blue-200 via-[#0052FF] to-blue-300 z-0" />
 
-            {/* Milestone Steps Matrix */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 relative z-10">
-              {filteredMilestones.map((ms, idx) => {
-                const isActive = activeMilestone && activeMilestone.id === ms.id;
-                return (
-                  <Magnetic key={ms.id || idx} strength={0.15}>
+        {/* Milestone Steps Matrix - Horizontal Scroll Rail on Mobile */}
+        <div className="flex overflow-x-auto no-scrollbar snap-x gap-3 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 md:grid-cols-5 sm:overflow-visible relative z-10">
+          {filteredMilestones.map((ms, idx) => {
+            const isActive = activeMilestone && activeMilestone.id === ms.id;
+            return (
+              <div key={ms.id || idx} className="min-w-[140px] sm:min-w-0 snap-start shrink-0 sm:shrink">
+                <Magnetic strength={0.15}>
+                  <button
+                    type="button"
+                    onClick={() => setActiveMilestoneId(ms.id || '')}
+                    className={`w-full p-4 rounded-2xl cursor-pointer transition-all duration-300 border text-center h-full flex flex-col justify-between select-none ${
+                      isActive
+                        ? 'bg-white border-[#0052FF] shadow-lg ring-2 ring-blue-500/20'
+                        : 'bg-white/80 border-slate-200/90 hover:border-blue-300 hover:bg-white'
+                    }`}
+                  >
                     <div
-                      onClick={() => setActiveMilestoneId(ms.id || '')}
-                      className={`p-4 rounded-2xl cursor-pointer transition-all duration-300 border text-center h-full flex flex-col justify-between ${
+                      className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center text-xs font-bold mb-2 transition-all ${
                         isActive
-                          ? 'bg-white border-[#0052FF] shadow-lg ring-2 ring-blue-500/20'
-                          : 'bg-white/80 border-slate-200/90 hover:border-blue-300 hover:bg-white'
+                          ? 'bg-[#0052FF] text-white shadow-md shadow-blue-500/30 scale-110'
+                          : 'bg-slate-100 text-slate-700 border border-slate-300'
                       }`}
                     >
-                      <div
-                        className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center text-xs font-bold mb-2 transition-all ${
-                          isActive
-                            ? 'bg-[#0052FF] text-white shadow-md shadow-blue-500/30 scale-110'
-                            : 'bg-slate-100 text-slate-700 border border-slate-300'
-                        }`}
-                      >
-                        {ms.year.split(' ')[0]}
-                      </div>
+                      {ms.year.split(' ')[0]}
+                    </div>
 
-                      <div>
-                        <div className="font-display font-bold text-sm text-slate-900 mb-0.5">
-                          {ms.year}
-                        </div>
-                        <div className="text-[11px] font-semibold text-[#0052FF] truncate">
-                          {ms.badge || 'Milestone'}
-                        </div>
+                    <div>
+                      <div className="font-display font-bold text-sm text-slate-900 mb-0.5">
+                        {ms.title || ms.year}
+                      </div>
+                      <div className="text-[11px] font-semibold text-[#0052FF] truncate">
+                        {ms.badge || 'Milestone'}
                       </div>
                     </div>
-                  </Magnetic>
-                );
-              })}
-            </div>
-          </div>
+                  </button>
+                </Magnetic>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
-          {/* Active Milestone Cinematic 3D Feature Card */}
-          {activeMilestone && (
-            <div className="max-w-5xl mx-auto">
-              <ScrollReveal key={activeMilestone.id} direction="up" delay={0.1}>
-                <TiltCard maxTilt={4} glareEffect>
-                  <div className="rounded-3xl overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white border border-slate-800 shadow-2xl">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
-                      {/* Left Column: Deep Context */}
-                      <div className="lg:col-span-7 p-8 sm:p-10 flex flex-col justify-between space-y-6">
-                        <div>
-                          <div className="flex items-center gap-2.5 mb-4 flex-wrap">
-                            <Badge variant="electric" size="sm" className="bg-blue-600 text-white font-bold">
-                              {activeMilestone.badge || 'Corporate Milestone'}
-                            </Badge>
-                            <span className="text-xs font-semibold text-blue-300">
-                              Year {activeMilestone.year}
-                            </span>
-                            {activeMilestone.date && (
-                              <span className="text-xs text-slate-400 font-mono">
-                                • {activeMilestone.date}
-                              </span>
-                            )}
-                          </div>
+      {/* Active Milestone Card */}
+      {activeMilestone && (
+        <ScrollReveal key={activeMilestone.id} direction="up" delay={0.05}>
+          <TiltCard maxTilt={4} glareEffect>
+            <div className="p-7 sm:p-9 rounded-2xl bg-white border border-slate-200 shadow-xl relative overflow-hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-100">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#0052FF] flex items-center justify-center border border-blue-100">
+                    <Sparkles className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-[#0052FF] uppercase tracking-wider block">
+                      {activeMilestone.year} Chapter
+                    </span>
+                    <h3 className="font-display text-2xl font-bold text-slate-900">
+                      {activeMilestone.title}
+                    </h3>
+                  </div>
+                </div>
+                {activeMilestone.badge && (
+                  <Badge variant="secondary" className="bg-blue-50 text-[#0052FF] border-blue-200 w-fit">
+                    {activeMilestone.badge}
+                  </Badge>
+                )}
+              </div>
 
-                          <h3 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight mb-4">
-                            {activeMilestone.title}
-                          </h3>
-
-                          <p className="text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
-                            {activeMilestone.description}
-                          </p>
-                        </div>
-
-                        {/* Key Outcome Box */}
-                        {(activeMilestone.keyOutcome || activeMilestone.metric) && (
-                          <div className="p-4 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md">
-                            <div className="flex items-start gap-3">
-                              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                              <div>
-                                <span className="text-xs font-bold uppercase tracking-wider text-emerald-300 block mb-1">
-                                  Institutional Outcome
-                                </span>
-                                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
-                                  {activeMilestone.keyOutcome || activeMilestone.metric}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Right Column: Visual Archival Imagery */}
-                      <div className="lg:col-span-5 relative min-h-[260px] lg:min-h-full bg-slate-900">
-                        <img
-                          src={
-                            activeMilestone.imageUrl ||
-                            'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=800&auto=format&fit=crop'
-                          }
-                          alt={activeMilestone.title}
-                          className="w-full h-full object-cover opacity-80"
-                          referrerPolicy="no-referrer"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-slate-950 via-slate-950/40 to-transparent" />
-                        <div className="absolute bottom-6 left-6 right-6 text-white text-xs font-mono opacity-80 flex items-center justify-between">
-                          <span>Ref: MDV-MS-{activeMilestone.year.split(' ')[0]}</span>
-                          <span className="text-emerald-400 font-sans font-semibold">Verified</span>
-                        </div>
-                      </div>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                <div className="lg:col-span-8">
+                  <p className="text-base sm:text-lg text-slate-700 leading-relaxed">
+                    {activeMilestone.description}
+                  </p>
+                </div>
+                {activeMilestone.keyOutcome && (
+                  <div className="lg:col-span-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
+                      Key Verified Outcome:
+                    </span>
+                    <div className="flex items-start gap-2 text-xs text-slate-800 font-medium">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                      <span>{activeMilestone.keyOutcome}</span>
                     </div>
                   </div>
-                </TiltCard>
-              </ScrollReveal>
+                )}
+              </div>
             </div>
-          )}
-        </>
+          </TiltCard>
+        </ScrollReveal>
       )}
     </SectionContainer>
   );

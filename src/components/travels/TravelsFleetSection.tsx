@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Car,
   Users,
@@ -8,7 +8,8 @@ import {
   ShieldCheck,
   Zap,
 } from 'lucide-react';
-import { VEHICLES, Vehicle } from '../../data/travelsData';
+import { Vehicle } from '../../data/travelsData';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
@@ -21,6 +22,36 @@ interface TravelsFleetSectionProps {
 export const TravelsFleetSection: React.FC<TravelsFleetSectionProps> = ({
   onBookTransport,
 }) => {
+  const { services: rawServices, products: rawProducts } = useFirestoreDataContext();
+
+  const vehicles = useMemo<Vehicle[]>(() => {
+    const list: Vehicle[] = [];
+    if (rawServices && rawServices.length > 0) {
+      const fleetServices = rawServices.filter(
+        (s) =>
+          (s.division === 'travels' || (s as any).divisionId === 'travels') &&
+          ((s as any).category === 'fleet' || (s as any).type === 'vehicle')
+      );
+      fleetServices.forEach((s) => {
+        list.push({
+          id: s.id,
+          name: s.name,
+          category: ((s as any).category || 'Luxury Sedan') as any,
+          capacity: (s as any).capacity || (s as any).passengers || '1-3 Passengers',
+          luggage: (s as any).luggage || '2 Large + 2 Small Bags',
+          dailyRate: typeof s.price === 'number' ? `$${s.price}/day` : String(s.price || '$75/day'),
+          features: s.features || ['Air-conditioned', 'English-speaking driver'],
+          imageUrl: s.images && s.images.length > 0 ? s.images[0] : (s as any).imageUrl || '',
+        });
+      });
+    }
+    return list;
+  }, [rawServices, rawProducts]);
+
+  if (vehicles.length === 0) {
+    return null;
+  }
+
   return (
     <SectionContainer id="transport" background="subtle" paddingY="xl" hasBorderBottom>
       {/* Header */}
@@ -40,7 +71,7 @@ export const TravelsFleetSection: React.FC<TravelsFleetSectionProps> = ({
 
       {/* Vehicles Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {VEHICLES.map((v) => (
+        {vehicles.map((v) => (
           <div
             key={v.id}
             className="group rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"

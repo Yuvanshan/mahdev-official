@@ -299,7 +299,7 @@ class StorageService {
             subfolder: subfolder || '',
             originalName: file.name,
             uploadedAt: new Date().toISOString(),
-            uploadedBy: currentAdmin?.email || currentUser?.email || auth.currentUser?.email || auth.currentUser?.uid || 'admin@mahdev.lk',
+            uploadedBy: currentAdmin?.email || currentUser?.email || auth.currentUser?.email || auth.currentUser?.uid || 'info.mahdev.lk@gmail.com',
             userRole: currentAdmin?.role || currentUser?.role || 'super_admin',
           },
         };
@@ -348,7 +348,7 @@ class StorageService {
         mimeType: fileToUpload.type || 'image/png',
         dimensions,
         uploadedAt: new Date().toISOString(),
-        uploadedBy: activeAdmin?.email || activeUser?.email || 'admin@mahdev.lk',
+        uploadedBy: activeAdmin?.email || activeUser?.email || 'info.mahdev.lk@gmail.com',
         userRole: activeAdmin?.role || activeUser?.role || 'super_admin',
       };
 

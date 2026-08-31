@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Calendar,
   Sparkles,
@@ -12,7 +12,8 @@ import {
   Camera,
   Film,
 } from 'lucide-react';
-import { U1_PACKAGES, U1Package } from '../../data/u1Data';
+import { U1Package } from '../../data/u1Data';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
@@ -24,7 +25,42 @@ interface U1PackagesSectionProps {
 }
 
 export const U1PackagesSection: React.FC<U1PackagesSectionProps> = ({ onBookPackage }) => {
+  const { services: rawServices } = useFirestoreDataContext();
   const [activeImageIndices, setActiveImageIndices] = useState<Record<string, number>>({});
+
+  const packages = useMemo<U1Package[]>(() => {
+    if (rawServices && rawServices.length > 0) {
+      const u1Packages = rawServices.filter(
+        (s) =>
+          (s.division === 'u1' || (s as any).divisionId === 'u1') &&
+          ((s as any).category === 'packages' || (s as any).type === 'package')
+      );
+      if (u1Packages.length > 0) {
+        return u1Packages.map((s) => ({
+          id: s.id,
+          name: s.name,
+          tier: (s as any).tier || 'Studio Package',
+          tagline: (s as any).tagline || s.description?.slice(0, 60) || '',
+          description: s.description || '',
+          duration: (s as any).duration || (s as any).coverageHours || '8-10 Hours Coverage',
+          price: typeof s.price === 'number' ? `$${s.price.toLocaleString()}` : String(s.price || ''),
+          priceNote: (s as any).priceNote || 'Package rate',
+          deliverables: (s as any).deliverables || s.features || [],
+          imageUrl: s.images && s.images.length > 0 ? s.images[0] : (s as any).imageUrl || '',
+          gallery: s.images || [],
+          popular: !!(s as any).popular,
+          badge: s.badge || 'Studio Package',
+          idealFor: (s as any).idealFor || 'Weddings & Cinema Productions',
+          locationType: (s as any).locationType || 'Studio & On-Location',
+        }));
+      }
+    }
+    return [];
+  }, [rawServices]);
+
+  if (packages.length === 0) {
+    return null;
+  }
 
   const nextImage = (pkgId: string, max: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -61,9 +97,9 @@ export const U1PackagesSection: React.FC<U1PackagesSectionProps> = ({ onBookPack
 
       {/* Grid of Packages */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {U1_PACKAGES.map((pkg) => {
+        {packages.map((pkg) => {
           const currentIndex = activeImageIndices[pkg.id] || 0;
-          const currentImage = pkg.gallery[currentIndex] || pkg.imageUrl;
+          const currentImage = pkg.gallery && pkg.gallery.length > 0 ? pkg.gallery[currentIndex] || pkg.imageUrl : pkg.imageUrl;
 
           return (
             <div

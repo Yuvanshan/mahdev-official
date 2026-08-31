@@ -24,6 +24,7 @@ export interface DivisionConfig {
   tagline: string;
   description: string;
   badge: string;
+  isPrimary?: boolean;
   route: string;
   domainUrl?: string;
   accentColor: string;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Star, Quote, ChevronLeft, ChevronRight, CheckCircle2, MessageSquare, Sparkles } from 'lucide-react';
+import { Star, ChevronRight, ExternalLink, MessageSquare, Sparkles, CheckCircle2 } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body, Caption } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
@@ -7,62 +7,73 @@ import { Button } from '../ui/Button';
 import {
   ScrollReveal,
   TiltCard,
-  Magnetic,
 } from '../motion/MotionWrappers';
-import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
-import { DivisionId } from '../../types';
+import { useGoogleReviews, useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { DivisionId } from '../../types/firestore';
 
 interface TestimonialsSectionProps {
   initialDivision?: DivisionId | 'all';
+  onNavigate?: (route: string) => void;
 }
 
 export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
   initialDivision = 'all',
+  onNavigate,
 }) => {
   const [selectedDivision, setSelectedDivision] = useState<DivisionId | 'all'>(initialDivision);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const { testimonials, homepageConfig } = useFirestoreDataContext();
+  const { reviews, config, allReviews } = useGoogleReviews(selectedDivision);
+  const { homepageConfig } = useFirestoreDataContext();
 
-  if (homepageConfig.testimonials && !homepageConfig.testimonials.enabled) {
+  // If testimonials section is disabled in homepage config or master google review switch is turned off
+  if (homepageConfig?.testimonials && !homepageConfig.testimonials.enabled) {
     return null;
   }
 
-  const activeTestimonials = testimonials.filter((t) => (t as any).status !== 'archived');
+  if (config && !config.enabled) {
+    return null;
+  }
 
-  const filteredTestimonials = activeTestimonials.filter((t) => {
-    const div = (t as any).divisionId || (t as any).division;
-    return selectedDivision === 'all' || div === selectedDivision || !div || div === 'all';
-  });
+  // Limit display count based on admin configuration (e.g., 6)
+  const displayReviews = reviews.slice(0, config.maxDisplayCount || 6);
 
-  const nextTestimonial = () => {
-    setCurrentIndex((prev) => (prev + 1) % (filteredTestimonials.length || 1));
-  };
-
-  const prevTestimonial = () => {
-    setCurrentIndex((prev) => (prev - 1 + (filteredTestimonials.length || 1)) % (filteredTestimonials.length || 1));
-  };
+  if (displayReviews.length === 0 && allReviews.length === 0) {
+    return null;
+  }
 
   return (
     <SectionContainer id="testimonials" background="white" paddingY="xl" hasBorderBottom>
       <ScrollReveal direction="up">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
           <div className="max-w-2xl">
-            <Caption className="text-[#0052FF] mb-2 block">Client Endorsements</Caption>
-            <H2 className="text-slate-900 mb-3">What Our Partners Say</H2>
-            <Body className="text-slate-600 text-base">
-              Direct feedback from business directors, marketing heads, and international delegations across Sri Lanka.
+            <div className="flex items-center gap-2 mb-2.5">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#0052FF] text-xs font-bold">
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                Google Verified Reviews
+              </span>
+
+              <span className="text-xs font-bold text-amber-600 flex items-center gap-1">
+                <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                {config.overallRating.toFixed(1)} Rating ({config.totalReviews}+ Reviews)
+              </span>
+            </div>
+
+            <H2 className="text-slate-900 mb-2.5">What Our Clients Say</H2>
+            <Body className="text-slate-600 text-sm sm:text-base">
+              Real customer feedback from our Google Maps & Google Business Profile across weddings, corporate events, cinema, and digital projects.
             </Body>
           </div>
 
           {/* Division Filter Pills */}
-          <div className="mt-4 md:mt-0 flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-xl border border-slate-200">
+          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-xl border border-slate-200 shrink-0">
             {(['all', 'sws', 'u1', 'it', 'travels', 'mart'] as (DivisionId | 'all')[]).map((divId) => (
               <button
                 key={divId}
-                onClick={() => {
-                  setSelectedDivision(divId);
-                  setCurrentIndex(0);
-                }}
+                onClick={() => setSelectedDivision(divId)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                   selectedDivision === divId
                     ? 'bg-[#0052FF] text-white shadow-xs'
@@ -86,68 +97,136 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
         </div>
       </ScrollReveal>
 
-      {/* Testimonials Grid Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTestimonials.map((t, idx) => (
-          <ScrollReveal key={t.id} direction="up" delay={idx * 0.07}>
-            <TiltCard maxTilt={5} glareEffect className="h-full">
-              <div className="h-full p-7 rounded-3xl bg-slate-50/80 border border-slate-200/90 hover:border-[#0052FF] hover:bg-white hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
-                <div>
-                  {/* Top Quote Icon & Rating */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-1 text-amber-500">
-                      {[...Array(t.rating)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                      ))}
+      {/* Testimonials Grid / Mobile Horizontal Track */}
+      {displayReviews.length === 0 ? (
+        <div className="p-8 rounded-2xl bg-slate-50 border border-slate-200 text-center">
+          <p className="text-xs text-slate-500">No featured reviews for this division currently.</p>
+        </div>
+      ) : (
+        <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 sm:overflow-visible">
+          {displayReviews.map((review, idx) => (
+            <div
+              key={review.id}
+              className="w-[calc(100vw-2.5rem)] max-w-[340px] sm:max-w-none sm:w-auto snap-center shrink-0 sm:shrink"
+            >
+              <ScrollReveal direction="up" delay={idx * 0.06}>
+                <TiltCard maxTilt={4} glareEffect className="h-full">
+                  <div className="h-full p-6 sm:p-7 rounded-3xl bg-slate-50/80 border border-slate-200/90 hover:border-[#0052FF] hover:bg-white hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
+                    <div>
+                      {/* Top Google Badge & Star Rating */}
+                      <div className="flex items-center justify-between mb-3.5 pb-2.5 border-b border-slate-200/70">
+                        <div className="flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                          </svg>
+                          <span className="text-[11px] font-bold text-slate-700">Google Review</span>
+                        </div>
+
+                        {review.divisionName && review.divisionName !== 'All Divisions' && (
+                          <Badge variant="outline" size="sm" className="text-slate-600 bg-white text-[10px]">
+                            {review.divisionName.split(' ')[0]}
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Stars */}
+                      <div className="flex items-center gap-1 text-amber-500 mb-3">
+                        {[...Array(review.rating || 5)].map((_, i) => (
+                          <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                        ))}
+                      </div>
+
+                      {/* Review Comment */}
+                      <p className="text-xs sm:text-sm text-slate-700 leading-relaxed italic mb-6">
+                        "{review.text}"
+                      </p>
                     </div>
-                    {t.divisionName && (
-                      <Badge variant="outline" size="sm" className="text-slate-600 bg-white">
-                        {t.divisionName.split('&')[0].trim()}
-                      </Badge>
-                    )}
-                  </div>
 
-                  {/* Quote Body */}
-                  <p className="text-xs sm:text-sm text-slate-700 leading-relaxed italic mb-6">
-                    "{t.quote}"
-                  </p>
-                </div>
+                    {/* Reviewer Information */}
+                    <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          {review.authorPhotoUrl ? (
+                            <img
+                              src={review.authorPhotoUrl}
+                              alt={review.authorName}
+                              className="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-2xs"
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shadow-2xs">
+                              {review.authorName.slice(0, 2).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white rounded-full flex items-center justify-center ring-2 ring-white">
+                            <CheckCircle2 className="w-2.5 h-2.5" />
+                          </div>
+                        </div>
 
-                {/* Author Information */}
-                <div className="pt-4 border-t border-slate-200 flex items-center gap-3.5">
-                  <div className="relative">
-                    {t.photoUrl ? (
-                      <img
-                        src={t.photoUrl}
-                        alt={t.author}
-                        className="w-11 h-11 rounded-full object-cover border-2 border-blue-500 shadow-xs shrink-0"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <div className="w-11 h-11 rounded-full bg-blue-600 text-white font-bold text-sm flex items-center justify-center shadow-xs">
-                        {t.avatarInitials}
+                        <div>
+                          <h4 className="font-display font-bold text-xs sm:text-sm text-slate-900 group-hover:text-[#0052FF] transition-colors">
+                            {review.authorName}
+                          </h4>
+                          <p className="text-[11px] text-slate-500">
+                            {review.relativePublishTimeDescription || review.date || 'Verified Customer'}
+                          </p>
+                        </div>
                       </div>
-                    )}
-                    {t.verified && (
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 text-white rounded-full flex items-center justify-center ring-2 ring-white">
-                        <CheckCircle2 className="w-3 h-3" />
-                      </div>
-                    )}
+                    </div>
                   </div>
+                </TiltCard>
+              </ScrollReveal>
+            </div>
+          ))}
+        </div>
+      )}
 
-                  <div>
-                    <h4 className="font-display font-bold text-sm text-slate-900 group-hover:text-[#0052FF] transition-colors">
-                      {t.author}
-                    </h4>
-                    <p className="text-xs text-slate-500">
-                      {t.role}, <span className="font-medium text-slate-700">{t.company}</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </TiltCard>
-          </ScrollReveal>
-        ))}
+      {/* Action Strip: View All & Write a Review on Google */}
+      <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          {config.writeReviewUrl && (
+            <a
+              href={config.writeReviewUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-100 hover:text-slate-900 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+              <span>Write a Review on Google</span>
+              <ExternalLink className="w-3 h-3 text-slate-400" />
+            </a>
+          )}
+
+          {config.mapsUrl && (
+            <a
+              href={config.mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1"
+            >
+              <span>View on Google Maps</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          )}
+        </div>
+
+        {onNavigate && (
+          <button
+            onClick={() => onNavigate('/testimonials')}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 font-bold text-xs hover:border-[#0052FF] hover:text-[#0052FF] hover:shadow-xs transition-all cursor-pointer group"
+          >
+            <span>View All Google Reviews</span>
+            <ChevronRight className="w-3.5 h-3.5 text-[#0052FF] group-hover:translate-x-0.5 transition-transform" />
+          </button>
+        )}
       </div>
     </SectionContainer>
   );

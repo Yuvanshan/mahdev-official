@@ -3,12 +3,15 @@ import { CompanyStorySection } from '../components/corporate/CompanyStorySection
 import { LeadershipSection } from '../components/corporate/LeadershipSection';
 import { TimelineCinematic } from '../components/corporate/TimelineCinematic';
 import { TrustedCompaniesMatrix } from '../components/corporate/TrustedCompaniesMatrix';
+import { WhyMahdevSection } from '../components/home/WhyMahdevSection';
 import { CallToActionSection } from '../components/home/CallToActionSection';
 import { H1, Body, Caption } from '../components/ui/Heading';
 import { SectionContainer } from '../components/ui/SectionContainer';
 import { ScrollReveal } from '../components/motion/MotionWrappers';
 import { Badge } from '../components/ui/Badge';
+import { BRAND_CONFIG } from '../config/brand';
 import { LeadershipMember } from '../types';
+import { SEOHead } from '../components/layout/SEOHead';
 
 interface AboutViewProps {
   onNavigate: (route: string) => void;
@@ -24,7 +27,13 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="pt-24 pb-12 bg-white">
+    <div className="pt-20 sm:pt-24 pb-12 bg-white">
+      <SEOHead
+        title="About Mahdev Pvt Ltd | Enterprise Architecture"
+        description="Learn about the origins, vision, leadership, and verified milestones of Mahdev Pvt Ltd—governing 5 specialized divisions in Sri Lanka."
+        canonicalUrl="https://mahdev.lk/about"
+      />
+
       {/* Hero Banner for About Mahdev */}
       <SectionContainer background="subtle" paddingY="lg" hasBorderBottom>
         <ScrollReveal direction="up">
@@ -34,21 +43,24 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
                 About Mahdev Pvt Ltd
               </Badge>
               <span className="text-xs font-semibold text-slate-500">
-                Est. 2018 • Colombo, Sri Lanka
+                Est. {BRAND_CONFIG.establishedYear} • Colombo & Trincomalee, Sri Lanka
               </span>
             </div>
             <H1 className="text-slate-900 text-3xl sm:text-4xl lg:text-5xl font-display font-bold tracking-tight mb-4">
               Pioneering Creative Artistry & Modern Technology
             </H1>
             <Body className="text-slate-600 text-base sm:text-lg">
-              Mahdev Pvt Ltd is an integrated parent company governing five autonomous business divisions—harmonizing event production, cinema media, cloud computing, bespoke travel, and certified hardware procurement under a unified standard of excellence.
+              Mahdev Pvt Ltd is an integrated parent enterprise governing five autonomous business divisions—harmonizing event production, cinema media, cloud computing, bespoke travel, and certified hardware procurement under a unified standard of excellence.
             </Body>
           </div>
         </ScrollReveal>
       </SectionContainer>
 
       {/* Story, Vision, Mission, Core Values */}
-      <CompanyStorySection onExploreDivisions={() => onNavigate('/')} />
+      <CompanyStorySection onExploreDivisions={() => onNavigate('/services')} />
+
+      {/* Why Mahdev (Differentiators & Guarantees) */}
+      <WhyMahdevSection />
 
       {/* Corporate Leadership Team */}
       <LeadershipSection onContactLeadership={handleContactLeadership} />
@@ -62,8 +74,9 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
       {/* Call to Action Banner */}
       <CallToActionSection
         onPrimaryClick={() => onNavigate('/contact')}
-        onSecondaryClick={() => onNavigate('/portfolio')}
+        onSecondaryClick={() => onNavigate('/services')}
       />
     </div>
   );
 };
+

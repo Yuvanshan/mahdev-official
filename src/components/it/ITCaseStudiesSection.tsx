@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Briefcase,
   TrendingUp,
@@ -9,7 +9,8 @@ import {
   CheckCircle2,
   Sparkles,
 } from 'lucide-react';
-import { IT_CASE_STUDIES, ITCaseStudy } from '../../data/itData';
+import { ITCaseStudy } from '../../data/itData';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
@@ -25,8 +26,45 @@ export const ITCaseStudiesSection: React.FC<ITCaseStudiesSectionProps> = ({
   onStartProject,
   onRequestQuote,
 }) => {
+  const { portfolio: rawPortfolio } = useFirestoreDataContext();
   const [activeCaseIndex, setActiveCaseIndex] = useState(0);
-  const activeCase = IT_CASE_STUDIES[activeCaseIndex];
+
+  const cases = useMemo<ITCaseStudy[]>(() => {
+    if (rawPortfolio && rawPortfolio.length > 0) {
+      const itPortfolio = rawPortfolio.filter(
+        (p) => p.division === 'it' || (p as any).divisionId === 'it'
+      );
+      if (itPortfolio.length > 0) {
+        return itPortfolio.map((p) => ({
+          id: p.id,
+          title: p.title,
+          client: p.client || 'Enterprise Client',
+          clientIndustry: (p as any).industry || (p as any).category || 'Enterprise Software',
+          year: p.year ? String(p.year) : '2025',
+          serviceId: (p as any).serviceId || 'custom-solution',
+          summary: p.summary || p.description || '',
+          challenge: (p as any).challenge || p.description || '',
+          architecture: (p as any).technologies || p.tags || ['React', 'Node.js', 'PostgreSQL', 'Docker'],
+          results: (p as any).results || (p.impactMetrics ? p.impactMetrics.map((m: any) => ({ metric: m.value, label: m.label })) : [
+            { metric: '99.99%', label: 'Platform Uptime' },
+            { metric: '<50ms', label: 'API Latency' },
+          ]),
+          testimonial: (p as any).testimonial ? {
+            quote: (p as any).testimonial.quote || '',
+            author: (p as any).testimonial.author || '',
+            role: (p as any).testimonial.role || (p as any).testimonial.designation || '',
+          } : undefined,
+        }));
+      }
+    }
+    return [];
+  }, [rawPortfolio]);
+
+  if (cases.length === 0) {
+    return null;
+  }
+
+  const activeCase = cases[activeCaseIndex] || cases[0];
 
   return (
     <SectionContainer id="case-studies" background="white" paddingY="xl" hasBorderBottom>
@@ -47,7 +85,7 @@ export const ITCaseStudiesSection: React.FC<ITCaseStudiesSectionProps> = ({
 
       {/* Case Study Switcher Tabs */}
       <div className="flex flex-wrap gap-2 mb-8 pb-3 border-b border-slate-200">
-        {IT_CASE_STUDIES.map((c, idx) => (
+        {cases.map((c, idx) => (
           <button
             key={c.id}
             onClick={() => setActiveCaseIndex(idx)}

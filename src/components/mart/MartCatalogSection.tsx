@@ -50,7 +50,7 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
         return martDivisionProducts.map((p) => mapFirestoreProductToMart(p, rawCategories));
       }
     }
-    return MART_PRODUCTS;
+    return [];
   }, [rawProducts, rawCategories]);
 
   const allMartCategories = useMemo(() => {
@@ -62,8 +62,12 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
         return martCats.map(mapFirestoreCategoryToMart);
       }
     }
-    return MART_CATEGORIES;
+    return [];
   }, [rawCategories]);
+
+  if (allMartProducts.length === 0) {
+    return null;
+  }
 
   // Filter & Sort Products
   const filteredProducts = useMemo(() => {

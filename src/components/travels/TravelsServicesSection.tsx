@@ -67,8 +67,12 @@ export const TravelsServicesSection: React.FC = () => {
         }));
       }
     }
-    return defaultServices;
+    return [];
   }, [rawServices]);
+
+  if (travelServices.length === 0) {
+    return null;
+  }
 
   return (
     <SectionContainer id="services" background="white" paddingY="xl" hasBorderBottom>

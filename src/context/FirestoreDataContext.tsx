@@ -30,13 +30,15 @@ import {
   getDefaultSiteSettings,
   getDefaultHomepageSettings,
 } from '../services/firestore/settings';
-import { firestoreDivisionsService } from '../services/firestore/divisions';
+import { firestoreDivisionsService, getDefaultDivisions } from '../services/firestore/divisions';
 import { firestoreCategoriesService } from '../services/firestore/categories';
 import { firestoreServicesService } from '../services/firestore/services';
 import { firestoreProductsService } from '../services/firestore/products';
 import { firestoreMilestonesService } from '../services/firestore/milestones';
 import { firestoreTrustedCompaniesService } from '../services/firestore/trustedCompanies';
 import { firestoreTestimonialsService } from '../services/firestore/testimonials';
+import { firestoreGoogleReviewsService, DEFAULT_GOOGLE_REVIEWS_CONFIG } from '../services/firestore/googleReviews';
+import { GoogleReview, GoogleReviewsConfig } from '../types/googleReviews';
 import { firestorePortfolioService } from '../services/firestore/portfolio';
 import { firestoreGalleryService } from '../services/firestore/gallery';
 import { cmsService } from '../services/cmsService';
@@ -58,12 +60,16 @@ export interface FirestoreDataContextValue {
   milestones: FirestoreMilestone[];
   trustedCompanies: FirestoreTrustedCompany[];
   testimonials: FirestoreTestimonial[];
+  googleReviews: GoogleReview[];
+  googleReviewsConfig: GoogleReviewsConfig;
   portfolio: FirestorePortfolio[];
   gallery: FirestoreGallery[];
   refreshAll: () => Promise<void>;
   updateSiteSettings: (data: Partial<FirestoreSiteSettings>) => Promise<void>;
   updateCompanySettings: (data: Partial<FirestoreCompanySettings>) => Promise<void>;
   updateHomepageConfig: (data: Partial<HomepageCmsConfig>) => Promise<void>;
+  updateGoogleReviewsConfig: (data: Partial<GoogleReviewsConfig>) => Promise<void>;
+  syncGoogleReviews: () => Promise<any>;
 }
 
 const FirestoreDataContext = createContext<FirestoreDataContextValue | null>(null);
@@ -73,18 +79,132 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isReady, setIsReady] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const [companySettings, setCompanySettings] = useState<FirestoreCompanySettings>(getDefaultCompanySettings);
-  const [siteSettings, setSiteSettings] = useState<FirestoreSiteSettings>(getDefaultSiteSettings);
-  const [homepageConfig, setHomepageConfig] = useState<HomepageCmsConfig>(getDefaultHomepageSettings);
-  const [divisions, setDivisions] = useState<FirestoreDivision[]>([]);
-  const [categories, setCategories] = useState<FirestoreCategory[]>([]);
-  const [services, setServices] = useState<FirestoreService[]>([]);
-  const [products, setProducts] = useState<FirestoreProduct[]>([]);
-  const [milestones, setMilestones] = useState<FirestoreMilestone[]>([]);
-  const [trustedCompanies, setTrustedCompanies] = useState<FirestoreTrustedCompany[]>([]);
-  const [testimonials, setTestimonials] = useState<FirestoreTestimonial[]>([]);
-  const [portfolio, setPortfolio] = useState<FirestorePortfolio[]>([]);
-  const [gallery, setGallery] = useState<FirestoreGallery[]>([]);
+  const [companySettings, setCompanySettings] = useState<FirestoreCompanySettings>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('mahdev_cached_company_settings');
+        if (cached) return JSON.parse(cached);
+      }
+    } catch {}
+    return getDefaultCompanySettings();
+  });
+  const [siteSettings, setSiteSettings] = useState<FirestoreSiteSettings>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('mahdev_cached_site_settings');
+        if (cached) return JSON.parse(cached);
+      }
+    } catch {}
+    return getDefaultSiteSettings();
+  });
+  const [homepageConfig, setHomepageConfig] = useState<HomepageCmsConfig>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('mahdev_cached_homepage_config');
+        if (cached) return JSON.parse(cached);
+      }
+    } catch {}
+    return getDefaultHomepageSettings();
+  });
+  const [divisions, setDivisions] = useState<FirestoreDivision[]>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('mahdev_cached_divisions');
+        if (cached) return JSON.parse(cached);
+      }
+    } catch {}
+    return getDefaultDivisions();
+  });
+  const [categories, setCategories] = useState<FirestoreCategory[]>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('mahdev_cached_categories');
+        if (cached) return JSON.parse(cached);
+      }
+    } catch {}
+    return [];
+  });
+  const [services, setServices] = useState<FirestoreService[]>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('mahdev_cached_services');
+        if (cached) return JSON.parse(cached);
+      }
+    } catch {}
+    return [];
+  });
+  const [products, setProducts] = useState<FirestoreProduct[]>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('mahdev_cached_products');
+        if (cached) return JSON.parse(cached);
+      }
+    } catch {}
+    return [];
+  });
+  const [milestones, setMilestones] = useState<FirestoreMilestone[]>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('mahdev_cached_milestones');
+        if (cached) return JSON.parse(cached);
+      }
+    } catch {}
+    return [];
+  });
+  const [trustedCompanies, setTrustedCompanies] = useState<FirestoreTrustedCompany[]>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('mahdev_cached_companies');
+        if (cached) return JSON.parse(cached);
+      }
+    } catch {}
+    return [];
+  });
+  const [testimonials, setTestimonials] = useState<FirestoreTestimonial[]>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('mahdev_cached_testimonials');
+        if (cached) return JSON.parse(cached);
+      }
+    } catch {}
+    return [];
+  });
+  const [googleReviews, setGoogleReviews] = useState<GoogleReview[]>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('mahdev_cached_google_reviews');
+        if (cached) return JSON.parse(cached);
+      }
+    } catch {}
+    return [];
+  });
+  const [googleReviewsConfig, setGoogleReviewsConfig] = useState<GoogleReviewsConfig>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('mahdev_cached_google_reviews_config');
+        if (cached) return JSON.parse(cached);
+      }
+    } catch {}
+    return DEFAULT_GOOGLE_REVIEWS_CONFIG;
+  });
+  const [portfolio, setPortfolio] = useState<FirestorePortfolio[]>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('mahdev_cached_portfolio');
+        if (cached) return JSON.parse(cached);
+      }
+    } catch {}
+    return [];
+  });
+  const [gallery, setGallery] = useState<FirestoreGallery[]>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('mahdev_cached_gallery');
+        if (cached) return JSON.parse(cached);
+      }
+    } catch {}
+    return [];
+  });
 
   // Explicit Manual Refresh: loads all collections concurrently from Firestore
   const refreshAll = useCallback(async () => {
@@ -101,6 +221,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         ms,
         partners,
         reviews,
+        gConfig,
+        gReviews,
         port,
         gal,
       ] = await Promise.all([
@@ -114,6 +236,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         firestoreMilestonesService.getMilestones(true),
         firestoreTrustedCompaniesService.getTrustedCompanies(true),
         firestoreTestimonialsService.getTestimonials(undefined, true),
+        firestoreGoogleReviewsService.getConfig(true),
+        firestoreGoogleReviewsService.getReviews(),
         firestorePortfolioService.getPortfolio(undefined, true),
         firestoreGalleryService.getGallery(undefined, true),
       ]);
@@ -128,8 +252,28 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       setMilestones(ms);
       setTrustedCompanies(partners);
       setTestimonials(reviews);
+      setGoogleReviewsConfig(gConfig);
+      setGoogleReviews(gReviews);
       setPortfolio(port);
       setGallery(gal);
+
+      // Persist hydrated snapshots to localStorage cache
+      try {
+        localStorage.setItem('mahdev_cached_company_settings', JSON.stringify(company));
+        localStorage.setItem('mahdev_cached_site_settings', JSON.stringify(site));
+        localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(home));
+        localStorage.setItem('mahdev_cached_divisions', JSON.stringify(divs));
+        localStorage.setItem('mahdev_cached_categories', JSON.stringify(cats));
+        localStorage.setItem('mahdev_cached_services', JSON.stringify(srvs));
+        localStorage.setItem('mahdev_cached_products', JSON.stringify(prods));
+        localStorage.setItem('mahdev_cached_milestones', JSON.stringify(ms));
+        localStorage.setItem('mahdev_cached_companies', JSON.stringify(partners));
+        localStorage.setItem('mahdev_cached_testimonials', JSON.stringify(reviews));
+        localStorage.setItem('mahdev_cached_google_reviews_config', JSON.stringify(gConfig));
+        localStorage.setItem('mahdev_cached_google_reviews', JSON.stringify(gReviews));
+        localStorage.setItem('mahdev_cached_portfolio', JSON.stringify(port));
+        localStorage.setItem('mahdev_cached_gallery', JSON.stringify(gal));
+      } catch {}
 
       // Sync with catalogService, bookingService, and cmsService cache
       catalogService.syncWithFirestore(prods, cats);
@@ -147,20 +291,39 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     let isMounted = true;
     let initialCount = 0;
-    const requiredSources = 7; // core collections needed for initial readiness
+    const requiredSources = 4; // company, site, home, divisions
 
-    const checkInitialReady = () => {
-      initialCount++;
-      if (initialCount >= requiredSources && isMounted) {
+    const markReady = () => {
+      if (isMounted) {
         setIsInitialLoading(false);
         setIsReady(true);
       }
     };
 
+    const checkInitialReady = () => {
+      initialCount++;
+      if (initialCount >= requiredSources) {
+        markReady();
+      }
+    };
+
+    // Fast initial fetch
+    refreshAll().catch((err) => {
+      console.warn('[FirestoreDataContext] Initial fast hydration warning:', err);
+    });
+
+    // Safety timeout: ensure loading state completes fast
+    const safetyTimer = setTimeout(() => {
+      markReady();
+    }, 600);
+
     // 1. Core Realtime Centralized Listeners (Single Source of Truth, zero duplicate listeners)
     const unsubCompany = firestoreSettingsService.subscribeCompanySettings((data) => {
       if (isMounted) {
         setCompanySettings(data);
+        try {
+          localStorage.setItem('mahdev_cached_company_settings', JSON.stringify(data));
+        } catch {}
         checkInitialReady();
       }
     });
@@ -168,6 +331,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubSite = firestoreSettingsService.subscribeSiteSettings((data) => {
       if (isMounted) {
         setSiteSettings(data);
+        try {
+          localStorage.setItem('mahdev_cached_site_settings', JSON.stringify(data));
+        } catch {}
         checkInitialReady();
       }
     });
@@ -220,6 +386,14 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const unsubReviews = firestoreTestimonialsService.subscribeTestimonials((data) => {
       if (isMounted) setTestimonials(data);
+    });
+
+    const unsubGoogleConfig = firestoreGoogleReviewsService.subscribeConfig((data) => {
+      if (isMounted) setGoogleReviewsConfig(data);
+    });
+
+    const unsubGoogleReviews = firestoreGoogleReviewsService.subscribeReviews((data) => {
+      if (isMounted) setGoogleReviews(data);
     });
 
     const unsubPort = firestorePortfolioService.subscribePortfolio((data) => {
@@ -396,14 +570,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       cmsService.subscribe(type, updater)
     );
 
-    // Fallback safety timer: ensure loader never hangs if network is slow
-    const safetyTimer = setTimeout(() => {
-      if (isMounted) {
-        setIsInitialLoading(false);
-        setIsReady(true);
-      }
-    }, 2000);
-
     return () => {
       isMounted = false;
       clearTimeout(safetyTimer);
@@ -417,6 +583,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       unsubMs();
       unsubPartners();
       unsubReviews();
+      unsubGoogleConfig();
+      unsubGoogleReviews();
       unsubPort();
       unsubGal();
       cmsUnsubscribers.forEach((u) => u());
@@ -446,6 +614,22 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   }, []);
 
+  const updateGoogleReviewsConfig = useCallback(async (data: Partial<GoogleReviewsConfig>) => {
+    await firestoreGoogleReviewsService.saveConfig(data);
+    setGoogleReviewsConfig((prev) => ({ ...prev, ...data }));
+  }, []);
+
+  const syncGoogleReviews = useCallback(async () => {
+    const res = await firestoreGoogleReviewsService.syncGoogleReviews();
+    if (res.success) {
+      const updatedReviews = await firestoreGoogleReviewsService.getReviews();
+      setGoogleReviews(updatedReviews);
+      const updatedConfig = await firestoreGoogleReviewsService.getConfig(true);
+      setGoogleReviewsConfig(updatedConfig);
+    }
+    return res;
+  }, []);
+
   const value = useMemo<FirestoreDataContextValue>(
     () => ({
       isInitialLoading,
@@ -462,12 +646,16 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       milestones,
       trustedCompanies,
       testimonials,
+      googleReviews,
+      googleReviewsConfig,
       portfolio,
       gallery,
       refreshAll,
       updateSiteSettings,
       updateCompanySettings,
       updateHomepageConfig,
+      updateGoogleReviewsConfig,
+      syncGoogleReviews,
     }),
     [
       isInitialLoading,
@@ -484,12 +672,16 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       milestones,
       trustedCompanies,
       testimonials,
+      googleReviews,
+      googleReviewsConfig,
       portfolio,
       gallery,
       refreshAll,
       updateSiteSettings,
       updateCompanySettings,
       updateHomepageConfig,
+      updateGoogleReviewsConfig,
+      syncGoogleReviews,
     ]
   );
 
@@ -761,6 +953,40 @@ export function useTestimonials(divisionId?: DivisionId) {
   return {
     testimonials: filtered,
     allTestimonials: testimonials,
+    isLoading: isInitialLoading,
+    isReady,
+  };
+}
+
+export function useGoogleReviews(divisionId?: DivisionId | 'all') {
+  const {
+    googleReviews,
+    googleReviewsConfig,
+    syncGoogleReviews,
+    updateGoogleReviewsConfig,
+    isInitialLoading,
+    isReady,
+  } = useFirestoreDataContext();
+
+  // Curated list for public website display
+  const publicReviews = useMemo(() => {
+    return googleReviews.filter((r) => {
+      if (r.isHidden) return false;
+      if (googleReviewsConfig.featuredOnly && !r.isFeatured) return false;
+      if (googleReviewsConfig.minStarRating && r.rating < googleReviewsConfig.minStarRating) return false;
+      if (divisionId && divisionId !== 'all' && r.divisionId !== 'all' && r.divisionId !== divisionId) {
+        return false;
+      }
+      return true;
+    });
+  }, [googleReviews, googleReviewsConfig, divisionId]);
+
+  return {
+    reviews: publicReviews,
+    allReviews: googleReviews,
+    config: googleReviewsConfig,
+    sync: syncGoogleReviews,
+    updateConfig: updateGoogleReviewsConfig,
     isLoading: isInitialLoading,
     isReady,
   };

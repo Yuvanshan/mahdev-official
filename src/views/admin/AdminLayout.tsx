@@ -34,9 +34,11 @@ import {
 import { activeFirestoreDatabaseId } from '../../lib/firebase';
 import { AdminSectionId } from '../../types/admin';
 import { useAdminAuth } from '../../context/AdminAuthContext';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { AdminLoginView } from './AdminLoginView';
 import { AdminNotificationCenter } from '../../components/admin/AdminNotificationCenter';
 import { SEOHead } from '../../components/layout/SEOHead';
+import { InitialAppLoader } from '../../components/common/InitialAppLoader';
 
 // Lazy-loaded Admin Views for dynamic code splitting
 const AdminDashboardView = lazy(() => import('./AdminDashboardView').then(m => ({ default: (m as any).default || m.AdminDashboardView })));
@@ -126,18 +128,17 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigate }) => {
   const { admin, session, isAuthenticated, isLoading, logout } = useAdminAuth();
+  const { isInitialLoading, isReady } = useFirestoreDataContext();
   const [activeSection, setActiveSection] = useState<AdminSectionId>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // 1. Loading State
-  if (isLoading) {
+  // 1. Loading State (Admin Auth Token or Live Database Hydration)
+  if (isLoading || (isInitialLoading && !isReady)) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-xs text-slate-400 font-mono">Verifying Administrative Token Signature...</p>
-        </div>
-      </div>
+      <InitialAppLoader
+        message="Loading Administrative Console..."
+        subMessage="Verifying administrative credentials and retrieving live Firestore configuration..."
+      />
     );
   }
 

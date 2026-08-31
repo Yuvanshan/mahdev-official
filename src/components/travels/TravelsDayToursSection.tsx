@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Clock,
   MapPin,
@@ -6,7 +6,8 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
-import { DAY_TOURS, DayTour } from '../../data/travelsData';
+import { DayTour } from '../../data/travelsData';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
@@ -19,6 +20,37 @@ interface TravelsDayToursSectionProps {
 export const TravelsDayToursSection: React.FC<TravelsDayToursSectionProps> = ({
   onBookDayTour,
 }) => {
+  const { services: rawServices } = useFirestoreDataContext();
+
+  const dayTours = useMemo<DayTour[]>(() => {
+    const list: DayTour[] = [];
+    if (rawServices && rawServices.length > 0) {
+      const tourServices = rawServices.filter(
+        (s) =>
+          (s.division === 'travels' || (s as any).divisionId === 'travels') &&
+          ((s as any).category === 'day-tours' || (s as any).type === 'day-tour')
+      );
+      tourServices.forEach((s) => {
+        list.push({
+          id: s.id,
+          title: s.name,
+          duration: (s as any).duration || (s as any).leadTime || 'Full Day (8-10 Hours)',
+          location: (s as any).location || (s as any).startLocation || 'Colombo / Negombo',
+          price: typeof s.price === 'number' ? `$${s.price}` : String(s.price || '$95'),
+          description: s.description || '',
+          imageUrl: s.images && s.images.length > 0 ? s.images[0] : (s as any).imageUrl || '',
+          highlights: s.features || [],
+          included: (s as any).included || ['Air-conditioned transport', 'Chauffeur guide'],
+        });
+      });
+    }
+    return list;
+  }, [rawServices]);
+
+  if (dayTours.length === 0) {
+    return null;
+  }
+
   return (
     <SectionContainer id="tours" background="white" paddingY="xl" hasBorderBottom>
       {/* Header */}
@@ -36,9 +68,9 @@ export const TravelsDayToursSection: React.FC<TravelsDayToursSectionProps> = ({
         </ScrollReveal>
       </div>
 
-      {/* Grid of 4 Day Tours */}
+      {/* Grid of Day Tours */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {DAY_TOURS.map((tour) => (
+        {dayTours.map((tour) => (
           <div
             key={tour.id}
             className="group rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"

@@ -41,7 +41,7 @@ export const DIVISION_DOCUMENT_MAP: Record<string, {
     docId: 'sws',
     name: 'SWS Event Management',
     slug: 'sws',
-    shortDescription: 'Premier end-to-end event planning, audio-visual production, luxury weddings, and concert staging.',
+    shortDescription: 'Premier luxury wedding and stage decorations, audio-visual production, mandap architecture, and concert staging.',
     description: DIVISIONS.sws.description,
     imageUrl: '/assets/images/hero_sws.jpg',
     logoUrl: '/assets/images/sws_logo.png',
@@ -52,7 +52,7 @@ export const DIVISION_DOCUMENT_MAP: Record<string, {
     docId: 'u1-studio',
     name: 'U1 Studio',
     slug: 'u1-studio',
-    shortDescription: 'State-of-the-art photography, cinematic videography, fashion production, and post-production.',
+    shortDescription: 'State-of-the-art photography, 8K cinematic films, wedding photojournalism, and studio fashion productions.',
     description: DIVISIONS.u1.description,
     imageUrl: '/assets/images/hero_u1.jpg',
     logoUrl: '/assets/images/u1_logo.png',
@@ -61,9 +61,9 @@ export const DIVISION_DOCUMENT_MAP: Record<string, {
   },
   'it-solutions': {
     docId: 'it-solutions',
-    name: 'Mahdev IT & Solutions',
+    name: 'Mahdev IT Solutions',
     slug: 'it-solutions',
-    shortDescription: 'Enterprise software engineering, modern cloud architecture, scalable web/mobile, and cybersecurity.',
+    shortDescription: 'Enterprise software engineering, modern cloud architecture, scalable web/mobile platforms, and cybersecurity.',
     description: DIVISIONS.it.description,
     imageUrl: '/assets/images/hero_it.jpg',
     logoUrl: '/assets/images/it_logo.png',
@@ -85,7 +85,7 @@ export const DIVISION_DOCUMENT_MAP: Record<string, {
     docId: 'online-mart',
     name: 'Mahdev Online Mart',
     slug: 'online-mart',
-    shortDescription: 'Curated e-commerce storefront delivering verified electronics, studio accessories, and lifestyle essentials.',
+    shortDescription: 'Curated e-commerce storefront delivering verified camera gear, audio hardware, and computing essentials.',
     description: DIVISIONS.mart.description,
     imageUrl: '/assets/images/hero_mart.jpg',
     logoUrl: '/assets/images/mart_logo.png',
@@ -152,11 +152,12 @@ export const firestoreDivisionsService = {
         return data;
       }
 
-      cachedDivisions = { data: [], timestamp: now };
-      return [];
+      const defaultDivs = getDefaultDivisions();
+      cachedDivisions = { data: defaultDivs, timestamp: now };
+      return defaultDivs;
     } catch (err) {
       console.warn('[Firestore Divisions] getDivisions error:', err);
-      return cachedDivisions?.data || [];
+      return cachedDivisions?.data || getDefaultDivisions();
     }
   },
 
@@ -206,17 +207,22 @@ export const firestoreDivisionsService = {
     return onSnapshot(
       colRef,
       (snap) => {
-        const data = snap.docs.map((docSnap) => ({
-          ...docSnap.data(),
-          id: docSnap.id,
-        })) as FirestoreDivision[];
-        data.sort((a, b) => (a.order || 0) - (b.order || 0));
-        cachedDivisions = { data, timestamp: Date.now() };
-        callback(data);
+        if (!snap.empty) {
+          const data = snap.docs.map((docSnap) => ({
+            ...docSnap.data(),
+            id: docSnap.id,
+          })) as FirestoreDivision[];
+          data.sort((a, b) => (a.order || 0) - (b.order || 0));
+          cachedDivisions = { data, timestamp: Date.now() };
+          callback(data);
+        } else {
+          const defaultDivs = cachedDivisions?.data?.length ? cachedDivisions.data : getDefaultDivisions();
+          callback(defaultDivs);
+        }
       },
       (err) => {
         console.warn('[Firestore Divisions] subscribe error:', err);
-        callback(cachedDivisions?.data || []);
+        callback(cachedDivisions?.data?.length ? cachedDivisions.data : getDefaultDivisions());
       }
     );
   },
