@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { Navigation } from './components/layout/Navigation';
 import { Footer } from './components/layout/Footer';
@@ -48,8 +48,6 @@ import { AccountLayout } from './views/account/AccountLayout';
 import { AdminLayout } from './views/admin/AdminLayout';
 import { MaintenanceView } from './views/MaintenanceView';
 import { InitialAppLoader } from './components/common/InitialAppLoader';
-
-const PageLoadingFallback: React.FC = () => null;
 
 function AppContent() {
   const {
@@ -148,10 +146,17 @@ function AppContent() {
 
   const isAdminRoute = normalizedPath === '/admin' || normalizedPath.startsWith('/admin/');
 
-  // Determine current division from path
-  const divisionKey = (Object.keys(DIVISIONS) as DivisionId[]).find(
-    (key) => DIVISIONS[key].route === normalizedPath
-  );
+  // Determine current division from path or known aliases
+  const divisionKey = (Object.keys(DIVISIONS) as DivisionId[]).find((key) => {
+    const route = DIVISIONS[key].route;
+    if (route === normalizedPath) return true;
+    if (key === 'sws' && ['/sws-events', '/sws', '/events', '/event-management'].includes(normalizedPath)) return true;
+    if (key === 'u1' && ['/u1-studio', '/u1', '/studio', '/photography'].includes(normalizedPath)) return true;
+    if (key === 'it' && ['/it-solutions', '/it', '/mahdev-it', '/solutions', '/software'].includes(normalizedPath)) return true;
+    if (key === 'travels' && ['/mahdev-travels', '/travels', '/tourism', '/tours'].includes(normalizedPath)) return true;
+    if (key === 'mart' && ['/online-mart', '/mart', '/mahdev-mart', '/shop', '/store'].includes(normalizedPath)) return true;
+    return false;
+  });
 
   // Track page views and division views automatically
   useEffect(() => {
@@ -672,9 +677,7 @@ function AppContent() {
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className="w-full max-w-full min-w-0"
           >
-            <Suspense fallback={<PageLoadingFallback />}>
-              {renderCurrentView()}
-            </Suspense>
+            {renderCurrentView()}
           </motion.div>
         </AnimatePresence>
       </main>

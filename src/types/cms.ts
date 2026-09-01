@@ -289,8 +289,71 @@ export interface DecorationShowcaseVideo {
   highlights: string[];
 }
 
+// 14b. Universal Section & Widget Models
+export type WidgetType =
+  | 'text'
+  | 'heading'
+  | 'image'
+  | 'video'
+  | 'gallery'
+  | 'slider'
+  | 'banner'
+  | 'cards'
+  | 'services'
+  | 'products'
+  | 'testimonials'
+  | 'statistics'
+  | 'timeline'
+  | 'faq'
+  | 'pricing'
+  | 'team'
+  | 'contact'
+  | 'map'
+  | 'socialLinks'
+  | 'cta'
+  | 'buttons'
+  | 'booking'
+  | 'customHtml';
+
+export interface DynamicWidget {
+  id: string;
+  type: WidgetType;
+  title?: string;
+  subtitle?: string;
+  badge?: string;
+  content?: string;
+  enabled: boolean;
+  order: number;
+  desktopVisible: boolean;
+  mobileVisible: boolean;
+  align?: 'left' | 'center' | 'right';
+  styleTheme?: 'default' | 'card' | 'gradient' | 'minimal' | 'luxury';
+  data?: Record<string, any>;
+}
+
+export interface DynamicSectionItem {
+  id: string;
+  name: string;
+  sectionKey: string;
+  enabled: boolean;
+  order: number;
+  desktopVisible?: boolean;
+  mobileVisible?: boolean;
+  title?: string;
+  subtitle?: string;
+  badge?: string;
+  widgets?: DynamicWidget[];
+}
+
 // 15. Homepage CMS Configuration
 export interface HomepageCmsConfig {
+  welcomeAnimation?: {
+    enabled: boolean;
+    welcomeText?: string;
+    duration?: number;
+    logoUrl?: string;
+  };
+  sectionsOrder?: DynamicSectionItem[];
   hero: {
     badgeText: string;
     titleLine1: string;
@@ -312,6 +375,24 @@ export interface HomepageCmsConfig {
     subheadline: string;
     description: string;
     pillars: { title: string; desc: string; icon: string }[];
+  };
+  divisionsSection?: {
+    badge?: string;
+    title?: string;
+    subtitle?: string;
+    enabled?: boolean;
+  };
+  whyMahdev?: {
+    badge?: string;
+    title?: string;
+    subtitle?: string;
+    enabled?: boolean;
+  };
+  statistics?: {
+    badge?: string;
+    title?: string;
+    subtitle?: string;
+    enabled?: boolean;
   };
   featuredServices: {
     badge: string;

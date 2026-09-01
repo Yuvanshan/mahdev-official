@@ -1,4 +1,4 @@
-import React, { useState, Suspense, lazy } from 'react';
+import React, { useState } from 'react';
 import {
   LayoutDashboard,
   Building2,
@@ -40,33 +40,32 @@ import { AdminNotificationCenter } from '../../components/admin/AdminNotificatio
 import { SEOHead } from '../../components/layout/SEOHead';
 import { InitialAppLoader } from '../../components/common/InitialAppLoader';
 
-// Lazy-loaded Admin Views for dynamic code splitting
-const AdminDashboardView = lazy(() => import('./AdminDashboardView').then(m => ({ default: (m as any).default || m.AdminDashboardView })));
-const AdminAnalyticsView = lazy(() => import('./AdminAnalyticsView').then(m => ({ default: (m as any).default || m.AdminAnalyticsView })));
-const AdminDivisionsView = lazy(() => import('./AdminDivisionsView').then(m => ({ default: (m as any).default || m.AdminDivisionsView })));
-const AdminServicesView = lazy(() => import('./AdminServicesView').then(m => ({ default: (m as any).default || m.AdminServicesView })));
-const AdminProductsView = lazy(() => import('./AdminProductsView').then(m => ({ default: (m as any).default || m.AdminProductsView })));
-const AdminCategoriesView = lazy(() => import('./AdminCategoriesView').then(m => ({ default: (m as any).default || m.AdminCategoriesView })));
-const AdminPackagesView = lazy(() => import('./AdminPackagesView').then(m => ({ default: (m as any).default || m.AdminPackagesView })));
-const AdminPortfolioView = lazy(() => import('./AdminPortfolioView').then(m => ({ default: (m as any).default || m.AdminPortfolioView })));
-const AdminGalleryView = lazy(() => import('./AdminGalleryView').then(m => ({ default: (m as any).default || m.AdminGalleryView })));
-const AdminMilestonesView = lazy(() => import('./AdminMilestonesView').then(m => ({ default: (m as any).default || m.AdminMilestonesView })));
-const AdminCompaniesView = lazy(() => import('./AdminCompaniesView').then(m => ({ default: (m as any).default || m.AdminCompaniesView })));
-const AdminTestimonialsView = lazy(() => import('./AdminTestimonialsView').then(m => ({ default: (m as any).default || m.AdminTestimonialsView })));
-const AdminPagesView = lazy(() => import('./AdminPagesView').then(m => ({ default: (m as any).default || m.AdminPagesView })));
-const AdminBannersView = lazy(() => import('./AdminBannersView').then(m => ({ default: (m as any).default || m.AdminBannersView })));
-const AdminCouponsView = lazy(() => import('./AdminCouponsView').then(m => ({ default: (m as any).default || m.AdminCouponsView })));
-const AdminOrdersView = lazy(() => import('./AdminOrdersView').then(m => ({ default: (m as any).default || m.AdminOrdersView })));
-const AdminBookingsView = lazy(() => import('./AdminBookingsView').then(m => ({ default: (m as any).default || m.AdminBookingsView })));
-const AdminCustomersView = lazy(() => import('./AdminCustomersView').then(m => ({ default: (m as any).default || m.AdminCustomersView })));
-const AdminInventoryView = lazy(() => import('./AdminInventoryView').then(m => ({ default: (m as any).default || m.AdminInventoryView })));
-const AdminMediaView = lazy(() => import('./AdminMediaView').then(m => ({ default: (m as any).default || m.AdminMediaView })));
-const AdminSeoView = lazy(() => import('./AdminSeoView').then(m => ({ default: (m as any).default || m.AdminSeoView })));
-const AdminSettingsView = lazy(() => import('./AdminSettingsView').then(m => ({ default: (m as any).default || m.AdminSettingsView })));
-const AdminUsersView = lazy(() => import('./AdminUsersView').then(m => ({ default: (m as any).default || m.AdminUsersView })));
-const AdminAuditLogsView = lazy(() => import('./AdminAuditLogsView').then(m => ({ default: (m as any).default || m.AdminAuditLogsView })));
-const AdminHomepageView = lazy(() => import('./AdminHomepageView').then(m => ({ default: (m as any).default || m.AdminHomepageView })));
-const AdminGenericView = lazy(() => import('./AdminGenericView').then(m => ({ default: (m as any).default || m.AdminGenericView })));
+import { AdminDashboardView } from './AdminDashboardView';
+import { AdminAnalyticsView } from './AdminAnalyticsView';
+import { AdminDivisionsView } from './AdminDivisionsView';
+import { AdminServicesView } from './AdminServicesView';
+import { AdminProductsView } from './AdminProductsView';
+import { AdminCategoriesView } from './AdminCategoriesView';
+import { AdminPackagesView } from './AdminPackagesView';
+import { AdminPortfolioView } from './AdminPortfolioView';
+import { AdminGalleryView } from './AdminGalleryView';
+import { AdminMilestonesView } from './AdminMilestonesView';
+import { AdminCompaniesView } from './AdminCompaniesView';
+import { AdminTestimonialsView } from './AdminTestimonialsView';
+import { AdminPagesView } from './AdminPagesView';
+import { AdminBannersView } from './AdminBannersView';
+import { AdminCouponsView } from './AdminCouponsView';
+import { AdminOrdersView } from './AdminOrdersView';
+import { AdminBookingsView } from './AdminBookingsView';
+import { AdminCustomersView } from './AdminCustomersView';
+import { AdminInventoryView } from './AdminInventoryView';
+import { AdminMediaView } from './AdminMediaView';
+import { AdminSeoView } from './AdminSeoView';
+import { AdminSettingsView } from './AdminSettingsView';
+import { AdminUsersView } from './AdminUsersView';
+import { AdminAuditLogsView } from './AdminAuditLogsView';
+import { AdminHomepageView } from './AdminHomepageView';
+import { AdminGenericView } from './AdminGenericView';
 
 const AdminSectionSkeleton: React.FC = () => (
   <div className="p-6 sm:p-8 max-w-7xl mx-auto animate-pulse space-y-6">
@@ -417,9 +416,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
 
         {/* WORKSPACE BODY */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl w-full mx-auto">
-          <Suspense fallback={<AdminSectionSkeleton />}>
-            {renderActiveView()}
-          </Suspense>
+          {renderActiveView()}
         </main>
       </div>
     </div>

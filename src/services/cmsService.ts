@@ -554,16 +554,26 @@ class CmsService {
         });
       } else if (entity === 'services') {
         await firestoreServicesService.saveService(item.id, {
+          divisionId: item.divisionId,
           division: item.divisionId,
+          divisionName: item.divisionName,
           name: item.name || item.title,
+          title: item.title || item.name,
           slug: item.slug || item.id,
-          description: item.description || item.shortDescription,
+          description: item.description || item.shortDescription || '',
+          imageUrl: item.imageUrl,
           images: item.imageUrl ? [item.imageUrl] : item.images || [],
-          price: item.startingPrice || item.price || 100,
+          price: item.startingPrice || item.price || 0,
+          startingPrice: item.startingPrice || item.price || 0,
           currency: item.currency || 'USD',
           status: item.isDeleted ? 'draft' : (item.isActive === false ? 'draft' : 'active'),
           bookingEnabled: item.bookingEnabled !== false,
           quoteEnabled: item.quoteEnabled !== false,
+          badge: item.badge,
+          features: item.features || [],
+          turnaroundTime: item.turnaroundTime,
+          popular: item.popular,
+          iconName: item.iconName,
         });
       } else if (entity === 'products') {
         await firestoreProductsService.saveProduct(item.id, {

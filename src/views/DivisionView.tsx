@@ -24,14 +24,45 @@ import { DivisionId } from '../types';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 
 interface DivisionViewProps {
-  divisionId: DivisionId;
+  divisionId: string;
   onNavigate: (route: string) => void;
 }
 
 export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNavigate }) => {
   const { divisions, services, companySettings } = useFirestoreDataContext();
-  const baseDivision = DIVISIONS[divisionId] || DIVISIONS.sws;
-  const firestoreDiv = divisions.find((d) => d.id === divisionId);
+  const baseDivision = DIVISIONS[divisionId as DivisionId] || {
+    id: divisionId as DivisionId,
+    name: 'Mahdev Division',
+    shortName: 'Division',
+    tagline: 'Delivering Innovation & Excellence',
+    description: 'Specialized services and enterprise solutions by Mahdev Pvt Ltd.',
+    badge: 'Specialized Division',
+    route: `/divisions/${divisionId}`,
+    domainUrl: `https://mahdev.lk/divisions/${divisionId}`,
+    accentColor: '#0052FF',
+    gradient: 'from-blue-600 to-indigo-700',
+    heroHeadline: 'Delivering Innovation & Specialized Services',
+    heroSubheadline: 'Tailored solutions and high-standard enterprise operations across Sri Lanka.',
+    iconName: 'Sparkles',
+    contactEmail: companySettings?.email || 'contact@mahdev.lk',
+    coreServices: [],
+    stats: [
+      { label: 'Active Projects', value: '100+' },
+      { label: 'Client Satisfaction', value: '99%' },
+      { label: 'Service Coverage', value: 'Island-wide' },
+    ],
+  };
+  const firestoreDiv = divisions.find((d) => d.id === divisionId || d.slug === divisionId);
+
+  // Live Firestore services matching this division
+  const liveDivisionServices = React.useMemo(() => {
+    return services.filter(
+      (s) =>
+        s.division === divisionId ||
+        (s as any).divisionId === divisionId ||
+        (firestoreDiv && (s.division === firestoreDiv.slug || (s as any).divisionId === firestoreDiv.id))
+    );
+  }, [services, divisionId, firestoreDiv]);
 
   // Merge Firestore overrides with base structure
   const division = {
@@ -49,6 +80,14 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
           heroSubheadline: firestoreDiv.description || baseDivision.heroSubheadline,
         }
       : {}),
+    coreServices:
+      liveDivisionServices.length > 0
+        ? liveDivisionServices.map((s) => ({
+            title: s.name,
+            description: s.description || 'Specialized enterprise service by Mahdev.',
+            iconName: (s as any).iconName || 'Sparkles',
+          }))
+        : baseDivision.coreServices || [],
   };
 
   const [inquirySubmitted, setInquirySubmitted] = useState(false);

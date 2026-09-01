@@ -22,10 +22,14 @@ export const HappyClientsAndProjectsSection: React.FC<HappyClientsAndProjectsSec
 }) => {
   const { trustedCompanies, portfolio, companySettings, homepageConfig } = useFirestoreDataContext();
 
+  if (trustedCompanies.length === 0 && portfolio.length === 0) {
+    return null;
+  }
+
   // Dynamic statistics calculated from Firestore or Admin configuration
-  const completedProjectsCount = portfolio.length > 0 ? portfolio.length : 120;
-  const happyClientsCount = trustedCompanies.length > 0 ? `${trustedCompanies.length * 15}+` : '350+';
-  const partnerCompaniesCount = trustedCompanies.length > 0 ? trustedCompanies.length : 18;
+  const completedProjectsCount = portfolio.length;
+  const happyClientsCount = trustedCompanies.length > 0 ? `${trustedCompanies.length * 15}+` : '0';
+  const partnerCompaniesCount = trustedCompanies.length;
 
   const stats = [
     {

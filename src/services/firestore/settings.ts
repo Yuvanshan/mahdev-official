@@ -39,8 +39,31 @@ let cachedCompanySettings: { data: FirestoreCompanySettings; timestamp: number }
 let cachedSiteSettings: { data: FirestoreSiteSettings; timestamp: number } | null = getInitialCachedSite();
 let cachedHomepageSettings: { data: HomepageCmsConfig; timestamp: number } | null = null;
 
+export const DEFAULT_HOMEPAGE_SECTIONS = [
+  { id: 'sec-welcome', name: 'Welcome Preloader', sectionKey: 'welcomeAnimation', enabled: true, order: 1 },
+  { id: 'sec-hero', name: 'Hero Section', sectionKey: 'hero', enabled: true, order: 2 },
+  { id: 'sec-about', name: 'About Mahdev', sectionKey: 'about', enabled: true, order: 3 },
+  { id: 'sec-divisions', name: 'Business Divisions', sectionKey: 'divisions', enabled: true, order: 4 },
+  { id: 'sec-services', name: 'Featured Services', sectionKey: 'services', enabled: true, order: 5 },
+  { id: 'sec-why', name: 'Why Mahdev', sectionKey: 'whyMahdev', enabled: true, order: 6 },
+  { id: 'sec-stats', name: 'Corporate Statistics', sectionKey: 'statistics', enabled: true, order: 7 },
+  { id: 'sec-gallery', name: 'Projects & Portfolios', sectionKey: 'gallery', enabled: true, order: 8 },
+  { id: 'sec-videos', name: 'Cinematic Video Showcase', sectionKey: 'decorationShowcase', enabled: true, order: 9 },
+  { id: 'sec-testimonials', name: 'Client Testimonials', sectionKey: 'testimonials', enabled: true, order: 10 },
+  { id: 'sec-milestones', name: 'Company Milestones', sectionKey: 'milestones', enabled: true, order: 11 },
+  { id: 'sec-partners', name: 'Trusted Partners', sectionKey: 'trustedCompanies', enabled: true, order: 12 },
+  { id: 'sec-cta', name: 'Call to Action', sectionKey: 'cta', enabled: true, order: 13 },
+  { id: 'sec-contact', name: 'Corporate Contact', sectionKey: 'contact', enabled: true, order: 14 },
+];
+
 export function getDefaultHomepageSettings(): HomepageCmsConfig {
   return {
+    welcomeAnimation: {
+      enabled: true,
+      welcomeText: 'Welcome to Mahdev Pvt Ltd',
+      duration: 3,
+    },
+    sectionsOrder: DEFAULT_HOMEPAGE_SECTIONS,
     hero: {
       badgeText: 'CORPORATE SYNERGY • EST. 2022',
       titleLine1: 'Creating Moments...',
@@ -72,6 +95,24 @@ export function getDefaultHomepageSettings(): HomepageCmsConfig {
         { title: 'Enterprise Rigor', desc: 'ISO-aligned quality standards, calibrated camera and stage gear, and enterprise SLA guarantees.', icon: 'ShieldCheck' },
         { title: 'Bespoke Craftsmanship', desc: 'Tailored solutions whether styling an opulent wedding decor, capturing 8K cinema, or engineering cloud IT infrastructure.', icon: 'Sparkles' },
       ],
+    },
+    divisionsSection: {
+      badge: 'OUR DIVISIONS',
+      title: 'Five Pillars of Industry Mastery',
+      subtitle: 'Specialized corporate subsidiaries delivering end-to-end excellence across hospitality, media, technology, travel, and commerce.',
+      enabled: true,
+    },
+    whyMahdev: {
+      badge: 'THE MAHDEV DIFFERENCE',
+      title: 'Why Leading Brands Trust Mahdev',
+      subtitle: 'Uncompromising standard of perfection, calibrated equipment, and enterprise SLA guarantees.',
+      enabled: true,
+    },
+    statistics: {
+      badge: 'PROVEN IMPACT',
+      title: 'Excellence In Numbers',
+      subtitle: 'Real-time performance metrics delivered across Sri Lanka and global clients.',
+      enabled: true,
     },
     featuredServices: {
       badge: 'FLAGSHIP SOLUTIONS',

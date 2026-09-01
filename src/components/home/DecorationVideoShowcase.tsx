@@ -38,75 +38,6 @@ interface DecorationVideo {
   highlights: string[];
 }
 
-// Verified real event decoration & stagecraft video reels for Mahdev / SWS
-const DEFAULT_DECORATION_VIDEOS: DecorationVideo[] = [
-  {
-    id: 'decor-vid-1',
-    title: 'Grand Royal Wedding Stagecraft & Architectural Floral Truss',
-    category: 'Weddings',
-    location: 'Shangri-La Ballroom, Colombo',
-    duration: '0:48',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-wedding-table-with-flower-decorations-and-cutlery-42797-large.mp4',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80',
-    description: 'Custom engineered kinetic floral canopy with gold-leaf mandap architecture, precision beam spotlights, and 1,200-guest seating alignment.',
-    venueType: '5-Star Luxury Ballroom',
-    divisionName: 'SWS Event Management',
-    highlights: ['Bespoke Floral Rigging', 'Kinetic Lighting Control', 'Custom Mandap Architecture'],
-  },
-  {
-    id: 'decor-vid-2',
-    title: 'Atmospheric Open-Air Coastal Reception & Fairy Light Canopy',
-    category: 'Floral & Canopy',
-    location: 'Nilaveli Beachfront, Trincomalee',
-    duration: '0:35',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-decorated-table-at-an-outdoor-wedding-42799-large.mp4',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=80',
-    description: 'Enchanted seaside evening ambiance featuring 20,000+ warm fairy light diodes, bamboo floral arches, and ocean breeze-resistant trussing.',
-    venueType: 'Oceanfront Private Estate',
-    divisionName: 'SWS Event Management',
-    highlights: ['Weather-Resistant Truss', 'Fairy Light Sky Ceiling', 'Driftwood Floral Arches'],
-  },
-  {
-    id: 'decor-vid-3',
-    title: 'Enterprise Tech Summit Stage & Dynamic RGB Beam Matrix',
-    category: 'Corporate Galas',
-    location: 'BMICH Main Hall, Colombo',
-    duration: '0:42',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-stage-lighting-at-a-concert-40879-large.mp4',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80',
-    description: 'High-impact corporate keynote presentation with 3D projection mapping, synchronized beam fixtures, and ultra-wide P2.5 LED wall.',
-    venueType: 'Convention Center Arena',
-    divisionName: 'SWS Event Management',
-    highlights: ['P2.5 Curved LED Wall', 'DMX Beam Sync', 'Corporate Keynote Staging'],
-  },
-  {
-    id: 'decor-vid-4',
-    title: 'Traditional Luxury Poruwa & Golden Lotus Floral Sanctum',
-    category: 'Weddings',
-    location: 'Cinnamon Grand, Colombo',
-    duration: '0:50',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-celebration-table-with-champagne-glasses-and-flowers-42798-large.mp4',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1200&q=80',
-    description: 'Handcrafted wooden Poruwa with cascading orchids, brass oil lamp accents, and warm ambient illumination celebrating Sri Lankan heritage.',
-    venueType: 'Heritage Banquet Hall',
-    divisionName: 'SWS Event Management',
-    highlights: ['Hand-Carved Poruwa', 'Fresh Orchid Cascades', 'Traditional Brass Accents'],
-  },
-  {
-    id: 'decor-vid-5',
-    title: 'Neon Gala Night & Kinetic Moving Heads Staging',
-    category: 'Lighting & Truss',
-    location: 'Galle Face Hotel, Colombo',
-    duration: '0:38',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-concert-crowd-raising-hands-under-lights-42999-large.mp4',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80',
-    description: 'Electrifying gala dinner production featuring 360-degree moving heads, haze effects, and elevated VIP lounge styling.',
-    venueType: 'Historical Seafront Lawn',
-    divisionName: 'SWS Event Management',
-    highlights: ['360-Degree Moving Heads', 'Atmospheric Haze FX', 'Custom Truss Rigging'],
-  },
-];
-
 interface DecorationVideoShowcaseProps {
   onNavigate?: (route: string) => void;
 }
@@ -144,7 +75,7 @@ export const DecorationVideoShowcase: React.FC<DecorationVideoShowcaseProps> = (
           location: 'Colombo, Sri Lanka',
           duration: '0:45',
           videoUrl: v.url || '',
-          thumbnailUrl: (v as any).thumbnailUrl || (v as any).imageUrl || DEFAULT_DECORATION_VIDEOS[i % DEFAULT_DECORATION_VIDEOS.length].thumbnailUrl,
+          thumbnailUrl: (v as any).thumbnailUrl || (v as any).imageUrl || '',
           description: (v as any).caption || 'Bespoke event decoration and stagecraft produced by Mahdev SWS Division.',
           venueType: 'Premium Event Venue',
           divisionName: 'SWS Event Management',
@@ -153,12 +84,8 @@ export const DecorationVideoShowcase: React.FC<DecorationVideoShowcaseProps> = (
       }
     }
 
-    return DEFAULT_DECORATION_VIDEOS;
+    return [];
   }, [showcaseConfig, firestoreGallery]);
-
-  if (showcaseConfig?.enabled === false) {
-    return null;
-  }
 
   const categories = ['All', 'Weddings', 'Floral & Canopy', 'Lighting & Truss', 'Corporate Galas'];
 
@@ -185,6 +112,10 @@ export const DecorationVideoShowcase: React.FC<DecorationVideoShowcaseProps> = (
     videoRef.current.muted = !isMuted;
     setIsMuted(!isMuted);
   };
+
+  if (showcaseConfig?.enabled === false || videoList.length === 0) {
+    return null;
+  }
 
   return (
     <SectionContainer

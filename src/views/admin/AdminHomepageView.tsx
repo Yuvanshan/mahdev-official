@@ -4,6 +4,7 @@ import {
   Save,
   RotateCcw,
   Eye,
+  EyeOff,
   Layers,
   LayoutTemplate,
   Sliders,
@@ -27,6 +28,11 @@ import {
   Film,
   Briefcase,
   Building2,
+  ArrowUp,
+  ArrowDown,
+  Smartphone,
+  Monitor,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
@@ -39,15 +45,17 @@ import {
   CmsPortfolioProject,
   DecorationShowcaseVideo,
   AchievementItem,
+  DynamicSectionItem,
 } from '../../types/cms';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { DEFAULT_HOMEPAGE_SECTIONS } from '../../services/firestore/settings';
 
 export const AdminHomepageView: React.FC = () => {
   const { homepageConfig, updateHomepageConfig } = useFirestoreDataContext();
   const [config, setConfig] = useState<HomepageCmsConfig>(() => homepageConfig || cmsService.getHomepageConfig());
   const [activeTab, setActiveTab] = useState<
-    'hero' | 'intro' | 'services' | 'products' | 'portfolio' | 'showcase' | 'milestones' | 'companies' | 'cta' | 'seo'
-  >('hero');
+    'sections' | 'hero' | 'intro' | 'services' | 'products' | 'portfolio' | 'showcase' | 'milestones' | 'companies' | 'cta' | 'seo'
+  >('sections');
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -58,6 +66,36 @@ export const AdminHomepageView: React.FC = () => {
   const [allServices, setAllServices] = useState<CmsServiceEntity[]>([]);
   const [allProducts, setAllProducts] = useState<CmsProduct[]>([]);
   const [allProjects, setAllProjects] = useState<CmsPortfolioProject[]>([]);
+
+  // Local helper for dynamic sections
+  const sectionsList: DynamicSectionItem[] = config.sectionsOrder && config.sectionsOrder.length > 0
+    ? config.sectionsOrder
+    : DEFAULT_HOMEPAGE_SECTIONS;
+
+  const handleToggleSection = (index: number) => {
+    const nextSections = [...sectionsList];
+    nextSections[index] = {
+      ...nextSections[index],
+      enabled: !nextSections[index].enabled,
+    };
+    setConfig((prev) => ({ ...prev, sectionsOrder: nextSections }));
+    setIsDirty(true);
+  };
+
+  const handleMoveSection = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === sectionsList.length - 1) return;
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    const nextSections = [...sectionsList];
+    const temp = nextSections[index];
+    nextSections[index] = nextSections[targetIndex];
+    nextSections[targetIndex] = temp;
+    nextSections.forEach((sec, idx) => {
+      sec.order = idx + 1;
+    });
+    setConfig((prev) => ({ ...prev, sectionsOrder: nextSections }));
+    setIsDirty(true);
+  };
 
   const addToast = (type: ToastMessage['type'], title: string, message: string) => {
     const id = Date.now().toString();
@@ -164,6 +202,7 @@ export const AdminHomepageView: React.FC = () => {
       {/* Tab Navigation Strip */}
       <div className="flex gap-2 overflow-x-auto pb-1">
         {[
+          { id: 'sections', label: '0. Sections & Widgets', icon: SlidersHorizontal },
           { id: 'hero', label: '1. Hero & Media', icon: Sparkles },
           { id: 'intro', label: '2. Advantage Pillars', icon: ShieldCheck },
           { id: 'services', label: '3. Featured Services', icon: Layers },
@@ -196,6 +235,142 @@ export const AdminHomepageView: React.FC = () => {
 
       {/* Main Workspace Body based on Active Tab */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs">
+        {/* ===================== TAB 0: SECTIONS & WIDGETS MANAGER ===================== */}
+        {activeTab === 'sections' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="font-display text-base font-bold text-slate-900">
+                  Homepage Section & Widget Order Control
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Toggle visibility ON/OFF and reorder sections live across desktop and mobile devices.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200/80">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-blue-600" />
+                <span>{sectionsList.filter(s => s.enabled !== false).length} Active / {sectionsList.length} Total Sections</span>
+              </div>
+            </div>
+
+            <div className="space-y-2.5">
+              {sectionsList.map((sec, idx) => {
+                const isFirst = idx === 0;
+                const isLast = idx === sectionsList.length - 1;
+                const isEnabled = sec.enabled !== false;
+
+                // Mapping section key to tab
+                const getTabTarget = (key: string) => {
+                  if (key === 'welcomeAnimation') return null;
+                  if (key === 'hero') return 'hero';
+                  if (key === 'about') return 'intro';
+                  if (key === 'services') return 'services';
+                  if (key === 'gallery' || key === 'portfolio') return 'portfolio';
+                  if (key === 'decorationShowcase') return 'showcase';
+                  if (key === 'milestones') return 'milestones';
+                  if (key === 'trustedCompanies' || key === 'companies') return 'companies';
+                  if (key === 'cta') return 'cta';
+                  return null;
+                };
+
+                const tabTarget = getTabTarget(sec.sectionKey);
+
+                return (
+                  <div
+                    key={sec.id || sec.sectionKey}
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border transition-all ${
+                      isEnabled
+                        ? 'bg-slate-50/70 border-slate-200/90 shadow-2xs'
+                        : 'bg-slate-100/40 border-dashed border-slate-200 opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          disabled={isFirst}
+                          onClick={() => handleMoveSection(idx, 'up')}
+                          className={`p-1 rounded-md border text-slate-600 transition-colors ${
+                            isFirst
+                              ? 'opacity-30 cursor-not-allowed border-slate-200 bg-white'
+                              : 'hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 border-slate-200 bg-white cursor-pointer'
+                          }`}
+                          title="Move section up"
+                        >
+                          <ArrowUp className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isLast}
+                          onClick={() => handleMoveSection(idx, 'down')}
+                          className={`p-1 rounded-md border text-slate-600 transition-colors ${
+                            isLast
+                              ? 'opacity-30 cursor-not-allowed border-slate-200 bg-white'
+                              : 'hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 border-slate-200 bg-white cursor-pointer'
+                          }`}
+                          title="Move section down"
+                        >
+                          <ArrowDown className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0">
+                        #{idx + 1}
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-bold text-slate-900">{sec.name}</h4>
+                          <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-slate-200/80 text-slate-700">
+                            {sec.sectionKey}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {isEnabled ? 'Live and visible on public website' : 'Hidden from public website'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 self-end sm:self-center">
+                      {tabTarget && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setActiveTab(tabTarget as any)}
+                          className="text-xs font-semibold text-blue-600 hover:bg-blue-50 cursor-pointer"
+                        >
+                          Edit Content
+                        </Button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleToggleSection(idx)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          isEnabled
+                            ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                            : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                        }`}
+                      >
+                        {isEnabled ? (
+                          <>
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Active (ON)</span>
+                          </>
+                        ) : (
+                          <>
+                            <EyeOff className="w-3.5 h-3.5" />
+                            <span>Disabled (OFF)</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {/* ===================== TAB 1: HERO & MEDIA ===================== */}
         {activeTab === 'hero' && (
           <div className="space-y-6">
