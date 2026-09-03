@@ -31,7 +31,8 @@ interface MartViewProps {
 
 export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
   const { addToCart, totalQuantity: totalCartCount, openCart } = useCart();
-  const { products: rawProducts, categories: rawCategories } = useFirestoreDataContext();
+  const { products: rawProducts, categories: rawCategories, companySettings } = useFirestoreDataContext();
+  const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedProductForDetail, setSelectedProductForDetail] = useState<Product | null>(null);
@@ -117,11 +118,11 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
           {/* Right Header Actions */}
           <div className="flex items-center gap-4">
             <a
-              href={getTelLink(COMPANY_INFO.primaryPhone)}
+              href={getTelLink(primaryPhone)}
               className="text-xs font-semibold text-slate-300 hover:text-white hidden md:flex items-center gap-1.5"
             >
               <Phone className="w-3.5 h-3.5 text-amber-400" />
-              <span>Helpline: {COMPANY_INFO.primaryPhone}</span>
+              <span>Helpline: {primaryPhone}</span>
             </a>
 
             {/* Cart Button with Reactive Badge */}

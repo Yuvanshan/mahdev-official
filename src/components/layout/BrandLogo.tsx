@@ -22,15 +22,81 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
 }) => {
   const { siteSettings, companySettings } = useFirestoreDataContext();
   const [imgError, setImgError] = useState(false);
+  const [liveLogoUrl, setLiveLogoUrl] = useState<string>('');
 
   const isDark = theme === 'dark';
 
-  // Determine active uploaded logo URL from Admin Portal / Firestore
-  const uploadedLogo =
+  // Listen to broadcast custom events for instant zero-refresh synchronization
+  useEffect(() => {
+    const handleUpdate = () => {
+      try {
+        const siteRaw = localStorage.getItem('mahdev_cached_site_settings');
+        if (siteRaw) {
+          const s = JSON.parse(siteRaw);
+          if (isDark && s?.darkLogoUrl?.trim()) {
+            setLiveLogoUrl(s.darkLogoUrl.trim());
+            return;
+          }
+          if (s?.logoUrl?.trim()) {
+            setLiveLogoUrl(s.logoUrl.trim());
+            return;
+          }
+        }
+        const compRaw = localStorage.getItem('mahdev_cached_company_settings');
+        if (compRaw) {
+          const c = JSON.parse(compRaw);
+          if (isDark && c?.darkLogoUrl?.trim()) {
+            setLiveLogoUrl(c.darkLogoUrl.trim());
+            return;
+          }
+          if (c?.logoUrl?.trim()) {
+            setLiveLogoUrl(c.logoUrl.trim());
+            return;
+          }
+        }
+      } catch {}
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('mahdev_site_settings_updated', handleUpdate);
+      window.addEventListener('mahdev_company_settings_updated', handleUpdate);
+      return () => {
+        window.removeEventListener('mahdev_site_settings_updated', handleUpdate);
+        window.removeEventListener('mahdev_company_settings_updated', handleUpdate);
+      };
+    }
+  }, [isDark]);
+
+  // Check localStorage for immediate zero-latency branding fallback
+  const cachedLogo = React.useMemo(() => {
+    if (typeof window === 'undefined') return '';
+    try {
+      const siteRaw = localStorage.getItem('mahdev_cached_site_settings');
+      if (siteRaw) {
+        const s = JSON.parse(siteRaw);
+        if (isDark && s?.darkLogoUrl?.trim()) return s.darkLogoUrl.trim();
+        if (s?.logoUrl?.trim()) return s.logoUrl.trim();
+      }
+      const compRaw = localStorage.getItem('mahdev_cached_company_settings');
+      if (compRaw) {
+        const c = JSON.parse(compRaw);
+        if (isDark && c?.darkLogoUrl?.trim()) return c.darkLogoUrl.trim();
+        if (c?.logoUrl?.trim()) return c.logoUrl.trim();
+      }
+    } catch {}
+    return '';
+  }, [isDark]);
+
+  // Determine active uploaded logo URL from props, live event, React context, or cached snapshot
+  const rawLogo =
     propLogoUrl ||
+    liveLogoUrl ||
     (isDark && (siteSettings?.darkLogoUrl || companySettings?.darkLogoUrl)
       ? siteSettings?.darkLogoUrl || companySettings?.darkLogoUrl
-      : siteSettings?.logoUrl || companySettings?.logoUrl);
+      : siteSettings?.logoUrl || companySettings?.logoUrl) ||
+    cachedLogo;
+
+  const uploadedLogo = typeof rawLogo === 'string' ? rawLogo.trim() : '';
 
   const brandName = companySettings?.name || siteSettings?.siteName || 'Mahdev';
   const legalNameSuffix = companySettings?.legalName?.includes('Pvt') ? 'Pvt Ltd' : 'Pvt Ltd';
@@ -42,7 +108,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
   }, [uploadedLogo]);
 
   const hasValidUploadedImage = Boolean(
-    uploadedLogo && uploadedLogo.trim() !== '' && !imgError
+    uploadedLogo && uploadedLogo !== '' && !imgError
   );
 
   const sizeStyles = {

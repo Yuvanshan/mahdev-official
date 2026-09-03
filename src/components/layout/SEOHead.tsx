@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SEOMetaData } from '../../types';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
@@ -13,6 +13,32 @@ export const SEOHead: React.FC<SEOMetaData> = ({
   ogType = 'website',
 }) => {
   const { siteSettings, companySettings } = useFirestoreDataContext();
+  const [seoVersion, setSeoVersion] = useState(0);
+
+  useEffect(() => {
+    const handleUpdate = () => setSeoVersion((v) => v + 1);
+    window.addEventListener('mahdev_seo_updated', handleUpdate);
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === SEO_STORAGE_KEY) handleUpdate();
+    };
+    window.addEventListener('storage', handleStorage);
+
+    let bc: BroadcastChannel | null = null;
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        bc = new BroadcastChannel('mahdev_realtime_settings_channel');
+        bc.addEventListener('message', (e) => {
+          if (e.data?.type === 'seo') handleUpdate();
+        });
+      } catch {}
+    }
+
+    return () => {
+      window.removeEventListener('mahdev_seo_updated', handleUpdate);
+      window.removeEventListener('storage', handleStorage);
+      if (bc) bc.close();
+    };
+  }, []);
 
   useEffect(() => {
     // 1. Dynamic Favicon synchronization from Firestore
@@ -172,7 +198,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     };
 
     scriptTag.textContent = JSON.stringify(schema);
-  }, [title, description, canonicalUrl, ogTitle, ogDescription, ogType, siteSettings, companySettings]);
+  }, [title, description, canonicalUrl, ogTitle, ogDescription, ogType, siteSettings, companySettings, seoVersion]);
 
   return null;
 };

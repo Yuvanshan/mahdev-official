@@ -242,8 +242,39 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         firestoreGalleryService.getGallery(undefined, true),
       ]);
 
-      setCompanySettings(company);
-      setSiteSettings(site);
+      let resolvedCompanyLogo = company.logoUrl || site.logoUrl || '';
+      let resolvedSiteLogo = site.logoUrl || company.logoUrl || '';
+      let resolvedDarkLogo = site.darkLogoUrl || company.darkLogoUrl || '';
+
+      setCompanySettings((prev) => {
+        const logo = resolvedCompanyLogo || prev.logoUrl || '';
+        const darkLogo = resolvedDarkLogo || prev.darkLogoUrl || '';
+        const merged = {
+          ...prev,
+          ...company,
+          logoUrl: logo,
+          darkLogoUrl: darkLogo,
+        };
+        try {
+          localStorage.setItem('mahdev_cached_company_settings', JSON.stringify(merged));
+        } catch {}
+        return merged;
+      });
+
+      setSiteSettings((prev) => {
+        const logo = resolvedSiteLogo || prev.logoUrl || '';
+        const darkLogo = resolvedDarkLogo || prev.darkLogoUrl || '';
+        const merged = {
+          ...prev,
+          ...site,
+          logoUrl: logo,
+          darkLogoUrl: darkLogo,
+        };
+        try {
+          localStorage.setItem('mahdev_cached_site_settings', JSON.stringify(merged));
+        } catch {}
+        return merged;
+      });
       setHomepageConfig(home);
       setDivisions(divs);
       setCategories(cats);
@@ -259,8 +290,18 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // Persist hydrated snapshots to localStorage cache
       try {
-        localStorage.setItem('mahdev_cached_company_settings', JSON.stringify(company));
-        localStorage.setItem('mahdev_cached_site_settings', JSON.stringify(site));
+        const finalCompanyCache = {
+          ...company,
+          logoUrl: resolvedCompanyLogo,
+          darkLogoUrl: resolvedDarkLogo,
+        };
+        const finalSiteCache = {
+          ...site,
+          logoUrl: resolvedSiteLogo,
+          darkLogoUrl: resolvedDarkLogo,
+        };
+        localStorage.setItem('mahdev_cached_company_settings', JSON.stringify(finalCompanyCache));
+        localStorage.setItem('mahdev_cached_site_settings', JSON.stringify(finalSiteCache));
         localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(home));
         localStorage.setItem('mahdev_cached_divisions', JSON.stringify(divs));
         localStorage.setItem('mahdev_cached_categories', JSON.stringify(cats));
@@ -279,6 +320,15 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       catalogService.syncWithFirestore(prods, cats);
       bookingService.syncWithFirestore(srvs);
       cmsService.syncHomepageConfig(home);
+      cmsService.syncEntityFromFirestore('divisions', divs);
+      cmsService.syncEntityFromFirestore('categories', cats);
+      cmsService.syncEntityFromFirestore('services', srvs);
+      cmsService.syncEntityFromFirestore('products', prods);
+      cmsService.syncEntityFromFirestore('milestones', ms);
+      cmsService.syncEntityFromFirestore('companies', partners);
+      cmsService.syncEntityFromFirestore('testimonials', reviews);
+      cmsService.syncEntityFromFirestore('portfolio', port);
+      cmsService.syncEntityFromFirestore('gallery', gal);
     } catch (err) {
       console.error('[FirestoreDataContext] Refresh error:', err);
       setError(err instanceof Error ? err : new Error(String(err)));
@@ -320,20 +370,40 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     // 1. Core Realtime Centralized Listeners (Single Source of Truth, zero duplicate listeners)
     const unsubCompany = firestoreSettingsService.subscribeCompanySettings((data) => {
       if (isMounted) {
-        setCompanySettings(data);
-        try {
-          localStorage.setItem('mahdev_cached_company_settings', JSON.stringify(data));
-        } catch {}
+        setCompanySettings((prev) => {
+          const logo = data.logoUrl !== undefined ? (data.logoUrl || prev.logoUrl) : prev.logoUrl;
+          const darkLogo = data.darkLogoUrl !== undefined ? (data.darkLogoUrl || prev.darkLogoUrl) : prev.darkLogoUrl;
+          const merged = {
+            ...prev,
+            ...data,
+            logoUrl: logo,
+            darkLogoUrl: darkLogo,
+          };
+          try {
+            localStorage.setItem('mahdev_cached_company_settings', JSON.stringify(merged));
+          } catch {}
+          return merged;
+        });
         checkInitialReady();
       }
     });
 
     const unsubSite = firestoreSettingsService.subscribeSiteSettings((data) => {
       if (isMounted) {
-        setSiteSettings(data);
-        try {
-          localStorage.setItem('mahdev_cached_site_settings', JSON.stringify(data));
-        } catch {}
+        setSiteSettings((prev) => {
+          const logo = data.logoUrl !== undefined ? (data.logoUrl || prev.logoUrl) : prev.logoUrl;
+          const darkLogo = data.darkLogoUrl !== undefined ? (data.darkLogoUrl || prev.darkLogoUrl) : prev.darkLogoUrl;
+          const merged = {
+            ...prev,
+            ...data,
+            logoUrl: logo,
+            darkLogoUrl: darkLogo,
+          };
+          try {
+            localStorage.setItem('mahdev_cached_site_settings', JSON.stringify(merged));
+          } catch {}
+          return merged;
+        });
         checkInitialReady();
       }
     });
@@ -349,6 +419,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubDivs = firestoreDivisionsService.subscribeDivisions((data) => {
       if (isMounted) {
         setDivisions(data);
+        cmsService.syncEntityFromFirestore('divisions', data);
         checkInitialReady();
       }
     });
@@ -356,6 +427,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubCats = firestoreCategoriesService.subscribeCategories((data) => {
       if (isMounted) {
         setCategories(data);
+        cmsService.syncEntityFromFirestore('categories', data);
         checkInitialReady();
       }
     });
@@ -364,6 +436,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       if (isMounted) {
         setServices(data);
         bookingService.syncWithFirestore(data);
+        cmsService.syncEntityFromFirestore('services', data);
         checkInitialReady();
       }
     });
@@ -371,21 +444,32 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubProds = firestoreProductsService.subscribeProducts((data) => {
       if (isMounted) {
         setProducts(data);
+        catalogService.syncWithFirestore(data, categories);
+        cmsService.syncEntityFromFirestore('products', data);
         checkInitialReady();
       }
     });
 
     // 2. Secondary Collections (Streamlined Snapshot Listeners)
     const unsubMs = firestoreMilestonesService.subscribeMilestones((data) => {
-      if (isMounted) setMilestones(data);
+      if (isMounted) {
+        setMilestones(data);
+        cmsService.syncEntityFromFirestore('milestones', data);
+      }
     });
 
     const unsubPartners = firestoreTrustedCompaniesService.subscribeTrustedCompanies((data) => {
-      if (isMounted) setTrustedCompanies(data);
+      if (isMounted) {
+        setTrustedCompanies(data);
+        cmsService.syncEntityFromFirestore('companies', data);
+      }
     });
 
     const unsubReviews = firestoreTestimonialsService.subscribeTestimonials((data) => {
-      if (isMounted) setTestimonials(data);
+      if (isMounted) {
+        setTestimonials(data);
+        cmsService.syncEntityFromFirestore('testimonials', data);
+      }
     });
 
     const unsubGoogleConfig = firestoreGoogleReviewsService.subscribeConfig((data) => {
@@ -397,178 +481,18 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     const unsubPort = firestorePortfolioService.subscribePortfolio((data) => {
-      if (isMounted) setPortfolio(data);
+      if (isMounted) {
+        setPortfolio(data);
+        cmsService.syncEntityFromFirestore('portfolio', data);
+      }
     });
 
     const unsubGal = firestoreGalleryService.subscribeGallery(undefined, (data) => {
-      if (isMounted) setGallery(data);
+      if (isMounted) {
+        setGallery(data);
+        cmsService.syncEntityFromFirestore('gallery', data);
+      }
     });
-
-    // 3. Central Local Sync Listener (Immediate UI response when Admin saves via CMS Service)
-    const entitiesToListen: Array<{
-      type: import('../types/cms').CmsEntityType;
-      updater: () => void;
-    }> = [
-      {
-        type: 'divisions',
-        updater: () => {
-          const cmsDivs = cmsService.getAll<import('../types/cms').CmsDivision>('divisions');
-          if (cmsDivs.length > 0 && isMounted) {
-            setDivisions((prev) => {
-              const mapped: FirestoreDivision[] = cmsDivs.map((d, idx) => ({
-                id: d.id.replace('div-', ''),
-                name: d.name,
-                shortName: d.shortName,
-                slug: d.route?.replace('/', '') || d.id,
-                description: d.description,
-                status: (d.isActive ? 'active' : 'inactive') as 'active' | 'inactive',
-                route: d.route,
-                logoUrl: d.logoUrl,
-                imageUrl: d.heroImageUrl,
-                accentColor: d.accentColor,
-                contactEmail: d.contactEmail,
-                order: (d as any).order || idx + 1,
-                hero: {
-                  title: d.heroHeadline || d.name,
-                  subtitle: d.heroSubheadline || d.tagline,
-                  badge: d.badge || 'Division Excellence',
-                  bgImage: d.heroImageUrl || '',
-                },
-                seo: {
-                  metaTitle: d.seo?.metaTitle || d.name,
-                  metaDescription: d.seo?.metaDescription || d.description,
-                  keywords: (d.seo as any)?.keywords || ['Mahdev', d.name],
-                },
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-              }));
-              return mapped;
-            });
-          }
-        },
-      },
-      {
-        type: 'services',
-        updater: () => {
-          const cmsSrvs = cmsService.getAll<import('../types/cms').CmsService>('services');
-          if (cmsSrvs.length > 0 && isMounted) {
-            const mapped: FirestoreService[] = cmsSrvs.map((s) => ({
-              id: s.id,
-              division: s.divisionId as any,
-              divisionId: s.divisionId as any,
-              name: s.title || (s as any).name,
-              slug: (s as any).slug || s.id,
-              description: s.description || (s as any).shortDescription,
-              detailedDescription: (s as any).detailedDescription,
-              images: (s as any).imageUrl ? [(s as any).imageUrl] : (s as any).images || [],
-              price: s.startingPrice || (s as any).price || 0,
-              currency: 'USD',
-              status: (s.isActive ? 'active' : 'draft') as 'active' | 'draft',
-              bookingEnabled: (s as any).bookingEnabled !== false,
-              quoteEnabled: (s as any).quoteEnabled !== false,
-              features: s.features || [],
-              badge: s.badge,
-              leadTime: (s as any).turnaroundTime || (s as any).leadTime,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            }));
-            setServices(mapped);
-            bookingService.syncWithFirestore(mapped);
-          }
-        },
-      },
-      {
-        type: 'products',
-        updater: () => {
-          const cmsProds = cmsService.getAll<import('../types/cms').CmsProduct>('products');
-          if (cmsProds.length > 0 && isMounted) {
-            const mapped: FirestoreProduct[] = cmsProds.map((p) => ({
-              id: p.id,
-              division: p.divisionId as any,
-              name: p.name,
-              slug: p.slug || p.id,
-              sku: p.sku,
-              categoryId: p.categoryId,
-              categoryName: p.categoryName,
-              description: p.description,
-              price: p.price,
-              compareAtPrice: (p as any).compareAtPrice || (p as any).originalPrice,
-              images: (p as any).galleryImages && (p as any).galleryImages.length > 0 ? (p as any).galleryImages : (p as any).imageUrl ? [(p as any).imageUrl] : [],
-              stock: p.stockQuantity,
-              status: (p.isActive ? 'active' : 'draft') as 'active' | 'draft',
-              hasVariants: Boolean((p as any).variants?.options?.length),
-              variants: (p as any).variants?.options,
-              rating: (p as any).rating || 5,
-              reviewsCount: (p as any).reviewsCount || 0,
-              tags: p.tags,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            }));
-            setProducts(mapped);
-          }
-        },
-      },
-      {
-        type: 'categories',
-        updater: () => {
-          const cmsCats = cmsService.getAll<import('../types/cms').CmsCategory>('categories');
-          if (cmsCats.length > 0 && isMounted) {
-            const mapped: FirestoreCategory[] = cmsCats.map((c) => ({
-              id: c.id,
-              division: c.divisionId as any,
-              name: c.name,
-              slug: c.slug || c.id,
-              description: c.description,
-              imageUrl: (c as any).imageUrl || '',
-              order: (c as any).order || (c as any).sortOrder || 0,
-              status: (c.isActive ? 'active' : 'inactive') as 'active' | 'inactive',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            }));
-            setCategories(mapped);
-          }
-        },
-      },
-      {
-        type: 'portfolio',
-        updater: () => {
-          const cmsPort = cmsService.getAll<import('../types/cms').CmsPortfolioProject>('portfolio');
-          if (cmsPort.length > 0 && isMounted) setPortfolio(cmsPort as any);
-        },
-      },
-      {
-        type: 'gallery',
-        updater: () => {
-          const cmsGal = cmsService.getAll<import('../types/cms').CmsGalleryItem>('gallery');
-          if (cmsGal.length > 0 && isMounted) setGallery(cmsGal as any);
-        },
-      },
-      {
-        type: 'milestones',
-        updater: () => {
-          const cmsMs = cmsService.getAll<import('../types/cms').CmsMilestone>('milestones');
-          if (cmsMs.length > 0 && isMounted) setMilestones(cmsMs as any);
-        },
-      },
-      {
-        type: 'companies',
-        updater: () => {
-          const cmsCompanies = cmsService.getAll<import('../types/cms').CmsTrustedCompany>('companies');
-          if (cmsCompanies.length > 0 && isMounted) setTrustedCompanies(cmsCompanies as any);
-        },
-      },
-      {
-        type: 'testimonials',
-        updater: () => {
-          const cmsReviews = cmsService.getAll<import('../types/cms').CmsTestimonial>('testimonials');
-          if (cmsReviews.length > 0 && isMounted) setTestimonials(cmsReviews as any);
-        },
-      },
-    ];
-
-    const cmsUnsubscribers = entitiesToListen.map(({ type, updater }) =>
-      cmsService.subscribe(type, updater)
-    );
 
     return () => {
       isMounted = false;
@@ -587,7 +511,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       unsubGoogleReviews();
       unsubPort();
       unsubGal();
-      cmsUnsubscribers.forEach((u) => u());
     };
   }, []);
 
@@ -597,18 +520,33 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const updateSiteSettings = useCallback(async (data: Partial<FirestoreSiteSettings>) => {
     await firestoreSettingsService.updateSiteSettings(data);
-    setSiteSettings((prev) => ({ ...prev, ...data }));
+    setSiteSettings((prev) => {
+      const merged = { ...prev, ...data };
+      try {
+        localStorage.setItem('mahdev_cached_site_settings', JSON.stringify(merged));
+      } catch {}
+      return merged;
+    });
   }, []);
 
   const updateCompanySettings = useCallback(async (data: Partial<FirestoreCompanySettings>) => {
     await firestoreSettingsService.updateCompanySettings(data);
-    setCompanySettings((prev) => ({ ...prev, ...data }));
+    setCompanySettings((prev) => {
+      const merged = { ...prev, ...data };
+      try {
+        localStorage.setItem('mahdev_cached_company_settings', JSON.stringify(merged));
+      } catch {}
+      return merged;
+    });
   }, []);
 
   const updateHomepageConfig = useCallback(async (data: Partial<HomepageCmsConfig>) => {
     await firestoreSettingsService.updateHomepageSettings(data);
     setHomepageConfig((prev) => {
       const merged = { ...prev, ...data };
+      try {
+        localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(merged));
+      } catch {}
       cmsService.syncHomepageConfig(merged);
       return merged;
     });

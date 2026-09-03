@@ -31,6 +31,8 @@ import {
 import { analyticsService } from '../../services/analyticsService';
 import { TimeRangeFilter, ExecutiveReportData } from '../../types/analytics';
 import { Button } from '../../components/ui/Button';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { formatCurrency, getCurrencySymbol } from '../../utils/currency';
 
 interface AdminAnalyticsViewProps {
   onNavigateSection: (sectionId: string) => void;
@@ -43,6 +45,10 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
   onNavigateSection,
   onNavigateSite,
 }) => {
+  const { siteSettings } = useFirestoreDataContext();
+  const currentCurrency = siteSettings?.currency || 'LKR';
+  const currencySymbol = getCurrencySymbol(currentCurrency);
+
   const [timeRange, setTimeRange] = useState<TimeRangeFilter>('30d');
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [report, setReport] = useState<ExecutiveReportData | null>(null);
@@ -54,7 +60,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
   const fetchReport = () => {
     setIsLoading(true);
     setTimeout(() => {
-      const data = analyticsService.getExecutiveReport(timeRange);
+      const data = analyticsService.getExecutiveReport(timeRange, currentCurrency);
       setReport(data);
       setIsLoading(false);
     }, 120);
@@ -62,11 +68,11 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
 
   useEffect(() => {
     fetchReport();
-  }, [timeRange]);
+  }, [timeRange, currentCurrency]);
 
   const handleExport = (type: 'revenue' | 'orders' | 'bookings' | 'products' | 'services' | 'divisions') => {
     setIsExporting(true);
-    analyticsService.exportCsv(type, timeRange);
+    analyticsService.exportCsv(type, timeRange, currentCurrency);
     setExportMenuOpen(false);
     setTimeout(() => setIsExporting(false), 500);
   };
@@ -219,7 +225,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
             </div>
           </div>
           <div className="text-xl font-bold text-slate-900 tracking-tight">
-            ${report.kpis.grossRevenue.toLocaleString()}
+            {formatCurrency(report.kpis.grossRevenue, currentCurrency)}
           </div>
           <div className="flex items-center gap-1.5 mt-2 text-xs">
             <span className="flex items-center font-bold text-emerald-600">
@@ -229,7 +235,9 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
             <span className="text-slate-400">vs prev cycle</span>
           </div>
           <div className="text-[11px] text-slate-400 mt-1 font-mono">
-            LKR {report.revenueByCurrency.LKR.toLocaleString()}
+            {currentCurrency === 'LKR'
+              ? `USD $${report.revenueByCurrency.USD.toLocaleString()}`
+              : `LKR Rs. ${report.revenueByCurrency.LKR.toLocaleString()}`}
           </div>
         </div>
 
@@ -245,7 +253,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
             {report.kpis.totalOrders}
           </div>
           <div className="flex items-center gap-1.5 mt-2 text-xs">
-            <span className="font-semibold text-slate-700">AOV: ${report.kpis.averageOrderValue}</span>
+            <span className="font-semibold text-slate-700">AOV: {formatCurrency(report.kpis.averageOrderValue, currentCurrency)}</span>
           </div>
           <div className="text-[11px] text-emerald-600 font-medium mt-1">
             +{report.kpis.ordersGrowthPercent}% velocity
@@ -264,7 +272,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
             {report.kpis.totalBookings}
           </div>
           <div className="flex items-center gap-1.5 mt-2 text-xs">
-            <span className="font-semibold text-slate-700">Pipeline: ${report.kpis.bookingsPipelineValue.toLocaleString()}</span>
+            <span className="font-semibold text-slate-700">Pipeline: {formatCurrency(report.kpis.bookingsPipelineValue, currentCurrency)}</span>
           </div>
           <div className="text-[11px] text-slate-400 mt-1">
             Across 4 service divisions
@@ -374,7 +382,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
               <div className="flex items-center gap-4 text-xs">
                 <div className="flex items-center gap-1.5">
                   <span className="w-3 h-3 rounded-full bg-[#0052FF]"></span>
-                  <span className="text-slate-600 font-medium">Gross Revenue ($)</span>
+                  <span className="text-slate-600 font-medium">Gross Revenue ({currencySymbol})</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
@@ -400,7 +408,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
                     <g key={idx}>
                       <line x1="0" y1={y} x2={chartWidth} y2={y} stroke="#F1F5F9" strokeWidth="1" />
                       <text x="0" y={y - 4} fill="#94A3B8" fontSize="9" fontFamily="monospace">
-                        ${Math.round(maxRevenue * pct).toLocaleString()}
+                        {currencySymbol} {Math.round(maxRevenue * pct).toLocaleString()}
                       </text>
                     </g>
                   );
@@ -471,7 +479,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
                   </div>
                   <h4 className="font-bold text-slate-900 text-sm">{div.name}</h4>
                   <div className="text-lg font-bold text-slate-900 mt-2">
-                    ${div.grossRevenue.toLocaleString()}
+                    {formatCurrency(div.grossRevenue, currentCurrency)}
                   </div>
                 </div>
 
@@ -511,20 +519,42 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
                 Dual-Currency Breakdown
               </h3>
               <div className="space-y-4">
-                <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-100">
-                  <div className="text-xs font-semibold text-blue-600 uppercase">United States Dollars (USD)</div>
-                  <div className="text-2xl font-bold text-slate-900 mt-1">
-                    ${report.revenueByCurrency.USD.toLocaleString()}
+                <div className={`p-4 rounded-xl border transition-all ${
+                  currentCurrency === 'LKR'
+                    ? 'bg-emerald-50/70 border-emerald-300 ring-2 ring-emerald-500/20'
+                    : 'bg-slate-50/80 border-slate-200'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-semibold text-emerald-700 uppercase">Sri Lankan Rupee (LKR)</div>
+                    {currentCurrency === 'LKR' && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-emerald-600 text-white rounded-full">
+                        Active Currency
+                      </span>
+                    )}
                   </div>
-                  <div className="text-xs text-slate-500 mt-1">International & Card Transactions</div>
-                </div>
-
-                <div className="p-4 bg-emerald-50/60 rounded-xl border border-emerald-100">
-                  <div className="text-xs font-semibold text-emerald-600 uppercase">Sri Lankan Rupee (LKR)</div>
                   <div className="text-2xl font-bold text-slate-900 mt-1">
                     Rs. {report.revenueByCurrency.LKR.toLocaleString()}
                   </div>
                   <div className="text-xs text-slate-500 mt-1">LankaPay National Switch & Local Settled</div>
+                </div>
+
+                <div className={`p-4 rounded-xl border transition-all ${
+                  currentCurrency === 'USD'
+                    ? 'bg-blue-50/70 border-blue-300 ring-2 ring-blue-500/20'
+                    : 'bg-slate-50/80 border-slate-200'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-semibold text-blue-700 uppercase">United States Dollars (USD)</div>
+                    {currentCurrency === 'USD' && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-blue-600 text-white rounded-full">
+                        Active Currency
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-2xl font-bold text-slate-900 mt-1">
+                    ${report.revenueByCurrency.USD.toLocaleString()}
+                  </div>
+                  <div className="text-xs text-slate-500 mt-1">International & Card Transactions</div>
                 </div>
               </div>
             </div>
@@ -542,7 +572,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
                         <CreditCard className="w-3.5 h-3.5 text-[#0052FF]" />
                         {gw.label}
                       </span>
-                      <span>${gw.volume.toLocaleString()} ({gw.percentage}%)</span>
+                      <span>{formatCurrency(gw.volume, currentCurrency)} ({gw.percentage}%)</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div
@@ -567,7 +597,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
                 <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-200">
                   <tr>
                     <th className="p-3.5">Date</th>
-                    <th className="p-3.5">Gross Revenue</th>
+                    <th className="p-3.5">Gross Revenue ({currentCurrency})</th>
                     <th className="p-3.5">Completed Orders</th>
                     <th className="p-3.5">Service Bookings</th>
                     <th className="p-3.5">Unique Visitors</th>
@@ -578,7 +608,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
                   {report.dailyTrends.map((d, i) => (
                     <tr key={i} className="hover:bg-slate-50/80 transition-colors">
                       <td className="p-3.5 font-semibold text-slate-900">{d.label} ({d.date})</td>
-                      <td className="p-3.5 font-bold text-emerald-600">${d.revenue.toLocaleString()}</td>
+                      <td className="p-3.5 font-bold text-emerald-600">{formatCurrency(d.revenue, currentCurrency)}</td>
                       <td className="p-3.5">{d.orders}</td>
                       <td className="p-3.5">{d.bookings}</td>
                       <td className="p-3.5">{d.visitors}</td>
@@ -622,7 +652,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
                   <th className="p-4">Direct Inquiries</th>
                   <th className="p-4">RFP Quotes</th>
                   <th className="p-4">Confirmed Transactions</th>
-                  <th className="p-4">Gross Revenue</th>
+                  <th className="p-4">Gross Revenue ({currentCurrency})</th>
                   <th className="p-4">Revenue Share</th>
                   <th className="p-4">Conversion Rate</th>
                 </tr>
@@ -648,7 +678,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
                     <td className="p-4 font-semibold text-slate-900">
                       {div.divisionId === 'mart' ? `${div.ordersCount} orders` : `${div.bookingsCount} bookings`}
                     </td>
-                    <td className="p-4 font-bold text-emerald-600">${div.grossRevenue.toLocaleString()}</td>
+                    <td className="p-4 font-bold text-emerald-600">{formatCurrency(div.grossRevenue, currentCurrency)}</td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -697,9 +727,9 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
                   <th className="p-4">Rank</th>
                   <th className="p-4">Product Name & SKU</th>
                   <th className="p-4">Category</th>
-                  <th className="p-4">Unit Price</th>
+                  <th className="p-4">Unit Price ({currentCurrency})</th>
                   <th className="p-4">Units Sold</th>
-                  <th className="p-4">Gross Revenue</th>
+                  <th className="p-4">Gross Revenue ({currentCurrency})</th>
                   <th className="p-4">Views / Cart Adds</th>
                   <th className="p-4">Conversion Rate</th>
                   <th className="p-4">Stock Health</th>
@@ -714,9 +744,9 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
                       <div className="text-[11px] text-slate-400 font-mono">{p.sku}</div>
                     </td>
                     <td className="p-4">{p.category}</td>
-                    <td className="p-4 font-semibold text-slate-800">${p.price}</td>
+                    <td className="p-4 font-semibold text-slate-800">{formatCurrency(p.price, currentCurrency)}</td>
                     <td className="p-4 font-bold text-slate-900">{p.unitsSold} units</td>
-                    <td className="p-4 font-bold text-emerald-600">${p.revenue.toLocaleString()}</td>
+                    <td className="p-4 font-bold text-emerald-600">{formatCurrency(p.revenue, currentCurrency)}</td>
                     <td className="p-4 text-slate-600">{p.views} / {p.cartAdds}</td>
                     <td className="p-4">
                       <span className="font-bold text-[#0052FF]">{p.conversionRate}%</span>
@@ -766,8 +796,8 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
                   <th className="p-4">Division</th>
                   <th className="p-4">Bookings Count</th>
                   <th className="p-4">Completed Deliverables</th>
-                  <th className="p-4">Average Value</th>
-                  <th className="p-4">Gross Revenue</th>
+                  <th className="p-4">Average Value ({currentCurrency})</th>
+                  <th className="p-4">Gross Revenue ({currentCurrency})</th>
                   <th className="p-4">Conversion Rate</th>
                 </tr>
               </thead>
@@ -783,8 +813,8 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
                     </td>
                     <td className="p-4 font-bold text-slate-900">{s.bookingsCount}</td>
                     <td className="p-4 font-semibold text-slate-700">{s.completedCount}</td>
-                    <td className="p-4 font-semibold text-slate-800">${s.averageBookingValue}</td>
-                    <td className="p-4 font-bold text-emerald-600">${s.revenue.toLocaleString()}</td>
+                    <td className="p-4 font-semibold text-slate-800">{formatCurrency(s.averageBookingValue, currentCurrency)}</td>
+                    <td className="p-4 font-bold text-emerald-600">{formatCurrency(s.revenue, currentCurrency)}</td>
                     <td className="p-4">
                       <span className="font-bold text-[#0052FF]">{s.conversionRate}%</span>
                     </td>

@@ -31,6 +31,10 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
 
   const activeServices = services.filter((s) => (s as any).status !== 'archived');
 
+  if (activeServices.length === 0) {
+    return null;
+  }
+
   const filteredServices =
     activeTab === 'all'
       ? activeServices

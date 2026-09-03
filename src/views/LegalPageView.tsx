@@ -18,6 +18,7 @@ import { ScrollReveal, Magnetic } from '../components/motion/MotionWrappers';
 import { LEGAL_POLICIES_CONTENT } from '../data/corporateData';
 import { COMPANY_INFO } from '../config/company';
 import { LegalPolicyType } from '../types';
+import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 
 interface LegalPageViewProps {
   policyType: LegalPolicyType;
@@ -56,9 +57,13 @@ const POLICY_METADATA: Record<
 };
 
 export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavigate }) => {
+  const { companySettings } = useFirestoreDataContext();
   const [copied, setCopied] = useState(false);
   const currentDoc = LEGAL_POLICIES_CONTENT[policyType];
   const meta = POLICY_METADATA[policyType];
+  const legalName = companySettings?.legalName || COMPANY_INFO.legalName;
+  const colomboAddress = companySettings?.offices?.colombo?.address || COMPANY_INFO.offices.colombo.address;
+  const contactEmail = companySettings?.email || COMPANY_INFO.email;
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -234,10 +239,10 @@ export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavi
                 </div>
                 <div>
                   <h4 className="font-display font-bold text-sm">
-                    {COMPANY_INFO.legalName} Corporate Office
+                    {legalName} Corporate Office
                   </h4>
                   <p className="text-xs text-slate-300">
-                    Colombo: {COMPANY_INFO.offices.colombo.address} • {COMPANY_INFO.email}
+                    Colombo: {colomboAddress} • {contactEmail}
                   </p>
                 </div>
               </div>

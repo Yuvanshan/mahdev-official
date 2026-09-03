@@ -33,29 +33,38 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
       label: 'Divisions',
       icon: Layers,
       isActive:
+        normalizedPath === '/divisions' ||
+        normalizedPath.startsWith('/divisions/') ||
         normalizedPath.startsWith('/sws') ||
         normalizedPath.startsWith('/u1') ||
         normalizedPath.startsWith('/it') ||
         normalizedPath.startsWith('/travels') ||
         normalizedPath.startsWith('/mart'),
       onClick: () => {
-        onNavigate('/#divisions');
+        onNavigate('/divisions');
       },
     },
     {
       id: 'projects',
       label: 'Projects',
       icon: Briefcase,
-      isActive: normalizedPath === '/portfolio',
+      isActive:
+        normalizedPath === '/portfolio' ||
+        normalizedPath === '/projects' ||
+        normalizedPath.startsWith('/portfolio/') ||
+        normalizedPath.startsWith('/projects/'),
       onClick: () => {
-        onNavigate('/portfolio');
+        onNavigate('/projects');
       },
     },
     {
       id: 'services',
       label: 'Services',
       icon: Sparkles,
-      isActive: normalizedPath === '/services',
+      isActive:
+        normalizedPath === '/services' ||
+        normalizedPath.startsWith('/services/') ||
+        normalizedPath.startsWith('/service/'),
       onClick: () => {
         onNavigate('/services');
       },

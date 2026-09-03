@@ -30,7 +30,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const { homepageConfig, divisions } = useFirestoreDataContext();
   const hero = homepageConfig.hero;
   const fullTitle = `${hero.titleLine1} ${hero.titleHighlight} ${hero.titleLine2}`.trim();
-  const displayDivisions = divisions && divisions.length > 0 ? divisions : DIVISION_LIST;
+  const displayDivisions = divisions && divisions.length > 0 ? divisions : [];
 
   const handleSecondaryClick = () => {
     if (onContactUs) {
@@ -154,31 +154,37 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               Five Divisions:
             </span>
             <div className="flex flex-nowrap sm:flex-wrap items-center justify-start sm:justify-center gap-2 overflow-x-auto no-scrollbar pb-1 max-w-full -mx-4 px-4 sm:mx-0 sm:px-0">
-              {displayDivisions.map((division) => (
-                <Magnetic key={division.id} strength={0.15}>
-                  <button
-                    id={`hero-division-pill-${division.id}`}
-                    onClick={() => onNavigate(division.route || `/${division.id}`)}
-                    className={`group px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer backdrop-blur-xs shrink-0 ${
-                      division.isPrimary || division.id === 'sws'
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 border border-blue-500 hover:bg-blue-700'
-                        : 'bg-white/90 border border-slate-200 text-slate-700 hover:text-[#0052FF] hover:border-blue-300 hover:shadow-md'
-                    }`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        division.isPrimary || division.id === 'sws'
-                          ? 'bg-amber-300 animate-pulse'
-                          : 'bg-slate-300 group-hover:bg-[#0052FF]'
-                      } transition-colors`}
-                    />
-                    <span>{division.shortName || division.name}</span>
-                    {(division.isPrimary || division.id === 'sws') && (
-                      <span className="text-[10px] font-bold text-amber-300">★ Primary</span>
-                    )}
-                  </button>
-                </Magnetic>
-              ))}
+              {displayDivisions.map((division) => {
+                const isPrimary = Boolean((division as any).isPrimary || division.id === 'sws');
+                const displayName = (division as any).shortName || division.name;
+                const route = division.route || `/${division.slug || division.id}`;
+
+                return (
+                  <Magnetic key={division.id} strength={0.15}>
+                    <button
+                      id={`hero-division-pill-${division.id}`}
+                      onClick={() => onNavigate(route)}
+                      className={`group px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer backdrop-blur-xs shrink-0 ${
+                        isPrimary
+                          ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 border border-blue-500 hover:bg-blue-700'
+                          : 'bg-white/90 border border-slate-200 text-slate-700 hover:text-[#0052FF] hover:border-blue-300 hover:shadow-md'
+                      }`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          isPrimary
+                            ? 'bg-amber-300 animate-pulse'
+                            : 'bg-slate-300 group-hover:bg-[#0052FF]'
+                        } transition-colors`}
+                      />
+                      <span>{displayName}</span>
+                      {isPrimary && (
+                        <span className="text-[10px] font-bold text-amber-300">★ Primary</span>
+                      )}
+                    </button>
+                  </Magnetic>
+                );
+              })}
             </div>
           </div>
         </div>

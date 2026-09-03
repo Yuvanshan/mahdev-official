@@ -39,6 +39,7 @@ import { AdminLoginView } from './AdminLoginView';
 import { AdminNotificationCenter } from '../../components/admin/AdminNotificationCenter';
 import { SEOHead } from '../../components/layout/SEOHead';
 import { InitialAppLoader } from '../../components/common/InitialAppLoader';
+import { BrandLogo } from '../../components/layout/BrandLogo';
 
 import { AdminDashboardView } from './AdminDashboardView';
 import { AdminAnalyticsView } from './AdminAnalyticsView';
@@ -249,18 +250,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
       >
         {/* Sidebar Brand Header */}
         <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-900/50">
-              <Shield className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="font-display text-sm font-bold text-white tracking-wide block">
-                MAHDEV ADMIN
-              </span>
-              <span className="text-[10px] text-slate-500 font-mono uppercase tracking-wider block">
-                Executive Core v2.6
-              </span>
-            </div>
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <BrandLogo size="sm" theme="dark" onClick={() => onNavigate('/')} />
           </div>
 
           <button

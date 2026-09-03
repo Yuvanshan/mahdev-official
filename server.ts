@@ -908,14 +908,48 @@ async function startServer() {
   let serverSiteSettings: any = null;
   let serverHomepageSettings: any = null;
 
-  app.get('/api/settings/company', (req: Request, res: Response) => {
+  // Preload settings from Firestore on server boot
+  (async () => {
+    try {
+      const { db } = await import('./src/lib/firebase');
+      const { doc, getDoc } = await import('firebase/firestore');
+      const [cSnap, sSnap] = await Promise.all([
+        getDoc(doc(db, 'settings', 'company')),
+        getDoc(doc(db, 'settings', 'site')),
+      ]);
+      if (cSnap.exists()) {
+        serverCompanySettings = cSnap.data();
+        console.log('[Server Settings] Loaded company settings from Firestore. Logo length:', serverCompanySettings?.logoUrl?.length || 0);
+      }
+      if (sSnap.exists()) {
+        serverSiteSettings = sSnap.data();
+        console.log('[Server Settings] Loaded site settings from Firestore. Logo length:', serverSiteSettings?.logoUrl?.length || 0);
+      }
+    } catch (err) {
+      console.warn('[Server Settings] Background preload from Firestore warning:', err);
+    }
+  })();
+
+  app.get('/api/settings/company', async (req: Request, res: Response) => {
+    if (!serverCompanySettings) {
+      try {
+        const { db } = await import('./src/lib/firebase');
+        const { doc, getDoc } = await import('firebase/firestore');
+        const snap = await getDoc(doc(db, 'settings', 'company'));
+        if (snap.exists()) {
+          serverCompanySettings = snap.data();
+        }
+      } catch (e) {
+        console.warn('[Server Settings] Fallback get settings/company notice:', e);
+      }
+    }
     res.json({
       success: true,
       settings: serverCompanySettings,
     });
   });
 
-  app.post('/api/settings/company', (req: Request, res: Response) => {
+  app.post('/api/settings/company', async (req: Request, res: Response) => {
     const data = req.body;
     if (!data || typeof data !== 'object') {
       res.status(400).json({ success: false, error: 'Invalid company settings payload' });
@@ -926,6 +960,18 @@ async function startServer() {
       ...data,
       updatedAt: new Date().toISOString(),
     };
+
+    // Async sync to Firestore
+    (async () => {
+      try {
+        const { db } = await import('./src/lib/firebase');
+        const { doc, setDoc } = await import('firebase/firestore');
+        await setDoc(doc(db, 'settings', 'company'), serverCompanySettings, { merge: true });
+      } catch (err) {
+        console.warn('[Server Settings] Error persisting company settings to Firestore:', err);
+      }
+    })();
+
     serverAuditLogs.unshift({
       id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
       timestamp: new Date().toISOString(),
@@ -943,14 +989,26 @@ async function startServer() {
     });
   });
 
-  app.get('/api/settings/site', (req: Request, res: Response) => {
+  app.get('/api/settings/site', async (req: Request, res: Response) => {
+    if (!serverSiteSettings) {
+      try {
+        const { db } = await import('./src/lib/firebase');
+        const { doc, getDoc } = await import('firebase/firestore');
+        const snap = await getDoc(doc(db, 'settings', 'site'));
+        if (snap.exists()) {
+          serverSiteSettings = snap.data();
+        }
+      } catch (e) {
+        console.warn('[Server Settings] Fallback get settings/site notice:', e);
+      }
+    }
     res.json({
       success: true,
       settings: serverSiteSettings,
     });
   });
 
-  app.post('/api/settings/site', (req: Request, res: Response) => {
+  app.post('/api/settings/site', async (req: Request, res: Response) => {
     const data = req.body;
     if (!data || typeof data !== 'object') {
       res.status(400).json({ success: false, error: 'Invalid site settings payload' });
@@ -961,6 +1019,18 @@ async function startServer() {
       ...data,
       updatedAt: new Date().toISOString(),
     };
+
+    // Async sync to Firestore
+    (async () => {
+      try {
+        const { db } = await import('./src/lib/firebase');
+        const { doc, setDoc } = await import('firebase/firestore');
+        await setDoc(doc(db, 'settings', 'site'), serverSiteSettings, { merge: true });
+      } catch (err) {
+        console.warn('[Server Settings] Error persisting site settings to Firestore:', err);
+      }
+    })();
+
     serverAuditLogs.unshift({
       id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
       timestamp: new Date().toISOString(),
@@ -969,7 +1039,7 @@ async function startServer() {
       action: 'SITE_SETTINGS_UPDATED',
       entityType: 'Settings',
       entityId: 'settings/site',
-      details: `Updated site settings: currency=${serverSiteSettings.currency || 'USD'}, maintenance=${Boolean(serverSiteSettings.maintenance?.enabled || serverSiteSettings.maintenanceMode)}.`,
+      details: `Updated site settings: currency=${serverSiteSettings.currency || 'LKR'}, maintenance=${Boolean(serverSiteSettings.maintenance?.enabled || serverSiteSettings.maintenanceMode)}.`,
       status: 'success',
     });
     res.json({

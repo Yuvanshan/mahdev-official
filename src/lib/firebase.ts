@@ -28,20 +28,31 @@ export const TARGET_AUTH_DOMAIN = 'for-her-33ea9.firebaseapp.com';
 export const TARGET_APP_ID = '1:1062826041810:web:2905a8e9f7bc3243dfa80b';
 export const TARGET_MESSAGING_SENDER_ID = '1062826041810';
 
+// Helper to safely access env vars in both Vite browser and Node.js environments
+function getEnvVar(key: string): string | undefined {
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[key]) {
+    return import.meta.env[key];
+  }
+  if (typeof process !== 'undefined' && process.env && process.env[key]) {
+    return process.env[key];
+  }
+  return undefined;
+}
+
 // Resolves Firebase configuration with env var priority and config fallback
 export const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || rawConfig.apiKey || 'AIzaSyAB05TE4Fx9C89tcfUNVGVcIEWw4CVDhJ0',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || rawConfig.authDomain || TARGET_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || rawConfig.projectId || TARGET_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || rawConfig.storageBucket || TARGET_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || rawConfig.messagingSenderId || TARGET_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || rawConfig.appId || TARGET_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || rawConfig.measurementId || 'G-MWNCCXGY4F',
+  apiKey: getEnvVar('VITE_FIREBASE_API_KEY') || rawConfig.apiKey || 'AIzaSyAB05TE4Fx9C89tcfUNVGVcIEWw4CVDhJ0',
+  authDomain: getEnvVar('VITE_FIREBASE_AUTH_DOMAIN') || rawConfig.authDomain || TARGET_AUTH_DOMAIN,
+  projectId: getEnvVar('VITE_FIREBASE_PROJECT_ID') || rawConfig.projectId || TARGET_FIREBASE_PROJECT_ID,
+  storageBucket: getEnvVar('VITE_FIREBASE_STORAGE_BUCKET') || rawConfig.storageBucket || TARGET_STORAGE_BUCKET,
+  messagingSenderId: getEnvVar('VITE_FIREBASE_MESSAGING_SENDER_ID') || rawConfig.messagingSenderId || TARGET_MESSAGING_SENDER_ID,
+  appId: getEnvVar('VITE_FIREBASE_APP_ID') || rawConfig.appId || TARGET_APP_ID,
+  measurementId: getEnvVar('VITE_FIREBASE_MEASUREMENT_ID') || rawConfig.measurementId || 'G-MWNCCXGY4F',
 };
 
 // Target Named Firestore Database ID
 export const activeFirestoreDatabaseId: string =
-  import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID ||
+  getEnvVar('VITE_FIREBASE_FIRESTORE_DATABASE_ID') ||
   rawConfig.firestoreDatabaseId ||
   TARGET_FIRESTORE_DATABASE_ID;
 

@@ -10,7 +10,7 @@ import {
   Magnetic,
   BlurReveal,
 } from '../motion/MotionWrappers';
-import { BRAND_CONFIG } from '../../config/brand';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 interface AboutMahdevSectionProps {
   onExploreDivisions: () => void;
@@ -18,6 +18,18 @@ interface AboutMahdevSectionProps {
 
 export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExploreDivisions }) => {
   const [showCharterModal, setShowCharterModal] = useState(false);
+  const { companySettings, homepageConfig, divisions } = useFirestoreDataContext();
+
+  const intro = homepageConfig.intro || {
+    badge: 'About Mahdev Pvt Ltd',
+    headline: 'A Forward-Looking Enterprise Driven By Purpose & Precision',
+    subheadline: companySettings.tagline || 'Creating Moments. Capturing Memories. Delivering Innovation.',
+    description: companySettings.description || 'Mahdev Pvt Ltd is a dynamic holding company headquartered in Colombo, Sri Lanka. Operating across specialized industry divisions with enterprise excellence.',
+    pillars: [],
+  };
+
+  const establishedYear = companySettings.establishedYear || '2022';
+  const divisionCount = divisions.filter((d) => d.status === 'active').length;
 
   return (
     <SectionContainer id="about" background="white" paddingY="xl" hasBorderBottom>
@@ -25,16 +37,18 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
         {/* Left Narrative Column with Sticky Storytelling */}
         <div className="lg:col-span-6 lg:sticky lg:top-28 space-y-6">
           <ScrollReveal direction="up">
-            <Caption className="text-[#0052FF]">About Mahdev Pvt Ltd</Caption>
+            <Caption className="text-[#0052FF]">{intro.badge || 'About Mahdev Pvt Ltd'}</Caption>
             <H2 className="text-slate-900 mt-2 mb-4">
-              A Forward-Looking Enterprise Driven By Purpose & Precision
+              {intro.headline || 'A Forward-Looking Enterprise Driven By Purpose & Precision'}
             </H2>
             <Body className="text-slate-600 text-base leading-relaxed">
-              Mahdev Pvt Ltd is a dynamic holding company headquartered in Colombo, Sri Lanka. Founded in 2022 with a vision to unite luxury event decorations, photographic mastery, and scalable IT solutions under one roof, we operate across five core industry pillars.
+              {intro.description || companySettings.description}
             </Body>
-            <Body className="text-slate-600 text-base leading-relaxed">
-              Our philosophy combines bold artistic innovation with institutional reliability. Whether designing luxury wedding decor, capturing life milestones in 8K cinema, architecting cloud IT platforms, curating island-wide journeys, or supplying modern tech gear—we deliver exceptional value.
-            </Body>
+            {intro.subheadline && intro.subheadline !== intro.headline && (
+              <Body className="text-slate-600 text-base leading-relaxed">
+                {intro.subheadline}
+              </Body>
+            )}
 
             {/* Core Values / Mission Pillars */}
             <div className="pt-2 space-y-3">
@@ -43,7 +57,7 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
                 <div>
                   <h4 className="text-xs font-bold text-slate-900">Our Mission</h4>
                   <p className="text-xs text-slate-600">
-                    To craft transformative experiences and scalable digital solutions that elevate businesses and enrich personal lives.
+                    {companySettings.mission || 'To craft transformative experiences and scalable digital solutions that elevate businesses and enrich personal lives.'}
                   </p>
                 </div>
               </div>
@@ -52,7 +66,7 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
                 <div>
                   <h4 className="text-xs font-bold text-slate-900">Our Vision</h4>
                   <p className="text-xs text-slate-600">
-                    To be recognized as Sri Lanka's foremost multi-disciplinary enterprise, celebrated for creativity, technical mastery, and corporate integrity.
+                    {companySettings.vision || "To be recognized as Sri Lanka's foremost multi-disciplinary enterprise, celebrated for creativity, technical mastery, and corporate integrity."}
                   </p>
                 </div>
               </div>
@@ -97,17 +111,17 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
                     <Award className="w-5 h-5" />
                   </div>
                   <div className="font-display text-3xl font-bold text-slate-900 mb-1">
-                    {BRAND_CONFIG.establishedYear}
+                    {establishedYear}
                   </div>
                   <h4 className="font-semibold text-sm text-slate-800 mb-2">
                     Founded & Incorporated
                   </h4>
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    Over 4 years of operational excellence, steady scaling, and sustainable multi-sector growth.
+                    Over {Math.max(1, new Date().getFullYear() - Number(establishedYear || 2022))} years of operational excellence, steady scaling, and sustainable multi-sector growth.
                   </p>
                 </div>
                 <div className="mt-4 pt-3 border-t border-slate-200 text-xs font-semibold text-slate-500">
-                  Colombo, Sri Lanka
+                  {companySettings.address || 'Colombo, Sri Lanka'}
                 </div>
               </div>
             </TiltCard>
@@ -121,7 +135,7 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
                     <Users className="w-5 h-5" />
                   </div>
                   <div className="font-display text-3xl font-bold text-slate-900 mb-1">
-                    5 Units
+                    {divisionCount} Units
                   </div>
                   <h4 className="font-semibold text-sm text-slate-800 mb-2">
                     Unified Operations
@@ -204,12 +218,12 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
               </Badge>
             </div>
             <h3 className="font-display text-2xl font-bold text-slate-900 mb-4">
-              Mahdev Pvt Ltd Corporate Charter
+              {companySettings.name || 'Mahdev Pvt Ltd'} Corporate Charter
             </h3>
 
             <div className="space-y-4 text-xs sm:text-sm text-slate-600 leading-relaxed">
               <p>
-                <strong>1. Institutional Integrity:</strong> Mahdev Pvt Ltd holds all divisions to rigorous standards of financial governance, legal compliance, and customer transparency.
+                <strong>1. Institutional Integrity:</strong> {companySettings.name || 'Mahdev Pvt Ltd'} holds all divisions to rigorous standards of financial governance, legal compliance, and customer transparency.
               </p>
               <p>
                 <strong>2. Quality Parity:</strong> No matter which division a client engages—be it SWS Events, U1 Studio, IT & Solutions, Mahdev Travels, or Online Mart—they receive the same gold-standard SLA and executive attention.

@@ -329,32 +329,52 @@ export const firestoreSettingsService = {
       return cachedCompanySettings.data;
     }
 
+    // Try server API first as fast local proxy
+    try {
+      const serverRes = await fetch('/api/settings/company');
+      if (serverRes.ok) {
+        const json = await serverRes.json();
+        if (json.success && json.settings && (json.settings.name || json.settings.logoUrl)) {
+          const merged = { ...getDefaultCompanySettings(), ...(cachedCompanySettings?.data || {}), ...json.settings };
+          cachedCompanySettings = { data: merged, timestamp: now };
+          return merged;
+        }
+      }
+    } catch {}
+
     try {
       const docRef = doc(db, 'settings', 'company');
-      // Set 4s timeout for remote getDoc
       const snapPromise = getDoc(docRef);
-      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000));
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000));
       const snap = (await Promise.race([snapPromise, timeoutPromise])) as any;
 
       if (snap && typeof snap.exists === 'function' && snap.exists()) {
         const data = snap.data() as FirestoreCompanySettings;
-        cachedCompanySettings = { data, timestamp: now };
-        return data;
+        const merged = { ...getDefaultCompanySettings(), ...(cachedCompanySettings?.data || {}), ...data };
+        cachedCompanySettings = { data: merged, timestamp: now };
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('mahdev_cached_company_settings', JSON.stringify(merged));
+          } catch {}
+        }
+        return merged;
       }
 
-      // Check server API fallback
-      try {
-        const serverRes = await fetch('/api/settings/company');
-        if (serverRes.ok) {
-          const json = await serverRes.json();
-          if (json.success && json.settings) {
-            cachedCompanySettings = { data: json.settings, timestamp: now };
-            return json.settings;
-          }
+      // Check localStorage backup before defaulting
+      if (typeof window !== 'undefined') {
+        const local = localStorage.getItem('mahdev_cached_company_settings');
+        if (local) {
+          try {
+            const parsed = JSON.parse(local);
+            if (parsed && (parsed.logoUrl || parsed.name)) {
+              cachedCompanySettings = { data: parsed, timestamp: now };
+              return parsed;
+            }
+          } catch {}
         }
-      } catch {}
+      }
 
-      const defaultSettings = getDefaultCompanySettings();
+      const defaultSettings = cachedCompanySettings?.data || getDefaultCompanySettings();
       cachedCompanySettings = { data: defaultSettings, timestamp: now };
       return defaultSettings;
     } catch (err) {
@@ -475,31 +495,52 @@ export const firestoreSettingsService = {
       return cachedSiteSettings.data;
     }
 
+    // Try server API first as fast local proxy
+    try {
+      const serverRes = await fetch('/api/settings/site');
+      if (serverRes.ok) {
+        const json = await serverRes.json();
+        if (json.success && json.settings && (json.settings.siteName || json.settings.logoUrl || json.settings.currency)) {
+          const merged = { ...getDefaultSiteSettings(), ...(cachedSiteSettings?.data || {}), ...json.settings };
+          cachedSiteSettings = { data: merged, timestamp: now };
+          return merged;
+        }
+      }
+    } catch {}
+
     try {
       const docRef = doc(db, 'settings', 'site');
       const snapPromise = getDoc(docRef);
-      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000));
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000));
       const snap = (await Promise.race([snapPromise, timeoutPromise])) as any;
 
       if (snap && typeof snap.exists === 'function' && snap.exists()) {
         const data = snap.data() as FirestoreSiteSettings;
-        cachedSiteSettings = { data, timestamp: now };
-        return data;
+        const merged = { ...getDefaultSiteSettings(), ...(cachedSiteSettings?.data || {}), ...data };
+        cachedSiteSettings = { data: merged, timestamp: now };
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('mahdev_cached_site_settings', JSON.stringify(merged));
+          } catch {}
+        }
+        return merged;
       }
 
-      // Check server API fallback
-      try {
-        const serverRes = await fetch('/api/settings/site');
-        if (serverRes.ok) {
-          const json = await serverRes.json();
-          if (json.success && json.settings) {
-            cachedSiteSettings = { data: json.settings, timestamp: now };
-            return json.settings;
-          }
+      // Check localStorage backup before defaulting
+      if (typeof window !== 'undefined') {
+        const local = localStorage.getItem('mahdev_cached_site_settings');
+        if (local) {
+          try {
+            const parsed = JSON.parse(local);
+            if (parsed && (parsed.logoUrl || parsed.siteName || parsed.currency)) {
+              cachedSiteSettings = { data: parsed, timestamp: now };
+              return parsed;
+            }
+          } catch {}
         }
-      } catch {}
+      }
 
-      const defaultSite = getDefaultSiteSettings();
+      const defaultSite = cachedSiteSettings?.data || getDefaultSiteSettings();
       cachedSiteSettings = { data: defaultSite, timestamp: now };
       return defaultSite;
     } catch (err) {
@@ -662,6 +703,11 @@ export const firestoreSettingsService = {
     const payload = sanitizeForFirestore(merged);
 
     cachedHomepageSettings = { data: payload, timestamp: Date.now() };
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(payload));
+      } catch {}
+    }
     broadcastUpdate('homepage', payload);
     syncToServerApi('homepage', payload);
 
@@ -686,12 +732,33 @@ export const firestoreSettingsService = {
     const handleBroadcast = (event: MessageEvent) => {
       if (event.data?.type === 'homepage' && event.data?.data) {
         cachedHomepageSettings = { data: event.data.data, timestamp: Date.now() };
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(event.data.data));
+          } catch {}
+        }
         onData(event.data.data);
+      }
+    };
+
+    const handleCustomEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<HomepageCmsConfig>;
+      if (customEvent.detail) {
+        cachedHomepageSettings = { data: customEvent.detail, timestamp: Date.now() };
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(customEvent.detail));
+          } catch {}
+        }
+        onData(customEvent.detail);
       }
     };
 
     if (broadcastChannel) {
       broadcastChannel.addEventListener('message', handleBroadcast);
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('mahdev_homepage_settings_updated', handleCustomEvent);
     }
 
     const firestoreUnsub = onSnapshot(
@@ -700,6 +767,11 @@ export const firestoreSettingsService = {
         if (snap.exists()) {
           const data = snap.data() as HomepageCmsConfig;
           cachedHomepageSettings = { data, timestamp: Date.now() };
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(data));
+            } catch {}
+          }
           onData(data);
         } else {
           onData(cachedHomepageSettings?.data || getDefaultHomepageSettings());
@@ -715,6 +787,9 @@ export const firestoreSettingsService = {
     return () => {
       if (broadcastChannel) {
         broadcastChannel.removeEventListener('message', handleBroadcast);
+      }
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('mahdev_homepage_settings_updated', handleCustomEvent);
       }
       firestoreUnsub();
     };

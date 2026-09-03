@@ -2,254 +2,176 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // =========================================================================
-    // GLOBAL DEFAULT-DENY SAFETY NET
-    // =========================================================================
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // =========================================================================
-    // CORE PRIMITIVES & SECURITY HELPERS
-    // =========================================================================
+    // Helper functions
     function isValidId(id) {
       return id is string && id.size() > 0 && id.size() <= 128;
     }
 
-    function incoming() {
-      return request.resource.data;
-    }
-
-    function existing() {
-      return resource.data;
-    }
-
-    function isSignedIn() {
-      return request.auth != null && request.auth.uid != null;
-    }
-
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    // Role Hierarchy Resolution from trusted users collection
-    function getUserDoc() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
-    function hasUserDoc() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
-    }
-
-    function isDedicatedAdmin() {
-      return exists(/databases/$(database)/documents/admins/$(request.auth.uid));
-    }
-
-    function getUserRole() {
-      return hasUserDoc() ? getUserDoc().role : (isDedicatedAdmin() ? 'admin' : 'customer');
-    }
-
-    function isSuperAdmin() {
-      return isSignedIn() && (
-        getUserRole() == 'superAdmin' || 
-        isDedicatedAdmin() ||
-        (request.auth.token.email != null && (
-          request.auth.token.email == 'yuvanshan875@gmail.com' ||
-          request.auth.token.email == 'admin@mahdev.lk' ||
-          request.auth.token.email.matches('(?i).*@(mahdev\\.lk|mahdevgroup\\.com)')
-        ))
-      );
-    }
-
-    function isAdmin() {
-      return isSignedIn() && (isSuperAdmin() || getUserRole() == 'admin');
-    }
-
-    function isManager() {
-      return isSignedIn() && (isAdmin() || getUserRole() == 'manager');
-    }
-
-    function isStaff() {
-      return isSignedIn() && (isManager() || getUserRole() == 'staff');
-    }
-
-    // =========================================================================
-    // 1. SITE SETTINGS (/settings/{settingId})
-    // =========================================================================
+    // 1. SITE & COMPANY SETTINGS (/settings/{settingId}, /companySettings/{settingId})
     match /settings/{settingId} {
-      allow get, list: if true;
-      allow create, update: if true;
-      allow delete: if isSuperAdmin();
+      allow read, write: if true;
     }
 
     match /companySettings/{settingId} {
-      allow get, list: if true;
-      allow create, update: if true;
-      allow delete: if isSuperAdmin();
+      allow read, write: if true;
     }
 
-    // =========================================================================
     // 2. DIVISIONS (/divisions/{divisionId})
-    // =========================================================================
     match /divisions/{divisionId} {
-      allow get: if isValidId(divisionId);
-      allow list: if true;
-      allow create, update: if isManager() || isStaff() || isAdmin();
-      allow delete: if isSuperAdmin();
+      allow read, write: if true;
     }
 
-    // =========================================================================
     // 3. SERVICES (/services/{serviceId})
-    // =========================================================================
     match /services/{serviceId} {
-      allow get: if isValidId(serviceId);
-      allow list: if true;
-      allow create, update: if isManager() || isStaff() || isAdmin();
-      allow delete: if isSuperAdmin();
+      allow read, write: if true;
     }
 
-    // =========================================================================
     // 4. PRODUCTS (/products/{productId})
-    // =========================================================================
     match /products/{productId} {
-      allow get: if isValidId(productId);
-      allow list: if true;
-      allow create, update: if isStaff() || isAdmin();
-      allow delete: if isAdmin() || isSuperAdmin();
+      allow read, write: if true;
     }
 
-    // =========================================================================
     // 5. CATEGORIES (/categories/{categoryId})
-    // =========================================================================
     match /categories/{categoryId} {
-      allow get: if isValidId(categoryId);
-      allow list: if true;
-      allow create, update: if isStaff() || isAdmin();
-      allow delete: if isAdmin() || isSuperAdmin();
+      allow read, write: if true;
     }
 
-    // =========================================================================
     // 6. MILESTONES (/milestones/{milestoneId})
-    // =========================================================================
     match /milestones/{milestoneId} {
-      allow get: if isValidId(milestoneId);
-      allow list: if true;
-      allow create, update: if isStaff() || isManager() || isAdmin();
-      allow delete: if isAdmin() || isSuperAdmin();
+      allow read, write: if true;
     }
 
-    // =========================================================================
     // 7. TRUSTED COMPANIES (/trustedCompanies/{companyId})
-    // =========================================================================
     match /trustedCompanies/{companyId} {
-      allow get: if isValidId(companyId);
-      allow list: if true;
-      allow create, update: if isManager() || isStaff() || isAdmin();
-      allow delete: if isAdmin() || isSuperAdmin();
+      allow read, write: if true;
     }
 
-    // =========================================================================
     // 8. PORTFOLIO (/portfolio/{portfolioId})
-    // =========================================================================
     match /portfolio/{portfolioId} {
-      allow get: if isValidId(portfolioId);
-      allow list: if true;
-      allow create, update: if isStaff() || isAdmin();
-      allow delete: if isAdmin() || isSuperAdmin();
+      allow read, write: if true;
     }
 
-    // =========================================================================
     // 9. TESTIMONIALS (/testimonials/{testimonialId})
-    // =========================================================================
     match /testimonials/{testimonialId} {
-      allow get: if isValidId(testimonialId);
-      allow list: if true;
-      allow create: if isValidId(testimonialId);
-      allow update: if isStaff() || isAdmin();
-      allow delete: if isAdmin() || isSuperAdmin();
+      allow read, write: if true;
     }
 
-    // =========================================================================
-    // 10. BOOKINGS (/bookings/{bookingId})
-    // =========================================================================
+    // 10. GOOGLE REVIEWS & CONFIG
+    match /googleReviews/{reviewId} {
+      allow read, write: if true;
+    }
+
+    match /googleReviewsConfig/{docId} {
+      allow read, write: if true;
+    }
+
+    // 11. GALLERY (/gallery/{itemId})
+    match /gallery/{itemId} {
+      allow read, write: if true;
+    }
+
+    // 12. BOOKINGS (/bookings/{bookingId})
     match /bookings/{bookingId} {
-      allow get, list: if true;
-      allow create, update: if true;
-      allow delete: if isAdmin() || isSuperAdmin();
+      allow read, write: if true;
     }
 
-    // =========================================================================
-    // 11. ORDERS (/orders/{orderId})
-    // =========================================================================
+    // 13. ORDERS (/orders/{orderId})
     match /orders/{orderId} {
-      allow get, list: if true;
-      allow create, update: if true;
-      allow delete: if isAdmin() || isSuperAdmin();
+      allow read, write: if true;
     }
 
-    // =========================================================================
-    // 12. USERS (/users/{userId}) (Firebase Auth handles auth credentials)
-    // =========================================================================
+    // 14. USERS & SUB-COLLECTIONS (/users/{userId})
     match /users/{userId} {
-      allow get, list: if isValidId(userId);
-      allow create, update: if isValidId(userId);
-      allow delete: if isSuperAdmin();
+      allow read, write: if true;
 
-      match /notifications/{notificationId} {
-        allow get, list: if true;
-        allow create, update, delete: if true;
+      match /{allSubcollections=**} {
+        allow read, write: if true;
       }
     }
 
-    // =========================================================================
-    // 13. PAYMENTS (/payments/{paymentId}) (No sensitive card data)
-    // =========================================================================
+    // 15. PAYMENTS (/payments/{paymentId})
     match /payments/{paymentId} {
-      allow get, list: if true;
-      allow create, update: if true;
-      allow delete: if isSuperAdmin();
+      allow read, write: if true;
     }
 
-    // =========================================================================
-    // 14. CONTACT SUBMISSIONS (/contactSubmissions/{submissionId})
-    // =========================================================================
+    // 16. CONTACT SUBMISSIONS (/contactSubmissions/{submissionId})
     match /contactSubmissions/{submissionId} {
-      allow get, list: if true;
-      allow create, update: if true;
-      allow delete: if isAdmin() || isSuperAdmin();
+      allow read, write: if true;
     }
 
-    // =========================================================================
-    // 15. ANNOUNCEMENTS (/announcements/{announcementId})
-    // =========================================================================
+    // 17. ANNOUNCEMENTS (/announcements/{announcementId})
     match /announcements/{announcementId} {
-      allow get: if isValidId(announcementId);
-      allow list: if true;
-      allow create, update: if isStaff() || isAdmin();
-      allow delete: if isAdmin() || isSuperAdmin();
+      allow read, write: if true;
     }
 
-    // =========================================================================
-    // 16. AUDIT LOGS (/auditLogs/{logId}) (Restricted & Immutable)
-    // =========================================================================
+    // 18. NAVIGATION (/navigation/{navId})
+    match /navigation/{navId} {
+      allow read, write: if true;
+    }
+
+    // 19. HERO SECTIONS (/heroSections/{heroId})
+    match /heroSections/{heroId} {
+      allow read, write: if true;
+    }
+
+    // 20. PAGES (/pages/{pageId})
+    match /pages/{pageId} {
+      allow read, write: if true;
+    }
+
+    // 21. PROJECTS (/projects/{projectId})
+    match /projects/{projectId} {
+      allow read, write: if true;
+    }
+
+    // 22. STATISTICS (/statistics/{statId})
+    match /statistics/{statId} {
+      allow read, write: if true;
+    }
+
+    // 23. CLIENTS (/clients/{clientId})
+    match /clients/{clientId} {
+      allow read, write: if true;
+    }
+
+    // 24. TEAM (/team/{memberId})
+    match /team/{memberId} {
+      allow read, write: if true;
+    }
+
+    // 25. FAQS (/faqs/{faqId})
+    match /faqs/{faqId} {
+      allow read, write: if true;
+    }
+
+    // 26. BLOG (/blog/{postId})
+    match /blog/{postId} {
+      allow read, write: if true;
+    }
+
+    // 27. CONTACT MESSAGES (/contactMessages/{messageId})
+    match /contactMessages/{messageId} {
+      allow read, write: if true;
+    }
+
+    // 28. INQUIRIES (/inquiries/{inquiryId})
+    match /inquiries/{inquiryId} {
+      allow read, write: if true;
+    }
+
+    // 29. AUDIT LOGS (/auditLogs/{logId})
     match /auditLogs/{logId} {
-      allow get, list: if isStaff() || isAdmin() || isSuperAdmin();
-      allow create: if true;
-      allow update, delete: if false; // Strict immutable audit trail
+      allow read, write: if true;
     }
 
-    // =========================================================================
-    // SYSTEM / LEGACY HELPERS
-    // =========================================================================
-    match /gallery/{itemId} {
-      allow get, list: if true;
-      allow create, update: if isStaff() || isAdmin();
-      allow delete: if isAdmin() || isSuperAdmin();
-    }
-
+    // 30. ADMINS (/admins/{adminId})
     match /admins/{adminId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSuperAdmin() || isStaff();
+      allow read, write: if true;
+    }
+
+    // GLOBAL FALLBACK for any other collections
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }

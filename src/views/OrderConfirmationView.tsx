@@ -34,6 +34,7 @@ import { Badge } from '../components/ui/Badge';
 import { SEOHead } from '../components/layout/SEOHead';
 import { PaymentGatewayModal } from '../components/payment/PaymentGatewayModal';
 import { COMPANY_INFO } from '../config/company';
+import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 
 interface OrderConfirmationViewProps {
   orderId?: string;
@@ -44,6 +45,15 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
   orderId,
   onNavigate,
 }) => {
+  const { companySettings } = useFirestoreDataContext();
+  const legalName = companySettings?.legalName || COMPANY_INFO.legalName;
+  const colomboAddress = companySettings?.offices?.colombo?.address || COMPANY_INFO.offices.colombo.address;
+  const trincoAddress = companySettings?.offices?.trincomalee?.address || COMPANY_INFO.offices.trincomalee.address;
+  const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
+  const secondaryPhone = companySettings?.secondaryPhone || COMPANY_INFO.secondaryPhone;
+  const contactEmail = companySettings?.email || COMPANY_INFO.email;
+  const domain = COMPANY_INFO.domain;
+  const regNumber = companySettings?.registrationNumber || COMPANY_INFO.registrationNumber;
   const [order, setOrder] = useState<Order | null>(null);
   const [copied, setCopied] = useState(false);
   const [lookupId, setLookupId] = useState('');
@@ -174,15 +184,15 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
         {/* Printable Corporate Invoice Header */}
         <div className="hidden print:flex items-start justify-between border-b-2 border-slate-900 pb-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 font-display">{COMPANY_INFO.legalName}</h1>
+            <h1 className="text-2xl font-bold text-slate-900 font-display">{legalName}</h1>
             <p className="text-xs text-slate-600 mt-1">Official Tax Invoice & Order Settlement Receipt</p>
-            <p className="text-[11px] text-slate-500 font-mono mt-0.5">Registration Ref: {COMPANY_INFO.registrationNumber} • VAT/SVAT Compliant</p>
+            <p className="text-[11px] text-slate-500 font-mono mt-0.5">Registration Ref: {regNumber} • VAT/SVAT Compliant</p>
           </div>
           <div className="text-right text-xs text-slate-600 space-y-0.5 font-sans">
-            <p className="font-semibold text-slate-900">Colombo: {COMPANY_INFO.offices.colombo.address}</p>
-            <p className="font-semibold text-slate-900">Trincomalee: {COMPANY_INFO.offices.trincomalee.address}</p>
-            <p>Hotlines: {COMPANY_INFO.primaryPhone} | {COMPANY_INFO.secondaryPhone}</p>
-            <p>Email: {COMPANY_INFO.email} • Web: {COMPANY_INFO.domain}</p>
+            <p className="font-semibold text-slate-900">Colombo: {colomboAddress}</p>
+            <p className="font-semibold text-slate-900">Trincomalee: {trincoAddress}</p>
+            <p>Hotlines: {primaryPhone} | {secondaryPhone}</p>
+            <p>Email: {contactEmail} • Web: {domain}</p>
           </div>
         </div>
 

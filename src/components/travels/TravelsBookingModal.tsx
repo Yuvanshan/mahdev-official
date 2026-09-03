@@ -20,6 +20,7 @@ import { TRAVEL_PACKAGES, DAY_TOURS, VEHICLES, TravelPackage, DayTour, Vehicle }
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { COMPANY_INFO, getTelLink, getMailtoLink } from '../../config/company';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 interface TravelsBookingModalProps {
   isOpen: boolean;
@@ -36,6 +37,9 @@ export const TravelsBookingModal: React.FC<TravelsBookingModalProps> = ({
   initialTour,
   initialVehicle,
 }) => {
+  const { companySettings } = useFirestoreDataContext();
+  const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
+  const contactEmail = companySettings?.email || COMPANY_INFO.email;
   const [packageType, setPackageType] = useState<string>('custom');
   const [startDate, setStartDate] = useState('');
   const [durationDays, setDurationDays] = useState('7');
@@ -377,18 +381,18 @@ export const TravelsBookingModal: React.FC<TravelsBookingModalProps> = ({
                   className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-md"
                 >
                   <MessageSquare className="w-4 h-4" />
-                  <span>Send Ticket Directly to WhatsApp Concierge ({COMPANY_INFO.primaryPhone})</span>
+                  <span>Send Ticket Directly to WhatsApp Concierge ({primaryPhone})</span>
                 </a>
 
                 <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-semibold text-slate-600 pt-2">
-                  <a href={getTelLink(COMPANY_INFO.primaryPhone)} className="flex items-center gap-1.5 hover:text-[#0052FF]">
+                  <a href={getTelLink(primaryPhone)} className="flex items-center gap-1.5 hover:text-[#0052FF]">
                     <Phone className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Direct Call: {COMPANY_INFO.primaryPhone}</span>
+                    <span>Direct Call: {primaryPhone}</span>
                   </a>
                   <span className="text-slate-300">|</span>
-                  <a href={getMailtoLink(COMPANY_INFO.email)} className="flex items-center gap-1.5 hover:text-[#0052FF]">
+                  <a href={getMailtoLink(contactEmail)} className="flex items-center gap-1.5 hover:text-[#0052FF]">
                     <Mail className="w-3.5 h-3.5 text-blue-600" />
-                    <span>{COMPANY_INFO.email}</span>
+                    <span>{contactEmail}</span>
                   </a>
                 </div>
               </div>

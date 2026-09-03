@@ -52,8 +52,14 @@ import { storageService } from '../../services/storageService';
 import { BrandLogo } from '../../components/layout/BrandLogo';
 import { adminService, syncAdminFirebaseAuth } from '../../services/adminService';
 import { auth } from '../../lib/firebase';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 export const AdminSettingsView: React.FC = () => {
+  const {
+    updateSiteSettings: updateContextSiteSettings,
+    updateCompanySettings: updateContextCompanySettings,
+    refreshAll,
+  } = useFirestoreDataContext();
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -158,12 +164,24 @@ export const AdminSettingsView: React.FC = () => {
         setCompanyData((prev) => ({ ...prev, logoUrl: result.url }));
         await firestoreSettingsService.updateCompanySettings({ logoUrl: result.url });
         cmsService.updateCompanyInfo({ ...companyData, logoUrl: result.url } as any);
+        try {
+          await updateContextCompanySettings({ logoUrl: result.url });
+          await updateContextSiteSettings({ logoUrl: result.url });
+        } catch {}
       } else if (field === 'darkLogo') {
         updatedSettings.darkLogoUrl = result.url;
+        try {
+          await updateContextCompanySettings({ darkLogoUrl: result.url });
+          await updateContextSiteSettings({ darkLogoUrl: result.url });
+        } catch {}
       } else if (field === 'mobileLogo') {
         updatedSettings.mobileLogoUrl = result.url;
       } else if (field === 'favicon') {
         updatedSettings.faviconUrl = result.url;
+        try {
+          await updateContextCompanySettings({ faviconUrl: result.url });
+          await updateContextSiteSettings({ faviconUrl: result.url });
+        } catch {}
       } else if (field === 'maintenanceImage') {
         updatedSettings.maintenance = {
           ...(systemSettings.maintenance || {
@@ -231,12 +249,24 @@ export const AdminSettingsView: React.FC = () => {
       setCompanyData((prev) => ({ ...prev, logoUrl: '' }));
       await firestoreSettingsService.updateCompanySettings({ logoUrl: '' });
       cmsService.updateCompanyInfo({ ...companyData, logoUrl: '' } as any);
+      try {
+        await updateContextCompanySettings({ logoUrl: '' });
+        await updateContextSiteSettings({ logoUrl: '' });
+      } catch {}
     } else if (field === 'darkLogo') {
       updatedSettings.darkLogoUrl = '';
+      try {
+        await updateContextCompanySettings({ darkLogoUrl: '' });
+        await updateContextSiteSettings({ darkLogoUrl: '' });
+      } catch {}
     } else if (field === 'mobileLogo') {
       updatedSettings.mobileLogoUrl = '';
     } else if (field === 'favicon') {
       updatedSettings.faviconUrl = '';
+      try {
+        await updateContextCompanySettings({ faviconUrl: '' });
+        await updateContextSiteSettings({ faviconUrl: '' });
+      } catch {}
     } else if (field === 'maintenanceImage') {
       if (updatedSettings.maintenance) {
         updatedSettings.maintenance = {
@@ -261,17 +291,29 @@ export const AdminSettingsView: React.FC = () => {
         });
       }
 
+      const activeCurrency = systemSettings.currency || systemSettings.defaultCurrency || 'LKR';
+
       // 1. Commit to Firestore database & multi-device sync channels
       await Promise.all([
         firestoreSettingsService.updateCompanySettings(companyData),
         firestoreSettingsService.updateSiteSettings({
           ...systemSettings,
-          currency: systemSettings.defaultCurrency || systemSettings.currency || 'USD',
+          currency: activeCurrency,
+          defaultCurrency: activeCurrency,
         }),
       ]);
 
-      // 2. Also keep CMS in-memory cache synchronized
+      // 2. Also keep Context and CMS in-memory cache synchronized
       cmsService.updateCompanyInfo(companyData as any);
+      try {
+        await updateContextCompanySettings(companyData);
+        await updateContextSiteSettings({
+          ...systemSettings,
+          currency: activeCurrency,
+          defaultCurrency: activeCurrency,
+        });
+        await refreshAll();
+      } catch {}
 
       addToast(
         'success',
@@ -293,20 +335,37 @@ export const AdminSettingsView: React.FC = () => {
   const handleSaveBrandingAssets = async () => {
     setIsSaving(true);
     try {
+      const resolvedLogo = systemSettings.logoUrl || companyData.logoUrl || '';
+      const resolvedDarkLogo = systemSettings.darkLogoUrl || companyData.darkLogoUrl || '';
+      const resolvedFavicon = systemSettings.faviconUrl || companyData.faviconUrl || '';
+
       const updatedSite: FirestoreSiteSettings = {
         ...systemSettings,
+        logoUrl: resolvedLogo,
+        darkLogoUrl: resolvedDarkLogo,
+        faviconUrl: resolvedFavicon,
         brandingUpdatedAt: new Date().toISOString(),
         brandingVersion: (systemSettings.brandingVersion || 1) + 1,
       };
       await Promise.all([
         firestoreSettingsService.updateCompanySettings({
           ...companyData,
-          logoUrl: systemSettings.logoUrl || companyData.logoUrl,
-          darkLogoUrl: systemSettings.darkLogoUrl || companyData.darkLogoUrl,
-          faviconUrl: systemSettings.faviconUrl || companyData.faviconUrl,
+          logoUrl: resolvedLogo,
+          darkLogoUrl: resolvedDarkLogo,
+          faviconUrl: resolvedFavicon,
         }),
         firestoreSettingsService.updateSiteSettings(updatedSite),
       ]);
+      try {
+        await updateContextCompanySettings({
+          ...companyData,
+          logoUrl: resolvedLogo,
+          darkLogoUrl: resolvedDarkLogo,
+          faviconUrl: resolvedFavicon,
+        });
+        await updateContextSiteSettings(updatedSite);
+        await refreshAll();
+      } catch {}
       addToast(
         'success',
         'Branding & Logo Assets Published',
@@ -322,10 +381,15 @@ export const AdminSettingsView: React.FC = () => {
   const handleSaveAnnouncement = async () => {
     setIsSaving(true);
     try {
-      await firestoreSettingsService.updateSiteSettings({
+      const announcementData = {
         ...systemSettings,
         announcement: systemSettings.announcement,
-      });
+      };
+      await firestoreSettingsService.updateSiteSettings(announcementData);
+      try {
+        await updateContextSiteSettings(announcementData);
+        await refreshAll();
+      } catch {}
       addToast(
         'success',
         'Announcement Banner Published',
@@ -341,12 +405,17 @@ export const AdminSettingsView: React.FC = () => {
   const handleSaveMaintenance = async () => {
     setIsSaving(true);
     try {
-      await firestoreSettingsService.updateSiteSettings({
+      const maintenanceData = {
         ...systemSettings,
         maintenance: systemSettings.maintenance,
         enableMaintenanceMode: systemSettings.enableMaintenanceMode ?? systemSettings.maintenance?.enabled,
         maintenanceMode: systemSettings.maintenanceMode ?? systemSettings.maintenance?.enabled,
-      });
+      };
+      await firestoreSettingsService.updateSiteSettings(maintenanceData);
+      try {
+        await updateContextSiteSettings(maintenanceData);
+        await refreshAll();
+      } catch {}
       addToast(
         'success',
         'Maintenance Settings Saved',
@@ -379,6 +448,11 @@ export const AdminSettingsView: React.FC = () => {
         ]);
 
         cmsService.updateCompanyInfo(defaultCompany as any);
+        try {
+          await updateContextCompanySettings(defaultCompany);
+          await updateContextSiteSettings(defaultSite);
+          await refreshAll();
+        } catch {}
 
         addToast(
           'info',
@@ -1110,17 +1184,51 @@ export const AdminSettingsView: React.FC = () => {
                   <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                     Or Direct Image URL
                   </label>
-                  <input
-                    type="text"
-                    value={systemSettings.logoUrl || ''}
-                    onChange={(e) => {
-                      const url = e.target.value;
-                      setSystemSettings({ ...systemSettings, logoUrl: url });
-                      setCompanyData({ ...companyData, logoUrl: url });
-                    }}
-                    placeholder="https://storage.googleapis.com/.../logo.png"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={systemSettings.logoUrl || ''}
+                      onChange={(e) => {
+                        const url = e.target.value;
+                        setSystemSettings({ ...systemSettings, logoUrl: url });
+                        setCompanyData({ ...companyData, logoUrl: url });
+                      }}
+                      onBlur={async () => {
+                        if (systemSettings.logoUrl) {
+                          try {
+                            const trimmed = systemSettings.logoUrl.trim();
+                            await firestoreSettingsService.updateSiteSettings({ logoUrl: trimmed });
+                            await firestoreSettingsService.updateCompanySettings({ logoUrl: trimmed });
+                            await updateContextCompanySettings({ logoUrl: trimmed });
+                            await updateContextSiteSettings({ logoUrl: trimmed });
+                          } catch {}
+                        }
+                      }}
+                      placeholder="https://storage.googleapis.com/.../logo.png"
+                      className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const trimmed = (systemSettings.logoUrl || '').trim();
+                          await firestoreSettingsService.updateSiteSettings({ logoUrl: trimmed });
+                          await firestoreSettingsService.updateCompanySettings({ logoUrl: trimmed });
+                          await updateContextCompanySettings({ logoUrl: trimmed });
+                          await updateContextSiteSettings({ logoUrl: trimmed });
+                          await refreshAll();
+                          addToast('success', 'Logo URL Applied', 'Brand logo URL saved and published live to website.');
+                        } catch (err: any) {
+                          addToast('error', 'Failed to Apply Logo', err?.message || 'Error saving URL');
+                        }
+                      }}
+                      className="text-xs shrink-0"
+                    >
+                      Apply
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -1195,13 +1303,47 @@ export const AdminSettingsView: React.FC = () => {
                   <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                     Or Direct Image URL
                   </label>
-                  <input
-                    type="text"
-                    value={systemSettings.darkLogoUrl || ''}
-                    onChange={(e) => setSystemSettings({ ...systemSettings, darkLogoUrl: e.target.value })}
-                    placeholder="https://storage.googleapis.com/.../dark_logo.png"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={systemSettings.darkLogoUrl || ''}
+                      onChange={(e) => setSystemSettings({ ...systemSettings, darkLogoUrl: e.target.value })}
+                      onBlur={async () => {
+                        if (systemSettings.darkLogoUrl) {
+                          try {
+                            const trimmed = systemSettings.darkLogoUrl.trim();
+                            await firestoreSettingsService.updateSiteSettings({ darkLogoUrl: trimmed });
+                            await firestoreSettingsService.updateCompanySettings({ darkLogoUrl: trimmed });
+                            await updateContextCompanySettings({ darkLogoUrl: trimmed });
+                            await updateContextSiteSettings({ darkLogoUrl: trimmed });
+                          } catch {}
+                        }
+                      }}
+                      placeholder="https://storage.googleapis.com/.../dark_logo.png"
+                      className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const trimmed = (systemSettings.darkLogoUrl || '').trim();
+                          await firestoreSettingsService.updateSiteSettings({ darkLogoUrl: trimmed });
+                          await firestoreSettingsService.updateCompanySettings({ darkLogoUrl: trimmed });
+                          await updateContextCompanySettings({ darkLogoUrl: trimmed });
+                          await updateContextSiteSettings({ darkLogoUrl: trimmed });
+                          await refreshAll();
+                          addToast('success', 'Dark Logo URL Applied', 'Dark contrast logo URL saved and published live.');
+                        } catch (err: any) {
+                          addToast('error', 'Failed to Apply Dark Logo', err?.message || 'Error saving URL');
+                        }
+                      }}
+                      className="text-xs shrink-0"
+                    >
+                      Apply
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -1730,6 +1872,10 @@ export const AdminSettingsView: React.FC = () => {
               setIsSaving(true);
               try {
                 await firestoreSettingsService.updateSiteSettings(updatedSettings);
+                try {
+                  await updateContextSiteSettings(updatedSettings);
+                  await refreshAll();
+                } catch {}
                 addToast(
                   nextState ? 'warning' : 'success',
                   nextState ? 'Maintenance Mode Enabled' : 'Maintenance Mode Disabled',

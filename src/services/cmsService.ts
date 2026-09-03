@@ -48,14 +48,56 @@ export interface CmsFilterOptions {
 class CmsService {
   private cache: Partial<Record<CmsEntityType, any[]>> = {};
   private listeners: Map<CmsEntityType, Set<() => void>> = new Map();
+  private broadcastChannel: BroadcastChannel | null =
+    typeof window !== 'undefined' && 'BroadcastChannel' in window
+      ? new BroadcastChannel('mahdev_cms_sync_channel')
+      : null;
 
   constructor() {
     this.initializeAllEntities();
     this.attachFirestoreSync();
+    this.attachCrossTabSync();
+  }
+
+  private attachCrossTabSync(): void {
+    if (this.broadcastChannel) {
+      this.broadcastChannel.addEventListener('message', (e) => {
+        if (e.data?.type === 'cms_entity_updated' && e.data?.entity) {
+          const entity = e.data.entity as CmsEntityType;
+          const key = this.getStorageKey(entity);
+          const stored = localStorage.getItem(key);
+          if (stored) {
+            try {
+              this.cache[entity] = JSON.parse(stored);
+            } catch {}
+          }
+          const subs = this.listeners.get(entity);
+          if (subs) {
+            subs.forEach((cb) => cb());
+          }
+        }
+      });
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (e) => {
+        if (e.key && e.key.startsWith(CMS_STORAGE_PREFIX)) {
+          const entity = e.key.replace(CMS_STORAGE_PREFIX, '') as CmsEntityType;
+          if (this.cache[entity] && e.newValue) {
+            try {
+              this.cache[entity] = JSON.parse(e.newValue);
+              const subs = this.listeners.get(entity);
+              if (subs) subs.forEach((cb) => cb());
+            } catch {}
+          }
+        }
+      });
+    }
   }
 
   private attachFirestoreSync(): void {
     try {
+      // 1. Company Settings
       firestoreSettingsService.subscribeCompanySettings(
         (firestoreCompany) => {
           if (firestoreCompany && firestoreCompany.name) {
@@ -92,13 +134,322 @@ class CmsService {
             this.notify('pages');
           }
         },
-        () => {
-          // Fallback gracefully if firestore is offline
+        () => {}
+      );
+
+      // 2. Homepage Settings
+      firestoreSettingsService.subscribeHomepageSettings(
+        (homepageConf) => {
+          if (homepageConf) {
+            this.syncHomepageConfig(homepageConf);
+          }
         }
       );
+
+      // 3. Divisions
+      firestoreDivisionsService.subscribeDivisions((divs) => {
+        if (divs && Array.isArray(divs)) {
+          this.syncEntityFromFirestore('divisions', divs);
+        }
+      });
+
+      // 4. Services
+      firestoreServicesService.subscribeServices((srvs) => {
+        if (srvs && Array.isArray(srvs)) {
+          this.syncEntityFromFirestore('services', srvs);
+        }
+      });
+
+      // 5. Products
+      firestoreProductsService.subscribeProducts((prods) => {
+        if (prods && Array.isArray(prods)) {
+          this.syncEntityFromFirestore('products', prods);
+        }
+      });
+
+      // 6. Categories
+      firestoreCategoriesService.subscribeCategories((cats) => {
+        if (cats && Array.isArray(cats)) {
+          this.syncEntityFromFirestore('categories', cats);
+        }
+      });
+
+      // 7. Portfolio
+      firestorePortfolioService.subscribePortfolio((port) => {
+        if (port && Array.isArray(port)) {
+          this.syncEntityFromFirestore('portfolio', port);
+        }
+      });
+
+      // 8. Gallery
+      firestoreGalleryService.subscribeGallery(undefined, (gal) => {
+        if (gal && Array.isArray(gal)) {
+          this.syncEntityFromFirestore('gallery', gal);
+        }
+      });
+
+      // 9. Milestones
+      firestoreMilestonesService.subscribeMilestones((ms) => {
+        if (ms && Array.isArray(ms)) {
+          this.syncEntityFromFirestore('milestones', ms);
+        }
+      });
+
+      // 10. Trusted Companies
+      firestoreTrustedCompaniesService.subscribeTrustedCompanies((comps) => {
+        if (comps && Array.isArray(comps)) {
+          this.syncEntityFromFirestore('companies', comps);
+        }
+      });
+
+      // 11. Testimonials
+      firestoreTestimonialsService.subscribeTestimonials(undefined, (tests) => {
+        if (tests && Array.isArray(tests)) {
+          this.syncEntityFromFirestore('testimonials', tests);
+        }
+      });
     } catch (e) {
-      console.warn('[CmsService] Firestore settings auto-sync initialization:', e);
+      console.warn('[CmsService] Firestore multi-entity auto-sync initialization:', e);
     }
+  }
+
+  /**
+   * Hydrates CMS cache directly from Firestore real-time stream
+   */
+  public syncEntityFromFirestore(entity: CmsEntityType, rawItems: any[]): void {
+    if (!Array.isArray(rawItems)) return;
+
+    let mapped: any[] = [];
+    const now = new Date().toISOString();
+
+    if (entity === 'divisions') {
+      mapped = rawItems.map((d) => {
+        const divKey: DivisionId =
+          d.id === 'u1-studio' ? 'u1' : d.id === 'it-solutions' ? 'it' : d.id === 'online-mart' ? 'mart' : (d.id as DivisionId);
+        const fallbackConfig = DIVISIONS[divKey] || DIVISIONS.sws;
+
+        return {
+          id: d.id.startsWith('div-') ? d.id : `div-${d.id}`,
+          divisionKey: divKey,
+          name: d.name || fallbackConfig.name,
+          shortName: d.shortName || (fallbackConfig as any).shortName || d.name,
+          tagline: d.hero?.subtitle || d.shortDescription || fallbackConfig.tagline,
+          description: d.description || fallbackConfig.description,
+          badge: d.hero?.badge || fallbackConfig.badge,
+          route: d.route || `/${d.slug || d.id}`,
+          accentColor: d.accentColor || fallbackConfig.accentColor || '#0052FF',
+          gradient: (fallbackConfig as any).gradient || 'from-blue-600 to-indigo-700',
+          heroHeadline: d.hero?.title || d.heroHeadline || fallbackConfig.heroHeadline,
+          heroSubheadline: d.hero?.subtitle || d.shortDescription || fallbackConfig.heroSubheadline,
+          heroImageUrl: d.hero?.bgImage || d.imageUrl || (fallbackConfig as any).heroImageUrl || '',
+          logoUrl: d.logoUrl || d.logo || (fallbackConfig as any).logoUrl || '',
+          contactEmail: d.contactEmail || (fallbackConfig as any).contactEmail || 'contact@mahdev.lk',
+          iconName: (d as any).iconName || fallbackConfig.iconName || 'Sparkles',
+          stats: (d as any).stats || fallbackConfig.stats || [],
+          galleryImages: (d as any).galleryImages || [],
+          seo: d.seo || {
+            metaTitle: `${d.name} | Mahdev Group`,
+            metaDescription: d.description,
+            ogImage: d.hero?.bgImage || d.imageUrl || '',
+            canonicalUrl: `https://mahdev.lk${d.route || '/' + d.slug}`,
+          },
+          isActive: d.status !== 'inactive' && d.isPublished !== false,
+          isDeleted: d.status === 'inactive' && d.isPublished === false,
+          createdAt: d.createdAt || now,
+          updatedAt: d.updatedAt || now,
+        };
+      });
+    } else if (entity === 'services') {
+      mapped = rawItems.map((s) => {
+        const divId = s.divisionId || s.division || 'sws';
+        const divName =
+          s.divisionName ||
+          (divId === 'u1' || divId === 'u1-studio'
+            ? 'U1 Studio'
+            : divId === 'it' || divId === 'it-solutions'
+            ? 'Mahdev IT Solutions'
+            : divId === 'travels'
+            ? 'Mahdev Travels'
+            : divId === 'mart' || divId === 'online-mart'
+            ? 'Mahdev Online Mart'
+            : 'SWS Event Management');
+
+        return {
+          id: s.id,
+          divisionId: divId,
+          divisionName: divName,
+          title: s.title || s.name,
+          name: s.name || s.title,
+          description: s.description || '',
+          imageUrl: s.imageUrl || (s.images && s.images[0]) || '',
+          images: s.images || (s.imageUrl ? [s.imageUrl] : []),
+          features: s.features || [],
+          iconName: s.iconName || 'Sparkles',
+          popular: Boolean(s.popular),
+          badge: s.badge || '',
+          startingPrice: s.startingPrice || s.price || 0,
+          price: s.price || s.startingPrice || 0,
+          currency: s.currency || 'USD',
+          turnaroundTime: s.turnaroundTime || 'Flexible',
+          isActive: s.status !== 'draft' && s.status !== 'inactive' && s.isPublished !== false,
+          isDeleted: s.status === 'draft' && s.isPublished === false,
+          createdAt: s.createdAt || now,
+          updatedAt: s.updatedAt || now,
+        };
+      });
+    } else if (entity === 'products') {
+      mapped = rawItems.map((p) => ({
+        id: p.id,
+        sku: p.sku || p.id,
+        name: p.name,
+        slug: p.slug || p.id,
+        divisionId: p.division || 'mart',
+        divisionName: 'Mahdev Online Mart',
+        categoryId: p.categoryId || 'gear',
+        categoryName: (p as any).categoryName || 'General Gear',
+        price: p.price || 0,
+        compareAtPrice: p.compareAtPrice || p.discountPrice || 0,
+        currency: p.currency || 'USD',
+        shortDescription: p.shortDescription || p.description?.substring(0, 100) || '',
+        description: p.description || '',
+        imageUrl: p.images?.[0] || (p as any).imageUrl || '',
+        galleryImages: p.images || ((p as any).imageUrl ? [(p as any).imageUrl] : []),
+        stockQuantity: p.stock || 0,
+        stockStatus: (p.stock || 0) > 5 ? 'in_stock' : (p.stock || 0) > 0 ? 'low_stock' : 'out_of_stock',
+        lowStockThreshold: 5,
+        isFeatured: Boolean(p.isPublished),
+        tags: (p as any).tags || [],
+        specifications: (p as any).specifications || {},
+        isActive: p.status !== 'draft' && p.status !== 'archived' && p.status !== 'out_of_stock',
+        isDeleted: p.status === 'archived',
+        createdAt: p.createdAt || now,
+        updatedAt: p.updatedAt || now,
+      }));
+    } else if (entity === 'categories') {
+      mapped = rawItems.map((c) => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug || c.id,
+        divisionId: c.division || 'mart',
+        description: c.description || '',
+        imageUrl: c.imageUrl || '',
+        bannerUrl: c.imageUrl || '',
+        displayOrder: c.order || 0,
+        itemCount: (c as any).itemCount || 0,
+        isActive: c.status !== 'inactive' && c.isPublished !== false,
+        isDeleted: c.status === 'inactive' && c.isPublished === false,
+        createdAt: c.createdAt || now,
+        updatedAt: c.updatedAt || now,
+      }));
+    } else if (entity === 'portfolio') {
+      mapped = rawItems.map((p) => ({
+        id: p.id,
+        divisionId: p.division || (p as any).divisionId || 'sws',
+        title: p.title || (p as any).name || 'Portfolio Project',
+        category: p.category || 'Production',
+        client: p.client || 'Corporate Client',
+        year: p.year || '2026',
+        summary: p.summary || p.description || '',
+        fullDescription: p.fullDescription || p.description || p.summary || '',
+        highlights: p.highlights || [],
+        deliverables: p.deliverables || [],
+        imageUrl: p.imageUrl || (p.galleryImages && p.galleryImages[0]) || '',
+        galleryImages: p.galleryImages || (p.imageUrl ? [p.imageUrl] : []),
+        liveUrl: p.liveUrl || '',
+        impactMetrics: p.impactMetrics || [],
+        tags: p.tags || [],
+        isFeatured: Boolean(p.featured || (p as any).isFeatured),
+        isActive: (p as any).isActive !== false && p.status !== 'draft',
+        isDeleted: p.status === 'draft' && (p as any).isActive === false,
+        createdAt: p.createdAt || now,
+        updatedAt: p.updatedAt || now,
+      }));
+    } else if (entity === 'gallery') {
+      mapped = rawItems.map((g) => ({
+        id: g.id,
+        divisionId: g.division || (g as any).divisionId || 'sws',
+        title: g.title || 'Gallery Media',
+        category: (g as any).category || g.tag || 'General',
+        type: g.type || 'image',
+        mediaType: g.type || 'image',
+        mediaUrl: g.url || (g as any).mediaUrl || (g as any).imageUrl || '',
+        url: g.url || (g as any).mediaUrl || (g as any).imageUrl || '',
+        thumbnailUrl: g.thumbnailUrl || g.url || (g as any).mediaUrl || (g as any).imageUrl || '',
+        caption: g.caption || '',
+        aspectRatio: (g as any).aspectRatio || '16:9',
+        tags: (g as any).tags || (g.tag ? [g.tag] : []),
+        sortOrder: g.order || (g as any).sortOrder || 1,
+        isFeatured: Boolean(g.featured || (g as any).isFeatured),
+        isActive: (g as any).isActive !== false && g.status !== 'inactive',
+        isDeleted: g.status === 'inactive' && (g as any).isActive === false,
+        createdAt: g.createdAt || now,
+        updatedAt: g.updatedAt || now,
+      }));
+    } else if (entity === 'milestones') {
+      mapped = rawItems.map((m) => ({
+        id: m.id,
+        year: m.year || '2026',
+        title: m.title || '',
+        description: m.description || '',
+        divisionId: m.divisionId || 'sws',
+        badge: m.badge || '',
+        metric: m.metric || '',
+        iconName: m.iconName || 'Award',
+        keyOutcome: m.keyOutcome || '',
+        highlight: Boolean(m.highlight),
+        imageUrl: m.imageUrl || '',
+        order: m.order || 0,
+        sortOrder: m.order || 0,
+        isActive: m.isPublished !== false && m.status !== 'draft',
+        isDeleted: m.status === 'draft' && m.isPublished === false,
+        createdAt: m.createdAt || now,
+        updatedAt: m.updatedAt || now,
+      }));
+    } else if (entity === 'companies') {
+      mapped = rawItems.map((c) => ({
+        id: c.id,
+        name: c.name || '',
+        industry: c.industry || '',
+        partnershipType: c.partnershipType || 'Strategic Partner',
+        logoUrl: c.logoUrl || '',
+        website: c.website || '',
+        description: c.description || '',
+        featured: Boolean(c.featured),
+        order: c.order || 0,
+        isActive: (c as any).isActive !== false && c.status !== 'inactive',
+        isDeleted: c.status === 'inactive' && (c as any).isActive === false,
+        createdAt: c.createdAt || now,
+        updatedAt: c.updatedAt || now,
+      }));
+    } else if (entity === 'testimonials') {
+      mapped = rawItems.map((t) => ({
+        id: t.id,
+        author: t.author || '',
+        role: t.role || '',
+        company: t.company || '',
+        content: t.content || '',
+        avatarUrl: t.avatarUrl || '',
+        rating: t.rating || 5,
+        divisionId: t.division || (t as any).divisionId || 'sws',
+        date: t.date || '',
+        verified: t.verified !== false,
+        order: t.order || 0,
+        featured: Boolean(t.featured),
+        isActive: !t.isHidden && (t as any).isActive !== false,
+        isDeleted: Boolean(t.isHidden),
+        createdAt: t.createdAt || now,
+        updatedAt: t.updatedAt || now,
+      }));
+    } else {
+      mapped = rawItems;
+    }
+
+    this.cache[entity] = mapped;
+    try {
+      localStorage.setItem(this.getStorageKey(entity), JSON.stringify(mapped));
+    } catch {}
+
+    this.notify(entity);
   }
 
   private getStorageKey(entity: CmsEntityType): string {
@@ -119,6 +470,22 @@ class CmsService {
     const subs = this.listeners.get(entity);
     if (subs) {
       subs.forEach((cb) => cb());
+    }
+    try {
+      if (this.broadcastChannel) {
+        this.broadcastChannel.postMessage({
+          type: 'cms_entity_updated',
+          entity,
+          timestamp: Date.now(),
+        });
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent(`mahdev_cms_${entity}_updated`, { detail: { entity } })
+        );
+      }
+    } catch (err) {
+      console.warn(`[CmsService] Broadcast notify notice for ${entity}:`, err);
     }
   }
 
@@ -545,23 +912,39 @@ class CmsService {
       if (entity === 'divisions') {
         const divKey = item.divisionKey || item.id?.replace('div-', '') || item.id;
         await firestoreDivisionsService.saveDivision(divKey, {
+          id: divKey,
           name: item.name,
+          shortName: item.shortName || item.name,
           description: item.description,
-          status: item.isDeleted ? 'inactive' : (item.status || 'active'),
-          hero: item.hero,
+          shortDescription: item.heroSubheadline || item.tagline || item.description,
+          imageUrl: item.heroImageUrl || item.imageUrl || '',
+          logoUrl: item.logoUrl || item.logo || '',
+          logo: item.logoUrl || item.logo || '',
+          accentColor: item.accentColor || '#0052FF',
+          route: item.route || `/${divKey}`,
+          slug: item.slug || divKey,
+          isPublished: !item.isDeleted && item.isActive !== false,
+          status: item.isDeleted ? 'inactive' : (item.isActive === false ? 'inactive' : 'active'),
+          hero: {
+            title: item.heroHeadline || item.name,
+            subtitle: item.heroSubheadline || item.tagline || '',
+            badge: item.badge || 'Enterprise Division',
+            bgImage: item.heroImageUrl || item.imageUrl || '',
+            ctaText: 'Explore ' + item.name,
+          },
           seo: item.seo,
-          logo: item.logo,
         });
       } else if (entity === 'services') {
         await firestoreServicesService.saveService(item.id, {
-          divisionId: item.divisionId,
-          division: item.divisionId,
+          id: item.id,
+          divisionId: item.divisionId || item.division || 'sws',
+          division: item.divisionId || item.division || 'sws',
           divisionName: item.divisionName,
           name: item.name || item.title,
           title: item.title || item.name,
           slug: item.slug || item.id,
           description: item.description || item.shortDescription || '',
-          imageUrl: item.imageUrl,
+          imageUrl: item.imageUrl || (item.images && item.images[0]) || '',
           images: item.imageUrl ? [item.imageUrl] : item.images || [],
           price: item.startingPrice || item.price || 0,
           startingPrice: item.startingPrice || item.price || 0,
@@ -577,40 +960,108 @@ class CmsService {
         });
       } else if (entity === 'products') {
         await firestoreProductsService.saveProduct(item.id, {
-          division: item.divisionId,
+          id: item.id,
+          division: item.divisionId || item.division || 'mart',
           name: item.name,
           slug: item.slug || item.id,
-          sku: item.sku,
-          categoryId: item.categoryId,
-          description: item.description || item.shortDescription,
-          price: item.price,
-          compareAtPrice: item.compareAtPrice || item.originalPrice,
+          sku: item.sku || item.id,
+          categoryId: item.categoryId || 'gear',
+          description: item.description || item.shortDescription || '',
+          price: item.price || 0,
+          compareAtPrice: item.compareAtPrice || item.originalPrice || 0,
           images: item.galleryImages && item.galleryImages.length > 0 ? item.galleryImages : item.imageUrl ? [item.imageUrl] : [],
-          stock: item.stockQuantity,
+          stock: item.stockQuantity || item.stock || 0,
           status: item.isDeleted ? 'draft' : (item.isActive === false ? 'draft' : 'active'),
           hasVariants: Boolean(item.variants && item.variants.options && item.variants.options.length > 0),
           variants: item.variants?.options,
         });
       } else if (entity === 'categories') {
         await firestoreCategoriesService.saveCategory(item.id, {
-          division: item.divisionId,
+          id: item.id,
+          division: item.divisionId || item.division || 'mart',
           name: item.name,
           slug: item.slug || item.id,
-          description: item.description,
-          imageUrl: item.imageUrl,
+          description: item.description || '',
+          imageUrl: item.imageUrl || '',
           order: item.order || item.sortOrder || 0,
           status: item.isDeleted ? 'inactive' : (item.status || 'active'),
         });
       } else if (entity === 'portfolio') {
-        await firestorePortfolioService.savePortfolio(item.id, item);
+        await firestorePortfolioService.savePortfolio(item.id, {
+          id: item.id,
+          title: item.title,
+          division: item.divisionId || item.division || 'sws',
+          category: item.category || 'Production',
+          client: item.client || 'Client',
+          year: item.year || '2026',
+          summary: item.summary || item.description || '',
+          description: item.description || item.fullDescription || item.summary || '',
+          highlights: item.highlights || [],
+          deliverables: item.deliverables || [],
+          imageUrl: item.imageUrl || (item.galleryImages && item.galleryImages[0]) || '',
+          galleryImages: item.galleryImages || (item.imageUrl ? [item.imageUrl] : []),
+          liveUrl: item.liveUrl || '',
+          impactMetrics: item.impactMetrics || [],
+          tags: item.tags || [],
+          featured: Boolean(item.isFeatured || item.featured),
+          status: item.isDeleted ? 'draft' : (item.isActive === false ? 'draft' : 'published'),
+        });
       } else if (entity === 'gallery') {
-        await firestoreGalleryService.saveGallery(item.id, item);
+        await firestoreGalleryService.saveGallery(item.id, {
+          id: item.id,
+          title: item.title,
+          division: item.divisionId || item.division || 'sws',
+          type: item.type || item.mediaType || 'image',
+          url: item.url || item.mediaUrl || item.imageUrl || '',
+          tag: Array.isArray(item.tags) ? item.tags[0] : (item.tag || 'General'),
+          status: (item.isDeleted || item.isActive === false) ? 'hidden' : 'published',
+        });
       } else if (entity === 'milestones') {
-        await firestoreMilestonesService.saveMilestone(item.id, item);
+        await firestoreMilestonesService.saveMilestone(item.id, {
+          id: item.id,
+          year: item.year || '2026',
+          title: item.title,
+          description: item.description,
+          divisionId: item.divisionId || 'sws',
+          badge: item.badge || '',
+          metric: item.metric || '',
+          iconName: item.iconName || 'Award',
+          keyOutcome: item.keyOutcome || '',
+          highlight: Boolean(item.highlight),
+          imageUrl: item.imageUrl || '',
+          order: item.order || item.sortOrder || 0,
+          status: item.isDeleted ? 'draft' : (item.isActive === false ? 'draft' : 'published'),
+          isPublished: !item.isDeleted && item.isActive !== false,
+        });
       } else if (entity === 'companies') {
-        await firestoreTrustedCompaniesService.saveTrustedCompany(item.id, item);
+        await firestoreTrustedCompaniesService.saveTrustedCompany(item.id, {
+          id: item.id,
+          name: item.name,
+          industry: item.industry || '',
+          partnershipType: item.partnershipType || 'Strategic Partner',
+          logoUrl: item.logoUrl || '',
+          website: item.website || '',
+          description: item.description || '',
+          isPublished: !item.isDeleted && item.isActive !== false,
+          order: item.order || 0,
+          status: item.isDeleted ? 'inactive' : (item.isActive === false ? 'inactive' : 'active'),
+        });
       } else if (entity === 'testimonials') {
-        await firestoreTestimonialsService.saveTestimonial(item.id, item);
+        await firestoreTestimonialsService.saveTestimonial(item.id, {
+          id: item.id,
+          author: item.author,
+          role: item.role || '',
+          company: item.company || '',
+          message: item.content || item.message || '',
+          quote: item.content || item.quote || item.message || '',
+          avatarUrl: item.avatarUrl || '',
+          rating: item.rating || 5,
+          division: item.divisionId || item.division || 'sws',
+          verified: item.verified !== false,
+          order: item.order || 0,
+          isFeatured: Boolean(item.featured || item.isFeatured),
+          isHidden: item.isDeleted || item.isActive === false,
+        });
       }
     } catch (err) {
       console.warn(`[Firestore Sync] Failed to sync ${entity}/${item.id}:`, err);

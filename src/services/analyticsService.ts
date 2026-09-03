@@ -21,6 +21,7 @@ import {
   TopServiceMetric,
   FunnelStage,
 } from '../types/analytics';
+import { getCurrencySymbol } from '../utils/currency';
 import { CmsProduct, CmsService as CmsServiceEntity } from '../types/cms';
 import { orderService } from './orderService';
 import { bookingService } from './bookingService';
@@ -306,12 +307,16 @@ class AnalyticsService {
     }
   }
 
-  public getExecutiveReport(timeRange: TimeRangeFilter = '30d'): ExecutiveReportData {
+  public getExecutiveReport(timeRange: TimeRangeFilter = '30d', targetCurrency: string = 'LKR'): ExecutiveReportData {
     const rawEvents = this.getRawEvents();
     const allOrders = orderService.getAllOrders();
     const allBookings = bookingService.getAllBookings();
     const allProducts = cmsService.getAll<CmsProduct>('products');
     const allServices = cmsService.getAll<CmsServiceEntity>('services');
+
+    const curr = (targetCurrency || 'LKR').toUpperCase();
+    const currSymbol = getCurrencySymbol(curr);
+    const USD_TO_LKR_RATE = 305;
 
     // 1. Time Filtering Window
     const now = new Date();
@@ -334,28 +339,56 @@ class AnalyticsService {
     // 2. Revenue Calculations
     let orderRevenueUSD = 0;
     let orderRevenueLKR = 0;
+    let orderRevenueTarget = 0;
+
     filteredOrders.forEach((o) => {
       if (o.status !== 'cancelled') {
-        if (o.currency === 'LKR') {
-          orderRevenueLKR += o.total;
-          orderRevenueUSD += Math.round(o.total / 305);
+        const oCurr = (o.currency || curr).toUpperCase();
+        let inLKR = 0;
+        let inUSD = 0;
+
+        if (oCurr === 'LKR') {
+          inLKR = o.total;
+          inUSD = Math.round(o.total / USD_TO_LKR_RATE);
         } else {
-          orderRevenueUSD += o.total;
-          orderRevenueLKR += Math.round(o.total * 305);
+          inUSD = o.total;
+          inLKR = Math.round(o.total * USD_TO_LKR_RATE);
         }
+
+        orderRevenueLKR += inLKR;
+        orderRevenueUSD += inUSD;
+        orderRevenueTarget += (curr === 'LKR' ? inLKR : inUSD);
       }
     });
 
     let bookingRevenueUSD = 0;
+    let bookingRevenueLKR = 0;
+    let bookingRevenueTarget = 0;
+
     filteredBookings.forEach((b) => {
       if (b.status !== 'cancelled' && b.status !== 'rejected') {
-        bookingRevenueUSD += b.price || 0;
+        const bCurr = (b.currency || curr).toUpperCase();
+        const rawPrice = b.price || 0;
+        let inLKR = 0;
+        let inUSD = 0;
+
+        if (bCurr === 'LKR') {
+          inLKR = rawPrice;
+          inUSD = Math.round(rawPrice / USD_TO_LKR_RATE);
+        } else {
+          inUSD = rawPrice;
+          inLKR = Math.round(rawPrice * USD_TO_LKR_RATE);
+        }
+
+        bookingRevenueLKR += inLKR;
+        bookingRevenueUSD += inUSD;
+        bookingRevenueTarget += (curr === 'LKR' ? inLKR : inUSD);
       }
     });
 
-    const totalGrossRevenueUSD = orderRevenueUSD + bookingRevenueUSD;
+    const totalGrossRevenue = orderRevenueTarget + bookingRevenueTarget;
     const completedOrdersCount = filteredOrders.length;
-    const aov = completedOrdersCount > 0 ? Math.round(orderRevenueUSD / completedOrdersCount) : 0;
+    const aov = completedOrdersCount > 0 ? Math.round(orderRevenueTarget / completedOrdersCount) : 0;
 
     // 3. Unique sessions & pageviews
     const uniqueSessions = new Set(filteredEvents.map((e) => e.sessionId));
@@ -379,7 +412,10 @@ class AnalyticsService {
       const dateKey = o.createdAt.split('T')[0];
       if (dailyMap[dateKey]) {
         dailyMap[dateKey].orders += 1;
-        const rev = o.currency === 'LKR' ? Math.round(o.total / 305) : o.total;
+        const oCurr = (o.currency || curr).toUpperCase();
+        const rev = curr === 'LKR'
+          ? (oCurr === 'LKR' ? o.total : Math.round(o.total * USD_TO_LKR_RATE))
+          : (oCurr === 'LKR' ? Math.round(o.total / USD_TO_LKR_RATE) : o.total);
         dailyMap[dateKey].revenue += rev;
       }
     });
@@ -388,7 +424,12 @@ class AnalyticsService {
       const dateKey = b.createdAt.split('T')[0];
       if (dailyMap[dateKey]) {
         dailyMap[dateKey].bookings += 1;
-        dailyMap[dateKey].revenue += b.price || 0;
+        const bCurr = (b.currency || curr).toUpperCase();
+        const rawPrice = b.price || 0;
+        const bRev = curr === 'LKR'
+          ? (bCurr === 'LKR' ? rawPrice : Math.round(rawPrice * USD_TO_LKR_RATE))
+          : (bCurr === 'LKR' ? Math.round(rawPrice / USD_TO_LKR_RATE) : rawPrice);
+        dailyMap[dateKey].revenue += bRev;
       }
     });
 
@@ -423,9 +464,16 @@ class AnalyticsService {
       
       let divRev = 0;
       if (div.id === 'mart') {
-        divRev = orderRevenueUSD;
+        divRev = orderRevenueTarget;
       } else {
-        divRev = divBookings.reduce((sum, b) => sum + (b.price || 0), 0);
+        divRev = divBookings.reduce((sum, b) => {
+          const bCurr = (b.currency || curr).toUpperCase();
+          const rawPrice = b.price || 0;
+          const val = curr === 'LKR'
+            ? (bCurr === 'LKR' ? rawPrice : Math.round(rawPrice * USD_TO_LKR_RATE))
+            : (bCurr === 'LKR' ? Math.round(rawPrice / USD_TO_LKR_RATE) : rawPrice);
+          return sum + val;
+        }, 0);
       }
 
       const pViews = filteredEvents.filter((e) => e.divisionId === div.id && (e.type === 'division_view' || e.type === 'page_view')).length + 45;
@@ -446,7 +494,7 @@ class AnalyticsService {
         bookingsCount: divBookings.length,
         ordersCount: divOrders.length,
         grossRevenue: divRev,
-        revenueSharePercent: totalGrossRevenueUSD > 0 ? Math.round((divRev / totalGrossRevenueUSD) * 100) : 0,
+        revenueSharePercent: totalGrossRevenue > 0 ? Math.round((divRev / totalGrossRevenue) * 100) : 0,
         conversionRatePercent: parseFloat(convRate.toFixed(1)),
       };
     });
@@ -459,7 +507,11 @@ class AnalyticsService {
           productSoldMap[item.productId] = { units: 0, rev: 0 };
         }
         productSoldMap[item.productId].units += item.quantity;
-        productSoldMap[item.productId].rev += item.unitPrice * item.quantity;
+        const oCurr = (o.currency || curr).toUpperCase();
+        let itemRev = item.unitPrice * item.quantity;
+        if (curr === 'LKR' && oCurr === 'USD') itemRev = Math.round(itemRev * USD_TO_LKR_RATE);
+        if (curr === 'USD' && oCurr === 'LKR') itemRev = Math.round(itemRev / USD_TO_LKR_RATE);
+        productSoldMap[item.productId].rev += itemRev;
       });
     });
 
@@ -498,14 +550,23 @@ class AnalyticsService {
         serviceBookingMap[b.serviceId] = { count: 0, rev: 0, completed: 0 };
       }
       serviceBookingMap[b.serviceId].count += 1;
-      serviceBookingMap[b.serviceId].rev += b.price || 0;
+      const bCurr = (b.currency || curr).toUpperCase();
+      const rawPrice = b.price || 0;
+      const bRev = curr === 'LKR'
+        ? (bCurr === 'LKR' ? rawPrice : Math.round(rawPrice * USD_TO_LKR_RATE))
+        : (bCurr === 'LKR' ? Math.round(rawPrice / USD_TO_LKR_RATE) : rawPrice);
+      serviceBookingMap[b.serviceId].rev += bRev;
       if (b.status === 'completed') {
         serviceBookingMap[b.serviceId].completed += 1;
       }
     });
 
     const topServices: TopServiceMetric[] = allServices.map((s) => {
-      const bData = serviceBookingMap[s.id] || { count: s.popular ? 6 : 2, rev: (s.popular ? 6 : 2) * (s.startingPrice || 450), completed: 2 };
+      const bData = serviceBookingMap[s.id] || {
+        count: s.popular ? 6 : 2,
+        rev: (s.popular ? 6 : 2) * (s.startingPrice || (curr === 'LKR' ? 45000 : 450)),
+        completed: 2,
+      };
       const views = filteredEvents.filter((e) => e.metadata?.serviceId === s.id).length + 42;
       const convRate = views > 0 ? parseFloat(((bData.count / views) * 100).toFixed(1)) : 8.2;
 
@@ -518,7 +579,7 @@ class AnalyticsService {
         completedCount: bData.completed,
         revenue: bData.rev,
         views,
-        averageBookingValue: bData.count > 0 ? Math.round(bData.rev / bData.count) : (s.startingPrice || 350),
+        averageBookingValue: bData.count > 0 ? Math.round(bData.rev / bData.count) : (s.startingPrice || (curr === 'LKR' ? 35000 : 350)),
         conversionRate: convRate,
       };
     }).sort((a, b) => b.revenue - a.revenue);
@@ -548,18 +609,22 @@ class AnalyticsService {
 
     // 9. Payment Gateways
     const gatewayMap: Record<string, { count: number; volume: number; label: string }> = {
-      stripe_card: { count: 0, volume: 0, label: 'Credit / Debit Cards (Stripe 3DS)' },
       lankapay_ipg: { count: 0, volume: 0, label: 'LankaPay National Switch IPG' },
+      stripe_card: { count: 0, volume: 0, label: 'Credit / Debit Cards (Stripe 3DS)' },
       bank_wire: { count: 0, volume: 0, label: 'Corporate Bank Wire / B2B Invoice' },
     };
 
     filteredOrders.forEach((o) => {
-      const gw = o.paymentMethod || 'stripe_card';
+      const gw = o.paymentMethod || 'lankapay_ipg';
       if (!gatewayMap[gw]) {
         gatewayMap[gw] = { count: 0, volume: 0, label: gw };
       }
       gatewayMap[gw].count += 1;
-      gatewayMap[gw].volume += o.currency === 'LKR' ? Math.round(o.total / 305) : o.total;
+      const oCurr = (o.currency || curr).toUpperCase();
+      const vol = curr === 'LKR'
+        ? (oCurr === 'LKR' ? o.total : Math.round(o.total * USD_TO_LKR_RATE))
+        : (oCurr === 'LKR' ? Math.round(o.total / USD_TO_LKR_RATE) : o.total);
+      gatewayMap[gw].volume += vol;
     });
 
     const paymentGatewayDistribution = Object.entries(gatewayMap).map(([gw, data]) => ({
@@ -567,19 +632,21 @@ class AnalyticsService {
       label: data.label,
       transactionsCount: data.count,
       volume: data.volume,
-      percentage: totalGrossRevenueUSD > 0 ? Math.round((data.volume / totalGrossRevenueUSD) * 100) : 0,
+      percentage: totalGrossRevenue > 0 ? Math.round((data.volume / totalGrossRevenue) * 100) : 0,
     }));
 
     return {
       timeRange,
+      currency: curr,
+      currencySymbol: currSymbol,
       kpis: {
-        grossRevenue: totalGrossRevenueUSD,
+        grossRevenue: totalGrossRevenue,
         revenueGrowthPercent: 18.4,
         totalOrders: completedOrdersCount,
         ordersGrowthPercent: 12.1,
         averageOrderValue: aov,
         totalBookings: filteredBookings.length,
-        bookingsPipelineValue: bookingRevenueUSD,
+        bookingsPipelineValue: bookingRevenueTarget,
         totalRegisteredCustomers: Math.max(48, filteredOrders.length * 2 + filteredBookings.length),
         corporateClientRatioPercent: 38,
         overallStoreConversionPercent: ecommerceFunnel[3]?.overallConversion || 3.8,
@@ -589,7 +656,7 @@ class AnalyticsService {
       },
       revenueByCurrency: {
         USD: orderRevenueUSD + bookingRevenueUSD,
-        LKR: orderRevenueLKR + (bookingRevenueUSD * 305),
+        LKR: orderRevenueLKR + bookingRevenueLKR,
       },
       dailyTrends,
       divisionPerformance,
@@ -610,35 +677,40 @@ class AnalyticsService {
   // 4. CSV EXPORT ENGINE
   // =========================================================================
 
-  public exportCsv(reportType: 'revenue' | 'orders' | 'bookings' | 'products' | 'services' | 'divisions', timeRange: TimeRangeFilter = '30d'): void {
-    const report = this.getExecutiveReport(timeRange);
+  public exportCsv(
+    reportType: 'revenue' | 'orders' | 'bookings' | 'products' | 'services' | 'divisions',
+    timeRange: TimeRangeFilter = '30d',
+    targetCurrency: string = 'LKR'
+  ): void {
+    const report = this.getExecutiveReport(timeRange, targetCurrency);
+    const curr = report.currency;
     let csvContent = '';
-    let filename = `mahdev_${reportType}_report_${new Date().toISOString().split('T')[0]}.csv`;
+    let filename = `mahdev_${reportType}_report_${curr.toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`;
 
     switch (reportType) {
       case 'revenue': {
-        csvContent = 'Date,Gross Revenue (USD),Orders Count,Bookings Count,Estimated Visitors\n';
+        csvContent = `Date,Gross Revenue (${curr}),Orders Count,Bookings Count,Estimated Visitors\n`;
         report.dailyTrends.forEach((row) => {
           csvContent += `"${row.date}",${row.revenue},${row.orders},${row.bookings},${row.visitors}\n`;
         });
         break;
       }
       case 'divisions': {
-        csvContent = 'Division ID,Division Name,Pageviews,Inquiries,Quote Requests,Bookings,Orders,Gross Revenue (USD),Revenue Share (%),Conversion Rate (%)\n';
+        csvContent = `Division ID,Division Name,Pageviews,Inquiries,Quote Requests,Bookings,Orders,Gross Revenue (${curr}),Revenue Share (%),Conversion Rate (%)\n`;
         report.divisionPerformance.forEach((div) => {
           csvContent += `"${div.divisionId}","${div.name}",${div.pageViews},${div.inquiries},${div.quoteRequests},${div.bookingsCount},${div.ordersCount},${div.grossRevenue},${div.revenueSharePercent}%,${div.conversionRatePercent}%\n`;
         });
         break;
       }
       case 'products': {
-        csvContent = 'Product ID,Name,SKU,Category,Price (USD),Units Sold,Gross Revenue (USD),Views,Cart Additions,Conversion Rate (%),Current Stock,Status\n';
+        csvContent = `Product ID,Name,SKU,Category,Price (${curr}),Units Sold,Gross Revenue (${curr}),Views,Cart Additions,Conversion Rate (%),Current Stock,Status\n`;
         report.topProducts.forEach((p) => {
           csvContent += `"${p.id}","${p.name}","${p.sku}","${p.category}",${p.price},${p.unitsSold},${p.revenue},${p.views},${p.cartAdds},${p.conversionRate}%,${p.currentStock},"${p.stockStatus}"\n`;
         });
         break;
       }
       case 'services': {
-        csvContent = 'Service ID,Service Name,Division,Bookings Count,Completed Count,Average Value (USD),Gross Revenue (USD),Views,Conversion Rate (%)\n';
+        csvContent = `Service ID,Service Name,Division,Bookings Count,Completed Count,Average Value (${curr}),Gross Revenue (${curr}),Views,Conversion Rate (%)\n`;
         report.topServices.forEach((s) => {
           csvContent += `"${s.id}","${s.name}","${s.divisionName}",${s.bookingsCount},${s.completedCount},${s.averageBookingValue},${s.revenue},${s.views},${s.conversionRate}%\n`;
         });

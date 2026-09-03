@@ -25,12 +25,15 @@ import { IconRenderer } from '../components/ui/IconRenderer';
 import { ITService } from '../data/itData';
 import { DIVISION_LIST } from '../config/divisions';
 import { COMPANY_INFO, getTelLink } from '../config/company';
+import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 
 interface ITViewProps {
   onNavigate: (route: string) => void;
 }
 
 export const ITView: React.FC<ITViewProps> = ({ onNavigate }) => {
+  const { companySettings } = useFirestoreDataContext();
+  const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
   const [selectedServiceForDetail, setSelectedServiceForDetail] = useState<ITService | null>(null);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [quoteModalService, setQuoteModalService] = useState<ITService | null>(null);
@@ -95,11 +98,11 @@ export const ITView: React.FC<ITViewProps> = ({ onNavigate }) => {
 
           <div className="flex items-center gap-3">
             <a
-              href={getTelLink(COMPANY_INFO.primaryPhone)}
+              href={getTelLink(primaryPhone)}
               className="text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5"
             >
               <Phone className="w-3.5 h-3.5 text-blue-400" />
-              <span>{COMPANY_INFO.primaryPhone}</span>
+              <span>{primaryPhone}</span>
             </a>
             <Button
               size="sm"

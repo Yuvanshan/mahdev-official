@@ -26,12 +26,15 @@ import { IconRenderer } from '../components/ui/IconRenderer';
 import { SWSService, SWSPackage, SWSRentalItem } from '../data/swsData';
 import { DIVISION_LIST } from '../config/divisions';
 import { COMPANY_INFO, getTelLink } from '../config/company';
+import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 
 interface SWSViewProps {
   onNavigate: (route: string) => void;
 }
 
 export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
+  const { companySettings } = useFirestoreDataContext();
+  const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [isQuoteMode, setIsQuoteMode] = useState(false);
   const [activeServiceForBooking, setActiveServiceForBooking] = useState<SWSService | null>(null);
@@ -145,11 +148,11 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
 
           <div className="flex items-center gap-3">
             <a
-              href={getTelLink(COMPANY_INFO.primaryPhone)}
+              href={getTelLink(primaryPhone)}
               className="text-xs font-bold text-slate-700 hover:text-blue-600 flex items-center gap-1.5"
             >
               <Phone className="w-3.5 h-3.5 text-blue-600" />
-              <span>{COMPANY_INFO.primaryPhone}</span>
+              <span>{primaryPhone}</span>
             </a>
             <Button
               size="sm"

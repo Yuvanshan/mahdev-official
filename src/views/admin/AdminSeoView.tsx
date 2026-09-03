@@ -120,6 +120,16 @@ export const AdminSeoView: React.FC = () => {
     setIsSaving(true);
     try {
       localStorage.setItem(SEO_STORAGE_KEY, JSON.stringify(configs));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('mahdev_seo_updated', { detail: configs }));
+        try {
+          if ('BroadcastChannel' in window) {
+            const bc = new BroadcastChannel('mahdev_realtime_settings_channel');
+            bc.postMessage({ type: 'seo', data: configs, timestamp: Date.now() });
+            bc.close();
+          }
+        } catch {}
+      }
       addToast('success', 'SEO Configs Saved', 'Search engine metadata updated successfully.');
     } catch (err: any) {
       addToast('error', 'Save Failed', err.message || 'Could not save SEO configuration.');

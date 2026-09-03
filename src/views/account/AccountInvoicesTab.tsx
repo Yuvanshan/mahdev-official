@@ -15,6 +15,7 @@ import { Order } from '../../types/order';
 import { CustomerUser } from '../../types/customer';
 import { Button } from '../../components/ui/Button';
 import { COMPANY_INFO } from '../../config/company';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 interface AccountInvoicesTabProps {
   user: CustomerUser;
@@ -27,6 +28,13 @@ export const AccountInvoicesTab: React.FC<AccountInvoicesTabProps> = ({
   orders,
   onNavigate,
 }) => {
+  const { companySettings } = useFirestoreDataContext();
+  const legalName = companySettings?.legalName || COMPANY_INFO.legalName;
+  const colomboAddress = companySettings?.offices?.colombo?.address || COMPANY_INFO.offices.colombo.address;
+  const trincoAddress = companySettings?.offices?.trincomalee?.address || COMPANY_INFO.offices.trincomalee.address;
+  const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
+  const secondaryPhone = companySettings?.secondaryPhone || COMPANY_INFO.secondaryPhone;
+  const contactEmail = companySettings?.email || COMPANY_INFO.email;
   const [selectedInvoice, setSelectedInvoice] = useState<Order | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -172,12 +180,12 @@ export const AccountInvoicesTab: React.FC<AccountInvoicesTabProps> = ({
                   Commercial Tax Invoice
                 </span>
                 <h2 className="font-display text-2xl font-bold text-slate-900 mt-0.5">
-                  {COMPANY_INFO.legalName}
+                  {legalName}
                 </h2>
                 <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  Colombo: {COMPANY_INFO.offices.colombo.address}<br />
-                  Trincomalee: {COMPANY_INFO.offices.trincomalee.address}<br />
-                  {COMPANY_INFO.email} • {COMPANY_INFO.primaryPhone} / {COMPANY_INFO.secondaryPhone}
+                  Colombo: {colomboAddress}<br />
+                  Trincomalee: {trincoAddress}<br />
+                  {contactEmail} • {primaryPhone} / {secondaryPhone}
                 </p>
               </div>
 

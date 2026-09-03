@@ -55,7 +55,7 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
           };
         });
     }
-    return DIVISION_LIST;
+    return [];
   }, [divisions]);
 
   const totalCount = displayDivisions.length;
@@ -71,7 +71,7 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
           <div className="max-w-2xl">
             <Caption className="text-[#0052FF] mb-2 block">Our Specialized Portfolio</Caption>
-            <H2 className="text-slate-900 mb-3">Five Distinct Business Divisions</H2>
+            <H2 className="text-slate-900 mb-3">Enterprise Business Divisions</H2>
             <Body className="text-slate-600 text-base">
               Each enterprise division operates with specialized domain mastery, offering distinct services while adhering to the core governance, technical precision, and reliability of {companySettings?.name || 'Mahdev Pvt Ltd'}.
             </Body>
@@ -84,9 +84,18 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
         </div>
       </ScrollReveal>
 
-      {/* Horizontal Carousel Track on Mobile / 3D Perspective Grid on Desktop */}
-      <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 lg:gap-8 sm:overflow-visible">
-        {displayDivisions.map((division, idx) => (
+      {totalCount === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-200 p-12 text-center bg-white">
+          <Sparkles className="w-8 h-8 text-slate-400 mx-auto mb-3" />
+          <h3 className="font-display font-bold text-slate-800 text-lg mb-1">No Divisions Available</h3>
+          <p className="text-slate-500 text-sm max-w-md mx-auto">
+            Divisions synchronized from Cloud Firestore will appear here.
+          </p>
+        </div>
+      ) : (
+        /* Horizontal Carousel Track on Mobile / 3D Perspective Grid on Desktop */
+        <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 lg:gap-8 sm:overflow-visible">
+          {displayDivisions.map((division, idx) => (
           <div
             key={division.id}
             className="w-[calc(100vw-2.5rem)] max-w-[340px] sm:max-w-none sm:w-auto snap-center shrink-0 sm:shrink"
@@ -225,6 +234,7 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
           </ScrollReveal>
         </div>
       </div>
+      )}
 
       {/* View All Divisions CTA Button */}
       <div className="mt-12 text-center">

@@ -27,7 +27,6 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
-import { COMPANY_INFO } from '../../config/company';
 
 interface SWSBookingModalProps {
   isOpen: boolean;

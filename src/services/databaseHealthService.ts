@@ -137,23 +137,33 @@ export class DatabaseHealthService {
       emailVerified: currentUser?.emailVerified ?? false,
     };
 
-    // 6. Probing Primary Collections
+    // 6. Probing Primary Collections (Separate Folders / Collections)
     const targetCollections = [
       'settings',
-      'companySettings',
       'divisions',
       'services',
       'products',
       'categories',
       'portfolio',
+      'projects',
       'gallery',
       'milestones',
       'trustedCompanies',
+      'clients',
       'testimonials',
       'orders',
       'bookings',
+      'inquiries',
       'users',
       'contactSubmissions',
+      'contactMessages',
+      'navigation',
+      'heroSections',
+      'pages',
+      'statistics',
+      'team',
+      'faqs',
+      'blog',
       'auditLogs',
     ];
 

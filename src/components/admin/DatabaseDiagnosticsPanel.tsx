@@ -15,12 +15,19 @@ import {
   ChevronUp,
   Cpu,
   Lock,
+  Trash2,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import {
   databaseHealthService,
   DatabaseDiagnosticReport,
 } from '../../services/databaseHealthService';
+import {
+  clearAllFirestoreCollections,
+  seedPristineProductionSettings,
+} from '../../services/firestore/databaseManagement';
+import { AdminConfirmDialog } from './AdminConfirmDialog';
 import {
   TARGET_FIREBASE_PROJECT_ID,
   TARGET_FIRESTORE_DATABASE_ID,
@@ -30,6 +37,9 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
   const [report, setReport] = useState<DatabaseDiagnosticReport | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showProbes, setShowProbes] = useState<boolean>(false);
+  const [showClearDialog, setShowClearDialog] = useState<boolean>(false);
+  const [isClearing, setIsClearing] = useState<boolean>(false);
+  const [actionMessage, setActionMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const runDiagnostics = async () => {
     setIsLoading(true);
@@ -43,9 +53,63 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
     }
   };
 
+  const handleClearDatabase = async () => {
+    setIsClearing(true);
+    setActionMessage(null);
+    try {
+      const result = await clearAllFirestoreCollections(true);
+      if (result.success) {
+        setActionMessage({
+          text: `Successfully wiped ${result.totalDeleted} documents across ${result.collectionsCleared.length} collections. Database is now in a pristine zero-content state.`,
+          type: 'success',
+        });
+      } else {
+        setActionMessage({
+          text: `Cleared with some errors: ${result.errors.map((e) => `${e.collection}: ${e.error}`).join(', ')}`,
+          type: 'error',
+        });
+      }
+      await runDiagnostics();
+    } catch (err: any) {
+      setActionMessage({
+        text: `Failed to clear Firestore: ${err?.message || err}`,
+        type: 'error',
+      });
+    } finally {
+      setIsClearing(false);
+      setShowClearDialog(false);
+    }
+  };
+
+  const handleSeedBaseline = async () => {
+    setIsLoading(true);
+    setActionMessage(null);
+    try {
+      await seedPristineProductionSettings();
+      setActionMessage({
+        text: 'Successfully seeded pristine Mahdev Pvt Ltd production settings into Firestore.',
+        type: 'success',
+      });
+      await runDiagnostics();
+    } catch (err: any) {
+      setActionMessage({
+        text: `Failed to seed baseline settings: ${err?.message || err}`,
+        type: 'error',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     runDiagnostics();
   }, []);
+
+  const totalContentDocs = report
+    ? report.collectionProbes
+        .filter((p) => p.collectionName !== 'settings')
+        .reduce((sum, p) => sum + p.docCount, 0)
+    : 0;
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 space-y-5">
@@ -97,12 +161,12 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={runDiagnostics}
-            disabled={isLoading}
+            disabled={isLoading || isClearing}
             leftIcon={
               <RefreshCw
                 className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-blue-600' : ''}`}
@@ -110,19 +174,60 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
             }
             className="text-xs font-semibold"
           >
-            {isLoading ? 'Testing Connection...' : 'Run Diagnostics'}
+            {isLoading ? 'Testing...' : 'Run Diagnostics'}
           </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSeedBaseline}
+            disabled={isLoading || isClearing}
+            leftIcon={<Sparkles className="w-3.5 h-3.5 text-blue-600" />}
+            className="text-xs font-semibold text-blue-700 hover:bg-blue-50"
+          >
+            Seed Baseline
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowClearDialog(true)}
+            disabled={isLoading || isClearing}
+            leftIcon={<Trash2 className="w-3.5 h-3.5 text-rose-600" />}
+            className="text-xs font-semibold text-rose-700 hover:bg-rose-50 border-rose-200"
+          >
+            Clear Firestore Data
+          </Button>
+
           <a
             href={`https://console.firebase.google.com/project/${TARGET_FIREBASE_PROJECT_ID}/firestore/databases/${TARGET_FIRESTORE_DATABASE_ID}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition-colors"
           >
-            <span>Firebase Console</span>
+            <span>Console</span>
             <ExternalLink className="w-3 h-3" />
           </a>
         </div>
       </div>
+
+      {actionMessage && (
+        <div
+          className={`p-3 rounded-xl text-xs font-medium border flex items-center justify-between ${
+            actionMessage.type === 'success'
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+              : 'bg-rose-50 text-rose-800 border-rose-200'
+          }`}
+        >
+          <span>{actionMessage.text}</span>
+          <button
+            onClick={() => setActionMessage(null)}
+            className="text-slate-400 hover:text-slate-600 font-bold ml-2 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Diagnostics Grid */}
       {report && (
@@ -231,6 +336,9 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
               <span className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-blue-600" />
                 Collection Read Access Probes ({report.collectionProbes.filter((p) => p.accessible).length}/{report.collectionProbes.length} Accessible)
+                <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] bg-slate-200 text-slate-700 font-mono">
+                  {totalContentDocs === 0 ? 'Pristine Zero State (0 Docs)' : `${totalContentDocs} Active Docs`}
+                </span>
               </span>
               {showProbes ? (
                 <ChevronUp className="w-4 h-4 text-slate-500" />
@@ -266,6 +374,21 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Confirmation Dialog for Complete Database Clear */}
+      <AdminConfirmDialog
+        isOpen={showClearDialog}
+        title="Wipe & Clear Firestore Data"
+        message="This will completely clear and delete all documents across all separate Firestore collections (products, services, categories, milestones, portfolio, projects, gallery, trustedCompanies, testimonials, orders, bookings, inquiries, contactMessages, navigation, heroSections, pages, statistics, team, faqs, blog). This resets your database to an empty zero-state."
+        confirmLabel="Clear Database"
+        cancelLabel="Cancel"
+        isDestructive
+        isDangerous
+        requireKeywordConfirm
+        confirmKeyword="CLEAR"
+        onConfirm={handleClearDatabase}
+        onCancel={() => setShowClearDialog(false)}
+      />
     </div>
   );
 };

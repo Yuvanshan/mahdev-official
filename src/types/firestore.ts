@@ -283,6 +283,12 @@ export interface FirestoreCompanySettings {
   logoUrl?: string;
   darkLogoUrl?: string;
   faviconUrl?: string;
+  establishedYear?: string;
+  mission?: string;
+  vision?: string;
+  address?: string;
+  contactEmail?: string;
+  contactPhone?: string;
   email: string;
   primaryPhone: string;
   secondaryPhone: string;

@@ -96,6 +96,8 @@ export interface FunnelStage {
 
 export interface ExecutiveReportData {
   timeRange: TimeRangeFilter;
+  currency: string;
+  currencySymbol: string;
   kpis: {
     grossRevenue: number;
     revenueGrowthPercent: number;

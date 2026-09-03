@@ -27,12 +27,15 @@ import { IconRenderer } from '../components/ui/IconRenderer';
 import { TravelPackage, TravelDestination, DayTour, Vehicle } from '../data/travelsData';
 import { DIVISION_LIST } from '../config/divisions';
 import { COMPANY_INFO, getTelLink } from '../config/company';
+import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 
 interface TravelsViewProps {
   onNavigate: (route: string) => void;
 }
 
 export const TravelsView: React.FC<TravelsViewProps> = ({ onNavigate }) => {
+  const { companySettings } = useFirestoreDataContext();
+  const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
   const [selectedPackageForDetail, setSelectedPackageForDetail] = useState<TravelPackage | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [bookingPackage, setBookingPackage] = useState<TravelPackage | null>(null);
@@ -117,11 +120,11 @@ export const TravelsView: React.FC<TravelsViewProps> = ({ onNavigate }) => {
 
           <div className="flex items-center gap-3">
             <a
-              href={getTelLink(COMPANY_INFO.primaryPhone)}
+              href={getTelLink(primaryPhone)}
               className="text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5"
             >
               <Phone className="w-3.5 h-3.5 text-amber-400" />
-              <span>{COMPANY_INFO.primaryPhone}</span>
+              <span>{primaryPhone}</span>
             </a>
             <Button
               size="sm"
