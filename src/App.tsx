@@ -182,8 +182,8 @@ function AppContent() {
     return <AdminLayout currentPath={normalizedPath} onNavigate={navigate} />;
   }
 
-  // 2. Initial Data Hydration Loader for public pages (prevents flash of empty/default data)
-  if (isInitialLoading && !isReady) {
+  // 2. Initial Data Hydration Loader for public pages (prevents flash of public website before maintenance or data is verified)
+  if (!isAdminRoute && (isInitialLoading || !isReady)) {
     return (
       <InitialAppLoader
         message="Welcome to Mahdev"

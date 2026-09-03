@@ -276,6 +276,8 @@ export function getDefaultSiteSettings(): FirestoreSiteSettings {
     bookingDepositPercent: 30,
     legalRegistrationNumber: COMPANY_INFO.registrationNumber || 'PV-00289410',
     enableStockAlertEmails: true,
+    enableSmsAlerts: true,
+    smsAlertsEnabled: true,
     dailyBackupEnabled: true,
   };
 }

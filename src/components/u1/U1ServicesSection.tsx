@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { U1_SERVICES, U1Service } from '../../data/u1Data';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { formatCurrency } from '../../utils/currency';
 import { U1ServiceDetailModal } from './U1ServiceDetailModal';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
@@ -38,9 +39,9 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
 
   const allServices = useMemo<U1Service[]>(() => {
     if (rawServices && rawServices.length > 0) {
-      const u1Services = rawServices.filter(
-        (s) => s.division === 'u1' || (s as any).divisionId === 'u1'
-      );
+      const u1Services = rawServices
+        .filter((s) => s.division === 'u1' || (s as any).divisionId === 'u1')
+        .sort((a, b) => (a.order ?? (a as any).sortOrder ?? 0) - (b.order ?? (b as any).sortOrder ?? 0));
       if (u1Services.length > 0) {
         return u1Services.map((s) => ({
           id: s.id,
@@ -49,7 +50,9 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
           tagline: (s as any).tagline || s.description?.slice(0, 60) || '',
           description: s.description || '',
           detailedDescription: (s as any).detailedDescription || s.description || '',
-          startingPrice: typeof s.price === 'number' ? `$${s.price.toLocaleString()}` : String(s.price || '$800'),
+          startingPrice: typeof s.price === 'number' || typeof (s as any).startingPrice === 'number'
+            ? formatCurrency(s.price || (s as any).startingPrice || 0, s.currency || 'LKR')
+            : String(s.price || 'Rs. 50,000'),
           turnaround: (s as any).turnaround || (s as any).leadTime || '7-10 Days',
           deliverables: (s as any).deliverables || s.features || ['High-Res Digital Master Gallery'],
           imageUrl: s.images && s.images.length > 0 ? s.images[0] : (s as any).imageUrl || '',

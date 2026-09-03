@@ -62,6 +62,8 @@ export interface CmsService extends BaseCmsEntity {
   popular: boolean;
   badge: string;
   startingPrice: number;
+  price?: number;
+  order?: number;
   currency: string;
   turnaroundTime: string;
   isActive: boolean;

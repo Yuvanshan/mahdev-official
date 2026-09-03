@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { SWS_SERVICES, SWSService } from '../../data/swsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { formatCurrency } from '../../utils/currency';
 import { SWSServiceCard } from './SWSServiceCard';
 import { SWSServiceDetailModal } from './SWSServiceDetailModal';
 import { SectionContainer } from '../ui/SectionContainer';
@@ -37,9 +38,9 @@ export const SWSServicesSection: React.FC<SWSServicesSectionProps> = ({
   // Dynamically resolve services from Firestore if available
   const allServices = useMemo<SWSService[]>(() => {
     if (rawServices && rawServices.length > 0) {
-      const swsServices = rawServices.filter(
-        (s) => s.division === 'sws' || (s as any).divisionId === 'sws'
-      );
+      const swsServices = rawServices
+        .filter((s) => s.division === 'sws' || (s as any).divisionId === 'sws')
+        .sort((a, b) => (a.order ?? (a as any).sortOrder ?? 0) - (b.order ?? (b as any).sortOrder ?? 0));
       if (swsServices.length > 0) {
         return swsServices.map((s) => ({
           id: s.id,
@@ -48,7 +49,9 @@ export const SWSServicesSection: React.FC<SWSServicesSectionProps> = ({
           tagline: (s as any).tagline || s.description?.slice(0, 60) || '',
           description: s.description || '',
           detailedDescription: (s as any).detailedDescription || s.description || '',
-          startingPrice: typeof s.price === 'number' ? `$${s.price.toLocaleString()}` : String(s.price || '$1,500'),
+          startingPrice: typeof s.price === 'number' || typeof (s as any).startingPrice === 'number'
+            ? formatCurrency(s.price || (s as any).startingPrice || 0, s.currency || 'LKR')
+            : String(s.price || 'Rs. 75,000'),
           priceNote: (s as any).priceNote || 'Customized to event scale',
           imageUrl: s.images && s.images.length > 0 ? s.images[0] : (s as any).imageUrl || '',
           gallery: s.images || [],

@@ -291,12 +291,15 @@ class CmsService {
           price: s.price || s.startingPrice || 0,
           currency: s.currency || 'USD',
           turnaroundTime: s.turnaroundTime || 'Flexible',
+          order: s.order ?? 0,
+          sortOrder: s.order ?? 0,
           isActive: s.status !== 'draft' && s.status !== 'inactive' && s.isPublished !== false,
           isDeleted: s.status === 'draft' && s.isPublished === false,
           createdAt: s.createdAt || now,
           updatedAt: s.updatedAt || now,
         };
       });
+      mapped.sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0));
     } else if (entity === 'products') {
       mapped = rawItems.map((p) => ({
         id: p.id,
@@ -866,6 +869,26 @@ class CmsService {
     }
 
     return results as T[];
+  }
+
+  /**
+   * Reorder items for an entity in CMS cache and localStorage
+   */
+  public reorder(entity: CmsEntityType, orderedIds: string[]): void {
+    const list: any[] = this.cache[entity] || [];
+    const updated = list
+      .map((item) => {
+        const newOrder = orderedIds.indexOf(item.id);
+        return newOrder >= 0 ? { ...item, order: newOrder + 1, sortOrder: newOrder + 1 } : item;
+      })
+      .sort((a, b) => (a.order ?? a.sortOrder ?? 0) - (b.order ?? b.sortOrder ?? 0));
+
+    this.cache[entity] = updated;
+    try {
+      localStorage.setItem(this.getStorageKey(entity), JSON.stringify(updated));
+    } catch {}
+
+    this.notify(entity);
   }
 
   public getById<T = any>(entity: CmsEntityType, id: string): T | null {

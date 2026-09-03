@@ -21,6 +21,7 @@ import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { DivisionId } from '../../types';
+import { formatCurrency, formatLKR } from '../../utils/currency';
 
 export const AdminPackagesView: React.FC = () => {
   const [packages, setPackages] = useState<CmsPackage[]>([]);
@@ -43,8 +44,8 @@ export const AdminPackagesView: React.FC = () => {
     name: '',
     divisionId: 'sws' as DivisionId,
     tagline: '',
-    price: 3500,
-    currency: 'USD',
+    price: 350000,
+    currency: 'LKR',
     billingCycle: 'one-time' as string,
     features: [''],
     popular: false,
@@ -85,8 +86,8 @@ export const AdminPackagesView: React.FC = () => {
       name: '',
       divisionId: 'sws',
       tagline: 'Comprehensive turnkey production & full executive management',
-      price: 4500,
-      currency: 'USD',
+      price: 350000,
+      currency: 'LKR',
       billingCycle: 'one-time',
       features: ['Full Turnkey Architecture', 'Dedicated Executive Project Lead', '24/7 Operations Oversight'],
       popular: false,
@@ -106,7 +107,7 @@ export const AdminPackagesView: React.FC = () => {
       divisionId: pkg.divisionId,
       tagline: pkg.tagline || '',
       price: pkg.price,
-      currency: pkg.currency || 'USD',
+      currency: pkg.currency || 'LKR',
       billingCycle: pkg.billingCycle || 'one-time',
       features: pkg.features.length > 0 ? [...pkg.features] : [''],
       popular: pkg.popular || false,
@@ -305,7 +306,7 @@ export const AdminPackagesView: React.FC = () => {
                       <span className="text-[10px] text-slate-400">{pkg.features?.length || 0} inclusions</span>
                     </td>
                     <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
-                      ${pkg.price?.toFixed(2)} {pkg.currency || 'USD'}
+                      {formatCurrency(pkg.price, pkg.currency || 'LKR')}
                       <span className="text-slate-400 text-[10px] font-normal block">/{pkg.billingCycle}</span>
                     </td>
                     <td className="py-3.5 px-4">
@@ -412,20 +413,42 @@ export const AdminPackagesView: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div className="sm:col-span-2">
+              <label className="block font-semibold text-slate-700 mb-1">Price (LKR) *</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 font-mono">
+                  Rs.
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={formData.price}
+                  onChange={(e) => {
+                    setFormData({ ...formData, price: parseFloat(e.target.value) || 0 });
+                    setIsDirty(true);
+                  }}
+                  className="w-full pl-9 pr-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono font-bold"
+                />
+              </div>
+            </div>
+
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Price (USD) *</label>
-              <input
-                type="number"
-                min="0"
-                step="50"
-                value={formData.price}
+              <label className="block font-semibold text-slate-700 mb-1">Currency</label>
+              <select
+                value={formData.currency}
                 onChange={(e) => {
-                  setFormData({ ...formData, price: parseFloat(e.target.value) || 0 });
+                  setFormData({ ...formData, currency: e.target.value });
                   setIsDirty(true);
                 }}
-                className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono font-bold"
-              />
+                className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs font-bold font-mono"
+              >
+                <option value="LKR">LKR (Rs. Sri Lanka)</option>
+                <option value="USD">USD ($ United States)</option>
+                <option value="EUR">EUR (€ Europe)</option>
+                <option value="GBP">GBP (£ United Kingdom)</option>
+              </select>
             </div>
 
             <div>
@@ -444,6 +467,22 @@ export const AdminPackagesView: React.FC = () => {
                 <option value="yearly">Annual License</option>
               </select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-2">
+              <label className="block font-semibold text-slate-700 mb-1">Tagline / Overview</label>
+              <input
+                type="text"
+                value={formData.tagline}
+                onChange={(e) => {
+                  setFormData({ ...formData, tagline: e.target.value });
+                  setIsDirty(true);
+                }}
+                placeholder="Turnkey executive production with 24/7 dedicated lead..."
+                className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
 
             <div>
               <label className="block font-semibold text-slate-700 mb-1">Badge Tag</label>
@@ -458,20 +497,6 @@ export const AdminPackagesView: React.FC = () => {
                 className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 mb-1">Tagline / Overview</label>
-            <input
-              type="text"
-              value={formData.tagline}
-              onChange={(e) => {
-                setFormData({ ...formData, tagline: e.target.value });
-                setIsDirty(true);
-              }}
-              placeholder="Turnkey executive production with 24/7 dedicated lead..."
-              className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
           </div>
 
           {/* Features */}

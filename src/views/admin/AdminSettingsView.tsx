@@ -428,6 +428,50 @@ export const AdminSettingsView: React.FC = () => {
     }
   };
 
+  const handleSaveCommerce = async () => {
+    setIsSaving(true);
+    try {
+      const activeCurrency = systemSettings.currency || systemSettings.defaultCurrency || 'LKR';
+      const updated = {
+        ...systemSettings,
+        currency: activeCurrency,
+        defaultCurrency: activeCurrency,
+      };
+      await Promise.all([
+        firestoreSettingsService.updateCompanySettings(companyData),
+        firestoreSettingsService.updateSiteSettings(updated),
+      ]);
+      await updateContextCompanySettings(companyData);
+      await updateContextSiteSettings(updated);
+      addToast(
+        'success',
+        'Commerce Settings Saved',
+        `Platform currency set to ${activeCurrency} and tax configuration saved.`
+      );
+    } catch (err: any) {
+      addToast('error', 'Save Failed', err?.message || 'Failed to save commerce settings.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveSecurityAlerts = async () => {
+    setIsSaving(true);
+    try {
+      await firestoreSettingsService.updateSiteSettings(systemSettings);
+      await updateContextSiteSettings(systemSettings);
+      addToast(
+        'success',
+        'Security & Alerts Saved',
+        'Maintenance status, corporate SMS alerts, and audit settings have been committed to Cloud Firestore.'
+      );
+    } catch (err: any) {
+      addToast('error', 'Save Failed', err?.message || 'Failed to save security settings.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleResetToDefaults = async () => {
     if (
       window.confirm(
@@ -1723,6 +1767,19 @@ export const AdminSettingsView: React.FC = () => {
                 placeholder="PV-00289410"
               />
             </div>
+
+            <div className="pt-2 flex justify-end">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleSaveCommerce}
+                disabled={isSaving}
+                className="gap-2"
+              >
+                {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                <span>Save Commerce Settings</span>
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -2511,6 +2568,27 @@ export const AdminSettingsView: React.FC = () => {
 
             <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer">
               <div>
+                <span className="text-xs font-bold text-slate-800 block">Corporate SMS & WhatsApp Alerts</span>
+                <span className="text-[11px] text-slate-500">
+                  Transmit real-time booking confirmations, tracking SMS & dispatch notifications to clients
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={systemSettings.enableSmsAlerts ?? systemSettings.smsAlertsEnabled ?? true}
+                onChange={(e) =>
+                  setSystemSettings({
+                    ...systemSettings,
+                    enableSmsAlerts: e.target.checked,
+                    smsAlertsEnabled: e.target.checked,
+                  })
+                }
+                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+              />
+            </label>
+
+            <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer">
+              <div>
                 <span className="text-xs font-bold text-slate-800 block">Daily Audit Backup Snapshots</span>
                 <span className="text-[11px] text-slate-500">
                   Generate encrypted snapshots of orders and bookings
@@ -2525,6 +2603,19 @@ export const AdminSettingsView: React.FC = () => {
                 className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
               />
             </label>
+
+            <div className="pt-2 flex justify-end">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleSaveSecurityAlerts}
+                disabled={isSaving}
+                className="gap-2"
+              >
+                {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                <span>Save Security & Alerts</span>
+              </Button>
+            </div>
           </div>
 
           <div className="pt-2">

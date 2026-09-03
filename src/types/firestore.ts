@@ -368,6 +368,8 @@ export interface FirestoreSiteSettings {
   bookingDepositPercent?: number;
   legalRegistrationNumber?: string;
   enableStockAlertEmails?: boolean;
+  enableSmsAlerts?: boolean;
+  smsAlertsEnabled?: boolean;
   dailyBackupEnabled?: boolean;
   mobileLogoUrl?: string;
   darkLogoUrl?: string;

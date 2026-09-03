@@ -20,6 +20,8 @@
         "maintenanceTitle": { "type": "string", "description": "Maintenance notice title" },
         "maintenanceMessage": { "type": "string", "description": "Maintenance notice message body" },
         "maintenanceImageUrl": { "type": "string", "description": "Maintenance visual banner asset URL" },
+        "enableStockAlertEmails": { "type": "boolean", "description": "Operations inventory alert emails" },
+        "enableSmsAlerts": { "type": "boolean", "description": "Client SMS and WhatsApp transaction alerts" },
         "updatedAt": { "type": "string", "format": "date-time", "description": "Last updated ISO timestamp" },
         "version": { "type": "string", "description": "Site schema or release version" }
       },

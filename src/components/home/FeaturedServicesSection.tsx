@@ -29,7 +29,9 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
     return null;
   }
 
-  const activeServices = services.filter((s) => (s as any).status !== 'archived');
+  const activeServices = services
+    .filter((s) => (s as any).status !== 'archived')
+    .sort((a, b) => (a.order ?? (a as any).sortOrder ?? 0) - (b.order ?? (b as any).sortOrder ?? 0));
 
   if (activeServices.length === 0) {
     return null;

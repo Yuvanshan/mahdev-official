@@ -36,3 +36,14 @@ export function formatCurrency(amount: number, currencyCode: string = 'LKR'): st
   // For LKR, INR, USD, EUR, etc. with clean localized comma separation
   return `${symbol}${validAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
+
+/**
+ * Convenience helper specifically for formatting Sri Lankan Rupees (LKR / Rs.)
+ */
+export function formatLKR(amount: number, showDecimals: boolean = false): string {
+  const validAmount = typeof amount === 'number' && !isNaN(amount) ? amount : 0;
+  return `Rs. ${validAmount.toLocaleString('en-US', {
+    minimumFractionDigits: showDecimals ? 2 : 0,
+    maximumFractionDigits: 2,
+  })}`;
+}

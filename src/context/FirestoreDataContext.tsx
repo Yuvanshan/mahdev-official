@@ -332,9 +332,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (err) {
       console.error('[FirestoreDataContext] Refresh error:', err);
       setError(err instanceof Error ? err : new Error(String(err)));
-    } finally {
-      setIsInitialLoading(false);
-      setIsReady(true);
     }
   }, []);
 
@@ -358,14 +355,20 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     // Fast initial fetch
-    refreshAll().catch((err) => {
-      console.warn('[FirestoreDataContext] Initial fast hydration warning:', err);
-    });
+    refreshAll()
+      .then(() => {
+        if (isMounted) {
+          markReady();
+        }
+      })
+      .catch((err) => {
+        console.warn('[FirestoreDataContext] Initial fast hydration warning:', err);
+      });
 
-    // Safety timeout: ensure loading state completes fast
+    // Safety timeout: ensure loading state completes without stalling
     const safetyTimer = setTimeout(() => {
       markReady();
-    }, 600);
+    }, 1800);
 
     // 1. Core Realtime Centralized Listeners (Single Source of Truth, zero duplicate listeners)
     const unsubCompany = firestoreSettingsService.subscribeCompanySettings((data) => {

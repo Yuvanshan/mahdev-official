@@ -14,6 +14,7 @@ import {
   where,
   onSnapshot,
   Unsubscribe,
+  writeBatch,
 } from 'firebase/firestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreService, DivisionId } from '../../types/firestore';
@@ -45,6 +46,7 @@ export const firestoreServicesService = {
             ...d.data(),
             id: d.id,
           })) as FirestoreService[];
+          allServices.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
           cachedServices = { data: allServices, timestamp: now };
         } else {
           allServices = [];
@@ -88,6 +90,31 @@ export const firestoreServicesService = {
       } else {
         cachedServices.data.push(payload as FirestoreService);
       }
+      cachedServices.data.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    }
+  },
+
+  /**
+   * Batch update service display order
+   */
+  async reorderServices(orderedIds: string[]): Promise<void> {
+    const batch = writeBatch(db);
+    const now = new Date().toISOString();
+
+    orderedIds.forEach((id, index) => {
+      const docRef = doc(db, 'services', id);
+      batch.update(docRef, { order: index + 1, updatedAt: now });
+    });
+
+    await batch.commit();
+
+    if (cachedServices) {
+      cachedServices.data = cachedServices.data
+        .map((s) => {
+          const newOrder = orderedIds.indexOf(s.id);
+          return newOrder >= 0 ? { ...s, order: newOrder + 1 } : s;
+        })
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     }
   },
 
@@ -123,6 +150,7 @@ export const firestoreServicesService = {
           ...d.data(),
           id: d.id,
         })) as FirestoreService[];
+        data.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         cachedServices = { data, timestamp: Date.now() };
         onData(data);
       },

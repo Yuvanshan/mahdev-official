@@ -14,16 +14,22 @@ import {
   Clock,
   Check,
   X,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { CmsService } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
+import { firestoreServicesService } from '../../services/firestore/services';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { Button } from '../../components/ui/Button';
 import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { DivisionId } from '../../types';
+import { formatCurrency, formatLKR } from '../../utils/currency';
 
 export const AdminServicesView: React.FC = () => {
+  const { refreshAll } = useFirestoreDataContext();
   const [services, setServices] = useState<CmsService[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [divisionFilter, setDivisionFilter] = useState<string>('all');
@@ -49,8 +55,8 @@ export const AdminServicesView: React.FC = () => {
     iconName: 'Sparkles',
     popular: false,
     badge: 'Enterprise Tier',
-    startingPrice: 1500,
-    currency: 'USD',
+    startingPrice: 75000,
+    currency: 'LKR',
     turnaroundTime: '2-3 Weeks',
     isActive: true,
   });
@@ -81,6 +87,27 @@ export const AdminServicesView: React.FC = () => {
     return () => unsub();
   }, [searchQuery, divisionFilter, statusFilter]);
 
+  const handleMove = async (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= services.length) return;
+
+    const newOrder = [...services];
+    const [moved] = newOrder.splice(index, 1);
+    newOrder.splice(targetIndex, 0, moved);
+    setServices(newOrder);
+
+    try {
+      const orderedIds = newOrder.map((s) => s.id);
+      cmsService.reorder('services', orderedIds);
+      await firestoreServicesService.reorderServices(orderedIds);
+      addToast('info', 'Service Order Updated', 'New service display order saved and updated on website.');
+      await refreshAll();
+    } catch (err: any) {
+      console.error('[AdminServices] Reorder error:', err);
+      addToast('error', 'Reorder Failed', err.message || 'Failed to persist services order.');
+    }
+  };
+
   const handleOpenCreate = () => {
     setEditingService(null);
     setFormData({
@@ -92,8 +119,8 @@ export const AdminServicesView: React.FC = () => {
       iconName: 'Sparkles',
       popular: false,
       badge: 'Featured Offering',
-      startingPrice: 1800,
-      currency: 'USD',
+      startingPrice: 75000,
+      currency: 'LKR',
       turnaroundTime: '2-3 Weeks',
       isActive: true,
     });
@@ -113,8 +140,8 @@ export const AdminServicesView: React.FC = () => {
       iconName: srv.iconName || 'Sparkles',
       popular: srv.popular,
       badge: srv.badge,
-      startingPrice: srv.startingPrice || 1000,
-      currency: srv.currency || 'USD',
+      startingPrice: srv.startingPrice || srv.price || 50000,
+      currency: srv.currency || 'LKR',
       turnaroundTime: srv.turnaroundTime || '2-3 Weeks',
       isActive: srv.isActive,
     });
@@ -286,6 +313,7 @@ export const AdminServicesView: React.FC = () => {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 text-slate-600 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-100">
               <tr>
+                <th className="py-3.5 px-4 w-16 text-center">Order</th>
                 <th className="py-3.5 px-4">Service & Division</th>
                 <th className="py-3.5 px-4">Deliverables & Features</th>
                 <th className="py-3.5 px-4">Starting Price</th>
@@ -297,13 +325,40 @@ export const AdminServicesView: React.FC = () => {
             <tbody className="divide-y divide-slate-100 font-medium">
               {services.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-500">
+                  <td colSpan={7} className="py-8 text-center text-slate-500">
                     No services found matching filters.
                   </td>
                 </tr>
               ) : (
-                services.map((srv) => (
+                services.map((srv, idx) => (
                   <tr key={srv.id} className={`hover:bg-slate-50/80 transition-colors ${srv.isDeleted ? 'bg-slate-50/50 opacity-60' : ''}`}>
+                    <td className="py-3.5 px-4 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <span className="font-mono text-xs font-bold text-slate-500 w-4 text-center">
+                          {srv.order || idx + 1}
+                        </span>
+                        <div className="flex flex-col gap-0.5">
+                          <button
+                            type="button"
+                            onClick={() => handleMove(idx, 'up')}
+                            disabled={idx === 0}
+                            className="p-0.5 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                            title="Move Up"
+                          >
+                            <ArrowUp className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMove(idx, 'down')}
+                            disabled={idx === services.length - 1}
+                            className="p-0.5 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                            title="Move Down"
+                          >
+                            <ArrowDown className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    </td>
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
@@ -338,7 +393,7 @@ export const AdminServicesView: React.FC = () => {
                       </div>
                     </td>
                     <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
-                      ${srv.startingPrice?.toFixed(2) || '0.00'} {srv.currency || 'USD'}
+                      {formatCurrency(srv.startingPrice, srv.currency || 'LKR')}
                     </td>
                     <td className="py-3.5 px-4 text-slate-600 text-[11px] font-mono">
                       <Clock className="w-3 h-3 inline mr-1 text-slate-400" />
@@ -489,22 +544,46 @@ export const AdminServicesView: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">Starting Price (USD)</label>
-              <input
-                type="number"
-                min="0"
-                step="50"
-                value={formData.startingPrice}
-                onChange={(e) => {
-                  setFormData({ ...formData, startingPrice: parseFloat(e.target.value) || 0 });
-                  setIsDirty(true);
-                }}
-                className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
-              />
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-1">
+            <div className="sm:col-span-2">
+              <label className="block font-semibold text-slate-700 mb-1">Starting Price (LKR) *</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 font-mono">
+                  Rs.
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={formData.startingPrice}
+                  onChange={(e) => {
+                    setFormData({ ...formData, startingPrice: parseFloat(e.target.value) || 0 });
+                    setIsDirty(true);
+                  }}
+                  className="w-full pl-9 pr-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono font-bold"
+                />
+              </div>
             </div>
 
+            <div className="sm:col-span-2">
+              <label className="block font-semibold text-slate-700 mb-1">Currency</label>
+              <select
+                value={formData.currency}
+                onChange={(e) => {
+                  setFormData({ ...formData, currency: e.target.value });
+                  setIsDirty(true);
+                }}
+                className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs font-bold font-mono"
+              >
+                <option value="LKR">LKR (Rs. Sri Lanka)</option>
+                <option value="USD">USD ($ United States)</option>
+                <option value="EUR">EUR (€ Europe)</option>
+                <option value="GBP">GBP (£ United Kingdom)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <div>
               <label className="block font-semibold text-slate-700 mb-1">Turnaround Time</label>
               <input

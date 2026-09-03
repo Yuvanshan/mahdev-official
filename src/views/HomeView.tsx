@@ -1,6 +1,5 @@
 import React from 'react';
 import { SEOHead } from '../components/layout/SEOHead';
-import { WelcomeAnimation } from '../components/home/WelcomeAnimation';
 import { HeroSection } from '../components/home/HeroSection';
 import { AboutMahdevSection } from '../components/home/AboutMahdevSection';
 import { DivisionsSection } from '../components/home/DivisionsSection';
@@ -106,13 +105,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
     }
   };
 
-  const showWelcome = homepageConfig?.welcomeAnimation?.enabled !== false;
-
   return (
     <div className="w-full flex flex-col pb-24 lg:pb-0">
-      {/* 0. WELCOME ANIMATION (Shown on first visit or as configured in CMS) */}
-      {showWelcome && <WelcomeAnimation />}
-
       <SEOHead
         title={homepageConfig?.seo?.pageTitle || 'Corporate Ecosystem'}
         description={homepageConfig?.seo?.metaDescription || `${brandName} — ${tagline} Multi-division enterprise spanning Event Management, Studio Cinema, IT & Cloud, Travels, and E-Commerce.`}
