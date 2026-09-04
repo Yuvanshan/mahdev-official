@@ -41,7 +41,7 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
 
   const companyName = companySettings.name || 'Mahdev Pvt Ltd';
-  const hotline = companySettings.primaryPhone || '+94 77 000 0000';
+  const hotline = companySettings.primaryPhone || '075 092 8078';
   const email = companySettings.email || 'info@mahdev.lk';
 
   // Handle Quick Search Submit

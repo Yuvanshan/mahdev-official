@@ -30,7 +30,7 @@ export const MaintenanceView: React.FC<MaintenanceViewProps> = ({ onAdminLogin }
   const imageUrl = maintenance?.imageUrl;
   const estimatedReturn = maintenance?.estimatedReturn || 'Within 2 hours';
   const hotline =
-    maintenance?.contactPhone || companySettings.primaryPhone || '+94 77 000 0000';
+    maintenance?.contactPhone || companySettings.primaryPhone || '075 092 8078';
   const email =
     maintenance?.contactEmail || companySettings.email || 'info@mahdev.lk';
 

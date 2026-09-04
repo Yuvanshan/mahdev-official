@@ -73,7 +73,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <div className="lg:col-span-7">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-900/40 border border-blue-500/30 text-blue-400 text-xs font-semibold mb-3">
                 <Shield className="w-3.5 h-3.5" />
-                <span>The {companyName} Ecosystem</span>
+                <span>The {companyName} Enterprise</span>
               </div>
               <h3 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight">
                 {tagline}

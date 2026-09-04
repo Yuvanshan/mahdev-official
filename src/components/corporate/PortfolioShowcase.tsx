@@ -16,11 +16,13 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 interface PortfolioShowcaseProps {
   onInquireProject?: (project: PortfolioProject) => void;
+  onNavigate?: (route: string) => void;
   initialDivision?: DivisionId | 'all';
 }
 
 export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
   onInquireProject,
+  onNavigate,
   initialDivision = 'all',
 }) => {
   const { portfolio } = useFirestoreDataContext();
@@ -159,8 +161,12 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
               maxTilt={6}
               glareEffect
               onClick={() => {
-                setSelectedProject(project);
-                setActiveGalleryIndex(0);
+                if (onNavigate) {
+                  onNavigate(`/project/${project.id}`);
+                } else {
+                  setSelectedProject(project);
+                  setActiveGalleryIndex(0);
+                }
               }}
               className="h-[460px] cursor-pointer"
             >

@@ -32,6 +32,7 @@ import { OrderConfirmationView } from './views/OrderConfirmationView';
 import { OrderLookupView } from './views/OrderLookupView';
 import { AboutView } from './views/AboutView';
 import { PortfolioView } from './views/PortfolioView';
+import { ProjectDetailView } from './views/ProjectDetailView';
 import { ContactView } from './views/ContactView';
 import { ServicesView } from './views/ServicesView';
 import { ClientsView } from './views/ClientsView';
@@ -67,9 +68,9 @@ function AppContent() {
 
   // Dynamic favicon and document title synchronization from Firestore
   useEffect(() => {
-    const brandName = companySettings?.name || siteSettings?.siteName || 'Mahdev';
+    const brandName = companySettings?.name || siteSettings?.siteName || 'Mahdev Pvt Ltd';
     if (brandName && !document.title.includes(brandName)) {
-      document.title = `${brandName} | Enterprise Ecosystem`;
+      document.title = `${brandName} – Creating. Capturing. Innovating.`;
     }
 
     const uploadedFavicon = siteSettings?.faviconUrl || companySettings?.faviconUrl;
@@ -514,6 +515,16 @@ function AppContent() {
       );
     }
 
+    // Dynamic Project Detail Routes (/project/{slug}, /projects/{slug}, /work/{slug})
+    if (
+      normalizedPath.startsWith('/project/') ||
+      (normalizedPath.startsWith('/projects/') && normalizedPath !== '/projects') ||
+      (normalizedPath.startsWith('/work/') && normalizedPath !== '/work')
+    ) {
+      const slug = normalizedPath.replace(/^\/(project|projects|work)\//, '').trim();
+      return <ProjectDetailView projectSlugOrId={slug} onNavigate={navigate} />;
+    }
+
     // Dynamic Divisions Routes (/divisions/{id} or /division/{id})
     if (normalizedPath.startsWith('/divisions/') || normalizedPath.startsWith('/division/')) {
       const divSlug = normalizedPath.replace(/^\/(divisions|division)\//, '').trim();
@@ -631,6 +642,7 @@ function AppContent() {
         return <AboutView onNavigate={navigate} />;
       case '/projects':
       case '/portfolio':
+      case '/work':
         return <PortfolioView onNavigate={navigate} />;
       case '/milestones':
       case '/journey':

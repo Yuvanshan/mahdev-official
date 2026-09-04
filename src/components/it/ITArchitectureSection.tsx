@@ -114,7 +114,7 @@ export const ITArchitectureSection: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
           <div>
             <span className="text-[10px] font-mono uppercase tracking-wider text-blue-400">
-              Enterprise Technology Ecosystem
+              Enterprise Technology Stack
             </span>
             <h3 className="font-display text-lg font-bold text-white mt-0.5">
               Our Vetted Production Technology Matrix

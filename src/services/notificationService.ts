@@ -366,7 +366,7 @@ class NotificationService {
       `📩 New Inquiry: ${inquiry.subject}`,
       `Message from ${inquiry.name} (${inquiry.email}): "${inquiry.message.slice(0, 140)}..."`,
       { name: inquiry.name, email: inquiry.email, subject: inquiry.subject },
-      '/admin'
+      '/admin/enquiries'
     );
   }
 
@@ -380,7 +380,7 @@ class NotificationService {
       `📋 RFP Quote Request: ${(quote.division || 'GROUP').toUpperCase()}`,
       `Custom proposal requested by ${quote.name} (${quote.email}, ${quote.phone || 'No phone'}). Details: ${quote.details.slice(0, 120)}...`,
       { name: quote.name, email: quote.email, division: quote.division },
-      '/admin'
+      '/admin/enquiries'
     );
   }
 

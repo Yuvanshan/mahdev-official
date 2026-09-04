@@ -207,7 +207,7 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
               Integrated Group Strengths
             </span>
             <h3 className="font-display text-xl font-bold text-slate-900 mt-1">
-              Explore Sister Divisions in the Mahdev Ecosystem
+              Explore Sister Divisions in the Mahdev Group
             </h3>
           </div>
           <Button

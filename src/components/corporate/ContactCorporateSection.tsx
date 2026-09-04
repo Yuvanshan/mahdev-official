@@ -298,7 +298,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                         id="contact-phone"
                         label="Phone / Mobile"
                         type="tel"
-                        placeholder="+94 77 123 4567"
+                        placeholder="075 092 8078"
                         value={formData.phone}
                         onChange={(e) => {
                           setFormData({ ...formData, phone: e.target.value });

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { CmsDivision } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { Button } from '../../components/ui/Button';
 import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
@@ -31,6 +32,7 @@ import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
 import { DivisionId } from '../../types';
 
 export const AdminDivisionsView: React.FC = () => {
+  const { saveDivision, divisions: firestoreDivisions, companySettings } = useFirestoreDataContext();
   const [divisions, setDivisions] = useState<CmsDivision[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'deleted'>('all');
@@ -39,7 +41,7 @@ export const AdminDivisionsView: React.FC = () => {
   // Modal States
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingDivision, setEditingDivision] = useState<CmsDivision | null>(null);
-  const [modalTab, setModalTab] = useState<'general' | 'hero' | 'seo'>('general');
+  const [modalTab, setModalTab] = useState<'general' | 'hero' | 'narrative' | 'seo'>('general');
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -66,6 +68,16 @@ export const AdminDivisionsView: React.FC = () => {
     heroSubheadline: '',
     heroImageUrl: '',
     contactEmail: '',
+    contactPhone: '075 092 8078',
+    aboutHeading: '',
+    aboutText: '',
+    mission: '',
+    vision: '',
+    stats: [
+      { label: 'Active Projects', value: '100+' },
+      { label: 'Client Satisfaction', value: '99%' },
+      { label: 'Service Coverage', value: 'Island-wide' },
+    ],
     iconName: 'Sparkles',
     isActive: true,
     order: 1,
@@ -125,7 +137,17 @@ export const AdminDivisionsView: React.FC = () => {
       heroHeadline: '',
       heroSubheadline: '',
       heroImageUrl: '',
-      contactEmail: '',
+      contactEmail: companySettings?.email || 'info.mahdev.lk@gmail.com',
+      contactPhone: '075 092 8078',
+      aboutHeading: '',
+      aboutText: '',
+      mission: '',
+      vision: '',
+      stats: [
+        { label: 'Active Projects', value: '100+' },
+        { label: 'Client Satisfaction', value: '99%' },
+        { label: 'Service Coverage', value: 'Island-wide' },
+      ],
       iconName: 'Sparkles',
       isActive: true,
       order: divisions.length + 1,
@@ -145,6 +167,11 @@ export const AdminDivisionsView: React.FC = () => {
     setEditingDivision(div);
     setModalTab('general');
     const defaultOrder = div.divisionKey === 'sws' ? 1 : div.divisionKey === 'u1' ? 2 : div.divisionKey === 'it' ? 3 : div.divisionKey === 'travels' ? 4 : 5;
+    const canonicalKey = div.divisionKey === 'u1' ? 'u1-studio' : div.divisionKey === 'it' ? 'it-solutions' : div.divisionKey === 'mart' ? 'online-mart' : div.divisionKey;
+    const fsMatch = firestoreDivisions.find(
+      (d) => d.id === div.divisionKey || d.id === canonicalKey || d.slug === div.divisionKey || d.slug === canonicalKey
+    );
+
     setFormData({
       divisionKey: div.divisionKey,
       name: div.name,
@@ -156,10 +183,24 @@ export const AdminDivisionsView: React.FC = () => {
       logoUrl: div.logoUrl || '',
       accentColor: div.accentColor,
       gradient: div.gradient,
-      heroHeadline: div.heroHeadline || '',
-      heroSubheadline: div.heroSubheadline || '',
-      heroImageUrl: div.heroImageUrl || '',
-      contactEmail: div.contactEmail,
+      heroHeadline: div.heroHeadline || (fsMatch as any)?.heroHeadline || fsMatch?.hero?.title || '',
+      heroSubheadline: div.heroSubheadline || (fsMatch as any)?.heroSubheadline || fsMatch?.hero?.subtitle || '',
+      heroImageUrl: div.heroImageUrl || (fsMatch?.hero as any)?.imageUrl || fsMatch?.hero?.bgImage || '',
+      contactEmail: div.contactEmail || (fsMatch as any)?.contactEmail || companySettings?.email || 'info.mahdev.lk@gmail.com',
+      contactPhone: (div as any).contactPhone || (div as any).contactNumber || (fsMatch as any)?.contactPhone || (fsMatch as any)?.contactNumber || companySettings?.primaryPhone || '075 092 8078',
+      aboutHeading: (div as any).aboutHeading || (fsMatch as any)?.aboutHeading || '',
+      aboutText: (div as any).aboutText || (fsMatch as any)?.aboutText || div.description || '',
+      mission: (div as any).mission || (fsMatch as any)?.mission || '',
+      vision: (div as any).vision || (fsMatch as any)?.vision || '',
+      stats: (div as any).stats?.length
+        ? (div as any).stats
+        : (fsMatch as any)?.stats?.length
+        ? (fsMatch as any).stats
+        : [
+            { label: 'Active Projects', value: '100+' },
+            { label: 'Client Satisfaction', value: '99%' },
+            { label: 'Service Coverage', value: 'Island-wide' },
+          ],
       iconName: div.iconName,
       isActive: div.isActive,
       order: typeof div.order === 'number' && div.order > 0 ? div.order : defaultOrder,
@@ -200,15 +241,56 @@ export const AdminDivisionsView: React.FC = () => {
         order: orderNum,
       };
 
+      // 1. Sync to Firestore
+      const canonicalKey =
+        formData.divisionKey === 'u1'
+          ? 'u1-studio'
+          : formData.divisionKey === 'it'
+          ? 'it-solutions'
+          : formData.divisionKey === 'mart'
+          ? 'online-mart'
+          : formData.divisionKey;
+
+      if (saveDivision) {
+        await saveDivision(canonicalKey, {
+          name: formData.name,
+          shortName: formData.shortName,
+          tagline: formData.tagline,
+          description: formData.description,
+          badge: formData.badge,
+          route: formData.route,
+          accentColor: formData.accentColor,
+          gradient: formData.gradient,
+          heroHeadline: formData.heroHeadline,
+          heroSubheadline: formData.heroSubheadline,
+          contactEmail: formData.contactEmail,
+          contactPhone: formData.contactPhone || '075 092 8078',
+          contactNumber: formData.contactPhone || '075 092 8078',
+          aboutHeading: formData.aboutHeading,
+          aboutText: formData.aboutText || formData.description,
+          mission: formData.mission,
+          vision: formData.vision,
+          stats: formData.stats,
+          hero: {
+            title: formData.heroHeadline,
+            subtitle: formData.heroSubheadline,
+            badge: formData.badge,
+            bgImage: formData.heroImageUrl,
+          },
+          order: orderNum,
+          status: formData.isActive ? 'active' : 'inactive',
+          isPublished: formData.isActive,
+          iconName: formData.iconName,
+        });
+      }
+
+      // 2. Sync to CMS Local Store
       if (editingDivision) {
         await cmsService.update<CmsDivision>('divisions', editingDivision.id, payload);
-        addToast('success', 'Division Updated', `"${formData.name}" saved with sequence order #${orderNum}.`);
+        addToast('success', 'Division Updated', `"${formData.name}" saved & live synced with Firestore.`);
       } else {
-        await cmsService.create<CmsDivision>('divisions', {
-          ...payload,
-          stats: [{ label: 'Engagements', value: '100+' }],
-        });
-        addToast('success', 'Division Created', `"${formData.name}" registered with sequence order #${orderNum}.`);
+        await cmsService.create<CmsDivision>('divisions', payload);
+        addToast('success', 'Division Created', `"${formData.name}" registered & live synced with Firestore.`);
       }
       setIsDirty(false);
       setIsEditorOpen(false);
@@ -595,7 +677,8 @@ export const AdminDivisionsView: React.FC = () => {
           <div className="flex gap-1.5 p-1 bg-slate-100 rounded-xl mb-3">
             {[
               { id: 'general', label: 'Identity & Info' },
-              { id: 'hero', label: 'Hero & Branding' },
+              { id: 'hero', label: 'Hero & Visuals' },
+              { id: 'narrative', label: 'Inside Text & About' },
               { id: 'seo', label: 'SEO & Social' },
             ].map((t) => (
               <button
@@ -755,19 +838,36 @@ export const AdminDivisionsView: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Contact Email *</label>
-                <input
-                  type="email"
-                  value={formData.contactEmail}
-                  onChange={(e) => {
-                    setFormData({ ...formData, contactEmail: e.target.value });
-                    setIsDirty(true);
-                  }}
-                  placeholder="events@mahdev.lk"
-                  className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-                {formErrors.contactEmail && <p className="text-red-600 text-[10px] mt-0.5">{formErrors.contactEmail}</p>}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Contact Email *</label>
+                  <input
+                    type="email"
+                    value={formData.contactEmail}
+                    onChange={(e) => {
+                      setFormData({ ...formData, contactEmail: e.target.value });
+                      setIsDirty(true);
+                    }}
+                    placeholder="events@mahdev.lk"
+                    className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                  {formErrors.contactEmail && <p className="text-red-600 text-[10px] mt-0.5">{formErrors.contactEmail}</p>}
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Division Hotline / Phone Number</label>
+                  <input
+                    type="text"
+                    value={formData.contactPhone}
+                    onChange={(e) => {
+                      setFormData({ ...formData, contactPhone: e.target.value });
+                      setIsDirty(true);
+                    }}
+                    placeholder="075 092 8078"
+                    className="w-full px-3 py-2 border rounded-xl border-slate-200 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-0.5">Corporate Standard: 075 092 8078</p>
+                </div>
               </div>
             </div>
           )}
@@ -899,7 +999,145 @@ export const AdminDivisionsView: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 3: SEO */}
+          {/* TAB 3: NARRATIVE & INSIDE CONTENT */}
+          {modalTab === 'narrative' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Inside Section Heading</label>
+                <input
+                  type="text"
+                  value={formData.aboutHeading}
+                  onChange={(e) => {
+                    setFormData({ ...formData, aboutHeading: e.target.value });
+                    setIsDirty(true);
+                  }}
+                  placeholder="e.g. The Art of Extraordinary Celebrations"
+                  className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+                <p className="text-[10px] text-slate-400 mt-0.5">Displayed prominently inside the division's overview narrative.</p>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Inside Detailed Overview / Text</label>
+                <textarea
+                  rows={3}
+                  value={formData.aboutText}
+                  onChange={(e) => {
+                    setFormData({ ...formData, aboutText: e.target.value });
+                    setIsDirty(true);
+                  }}
+                  placeholder="Detailed breakdown of division vision, craftsmanship, and capabilities..."
+                  className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Mission Statement</label>
+                  <textarea
+                    rows={2}
+                    value={formData.mission}
+                    onChange={(e) => {
+                      setFormData({ ...formData, mission: e.target.value });
+                      setIsDirty(true);
+                    }}
+                    placeholder="e.g. To craft immersive sensory event environments..."
+                    className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Vision Statement</label>
+                  <textarea
+                    rows={2}
+                    value={formData.vision}
+                    onChange={(e) => {
+                      setFormData({ ...formData, vision: e.target.value });
+                      setIsDirty(true);
+                    }}
+                    placeholder="e.g. To be the preeminent luxury event management institution..."
+                    className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Key Metrics / Stats Editor */}
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h5 className="font-bold text-slate-800 text-xs">Division Key Performance Metrics / Stats</h5>
+                    <p className="text-[10px] text-slate-500">Highlighted on the public division page (e.g. 450+ Events, 99.4% Satisfaction)</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData({
+                        ...formData,
+                        stats: [...formData.stats, { label: 'New Metric', value: '100+' }],
+                      });
+                      setIsDirty(true);
+                    }}
+                    className="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                  >
+                    <Plus className="w-3 h-3" /> Add Metric
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {formData.stats.map((stat, idx) => (
+                    <div key={idx} className="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
+                      <div className="flex-1">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase">Label</label>
+                        <input
+                          type="text"
+                          value={stat.label}
+                          onChange={(e) => {
+                            const updated = [...formData.stats];
+                            updated[idx] = { ...updated[idx], label: e.target.value };
+                            setFormData({ ...formData, stats: updated });
+                            setIsDirty(true);
+                          }}
+                          placeholder="Label (e.g. Events Curated)"
+                          className="w-full px-2 py-1 text-xs border border-slate-200 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        />
+                      </div>
+                      <div className="w-32">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase">Value</label>
+                        <input
+                          type="text"
+                          value={stat.value}
+                          onChange={(e) => {
+                            const updated = [...formData.stats];
+                            updated[idx] = { ...updated[idx], value: e.target.value };
+                            setFormData({ ...formData, stats: updated });
+                            setIsDirty(true);
+                          }}
+                          placeholder="Value (e.g. 450+)"
+                          className="w-full px-2 py-1 text-xs font-bold text-blue-600 border border-slate-200 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        />
+                      </div>
+                      {formData.stats.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = formData.stats.filter((_, i) => i !== idx);
+                            setFormData({ ...formData, stats: updated });
+                            setIsDirty(true);
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors self-end"
+                          title="Remove Metric"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: SEO */}
           {modalTab === 'seo' && (
             <div className="space-y-4">
               <div>

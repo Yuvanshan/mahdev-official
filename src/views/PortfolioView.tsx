@@ -46,7 +46,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({ onNavigate }) => {
       </SectionContainer>
 
       {/* Main Portfolio Showcase with Division & Category Filters */}
-      <PortfolioShowcase onInquireProject={handleInquireProject} />
+      <PortfolioShowcase onInquireProject={handleInquireProject} onNavigate={onNavigate} />
 
       {/* Client Testimonials */}
       <TestimonialsSection />

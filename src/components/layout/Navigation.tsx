@@ -429,7 +429,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                 rightIcon={<ArrowRight className="w-4 h-4" />}
                 className="hidden xl:inline-flex shrink-0"
               >
-                Ecosystem
+                Divisions
               </Button>
 
               {/* Mobile Hamburger Button */}
@@ -611,7 +611,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                   onNavigate('/');
                 }}
               >
-                Explore Mahdev Ecosystem
+                Explore All 5 Divisions
               </Button>
             </div>
           </div>

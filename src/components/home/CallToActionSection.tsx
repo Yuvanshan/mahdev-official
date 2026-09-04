@@ -6,9 +6,7 @@ import { Button } from '../ui/Button';
 import { Input, Textarea, Select } from '../ui/Input';
 import {
   ScrollReveal,
-  TiltCard,
   Magnetic,
-  Floating3DObject,
 } from '../motion/MotionWrappers';
 import { BRAND_CONFIG } from '../../config/brand';
 import { COMPANY_INFO, getTelLink, getMailtoLink, getMapSearchUrl } from '../../config/company';
@@ -96,42 +94,23 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
       paddingY="xl"
       hasBorderBottom
     >
-      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-8 sm:p-12 lg:p-16 text-white border border-slate-800 shadow-2xl">
-        {/* Floating 3D ambient objects */}
-        <Floating3DObject
-          size={70}
-          delay={0}
-          duration={8}
-          className="top-8 right-12 opacity-30"
-        />
-        <Floating3DObject
-          size={50}
-          delay={2}
-          duration={6}
-          className="bottom-10 left-10 opacity-20"
-        />
-
-        {/* Ambient background glow nodes */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/20 blur-3xl rounded-full pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-600/15 blur-3xl rounded-full pointer-events-none" />
-
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <div className="relative rounded-2xl overflow-hidden bg-slate-900 p-8 sm:p-12 lg:p-14 text-white border border-slate-800 shadow-xl">
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
           {/* Left Narrative Column */}
           <div className="lg:col-span-6 space-y-6">
             <ScrollReveal direction="up">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-semibold">
-                <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-                <span>{cta.badge || "Let's Build Together"}</span>
-              </div>
+              <span className="text-[11px] font-bold uppercase tracking-widest text-blue-400 block mb-2">
+                {cta.badge || "Get In Touch"}
+              </span>
 
-              <H2 className="text-white mt-2 mb-4 font-display text-3xl sm:text-4xl lg:text-5xl tracking-tight">
-                {cta.headline || "Let's Create Something Remarkable."}
-              </H2>
+              <h2 className="text-white mb-3 font-display text-3xl sm:text-4xl font-bold tracking-tight">
+                {cta.headline || "Partner With Mahdev Group"}
+              </h2>
 
-              <Body className="text-slate-300 text-base sm:text-lg leading-relaxed">
+              <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
                 {cta.subheadline ||
-                  'Connect with Mahdev Pvt Ltd corporate headquarters or route your project directly to one of our specialized divisions.'}
-              </Body>
+                  'Direct your inquiry to our corporate executive office or select a specialized division for targeted execution.'}
+              </p>
 
               {/* Direct Contacts Bar */}
               <div className="pt-4 space-y-3.5">
@@ -226,7 +205,7 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
           {/* Right Column: Direct Corporate Dispatch Form */}
           <div className="lg:col-span-6">
             <ScrollReveal direction="up" delay={0.2}>
-              <TiltCard maxTilt={5} glareEffect={false}>
+              <div className="w-full">
                 <div className="p-6 sm:p-8 rounded-2xl bg-white text-slate-900 shadow-2xl border border-slate-200">
                   {submitted ? (
                     <div className="py-10 text-center space-y-4">
@@ -300,7 +279,7 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
                           onChange={(e) =>
                             setFormData({ ...formData, phone: e.target.value })
                           }
-                          placeholder="+94 77 123 4567"
+                          placeholder="075 092 8078"
                         />
                         <Select
                           id="cta-division"
@@ -347,7 +326,7 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
                     </form>
                   )}
                 </div>
-              </TiltCard>
+              </div>
             </ScrollReveal>
           </div>
         </div>

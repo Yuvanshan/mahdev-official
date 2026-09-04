@@ -422,7 +422,7 @@ class OrderService {
     if (!customer.phone.trim()) {
       errors.phone = 'Contact phone number is required';
     } else if (!phoneRegex.test(customer.phone.trim().replace(/\s+/g, ''))) {
-      errors.phone = 'Please provide a valid phone number (e.g. +94 77 123 4567)';
+      errors.phone = 'Please provide a valid phone number (e.g. 075 092 8078)';
     }
 
     if (requiresShipping) {

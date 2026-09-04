@@ -308,7 +308,7 @@ export const ITQuoteModal: React.FC<ITQuoteModalProps> = ({
                 <Input
                   label="Phone / WhatsApp"
                   required
-                  placeholder="+94 77 123 4567"
+                  placeholder="075 092 8078"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                 />

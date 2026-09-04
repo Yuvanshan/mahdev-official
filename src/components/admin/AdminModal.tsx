@@ -13,6 +13,7 @@ interface AdminModalProps {
   isDirty?: boolean;
   onSave?: () => Promise<void> | void;
   isSaving?: boolean;
+  saveLabel?: string;
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | string;
 }
@@ -26,6 +27,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({
   footer,
   size,
   isDirty = false,
+  onSave,
+  isSaving = false,
+  saveLabel,
   children,
   maxWidth = '2xl',
 }) => {
@@ -107,8 +111,36 @@ export const AdminModal: React.FC<AdminModalProps> = ({
         {/* Body */}
         <div className="p-6 overflow-y-auto grow custom-scrollbar">{children}</div>
 
-        {/* Optional Footer */}
-        {footer && <div className="p-4 bg-slate-50 border-t border-slate-100 shrink-0">{footer}</div>}
+        {/* Modal Footer: either explicit custom footer or standard onSave footer */}
+        {(footer || onSave) && (
+          <div className="p-4 bg-slate-50 border-t border-slate-100 shrink-0 flex items-center justify-between gap-3">
+            {footer ? (
+              footer
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRequestClose}
+                  className="cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={onSave}
+                  disabled={isSaving}
+                  className="cursor-pointer shadow-sm"
+                >
+                  {isSaving ? 'Saving Changes...' : (saveLabel || 'Save Record')}
+                </Button>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Unsaved Changes Confirmation Prompt Modal Overlay */}
         {showUnsavedPrompt && (

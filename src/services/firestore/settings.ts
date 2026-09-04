@@ -225,7 +225,7 @@ export function getDefaultSiteSettings(): FirestoreSiteSettings {
     faviconUrl: '',
     currencyCode: 'LKR',
     currencySymbol: 'Rs. ',
-    phoneNumbers: [COMPANY_INFO.primaryPhone || '+94 77 000 0000', COMPANY_INFO.secondaryPhone || '+94 11 200 0000'].filter(Boolean),
+    phoneNumbers: [COMPANY_INFO.primaryPhone || '075 092 8078'].filter(Boolean),
     email: COMPANY_INFO.email || 'info@mahdev.lk',
     addresses: [
       {
@@ -259,7 +259,7 @@ export function getDefaultSiteSettings(): FirestoreSiteSettings {
         'Our digital platforms, client portals, and division infrastructure are undergoing planned architectural maintenance to ensure maximum reliability, security, and performance.',
       imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
       estimatedReturn: 'Within 2 hours',
-      contactPhone: COMPANY_INFO.primaryPhone || '+94 77 000 0000',
+      contactPhone: COMPANY_INFO.primaryPhone || '075 092 8078',
       contactEmail: COMPANY_INFO.email || 'info@mahdev.lk',
       allowedRoles: ['admin', 'superAdmin'],
     },

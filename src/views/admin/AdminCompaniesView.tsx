@@ -195,7 +195,7 @@ export const AdminCompaniesView: React.FC = () => {
           <div className="flex items-center gap-2">
             <Building className="w-5 h-5 text-blue-600" />
             <h2 className="font-display text-lg font-bold text-slate-900">
-              Trusted Companies & Partner Ecosystem ({companies.length})
+              Trusted Companies & Partner Network ({companies.length})
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -393,6 +393,29 @@ export const AdminCompaniesView: React.FC = () => {
         onSave={handleSave}
         isSaving={isSaving}
         maxWidth="max-w-2xl"
+        footer={
+          <div className="flex items-center justify-between w-full">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditorOpen(false)}
+              className="cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer shadow-xs"
+            >
+              {isSaving ? 'Saving Partner...' : editingCompany ? 'Save Partner Company' : 'Create Partner Company'}
+            </Button>
+          </div>
+        }
       >
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

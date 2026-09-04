@@ -30,6 +30,7 @@ import {
   BarChart2,
   Database,
   Loader2,
+  Mail,
 } from 'lucide-react';
 import { activeFirestoreDatabaseId } from '../../lib/firebase';
 import { AdminSectionId } from '../../types/admin';
@@ -56,6 +57,7 @@ import { AdminTestimonialsView } from './AdminTestimonialsView';
 import { AdminPagesView } from './AdminPagesView';
 import { AdminBannersView } from './AdminBannersView';
 import { AdminCouponsView } from './AdminCouponsView';
+import { AdminEnquiriesView } from './AdminEnquiriesView';
 import { AdminOrdersView } from './AdminOrdersView';
 import { AdminBookingsView } from './AdminBookingsView';
 import { AdminCustomersView } from './AdminCustomersView';
@@ -115,6 +117,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { id: 'pages', label: 'Pages', icon: FileCode },
   { id: 'banners', label: 'Banners', icon: Tag },
   { id: 'coupons', label: 'Coupons', icon: Tag },
+  { id: 'enquiries', label: 'Website Enquiries', icon: Mail, badge: 'Live' },
   { id: 'orders', label: 'Orders', icon: ShoppingBag, badge: 'Live' },
   { id: 'bookings', label: 'Bookings', icon: Calendar },
   { id: 'customers', label: 'Customers', icon: Users },
@@ -129,8 +132,43 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigate }) => {
   const { admin, session, isAuthenticated, isLoading, logout } = useAdminAuth();
   const { isInitialLoading, isReady } = useFirestoreDataContext();
-  const [activeSection, setActiveSection] = useState<AdminSectionId>('dashboard');
+  const [activeSection, setActiveSection] = useState<AdminSectionId>(() => {
+    if (typeof window !== 'undefined' && currentPath) {
+      const match = currentPath.match(/^\/admin\/([a-z0-9-]+)/i);
+      if (match && match[1]) {
+        const found = SIDEBAR_ITEMS.some((item) => item.id === match[1].toLowerCase());
+        if (found) return match[1].toLowerCase() as AdminSectionId;
+      }
+    }
+    return 'dashboard';
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Synchronize activeSection whenever currentPath prop changes
+  React.useEffect(() => {
+    if (currentPath) {
+      const match = currentPath.match(/^\/admin\/([a-z0-9-]+)/i);
+      if (match && match[1]) {
+        const sec = match[1].toLowerCase() as AdminSectionId;
+        const exists = SIDEBAR_ITEMS.some((item) => item.id === sec);
+        if (exists) {
+          setActiveSection(sec);
+        }
+      } else if (currentPath === '/admin' || currentPath === '/admin/') {
+        setActiveSection('dashboard');
+      }
+    }
+  }, [currentPath]);
+
+  const handleSelectSection = (sec: AdminSectionId) => {
+    setActiveSection(sec);
+    setIsMobileMenuOpen(false);
+    if (sec === 'dashboard') {
+      onNavigate('/admin');
+    } else {
+      onNavigate(`/admin/${sec}`);
+    }
+  };
 
   // 1. Loading State (Admin Auth Token or Live Database Hydration)
   if (isLoading || (isInitialLoading && !isReady)) {
@@ -196,6 +234,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
         return <AdminBannersView />;
       case 'coupons':
         return <AdminCouponsView />;
+      case 'enquiries':
+        return <AdminEnquiriesView />;
       case 'orders':
         return <AdminOrdersView />;
       case 'bookings':
@@ -265,7 +305,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
         {/* Sidebar Navigation Items */}
         <div className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5 custom-scrollbar">
           <span className="px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">
-            Ecosystem Controls
+            Enterprise Controls
           </span>
 
           {SIDEBAR_ITEMS.map((item) => {
@@ -274,10 +314,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
             return (
               <button
                 key={item.id}
-                onClick={() => {
-                  setActiveSection(item.id);
-                  setIsMobileMenuOpen(false);
-                }}
+                onClick={() => handleSelectSection(item.id)}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer group ${
                   isActive
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-900/40 font-bold'
@@ -372,8 +409,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
           <div className="flex items-center gap-3">
             <AdminNotificationCenter onNavigate={(path) => {
               if (path.startsWith('/admin')) {
-                const section = path.replace('/admin/', '') || 'dashboard';
-                setActiveSection(section as AdminSectionId);
+                const cleaned = path.replace(/^\/admin\/?/, '').split('?')[0].split('/')[0];
+                const section = (cleaned || 'dashboard') as AdminSectionId;
+                handleSelectSection(section);
               } else {
                 onNavigate(path);
               }

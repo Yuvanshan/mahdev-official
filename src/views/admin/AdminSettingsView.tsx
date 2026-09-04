@@ -428,6 +428,30 @@ export const AdminSettingsView: React.FC = () => {
     }
   };
 
+  const handleSaveCompany = async () => {
+    setIsSaving(true);
+    try {
+      if (currentAdmin) {
+        syncAdminFirebaseAuth(currentAdmin).catch(() => {});
+      }
+      await firestoreSettingsService.updateCompanySettings(companyData);
+      cmsService.updateCompanyInfo(companyData as any);
+      try {
+        await updateContextCompanySettings(companyData);
+        await refreshAll();
+      } catch {}
+      addToast(
+        'success',
+        'Company & Office Settings Saved',
+        'Corporate legal identity, communications, office locations, and social links saved.'
+      );
+    } catch (err: any) {
+      addToast('error', 'Save Failed', err?.message || 'Failed to save company settings.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleSaveCommerce = async () => {
     setIsSaving(true);
     try {
@@ -806,7 +830,7 @@ export const AdminSettingsView: React.FC = () => {
                     })
                   }
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:bg-white focus:outline-none"
-                  placeholder="076 898 8970"
+                  placeholder="075 092 8078"
                 />
               </div>
 
@@ -1131,6 +1155,43 @@ export const AdminSettingsView: React.FC = () => {
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Company Tab Save Action Footer */}
+          <div className="lg:col-span-2 pt-3 pb-1 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/80 p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                <Building className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-800">Corporate & Office Information</p>
+                <p className="text-[11px] text-slate-500">
+                  Changes update legal documents, invoices, contact channels, and website footer.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={refreshAll}
+                className="cursor-pointer"
+              >
+                Discard Edits
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                onClick={handleSaveCompany}
+                disabled={isSaving}
+                className="cursor-pointer shadow-xs bg-blue-600 hover:bg-blue-700 text-white font-bold"
+              >
+                <Save className="w-4 h-4 mr-1.5" />
+                {isSaving ? 'Saving Company...' : 'Save Company & Offices'}
+              </Button>
             </div>
           </div>
         </div>
@@ -1905,7 +1966,7 @@ export const AdminSettingsView: React.FC = () => {
               imageUrl:
                 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
               estimatedReturn: 'Within 2 hours',
-              contactPhone: companyData.primaryPhone || '+94 77 000 0000',
+              contactPhone: companyData.primaryPhone || '075 092 8078',
               contactEmail: companyData.email || 'info@mahdev.lk',
             };
 
@@ -2293,7 +2354,7 @@ export const AdminSettingsView: React.FC = () => {
                                 ...systemSettings,
                                 maintenance: {
                                   ...currentMaint,
-                                  contactPhone: companyData.primaryPhone || '+94 77 000 0000',
+                                  contactPhone: companyData.primaryPhone || '075 092 8078',
                                 },
                               })
                             }
@@ -2315,7 +2376,7 @@ export const AdminSettingsView: React.FC = () => {
                             })
                           }
                           className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
-                          placeholder="+94 77 000 0000"
+                          placeholder="075 092 8078"
                         />
                       </div>
 

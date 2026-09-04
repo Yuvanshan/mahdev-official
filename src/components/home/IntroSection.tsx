@@ -20,10 +20,13 @@ export const IntroSection: React.FC<IntroSectionProps> = () => {
   const { homepageConfig, companySettings } = useFirestoreDataContext();
   const intro = homepageConfig?.intro || {
     badge: 'Parent Company Architecture',
-    headline: 'A Unified Ecosystem of Specialized Industry Leaders',
+    headline: 'A Unified Enterprise of Specialized Industry Leaders',
     subheadline: 'Mahdev Pvt Ltd acts as the strategic and operational holding foundation behind five distinguished business divisions.',
     description: 'From landmark corporate galas and cinematic storytelling to cloud infrastructure, island expeditions, and hardware commerce, Mahdev bridges diverse disciplines into one dependable partner.',
   };
+
+  const rawHeadline = intro.headline || 'A Unified Enterprise of Specialized Industry Leaders';
+  const headline = rawHeadline.replace(/ecosystem/gi, 'Enterprise');
 
   const companyName = companySettings?.name || 'Mahdev Pvt Ltd';
 
@@ -39,7 +42,7 @@ export const IntroSection: React.FC<IntroSectionProps> = () => {
               </Badge>
             </div>
             <H2 className="text-slate-900 mt-2 mb-4">
-              {intro.headline || 'A Unified Ecosystem of Specialized Industry Leaders'}
+              {headline}
             </H2>
             {intro.subheadline && (
               <Body className="text-slate-700 text-base font-medium leading-relaxed mb-3">

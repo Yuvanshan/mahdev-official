@@ -134,7 +134,7 @@ export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) =>
               const Icon = ms.icon || Award;
 
               return (
-                <ScrollReveal key={ms.year || index} direction="up" delay={index * 0.08}>
+                <ScrollReveal key={ms.id ? `ms-view-${ms.id}` : `ms-view-${ms.year}-${index}`} direction="up" delay={index * 0.08}>
                   <div
                     className={`flex flex-col sm:flex-row items-start ${
                       isEven ? 'sm:flex-row-reverse' : ''

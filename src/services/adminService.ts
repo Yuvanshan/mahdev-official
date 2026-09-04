@@ -491,12 +491,29 @@ class AdminService {
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        // Ensure super admin displays as Yuvanshan Prabakaran
-        return parsed.map((u: AdminUser) =>
-          u.username === 'yuvanshan' || u.role === 'super_admin'
-            ? { ...u, name: 'Yuvanshan Prabakaran', email: 'info.mahdev.lk@gmail.com' }
-            : u
-        );
+        if (Array.isArray(parsed)) {
+          // Purge unwanted legacy demo/test staff accounts
+          const cleaned = parsed
+            .filter(
+              (u: AdminUser) =>
+                u.username !== 'dilshan.m' &&
+                u.username !== 'anuki.s' &&
+                !u.email?.includes('operations@mahdev.lk') &&
+                !u.email?.includes('finance@mahdev.lk') &&
+                !u.email?.includes('demo') &&
+                !u.email?.includes('test')
+            )
+            .map((u: AdminUser) =>
+              u.username === 'yuvanshan' || u.role === 'super_admin'
+                ? { ...u, name: 'Yuvanshan Prabakaran', email: 'info.mahdev.lk@gmail.com' }
+                : u
+            );
+
+          if (cleaned.length > 0) {
+            localStorage.setItem(key, JSON.stringify(cleaned));
+            return cleaned;
+          }
+        }
       } catch {}
     }
 
@@ -513,32 +530,6 @@ class AdminService {
         isActive: true,
         lastLoginAt: new Date().toISOString(),
         createdAt: '2026-01-01T00:00:00.000Z',
-      },
-      {
-        id: 'ADM-OPS-02',
-        username: 'dilshan.m',
-        name: 'Dilshan Mendis',
-        email: 'operations@mahdev.lk',
-        role: 'operations_manager',
-        department: 'Operations & Production',
-        divisionAccess: ['sws', 'u1'],
-        divisionScope: 'sws',
-        isActive: true,
-        lastLoginAt: new Date(Date.now() - 3600000).toISOString(),
-        createdAt: '2026-01-05T00:00:00.000Z',
-      },
-      {
-        id: 'ADM-FIN-03',
-        username: 'anuki.s',
-        name: 'Anuki Samarasinghe',
-        email: 'finance@mahdev.lk',
-        role: 'finance_manager',
-        department: 'Corporate Accounts',
-        divisionAccess: ['all'],
-        divisionScope: 'all',
-        isActive: true,
-        lastLoginAt: new Date(Date.now() - 7200000).toISOString(),
-        createdAt: '2026-01-10T00:00:00.000Z',
       },
     ];
 

@@ -405,7 +405,7 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
                 <Input
                   label="Phone / WhatsApp"
                   required
-                  placeholder="+94 77 ..."
+                  placeholder="075 092 8078"
                   value={clientPhone}
                   onChange={(e) => setClientPhone(e.target.value)}
                 />

@@ -363,7 +363,7 @@ export const U1BookingModal: React.FC<U1BookingModalProps> = ({
                 <Input
                   label="Phone / WhatsApp"
                   required
-                  placeholder="+94 77 ..."
+                  placeholder="075 092 8078"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
                 />

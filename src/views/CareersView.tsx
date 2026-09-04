@@ -230,7 +230,7 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm focus:outline-hidden focus:border-blue-500"
-                        placeholder="+94 7X XXX XXXX"
+                        placeholder="075 092 8078"
                       />
                     </div>
                     <div>

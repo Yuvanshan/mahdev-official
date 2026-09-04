@@ -359,7 +359,7 @@ class AuthService {
             .replace(/[._]/g, ' ')
             .replace(/\b\w/g, (l) => l.toUpperCase()),
           email: emailClean,
-          phone: '+94 77 000 0000',
+          phone: '+94 75 092 8078',
           accountType: 'individual',
           role: 'customer',
           address: {

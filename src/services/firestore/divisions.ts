@@ -119,6 +119,7 @@ export function getDefaultDivisions(): FirestoreDivision[] {
       id: d.docId,
       name: d.name,
       slug: d.slug,
+      shortName: rawDivision?.shortName || d.name,
       shortDescription: d.shortDescription,
       description: d.description,
       imageUrl: d.imageUrl,
@@ -127,18 +128,42 @@ export function getDefaultDivisions(): FirestoreDivision[] {
       route: d.route,
       isPublished: true,
       order: d.order,
+      badge: rawDivision?.badge || d.name,
+      accentColor: rawDivision?.accentColor || '#0052FF',
+      gradient: rawDivision?.gradient || 'from-blue-600 to-indigo-700',
+      iconName: rawDivision?.iconName || 'Sparkles',
+      heroHeadline: rawDivision?.heroHeadline || d.name,
+      heroSubheadline: rawDivision?.heroSubheadline || d.shortDescription,
+      tagline: rawDivision?.tagline || d.shortDescription,
+      contactPhone: '075 092 8078',
+      contactNumber: '075 092 8078',
+      contactEmail: rawDivision?.contactEmail || 'info.mahdev.lk@gmail.com',
+      aboutHeading: `About ${d.name}`,
+      aboutText: d.description,
+      mission: `To provide unmatched quality, speed, and reliability in ${d.name.toLowerCase()} across Sri Lanka.`,
+      vision: `To stand as Sri Lanka's benchmark for excellence in our specialized field.`,
+      stats: rawDivision?.stats && rawDivision.stats.length > 0 ? rawDivision.stats : [
+        { label: 'Completed Projects', value: '150+' },
+        { label: 'Client Satisfaction', value: '99%' },
+        { label: 'Island Coverage', value: 'Island-wide' },
+      ],
+      coreServices: rawDivision?.coreServices || [],
+      cardHighlight: (rawDivision as any)?.cardHighlight || '',
       hero: {
         title: rawDivision?.heroHeadline || d.name,
         subtitle: rawDivision?.heroSubheadline || d.shortDescription,
         badge: rawDivision?.badge || d.name,
         bgImage: d.imageUrl,
         ctaText: `Explore ${d.name}`,
+        secondaryCtaText: 'Contact Division',
       },
       status: 'active',
       seo: {
         metaTitle: `${d.name} | Mahdev Pvt Ltd`,
         metaDescription: d.shortDescription,
         keywords: [d.docId, d.slug, 'mahdev', 'sri lanka'],
+        ogImage: d.imageUrl,
+        canonicalUrl: `https://mahdev.lk${d.route}`,
       },
       createdAt: '2026-01-01T00:00:00Z',
       updatedAt: now,
@@ -191,17 +216,32 @@ export const firestoreDivisionsService = {
    * Update or create division document
    */
   async saveDivision(id: DivisionId | string, data: Partial<FirestoreDivision>): Promise<void> {
-    const docRef = doc(db, 'divisions', id);
+    const canonicalId = id === 'u1' ? 'u1-studio' : id === 'it' ? 'it-solutions' : id === 'mart' ? 'online-mart' : id;
+    const alternateId = id === 'u1-studio' ? 'u1' : id === 'it-solutions' ? 'it' : id === 'online-mart' ? 'mart' : null;
+
     const payload = sanitizeForFirestore({
       ...data,
-      id,
+      id: canonicalId,
       updatedAt: new Date().toISOString(),
     });
+
+    const docRef = doc(db, 'divisions', canonicalId);
     await setDoc(docRef, payload, { merge: true });
+
+    // If there is an alias ID, also keep it synchronized for backwards-compatibility
+    if (alternateId) {
+      try {
+        await setDoc(doc(db, 'divisions', alternateId), { ...payload, id: alternateId }, { merge: true });
+      } catch {}
+    }
+
     if (cachedDivisions) {
-      const idx = cachedDivisions.data.findIndex((d) => d.id === id);
+      const idx = cachedDivisions.data.findIndex((d) => d.id === canonicalId || d.id === id);
       if (idx >= 0) {
-        cachedDivisions.data[idx] = { ...cachedDivisions.data[idx], ...payload } as FirestoreDivision;
+        cachedDivisions.data[idx] = { ...cachedDivisions.data[idx], ...payload, id: canonicalId } as FirestoreDivision;
+        cachedDivisions.data = sortDivisions(cachedDivisions.data);
+      } else {
+        cachedDivisions.data.push(payload as FirestoreDivision);
         cachedDivisions.data = sortDivisions(cachedDivisions.data);
       }
     }

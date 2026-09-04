@@ -108,10 +108,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
   return (
     <div className="w-full flex flex-col pb-24 lg:pb-0">
       <SEOHead
-        title={homepageConfig?.seo?.pageTitle || 'Corporate Ecosystem'}
-        description={homepageConfig?.seo?.metaDescription || `${brandName} — ${tagline} Multi-division enterprise spanning Event Management, Studio Cinema, IT & Cloud, Travels, and E-Commerce.`}
+        title={homepageConfig?.seo?.pageTitle && homepageConfig.seo.pageTitle !== 'Corporate Ecosystem' ? homepageConfig.seo.pageTitle : 'Mahdev Pvt Ltd – Creating. Capturing. Innovating.'}
+        description={homepageConfig?.seo?.metaDescription || `${brandName} — Creating. Capturing. Innovating. Multi-division enterprise spanning Event Management, Studio Cinema, IT & Cloud, Travels, and E-Commerce.`}
         canonicalUrl={homepageConfig?.seo?.canonicalUrl || 'https://mahdev.lk'}
-        ogTitle={homepageConfig?.seo?.pageTitle}
+        ogTitle={homepageConfig?.seo?.pageTitle && homepageConfig.seo.pageTitle !== 'Corporate Ecosystem' ? homepageConfig.seo.pageTitle : 'Mahdev Pvt Ltd – Creating. Capturing. Innovating.'}
         ogDescription={homepageConfig?.seo?.metaDescription}
       />
 

@@ -21,7 +21,7 @@ interface AppBootLoaderProps {
 }
 
 export const AppBootLoader: React.FC<AppBootLoaderProps> = ({
-  message = 'Loading Mahdev Enterprise Ecosystem',
+  message = 'Loading Mahdev Enterprise',
   subtext = 'Synchronizing real-time Firestore collections & division data...',
   error = null,
   onRetry,

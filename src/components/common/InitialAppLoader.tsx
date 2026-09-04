@@ -91,7 +91,7 @@ export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
 
       {/* Subtle Corporate Micro-Footer */}
       <div className="absolute bottom-8 text-[10px] font-medium tracking-[0.2em] uppercase text-slate-300">
-        Enterprise Ecosystem
+        Enterprise Group
       </div>
     </motion.div>
   );

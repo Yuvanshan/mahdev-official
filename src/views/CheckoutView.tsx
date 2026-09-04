@@ -318,7 +318,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                       type="tel"
                       value={customer.phone}
                       onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
-                      placeholder="+94 77 123 4567"
+                      placeholder="075 092 8078"
                       className={`w-full px-3.5 py-2.5 rounded-xl border text-xs focus:outline-none focus:ring-2 ${
                         formErrors.phone
                           ? 'border-rose-400 focus:ring-rose-200 bg-rose-50/20'

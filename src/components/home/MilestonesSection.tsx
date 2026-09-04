@@ -240,13 +240,14 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
       <div className="relative max-w-5xl mx-auto mb-14">
         {/* Milestone Steps Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 relative z-10 mb-8">
-          {displayMilestones.map((ms) => {
-            const isSelected = currentMilestone?.id === ms.id || currentMilestone?.year === ms.year;
+          {displayMilestones.map((ms, index) => {
+            const milestoneKey = ms.id ? `step-${ms.id}` : `step-${ms.year}-${index}`;
+            const isSelected = currentMilestone?.id === ms.id || (ms.id && currentMilestone?.id ? currentMilestone.id === ms.id : currentMilestone?.year === ms.year);
             return (
-              <Magnetic key={ms.id || ms.year} strength={0.12}>
+              <Magnetic key={milestoneKey} strength={0.12}>
                 <button
                   type="button"
-                  id={`milestone-step-${ms.year}`}
+                  id={`milestone-step-${ms.id || `${ms.year}-${index}`}`}
                   onClick={() => setActiveMilestoneId(ms.id || ms.year)}
                   className={`w-full p-4 rounded-xl cursor-pointer transition-all duration-300 border text-center h-full flex flex-col justify-between select-none ${
                     isSelected
@@ -280,7 +281,7 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
 
         {/* Active Milestone Highlight Card */}
         {currentMilestone && (
-          <ScrollReveal key={currentMilestone.id || currentMilestone.year} direction="up" delay={0.05}>
+          <ScrollReveal key={currentMilestone.id ? `active-ms-${currentMilestone.id}` : `active-ms-${currentMilestone.year}`} direction="up" delay={0.05}>
             <TiltCard maxTilt={4} glareEffect>
               <div className="p-6 sm:p-9 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white border border-slate-800 shadow-xl">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-800">

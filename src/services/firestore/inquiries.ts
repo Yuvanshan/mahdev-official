@@ -10,19 +10,39 @@ import {
 } from 'firebase/firestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 
+export type EnquiryStatus =
+  | 'New'
+  | 'Contacted'
+  | 'In Progress'
+  | 'Completed'
+  | 'Cancelled'
+  | 'new'
+  | 'contacted'
+  | 'in-progress'
+  | 'in-review'
+  | 'completed'
+  | 'cancelled'
+  | 'converted'
+  | 'archived';
+
 export interface FirestoreInquiry {
   id: string;
   name: string;
+  fullName?: string;
   email: string;
   phone: string;
+  service?: string;
   serviceId?: string;
   serviceName?: string;
   divisionId?: string;
+  division?: string;
   preferredDate?: string;
   location?: string;
+  subject?: string;
   message: string;
-  status: 'new' | 'in-review' | 'contacted' | 'converted' | 'archived';
+  status: EnquiryStatus | string;
   notes?: string;
+  source?: 'contact_page' | 'cta_banner' | 'division_page' | 'direct' | string;
   createdAt?: any;
   updatedAt?: any;
 }

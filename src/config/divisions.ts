@@ -20,6 +20,11 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
       'From luxury wedding mandaps, floral stage decor, and full event furniture/AV rentals to corporate summits and concert arenas, SWS is Mahdev’s primary flagship division.',
     iconName: 'Sparkles',
     contactEmail: COMPANY_INFO.email,
+    contactPhone: '075 092 8078',
+    aboutHeading: 'The Art of Extraordinary Celebrations',
+    aboutText: 'SWS Event Management transforms landmark visions into grand realities across Sri Lanka. Combining architectural mandaps, high-density floral artistry, and cutting-edge stage engineering, we ensure unforgettable moments.',
+    mission: 'To craft immersive sensory event environments that honor tradition while pioneering modern aesthetic luxury.',
+    vision: 'To be the preeminent luxury event management institution in South Asia recognized for bespoke craftsmanship.',
     coreServices: [
       {
         title: 'Luxury Wedding & Stage Decorations',
@@ -65,6 +70,11 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
       'Mastering the delicate harmony between natural light, fine-art composition, and cutting-edge 8K cinema gear to immortalize your sacred milestones forever.',
     iconName: 'Camera',
     contactEmail: COMPANY_INFO.email,
+    contactPhone: '075 092 8078',
+    aboutHeading: 'Immortalizing Milestones with Fine-Art Precision',
+    aboutText: 'U1 Studio operates at the vanguard of modern visual documentation. Our master cinema directors, lighting masters, and fine-art portraitists preserve life’s most sacred milestones with emotional authenticity and 8K HDR fidelity.',
+    mission: 'To elevate every candid emotion and sacred ritual into timeless visual poetry.',
+    vision: 'To establish Sri Lanka’s premier cinematic studio renowned globally for fine-art wedding storytelling.',
     coreServices: [
       {
         title: 'Luxury Wedding Photography',
@@ -110,6 +120,11 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
       'We architect mission-critical software, intuitive web platforms, and automated cloud workflows that empower modern enterprises to scale without limits.',
     iconName: 'Cpu',
     contactEmail: COMPANY_INFO.email,
+    contactPhone: '075 092 8078',
+    aboutHeading: 'Architecting Resilient Digital Futures',
+    aboutText: 'Mahdev IT Solutions delivers mission-critical software engineering, cloud transformations, and custom enterprise ecosystems that drive scalable digital dominance for forward-looking organizations.',
+    mission: 'To build high-performance software and cloud infrastructures engineered for uncompromising scale and security.',
+    vision: 'To be the strategic technology catalyst empowering enterprises to dominate global digital markets.',
     coreServices: [
       {
         title: 'Custom Web & Mobile Applications',
@@ -155,6 +170,11 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
       'Experience unmatched hospitality, handpicked heritage villas, private charters, and guided expeditions designed with flawless logistics.',
     iconName: 'Plane',
     contactEmail: COMPANY_INFO.email,
+    contactPhone: '075 092 8078',
+    aboutHeading: 'Unlocking Extraordinary Island Horizons',
+    aboutText: 'Mahdev Travels curates bespoke travel expeditions and VIP corporate retreats. We combine five-star private sanctuary bookings, private helicopter transfers, and discreet chauffeur services.',
+    mission: 'To connect global travelers with the deepest soul of Sri Lanka through unparalleled luxury and private access.',
+    vision: 'To be the most coveted bespoke luxury expedition brand in the Indian Ocean.',
     coreServices: [
       {
         title: 'Bespoke Island & Heritage Tours',
@@ -200,6 +220,11 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
       'Explore authenticated tech hardware, professional media equipment, photography gear, and seamless nationwide logistics.',
     iconName: 'ShoppingBag',
     contactEmail: COMPANY_INFO.email,
+    contactPhone: '075 092 8078',
+    aboutHeading: 'Verified Hardware for Creative Professionals',
+    aboutText: 'Mahdev Online Mart is the trusted commerce ecosystem for verified camera gear, audio systems, computing hardware, and enterprise electronics with island-wide express logistics.',
+    mission: 'To provide creative professionals and businesses authentic technology gear backed by trusted local warranties.',
+    vision: 'To be Sri Lanka’s premier digital technology marketplace for creators and modern enterprises.',
     coreServices: [
       {
         title: 'Professional Photography & Camera Gear',

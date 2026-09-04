@@ -49,8 +49,8 @@ export const COMPANY_INFO: CompanyInformation = {
     'Premier multi-division enterprise ecosystem delivering luxury event decorations, fine-art photography, scalable IT solutions, luxury travel expeditions, and verified tech commerce.',
   domain: 'mahdev.lk',
   email: 'info.mahdev.lk@gmail.com',
-  phones: ['076 898 8970', '075 092 8078'],
-  primaryPhone: '076 898 8970',
+  phones: ['075 092 8078'],
+  primaryPhone: '075 092 8078',
   secondaryPhone: '075 092 8078',
   offices: {
     colombo: {

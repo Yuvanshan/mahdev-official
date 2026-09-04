@@ -65,7 +65,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
 
     // Check if there is an admin-configured SEO override in CMS
     let effectiveTitle = dynamicFullTitle;
-    let effectiveDesc = description || siteSettings?.metaDescription || companySettings?.description || 'Mahdev Pvt Ltd — Multi-sector corporate ecosystem.';
+    let effectiveDesc = description || siteSettings?.metaDescription || companySettings?.description || 'Mahdev Pvt Ltd – Creating. Capturing. Innovating. Multi-division enterprise group.';
     let effectiveOgTitle = ogTitle || dynamicFullTitle;
     let effectiveOgDesc = ogDescription || effectiveDesc;
     let effectiveCanonical = canonicalUrl;
@@ -170,9 +170,9 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       alternateName: compName,
       url: `https://${domain}`,
       logo: siteSettings?.logoUrl || companySettings?.logoUrl || `https://${domain}/logo.svg`,
-      description: siteSettings?.metaDescription || companySettings?.description || 'Mahdev Pvt Ltd — Multi-sector corporate ecosystem.',
+      description: siteSettings?.metaDescription || companySettings?.description || 'Mahdev Pvt Ltd – Creating. Capturing. Innovating. Multi-division enterprise group.',
       email: companySettings?.email || 'info@mahdev.lk',
-      telephone: [companySettings?.primaryPhone || '+94 77 000 0000', companySettings?.secondaryPhone].filter(Boolean),
+      telephone: [companySettings?.primaryPhone || '075 092 8078', companySettings?.secondaryPhone || '075 092 8078'].filter(Boolean),
       sameAs: [
         companySettings?.socials?.linkedin,
         companySettings?.socials?.facebook,

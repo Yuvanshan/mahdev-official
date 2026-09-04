@@ -87,7 +87,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
               MAHDEV ADMIN PORTAL
             </h1>
             <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
-              Universal Operations & Ecosystem Management Hub
+              Universal Operations & Enterprise Management Hub
             </p>
           </div>
         </div>

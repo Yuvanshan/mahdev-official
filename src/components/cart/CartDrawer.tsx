@@ -98,7 +98,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
             <div>
               <h3 className="font-display text-sm font-bold text-white">Your Shopping Cart</h3>
               <span className="text-[11px] text-slate-400 font-mono">
-                {cartSummary.totalQuantity} {cartSummary.totalQuantity === 1 ? 'item' : 'items'} across Mahdev Ecosystem
+                {cartSummary.totalQuantity} {cartSummary.totalQuantity === 1 ? 'item' : 'items'} across Mahdev Divisions
               </span>
             </div>
           </div>

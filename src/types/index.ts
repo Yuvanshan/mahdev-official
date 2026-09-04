@@ -34,6 +34,11 @@ export interface DivisionConfig {
   coreServices: CoreServiceFeature[];
   stats: DivisionStat[];
   contactEmail: string;
+  contactPhone?: string;
+  aboutHeading?: string;
+  aboutText?: string;
+  mission?: string;
+  vision?: string;
   iconName: string;
 }
 

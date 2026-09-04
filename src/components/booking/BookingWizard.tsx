@@ -755,7 +755,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
                   <input
                     type="tel"
                     required
-                    placeholder="e.g. +94 77 123 4567 or +1 415 555 0192"
+                    placeholder="e.g. 075 092 8078"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-300 rounded-lg text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"

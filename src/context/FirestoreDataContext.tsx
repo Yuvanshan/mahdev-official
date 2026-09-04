@@ -72,6 +72,7 @@ export interface FirestoreDataContextValue {
   syncGoogleReviews: () => Promise<any>;
   reorderDivisions: (orderedIds: string[]) => Promise<void>;
   updateDivisionOrder: (id: string, order: number) => Promise<void>;
+  saveDivision: (id: string, data: Partial<FirestoreDivision>) => Promise<void>;
 }
 
 const FirestoreDataContext = createContext<FirestoreDataContextValue | null>(null);
@@ -416,6 +417,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubHome = firestoreSettingsService.subscribeHomepageSettings((data) => {
       if (isMounted) {
         setHomepageConfig(data);
+        try {
+          localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(data));
+        } catch {}
         cmsService.syncHomepageConfig(data);
         checkInitialReady();
       }
@@ -424,6 +428,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubDivs = firestoreDivisionsService.subscribeDivisions((data) => {
       if (isMounted) {
         setDivisions(data);
+        try {
+          localStorage.setItem('mahdev_cached_divisions', JSON.stringify(data));
+        } catch {}
         cmsService.syncEntityFromFirestore('divisions', data);
         checkInitialReady();
       }
@@ -586,6 +593,23 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     setDivisions(fresh);
   }, []);
 
+  const saveDivision = useCallback(async (id: string, data: Partial<FirestoreDivision>) => {
+    await firestoreDivisionsService.saveDivision(id, data);
+    const canonicalId = id === 'u1' ? 'u1-studio' : id === 'it' ? 'it-solutions' : id === 'mart' ? 'online-mart' : id;
+    setDivisions((prev) => {
+      const updated = prev.map((d) => {
+        if (d.id === id || d.id === canonicalId || d.slug === id || d.slug === canonicalId) {
+          return { ...d, ...data, id: d.id };
+        }
+        return d;
+      });
+      try {
+        localStorage.setItem('mahdev_cached_divisions', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  }, []);
+
   const value = useMemo<FirestoreDataContextValue>(
     () => ({
       isInitialLoading,
@@ -614,6 +638,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       syncGoogleReviews,
       reorderDivisions,
       updateDivisionOrder,
+      saveDivision,
     }),
     [
       isInitialLoading,
@@ -642,6 +667,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       syncGoogleReviews,
       reorderDivisions,
       updateDivisionOrder,
+      saveDivision,
     ]
   );
 
@@ -692,7 +718,7 @@ export function useMaintenanceMode() {
         'Our digital platforms, client portals, and division infrastructure are undergoing planned architectural maintenance to ensure maximum reliability, security, and performance.',
       imageUrl: siteSettings.maintenance?.imageUrl || '',
       estimatedReturn: siteSettings.maintenance?.estimatedReturn || 'Within 2 hours',
-      contactPhone: siteSettings.maintenance?.contactPhone || companySettings.primaryPhone || '+94 77 000 0000',
+      contactPhone: siteSettings.maintenance?.contactPhone || companySettings.primaryPhone || '075 092 8078',
       contactEmail: siteSettings.maintenance?.contactEmail || companySettings.email || 'info@mahdev.lk',
       allowedRoles: siteSettings.maintenance?.allowedRoles || ['admin', 'superAdmin'],
       lastActivatedAt: siteSettings.maintenance?.lastActivatedAt,

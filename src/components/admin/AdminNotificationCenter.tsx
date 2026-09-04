@@ -51,8 +51,35 @@ export const AdminNotificationCenter: React.FC<AdminNotificationCenterProps> = (
   const handleItemClick = (n: AppNotification) => {
     notificationService.markAsRead(n.id);
     refresh();
-    if (n.actionUrl && onNavigate) {
-      onNavigate(n.actionUrl);
+
+    const isEnquiry =
+      n.type === 'admin_contact_inquiry' ||
+      n.type === 'admin_quote_request' ||
+      n.type.toLowerCase().includes('inquiry') ||
+      n.title.toLowerCase().includes('inquiry') ||
+      n.title.toLowerCase().includes('quote') ||
+      (n.actionUrl && n.actionUrl.includes('enquiries'));
+
+    if (isEnquiry) {
+      if (n.data?.inquiryId) {
+        sessionStorage.setItem('mahdev_target_inquiry_id', String(n.data.inquiryId));
+      } else if (n.data?.email) {
+        sessionStorage.setItem('mahdev_target_inquiry_email', String(n.data.email));
+      } else if (n.data?.name) {
+        sessionStorage.setItem('mahdev_target_inquiry_query', String(n.data.name));
+      } else if (n.title) {
+        sessionStorage.setItem('mahdev_target_inquiry_query', n.title.replace(/🚨|📩|📋|New Inquiry:|RFP Quote Request:/gi, '').trim());
+      }
+    }
+
+    if (onNavigate) {
+      if (isEnquiry) {
+        onNavigate('/admin/enquiries');
+      } else if (n.actionUrl) {
+        onNavigate(n.actionUrl);
+      } else {
+        onNavigate('/admin/dashboard');
+      }
       setIsOpen(false);
     }
   };

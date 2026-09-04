@@ -118,6 +118,7 @@ export type AdminSectionId =
   | 'pages'
   | 'banners'
   | 'coupons'
+  | 'enquiries'
   | 'orders'
   | 'bookings'
   | 'customers'

@@ -39,8 +39,15 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
             badge: d.hero?.badge || config.badge || 'Enterprise Division',
             iconName: config.iconName || 'Building',
             color: config.color || '#0052FF',
-            coreServices: config.coreServices || [],
-            stats: config.stats || [],
+            coreServices:
+              (d as any).coreServices && (d as any).coreServices.length > 0
+                ? (d as any).coreServices
+                : config.coreServices || [],
+            stats:
+              (d as any).stats && (d as any).stats.length > 0
+                ? (d as any).stats
+                : config.stats || [],
+            cardHighlight: (d as any).cardHighlight || config.cardHighlight || '',
           };
         });
     }

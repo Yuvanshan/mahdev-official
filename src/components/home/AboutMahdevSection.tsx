@@ -1,15 +1,8 @@
-import React, { useState } from 'react';
-import { Award, CheckCircle2, ChevronRight, FileText, Globe, Sparkles, Target, Users, X } from 'lucide-react';
+import React from 'react';
+import { Award, ChevronRight, Globe, ShieldCheck, Users } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
-import { H2, Body, Caption } from '../ui/Heading';
-import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
-import {
-  ScrollReveal,
-  TiltCard,
-  Magnetic,
-  BlurReveal,
-} from '../motion/MotionWrappers';
+import { ScrollReveal } from '../motion/MotionWrappers';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 interface AboutMahdevSectionProps {
@@ -17,239 +10,106 @@ interface AboutMahdevSectionProps {
 }
 
 export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExploreDivisions }) => {
-  const [showCharterModal, setShowCharterModal] = useState(false);
   const { companySettings, homepageConfig, divisions } = useFirestoreDataContext();
 
-  const intro = homepageConfig.intro || {
-    badge: 'About Mahdev Pvt Ltd',
-    headline: 'A Forward-Looking Enterprise Driven By Purpose & Precision',
-    subheadline: companySettings.tagline || 'Creating Moments. Capturing Memories. Delivering Innovation.',
-    description: companySettings.description || 'Mahdev Pvt Ltd is a dynamic holding company headquartered in Colombo, Sri Lanka. Operating across specialized industry divisions with enterprise excellence.',
-    pillars: [],
-  };
-
   const establishedYear = companySettings.establishedYear || '2022';
-  const divisionCount = divisions.filter((d) => d.status === 'active').length;
+  const divisionCount = divisions.filter((d) => d.status === 'active').length || 5;
+
+  const pillars = [
+    {
+      icon: Award,
+      title: 'Established Foundation',
+      stat: `${establishedYear}`,
+      desc: 'Incorporated in Sri Lanka with sustained growth across diverse markets.',
+    },
+    {
+      icon: Users,
+      title: 'Integrated Units',
+      stat: `${divisionCount} Divisions`,
+      desc: 'Specialized domain leadership under centralized executive governance.',
+    },
+    {
+      icon: Globe,
+      title: 'Islandwide Reach',
+      stat: '9 Provinces',
+      desc: 'Executing events, media productions, and logistics across the country.',
+    },
+    {
+      icon: ShieldCheck,
+      title: 'Quality Standard',
+      stat: '100% In-House',
+      desc: 'Direct execution, dedicated technical crews, and verified delivery.',
+    },
+  ];
 
   return (
     <SectionContainer id="about" background="white" paddingY="xl" hasBorderBottom>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-        {/* Left Narrative Column with Sticky Storytelling */}
-        <div className="lg:col-span-6 lg:sticky lg:top-28 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+        {/* Left Narrative Column */}
+        <div className="lg:col-span-6 space-y-6">
           <ScrollReveal direction="up">
-            <Caption className="text-[#0052FF]">{intro.badge || 'About Mahdev Pvt Ltd'}</Caption>
-            <H2 className="text-slate-900 mt-2 mb-4">
-              {intro.headline || 'A Forward-Looking Enterprise Driven By Purpose & Precision'}
-            </H2>
-            <Body className="text-slate-600 text-base leading-relaxed">
-              {intro.description || companySettings.description}
-            </Body>
-            {intro.subheadline && intro.subheadline !== intro.headline && (
-              <Body className="text-slate-600 text-base leading-relaxed">
-                {intro.subheadline}
-              </Body>
-            )}
+            <span className="text-[11px] font-bold uppercase tracking-widest text-[#0052FF] block mb-2">
+              Corporate Overview
+            </span>
+            <h2 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 leading-tight mb-4">
+              A Multi-Sector Enterprise Built on Quality & Trust
+            </h2>
+            <p className="text-slate-600 text-base leading-relaxed mb-6">
+              Mahdev Group is a Sri Lankan holding enterprise managing autonomous operations across luxury event production, cinema media, software engineering, bespoke travel, and retail commerce.
+            </p>
 
-            {/* Core Values / Mission Pillars */}
-            <div className="pt-2 space-y-3">
-              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                <Target className="w-5 h-5 text-[#0052FF] shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900">Our Mission</h4>
-                  <p className="text-xs text-slate-600">
-                    {companySettings.mission || 'To craft transformative experiences and scalable digital solutions that elevate businesses and enrich personal lives.'}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                <Sparkles className="w-5 h-5 text-[#0052FF] shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900">Our Vision</h4>
-                  <p className="text-xs text-slate-600">
-                    {companySettings.vision || "To be recognized as Sri Lanka's foremost multi-disciplinary enterprise, celebrated for creativity, technical mastery, and corporate integrity."}
-                  </p>
-                </div>
-              </div>
+            <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-700 mb-8">
+              <span className="px-3 py-1.5 rounded-md bg-slate-100 border border-slate-200">
+                Turnkey Execution
+              </span>
+              <span className="px-3 py-1.5 rounded-md bg-slate-100 border border-slate-200">
+                Direct Governance
+              </span>
+              <span className="px-3 py-1.5 rounded-md bg-slate-100 border border-slate-200">
+                Enterprise Reliability
+              </span>
             </div>
 
-            {/* Action Bar */}
-            <div className="pt-4 flex flex-wrap items-center gap-3">
-              <Magnetic strength={0.25}>
-                <Button
-                  id="about-charter-btn"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowCharterModal(true)}
-                  rightIcon={<FileText className="w-4 h-4 text-[#0052FF]" />}
-                  className="hover:border-blue-400"
-                >
-                  View Corporate Charter
-                </Button>
-              </Magnetic>
-              <Magnetic strength={0.25}>
-                <Button
-                  id="about-divisions-btn"
-                  variant="electric"
-                  size="sm"
-                  onClick={onExploreDivisions}
-                  rightIcon={<ChevronRight className="w-4 h-4" />}
-                >
-                  Explore Divisions
-                </Button>
-              </Magnetic>
+            <div>
+              <Button
+                id="about-divisions-btn"
+                variant="electric"
+                size="md"
+                onClick={onExploreDivisions}
+                rightIcon={<ChevronRight className="w-4 h-4" />}
+                className="font-semibold cursor-pointer"
+              >
+                Explore Divisions
+              </Button>
             </div>
           </ScrollReveal>
         </div>
 
-        {/* Right Column: 3D Metric & Capability Matrix */}
-        <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <ScrollReveal direction="up" delay={0.1}>
-            <TiltCard maxTilt={8} className="h-full">
-              <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/90 h-full flex flex-col justify-between hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/5 transition-all">
-                <div>
-                  <div className="w-10 h-10 rounded-xl bg-blue-100 text-[#0052FF] flex items-center justify-center mb-4">
-                    <Award className="w-5 h-5" />
+        {/* Right Matrix: 4 Clean Minimal Cards */}
+        <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+          {pillars.map((pillar, idx) => {
+            const Icon = pillar.icon;
+            return (
+              <ScrollReveal key={pillar.title} direction="up" delay={idx * 0.08}>
+                <div className="p-6 rounded-xl bg-slate-50 border border-slate-200/90 hover:border-blue-300 transition-colors">
+                  <div className="w-9 h-9 rounded-lg bg-blue-50 text-[#0052FF] flex items-center justify-center mb-3">
+                    <Icon className="w-4 h-4" />
                   </div>
-                  <div className="font-display text-3xl font-bold text-slate-900 mb-1">
-                    {establishedYear}
+                  <div className="font-display text-2xl font-bold text-slate-900 mb-1">
+                    {pillar.stat}
                   </div>
-                  <h4 className="font-semibold text-sm text-slate-800 mb-2">
-                    Founded & Incorporated
-                  </h4>
+                  <h3 className="font-semibold text-xs text-slate-800 mb-1.5 uppercase tracking-wide">
+                    {pillar.title}
+                  </h3>
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    Over {Math.max(1, new Date().getFullYear() - Number(establishedYear || 2022))} years of operational excellence, steady scaling, and sustainable multi-sector growth.
+                    {pillar.desc}
                   </p>
                 </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 text-xs font-semibold text-slate-500">
-                  {companySettings.address || 'Colombo, Sri Lanka'}
-                </div>
-              </div>
-            </TiltCard>
-          </ScrollReveal>
-
-          <ScrollReveal direction="up" delay={0.2}>
-            <TiltCard maxTilt={8} className="h-full">
-              <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/90 h-full flex flex-col justify-between hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/5 transition-all">
-                <div>
-                  <div className="w-10 h-10 rounded-xl bg-blue-100 text-[#0052FF] flex items-center justify-center mb-4">
-                    <Users className="w-5 h-5" />
-                  </div>
-                  <div className="font-display text-3xl font-bold text-slate-900 mb-1">
-                    {divisionCount} Units
-                  </div>
-                  <h4 className="font-semibold text-sm text-slate-800 mb-2">
-                    Unified Operations
-                  </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Autonomous domain leadership united under central executive governance.
-                  </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 text-xs font-semibold text-slate-500">
-                  100% In-house Capacity
-                </div>
-              </div>
-            </TiltCard>
-          </ScrollReveal>
-
-          <ScrollReveal direction="up" delay={0.3}>
-            <TiltCard maxTilt={8} className="h-full">
-              <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/90 h-full flex flex-col justify-between hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/5 transition-all">
-                <div>
-                  <div className="w-10 h-10 rounded-xl bg-blue-100 text-[#0052FF] flex items-center justify-center mb-4">
-                    <Globe className="w-5 h-5" />
-                  </div>
-                  <div className="font-display text-3xl font-bold text-slate-900 mb-1">
-                    9 Provinces
-                  </div>
-                  <h4 className="font-semibold text-sm text-slate-800 mb-2">
-                    Island-wide Delivery
-                  </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Executing events, media productions, and logistics seamlessly across Sri Lanka.
-                  </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 text-xs font-semibold text-slate-500">
-                  National Footprint
-                </div>
-              </div>
-            </TiltCard>
-          </ScrollReveal>
-
-          <ScrollReveal direction="up" delay={0.4}>
-            <TiltCard maxTilt={8} className="h-full">
-              <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/90 h-full flex flex-col justify-between hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/5 transition-all">
-                <div>
-                  <div className="w-10 h-10 rounded-xl bg-blue-100 text-[#0052FF] flex items-center justify-center mb-4">
-                    <Sparkles className="w-5 h-5" />
-                  </div>
-                  <div className="font-display text-3xl font-bold text-slate-900 mb-1">
-                    99.8%
-                  </div>
-                  <h4 className="font-semibold text-sm text-slate-800 mb-2">
-                    Customer Satisfaction
-                  </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Highest verified client ratings across corporate and private clientele.
-                  </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 text-xs font-semibold text-slate-500">
-                  Client Focus First
-                </div>
-              </div>
-            </TiltCard>
-          </ScrollReveal>
+              </ScrollReveal>
+            );
+          })}
         </div>
       </div>
-
-      {/* Corporate Charter Modal */}
-      {showCharterModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 relative max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setShowCharterModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 text-slate-500 cursor-pointer transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-2 mb-2">
-              <Badge variant="electric" size="sm">
-                Corporate Governance
-              </Badge>
-            </div>
-            <h3 className="font-display text-2xl font-bold text-slate-900 mb-4">
-              {companySettings.name || 'Mahdev Pvt Ltd'} Corporate Charter
-            </h3>
-
-            <div className="space-y-4 text-xs sm:text-sm text-slate-600 leading-relaxed">
-              <p>
-                <strong>1. Institutional Integrity:</strong> {companySettings.name || 'Mahdev Pvt Ltd'} holds all divisions to rigorous standards of financial governance, legal compliance, and customer transparency.
-              </p>
-              <p>
-                <strong>2. Quality Parity:</strong> No matter which division a client engages—be it SWS Events, U1 Studio, IT & Solutions, Mahdev Travels, or Online Mart—they receive the same gold-standard SLA and executive attention.
-              </p>
-              <p>
-                <strong>3. Innovation Commitment:</strong> We invest continually in cutting-edge audio-visual equipment, camera optics, cloud frameworks, and fleet logistics to remain at the technology forefront.
-              </p>
-              <p>
-                <strong>4. Community & Sustainability:</strong> We support local communities, nurture Sri Lankan creative talent, and adhere to responsible corporate citizenship.
-              </p>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-slate-100 flex justify-end">
-              <Magnetic strength={0.25}>
-                <Button
-                  variant="electric"
-                  size="sm"
-                  onClick={() => setShowCharterModal(false)}
-                >
-                  Close Charter
-                </Button>
-              </Magnetic>
-            </div>
-          </div>
-        </div>
-      )}
     </SectionContainer>
   );
 };

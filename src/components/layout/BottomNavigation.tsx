@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Layers, Briefcase, Sparkles, PhoneCall, ShoppingCart } from 'lucide-react';
+import { Home, Sparkles, Camera, Terminal, Compass, ShoppingBag, ShoppingCart } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useCart } from '../../context/CartContext';
 
@@ -29,53 +29,48 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
       },
     },
     {
-      id: 'divisions',
-      label: 'Divisions',
-      icon: Layers,
-      isActive:
-        normalizedPath === '/divisions' ||
-        normalizedPath.startsWith('/divisions/') ||
-        normalizedPath.startsWith('/sws') ||
-        normalizedPath.startsWith('/u1') ||
-        normalizedPath.startsWith('/it') ||
-        normalizedPath.startsWith('/travels') ||
-        normalizedPath.startsWith('/mart'),
-      onClick: () => {
-        onNavigate('/divisions');
-      },
-    },
-    {
-      id: 'projects',
-      label: 'Projects',
-      icon: Briefcase,
-      isActive:
-        normalizedPath === '/portfolio' ||
-        normalizedPath === '/projects' ||
-        normalizedPath.startsWith('/portfolio/') ||
-        normalizedPath.startsWith('/projects/'),
-      onClick: () => {
-        onNavigate('/projects');
-      },
-    },
-    {
-      id: 'services',
-      label: 'Services',
+      id: 'sws',
+      label: 'SWS',
       icon: Sparkles,
-      isActive:
-        normalizedPath === '/services' ||
-        normalizedPath.startsWith('/services/') ||
-        normalizedPath.startsWith('/service/'),
+      isActive: normalizedPath === '/sws' || normalizedPath.startsWith('/sws/'),
       onClick: () => {
-        onNavigate('/services');
+        onNavigate('/sws');
       },
     },
     {
-      id: 'contact',
-      label: 'Contact',
-      icon: PhoneCall,
-      isActive: normalizedPath === '/contact',
+      id: 'u1',
+      label: 'U1 Studio',
+      icon: Camera,
+      isActive: normalizedPath === '/u1' || normalizedPath.startsWith('/u1/'),
       onClick: () => {
-        onNavigate('/contact');
+        onNavigate('/u1');
+      },
+    },
+    {
+      id: 'it',
+      label: 'IT Tech',
+      icon: Terminal,
+      isActive: normalizedPath === '/it' || normalizedPath.startsWith('/it/'),
+      onClick: () => {
+        onNavigate('/it');
+      },
+    },
+    {
+      id: 'travels',
+      label: 'Travels',
+      icon: Compass,
+      isActive: normalizedPath === '/travels' || normalizedPath.startsWith('/travels/'),
+      onClick: () => {
+        onNavigate('/travels');
+      },
+    },
+    {
+      id: 'mart',
+      label: 'Mart',
+      icon: ShoppingBag,
+      isActive: normalizedPath === '/mart' || normalizedPath.startsWith('/mart/'),
+      onClick: () => {
+        onNavigate('/mart');
       },
     },
   ];
@@ -84,11 +79,11 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
     <nav
       id="floating-bottom-navbar"
       aria-label="Mobile Navigation"
-      className="lg:hidden fixed bottom-3 left-0 right-0 z-50 flex justify-center items-center pointer-events-none px-3"
+      className="lg:hidden fixed bottom-3 left-0 right-0 z-50 flex justify-center items-center pointer-events-none px-2"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0.5rem)' }}
     >
       {/* Floating Pill Container */}
-      <div className="pointer-events-auto flex items-center justify-between gap-1 w-full max-w-md px-2 py-1.5 rounded-full bg-slate-950/92 backdrop-blur-xl border border-white/10 shadow-2xl shadow-slate-950/50">
+      <div className="pointer-events-auto flex items-center justify-between gap-0.5 w-full max-w-lg px-1.5 py-1.5 rounded-full bg-slate-950/95 backdrop-blur-xl border border-white/10 shadow-2xl shadow-slate-950/50">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = item.isActive;
@@ -123,7 +118,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
               </div>
 
               {/* Short Label */}
-              <span className="relative z-10 text-[10px] tracking-tight leading-tight mt-0.5 whitespace-nowrap truncate max-w-full">
+              <span className="relative z-10 text-[9.5px] tracking-tight leading-tight mt-0.5 whitespace-nowrap truncate max-w-full">
                 {item.label}
               </span>
             </button>
@@ -135,7 +130,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
           type="button"
           id="nav-tab-cart"
           onClick={openCart}
-          className="relative flex flex-col items-center justify-center py-1.5 px-2.5 rounded-full text-slate-400 hover:text-white transition-all duration-200 cursor-pointer select-none touch-manipulation active:scale-95 border-l border-white/10 ml-0.5"
+          className="relative flex flex-col items-center justify-center py-1.5 px-2 rounded-full text-slate-400 hover:text-white transition-all duration-200 cursor-pointer select-none touch-manipulation active:scale-95 border-l border-white/10 ml-0.5 shrink-0"
           aria-label="Shopping Cart"
         >
           <div className="relative flex items-center justify-center">
@@ -146,7 +141,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
               </span>
             )}
           </div>
-          <span className="text-[10px] tracking-tight leading-tight mt-0.5 whitespace-nowrap">
+          <span className="text-[9.5px] tracking-tight leading-tight mt-0.5 whitespace-nowrap">
             Cart
           </span>
         </button>
