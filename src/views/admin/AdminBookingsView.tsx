@@ -24,12 +24,14 @@ import {
   Mail,
   ShieldCheck,
   Tag,
+  Trash2,
 } from 'lucide-react';
 import { Booking, BookingStatus, PaymentStatus } from '../../types/booking';
 import { bookingService } from '../../services/bookingService';
 import { useAdminAuth } from '../../context/AdminAuthContext';
 import { Button } from '../../components/ui/Button';
 import { AdminModal } from '../../components/admin/AdminModal';
+import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 
 export const AdminBookingsView: React.FC = () => {
@@ -42,6 +44,9 @@ export const AdminBookingsView: React.FC = () => {
 
   // Modals & Action States
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
 
   // Rejection Modal
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
@@ -74,6 +79,40 @@ export const AdminBookingsView: React.FC = () => {
     if (selectedBooking) {
       const updated = list.find((b) => b.id === selectedBooking.id);
       if (updated) setSelectedBooking(updated);
+    }
+  };
+
+  const handleDeleteBooking = async () => {
+    if (!bookingToDelete) return;
+    setIsDeleting(true);
+    try {
+      await bookingService.deleteBooking(bookingToDelete.id);
+      logAuditAction('BOOKING_DELETED', 'Booking', bookingToDelete.id, `Deleted booking #${bookingToDelete.id}`);
+      addToast('success', 'Booking Deleted', `Reservation #${bookingToDelete.id} removed permanently.`);
+      if (selectedBooking?.id === bookingToDelete.id) {
+        setSelectedBooking(null);
+      }
+      loadBookings();
+    } catch {
+      addToast('error', 'Delete Failed', 'Failed to delete booking.');
+    } finally {
+      setIsDeleting(false);
+      setBookingToDelete(null);
+    }
+  };
+
+  const handlePurgeAllTestBookings = async () => {
+    setIsDeleting(true);
+    try {
+      const res = await bookingService.clearAllTestBookings();
+      logAuditAction('BOOKINGS_PURGED', 'Booking', 'ALL_TEST', `Purged ${res.removedCount} sample/test bookings.`);
+      addToast('success', 'Test Bookings Removed', `Cleaned up ${res.removedCount} test/sample bookings.`);
+      loadBookings();
+    } catch {
+      addToast('error', 'Cleanup Failed', 'Failed to purge test bookings.');
+    } finally {
+      setIsDeleting(false);
+      setShowPurgeConfirm(false);
     }
   };
 
@@ -301,6 +340,15 @@ export const AdminBookingsView: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setShowPurgeConfirm(true)}
+            leftIcon={<Trash2 className="w-3.5 h-3.5 text-rose-500" />}
+            className="text-xs font-semibold text-rose-700 hover:bg-rose-50 border-rose-200"
+          >
+            Purge Test Bookings
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={loadBookings}
             leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
             className="text-xs font-bold"
@@ -439,6 +487,15 @@ export const AdminBookingsView: React.FC = () => {
                           <Eye className="w-3.5 h-3.5 mr-1" />
                           Dossier
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setBookingToDelete(b)}
+                          className="h-8 px-2 text-xs text-slate-400 hover:text-rose-600 hover:bg-rose-50 border-slate-200 hover:border-rose-200"
+                          title="Delete Booking"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -521,6 +578,16 @@ export const AdminBookingsView: React.FC = () => {
                     </Button>
                   </>
                 )}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setBookingToDelete(selectedBooking)}
+                  className="h-8 text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1" />
+                  Delete Booking
+                </Button>
               </div>
             </div>
 
@@ -767,6 +834,30 @@ export const AdminBookingsView: React.FC = () => {
           </form>
         </AdminModal>
       )}
+
+      {/* Confirm Delete Booking Dialog */}
+      <AdminConfirmDialog
+        isOpen={!!bookingToDelete}
+        title="Delete Reservation Permanently"
+        message={`Are you sure you want to delete reservation #${bookingToDelete?.id} (${bookingToDelete?.serviceName})? This action cannot be undone.`}
+        confirmLabel="Delete Booking"
+        cancelLabel="Keep Booking"
+        isDestructive
+        onConfirm={handleDeleteBooking}
+        onCancel={() => setBookingToDelete(null)}
+      />
+
+      {/* Confirm Purge All Test Bookings Dialog */}
+      <AdminConfirmDialog
+        isOpen={showPurgeConfirm}
+        title="Purge All Test / Sample Bookings"
+        message="This will permanently delete all demo and test bookings matching test keywords or sample IDs. Genuine client reservations will not be affected."
+        confirmLabel="Purge Test Bookings"
+        cancelLabel="Cancel"
+        isDestructive
+        onConfirm={handlePurgeAllTestBookings}
+        onCancel={() => setShowPurgeConfirm(false)}
+      />
     </div>
   );
 };

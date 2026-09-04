@@ -16,7 +16,14 @@ import {
   memoryLocalCache,
   memoryEagerGarbageCollector,
 } from 'firebase/firestore';
-import { getAuth, Auth } from 'firebase/auth';
+import {
+  initializeAuth,
+  browserLocalPersistence,
+  browserSessionPersistence,
+  inMemoryPersistence,
+  getAuth,
+  Auth,
+} from 'firebase/auth';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import rawConfig from '../../firebase-applet-config.json';
 
@@ -62,7 +69,7 @@ export const app: FirebaseApp =
 
 // Initialize Centralized Cloud Firestore Database connected to the production named database
 // Configured with memoryLocalCache to eliminate IndexedDB "Database is closing/hidden" errors in iframe & sandbox environments
-// and experimentalAutoDetectLongPolling to prevent write-stream stalls and queued-write exhaustion
+// and experimentalForceLongPolling to eliminate the 10-second streaming timeout and ensure immediate backend connectivity
 export const db: Firestore = (() => {
   try {
     return initializeFirestore(
@@ -71,7 +78,7 @@ export const db: Firestore = (() => {
         localCache: memoryLocalCache({
           garbageCollector: memoryEagerGarbageCollector(),
         }),
-        experimentalAutoDetectLongPolling: true,
+        experimentalForceLongPolling: true,
       },
       activeFirestoreDatabaseId || undefined
     );
@@ -83,8 +90,21 @@ export const db: Firestore = (() => {
   }
 })();
 
-// Initialize Firebase Auth foundation
-export const auth: Auth = getAuth(app);
+// Initialize Firebase Auth with browserLocalPersistence, browserSessionPersistence & inMemoryPersistence.
+// By avoiding indexedDBLocalPersistence in iframe sandbox environments, we completely eliminate
+// "Database is closing/hidden" errors triggered when window visibilityState changes to hidden.
+export const auth: Auth = (() => {
+  if (typeof window === 'undefined') {
+    return getAuth(app);
+  }
+  try {
+    return initializeAuth(app, {
+      persistence: [browserLocalPersistence, browserSessionPersistence, inMemoryPersistence],
+    });
+  } catch {
+    return getAuth(app);
+  }
+})();
 
 // Initialize Firebase Storage foundation
 export const storage: FirebaseStorage = getStorage(app);

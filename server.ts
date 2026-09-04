@@ -293,6 +293,15 @@ async function startServer() {
   // PAYMENT API ROUTES (FIRST)
   // ==========================================
 
+  // 0. Base Health Check
+  app.get('/api/health', (req: Request, res: Response) => {
+    res.json({
+      status: 'ok',
+      service: 'Mahdev Enterprise Multi-Division Core',
+      timestamp: new Date().toISOString(),
+    });
+  });
+
   // 1. Health check & Gateway Info (Public)
   app.get('/api/payment/health', (req: Request, res: Response) => {
     res.json({
@@ -904,43 +913,96 @@ async function startServer() {
   // ==========================================
   // AUTHORITATIVE SYSTEM & COMPANY SETTINGS
   // ==========================================
-  let serverCompanySettings: any = null;
-  let serverSiteSettings: any = null;
+  // ENTERPRISE SETTINGS STATE & PERSISTENCE
+  // ==========================================
+  const defaultCompanySettings = {
+    name: 'Mahdev Pvt Ltd',
+    legalName: 'Mahdev Private Limited',
+    registrationNumber: 'PV-00289410',
+    tagline: 'Creating Moments... Capturing Memories... & Delivering Innovation...',
+    description: 'Premier South Asian enterprise uniting 5 specialized business divisions.',
+    domain: 'mahdev.lk',
+    email: 'info.mahdev.lk@gmail.com',
+    primaryPhone: '+94 77 000 0000',
+    secondaryPhone: '+94 11 200 0000',
+    phones: ['076 898 8970', '075 092 8078'],
+    whatsappNumber: '+94 77 000 0000',
+    address: 'Colombo, Western Province, Sri Lanka',
+  };
+
+  const defaultSiteSettings = {
+    companyName: 'Mahdev Pvt Ltd',
+    legalName: 'Mahdev Private Limited',
+    tagline: 'Excellence Across Every Horizon',
+    description: 'Premier South Asian enterprise uniting 5 specialized business divisions.',
+    logoUrl: '',
+    darkLogoUrl: '',
+    faviconUrl: '',
+    currencyCode: 'LKR',
+    currencySymbol: 'Rs. ',
+    phoneNumbers: ['+94 77 000 0000', '+94 11 200 0000'],
+    email: 'info.mahdev.lk@gmail.com',
+    maintenanceMode: false,
+    updatedAt: new Date().toISOString(),
+    version: '1.0.0',
+    siteName: 'Mahdev Pvt Ltd',
+    enableMaintenanceMode: false,
+  };
+
+  let serverCompanySettings: any = { ...defaultCompanySettings };
+  let serverSiteSettings: any = { ...defaultSiteSettings };
   let serverHomepageSettings: any = null;
 
-  // Preload settings from Firestore on server boot
+  /**
+   * Safely reads a Firestore document with retry logic to gracefully accommodate
+   * the brief initial connection handshake without throwing offline errors.
+   */
+  async function fetchFirestoreDocSafe(collectionName: string, docId: string, maxAttempts = 3): Promise<any | null> {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const { db } = await import('./src/lib/firebase');
+        const { doc, getDoc } = await import('firebase/firestore');
+        const snap = await getDoc(doc(db, collectionName, docId));
+        if (snap.exists()) {
+          return snap.data();
+        }
+        return null;
+      } catch (err: any) {
+        const isOffline = err?.code === 'unavailable' || String(err?.message || '').includes('client is offline');
+        if (isOffline && attempt < maxAttempts) {
+          await new Promise((res) => setTimeout(res, 400 * attempt));
+          continue;
+        }
+        return null;
+      }
+    }
+    return null;
+  }
+
+  // Preload settings from Firestore on server boot with a grace period for network handshake
   (async () => {
+    await new Promise((resolve) => setTimeout(resolve, 350));
     try {
-      const { db } = await import('./src/lib/firebase');
-      const { doc, getDoc } = await import('firebase/firestore');
-      const [cSnap, sSnap] = await Promise.all([
-        getDoc(doc(db, 'settings', 'company')),
-        getDoc(doc(db, 'settings', 'site')),
+      const [cData, sData] = await Promise.all([
+        fetchFirestoreDocSafe('settings', 'company', 3),
+        fetchFirestoreDocSafe('settings', 'site', 3),
       ]);
-      if (cSnap.exists()) {
-        serverCompanySettings = cSnap.data();
-        console.log('[Server Settings] Loaded company settings from Firestore. Logo length:', serverCompanySettings?.logoUrl?.length || 0);
+      if (cData) {
+        serverCompanySettings = { ...serverCompanySettings, ...cData };
       }
-      if (sSnap.exists()) {
-        serverSiteSettings = sSnap.data();
-        console.log('[Server Settings] Loaded site settings from Firestore. Logo length:', serverSiteSettings?.logoUrl?.length || 0);
+      if (sData) {
+        serverSiteSettings = { ...serverSiteSettings, ...sData };
       }
-    } catch (err) {
-      console.warn('[Server Settings] Background preload from Firestore warning:', err);
+    } catch {
+      // Retains safe default settings
     }
   })();
 
   app.get('/api/settings/company', async (req: Request, res: Response) => {
-    if (!serverCompanySettings) {
-      try {
-        const { db } = await import('./src/lib/firebase');
-        const { doc, getDoc } = await import('firebase/firestore');
-        const snap = await getDoc(doc(db, 'settings', 'company'));
-        if (snap.exists()) {
-          serverCompanySettings = snap.data();
-        }
-      } catch (e) {
-        console.warn('[Server Settings] Fallback get settings/company notice:', e);
+    if (!serverCompanySettings || !serverCompanySettings.updatedAt) {
+      const live = await fetchFirestoreDocSafe('settings', 'company', 2);
+      if (live) {
+        serverCompanySettings = { ...serverCompanySettings, ...live };
       }
     }
     res.json({
@@ -967,8 +1029,8 @@ async function startServer() {
         const { db } = await import('./src/lib/firebase');
         const { doc, setDoc } = await import('firebase/firestore');
         await setDoc(doc(db, 'settings', 'company'), serverCompanySettings, { merge: true });
-      } catch (err) {
-        console.warn('[Server Settings] Error persisting company settings to Firestore:', err);
+      } catch {
+        // Non-blocking catch to ensure transaction continuity
       }
     })();
 
@@ -990,16 +1052,10 @@ async function startServer() {
   });
 
   app.get('/api/settings/site', async (req: Request, res: Response) => {
-    if (!serverSiteSettings) {
-      try {
-        const { db } = await import('./src/lib/firebase');
-        const { doc, getDoc } = await import('firebase/firestore');
-        const snap = await getDoc(doc(db, 'settings', 'site'));
-        if (snap.exists()) {
-          serverSiteSettings = snap.data();
-        }
-      } catch (e) {
-        console.warn('[Server Settings] Fallback get settings/site notice:', e);
+    if (!serverSiteSettings || !serverSiteSettings.updatedAt) {
+      const live = await fetchFirestoreDocSafe('settings', 'site', 2);
+      if (live) {
+        serverSiteSettings = { ...serverSiteSettings, ...live };
       }
     }
     res.json({
@@ -1026,8 +1082,8 @@ async function startServer() {
         const { db } = await import('./src/lib/firebase');
         const { doc, setDoc } = await import('firebase/firestore');
         await setDoc(doc(db, 'settings', 'site'), serverSiteSettings, { merge: true });
-      } catch (err) {
-        console.warn('[Server Settings] Error persisting site settings to Firestore:', err);
+      } catch {
+        // Non-blocking catch to ensure transaction continuity
       }
     })();
 

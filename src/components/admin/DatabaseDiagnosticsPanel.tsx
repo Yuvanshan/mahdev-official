@@ -27,6 +27,9 @@ import {
   clearAllFirestoreCollections,
   seedPristineProductionSettings,
 } from '../../services/firestore/databaseManagement';
+import { orderService } from '../../services/orderService';
+import { bookingService } from '../../services/bookingService';
+import { analyticsService } from '../../services/analyticsService';
 import { AdminConfirmDialog } from './AdminConfirmDialog';
 import {
   TARGET_FIREBASE_PROJECT_ID,
@@ -94,6 +97,28 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
     } catch (err: any) {
       setActionMessage({
         text: `Failed to seed baseline settings: ${err?.message || err}`,
+        type: 'error',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePurgeTestRecords = async () => {
+    setIsLoading(true);
+    setActionMessage(null);
+    try {
+      const orderRes = await orderService.clearAllTestOrders();
+      const bookingRes = await bookingService.clearAllTestBookings();
+      analyticsService.clearAnalyticsEvents();
+      setActionMessage({
+        text: `Successfully purged ${orderRes.removedCount} test/sample orders and ${bookingRes.removedCount} test bookings. Analytics telemetry sanitized.`,
+        type: 'success',
+      });
+      await runDiagnostics();
+    } catch (err: any) {
+      setActionMessage({
+        text: `Failed to purge test records: ${err?.message || err}`,
         type: 'error',
       });
     } finally {
@@ -186,6 +211,17 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
             className="text-xs font-semibold text-blue-700 hover:bg-blue-50"
           >
             Seed Baseline
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePurgeTestRecords}
+            disabled={isLoading || isClearing}
+            leftIcon={<Trash2 className="w-3.5 h-3.5 text-amber-600" />}
+            className="text-xs font-semibold text-amber-700 hover:bg-amber-50 border-amber-200"
+          >
+            Purge Test Records
           </Button>
 
           <Button

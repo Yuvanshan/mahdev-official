@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   ChevronDown,
   Menu,
@@ -23,7 +23,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { IconRenderer } from '../ui/IconRenderer';
 import { MAIN_NAV_ITEMS } from '../../config/navigation';
-import { DIVISIONS } from '../../config/divisions';
+import { DIVISIONS, DIVISION_LIST } from '../../config/divisions';
 import { DivisionId } from '../../types';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -38,7 +38,7 @@ interface NavigationProps {
 export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate }) => {
   const { totalQuantity, openCart } = useCart();
   const { user, isAuthenticated, logout } = useAuth();
-  const { companySettings, siteSettings } = useFirestoreDataContext();
+  const { companySettings, siteSettings, divisions } = useFirestoreDataContext();
 
   const primaryPhone = companySettings?.primaryPhone || '076 898 8970';
   const secondaryPhone = companySettings?.secondaryPhone || '075 092 8078';
@@ -53,6 +53,29 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
   const servicesDropdownRef = useRef<HTMLDivElement>(null);
   const accountDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic divisions sorted by order
+  const displayDivisions = useMemo(() => {
+    if (divisions && divisions.length > 0) {
+      return divisions
+        .filter((d) => d.status !== 'inactive')
+        .map((d) => {
+          const config = (DIVISIONS as any)[d.id] || DIVISION_LIST.find((item) => item.id === d.id) || {};
+          return {
+            ...config,
+            id: d.id,
+            name: d.name || config.name,
+            route: config.route || `/${d.slug || d.id}`,
+            badge: d.hero?.badge || config.badge || 'Enterprise Division',
+            iconName: config.iconName || 'Building',
+            accentColor: (config as any).accentColor || (config as any).color || '#0052FF',
+            tagline: d.hero?.subtitle || config.tagline || '',
+            isPrimary: (config as any).isPrimary || d.id === 'sws',
+          };
+        });
+    }
+    return Object.values(DIVISIONS);
+  }, [divisions]);
 
   // Detect current division if on child route
   const currentDivisionKey = Object.keys(DIVISIONS).find(
@@ -197,7 +220,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                             Our Operating Divisions
                           </div>
                           <div className="mt-1 space-y-1">
-                            {Object.values(DIVISIONS).map((division) => (
+                            {displayDivisions.map((division) => (
                               <button
                                 key={division.id}
                                 onClick={() => handleLinkClick(division.route)}
@@ -461,7 +484,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
               <div className="px-3 py-1 text-xs font-bold uppercase tracking-wider text-slate-400">
                 Divisions
               </div>
-              {Object.values(DIVISIONS).map((division) => (
+              {displayDivisions.map((division) => (
                 <button
                   key={division.id}
                   onClick={() => handleLinkClick(division.route)}

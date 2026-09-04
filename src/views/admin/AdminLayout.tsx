@@ -136,8 +136,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
   if (isLoading || (isInitialLoading && !isReady)) {
     return (
       <InitialAppLoader
-        message="Loading Administrative Console..."
-        subMessage="Verifying administrative credentials and retrieving live Firestore configuration..."
+        message="Executive Console"
+        subMessage="Securing administrative session..."
       />
     );
   }

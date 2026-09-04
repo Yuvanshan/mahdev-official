@@ -10,6 +10,7 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  deleteDoc,
   query,
   where,
   orderBy,
@@ -216,6 +217,19 @@ export const firestoreOrdersService = {
     } catch (err) {
       console.warn('[Firestore Orders] getAllOrders error:', err);
       return [];
+    }
+  },
+
+  /**
+   * Delete order by ID from Firestore
+   */
+  async deleteOrder(id: string): Promise<boolean> {
+    try {
+      await deleteDoc(doc(db, 'orders', id));
+      return true;
+    } catch (err) {
+      console.warn(`[Firestore Orders] deleteOrder error for ${id}:`, err);
+      return false;
     }
   },
 };

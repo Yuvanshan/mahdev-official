@@ -7,6 +7,7 @@ export type AnalyticsEventType =
   | 'page_view'
   | 'division_view'
   | 'product_view'
+  | 'service_view'
   | 'add_to_cart'
   | 'remove_from_cart'
   | 'checkout_started'

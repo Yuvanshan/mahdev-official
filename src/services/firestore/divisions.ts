@@ -94,6 +94,23 @@ export const DIVISION_DOCUMENT_MAP: Record<string, {
   },
 };
 
+export function getDivisionFallbackOrder(id: string): number {
+  if (id === 'sws') return 1;
+  if (id === 'u1' || id === 'u1-studio') return 2;
+  if (id === 'it' || id === 'it-solutions') return 3;
+  if (id === 'travels') return 4;
+  if (id === 'mart' || id === 'online-mart') return 5;
+  return 99;
+}
+
+export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
+  return [...list].sort((a, b) => {
+    const orderA = typeof a.order === 'number' && a.order > 0 ? a.order : getDivisionFallbackOrder(a.id);
+    const orderB = typeof b.order === 'number' && b.order > 0 ? b.order : getDivisionFallbackOrder(b.id);
+    return orderA - orderB;
+  });
+}
+
 export function getDefaultDivisions(): FirestoreDivision[] {
   const now = new Date().toISOString();
   return Object.values(DIVISION_DOCUMENT_MAP).map((d) => {
@@ -143,21 +160,21 @@ export const firestoreDivisionsService = {
     try {
       const snap = await getDocs(collection(db, 'divisions'));
       if (!snap.empty) {
-        const data = snap.docs.map((docSnap) => ({
+        const raw = snap.docs.map((docSnap) => ({
           ...docSnap.data(),
           id: docSnap.id,
         })) as FirestoreDivision[];
-        data.sort((a, b) => (a.order || 0) - (b.order || 0));
+        const data = sortDivisions(raw);
         cachedDivisions = { data, timestamp: now };
         return data;
       }
 
-      const defaultDivs = getDefaultDivisions();
+      const defaultDivs = sortDivisions(getDefaultDivisions());
       cachedDivisions = { data: defaultDivs, timestamp: now };
       return defaultDivs;
     } catch (err) {
       console.warn('[Firestore Divisions] getDivisions error:', err);
-      return cachedDivisions?.data || getDefaultDivisions();
+      return cachedDivisions?.data || sortDivisions(getDefaultDivisions());
     }
   },
 
@@ -185,8 +202,29 @@ export const firestoreDivisionsService = {
       const idx = cachedDivisions.data.findIndex((d) => d.id === id);
       if (idx >= 0) {
         cachedDivisions.data[idx] = { ...cachedDivisions.data[idx], ...payload } as FirestoreDivision;
+        cachedDivisions.data = sortDivisions(cachedDivisions.data);
       }
     }
+  },
+
+  /**
+   * Reorder all divisions with sequential orders (1, 2, 3...)
+   */
+  async reorderDivisions(orderedIds: string[]): Promise<void> {
+    const promises = orderedIds.map((id, index) => {
+      const order = index + 1;
+      return this.saveDivision(id, { order });
+    });
+    await Promise.all(promises);
+    await this.getDivisions(true);
+  },
+
+  /**
+   * Update a single division's order index
+   */
+  async updateDivisionOrder(id: DivisionId | string, order: number): Promise<void> {
+    await this.saveDivision(id, { order });
+    await this.getDivisions(true);
   },
 
   /**
@@ -208,21 +246,27 @@ export const firestoreDivisionsService = {
       colRef,
       (snap) => {
         if (!snap.empty) {
-          const data = snap.docs.map((docSnap) => ({
+          const raw = snap.docs.map((docSnap) => ({
             ...docSnap.data(),
             id: docSnap.id,
           })) as FirestoreDivision[];
-          data.sort((a, b) => (a.order || 0) - (b.order || 0));
+          const data = sortDivisions(raw);
           cachedDivisions = { data, timestamp: Date.now() };
           callback(data);
         } else {
-          const defaultDivs = cachedDivisions?.data?.length ? cachedDivisions.data : getDefaultDivisions();
+          const defaultDivs = cachedDivisions?.data?.length
+            ? sortDivisions(cachedDivisions.data)
+            : sortDivisions(getDefaultDivisions());
           callback(defaultDivs);
         }
       },
       (err) => {
         console.warn('[Firestore Divisions] subscribe error:', err);
-        callback(cachedDivisions?.data?.length ? cachedDivisions.data : getDefaultDivisions());
+        callback(
+          cachedDivisions?.data?.length
+            ? sortDivisions(cachedDivisions.data)
+            : sortDivisions(getDefaultDivisions())
+        );
       }
     );
   },

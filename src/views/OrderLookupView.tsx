@@ -80,7 +80,7 @@ export const OrderLookupView: React.FC<OrderLookupViewProps> = ({ onNavigate }) 
             Order Status & Fulfillment Lookup
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto">
-            Enter your Order ID (e.g. <code>ORD-2026-8941</code>) or your registered customer email to inspect delivery logistics and payment transition status.
+            Enter your Order ID (e.g. <code>ORD-2026-XXXX</code>) or your registered customer email to inspect delivery logistics and payment transition status.
           </p>
         </div>
 
@@ -93,7 +93,7 @@ export const OrderLookupView: React.FC<OrderLookupViewProps> = ({ onNavigate }) 
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Enter Order ID (e.g. ORD-2026-8941) or Customer Email..."
+                placeholder="Enter Order ID or Customer Email..."
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 uppercase font-mono placeholder:normal-case placeholder:font-sans"
               />
             </div>
@@ -101,32 +101,6 @@ export const OrderLookupView: React.FC<OrderLookupViewProps> = ({ onNavigate }) 
               Track Order
             </Button>
           </form>
-
-          {/* Quick Demo ID Suggestion */}
-          <div className="mt-3 flex items-center gap-2 text-[11px] text-slate-500">
-            <span>Sample Test Orders:</span>
-            <button
-              onClick={() => {
-                setSearchQuery('ORD-2026-8941');
-                setResults([orderService.getOrderById('ORD-2026-8941')!]);
-                setSearched(true);
-              }}
-              className="font-mono text-blue-600 hover:underline cursor-pointer font-bold"
-            >
-              ORD-2026-8941
-            </button>
-            <span>•</span>
-            <button
-              onClick={() => {
-                setSearchQuery('ORD-2026-7219');
-                setResults([orderService.getOrderById('ORD-2026-7219')!]);
-                setSearched(true);
-              }}
-              className="font-mono text-blue-600 hover:underline cursor-pointer font-bold"
-            >
-              ORD-2026-7219
-            </button>
-          </div>
         </div>
 
         {/* Search Results */}

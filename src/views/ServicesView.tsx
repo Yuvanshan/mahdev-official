@@ -41,7 +41,27 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
 }) => {
   const [selectedDivision, setSelectedDivision] = useState<DivisionId | 'all'>(initialDivision);
   const [searchQuery, setSearchQuery] = useState('');
-  const { services, companySettings } = useFirestoreDataContext();
+  const { services, companySettings, divisions } = useFirestoreDataContext();
+
+  const orderedDivisions = React.useMemo(() => {
+    if (divisions && divisions.length > 0) {
+      return divisions
+        .filter((d) => d.status !== 'inactive')
+        .map((d) => {
+          const config = (DIVISIONS as any)[d.id] || DIVISION_LIST.find((item) => item.id === d.id) || {};
+          return {
+            ...config,
+            id: d.id,
+            name: d.name || config.name,
+            shortName: config.shortName || d.name,
+            tagline: d.hero?.subtitle || config.tagline || '',
+            route: config.route || `/${d.slug || d.id}`,
+            iconName: config.iconName || 'Building',
+          };
+        });
+    }
+    return DIVISION_LIST;
+  }, [divisions]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -383,7 +403,7 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
 
         {/* Mobile Horizontal Scrollable Division Cards */}
         <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-5 sm:gap-4 sm:overflow-visible">
-          {DIVISION_LIST.map((division) => (
+          {orderedDivisions.map((division) => (
             <div
               key={division.id}
               onClick={() => onNavigate(division.route)}

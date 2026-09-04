@@ -182,12 +182,12 @@ function AppContent() {
     return <AdminLayout currentPath={normalizedPath} onNavigate={navigate} />;
   }
 
-  // 2. Initial Data Hydration Loader for public pages (prevents flash of public website before maintenance or data is verified)
+  // 2. Initial Data Hydration Loader for public pages (prevents flash of unverified state)
   if (!isAdminRoute && (isInitialLoading || !isReady)) {
     return (
       <InitialAppLoader
-        message="Welcome to Mahdev"
-        subMessage="Retrieving live corporate records, services & product catalog from Cloud Firestore..."
+        message="Mahdev"
+        subMessage="Preparing your experience..."
       />
     );
   }

@@ -28,6 +28,7 @@ export interface CmsDivision extends BaseCmsEntity {
   divisionKey: DivisionId;
   name: string;
   shortName: string;
+  order?: number;
   tagline: string;
   description: string;
   badge: string;

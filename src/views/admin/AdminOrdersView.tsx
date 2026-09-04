@@ -25,6 +25,7 @@ import {
   Package,
   Building,
   ArrowUpRight,
+  Trash2,
 } from 'lucide-react';
 import { Order, OrderStatus, OrderPaymentStatus } from '../../types/order';
 import { orderService } from '../../services/orderService';
@@ -44,6 +45,9 @@ export const AdminOrdersView: React.FC = () => {
 
   // Modals
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
   const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
   const [refundAmount, setRefundAmount] = useState<number>(0);
   const [refundReason, setRefundReason] = useState('Customer requested order cancellation');
@@ -70,6 +74,40 @@ export const AdminOrdersView: React.FC = () => {
     if (selectedOrder) {
       const updated = all.find((o) => o.id === selectedOrder.id);
       if (updated) setSelectedOrder(updated);
+    }
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!orderToDelete) return;
+    setIsDeleting(true);
+    try {
+      await orderService.deleteOrder(orderToDelete.id);
+      logAuditAction('ORDER_DELETED', 'Order', orderToDelete.id, `Deleted order ${orderToDelete.id}`);
+      addToast('success', 'Order Deleted', `Order ${orderToDelete.id} removed permanently.`);
+      if (selectedOrder?.id === orderToDelete.id) {
+        setSelectedOrder(null);
+      }
+      loadOrders();
+    } catch {
+      addToast('error', 'Delete Failed', 'Could not delete order.');
+    } finally {
+      setIsDeleting(false);
+      setOrderToDelete(null);
+    }
+  };
+
+  const handlePurgeAllTestOrders = async () => {
+    setIsDeleting(true);
+    try {
+      const res = await orderService.clearAllTestOrders();
+      logAuditAction('ORDERS_PURGED', 'Order', 'ALL_TEST', `Purged ${res.removedCount} sample/test orders.`);
+      addToast('success', 'Test Orders Removed', `Cleaned up ${res.removedCount} test/sample orders.`);
+      loadOrders();
+    } catch {
+      addToast('error', 'Cleanup Failed', 'Failed to purge test orders.');
+    } finally {
+      setIsDeleting(false);
+      setShowPurgeConfirm(false);
     }
   };
 
@@ -288,6 +326,15 @@ export const AdminOrdersView: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setShowPurgeConfirm(true)}
+            leftIcon={<Trash2 className="w-3.5 h-3.5 text-rose-500" />}
+            className="text-xs font-semibold text-rose-700 hover:bg-rose-50 border-rose-200"
+          >
+            Purge Test Orders
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={loadOrders}
             leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
             className="text-xs font-bold"
@@ -426,6 +473,15 @@ export const AdminOrdersView: React.FC = () => {
                           <Eye className="w-3.5 h-3.5 mr-1" />
                           View Dossier
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setOrderToDelete(order)}
+                          className="h-8 px-2 text-xs text-slate-400 hover:text-rose-600 hover:bg-rose-50 border-slate-200 hover:border-rose-200"
+                          title="Delete Order"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -496,6 +552,16 @@ export const AdminOrdersView: React.FC = () => {
                     Process Refund
                   </Button>
                 )}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setOrderToDelete(selectedOrder)}
+                  className="h-8 text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1" />
+                  Delete Order
+                </Button>
               </div>
             </div>
 
@@ -847,6 +913,30 @@ export const AdminOrdersView: React.FC = () => {
           </form>
         </AdminModal>
       )}
+
+      {/* Confirm Delete Order Dialog */}
+      <AdminConfirmDialog
+        isOpen={!!orderToDelete}
+        title="Delete Order Permanently"
+        message={`Are you sure you want to delete order ${orderToDelete?.id}? This action cannot be undone and will remove the order record from storage.`}
+        confirmLabel="Delete Order"
+        cancelLabel="Keep Order"
+        isDestructive
+        onConfirm={handleDeleteOrder}
+        onCancel={() => setOrderToDelete(null)}
+      />
+
+      {/* Confirm Purge All Test Orders Dialog */}
+      <AdminConfirmDialog
+        isOpen={showPurgeConfirm}
+        title="Purge All Test / Sample Orders"
+        message="This will permanently delete all demo and test orders matching test keywords or sample IDs. Genuine customer orders will not be affected."
+        confirmLabel="Purge Test Orders"
+        cancelLabel="Cancel"
+        isDestructive
+        onConfirm={handlePurgeAllTestOrders}
+        onCancel={() => setShowPurgeConfirm(false)}
+      />
     </div>
   );
 };

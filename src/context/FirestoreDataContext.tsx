@@ -70,6 +70,8 @@ export interface FirestoreDataContextValue {
   updateHomepageConfig: (data: Partial<HomepageCmsConfig>) => Promise<void>;
   updateGoogleReviewsConfig: (data: Partial<GoogleReviewsConfig>) => Promise<void>;
   syncGoogleReviews: () => Promise<any>;
+  reorderDivisions: (orderedIds: string[]) => Promise<void>;
+  updateDivisionOrder: (id: string, order: number) => Promise<void>;
 }
 
 const FirestoreDataContext = createContext<FirestoreDataContextValue | null>(null);
@@ -365,10 +367,10 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         console.warn('[FirestoreDataContext] Initial fast hydration warning:', err);
       });
 
-    // Safety timeout: ensure loading state completes without stalling
+    // Safety timeout: ensure loading state completes promptly without stalling
     const safetyTimer = setTimeout(() => {
       markReady();
-    }, 1800);
+    }, 850);
 
     // 1. Core Realtime Centralized Listeners (Single Source of Truth, zero duplicate listeners)
     const unsubCompany = firestoreSettingsService.subscribeCompanySettings((data) => {
@@ -571,6 +573,19 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     return res;
   }, []);
 
+  const reorderDivisions = useCallback(async (orderedIds: string[]) => {
+    await firestoreDivisionsService.reorderDivisions(orderedIds);
+    await cmsService.reorderDivisions(orderedIds);
+    const fresh = await firestoreDivisionsService.getDivisions(true);
+    setDivisions(fresh);
+  }, []);
+
+  const updateDivisionOrder = useCallback(async (id: string, order: number) => {
+    await firestoreDivisionsService.updateDivisionOrder(id, order);
+    const fresh = await firestoreDivisionsService.getDivisions(true);
+    setDivisions(fresh);
+  }, []);
+
   const value = useMemo<FirestoreDataContextValue>(
     () => ({
       isInitialLoading,
@@ -597,6 +612,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       updateHomepageConfig,
       updateGoogleReviewsConfig,
       syncGoogleReviews,
+      reorderDivisions,
+      updateDivisionOrder,
     }),
     [
       isInitialLoading,
@@ -623,6 +640,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       updateHomepageConfig,
       updateGoogleReviewsConfig,
       syncGoogleReviews,
+      reorderDivisions,
+      updateDivisionOrder,
     ]
   );
 

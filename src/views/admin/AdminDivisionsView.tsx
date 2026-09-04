@@ -16,6 +16,10 @@ import {
   Globe,
   Tag,
   FileCode,
+  ArrowUp,
+  ArrowDown,
+  ListOrdered,
+  Crown,
 } from 'lucide-react';
 import { CmsDivision } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
@@ -64,6 +68,7 @@ export const AdminDivisionsView: React.FC = () => {
     contactEmail: '',
     iconName: 'Sparkles',
     isActive: true,
+    order: 1,
     seo: {
       metaTitle: '',
       metaDescription: '',
@@ -88,7 +93,13 @@ export const AdminDivisionsView: React.FC = () => {
       status: statusFilter,
       includeDeleted: statusFilter === 'deleted' || statusFilter === 'all',
     });
-    setDivisions(data);
+    // Sort ascending by order
+    const sorted = [...data].sort((a, b) => {
+      const ordA = typeof a.order === 'number' ? a.order : 99;
+      const ordB = typeof b.order === 'number' ? b.order : 99;
+      return ordA - ordB;
+    });
+    setDivisions(sorted);
   };
 
   useEffect(() => {
@@ -117,6 +128,7 @@ export const AdminDivisionsView: React.FC = () => {
       contactEmail: '',
       iconName: 'Sparkles',
       isActive: true,
+      order: divisions.length + 1,
       seo: {
         metaTitle: '',
         metaDescription: '',
@@ -132,6 +144,7 @@ export const AdminDivisionsView: React.FC = () => {
   const handleOpenEdit = (div: CmsDivision) => {
     setEditingDivision(div);
     setModalTab('general');
+    const defaultOrder = div.divisionKey === 'sws' ? 1 : div.divisionKey === 'u1' ? 2 : div.divisionKey === 'it' ? 3 : div.divisionKey === 'travels' ? 4 : 5;
     setFormData({
       divisionKey: div.divisionKey,
       name: div.name,
@@ -149,6 +162,7 @@ export const AdminDivisionsView: React.FC = () => {
       contactEmail: div.contactEmail,
       iconName: div.iconName,
       isActive: div.isActive,
+      order: typeof div.order === 'number' && div.order > 0 ? div.order : defaultOrder,
       seo: {
         metaTitle: div.seo?.metaTitle || `${div.name} | Mahdev Group`,
         metaDescription: div.seo?.metaDescription || div.description,
@@ -180,15 +194,21 @@ export const AdminDivisionsView: React.FC = () => {
 
     setIsSaving(true);
     try {
+      const orderNum = Number(formData.order) || 1;
+      const payload = {
+        ...formData,
+        order: orderNum,
+      };
+
       if (editingDivision) {
-        cmsService.update<CmsDivision>('divisions', editingDivision.id, formData);
-        addToast('success', 'Division Updated', `"${formData.name}" has been successfully saved.`);
+        await cmsService.update<CmsDivision>('divisions', editingDivision.id, payload);
+        addToast('success', 'Division Updated', `"${formData.name}" saved with sequence order #${orderNum}.`);
       } else {
-        cmsService.create<CmsDivision>('divisions', {
-          ...formData,
+        await cmsService.create<CmsDivision>('divisions', {
+          ...payload,
           stats: [{ label: 'Engagements', value: '100+' }],
         });
-        addToast('success', 'Division Created', `"${formData.name}" has been registered.`);
+        addToast('success', 'Division Created', `"${formData.name}" registered with sequence order #${orderNum}.`);
       }
       setIsDirty(false);
       setIsEditorOpen(false);
@@ -197,6 +217,77 @@ export const AdminDivisionsView: React.FC = () => {
       addToast('error', 'Save Failed', err.message || 'An error occurred.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleMoveOrder = async (division: CmsDivision, direction: 'up' | 'down') => {
+    // Current sorted list
+    const currentList = [...divisions].sort((a, b) => (a.order || 99) - (b.order || 99));
+    const currentIndex = currentList.findIndex((d) => d.id === division.id);
+    if (currentIndex === -1) return;
+
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= currentList.length) return;
+
+    // Swap
+    const newSorted = [...currentList];
+    const temp = newSorted[currentIndex];
+    newSorted[currentIndex] = newSorted[targetIndex];
+    newSorted[targetIndex] = temp;
+
+    const orderedIds = newSorted.map((d) => d.id);
+    try {
+      await cmsService.reorderDivisions(orderedIds);
+      loadDivisions();
+      addToast(
+        'success',
+        'Display Order Updated',
+        `Moved "${division.name}" to position #${targetIndex + 1}. Public website updated!`
+      );
+    } catch (err: any) {
+      addToast('error', 'Reorder Failed', err?.message || 'Could not update order.');
+    }
+  };
+
+  const handleSetFirst = async (division: CmsDivision) => {
+    const currentList = [...divisions].sort((a, b) => (a.order || 99) - (b.order || 99));
+    const without = currentList.filter((d) => d.id !== division.id);
+    const newSorted = [division, ...without];
+    const orderedIds = newSorted.map((d) => d.id);
+    try {
+      await cmsService.reorderDivisions(orderedIds);
+      loadDivisions();
+      addToast(
+        'success',
+        'Primary Position Set',
+        `"${division.name}" is now the 1st (#1) division on the website!`
+      );
+    } catch (err: any) {
+      addToast('error', 'Failed to update order', err?.message || 'Could not update order.');
+    }
+  };
+
+  const handleResetDefaultOrder = async () => {
+    // SWS as 1st, U1 as 2nd, IT as 3rd, Travels as 4th, Mart as 5th
+    const defaultKeyOrder = ['sws', 'u1', 'it', 'travels', 'mart'];
+    const sorted = [...divisions].sort((a, b) => {
+      const keyA = a.divisionKey || a.id.replace('div-', '');
+      const keyB = b.divisionKey || b.id.replace('div-', '');
+      const idxA = defaultKeyOrder.indexOf(keyA);
+      const idxB = defaultKeyOrder.indexOf(keyB);
+      return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+    });
+    const orderedIds = sorted.map((d) => d.id);
+    try {
+      await cmsService.reorderDivisions(orderedIds);
+      loadDivisions();
+      addToast(
+        'success',
+        'Default Order Restored',
+        'SWS Event Management set as #1, followed by U1, IT, Travels, and Online Mart.'
+      );
+    } catch (err: any) {
+      addToast('error', 'Reset Failed', err?.message || 'Could not reset order.');
     }
   };
 
@@ -245,6 +336,67 @@ export const AdminDivisionsView: React.FC = () => {
         </div>
       </div>
 
+      {/* Website Division Display Sequence Ribbon */}
+      <div className="bg-gradient-to-r from-blue-50/80 via-slate-50 to-white p-4 rounded-2xl border border-blue-100/80 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs">
+              <ListOrdered className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-display font-bold text-slate-900 text-xs sm:text-sm">
+                  Website Display Sequence
+                </h3>
+                <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  Live Sync
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Divisions appear across the navbar dropdown, hero quick-pills, and showcase sections in this exact order.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleResetDefaultOrder}
+              className="text-xs px-3 py-1.5 bg-white border border-slate-200 hover:border-blue-300 text-slate-700 hover:text-blue-600 rounded-xl font-semibold transition-all cursor-pointer shadow-2xs flex items-center gap-1.5"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Reset: SWS as 1st (#1)
+            </button>
+          </div>
+        </div>
+
+        {/* Horizontal Sequence Chips */}
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          {divisions.map((d, idx) => {
+            const isFirst = (d.order || idx + 1) === 1;
+            return (
+              <div
+                key={d.id}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+                  isFirst
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                    : 'bg-white text-slate-800 border-slate-200 hover:border-blue-200'
+                }`}
+              >
+                <span
+                  className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
+                    isFirst ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  #{d.order || idx + 1}
+                </span>
+                <span className="truncate max-w-[130px]">{d.shortName || d.name}</span>
+                {isFirst && <Crown className="w-3.5 h-3.5 text-amber-300 ml-0.5" />}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Filter Toolbar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
         <div className="relative w-full md:w-96">
@@ -279,6 +431,7 @@ export const AdminDivisionsView: React.FC = () => {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 text-slate-600 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-100">
               <tr>
+                <th className="py-3.5 px-4 text-center w-28">Sequence</th>
                 <th className="py-3.5 px-4">Division & Badge</th>
                 <th className="py-3.5 px-4">Tagline & Description</th>
                 <th className="py-3.5 px-4">Route & Email</th>
@@ -289,85 +442,139 @@ export const AdminDivisionsView: React.FC = () => {
             <tbody className="divide-y divide-slate-100 font-medium">
               {divisions.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-500">
+                  <td colSpan={6} className="py-8 text-center text-slate-500">
                     No divisions found matching criteria.
                   </td>
                 </tr>
               ) : (
-                divisions.map((div) => (
-                  <tr key={div.id} className={`hover:bg-slate-50/80 transition-colors ${div.isDeleted ? 'bg-slate-50/50 opacity-60' : ''}`}>
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-white shadow-xs overflow-hidden"
-                          style={{ backgroundColor: div.accentColor || '#0052FF' }}
-                        >
-                          {div.logoUrl ? (
-                            <img src={div.logoUrl} alt={div.name} className="w-full h-full object-cover" />
+                divisions.map((div, idx) => {
+                  const currentOrder = div.order || idx + 1;
+                  const isFirst = currentOrder === 1;
+                  return (
+                    <tr
+                      key={div.id}
+                      className={`hover:bg-slate-50/80 transition-colors ${
+                        div.isDeleted ? 'bg-slate-50/50 opacity-60' : ''
+                      }`}
+                    >
+                      {/* Order Controls */}
+                      <td className="py-3.5 px-4 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <span
+                            className={`inline-flex items-center justify-center px-2 py-0.5 rounded-md text-[11px] font-bold font-mono ${
+                              isFirst
+                                ? 'bg-blue-600 text-white shadow-xs'
+                                : 'bg-slate-100 text-slate-700 border border-slate-200'
+                            }`}
+                          >
+                            #{currentOrder}
+                            {isFirst && <Crown className="w-3 h-3 ml-1 text-amber-300" />}
+                          </span>
+                          <div className="flex flex-col gap-0.5">
+                            <button
+                              type="button"
+                              onClick={() => handleMoveOrder(div, 'up')}
+                              disabled={idx === 0}
+                              title="Move Up"
+                              className="p-1 rounded bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 disabled:opacity-25 disabled:hover:bg-slate-100 disabled:hover:text-slate-600 cursor-pointer disabled:cursor-not-allowed transition-colors"
+                            >
+                              <ArrowUp className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleMoveOrder(div, 'down')}
+                              disabled={idx === divisions.length - 1}
+                              title="Move Down"
+                              className="p-1 rounded bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 disabled:opacity-25 disabled:hover:bg-slate-100 disabled:hover:text-slate-600 cursor-pointer disabled:cursor-not-allowed transition-colors"
+                            >
+                              <ArrowDown className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                        {!isFirst && !div.isDeleted && (
+                          <button
+                            type="button"
+                            onClick={() => handleSetFirst(div)}
+                            className="mt-1 text-[10px] text-blue-600 hover:text-blue-800 font-semibold hover:underline block mx-auto cursor-pointer"
+                          >
+                            Set as 1st
+                          </button>
+                        )}
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-white shadow-xs overflow-hidden shrink-0"
+                            style={{ backgroundColor: div.accentColor || '#0052FF' }}
+                          >
+                            {div.logoUrl ? (
+                              <img src={div.logoUrl} alt={div.name} className="w-full h-full object-cover" />
+                            ) : (
+                              div.shortName?.slice(0, 2) || div.name.slice(0, 2)
+                            )}
+                          </div>
+                          <div>
+                            <span className="font-bold text-slate-900 block">{div.name}</span>
+                            <span className="text-[10px] text-blue-600 uppercase font-bold tracking-wider">
+                              {div.badge || div.divisionKey}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 max-w-xs">
+                        <span className="font-semibold text-slate-800 block truncate">{div.tagline}</span>
+                        <span className="text-[11px] text-slate-500 line-clamp-1">{div.description}</span>
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-[11px]">
+                        <span className="text-slate-900 block">{div.route}</span>
+                        <span className="text-slate-500">{div.contactEmail}</span>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {div.isDeleted ? (
+                          <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            Archived
+                          </span>
+                        ) : div.isActive ? (
+                          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 w-fit">
+                            <CheckCircle2 className="w-3 h-3" /> Active
+                          </span>
+                        ) : (
+                          <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 w-fit">
+                            <XCircle className="w-3 h-3" /> Inactive
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {div.isDeleted ? (
+                            <Button variant="outline" size="sm" onClick={() => handleRestore(div)} className="text-blue-600">
+                              <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                              Restore
+                            </Button>
                           ) : (
-                            div.shortName?.slice(0, 2) || div.name.slice(0, 2)
+                            <>
+                              <button
+                                onClick={() => handleOpenEdit(div)}
+                                className="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                                title="Edit Division"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => setDeletingDivision(div)}
+                                className="p-1.5 rounded-lg text-slate-600 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                                title="Delete / Archive"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </>
                           )}
                         </div>
-                        <div>
-                          <span className="font-bold text-slate-900 block">{div.name}</span>
-                          <span className="text-[10px] text-blue-600 uppercase font-bold tracking-wider">
-                            {div.badge || div.divisionKey}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 max-w-xs">
-                      <span className="font-semibold text-slate-800 block truncate">{div.tagline}</span>
-                      <span className="text-[11px] text-slate-500 line-clamp-1">{div.description}</span>
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-[11px]">
-                      <span className="text-slate-900 block">{div.route}</span>
-                      <span className="text-slate-500">{div.contactEmail}</span>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {div.isDeleted ? (
-                        <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                          Archived
-                        </span>
-                      ) : div.isActive ? (
-                        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 w-fit">
-                          <CheckCircle2 className="w-3 h-3" /> Active
-                        </span>
-                      ) : (
-                        <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 w-fit">
-                          <XCircle className="w-3 h-3" /> Inactive
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {div.isDeleted ? (
-                          <Button variant="outline" size="sm" onClick={() => handleRestore(div)} className="text-blue-600">
-                            <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                            Restore
-                          </Button>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => handleOpenEdit(div)}
-                              className="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
-                              title="Edit Division"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => setDeletingDivision(div)}
-                              className="p-1.5 rounded-lg text-slate-600 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                              title="Delete / Archive"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -484,6 +691,37 @@ export const AdminDivisionsView: React.FC = () => {
                     }}
                     placeholder="Events & Experiences"
                     className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Display Order Setting */}
+              <div className="p-3.5 bg-blue-50/70 rounded-xl border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <ListOrdered className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-800 text-xs">
+                      Website Display Sequence / Order
+                    </label>
+                    <p className="text-[11px] text-slate-500">
+                      Position on public website (1 = First, 2 = Second, etc.). SWS is recommended as #1.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <span className="text-xs font-bold text-slate-600">Position #</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={99}
+                    value={formData.order}
+                    onChange={(e) => {
+                      setFormData({ ...formData, order: Math.max(1, parseInt(e.target.value, 10) || 1) });
+                      setIsDirty(true);
+                    }}
+                    className="w-20 px-3 py-1.5 border rounded-lg border-slate-200 bg-white font-bold text-center text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs"
                   />
                 </div>
               </div>

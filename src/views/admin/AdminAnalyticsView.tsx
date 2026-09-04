@@ -228,11 +228,17 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
             {formatCurrency(report.kpis.grossRevenue, currentCurrency)}
           </div>
           <div className="flex items-center gap-1.5 mt-2 text-xs">
-            <span className="flex items-center font-bold text-emerald-600">
-              <ArrowUpRight className="w-3.5 h-3.5" />
-              +{report.kpis.revenueGrowthPercent}%
-            </span>
-            <span className="text-slate-400">vs prev cycle</span>
+            {report.kpis.revenueGrowthPercent > 0 ? (
+              <>
+                <span className="flex items-center font-bold text-emerald-600">
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  +{report.kpis.revenueGrowthPercent}%
+                </span>
+                <span className="text-slate-400">vs prev cycle</span>
+              </>
+            ) : (
+              <span className="text-slate-400 font-medium">Real-time ledger</span>
+            )}
           </div>
           <div className="text-[11px] text-slate-400 mt-1 font-mono">
             {currentCurrency === 'LKR'
@@ -255,8 +261,8 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
           <div className="flex items-center gap-1.5 mt-2 text-xs">
             <span className="font-semibold text-slate-700">AOV: {formatCurrency(report.kpis.averageOrderValue, currentCurrency)}</span>
           </div>
-          <div className="text-[11px] text-emerald-600 font-medium mt-1">
-            +{report.kpis.ordersGrowthPercent}% velocity
+          <div className="text-[11px] text-slate-400 font-medium mt-1">
+            {report.kpis.ordersGrowthPercent > 0 ? `+${report.kpis.ordersGrowthPercent}% velocity` : 'Verified orders'}
           </div>
         </div>
 

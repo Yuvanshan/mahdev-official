@@ -10,7 +10,7 @@ import {
 import { FirestoreService } from '../types/firestore';
 import { notificationService } from './notificationService';
 import { db, sanitizeForFirestore } from '../lib/firebase';
-import { doc, setDoc, getDocs, collection } from 'firebase/firestore';
+import { doc, setDoc, getDocs, collection, deleteDoc } from 'firebase/firestore';
 
 export function mapFirestoreServiceToBookable(fs: FirestoreService): BookableServiceItem {
   const meta = (fs.metadata || {}) as any;
@@ -77,7 +77,24 @@ class UniversalBookingService {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        this.bookings = JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          const testEmails = ['test', 'example.com', 'fake', 'dummy'];
+          const genuine = parsed.filter((b: any) => {
+            if (!b || !b.id) return false;
+            if (typeof b.id === 'string' && (b.id.startsWith('TEST-') || b.id.startsWith('FAKE-') || b.id.startsWith('DEMO-'))) return false;
+            const email = (b.customer?.email || '').toLowerCase();
+            const name = (b.customer?.fullName || '').toLowerCase();
+            if (testEmails.some((t) => email.includes(t) || name.includes(t))) return false;
+            return true;
+          });
+          this.bookings = genuine;
+          if (genuine.length !== parsed.length) {
+            this.saveToStorage();
+          }
+        } else {
+          this.bookings = [];
+        }
       } else {
         this.bookings = [];
       }
@@ -513,6 +530,44 @@ class UniversalBookingService {
     booking.updatedAt = new Date().toISOString();
     this.saveToStorage();
     return { success: true, booking };
+  }
+
+  public async deleteBooking(id: string): Promise<{ success: boolean; error?: string }> {
+    const cleanId = id.trim();
+    const index = this.bookings.findIndex((b) => b.id.toLowerCase() === cleanId.toLowerCase());
+    if (index !== -1) {
+      this.bookings.splice(index, 1);
+      this.saveToStorage();
+    }
+    try {
+      await deleteDoc(doc(db, 'bookings', cleanId));
+    } catch (e) {
+      console.warn(`[BookingService] Firestore booking delete error for ${cleanId}:`, e);
+    }
+    return { success: true };
+  }
+
+  public async clearAllTestBookings(): Promise<{ removedCount: number }> {
+    const initialCount = this.bookings.length;
+    const testEmails = ['test', 'example.com', 'fake', 'dummy'];
+    const genuine = this.bookings.filter((b) => {
+      if (typeof b.id === 'string' && (b.id.startsWith('TEST-') || b.id.startsWith('FAKE-') || b.id.startsWith('DEMO-'))) return false;
+      const email = (b.customer?.email || '').toLowerCase();
+      const name = (b.customer?.fullName || '').toLowerCase();
+      if (testEmails.some((t) => email.includes(t) || name.includes(t))) return false;
+      return true;
+    });
+
+    const removed = this.bookings.filter((b) => !genuine.includes(b));
+    for (const b of removed) {
+      try {
+        await deleteDoc(doc(db, 'bookings', b.id));
+      } catch {}
+    }
+
+    this.bookings = genuine;
+    this.saveToStorage();
+    return { removedCount: initialCount - genuine.length };
   }
 }
 

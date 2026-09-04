@@ -307,6 +307,15 @@ class AnalyticsService {
     }
   }
 
+  public clearAnalyticsEvents(): void {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem(ANALYTICS_STORAGE_KEY);
+      }
+      this.eventQueue = [];
+    } catch {}
+  }
+
   public getExecutiveReport(timeRange: TimeRangeFilter = '30d', targetCurrency: string = 'LKR'): ExecutiveReportData {
     const rawEvents = this.getRawEvents();
     const allOrders = orderService.getAllOrders();
@@ -392,12 +401,42 @@ class AnalyticsService {
 
     // 3. Unique sessions & pageviews
     const uniqueSessions = new Set(filteredEvents.map((e) => e.sessionId));
-    const totalPageViews = Math.max(
-      filteredEvents.filter((e) => e.type === 'page_view' || e.type === 'division_view').length,
-      Math.max(124, (completedOrdersCount + filteredBookings.length) * 14)
-    );
+    const totalPageViews = filteredEvents.filter((e) => e.type === 'page_view' || e.type === 'division_view').length;
 
-    // 4. Daily Trends (Last 7 Days or 14 Days)
+    // Customer breakdown from genuine orders and bookings
+    const customerEmailMap: Record<string, { orders: number; bookings: number; isCorporate: boolean }> = {};
+    filteredOrders.forEach((o) => {
+      const email = (o.customer?.email || '').toLowerCase().trim();
+      if (!email) return;
+      if (!customerEmailMap[email]) {
+        customerEmailMap[email] = { orders: 0, bookings: 0, isCorporate: !!(o.customer?.company && o.customer.company.trim()) };
+      }
+      customerEmailMap[email].orders += 1;
+      if (o.customer?.company && o.customer.company.trim()) customerEmailMap[email].isCorporate = true;
+    });
+
+    filteredBookings.forEach((b) => {
+      const email = (b.customer?.email || '').toLowerCase().trim();
+      if (!email) return;
+      if (!customerEmailMap[email]) {
+        customerEmailMap[email] = { orders: 0, bookings: 0, isCorporate: !!(b.customer?.company && b.customer.company.trim()) };
+      }
+      customerEmailMap[email].bookings += 1;
+      if (b.customer?.company && b.customer.company.trim()) customerEmailMap[email].isCorporate = true;
+    });
+
+    const totalCustomers = Object.keys(customerEmailMap).length;
+    let corporateCount = 0;
+    let repeatCount = 0;
+    Object.values(customerEmailMap).forEach((c) => {
+      if (c.isCorporate) corporateCount++;
+      if (c.orders + c.bookings > 1) repeatCount++;
+    });
+    const individualCount = Math.max(0, totalCustomers - corporateCount);
+    const repeatOrderRatePercent = totalCustomers > 0 ? parseFloat(((repeatCount / totalCustomers) * 100).toFixed(1)) : 0;
+    const corporateClientRatioPercent = totalCustomers > 0 ? parseFloat(((corporateCount / totalCustomers) * 100).toFixed(1)) : 0;
+
+    // 4. Daily Trends
     const dailyMap: Record<string, { label: string; revenue: number; orders: number; bookings: number; visitors: number }> = {};
     const daysToShow = timeRange === 'today' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 14 : 30;
 
@@ -446,7 +485,7 @@ class AnalyticsService {
       revenue: val.revenue,
       orders: val.orders,
       bookings: val.bookings,
-      visitors: Math.max(val.visitors, val.orders * 4 + val.bookings * 3 + 8),
+      visitors: val.visitors,
     }));
 
     // 5. Division Performance
@@ -476,12 +515,12 @@ class AnalyticsService {
         }, 0);
       }
 
-      const pViews = filteredEvents.filter((e) => e.divisionId === div.id && (e.type === 'division_view' || e.type === 'page_view')).length + 45;
-      const inq = filteredEvents.filter((e) => e.divisionId === div.id && e.type === 'contact_submitted').length + 6;
-      const rfp = filteredEvents.filter((e) => e.divisionId === div.id && e.type === 'quote_requested').length + 4;
+      const pViews = filteredEvents.filter((e) => e.divisionId === div.id && (e.type === 'division_view' || e.type === 'page_view')).length;
+      const inq = filteredEvents.filter((e) => e.divisionId === div.id && e.type === 'contact_submitted').length;
+      const rfp = filteredEvents.filter((e) => e.divisionId === div.id && e.type === 'quote_requested').length;
 
       const totalConversions = divBookings.length + divOrders.length;
-      const convRate = pViews > 0 ? ((totalConversions / pViews) * 100) : 0;
+      const convRate = pViews > 0 ? parseFloat(((totalConversions / pViews) * 100).toFixed(1)) : (totalConversions > 0 ? 100 : 0);
 
       return {
         divisionId: div.id,
@@ -495,11 +534,11 @@ class AnalyticsService {
         ordersCount: divOrders.length,
         grossRevenue: divRev,
         revenueSharePercent: totalGrossRevenue > 0 ? Math.round((divRev / totalGrossRevenue) * 100) : 0,
-        conversionRatePercent: parseFloat(convRate.toFixed(1)),
+        conversionRatePercent: convRate,
       };
     });
 
-    // 6. Top Products Metric
+    // 6. Top Products Metric (Only genuine sales and views)
     const productSoldMap: Record<string, { units: number; rev: number }> = {};
     filteredOrders.forEach((o) => {
       o.items.forEach((item) => {
@@ -516,13 +555,13 @@ class AnalyticsService {
     });
 
     const topProducts: TopProductMetric[] = allProducts.map((p) => {
-      const sold = productSoldMap[p.id]?.units || (p.isFeatured ? 12 : 3);
-      const rev = productSoldMap[p.id]?.rev || (sold * p.price);
-      const pViews = filteredEvents.filter((e) => e.metadata?.productId === p.id).length + 38;
-      const cartAdds = filteredEvents.filter((e) => e.metadata?.productId === p.id && e.type === 'add_to_cart').length + 15;
-      const convRate = pViews > 0 ? parseFloat(((sold / pViews) * 100).toFixed(1)) : 4.5;
+      const sold = productSoldMap[p.id]?.units || 0;
+      const rev = productSoldMap[p.id]?.rev || 0;
+      const pViews = filteredEvents.filter((e) => e.metadata?.productId === p.id).length;
+      const cartAdds = filteredEvents.filter((e) => e.metadata?.productId === p.id && e.type === 'add_to_cart').length;
+      const convRate = pViews > 0 ? parseFloat(((sold / pViews) * 100).toFixed(1)) : (sold > 0 ? 100 : 0);
 
-      const currentStock = p.stockQuantity || 25;
+      const currentStock = p.stockQuantity ?? 0;
       const stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock' =
         currentStock <= 0 ? 'out_of_stock' : currentStock <= 5 ? 'low_stock' : 'in_stock';
 
@@ -543,7 +582,7 @@ class AnalyticsService {
       };
     }).sort((a, b) => b.revenue - a.revenue);
 
-    // 7. Top Services Metric
+    // 7. Top Services Metric (Only genuine bookings and views)
     const serviceBookingMap: Record<string, { count: number; rev: number; completed: number }> = {};
     filteredBookings.forEach((b) => {
       if (!serviceBookingMap[b.serviceId]) {
@@ -563,12 +602,12 @@ class AnalyticsService {
 
     const topServices: TopServiceMetric[] = allServices.map((s) => {
       const bData = serviceBookingMap[s.id] || {
-        count: s.popular ? 6 : 2,
-        rev: (s.popular ? 6 : 2) * (s.startingPrice || (curr === 'LKR' ? 45000 : 450)),
-        completed: 2,
+        count: 0,
+        rev: 0,
+        completed: 0,
       };
-      const views = filteredEvents.filter((e) => e.metadata?.serviceId === s.id).length + 42;
-      const convRate = views > 0 ? parseFloat(((bData.count / views) * 100).toFixed(1)) : 8.2;
+      const views = filteredEvents.filter((e) => e.metadata?.serviceId === s.id).length;
+      const convRate = views > 0 ? parseFloat(((bData.count / views) * 100).toFixed(1)) : (bData.count > 0 ? 100 : 0);
 
       return {
         id: s.id,
@@ -579,32 +618,88 @@ class AnalyticsService {
         completedCount: bData.completed,
         revenue: bData.rev,
         views,
-        averageBookingValue: bData.count > 0 ? Math.round(bData.rev / bData.count) : (s.startingPrice || (curr === 'LKR' ? 35000 : 350)),
+        averageBookingValue: bData.count > 0 ? Math.round(bData.rev / bData.count) : 0,
         conversionRate: convRate,
       };
     }).sort((a, b) => b.revenue - a.revenue);
 
-    // 8. Conversion Funnels
-    const productViewsCount = Math.max(140, completedOrdersCount * 12);
-    const cartAddsCount = Math.max(45, completedOrdersCount * 4);
-    const checkoutStartsCount = Math.max(22, completedOrdersCount * 2);
+    // 8. Conversion Funnels (Strictly genuine)
+    const productViewsCount = filteredEvents.filter((e) => e.type === 'product_view').length;
+    const cartAddsCount = filteredEvents.filter((e) => e.type === 'add_to_cart').length;
+    const checkoutStartsCount = filteredEvents.filter((e) => e.type === 'checkout_started').length;
 
     const ecommerceFunnel: FunnelStage[] = [
-      { id: '1', name: 'Product Views', count: productViewsCount, dropoffRate: 0, stepConversion: 100, overallConversion: 100 },
-      { id: '2', name: 'Added to Cart', count: cartAddsCount, dropoffRate: Math.round(((productViewsCount - cartAddsCount) / productViewsCount) * 100), stepConversion: Math.round((cartAddsCount / productViewsCount) * 100), overallConversion: Math.round((cartAddsCount / productViewsCount) * 100) },
-      { id: '3', name: 'Checkout Started', count: checkoutStartsCount, dropoffRate: Math.round(((cartAddsCount - checkoutStartsCount) / cartAddsCount) * 100), stepConversion: Math.round((checkoutStartsCount / cartAddsCount) * 100), overallConversion: Math.round((checkoutStartsCount / productViewsCount) * 100) },
-      { id: '4', name: 'Order Completed', count: completedOrdersCount, dropoffRate: Math.round(((checkoutStartsCount - completedOrdersCount) / checkoutStartsCount) * 100), stepConversion: checkoutStartsCount > 0 ? Math.round((completedOrdersCount / checkoutStartsCount) * 100) : 0, overallConversion: productViewsCount > 0 ? Math.round((completedOrdersCount / productViewsCount) * 100) : 0 },
+      {
+        id: '1',
+        name: 'Product Views',
+        count: productViewsCount,
+        dropoffRate: 0,
+        stepConversion: productViewsCount > 0 ? 100 : 0,
+        overallConversion: productViewsCount > 0 ? 100 : 0,
+      },
+      {
+        id: '2',
+        name: 'Added to Cart',
+        count: cartAddsCount,
+        dropoffRate: productViewsCount > 0 ? Math.max(0, Math.round(((productViewsCount - cartAddsCount) / productViewsCount) * 100)) : 0,
+        stepConversion: productViewsCount > 0 ? Math.min(100, Math.round((cartAddsCount / productViewsCount) * 100)) : 0,
+        overallConversion: productViewsCount > 0 ? Math.min(100, Math.round((cartAddsCount / productViewsCount) * 100)) : 0,
+      },
+      {
+        id: '3',
+        name: 'Checkout Started',
+        count: checkoutStartsCount,
+        dropoffRate: cartAddsCount > 0 ? Math.max(0, Math.round(((cartAddsCount - checkoutStartsCount) / cartAddsCount) * 100)) : 0,
+        stepConversion: cartAddsCount > 0 ? Math.min(100, Math.round((checkoutStartsCount / cartAddsCount) * 100)) : 0,
+        overallConversion: productViewsCount > 0 ? Math.min(100, Math.round((checkoutStartsCount / productViewsCount) * 100)) : 0,
+      },
+      {
+        id: '4',
+        name: 'Order Completed',
+        count: completedOrdersCount,
+        dropoffRate: checkoutStartsCount > 0 ? Math.max(0, Math.round(((checkoutStartsCount - completedOrdersCount) / checkoutStartsCount) * 100)) : 0,
+        stepConversion: checkoutStartsCount > 0 ? Math.min(100, Math.round((completedOrdersCount / checkoutStartsCount) * 100)) : (completedOrdersCount > 0 ? 100 : 0),
+        overallConversion: productViewsCount > 0 ? Math.min(100, Math.round((completedOrdersCount / productViewsCount) * 100)) : (completedOrdersCount > 0 ? 100 : 0),
+      },
     ];
 
-    const serviceViewsCount = Math.max(160, filteredBookings.length * 15);
-    const bookingStartsCount = Math.max(35, filteredBookings.length * 3);
+    const serviceViewsCount = filteredEvents.filter((e) => e.type === 'service_view' || e.type === 'page_view').length;
+    const bookingStartsCount = filteredEvents.filter((e) => e.type === 'booking_started').length;
     const confirmedBookingsCount = filteredBookings.filter((b) => b.status === 'confirmed' || b.status === 'completed' || b.status === 'scheduled').length;
 
     const bookingFunnel: FunnelStage[] = [
-      { id: '1', name: 'Service Catalog Views', count: serviceViewsCount, dropoffRate: 0, stepConversion: 100, overallConversion: 100 },
-      { id: '2', name: 'Booking Modal / Dates Picked', count: bookingStartsCount, dropoffRate: Math.round(((serviceViewsCount - bookingStartsCount) / serviceViewsCount) * 100), stepConversion: Math.round((bookingStartsCount / serviceViewsCount) * 100), overallConversion: Math.round((bookingStartsCount / serviceViewsCount) * 100) },
-      { id: '3', name: 'Booking Submitted', count: filteredBookings.length, dropoffRate: Math.round(((bookingStartsCount - filteredBookings.length) / bookingStartsCount) * 100), stepConversion: Math.round((filteredBookings.length / bookingStartsCount) * 100), overallConversion: Math.round((filteredBookings.length / serviceViewsCount) * 100) },
-      { id: '4', name: 'Confirmed & Scheduled', count: confirmedBookingsCount, dropoffRate: filteredBookings.length > 0 ? Math.round(((filteredBookings.length - confirmedBookingsCount) / filteredBookings.length) * 100) : 0, stepConversion: filteredBookings.length > 0 ? Math.round((confirmedBookingsCount / filteredBookings.length) * 100) : 0, overallConversion: serviceViewsCount > 0 ? Math.round((confirmedBookingsCount / serviceViewsCount) * 100) : 0 },
+      {
+        id: '1',
+        name: 'Service Catalog Views',
+        count: serviceViewsCount,
+        dropoffRate: 0,
+        stepConversion: serviceViewsCount > 0 ? 100 : 0,
+        overallConversion: serviceViewsCount > 0 ? 100 : 0,
+      },
+      {
+        id: '2',
+        name: 'Booking Modal / Dates Picked',
+        count: bookingStartsCount,
+        dropoffRate: serviceViewsCount > 0 ? Math.max(0, Math.round(((serviceViewsCount - bookingStartsCount) / serviceViewsCount) * 100)) : 0,
+        stepConversion: serviceViewsCount > 0 ? Math.min(100, Math.round((bookingStartsCount / serviceViewsCount) * 100)) : 0,
+        overallConversion: serviceViewsCount > 0 ? Math.min(100, Math.round((bookingStartsCount / serviceViewsCount) * 100)) : 0,
+      },
+      {
+        id: '3',
+        name: 'Booking Submitted',
+        count: filteredBookings.length,
+        dropoffRate: bookingStartsCount > 0 ? Math.max(0, Math.round(((bookingStartsCount - filteredBookings.length) / bookingStartsCount) * 100)) : 0,
+        stepConversion: bookingStartsCount > 0 ? Math.min(100, Math.round((filteredBookings.length / bookingStartsCount) * 100)) : (filteredBookings.length > 0 ? 100 : 0),
+        overallConversion: serviceViewsCount > 0 ? Math.min(100, Math.round((filteredBookings.length / serviceViewsCount) * 100)) : (filteredBookings.length > 0 ? 100 : 0),
+      },
+      {
+        id: '4',
+        name: 'Confirmed & Scheduled',
+        count: confirmedBookingsCount,
+        dropoffRate: filteredBookings.length > 0 ? Math.max(0, Math.round(((filteredBookings.length - confirmedBookingsCount) / filteredBookings.length) * 100)) : 0,
+        stepConversion: filteredBookings.length > 0 ? Math.min(100, Math.round((confirmedBookingsCount / filteredBookings.length) * 100)) : (confirmedBookingsCount > 0 ? 100 : 0),
+        overallConversion: serviceViewsCount > 0 ? Math.min(100, Math.round((confirmedBookingsCount / serviceViewsCount) * 100)) : (confirmedBookingsCount > 0 ? 100 : 0),
+      },
     ];
 
     // 9. Payment Gateways
@@ -641,18 +736,18 @@ class AnalyticsService {
       currencySymbol: currSymbol,
       kpis: {
         grossRevenue: totalGrossRevenue,
-        revenueGrowthPercent: 18.4,
+        revenueGrowthPercent: 0,
         totalOrders: completedOrdersCount,
-        ordersGrowthPercent: 12.1,
+        ordersGrowthPercent: 0,
         averageOrderValue: aov,
         totalBookings: filteredBookings.length,
         bookingsPipelineValue: bookingRevenueTarget,
-        totalRegisteredCustomers: Math.max(48, filteredOrders.length * 2 + filteredBookings.length),
-        corporateClientRatioPercent: 38,
-        overallStoreConversionPercent: ecommerceFunnel[3]?.overallConversion || 3.8,
-        bookingConversionPercent: bookingFunnel[3]?.overallConversion || 6.2,
+        totalRegisteredCustomers: totalCustomers,
+        corporateClientRatioPercent,
+        overallStoreConversionPercent: ecommerceFunnel[3]?.overallConversion || 0,
+        bookingConversionPercent: bookingFunnel[3]?.overallConversion || 0,
         totalPageViews,
-        uniqueSessionsCount: Math.max(uniqueSessions.size, Math.round(totalPageViews / 2.8)),
+        uniqueSessionsCount: uniqueSessions.size,
       },
       revenueByCurrency: {
         USD: orderRevenueUSD + bookingRevenueUSD,
@@ -666,9 +761,9 @@ class AnalyticsService {
       bookingFunnel,
       paymentGatewayDistribution,
       customerBreakdown: {
-        individualCount: 32,
-        corporateCount: 16,
-        repeatOrderRatePercent: 24.5,
+        individualCount,
+        corporateCount,
+        repeatOrderRatePercent,
       },
     };
   }

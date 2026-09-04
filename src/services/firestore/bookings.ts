@@ -10,6 +10,7 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  deleteDoc,
   query,
   where,
   orderBy,
@@ -223,6 +224,19 @@ export const firestoreBookingsService = {
     } catch (err) {
       console.warn('[Firestore Bookings] getAllBookings error:', err);
       return [];
+    }
+  },
+
+  /**
+   * Delete booking by ID from Firestore
+   */
+  async deleteBooking(id: string): Promise<boolean> {
+    try {
+      await deleteDoc(doc(db, 'bookings', id));
+      return true;
+    } catch (err) {
+      console.warn(`[Firestore Bookings] deleteBooking error for ${id}:`, err);
+      return false;
     }
   },
 };

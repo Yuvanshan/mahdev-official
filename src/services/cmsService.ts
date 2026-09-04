@@ -233,6 +233,7 @@ class CmsService {
           divisionKey: divKey,
           name: d.name || fallbackConfig.name,
           shortName: d.shortName || (fallbackConfig as any).shortName || d.name,
+          order: typeof d.order === 'number' && d.order > 0 ? d.order : (divKey === 'sws' ? 1 : divKey === 'u1' ? 2 : divKey === 'it' ? 3 : divKey === 'travels' ? 4 : 5),
           tagline: d.hero?.subtitle || d.shortDescription || fallbackConfig.tagline,
           description: d.description || fallbackConfig.description,
           badge: d.hero?.badge || fallbackConfig.badge,
@@ -259,6 +260,7 @@ class CmsService {
           updatedAt: d.updatedAt || now,
         };
       });
+      mapped.sort((a, b) => (a.order || 99) - (b.order || 99));
     } else if (entity === 'services') {
       mapped = rawItems.map((s) => {
         const divId = s.divisionId || s.division || 'sws';
@@ -938,6 +940,7 @@ class CmsService {
           id: divKey,
           name: item.name,
           shortName: item.shortName || item.name,
+          order: typeof item.order === 'number' ? item.order : undefined,
           description: item.description,
           shortDescription: item.heroSubheadline || item.tagline || item.description,
           imageUrl: item.heroImageUrl || item.imageUrl || '',
@@ -1149,6 +1152,39 @@ class CmsService {
     this.syncEntityItemToFirestore(entity, updatedItem);
 
     return updatedItem as T;
+  }
+
+  /**
+   * Reorder business divisions sequentially and sync to Firestore
+   */
+  public async reorderDivisions(orderedIds: string[]): Promise<void> {
+    const current: CmsDivision[] = (this.cache.divisions || []) as CmsDivision[];
+    orderedIds.forEach((rawId, idx) => {
+      const order = idx + 1;
+      const cleanId = rawId.replace('div-', '');
+      const found = current.find((d) => d.id === rawId || d.id === `div-${cleanId}` || d.divisionKey === cleanId);
+      if (found) {
+        found.order = order;
+      }
+    });
+
+    current.sort((a, b) => (a.order || 99) - (b.order || 99));
+    this.cache.divisions = [...current];
+    localStorage.setItem(this.getStorageKey('divisions'), JSON.stringify(this.cache.divisions));
+
+    adminService.logAudit({
+      action: 'CMS_REORDER_DIVISIONS',
+      entityType: 'divisions',
+      entityId: 'all',
+      details: `Reordered divisions: ${orderedIds.join(' > ')}`,
+      status: 'success',
+    });
+
+    this.notify('divisions');
+
+    // Sync to Firestore
+    const cleanIds = orderedIds.map((id) => id.replace('div-', ''));
+    await firestoreDivisionsService.reorderDivisions(cleanIds);
   }
 
   // Soft Deletion (marks isDeleted: true and sets deletedAt timestamp)
