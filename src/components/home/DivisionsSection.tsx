@@ -1,174 +1,380 @@
-import React from 'react';
-import { ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import React, { useMemo, useRef } from 'react';
+import { ArrowRight, Sparkles, Calendar, Layers, ShieldCheck, MessageCircle, ExternalLink } from 'lucide-react';
+import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import { SectionContainer } from '../ui/SectionContainer';
-import { H2, Body, Caption } from '../ui/Heading';
-import { Badge } from '../ui/Badge';
-import { IconRenderer } from '../ui/IconRenderer';
-import {
-  ScrollReveal,
-  TiltCard,
-} from '../motion/MotionWrappers';
-import { DIVISIONS, DIVISION_LIST } from '../../config/divisions';
-import { BRAND_CONFIG } from '../../config/brand';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
-import { DivisionId } from '../../types';
+import { openWhatsAppInquiry } from '../../utils/whatsapp';
+import { ParallelWatermark } from '../motion/ParallelScroll';
+import { useDeviceMotion } from '../motion/MotionWrappers';
 
 interface DivisionsSectionProps {
   onNavigate: (route: string) => void;
 }
 
+interface BentoDivisionItem {
+  id: string;
+  name: string;
+  badge: string;
+  subtitle: string;
+  summary: string;
+  image: string;
+  route: string;
+  metrics: string[];
+  isFeatured?: boolean;
+}
+
+const DEFAULT_DIVISION_BENTO_DATA: BentoDivisionItem[] = [
+  {
+    id: 'sws',
+    name: 'SWS Event Management',
+    badge: 'Primary Flagship Division',
+    subtitle: 'Luxury Weddings, Stage Decor & 5,000+ Rental Units',
+    summary: 'Sri Lanka’s premier event production unit for grand floral mandaps, banquet staging, concert AV, and comprehensive equipment rentals.',
+    image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=85',
+    route: '/sws',
+    metrics: ['5,000+ Rentals', 'Floral Mandaps', 'Stage Lighting', 'Audio/Visual'],
+    isFeatured: true,
+  },
+  {
+    id: 'u1',
+    name: 'U1 Studio',
+    badge: 'Cinema & Photography',
+    subtitle: 'Fine Art Visual Production',
+    summary: 'Ultra-HD commercial filmmaking, cinema wedding cinematography, and professional studio portraiture.',
+    image: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=800&q=80',
+    route: '/u1',
+    metrics: ['8K Cinema', 'Aerial Drones', 'Commercials'],
+    isFeatured: false,
+  },
+  {
+    id: 'it',
+    name: 'Mahdev IT & Solutions',
+    badge: 'Software & Cloud',
+    subtitle: 'Enterprise Engineering',
+    summary: 'Full-stack web applications, scalable mobile software, and secure cloud API architectures.',
+    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
+    route: '/it',
+    metrics: ['Web Apps', 'Mobile', 'Cloud 99.9%'],
+    isFeatured: false,
+  },
+  {
+    id: 'travels',
+    name: 'Mahdev Travels',
+    badge: 'Bespoke Travel',
+    subtitle: 'Curated Islandwide Expeditions',
+    summary: 'Dedicated luxury chauffeur fleets, boutique villa reservations, and personalized Ceylon journeys.',
+    image: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=800&q=80',
+    route: '/travels',
+    metrics: ['Chauffeur Fleet', 'Custom Itineraries', '24/7 Support'],
+    isFeatured: false,
+  },
+  {
+    id: 'mart',
+    name: 'Mahdev Online Mart',
+    badge: 'Decor & Tech Hardware',
+    subtitle: 'Premium Living Essentials',
+    summary: 'Curated home aesthetics, ambient interior decor, and verified smart technology delivered nationwide.',
+    image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=800&q=80',
+    route: '/mart',
+    metrics: ['Decor Items', 'Tech Hardware', 'Islandwide Courier'],
+    isFeatured: false,
+  },
+];
+
 export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }) => {
-  const { divisions, activeDivisions, companySettings } = useFirestoreDataContext();
+  const { companySettings, homepageConfig, divisions } = useFirestoreDataContext();
 
-  // Merge Firestore division data with division route/icon configs
-  const displayDivisions = React.useMemo(() => {
-    if (divisions && divisions.length > 0) {
-      return divisions
-        .filter((d) => d.status !== 'inactive')
-        .map((d) => {
-          const config = DIVISIONS[d.id as DivisionId] || DIVISION_LIST.find((item) => item.id === d.id) || {
-            id: d.id,
-            name: d.name,
-            shortName: d.name,
-            tagline: d.hero?.subtitle || '',
-            description: d.description,
-            route: `/${d.slug || d.id}`,
-            badge: d.hero?.badge || 'Enterprise Division',
-            iconName: 'Building',
-            color: '#0052FF',
-            coreServices: [],
-            stats: [],
-          };
+  const sectionConfig = homepageConfig?.divisionsSection;
+  if (sectionConfig?.enabled === false) return null;
 
-          return {
-            id: d.id,
-            name: d.name || config.name,
-            shortName: (config as any).shortName || d.name,
-            tagline: d.hero?.subtitle || (config as any).tagline || '',
-            description: d.description || config.description,
-            route: (config as any).route || `/${d.slug || d.id}`,
-            badge: d.hero?.badge || (config as any).badge || 'Active Division',
-            iconName: (config as any).iconName || 'Building',
-            color: (config as any).color || '#0052FF',
-            coreServices:
-              (d as any).coreServices && (d as any).coreServices.length > 0
-                ? (d as any).coreServices
-                : (config as any).coreServices || [],
-            stats:
-              (d as any).stats && (d as any).stats.length > 0
-                ? (d as any).stats
-                : (config as any).stats || [{ label: 'Operational Status', value: 'Active' }],
-            cardHighlight: (d as any).cardHighlight || (config as any).cardHighlight || '',
-          };
-        });
-    }
-    return [];
+  const sectionBadge = sectionConfig?.badge || 'Enterprise Portfolio';
+  const sectionTitle = sectionConfig?.title || 'Operating Divisions';
+  const sectionSubtitle =
+    sectionConfig?.subtitle ||
+    `Autonomous specialized units governed under ${companySettings?.name || 'Mahdev Group'} with direct in-house technical crews.`;
+
+  // Dynamically map divisions using live updates from Admin Portal / FirestoreDataContext
+  const bentoDivisions = useMemo<BentoDivisionItem[]>(() => {
+    const getCanonicalRoute = (id: string, fallbackRoute: string) => {
+      if (id === 'sws') return '/sws';
+      if (id === 'u1') return '/u1';
+      if (id === 'it') return '/it';
+      if (id === 'travels') return '/travels';
+      if (id === 'mart') return '/mart';
+      return fallbackRoute.startsWith('/') ? fallbackRoute : `/${fallbackRoute}`;
+    };
+
+    return DEFAULT_DIVISION_BENTO_DATA.map((fallback) => {
+      const liveDiv = divisions?.find(
+        (d) =>
+          d.id === fallback.id || d.slug === fallback.id || (d as any).divisionKey === fallback.id
+      );
+      if (liveDiv) {
+        return {
+          ...fallback,
+          name: liveDiv.name || fallback.name,
+          badge: liveDiv.badge || fallback.badge,
+          subtitle: liveDiv.tagline || liveDiv.shortDescription || fallback.subtitle,
+          summary: liveDiv.description || liveDiv.aboutText || fallback.summary,
+          image:
+            liveDiv.imageUrl ||
+            liveDiv.heroImageUrl ||
+            (liveDiv.hero as any)?.bgImage ||
+            fallback.image,
+          route: getCanonicalRoute(fallback.id, liveDiv.route || fallback.route),
+          metrics:
+            liveDiv.stats && liveDiv.stats.length > 0
+              ? liveDiv.stats.map((s) => `${s.value} ${s.label}`)
+              : fallback.metrics,
+        };
+      }
+      return {
+        ...fallback,
+        route: getCanonicalRoute(fallback.id, fallback.route),
+      };
+    });
   }, [divisions]);
 
-  const totalCount = displayDivisions.length;
+  const sws = bentoDivisions[0];
+
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const { reducedMotion, isTouch } = useDeviceMotion();
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start end', 'end start'],
+  });
+
+  const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 22, mass: 0.1 });
+  const yParallaxLeft = useTransform(smoothProgress, [0, 1], ['25px', '-25px']);
+  const yParallaxRight = useTransform(smoothProgress, [0, 1], ['-20px', '20px']);
+
+  const handleWhatsAppInquiry = (
+    e: React.MouseEvent,
+    division: BentoDivisionItem
+  ) => {
+    e.stopPropagation();
+    openWhatsAppInquiry({
+      title: `${division.name} Service Inquiry`,
+      divisionName: division.name,
+      category: division.badge,
+      imageUrl: division.image,
+      description: division.subtitle || division.summary,
+      type: 'general',
+    });
+  };
 
   return (
-    <SectionContainer
-      id="divisions"
-      background="subtle"
-      paddingY="xl"
-      hasBorderBottom
-    >
-      <ScrollReveal direction="up">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
-          <div className="max-w-2xl">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-[#0052FF] block mb-2">
-              Our Portfolio
-            </span>
-            <h2 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 mb-2">
-              Operating Business Divisions
+    <div ref={sectionRef} className="relative overflow-hidden bg-slate-50/50">
+      <ParallelWatermark text="03 // DIVISIONS" />
+      <SectionContainer id="divisions" background="subtle" paddingY="xl" hasBorderBottom>
+        {/* Editorial Header */}
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-[11px] font-mono uppercase tracking-wider text-slate-700 mb-2.5">
+              <Layers className="w-3.5 h-3.5 text-blue-600" />
+              <span>{sectionBadge}</span>
+            </div>
+            <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900">
+              {sectionTitle}
             </h2>
-            <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-              Dedicated industry mastery with turnkey execution under the unified governance of {companySettings?.name || 'Mahdev Group'}.
+          </div>
+          <div className="md:max-w-md">
+            <p className="text-slate-600 text-sm leading-relaxed font-normal">
+              {sectionSubtitle}
             </p>
-          </div>
-          <div className="mt-4 md:mt-0">
-            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-200/70 text-slate-700">
-              {totalCount} Active Divisions
-            </span>
+            <div className="flex items-center gap-2 mt-2 text-xs font-medium text-slate-500">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Direct inquiries active at 075 092 8078</span>
+            </div>
           </div>
         </div>
-      </ScrollReveal>
 
-      {totalCount === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 p-12 text-center bg-white">
-          <Sparkles className="w-8 h-8 text-slate-400 mx-auto mb-3" />
-          <h3 className="font-display font-bold text-slate-800 text-lg mb-1">No Divisions Available</h3>
-          <p className="text-slate-500 text-sm max-w-md mx-auto">
-            Divisions synchronized from Cloud Firestore will appear here.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {displayDivisions.map((division, idx) => (
-            <ScrollReveal key={division.id} direction="up" delay={idx * 0.06}>
-              <div
-                id={`division-card-${division.id}`}
-                onClick={() => onNavigate(division.route)}
-                className="group relative flex flex-col justify-between rounded-xl bg-white border border-slate-200/90 p-6 hover:border-blue-500 hover:shadow-md transition-all duration-200 cursor-pointer h-full"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-10 h-10 rounded-lg bg-blue-50 text-[#0052FF] flex items-center justify-center group-hover:bg-[#0052FF] group-hover:text-white transition-colors">
-                      <IconRenderer name={division.iconName} className="w-5 h-5" />
-                    </div>
-                    <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded">
-                      {division.badge}
-                    </span>
-                  </div>
+        {/* Bento Grid Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* 1. Flagship Card: SWS Event Management */}
+          {sws && (
+            <motion.div
+              style={{ y: yParallaxLeft }}
+              whileHover={{ y: -3 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => onNavigate(sws.route)}
+              className="lg:col-span-7 group relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-200/80 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-end min-h-[400px] lg:min-h-[440px]"
+            >
+              <img
+                src={sws.image}
+                alt={sws.name}
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-103 transition-transform duration-700 ease-out"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/65 to-transparent" />
 
-                  <h3 className="font-display text-lg font-bold text-slate-900 mb-1.5 group-hover:text-[#0052FF] transition-colors">
-                    {division.name}
-                  </h3>
-
-                  <p className="text-xs text-slate-600 leading-relaxed mb-5 line-clamp-2">
-                    {division.description}
-                  </p>
-
-                  {division.coreServices && division.coreServices.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-6">
-                      {division.coreServices.slice(0, 3).map((service: any, sIdx: number) => (
-                        <span
-                          key={sIdx}
-                          className="px-2 py-0.5 rounded text-[11px] font-medium text-slate-600 bg-slate-50 border border-slate-200/70"
-                        >
-                          {service.title ? service.title.split('&')[0] : (service.name || 'Service')}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+              <div className="relative p-6 sm:p-8 space-y-3.5 z-10">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1 rounded-md text-[10px] font-mono uppercase tracking-wider bg-rose-700 text-white font-semibold">
+                    {sws.badge}
+                  </span>
+                  <span className="px-2.5 py-1 rounded-md text-[10px] font-medium bg-white/10 text-white backdrop-blur-md border border-white/10">
+                    5,000+ Rental Inventory
+                  </span>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-500">
-                    {(division as any).cardHighlight || 'Specialized Solutions'}
-                  </span>
-                  <div className="inline-flex items-center gap-1 text-xs font-bold text-[#0052FF] group-hover:translate-x-0.5 transition-transform">
-                    <span>Explore</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                <div>
+                  <h3 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight group-hover:text-rose-200 transition-colors">
+                    {sws.name}
+                  </h3>
+                  <p className="text-slate-300 text-xs font-medium mt-1">
+                    {sws.subtitle}
+                  </p>
+                </div>
+
+                <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-xl">
+                  {sws.summary}
+                </p>
+
+                <div className="pt-4 border-t border-white/15 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap gap-1.5">
+                    {sws.metrics.map((m) => (
+                      <span
+                        key={m}
+                        className="px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-200 bg-black/40 border border-white/10"
+                      >
+                        {m}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => handleWhatsAppInquiry(e, sws)}
+                      title="Inquire via WhatsApp (0750928078)"
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-[#25D366] hover:bg-[#20bd5a] px-3.5 py-2 rounded-xl transition-colors shadow-xs cursor-pointer"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>WhatsApp</span>
+                    </button>
+
+                    <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl transition-colors border border-white/10">
+                      <span>Explore</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    </div>
                   </div>
                 </div>
               </div>
-            </ScrollReveal>
-          ))}
-        </div>
-      )}
+            </motion.div>
+          )}
 
-      {/* View All Divisions CTA Button */}
-      <div className="mt-12 text-center">
-        <button
-          onClick={() => onNavigate('/divisions')}
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-800 font-semibold text-xs hover:border-[#0052FF] hover:text-[#0052FF] hover:shadow-xs transition-all cursor-pointer group"
-        >
-          <span>View All Divisions & Portfolios</span>
-          <ArrowRight className="w-3.5 h-3.5 text-[#0052FF] group-hover:translate-x-1 transition-transform" />
-        </button>
-      </div>
-    </SectionContainer>
+          {/* 2. Side Stack: U1 Studio and Mahdev IT */}
+          <motion.div
+            style={{ y: yParallaxRight }}
+            className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6"
+          >
+            {bentoDivisions.slice(1, 3).map((div) => {
+              const badgeBg = div.id === 'u1' ? 'bg-amber-700' : 'bg-blue-700';
+              return (
+                <motion.div
+                  key={div.id}
+                  whileHover={{ y: -3 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={() => onNavigate(div.route)}
+                  className="group relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-200/80 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-end min-h-[210px] p-6"
+                >
+                  <img
+                    src={div.image}
+                    alt={div.name}
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-103 transition-transform duration-700 ease-out"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent" />
+
+                  <div className="relative z-10 space-y-2">
+                    <span className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-mono font-semibold uppercase tracking-wider text-white ${badgeBg}`}>
+                      {div.badge}
+                    </span>
+                    <h3 className="font-display text-lg font-bold text-white group-hover:text-slate-200 transition-colors">
+                      {div.name}
+                    </h3>
+                    <p className="text-slate-300 text-xs line-clamp-1">
+                      {div.summary}
+                    </p>
+
+                    <div className="pt-2 border-t border-white/15 flex items-center justify-between text-xs text-slate-300">
+                      <button
+                        type="button"
+                        onClick={(e) => handleWhatsAppInquiry(e, div)}
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        <span>Inquire 0750928078</span>
+                      </button>
+                      <span className="font-medium text-slate-300 group-hover:text-white flex items-center gap-1 transition-colors">
+                        Explore <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+
+          {/* 3. Bottom Row: Mahdev Travels and Mahdev Online Mart */}
+          {bentoDivisions.slice(3, 5).map((div) => {
+            const badgeBg = div.id === 'travels' ? 'bg-teal-700' : 'bg-indigo-700';
+            return (
+              <motion.div
+                key={div.id}
+                whileHover={{ y: -3 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => onNavigate(div.route)}
+                className="lg:col-span-6 group relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-200/80 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-end min-h-[230px] p-6 sm:p-7"
+              >
+                <img
+                  src={div.image}
+                  alt={div.name}
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-103 transition-transform duration-700 ease-out"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent" />
+
+                <div className="relative z-10 space-y-2.5">
+                  <span className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-mono font-semibold uppercase tracking-wider text-white ${badgeBg}`}>
+                    {div.badge}
+                  </span>
+                  <h3 className="font-display text-xl font-bold text-white group-hover:text-slate-200 transition-colors">
+                    {div.name}
+                  </h3>
+                  <p className="text-slate-300 text-xs line-clamp-1 max-w-lg">
+                    {div.summary}
+                  </p>
+
+                  <div className="pt-3 border-t border-white/15 flex items-center justify-between text-xs">
+                    <div className="flex gap-2">
+                      {div.metrics.map((m) => (
+                        <span
+                          key={m}
+                          className="px-2.5 py-0.5 rounded-md text-[10px] font-medium text-slate-200 bg-black/40 border border-white/10"
+                        >
+                          {m}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={(e) => handleWhatsAppInquiry(e, div)}
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        <span>Inquire</span>
+                      </button>
+                      <span className="font-medium text-slate-300 group-hover:text-white flex items-center gap-1 transition-colors">
+                        View Division <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </SectionContainer>
+    </div>
   );
 };

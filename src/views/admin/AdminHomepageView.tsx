@@ -106,16 +106,32 @@ export const AdminHomepageView: React.FC = () => {
   };
 
   useEffect(() => {
-    if (homepageConfig) {
-      setConfig(homepageConfig);
-    } else {
-      const loaded = cmsService.getHomepageConfig();
-      setConfig(loaded);
+    if (!isDirty) {
+      if (homepageConfig) {
+        // Ensure milestones has default achievements if empty
+        const milestonesData = homepageConfig.milestones || ({} as any);
+        const achievements =
+          milestonesData.achievements && milestonesData.achievements.length > 0
+            ? milestonesData.achievements
+            : (cmsService.getHomepageConfig().milestones.achievements || []);
+        setConfig({
+          ...homepageConfig,
+          milestones: {
+            ...milestonesData,
+            achievements,
+            achievementsTitle: milestonesData.achievementsTitle || 'Key Verified Achievements',
+            achievementsSubtitle: milestonesData.achievementsSubtitle || 'Official Company Metrics',
+          },
+        });
+      } else {
+        const loaded = cmsService.getHomepageConfig();
+        setConfig(loaded);
+      }
     }
     setAllServices(cmsService.getAll<CmsServiceEntity>('services'));
     setAllProducts(cmsService.getAll<CmsProduct>('products'));
     setAllProjects(cmsService.getAll<CmsPortfolioProject>('portfolio'));
-  }, [homepageConfig]);
+  }, [homepageConfig, isDirty]);
 
   const handleSave = async () => {
     setIsSaving(true);

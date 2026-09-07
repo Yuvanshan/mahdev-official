@@ -265,3 +265,60 @@ export function formatBytes(bytes: number, decimals = 1): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
+
+/**
+ * Resizes and compresses base64 Data URLs using an offscreen canvas.
+ * Reduces 3-5MB raw base64 data URLs to ~30-60KB WebP/JPEG,
+ * protecting browser localStorage and Firestore document boundaries.
+ */
+export function compressDataUrl(
+  dataUrl: string,
+  maxDimension = 1200,
+  quality = 0.75
+): Promise<string> {
+  if (typeof window === 'undefined') return Promise.resolve(dataUrl);
+  if (!dataUrl || !dataUrl.startsWith('data:image/') || dataUrl.length < 25000 || dataUrl.includes('image/svg+xml')) {
+    return Promise.resolve(dataUrl);
+  }
+
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          let { width, height } = img;
+          if (width > maxDimension || height > maxDimension) {
+            const ratio = Math.min(maxDimension / width, maxDimension / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(dataUrl);
+            return;
+          }
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Try WebP first, fallback to JPEG
+          let compressed = canvas.toDataURL('image/webp', quality);
+          if (!compressed.startsWith('data:image/webp')) {
+            compressed = canvas.toDataURL('image/jpeg', quality);
+          }
+
+          resolve(compressed.length < dataUrl.length ? compressed : dataUrl);
+        } catch {
+          resolve(dataUrl);
+        }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    } catch {
+      resolve(dataUrl);
+    }
+  });
+}

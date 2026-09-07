@@ -1,13 +1,14 @@
 import React, { useMemo } from 'react';
 import {
-  Coffee,
-  Utensils,
-  HeartPulse,
   Smartphone,
   ShoppingBag,
   Home,
   ChevronRight,
   Package,
+  Sparkles,
+  Zap,
+  Headphones,
+  Laptop,
 } from 'lucide-react';
 import { MART_CATEGORIES, MartCategory, mapFirestoreCategoryToMart } from '../../data/martData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
@@ -42,12 +43,14 @@ export const MartCategoriesSection: React.FC<MartCategoriesSectionProps> = ({
 
   const getCategoryIcon = (iconName: string) => {
     switch (iconName) {
-      case 'Coffee':
-        return <Coffee className="w-5 h-5 text-amber-600" />;
-      case 'Utensils':
-        return <Utensils className="w-5 h-5 text-emerald-600" />;
-      case 'HeartPulse':
-        return <HeartPulse className="w-5 h-5 text-rose-600" />;
+      case 'Sparkles':
+        return <Sparkles className="w-5 h-5 text-amber-500" />;
+      case 'Zap':
+        return <Zap className="w-5 h-5 text-indigo-500" />;
+      case 'Headphones':
+        return <Headphones className="w-5 h-5 text-rose-500" />;
+      case 'Laptop':
+        return <Laptop className="w-5 h-5 text-teal-600" />;
       case 'Smartphone':
         return <Smartphone className="w-5 h-5 text-blue-600" />;
       case 'ShoppingBag':

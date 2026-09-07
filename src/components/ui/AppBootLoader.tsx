@@ -69,10 +69,10 @@ export const AppBootLoader: React.FC<AppBootLoaderProps> = ({
     {
       id: 'mart',
       name: 'Mahdev Online Mart',
-      shortName: 'Online Mart & Tech',
+      shortName: 'Decor & Smart Tech',
       icon: ShoppingBag,
       color: '#7C3AED',
-      badge: 'Hardware & Ceylon Tea',
+      badge: 'Event Decor & Smart Tech',
       statusText: 'Hydrating verified product catalog & checkout engine...',
     },
   ];

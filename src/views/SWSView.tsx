@@ -104,7 +104,7 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
           <div className="flex items-center gap-6">
             <button
               onClick={() => onNavigate('/')}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-[#0052FF] transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
               <span>Mahdev Group</span>
@@ -115,31 +115,31 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
             <nav className="flex items-center gap-5 text-xs font-semibold text-slate-600">
               <button
                 onClick={() => scrollToAnchor('services')}
-                className="hover:text-[#0052FF] transition-colors cursor-pointer"
+                className="hover:text-blue-600 transition-colors cursor-pointer"
               >
                 Services
               </button>
               <button
                 onClick={() => scrollToAnchor('rentals')}
-                className="hover:text-[#0052FF] transition-colors cursor-pointer text-blue-600 font-bold"
+                className="hover:text-blue-600 transition-colors cursor-pointer text-blue-600 font-bold"
               >
                 Rentals & Equipment (5,000+)
               </button>
               <button
                 onClick={() => scrollToAnchor('packages')}
-                className="hover:text-[#0052FF] transition-colors cursor-pointer"
+                className="hover:text-blue-600 transition-colors cursor-pointer"
               >
                 Turnkey Packages
               </button>
               <button
                 onClick={() => scrollToAnchor('gallery')}
-                className="hover:text-[#0052FF] transition-colors cursor-pointer"
+                className="hover:text-blue-600 transition-colors cursor-pointer"
               >
                 Cinematic Gallery
               </button>
               <button
                 onClick={() => scrollToAnchor('portfolio')}
-                className="hover:text-[#0052FF] transition-colors cursor-pointer"
+                className="hover:text-blue-600 transition-colors cursor-pointer"
               >
                 Portfolio & Cases
               </button>
@@ -229,20 +229,20 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <div className="p-2 rounded-lg bg-blue-50 text-[#0052FF] group-hover:bg-[#0052FF] group-hover:text-white transition-colors">
+                  <div className="p-2 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                     <IconRenderer name={sister.iconName} className="w-4 h-4" />
                   </div>
                   <Badge size="sm" variant="default" className="text-[10px]">
                     {sister.badge}
                   </Badge>
                 </div>
-                <h4 className="font-display text-sm font-bold text-slate-900 group-hover:text-[#0052FF] transition-colors mb-1">
+                <h4 className="font-display text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors mb-1">
                   {sister.name}
                 </h4>
                 <p className="text-xs text-slate-500 line-clamp-2">{sister.tagline}</p>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-700 group-hover:text-[#0052FF]">
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-700 group-hover:text-blue-600">
                 <span>Explore {sister.shortName}</span>
                 <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
               </div>

@@ -56,8 +56,12 @@ export interface CmsDivision extends BaseCmsEntity {
 export interface CmsService extends BaseCmsEntity {
   divisionId: DivisionId;
   divisionName: string;
+  category?: string;
+  categoryId?: string;
   title: string;
   description: string;
+  imageUrl?: string;
+  images?: string[];
   features: string[];
   iconName: string;
   popular: boolean;
@@ -348,6 +352,24 @@ export interface DynamicSectionItem {
   widgets?: DynamicWidget[];
 }
 
+export interface HeroShowcaseSlideItem {
+  id: string;
+  name: string;
+  badge: string;
+  tagline: string;
+  highlight: string;
+  image: string;
+  route: string;
+}
+
+export interface EnterpriseStandardGuarantee {
+  id?: string;
+  title: string;
+  description: string;
+  tag: string;
+  iconName?: string;
+}
+
 // 15. Homepage CMS Configuration
 export interface HomepageCmsConfig {
   welcomeAnimation?: {
@@ -371,6 +393,7 @@ export interface HomepageCmsConfig {
     secondaryCtaLabel: string;
     secondaryCtaLink: string;
     metrics: { label: string; value: string; subtext?: string }[];
+    showcaseItems?: HeroShowcaseSlideItem[];
   };
   intro: {
     badge: string;
@@ -390,6 +413,7 @@ export interface HomepageCmsConfig {
     title?: string;
     subtitle?: string;
     enabled?: boolean;
+    guarantees?: EnterpriseStandardGuarantee[];
   };
   statistics?: {
     badge?: string;

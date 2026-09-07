@@ -455,7 +455,8 @@ class FirestoreServiceRepository {
       {
         id: 'sws',
         name: 'SWS Event Management',
-        slug: 'sws-event-management',
+        slug: 'sws',
+        route: '/sws',
         description: 'Elite corporate summits, theatrical galas, luxury weddings, and 360° technical staging.',
         logo: '/assets/images/sws_logo.png',
         hero: {
@@ -477,7 +478,8 @@ class FirestoreServiceRepository {
       {
         id: 'u1',
         name: 'U1 Studio',
-        slug: 'u1-studio',
+        slug: 'u1',
+        route: '/u1',
         description: 'Cinema-grade cinematography, high-fashion photography, aerial drone capture, and post-production.',
         logo: '/assets/images/u1_logo.png',
         hero: {
@@ -499,7 +501,8 @@ class FirestoreServiceRepository {
       {
         id: 'it',
         name: 'Mahdev IT & Solutions',
-        slug: 'it-solutions',
+        slug: 'it',
+        route: '/it',
         description: 'Enterprise full-stack architectures, high-performance web systems, cloud DevOps, and AI software.',
         logo: '/assets/images/it_logo.png',
         hero: {
@@ -521,7 +524,8 @@ class FirestoreServiceRepository {
       {
         id: 'travels',
         name: 'Mahdev Travels',
-        slug: 'mahdev-travels',
+        slug: 'travels',
+        route: '/travels',
         description: 'Curated luxury expeditions, private chauffeur fleets, Ceylon cultural tours, and VIP safari retreats.',
         logo: '/assets/images/travels_logo.png',
         hero: {

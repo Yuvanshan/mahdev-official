@@ -16,8 +16,10 @@ import {
   X,
   ArrowUp,
   ArrowDown,
+  Image as ImageIcon,
+  FolderTree,
 } from 'lucide-react';
-import { CmsService } from '../../types/cms';
+import { CmsService, CmsCategory } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
 import { firestoreServicesService } from '../../services/firestore/services';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
@@ -25,19 +27,24 @@ import { Button } from '../../components/ui/Button';
 import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
+import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
+import { QuickCategoryCreator } from '../../components/admin/QuickCategoryCreator';
 import { DivisionId } from '../../types';
 import { formatCurrency, formatLKR } from '../../utils/currency';
 
 export const AdminServicesView: React.FC = () => {
   const { refreshAll } = useFirestoreDataContext();
   const [services, setServices] = useState<CmsService[]>([]);
+  const [categories, setCategories] = useState<CmsCategory[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [divisionFilter, setDivisionFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'deleted'>('all');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Modal States
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
   const [editingService, setEditingService] = useState<CmsService | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -49,8 +56,10 @@ export const AdminServicesView: React.FC = () => {
   const [formData, setFormData] = useState({
     divisionId: 'sws' as DivisionId,
     divisionName: 'SWS Event Management',
+    category: '',
     title: '',
     description: '',
+    imageUrl: '',
     features: [''],
     iconName: 'Sparkles',
     popular: false,
@@ -72,20 +81,35 @@ export const AdminServicesView: React.FC = () => {
   };
 
   const loadServices = () => {
-    const data = cmsService.getAll<CmsService>('services', {
+    let data = cmsService.getAll<CmsService>('services', {
       search: searchQuery,
       divisionId: divisionFilter,
       status: statusFilter,
       includeDeleted: statusFilter === 'deleted' || statusFilter === 'all',
     });
+
+    if (categoryFilter !== 'all') {
+      data = data.filter(
+        (s) => s.category === categoryFilter || s.badge === categoryFilter
+      );
+    }
+
     setServices(data);
+
+    // Load available categories
+    const allCats = cmsService.getAll<CmsCategory>('categories');
+    setCategories(allCats);
   };
 
   useEffect(() => {
     loadServices();
-    const unsub = cmsService.subscribe('services', loadServices);
-    return () => unsub();
-  }, [searchQuery, divisionFilter, statusFilter]);
+    const unsubServices = cmsService.subscribe('services', loadServices);
+    const unsubCategories = cmsService.subscribe('categories', loadServices);
+    return () => {
+      unsubServices();
+      unsubCategories();
+    };
+  }, [searchQuery, divisionFilter, categoryFilter, statusFilter]);
 
   const handleMove = async (index: number, direction: 'up' | 'down') => {
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
@@ -113,8 +137,10 @@ export const AdminServicesView: React.FC = () => {
     setFormData({
       divisionId: 'sws',
       divisionName: 'SWS Event Management',
+      category: '',
       title: '',
       description: '',
+      imageUrl: '',
       features: ['24/7 Dedicated Concierge', 'Custom Architectural CAD Renderings', 'High Reliability Delivery'],
       iconName: 'Sparkles',
       popular: false,
@@ -134,8 +160,10 @@ export const AdminServicesView: React.FC = () => {
     setFormData({
       divisionId: srv.divisionId,
       divisionName: srv.divisionName,
+      category: srv.category || '',
       title: srv.title,
       description: srv.description,
+      imageUrl: srv.imageUrl || (srv.images && srv.images[0]) || '',
       features: srv.features.length > 0 ? [...srv.features] : [''],
       iconName: srv.iconName || 'Sparkles',
       popular: srv.popular,
@@ -200,8 +228,35 @@ export const AdminServicesView: React.FC = () => {
     setIsSaving(true);
     try {
       const cleanFeatures = formData.features.map((f) => f.trim()).filter(Boolean);
+      const img = formData.imageUrl.trim();
+      const resolvedCategory = formData.category.trim() || formData.badge.trim() || 'General';
+
+      // Ensure category exists in categories collection
+      const existingCategory = cmsService
+        .getAll<CmsCategory>('categories')
+        .find((c) => c.name.toLowerCase() === resolvedCategory.toLowerCase());
+
+      if (!existingCategory && resolvedCategory !== 'General') {
+        cmsService.create<CmsCategory>('categories', {
+          name: resolvedCategory,
+          slug: resolvedCategory
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, ''),
+          divisionId: formData.divisionId,
+          description: `Services category for ${resolvedCategory}`,
+          iconName: 'Sparkles',
+          itemCount: 1,
+          displayOrder: 1,
+          isActive: true,
+        });
+      }
+
       const payload = {
         ...formData,
+        category: resolvedCategory,
+        imageUrl: img || undefined,
+        images: img ? [img] : undefined,
         features: cleanFeatures.length > 0 ? cleanFeatures : ['Professional Service Consultation'],
       };
 
@@ -295,6 +350,19 @@ export const AdminServicesView: React.FC = () => {
           </select>
 
           <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 font-semibold cursor-pointer"
+          >
+            <option value="all">All Categories ({categories.length})</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+
+          <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
             className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 font-semibold cursor-pointer"
@@ -361,9 +429,17 @@ export const AdminServicesView: React.FC = () => {
                     </td>
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                          <Briefcase className="w-4 h-4" />
-                        </div>
+                        {srv.imageUrl || (srv.images && srv.images[0]) ? (
+                          <img
+                            src={srv.imageUrl || (srv.images && srv.images[0])}
+                            alt=""
+                            className="w-8 h-8 rounded-lg object-cover border border-slate-200 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                            <Briefcase className="w-4 h-4" />
+                          </div>
+                        )}
                         <div>
                           <div className="flex items-center gap-1.5">
                             <span className="font-bold text-slate-900">{srv.title}</span>
@@ -373,9 +449,17 @@ export const AdminServicesView: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">
-                            {srv.divisionName}
-                          </span>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">
+                              {srv.divisionName}
+                            </span>
+                            {(srv.category || srv.badge) && (
+                              <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200/50">
+                                <FolderTree className="w-2.5 h-2.5 text-blue-500" />
+                                {srv.category || srv.badge}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -459,8 +543,8 @@ export const AdminServicesView: React.FC = () => {
         maxWidth="2xl"
       >
         <form onSubmit={handleSave} className="space-y-4 text-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-1">
               <label className="block font-semibold text-slate-700 mb-1">Service Title *</label>
               <input
                 type="text"
@@ -469,13 +553,13 @@ export const AdminServicesView: React.FC = () => {
                   setFormData({ ...formData, title: e.target.value });
                   setIsDirty(true);
                 }}
-                placeholder="e.g. Cinema 8K Documentaries & Commercials"
+                placeholder="e.g. Cinema 8K Documentaries"
                 className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
               {formErrors.title && <p className="text-red-600 text-[10px] mt-0.5">{formErrors.title}</p>}
             </div>
 
-            <div>
+            <div className="sm:col-span-1">
               <label className="block font-semibold text-slate-700 mb-1">Division *</label>
               <select
                 value={formData.divisionId}
@@ -487,6 +571,50 @@ export const AdminServicesView: React.FC = () => {
                 <option value="it">Mahdev IT & Solutions</option>
                 <option value="travels">Mahdev Travels</option>
                 <option value="mart">Mahdev Online Mart</option>
+              </select>
+            </div>
+
+            <div className="sm:col-span-1">
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-semibold text-slate-700">Category</label>
+                <QuickCategoryCreator
+                  currentDivisionId={formData.divisionId}
+                  onCategoryCreated={(newCat) => {
+                    setCategories((prev) => Array.from(new Set([...prev, newCat])));
+                    setFormData((prev) => ({
+                      ...prev,
+                      category: newCat.name,
+                      badge: prev.badge || newCat.name,
+                    }));
+                    setIsDirty(true);
+                    addToast(
+                      'success',
+                      'Category Created',
+                      `"${newCat.name}" created and assigned to service.`
+                    );
+                  }}
+                  buttonLabel="+ Manual Add"
+                />
+              </div>
+              <select
+                value={formData.category}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData({
+                    ...formData,
+                    category: val,
+                    badge: formData.badge || val,
+                  });
+                  setIsDirty(true);
+                }}
+                className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              >
+                <option value="">-- General / No Category --</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.name} ({c.divisionId.toUpperCase()})
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -504,6 +632,53 @@ export const AdminServicesView: React.FC = () => {
               className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
             {formErrors.description && <p className="text-red-600 text-[10px] mt-0.5">{formErrors.description}</p>}
+          </div>
+
+          {/* Service Image / Cover */}
+          <div>
+            <label className="block font-semibold text-slate-700 mb-1">Service Cover Image</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="url"
+                value={formData.imageUrl}
+                onChange={(e) => {
+                  setFormData({ ...formData, imageUrl: e.target.value });
+                  setIsDirty(true);
+                }}
+                placeholder="https://images.unsplash.com/... or choose from gallery"
+                className="grow px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMediaPickerOpen(true)}
+                className="shrink-0 flex items-center gap-1.5 cursor-pointer"
+              >
+                <ImageIcon className="w-3.5 h-3.5" />
+                Choose Media
+              </Button>
+            </div>
+            {formData.imageUrl && (
+              <div className="mt-2 relative w-full h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 group">
+                <img
+                  src={formData.imageUrl}
+                  alt="Service Preview"
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData({ ...formData, imageUrl: '' });
+                    setIsDirty(true);
+                  }}
+                  className="absolute top-2 right-2 bg-slate-900/80 hover:bg-red-600 text-white p-1 rounded-lg text-[10px] transition-colors cursor-pointer"
+                  title="Remove image"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Features / Deliverables List */}
@@ -653,6 +828,16 @@ export const AdminServicesView: React.FC = () => {
           </div>
         </form>
       </AdminModal>
+
+      <MediaPickerModal
+        isOpen={isMediaPickerOpen}
+        onClose={() => setIsMediaPickerOpen(false)}
+        currentUrl={formData.imageUrl}
+        onSelect={(url) => {
+          setFormData({ ...formData, imageUrl: url });
+          setIsDirty(true);
+        }}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AdminConfirmDialog

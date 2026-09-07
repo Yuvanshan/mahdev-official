@@ -40,7 +40,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
   const { user, isAuthenticated, logout } = useAuth();
   const { companySettings, siteSettings, divisions } = useFirestoreDataContext();
 
-  const primaryPhone = companySettings?.primaryPhone || '076 898 8970';
+  const primaryPhone = companySettings?.primaryPhone || '075 092 8078';
   const secondaryPhone = companySettings?.secondaryPhone || '075 092 8078';
   const email = companySettings?.email || 'info.mahdev.lk@gmail.com';
   const whatsappUrl = companySettings?.socials?.whatsapp || 'https://wa.me/94750928078';
@@ -68,7 +68,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
             route: config.route || `/${d.slug || d.id}`,
             badge: d.hero?.badge || config.badge || 'Enterprise Division',
             iconName: config.iconName || 'Building',
-            accentColor: (config as any).accentColor || (config as any).color || '#0052FF',
+            accentColor: (config as any).accentColor || (config as any).color || '#1d4ed8',
             tagline: d.hero?.subtitle || config.tagline || '',
             isPrimary: (config as any).isPrimary || d.id === 'sws',
           };
@@ -200,7 +200,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                         onClick={() => setIsServicesOpen(!isServicesOpen)}
                         className={`inline-flex items-center gap-1 px-3.5 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
                           isServicesOpen || currentDivision
-                            ? 'text-[#0052FF] bg-blue-50/60'
+                            ? 'text-blue-700 bg-blue-50/80'
                             : 'text-slate-700 hover:text-slate-900 hover:bg-slate-50'
                         }`}
                         aria-expanded={isServicesOpen}
@@ -208,71 +208,91 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                         <span>Divisions</span>
                         <ChevronDown
                           className={`w-4 h-4 transition-transform duration-200 ${
-                            isServicesOpen ? 'rotate-180 text-[#0052FF]' : 'text-slate-400'
+                            isServicesOpen ? 'rotate-180 text-blue-700' : 'text-slate-400'
                           }`}
                         />
                       </button>
 
-                      {/* Dropdown Menu */}
+                      {/* Dropdown Menu - perfectly constrained, responsive width, never overflows viewport */}
                       {isServicesOpen && (
-                        <div className="absolute left-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-200/80 p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                          <div className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">
-                            Our Operating Divisions
+                        <div className="absolute left-0 mt-2 w-[360px] sm:w-[410px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-slate-200/90 z-50 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col max-h-[calc(100vh-5rem)] overflow-hidden">
+                          <div className="px-4 py-3 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between shrink-0">
+                            <div>
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+                                Operating Divisions
+                              </span>
+                              <span className="text-[10px] text-slate-400">
+                                Autonomous specialized enterprise units
+                              </span>
+                            </div>
+                            <span className="text-[10px] font-mono font-semibold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200/60">
+                              {displayDivisions.length} Active
+                            </span>
                           </div>
-                          <div className="mt-1 space-y-1">
+
+                          {/* Scrollable division items container */}
+                          <div className="p-2 space-y-1 overflow-y-auto overscroll-contain max-h-[360px] divide-y divide-slate-50 scrollbar-thin">
                             {displayDivisions.map((division) => (
                               <button
                                 key={division.id}
                                 onClick={() => handleLinkClick(division.route)}
-                                className={`w-full flex items-center justify-between p-2.5 rounded-lg text-left transition-colors cursor-pointer ${
+                                className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all cursor-pointer group ${
                                   currentPath === division.route
-                                    ? 'bg-blue-50 text-[#0052FF]'
-                                    : 'hover:bg-slate-50 text-slate-800'
+                                    ? 'bg-blue-50/90 text-blue-700 ring-1 ring-blue-500/20'
+                                    : 'hover:bg-slate-50/90 text-slate-800'
                                 }`}
                               >
-                                <div className="flex items-center gap-2.5">
+                                <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
                                   <div
-                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 shadow-xs"
+                                    className="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0 shadow-xs group-hover:scale-105 transition-transform"
                                     style={{ backgroundColor: division.accentColor }}
                                   >
-                                    <IconRenderer name={division.iconName} className="w-4 h-4" />
+                                    <IconRenderer name={division.iconName} className="w-4.5 h-4.5" />
                                   </div>
-                                  <div>
-                                    <div className="text-sm font-semibold flex items-center gap-1.5">
-                                      <span>{division.name}</span>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="text-sm font-bold flex items-center gap-1.5 flex-wrap">
+                                      <span className="truncate group-hover:text-blue-600 transition-colors">
+                                        {division.name}
+                                      </span>
                                       {division.isPrimary && (
-                                        <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-amber-50 text-amber-800 border border-amber-300 shrink-0">
                                           PRIMARY
                                         </span>
                                       )}
                                     </div>
-                                    <div className="text-xs text-slate-500 line-clamp-1">
+                                    <div className="text-xs text-slate-500 truncate mt-0.5">
                                       {division.tagline}
                                     </div>
                                   </div>
                                 </div>
-                                <Badge size="sm" variant={division.isPrimary ? 'electric' : 'default'}>
+                                <Badge
+                                  size="sm"
+                                  variant={division.isPrimary ? 'electric' : 'default'}
+                                  className="shrink-0 text-[10px]"
+                                >
                                   {division.badge}
                                 </Badge>
                               </button>
                             ))}
                           </div>
-                          <div className="mt-2 pt-2 border-t border-slate-100 p-1 flex gap-2">
+
+                          {/* Action footer */}
+                          <div className="p-3 bg-slate-50/90 border-t border-slate-100 flex items-center gap-2 shrink-0">
                             <Button
                               variant="outline"
                               size="sm"
                               fullWidth
-                              onClick={() => handleLinkClick('/catalog')}
-                              className="text-xs"
+                              onClick={() => handleLinkClick('/divisions')}
+                              className="text-xs font-semibold"
                             >
-                              Catalog
+                              All Divisions
                             </Button>
                             <Button
                               variant="electric"
                               size="sm"
                               fullWidth
                               onClick={() => handleLinkClick('/book')}
-                              className="text-xs"
+                              className="text-xs font-bold shadow-xs"
                             >
                               Book Services
                             </Button>
@@ -289,7 +309,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                     onClick={() => handleLinkClick(item.href)}
                     className={`px-3.5 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
                       currentPath === item.href
-                        ? 'text-[#0052FF] font-semibold bg-blue-50/50'
+                        ? 'text-blue-700 font-semibold bg-blue-50/70'
                         : 'text-slate-700 hover:text-slate-900 hover:bg-slate-50'
                     }`}
                   >
@@ -311,7 +331,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                 <ShoppingCart className="w-4 h-4 text-blue-600 shrink-0" />
                 <span className="hidden md:inline">Cart</span>
                 {totalQuantity > 0 && (
-                  <span className="w-4.5 h-4.5 rounded-full bg-[#0052FF] text-white font-mono text-[9px] sm:text-[10px] font-bold flex items-center justify-center animate-scaleIn">
+                  <span className="w-4.5 h-4.5 rounded-full bg-blue-600 text-white font-mono text-[9px] sm:text-[10px] font-bold flex items-center justify-center animate-scaleIn">
                     {totalQuantity}
                   </span>
                 )}
@@ -490,12 +510,12 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                   onClick={() => handleLinkClick(division.route)}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left text-sm font-medium cursor-pointer ${
                     currentPath === division.route
-                      ? 'bg-blue-50 text-[#0052FF] font-semibold'
+                      ? 'bg-blue-50 text-blue-700 font-semibold'
                       : 'text-slate-700 hover:bg-slate-50'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <IconRenderer name={division.iconName} className="w-4 h-4 text-[#0052FF] shrink-0" />
+                    <IconRenderer name={division.iconName} className="w-4 h-4 text-blue-700 shrink-0" />
                     <span className="truncate">{division.name}</span>
                     {division.isPrimary && (
                       <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 shrink-0">

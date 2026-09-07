@@ -32,6 +32,7 @@ import {
   firestoreTrustedCompaniesService,
   firestoreTestimonialsService,
 } from './firestore';
+import { safeStorage } from '../utils/safeStorage';
 
 const CMS_STORAGE_PREFIX = 'mahdev_cms_v1_';
 
@@ -65,7 +66,7 @@ class CmsService {
         if (e.data?.type === 'cms_entity_updated' && e.data?.entity) {
           const entity = e.data.entity as CmsEntityType;
           const key = this.getStorageKey(entity);
-          const stored = localStorage.getItem(key);
+          const stored = safeStorage.getItem(key);
           if (stored) {
             try {
               this.cache[entity] = JSON.parse(stored);
@@ -130,7 +131,7 @@ class CmsService {
               },
             };
             const key = `${CMS_STORAGE_PREFIX}company_info`;
-            localStorage.setItem(key, JSON.stringify(merged));
+            safeStorage.setItem(key, JSON.stringify(merged));
             this.notify('pages');
           }
         },
@@ -238,7 +239,7 @@ class CmsService {
           description: d.description || fallbackConfig.description,
           badge: d.hero?.badge || fallbackConfig.badge,
           route: d.route || `/${d.slug || d.id}`,
-          accentColor: d.accentColor || fallbackConfig.accentColor || '#0052FF',
+          accentColor: d.accentColor || fallbackConfig.accentColor || '#1d4ed8',
           gradient: (fallbackConfig as any).gradient || 'from-blue-600 to-indigo-700',
           heroHeadline: d.hero?.title || d.heroHeadline || fallbackConfig.heroHeadline,
           heroSubheadline: d.hero?.subtitle || d.shortDescription || fallbackConfig.heroSubheadline,
@@ -450,9 +451,7 @@ class CmsService {
     }
 
     this.cache[entity] = mapped;
-    try {
-      localStorage.setItem(this.getStorageKey(entity), JSON.stringify(mapped));
-    } catch {}
+    safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(mapped));
 
     this.notify(entity);
   }
@@ -513,17 +512,17 @@ class CmsService {
 
     entities.forEach((entity) => {
       const key = this.getStorageKey(entity);
-      const stored = localStorage.getItem(key);
+      const stored = safeStorage.getItem(key);
       if (!stored || forceReset) {
         const seedData = this.getSeedDataForEntity(entity);
-        localStorage.setItem(key, JSON.stringify(seedData));
+        safeStorage.setItem(key, JSON.stringify(seedData));
         this.cache[entity] = seedData;
       } else {
         try {
           this.cache[entity] = JSON.parse(stored);
         } catch {
           const seedData = this.getSeedDataForEntity(entity);
-          localStorage.setItem(key, JSON.stringify(seedData));
+          safeStorage.setItem(key, JSON.stringify(seedData));
           this.cache[entity] = seedData;
         }
       }
@@ -886,9 +885,7 @@ class CmsService {
       .sort((a, b) => (a.order ?? a.sortOrder ?? 0) - (b.order ?? b.sortOrder ?? 0));
 
     this.cache[entity] = updated;
-    try {
-      localStorage.setItem(this.getStorageKey(entity), JSON.stringify(updated));
-    } catch {}
+    safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(updated));
 
     this.notify(entity);
   }
@@ -914,7 +911,7 @@ class CmsService {
     const current = this.cache[entity] || [];
     const updated = [newItem, ...current];
     this.cache[entity] = updated;
-    localStorage.setItem(this.getStorageKey(entity), JSON.stringify(updated));
+    safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(updated));
 
     adminService.logAudit({
       action: `CMS_CREATE_${entity.toUpperCase()}`,
@@ -946,7 +943,7 @@ class CmsService {
           imageUrl: item.heroImageUrl || item.imageUrl || '',
           logoUrl: item.logoUrl || item.logo || '',
           logo: item.logoUrl || item.logo || '',
-          accentColor: item.accentColor || '#0052FF',
+          accentColor: item.accentColor || '#1d4ed8',
           route: item.route || `/${divKey}`,
           slug: item.slug || divKey,
           isPublished: !item.isDeleted && item.isActive !== false,
@@ -978,6 +975,8 @@ class CmsService {
           status: item.isDeleted ? 'draft' : (item.isActive === false ? 'draft' : 'active'),
           bookingEnabled: item.bookingEnabled !== false,
           quoteEnabled: item.quoteEnabled !== false,
+          category: item.category,
+          categoryId: item.categoryId,
           badge: item.badge,
           features: item.features || [],
           turnaroundTime: item.turnaroundTime,
@@ -1039,7 +1038,13 @@ class CmsService {
           division: item.divisionId || item.division || 'sws',
           type: item.type || item.mediaType || 'image',
           url: item.url || item.mediaUrl || item.imageUrl || '',
-          tag: Array.isArray(item.tags) ? item.tags[0] : (item.tag || 'General'),
+          thumbnailUrl: item.thumbnailUrl || item.url || item.mediaUrl || '',
+          caption: item.caption || '',
+          aspectRatio: item.aspectRatio || '16:9',
+          tag: item.category || (Array.isArray(item.tags) ? item.tags[0] : (item.tag || 'General')),
+          category: item.category || (Array.isArray(item.tags) ? item.tags[0] : (item.tag || 'General')),
+          tags: Array.isArray(item.tags) ? item.tags : (item.category ? [item.category] : []),
+          order: item.sortOrder || item.order || 0,
           status: (item.isDeleted || item.isActive === false) ? 'hidden' : 'published',
         });
       } else if (entity === 'milestones') {
@@ -1136,7 +1141,7 @@ class CmsService {
 
     current[index] = updatedItem;
     this.cache[entity] = [...current];
-    localStorage.setItem(this.getStorageKey(entity), JSON.stringify(this.cache[entity]));
+    safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(this.cache[entity]));
 
     adminService.logAudit({
       action: `CMS_UPDATE_${entity.toUpperCase()}`,
@@ -1170,7 +1175,7 @@ class CmsService {
 
     current.sort((a, b) => (a.order || 99) - (b.order || 99));
     this.cache.divisions = [...current];
-    localStorage.setItem(this.getStorageKey('divisions'), JSON.stringify(this.cache.divisions));
+    safeStorage.setItem(this.getStorageKey('divisions'), JSON.stringify(this.cache.divisions));
 
     adminService.logAudit({
       action: 'CMS_REORDER_DIVISIONS',
@@ -1202,7 +1207,7 @@ class CmsService {
     };
 
     this.cache[entity] = [...current];
-    localStorage.setItem(this.getStorageKey(entity), JSON.stringify(this.cache[entity]));
+    safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(this.cache[entity]));
 
     adminService.logAudit({
       action: `CMS_SOFT_DELETE_${entity.toUpperCase()}`,
@@ -1228,7 +1233,7 @@ class CmsService {
 
     const filtered = current.filter((i) => i.id !== id);
     this.cache[entity] = filtered;
-    localStorage.setItem(this.getStorageKey(entity), JSON.stringify(filtered));
+    safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(filtered));
 
     adminService.logAudit({
       action: `CMS_HARD_DELETE_${entity.toUpperCase()}`,
@@ -1266,7 +1271,7 @@ class CmsService {
     };
 
     this.cache[entity] = [...current];
-    localStorage.setItem(this.getStorageKey(entity), JSON.stringify(this.cache[entity]));
+    safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(this.cache[entity]));
 
     adminService.logAudit({
       action: `CMS_RESTORE_${entity.toUpperCase()}`,
@@ -1287,7 +1292,7 @@ class CmsService {
   public resetEntityToDefaults(entity: CmsEntityType): void {
     const seed = this.getSeedDataForEntity(entity);
     this.cache[entity] = seed;
-    localStorage.setItem(this.getStorageKey(entity), JSON.stringify(seed));
+    safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(seed));
 
     adminService.logAudit({
       action: `CMS_RESET_${entity.toUpperCase()}`,
@@ -1340,7 +1345,7 @@ class CmsService {
   // ==========================================
   public getHomepageConfig(): HomepageCmsConfig {
     const key = `${CMS_STORAGE_PREFIX}homepage_config`;
-    const stored = localStorage.getItem(key);
+    const stored = safeStorage.getItem(key);
     if (stored) {
       try {
         return JSON.parse(stored);
@@ -1349,7 +1354,7 @@ class CmsService {
       }
     }
     const defaultConf = this.getDefaultHomepageConfig();
-    localStorage.setItem(key, JSON.stringify(defaultConf));
+    safeStorage.setItem(key, JSON.stringify(defaultConf));
     return defaultConf;
   }
 
@@ -1372,7 +1377,7 @@ class CmsService {
     };
 
     const key = `${CMS_STORAGE_PREFIX}homepage_config`;
-    localStorage.setItem(key, JSON.stringify(updated));
+    safeStorage.setItem(key, JSON.stringify(updated));
 
     adminService.logAudit({
       action: 'CMS_UPDATE_HOMEPAGE',
@@ -1396,7 +1401,7 @@ class CmsService {
   public syncHomepageConfig(config: HomepageCmsConfig): void {
     const key = `${CMS_STORAGE_PREFIX}homepage_config`;
     try {
-      localStorage.setItem(key, JSON.stringify(config));
+      safeStorage.setItem(key, JSON.stringify(config));
       this.notifyHomepage();
     } catch (e) {
       console.warn('[cmsService] Failed to sync homepage config to localStorage:', e);
@@ -1406,7 +1411,7 @@ class CmsService {
   public resetHomepageConfig(): HomepageCmsConfig {
     const defaultConf = this.getDefaultHomepageConfig();
     const key = `${CMS_STORAGE_PREFIX}homepage_config`;
-    localStorage.setItem(key, JSON.stringify(defaultConf));
+    safeStorage.setItem(key, JSON.stringify(defaultConf));
 
     adminService.logAudit({
       action: 'CMS_RESET_HOMEPAGE',
@@ -1439,7 +1444,7 @@ class CmsService {
     this.homepageListeners.forEach((cb) => cb());
   }
 
-  private getDefaultHomepageConfig(): HomepageCmsConfig {
+  public getDefaultHomepageConfig(): HomepageCmsConfig {
     return {
       hero: {
         badgeText: 'INTEGRATED ENTERPRISE CONGLOMERATE • EST. 2022',
@@ -1461,6 +1466,53 @@ class CmsService {
           { label: 'Projects Delivered', value: '1,450+', subtext: 'Island-wide & Global' },
           { label: 'Uptime & Reliability', value: '99.9%', subtext: 'Mission Critical' },
         ],
+        showcaseItems: [
+          {
+            id: 'sws',
+            name: 'SWS Event Management',
+            badge: 'Luxury Events & Staging',
+            tagline: 'Creating Moments... Luxury Event Decor & Rentals',
+            highlight: '5,000+ Rental Inventory • Mandaps • Stage Lighting',
+            image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=85',
+            route: '/sws',
+          },
+          {
+            id: 'u1',
+            name: 'U1 Studio',
+            badge: 'Cinema & Photography',
+            tagline: 'Capturing Memories... 8K Cinema & Commercials',
+            highlight: 'Master Portraiture • Drone Filming • Brand Campaigns',
+            image: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1200&q=85',
+            route: '/u1',
+          },
+          {
+            id: 'it',
+            name: 'Mahdev IT & Solutions',
+            badge: 'Software & Cloud',
+            tagline: 'Delivering Innovation... Web, Mobile & Enterprise Cloud',
+            highlight: 'Custom Web Apps • Scalable API Systems • 99.9% SLA',
+            image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=85',
+            route: '/it',
+          },
+          {
+            id: 'travels',
+            name: 'Mahdev Travels',
+            badge: 'Bespoke Travel',
+            tagline: 'Discover Paradise... Curated Ceylon Itineraries',
+            highlight: 'Chauffeur Fleet • Boutique Villas • Islandwide Tours',
+            image: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=85',
+            route: '/travels',
+          },
+          {
+            id: 'mart',
+            name: 'Mahdev Online Mart',
+            badge: 'Decor & Tech Mart',
+            tagline: 'Modern Living... Premium Decor & Smart Tech',
+            highlight: 'Verified Hardware • Direct Islandwide Courier Delivery',
+            image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1200&q=85',
+            route: '/mart',
+          },
+        ],
       },
       intro: {
         badge: 'THE MAHDEV ADVANTAGE',
@@ -1472,6 +1524,48 @@ class CmsService {
           { title: 'Turnkey Integration', desc: 'Seamless single-point coordination from event decor to studio cinematography and cloud IT systems.', icon: 'Layers' },
           { title: 'Enterprise Rigor', desc: 'ISO-aligned quality standards, calibrated hardware fleets, and SLA guarantees.', icon: 'ShieldCheck' },
           { title: 'Bespoke Craftsmanship', desc: 'Tailored solutions whether styling an opulent wedding decor, capturing 8K cinema, or building high-traffic cloud infrastructure.', icon: 'Sparkles' },
+        ],
+      },
+      divisionsSection: {
+        badge: 'Enterprise Portfolio',
+        title: 'Operating Divisions',
+        subtitle: 'Autonomous specialized units governed under Mahdev Group with direct in-house technical crews.',
+        enabled: true,
+      },
+      whyMahdev: {
+        badge: 'Operational Standards',
+        title: 'The Enterprise Standard',
+        subtitle: 'Rigorous quality control, in-house technical mastery, and clear accountability across every project.',
+        enabled: true,
+        guarantees: [
+          {
+            id: 'std-1',
+            iconName: 'ShieldCheck',
+            title: 'Direct Holding Governance',
+            description: 'Zero third-party brokerages. You contract directly with certified in-house technical directors and crews.',
+            tag: '100% In-House',
+          },
+          {
+            id: 'std-2',
+            iconName: 'Zap',
+            title: 'Turnkey Execution Speed',
+            description: 'From 3D CAD stage renders and software sprint cycles to immediate nationwide logistics.',
+            tag: 'Turnkey SLA',
+          },
+          {
+            id: 'std-3',
+            iconName: 'Layers',
+            title: '5,000+ Verified Assets',
+            description: 'State-of-the-art concert audio, LED walls, German trussing, cinema cameras, and vehicle fleets.',
+            tag: 'Fully Owned',
+          },
+          {
+            id: 'std-4',
+            iconName: 'PhoneCall',
+            title: 'Direct Client Line: 075 092 8078',
+            description: 'Dedicated account managers ensuring uninterrupted coordination across all divisions 24/7.',
+            tag: 'Always Active',
+          },
         ],
       },
       featuredServices: {
@@ -1668,7 +1762,7 @@ class CmsService {
   // ==========================================
   public getCompanyInfo(): CompanyInformation {
     const key = `${CMS_STORAGE_PREFIX}company_info`;
-    const stored = localStorage.getItem(key);
+    const stored = safeStorage.getItem(key);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -1714,7 +1808,7 @@ class CmsService {
     };
 
     const key = `${CMS_STORAGE_PREFIX}company_info`;
-    localStorage.setItem(key, JSON.stringify(merged));
+    safeStorage.setItem(key, JSON.stringify(merged));
 
     adminService.logAudit({
       action: 'UPDATE_COMPANY_INFO',

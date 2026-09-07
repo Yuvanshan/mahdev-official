@@ -13,7 +13,9 @@ import {
   GitBranch,
   Activity,
   Lock,
+  Phone,
 } from 'lucide-react';
+import { getTelLink } from '../../config/company';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
@@ -88,13 +90,13 @@ export const ITHeroSection: React.FC<ITHeroSectionProps> = ({
                   Start a Project
                 </Button>
 
-                <button
-                  onClick={onContactTeam}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+                <a
+                  href={getTelLink('075 092 8078')}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900/80 text-slate-200 text-xs sm:text-sm font-semibold hover:border-blue-400 hover:text-white transition-all backdrop-blur-sm"
                 >
-                  <span>Contact IT Team</span>
-                  <span className="text-slate-500">→</span>
-                </button>
+                  <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>075 092 8078</span>
+                </a>
               </div>
             </ScrollReveal>
 

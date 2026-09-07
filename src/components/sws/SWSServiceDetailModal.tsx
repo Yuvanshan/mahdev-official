@@ -11,11 +11,13 @@ import {
   ShieldCheck,
   Tag,
   PhoneCall,
+  MessageCircle,
 } from 'lucide-react';
 import { SWSService } from '../../data/swsData';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { IconRenderer } from '../ui/IconRenderer';
+import { openWhatsAppInquiry } from '../../utils/whatsapp';
 
 interface SWSServiceDetailModalProps {
   service: SWSService | null;
@@ -221,7 +223,28 @@ export const SWSServiceDetailModal: React.FC<SWSServiceDetailModalProps> = ({
             </span>
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => {
+                const activeImg = images[activeImageIndex] || service.imageUrl;
+                openWhatsAppInquiry({
+                  title: service.name,
+                  category: service.category,
+                  divisionName: 'SWS Event Management',
+                  imageUrl: activeImg,
+                  price: service.startingPrice,
+                  description: service.description,
+                  type: 'service',
+                });
+              }}
+              title="Inquire about this service on WhatsApp 0750928078"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold shadow-md shadow-emerald-500/20 transition-all cursor-pointer active:scale-95"
+            >
+              <MessageCircle className="w-3.5 h-3.5 fill-white/20" />
+              <span>WhatsApp (0750928078)</span>
+            </button>
+
             <Button
               variant="outline"
               size="md"
@@ -238,7 +261,7 @@ export const SWSServiceDetailModal: React.FC<SWSServiceDetailModalProps> = ({
               rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
               className="flex-1 sm:flex-none text-xs shadow-md shadow-blue-500/20"
             >
-              Book This Service
+              Book Service
             </Button>
           </div>
         </div>

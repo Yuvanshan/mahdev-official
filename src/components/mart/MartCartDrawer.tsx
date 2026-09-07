@@ -121,7 +121,7 @@ export const MartCartDrawer: React.FC<MartCartDrawerProps> = ({
               <div className="space-y-1">
                 <h4 className="font-display text-sm font-bold text-slate-900">Your cart is empty</h4>
                 <p className="text-xs text-slate-500 max-w-xs mx-auto">
-                  Explore our pure Ceylon teas, organic spices, and artisanal wellness products.
+                  Explore our curated event decor, ambient lighting, and smart tech collections.
                 </p>
               </div>
               <Button variant="electric" size="sm" onClick={onClose} className="text-xs">

@@ -22,21 +22,9 @@ import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
-import { FirestoreGallery } from '../../types/firestore';
+import { DecorationShowcaseVideo } from '../../types/cms';
 
-interface DecorationVideo {
-  id: string;
-  title: string;
-  category: 'Weddings' | 'Floral & Canopy' | 'Lighting & Truss' | 'Corporate Galas';
-  location: string;
-  duration: string;
-  videoUrl: string;
-  thumbnailUrl: string;
-  description: string;
-  venueType: string;
-  divisionName: string;
-  highlights: string[];
-}
+type DecorationVideo = DecorationShowcaseVideo;
 
 interface DecorationVideoShowcaseProps {
   onNavigate?: (route: string) => void;
@@ -45,7 +33,7 @@ interface DecorationVideoShowcaseProps {
 export const DecorationVideoShowcase: React.FC<DecorationVideoShowcaseProps> = ({
   onNavigate,
 }) => {
-  const { gallery: firestoreGallery, homepageConfig } = useFirestoreDataContext();
+  const { homepageConfig } = useFirestoreDataContext();
   const showcaseConfig = homepageConfig?.decorationShowcase;
 
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -56,38 +44,18 @@ export const DecorationVideoShowcase: React.FC<DecorationVideoShowcaseProps> = (
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  // Sync real videos from Homepage CMS Config or Firestore gallery fallback
+  // Exclusively consume dynamic showcase videos from Homepage CMS Config
   const videoList = useMemo<DecorationVideo[]>(() => {
-    if (showcaseConfig?.videos && showcaseConfig.videos.length > 0) {
-      return showcaseConfig.videos as DecorationVideo[];
+    if (showcaseConfig?.videos && Array.isArray(showcaseConfig.videos)) {
+      return showcaseConfig.videos;
     }
-
-    if (firestoreGallery && firestoreGallery.length > 0) {
-      const rawVideos = firestoreGallery.filter(
-        (item: FirestoreGallery) => item.type === 'video' && item.url
-      );
-
-      if (rawVideos.length > 0) {
-        return rawVideos.map((v, i) => ({
-          id: v.id || `video-${i}`,
-          title: v.title || 'Event Decoration Showcase',
-          category: ((v.tag as any) || 'Weddings') as DecorationVideo['category'],
-          location: 'Colombo, Sri Lanka',
-          duration: '0:45',
-          videoUrl: v.url || '',
-          thumbnailUrl: (v as any).thumbnailUrl || (v as any).imageUrl || '',
-          description: (v as any).caption || 'Bespoke event decoration and stagecraft produced by Mahdev SWS Division.',
-          venueType: 'Premium Event Venue',
-          divisionName: 'SWS Event Management',
-          highlights: ['Bespoke Decor', 'Lighting Staging', 'Live Production'],
-        }));
-      }
-    }
-
     return [];
-  }, [showcaseConfig, firestoreGallery]);
+  }, [showcaseConfig?.videos]);
 
-  const categories = ['All', 'Weddings', 'Floral & Canopy', 'Lighting & Truss', 'Corporate Galas'];
+  const categories = useMemo(() => {
+    const unique = Array.from(new Set(videoList.map((v) => v.category).filter(Boolean)));
+    return ['All', ...unique];
+  }, [videoList]);
 
   const filteredVideos = useMemo(() => {
     if (selectedCategory === 'All') return videoList;
@@ -134,7 +102,7 @@ export const DecorationVideoShowcase: React.FC<DecorationVideoShowcaseProps> = (
             </div>
             <H2 className="text-white">{showcaseConfig?.title || 'Cinematic Event & Decoration Showcase'}</H2>
             <Body className="text-slate-400 mt-2 max-w-2xl">
-              {showcaseConfig?.subtitle || 'Experience the scale, floral artistry, and technical lighting precision that define Mahdev SWS Event Management productions across Sri Lanka.'}
+              {showcaseConfig?.subtitle || 'Experience the scale, floral artistry, and stage lighting behind Mahdev event productions.'}
             </Body>
           </ScrollReveal>
         </div>

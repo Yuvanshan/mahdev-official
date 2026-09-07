@@ -1,115 +1,169 @@
-import React from 'react';
-import { Award, ChevronRight, Globe, ShieldCheck, Users } from 'lucide-react';
+import React, { useRef } from 'react';
+import { Award, ChevronRight, Globe, ShieldCheck, Users, Phone } from 'lucide-react';
+import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { Button } from '../ui/Button';
-import { ScrollReveal } from '../motion/MotionWrappers';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { getTelLink } from '../../config/company';
+import { ParallelWatermark } from '../motion/ParallelScroll';
+import { useDeviceMotion } from '../motion/MotionWrappers';
 
 interface AboutMahdevSectionProps {
   onExploreDivisions: () => void;
 }
 
 export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExploreDivisions }) => {
-  const { companySettings, homepageConfig, divisions } = useFirestoreDataContext();
-
+  const { companySettings } = useFirestoreDataContext();
   const establishedYear = companySettings.establishedYear || '2022';
-  const divisionCount = divisions.filter((d) => d.status === 'active').length || 5;
+  const hotline = '075 092 8078';
+  const { reducedMotion, isTouch } = useDeviceMotion();
 
-  const pillars = [
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start end', 'end start'],
+  });
+
+  const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 22, mass: 0.1 });
+  const yLeft = useTransform(smoothProgress, [0, 1], ['-10px', '25px']);
+  const yCol1 = useTransform(smoothProgress, [0, 1], ['-24px', '24px']);
+  const yCol2 = useTransform(smoothProgress, [0, 1], ['24px', '-24px']);
+
+  const col1Metrics = [
     {
+      value: establishedYear,
+      label: 'Established',
+      caption: 'Incorporated in Sri Lanka',
       icon: Award,
-      title: 'Established Foundation',
-      stat: `${establishedYear}`,
-      desc: 'Incorporated in Sri Lanka with sustained growth across diverse markets.',
     },
     {
-      icon: Users,
-      title: 'Integrated Units',
-      stat: `${divisionCount} Divisions`,
-      desc: 'Specialized domain leadership under centralized executive governance.',
-    },
-    {
+      value: '9 Provinces',
+      label: 'Nationwide Reach',
+      caption: 'Turnkey Islandwide Operations',
       icon: Globe,
-      title: 'Islandwide Reach',
-      stat: '9 Provinces',
-      desc: 'Executing events, media productions, and logistics across the country.',
+    },
+  ];
+
+  const col2Metrics = [
+    {
+      value: '5 Units',
+      label: 'Specialized Units',
+      caption: 'Events, Media, IT, Travel, Mart',
+      icon: Users,
     },
     {
+      value: '100%',
+      label: 'Direct Delivery',
+      caption: 'Verified In-House Technical Teams',
       icon: ShieldCheck,
-      title: 'Quality Standard',
-      stat: '100% In-House',
-      desc: 'Direct execution, dedicated technical crews, and verified delivery.',
     },
   ];
 
   return (
-    <SectionContainer id="about" background="white" paddingY="xl" hasBorderBottom>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-        {/* Left Narrative Column */}
-        <div className="lg:col-span-6 space-y-6">
-          <ScrollReveal direction="up">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-[#0052FF] block mb-2">
-              Corporate Overview
-            </span>
-            <h2 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 leading-tight mb-4">
-              A Multi-Sector Enterprise Built on Quality & Trust
-            </h2>
-            <p className="text-slate-600 text-base leading-relaxed mb-6">
-              Mahdev Group is a Sri Lankan holding enterprise managing autonomous operations across luxury event production, cinema media, software engineering, bespoke travel, and retail commerce.
-            </p>
-
-            <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-700 mb-8">
-              <span className="px-3 py-1.5 rounded-md bg-slate-100 border border-slate-200">
-                Turnkey Execution
-              </span>
-              <span className="px-3 py-1.5 rounded-md bg-slate-100 border border-slate-200">
-                Direct Governance
-              </span>
-              <span className="px-3 py-1.5 rounded-md bg-slate-100 border border-slate-200">
-                Enterprise Reliability
-              </span>
+    <div ref={containerRef} className="relative overflow-hidden">
+      <ParallelWatermark text="02 // ECOSYSTEM" />
+      <SectionContainer id="about" background="white" paddingY="xl" hasBorderBottom>
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+          {/* Left Narrative Column - Parallel Drift */}
+          <motion.div
+            style={!reducedMotion && !isTouch ? { y: yLeft } : undefined}
+            className="lg:col-span-6 space-y-5"
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[11px] font-mono uppercase tracking-wider text-blue-700">
+              <span>Enterprise Architecture</span>
             </div>
 
-            <div>
+            <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
+              Integrated Operations. Autonomous Mastery.
+            </h2>
+            <p className="text-slate-600 text-sm sm:text-base leading-relaxed font-normal">
+              Mahdev Group unites luxury event production, cinema filmmaking, custom software engineering, Ceylon travel, and retail commerce under unified governance and strict quality standards.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-3 pt-2">
               <Button
                 id="about-divisions-btn"
                 variant="electric"
                 size="md"
                 onClick={onExploreDivisions}
                 rightIcon={<ChevronRight className="w-4 h-4" />}
-                className="font-semibold cursor-pointer"
+                className="font-bold cursor-pointer"
               >
-                Explore Divisions
+                Explore All Divisions
               </Button>
-            </div>
-          </ScrollReveal>
-        </div>
 
-        {/* Right Matrix: 4 Clean Minimal Cards */}
-        <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-          {pillars.map((pillar, idx) => {
-            const Icon = pillar.icon;
-            return (
-              <ScrollReveal key={pillar.title} direction="up" delay={idx * 0.08}>
-                <div className="p-6 rounded-xl bg-slate-50 border border-slate-200/90 hover:border-blue-300 transition-colors">
-                  <div className="w-9 h-9 rounded-lg bg-blue-50 text-[#0052FF] flex items-center justify-center mb-3">
-                    <Icon className="w-4 h-4" />
+              <a
+                href={getTelLink(hotline)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:text-blue-600 hover:border-blue-300 transition-colors"
+              >
+                <Phone className="w-3.5 h-3.5 text-blue-600" />
+                <span>Direct: {hotline}</span>
+              </a>
+            </div>
+          </motion.div>
+
+          {/* Right Column: Two Staggered Parallel Columns */}
+          <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Column 1 - Negative Parallel Drift */}
+            <motion.div
+              style={!reducedMotion && !isTouch ? { y: yCol1 } : undefined}
+              className="space-y-4"
+            >
+              {col1Metrics.map((m) => {
+                const Icon = m.icon;
+                return (
+                  <div
+                    key={m.label}
+                    className="p-5 sm:p-6 rounded-2xl bg-slate-50/90 border border-slate-200/80 hover:border-blue-400 hover:bg-white transition-all shadow-xs"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-0.5">
+                      {m.value}
+                    </div>
+                    <div className="text-xs font-bold text-slate-800 mb-0.5">
+                      {m.label}
+                    </div>
+                    <div className="text-[11px] text-slate-500 font-medium">
+                      {m.caption}
+                    </div>
                   </div>
-                  <div className="font-display text-2xl font-bold text-slate-900 mb-1">
-                    {pillar.stat}
+                );
+              })}
+            </motion.div>
+
+            {/* Column 2 - Positive Parallel Drift */}
+            <motion.div
+              style={!reducedMotion && !isTouch ? { y: yCol2 } : undefined}
+              className="space-y-4 sm:pt-6"
+            >
+              {col2Metrics.map((m) => {
+                const Icon = m.icon;
+                return (
+                  <div
+                    key={m.label}
+                    className="p-5 sm:p-6 rounded-2xl bg-slate-50/90 border border-slate-200/80 hover:border-blue-400 hover:bg-white transition-all shadow-xs"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-0.5">
+                      {m.value}
+                    </div>
+                    <div className="text-xs font-bold text-slate-800 mb-0.5">
+                      {m.label}
+                    </div>
+                    <div className="text-[11px] text-slate-500 font-medium">
+                      {m.caption}
+                    </div>
                   </div>
-                  <h3 className="font-semibold text-xs text-slate-800 mb-1.5 uppercase tracking-wide">
-                    {pillar.title}
-                  </h3>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    {pillar.desc}
-                  </p>
-                </div>
-              </ScrollReveal>
-            );
-          })}
+                );
+              })}
+            </motion.div>
+          </div>
         </div>
-      </div>
-    </SectionContainer>
+      </SectionContainer>
+    </div>
   );
 };

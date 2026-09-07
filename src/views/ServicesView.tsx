@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Calendar,
   Layers,
+  MessageCircle,
 } from 'lucide-react';
 import { SEOHead } from '../components/layout/SEOHead';
 import { SectionContainer } from '../components/ui/SectionContainer';
@@ -29,6 +30,7 @@ import { CallToActionSection } from '../components/home/CallToActionSection';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { DIVISIONS, DIVISION_LIST } from '../config/divisions';
 import { DivisionId } from '../types';
+import { openWhatsAppInquiry } from '../utils/whatsapp';
 
 interface ServicesViewProps {
   onNavigate: (route: string) => void;
@@ -311,23 +313,42 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
                               </span>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-3 gap-1.5">
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => onNavigate(divRoute)}
-                                className="text-xs cursor-pointer justify-center"
+                                className="text-[11px] px-2 cursor-pointer justify-center"
                               >
-                                Division Info
+                                Division
                               </Button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  openWhatsAppInquiry({
+                                    title: service.title || service.name,
+                                    category: service.category,
+                                    divisionName: divisionBadgeText,
+                                    imageUrl: (service as any).imageUrl || (service as any).image,
+                                    price: service.startingPrice || service.price,
+                                    description: service.description,
+                                    type: 'service',
+                                  });
+                                }}
+                                title="Send WhatsApp inquiry with image to 0750928078"
+                                className="inline-flex items-center justify-center gap-1 text-[11px] font-bold text-white bg-[#25D366] hover:bg-[#20bd5a] px-2 py-1.5 rounded-xl transition-all cursor-pointer active:scale-95"
+                              >
+                                <MessageCircle className="w-3.5 h-3.5 fill-white/20 shrink-0" />
+                                <span>WhatsApp</span>
+                              </button>
                               <Button
                                 size="sm"
                                 variant="electric"
                                 onClick={() => onNavigate(`/book/service/${service.id}`)}
-                                rightIcon={<Calendar className="w-3.5 h-3.5" />}
-                                className="text-xs cursor-pointer justify-center"
+                                rightIcon={<Calendar className="w-3 h-3" />}
+                                className="text-[11px] px-2 cursor-pointer justify-center"
                               >
-                                Book Now
+                                Book
                               </Button>
                             </div>
                           </div>

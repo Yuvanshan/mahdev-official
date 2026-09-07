@@ -141,6 +141,60 @@ export function getDefaultHomepageSettings(): HomepageCmsConfig {
       title: 'Milestones of Excellence (2022 - Present)',
       subtitle: 'Key historical chapters shaping the expansion of Mahdev Pvt Ltd.',
       enabled: true,
+      achievementsTitle: 'Key Verified Achievements',
+      achievementsSubtitle: 'Tangible deliverables, certified quality benchmarks, and nationwide enterprise footprint.',
+      achievements: [
+        {
+          id: 'projects',
+          metric: '1,800+',
+          label: 'Projects Completed',
+          description: 'Successfully completed more than 1,800 projects across our event management, photography, and IT services.',
+          badge: 'Deliverables',
+          iconName: 'Briefcase',
+          highlight: true,
+        },
+        {
+          id: 'success-rate',
+          metric: '98%',
+          label: 'Success Rate',
+          description: 'Maintaining a strong commitment to quality, reliability, and successful project delivery.',
+          badge: 'Quality Standard',
+          iconName: 'CheckCircle2',
+        },
+        {
+          id: 'growth',
+          metric: '5+',
+          label: 'Years of Growth',
+          description: 'Growing from an event management service into a multi-service registered private enterprise.',
+          badge: 'Track Record',
+          iconName: 'TrendingUp',
+        },
+        {
+          id: 'divisions',
+          metric: '3+',
+          label: 'Core Business Divisions',
+          description: 'Event Management, Photography & Creative Media, and IT & Digital Solutions.',
+          badge: 'Multidisciplinary',
+          iconName: 'Layers',
+        },
+        {
+          id: 'coverage',
+          metric: 'Islandwide',
+          label: 'Service Coverage',
+          description: 'Serving clients across Sri Lanka with our expanding range of specialized corporate and private services.',
+          badge: 'Sri Lanka Wide',
+          iconName: 'MapPin',
+        },
+        {
+          id: 'vision',
+          metric: 'One Vision',
+          label: 'Multiple Solutions',
+          description: 'Creating Moments. Capturing Memories. Delivering Innovation.',
+          badge: 'Enterprise Creed',
+          iconName: 'Sparkles',
+          highlight: true,
+        },
+      ],
     },
     companies: {
       badge: 'CORPORATE PARTNERS',
@@ -669,7 +723,24 @@ export const firestoreSettingsService = {
       const snap = (await Promise.race([snapPromise, timeoutPromise])) as any;
 
       if (snap && typeof snap.exists === 'function' && snap.exists()) {
-        const data = snap.data() as HomepageCmsConfig;
+        const rawData = snap.data() as HomepageCmsConfig;
+        const def = getDefaultHomepageSettings();
+        const data: HomepageCmsConfig = {
+          ...def,
+          ...rawData,
+          milestones: {
+            ...def.milestones,
+            ...(rawData?.milestones || {}),
+            achievementsTitle: rawData?.milestones?.achievementsTitle || def.milestones.achievementsTitle,
+            achievementsSubtitle: rawData?.milestones?.achievementsSubtitle || def.milestones.achievementsSubtitle,
+            achievements:
+              rawData?.milestones?.achievements && rawData.milestones.achievements.length > 0
+                ? rawData.milestones.achievements
+                : (cachedHomepageSettings?.data?.milestones?.achievements && cachedHomepageSettings.data.milestones.achievements.length > 0
+                    ? cachedHomepageSettings.data.milestones.achievements
+                    : def.milestones.achievements),
+          },
+        };
         cachedHomepageSettings = { data, timestamp: now };
         return data;
       }
@@ -767,7 +838,24 @@ export const firestoreSettingsService = {
       docRef,
       (snap) => {
         if (snap.exists()) {
-          const data = snap.data() as HomepageCmsConfig;
+          const rawData = snap.data() as HomepageCmsConfig;
+          const def = getDefaultHomepageSettings();
+          const data: HomepageCmsConfig = {
+            ...def,
+            ...rawData,
+            milestones: {
+              ...def.milestones,
+              ...(rawData?.milestones || {}),
+              achievementsTitle: rawData?.milestones?.achievementsTitle || def.milestones.achievementsTitle,
+              achievementsSubtitle: rawData?.milestones?.achievementsSubtitle || def.milestones.achievementsSubtitle,
+              achievements:
+                rawData?.milestones?.achievements && rawData.milestones.achievements.length > 0
+                  ? rawData.milestones.achievements
+                  : (cachedHomepageSettings?.data?.milestones?.achievements && cachedHomepageSettings.data.milestones.achievements.length > 0
+                      ? cachedHomepageSettings.data.milestones.achievements
+                      : def.milestones.achievements),
+            },
+          };
           cachedHomepageSettings = { data, timestamp: Date.now() };
           if (typeof window !== 'undefined') {
             try {

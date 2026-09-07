@@ -30,6 +30,7 @@ export interface FirestoreDivision {
   shortDescription?: string;
   description: string;
   imageUrl?: string;
+  heroImageUrl?: string;
   logoUrl?: string;
   logo?: string; // backwards compatibility
   route?: string;
@@ -81,6 +82,8 @@ export interface FirestoreService {
   divisionId: DivisionId | string;
   division?: DivisionId | string; // backwards compatibility
   divisionName?: string;
+  category?: string;
+  categoryId?: string;
   title?: string;
   description: string;
   imageUrl?: string;
@@ -530,6 +533,12 @@ export interface FirestoreGallery {
   url: string;
   type: 'image' | 'video';
   tag?: string;
+  category?: string;
+  thumbnailUrl?: string;
+  caption?: string;
+  aspectRatio?: string;
+  tags?: string[];
+  order?: number;
   status: 'published' | 'hidden';
   createdAt?: string;
   updatedAt?: string;

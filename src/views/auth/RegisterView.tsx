@@ -155,7 +155,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
     <div className="min-h-[85vh] bg-slate-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <SEOHead
         title="Customer Registration | Mahdev Pvt Ltd"
-        description="Create your Mahdev customer account to book event productions, studio shoots, safari tours, IT solutions, and Ceylon tea collections."
+        description="Create your Mahdev customer account to book event productions, studio shoots, safari tours, IT solutions, and curated decor and tech collections."
         canonicalUrl="https://mahdev.lk/register"
       />
 

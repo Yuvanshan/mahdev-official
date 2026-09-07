@@ -9,12 +9,14 @@ import {
   ChevronRight,
   MapPin,
   Calendar,
+  MessageCircle,
 } from 'lucide-react';
 import { TravelStory } from '../../data/travelsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { ScrollReveal } from '../motion/MotionWrappers';
+import { openWhatsAppInquiry } from '../../utils/whatsapp';
 
 export const TravelsGalleryStoriesSection: React.FC = () => {
   const { gallery: rawGallery, testimonials: rawTestimonials } = useFirestoreDataContext();
@@ -93,6 +95,28 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
               loading="lazy"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108"
             />
+            {/* Quick WhatsApp Inquiry on Card */}
+            <div className="absolute top-3 right-3 z-10">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openWhatsAppInquiry({
+                    title: img.title,
+                    location: img.location,
+                    divisionName: 'Mahdev Travels',
+                    imageUrl: img.src,
+                    type: 'gallery',
+                  });
+                }}
+                title="Send inquiry with this photo to WhatsApp 0750928078"
+                className="px-2.5 py-1 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white flex items-center gap-1 text-[10px] font-bold shadow-md opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer active:scale-95"
+              >
+                <MessageCircle className="w-3 h-3 fill-white/20" />
+                <span>WhatsApp</span>
+              </button>
+            </div>
+
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4 text-white">
               <span className="text-[10px] font-mono uppercase tracking-wider text-amber-300">
                 {img.location}
@@ -163,21 +187,41 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
       {/* Full-Screen Lightbox Modal */}
       {lightboxImage && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/95 flex items-center justify-center p-4 animate-fadeIn"
+          className="fixed inset-0 z-50 bg-slate-950/95 flex flex-col items-center justify-center p-4 animate-fadeIn"
           onClick={() => setLightboxImage(null)}
         >
           <button
             onClick={() => setLightboxImage(null)}
-            className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer z-20"
             aria-label="Close lightbox"
           >
             <X className="w-6 h-6" />
           </button>
-          <img
-            src={lightboxImage}
-            alt="Enlarged gallery photo"
-            className="max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl"
-          />
+          <div className="relative max-h-[80vh] flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={lightboxImage}
+              alt="Enlarged gallery photo"
+              className="max-w-full max-h-[75vh] rounded-xl object-contain shadow-2xl"
+            />
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  openWhatsAppInquiry({
+                    title: 'Travel Expedition Inquiry',
+                    divisionName: 'Mahdev Travels',
+                    imageUrl: lightboxImage,
+                    description: 'Inquiring about this private tour destination.',
+                    type: 'gallery',
+                  });
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs sm:text-sm font-bold shadow-md transition-all cursor-pointer active:scale-95"
+              >
+                <MessageCircle className="w-4 h-4 fill-white/20" />
+                <span>Inquire on WhatsApp (0750928078)</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </SectionContainer>

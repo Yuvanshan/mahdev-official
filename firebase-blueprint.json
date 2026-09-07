@@ -294,12 +294,38 @@
         "createdAt": { "type": "string", "format": "date-time", "description": "Log entry timestamp" }
       },
       "required": ["userId", "action", "collection", "documentId", "createdAt"]
+    },
+    "GalleryItem": {
+      "title": "GalleryItem",
+      "description": "Media showcase gallery item for photography, videography, and project highlights",
+      "type": "object",
+      "properties": {
+        "division": { "type": "string", "description": "Operating business division ID" },
+        "title": { "type": "string", "description": "Media title" },
+        "url": { "type": "string", "description": "Full asset URL" },
+        "thumbnailUrl": { "type": "string", "description": "Optimized thumbnail URL" },
+        "type": { "type": "string", "enum": ["image", "video"], "description": "Media type" },
+        "tag": { "type": "string", "description": "Category or tag label" },
+        "category": { "type": "string", "description": "Category taxonomy reference" },
+        "caption": { "type": "string", "description": "Caption description" },
+        "aspectRatio": { "type": "string", "description": "Visual aspect ratio" },
+        "tags": { "type": "array", "description": "Collection of searchable tags" },
+        "order": { "type": "number", "description": "Display order index" },
+        "status": { "type": "string", "enum": ["published", "hidden"], "description": "Visibility status" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["division", "title", "url", "type", "status"]
     }
   },
   "firestore": {
     "/settings/site": {
       "schema": "SiteSettings",
       "description": "Global website configuration, branding, contact info, and maintenance mode"
+    },
+    "/gallery/{itemId}": {
+      "schema": "GalleryItem",
+      "description": "Showcase visual gallery media items across divisions"
     },
     "/divisions/{divisionId}": {
       "schema": "Division",

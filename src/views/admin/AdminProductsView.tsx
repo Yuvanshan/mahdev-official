@@ -23,6 +23,7 @@ import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
+import { QuickCategoryCreator } from '../../components/admin/QuickCategoryCreator';
 import { DivisionId } from '../../types';
 
 export const AdminProductsView: React.FC = () => {
@@ -525,7 +526,23 @@ export const AdminProductsView: React.FC = () => {
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Catalog Category *</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-semibold text-slate-700">Catalog Category *</label>
+                <QuickCategoryCreator
+                  currentDivisionId={formData.divisionId}
+                  onCategoryCreated={(newCat) => {
+                    setCategories((prev) => Array.from(new Set([...prev, newCat])));
+                    handleCategoryChange(newCat.id);
+                    setIsDirty(true);
+                    addToast(
+                      'success',
+                      'Category Created',
+                      `"${newCat.name}" created and selected.`
+                    );
+                  }}
+                  buttonLabel="+ Manual Add"
+                />
+              </div>
               <select
                 value={formData.categoryId}
                 onChange={(e) => handleCategoryChange(e.target.value)}

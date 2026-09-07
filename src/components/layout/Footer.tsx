@@ -19,7 +19,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   const tagline = companySettings?.tagline || 'Pioneering Creative Artistry & Modern Technology';
   const description = companySettings?.description || 'A unified multi-division powerhouse driving creative entertainment, visual storytelling, cloud engineering, luxury travel, and verified commerce.';
   const email = companySettings?.email || 'info.mahdev.lk@gmail.com';
-  const primaryPhone = companySettings?.primaryPhone || '076 898 8970';
+  const primaryPhone = companySettings?.primaryPhone || '075 092 8078';
   const secondaryPhone = companySettings?.secondaryPhone || '075 092 8078';
   const domain = companySettings?.domain || 'mahdev.lk';
 

@@ -10,20 +10,39 @@ import {
   XCircle,
   Sparkles,
   Layers,
+  FolderTree,
 } from 'lucide-react';
-import { CmsGalleryItem } from '../../types/cms';
+import { CmsGalleryItem, CmsCategory } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
 import { Button } from '../../components/ui/Button';
 import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
+import { QuickCategoryCreator } from '../../components/admin/QuickCategoryCreator';
 import { DivisionId } from '../../types';
+import { compressDataUrl } from '../../utils/imageOptimizer';
+
+const PRESET_GALLERY_CATEGORIES = [
+  'Weddings',
+  'Corporate',
+  'Birthdays & Socials',
+  'Stage & Lighting',
+  'Dining & Decor',
+  'Studio Photography',
+  'Exhibition & Stalls',
+  'Private Celebrations',
+  'Other / Custom',
+];
 
 export const AdminGalleryView: React.FC = () => {
   const [galleryItems, setGalleryItems] = useState<CmsGalleryItem[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<string[]>(
+    PRESET_GALLERY_CATEGORIES.filter((c) => c !== 'Other / Custom')
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [divisionFilter, setDivisionFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'deleted'>('all');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -33,6 +52,7 @@ export const AdminGalleryView: React.FC = () => {
   const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [customCategoryInput, setCustomCategoryInput] = useState('');
 
   // Delete State
   const [deletingItem, setDeletingItem] = useState<CmsGalleryItem | null>(null);
@@ -41,6 +61,7 @@ export const AdminGalleryView: React.FC = () => {
   const [formData, setFormData] = useState({
     title: '',
     divisionId: 'sws' as DivisionId,
+    category: 'Weddings',
     caption: '',
     mediaUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
     thumbnailUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=400&q=80',
@@ -65,32 +86,52 @@ export const AdminGalleryView: React.FC = () => {
     const data = cmsService.getAll<CmsGalleryItem>('gallery', {
       search: searchQuery,
       divisionId: divisionFilter,
+      category: categoryFilter !== 'all' ? categoryFilter : undefined,
       status: statusFilter,
       includeDeleted: statusFilter === 'deleted' || statusFilter === 'all',
     });
     setGalleryItems(data);
+
+    // Refresh categories from CMS and current gallery items
+    const cmsCats = cmsService.getAll<CmsCategory>('categories');
+    const allGalleryItems = cmsService.getAll<CmsGalleryItem>('gallery');
+    const itemCats = allGalleryItems.map((g) => g.category).filter(Boolean) as string[];
+    const merged = Array.from(
+      new Set([
+        ...PRESET_GALLERY_CATEGORIES.filter((c) => c !== 'Other / Custom'),
+        ...cmsCats.map((c) => c.name),
+        ...itemCats,
+      ])
+    ).sort();
+    setAvailableCategories(merged);
   };
 
   useEffect(() => {
     loadData();
-    const unsub = cmsService.subscribe('gallery', loadData);
-    return () => unsub();
-  }, [searchQuery, divisionFilter, statusFilter]);
+    const unsubGallery = cmsService.subscribe('gallery', loadData);
+    const unsubCategories = cmsService.subscribe('categories', loadData);
+    return () => {
+      unsubGallery();
+      unsubCategories();
+    };
+  }, [searchQuery, divisionFilter, categoryFilter, statusFilter]);
 
   const handleOpenCreate = () => {
     setEditingItem(null);
     setFormData({
       title: '',
       divisionId: 'sws',
+      category: 'Weddings',
       caption: '',
       mediaUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
       thumbnailUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=400&q=80',
       type: 'image',
       aspectRatio: '16:9',
-      tags: ['Corporate', 'Live'],
+      tags: ['Weddings'],
       sortOrder: galleryItems.length + 1,
       isActive: true,
     });
+    setCustomCategoryInput('');
     setFormErrors({});
     setIsDirty(false);
     setIsEditorOpen(true);
@@ -98,9 +139,12 @@ export const AdminGalleryView: React.FC = () => {
 
   const handleOpenEdit = (item: CmsGalleryItem) => {
     setEditingItem(item);
+    const existingCat = item.category || (Array.isArray(item.tags) && item.tags[0]) || 'Weddings';
+    const isPreset = PRESET_GALLERY_CATEGORIES.includes(existingCat);
     setFormData({
       title: item.title,
       divisionId: item.divisionId,
+      category: isPreset ? existingCat : 'Other / Custom',
       caption: item.caption || '',
       mediaUrl: item.mediaUrl,
       thumbnailUrl: item.thumbnailUrl || item.mediaUrl,
@@ -110,6 +154,7 @@ export const AdminGalleryView: React.FC = () => {
       sortOrder: item.sortOrder || 1,
       isActive: item.isActive,
     });
+    setCustomCategoryInput(isPreset ? '' : existingCat);
     setFormErrors({});
     setIsDirty(false);
     setIsEditorOpen(true);
@@ -119,6 +164,9 @@ export const AdminGalleryView: React.FC = () => {
     const errors: Record<string, string> = {};
     if (!formData.title.trim()) errors.title = 'Title is required';
     if (!formData.mediaUrl.trim()) errors.mediaUrl = 'Media URL is required';
+    if (formData.category === 'Other / Custom' && !customCategoryInput.trim()) {
+      errors.category = 'Please enter a custom category name';
+    }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -129,9 +177,47 @@ export const AdminGalleryView: React.FC = () => {
 
     setIsSaving(true);
     try {
+      const resolvedCategory =
+        formData.category === 'Other / Custom' && customCategoryInput.trim()
+          ? customCategoryInput.trim()
+          : (formData.category || 'Weddings');
+
+      // Ensure this category is registered in the central categories collection
+      const existingCategory = cmsService
+        .getAll<CmsCategory>('categories')
+        .find((c) => c.name.toLowerCase() === resolvedCategory.toLowerCase());
+
+      if (!existingCategory) {
+        cmsService.create<CmsCategory>('categories', {
+          name: resolvedCategory,
+          slug: resolvedCategory
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, ''),
+          divisionId: formData.divisionId,
+          description: `Gallery collection for ${resolvedCategory}`,
+          iconName: 'FolderTree',
+          itemCount: 1,
+          displayOrder: 1,
+          isActive: true,
+        });
+      }
+
+      // Automatically compress and optimize base64 images to prevent quota exhaustion
+      let finalMediaUrl = formData.mediaUrl.trim();
+      let finalThumbnailUrl = formData.thumbnailUrl?.trim() || finalMediaUrl;
+
+      if (finalMediaUrl.startsWith('data:image/')) {
+        finalMediaUrl = await compressDataUrl(finalMediaUrl, 1280, 0.75);
+        finalThumbnailUrl = await compressDataUrl(finalMediaUrl, 400, 0.7);
+      }
+
       const payload = {
         ...formData,
-        thumbnailUrl: formData.thumbnailUrl || formData.mediaUrl,
+        mediaUrl: finalMediaUrl,
+        thumbnailUrl: finalThumbnailUrl,
+        category: resolvedCategory,
+        tags: Array.from(new Set([resolvedCategory, ...(formData.tags || [])])),
       };
 
       if (editingItem) {
@@ -213,7 +299,7 @@ export const AdminGalleryView: React.FC = () => {
           <select
             value={divisionFilter}
             onChange={(e) => setDivisionFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 font-semibold cursor-pointer"
+            className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 font-semibold cursor-pointer text-slate-700"
           >
             <option value="all">All Divisions</option>
             <option value="sws">SWS Event Management</option>
@@ -224,9 +310,22 @@ export const AdminGalleryView: React.FC = () => {
           </select>
 
           <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 font-semibold cursor-pointer text-slate-700"
+          >
+            <option value="all">All Categories ({availableCategories.length})</option>
+            {availableCategories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+
+          <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 font-semibold cursor-pointer"
+            className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 font-semibold cursor-pointer text-slate-700"
           >
             <option value="all">All Status</option>
             <option value="active">Active Only</option>
@@ -237,12 +336,26 @@ export const AdminGalleryView: React.FC = () => {
 
       {/* Grid of Gallery Items */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {galleryItems.length === 0 ? (
+        {galleryItems.filter((item) => {
+          if (categoryFilter !== 'all') {
+            const itemCat = item.category || (Array.isArray(item.tags) && item.tags[0]);
+            if (itemCat !== categoryFilter) return false;
+          }
+          return true;
+        }).length === 0 ? (
           <div className="col-span-full py-12 bg-white rounded-2xl border border-slate-200 text-center text-slate-500 text-xs">
             No gallery assets found matching filters.
           </div>
         ) : (
-          galleryItems.map((item) => (
+          galleryItems
+            .filter((item) => {
+              if (categoryFilter !== 'all') {
+                const itemCat = item.category || (Array.isArray(item.tags) && item.tags[0]);
+                if (itemCat !== categoryFilter) return false;
+              }
+              return true;
+            })
+            .map((item) => (
             <div
               key={item.id}
               className={`bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden flex flex-col transition-all hover:shadow-md ${
@@ -255,6 +368,9 @@ export const AdminGalleryView: React.FC = () => {
                   alt={item.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
+                <div className="absolute top-2 left-2 flex items-center gap-1 bg-blue-600/90 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
+                  {item.category || (Array.isArray(item.tags) && item.tags[0]) || 'Weddings'}
+                </div>
                 <div className="absolute top-2 right-2 flex items-center gap-1 bg-slate-900/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
                   {item.divisionId}
                 </div>
@@ -340,7 +456,7 @@ export const AdminGalleryView: React.FC = () => {
             {formErrors.title && <p className="text-red-600 text-[10px] mt-0.5">{formErrors.title}</p>}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block font-semibold text-slate-700 mb-1">Division Assignment</label>
               <select
@@ -356,6 +472,44 @@ export const AdminGalleryView: React.FC = () => {
                 <option value="it">Mahdev IT & Solutions</option>
                 <option value="travels">Mahdev Travels</option>
                 <option value="mart">Mahdev Online Mart</option>
+              </select>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-semibold text-slate-700">Category *</label>
+                <QuickCategoryCreator
+                  currentDivisionId={formData.divisionId}
+                  onCategoryCreated={(newCat) => {
+                    setAvailableCategories((prev) =>
+                      Array.from(new Set([...prev, newCat.name])).sort()
+                    );
+                    setFormData((prev) => ({ ...prev, category: newCat.name }));
+                    setCustomCategoryInput('');
+                    setIsDirty(true);
+                    addToast(
+                      'success',
+                      'Category Created',
+                      `"${newCat.name}" is now created and applied.`
+                    );
+                  }}
+                  buttonLabel="+ Manual Add"
+                />
+              </div>
+              <select
+                value={formData.category}
+                onChange={(e) => {
+                  setFormData({ ...formData, category: e.target.value });
+                  setIsDirty(true);
+                }}
+                className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
+              >
+                {availableCategories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+                <option value="Other / Custom">+ Other / Custom</option>
               </select>
             </div>
 
@@ -376,6 +530,23 @@ export const AdminGalleryView: React.FC = () => {
               </select>
             </div>
           </div>
+
+          {formData.category === 'Other / Custom' && (
+            <div className="bg-blue-50/60 p-3 rounded-xl border border-blue-200">
+              <label className="block font-semibold text-blue-900 mb-1">Custom Category Name *</label>
+              <input
+                type="text"
+                value={customCategoryInput}
+                onChange={(e) => {
+                  setCustomCategoryInput(e.target.value);
+                  setIsDirty(true);
+                }}
+                placeholder="e.g. Traditional Weddings, High Tea, Fashion Show..."
+                className="w-full px-3 py-2 border rounded-lg border-blue-300 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
+              />
+              {formErrors.category && <p className="text-red-600 text-[10px] mt-0.5">{formErrors.category}</p>}
+            </div>
+          )}
 
           <div>
             <label className="block font-semibold text-slate-700 mb-1">Media URL *</label>

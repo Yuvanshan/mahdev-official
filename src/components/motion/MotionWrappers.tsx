@@ -339,7 +339,7 @@ export const ParallaxContainer: React.FC<{
   );
 };
 
-// 5. 3D Perspective Tilt Card with Specular Glare
+// 5. Professional Enterprise Card Container (Precision subtle elevation, no 3D distortion)
 export const TiltCard: React.FC<{
   children: React.ReactNode;
   className?: string;
@@ -350,78 +350,12 @@ export const TiltCard: React.FC<{
 }> = ({
   children,
   className = '',
-  maxTilt = 8,
-  glareEffect = true,
   onClick,
   id,
 }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const rectRef = useRef<{ left: number; top: number; width: number; height: number } | null>(null);
-  const { reducedMotion, isTouch } = useDeviceMotion();
+  const { reducedMotion } = useDeviceMotion();
 
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-
-  const mouseXSpring = useSpring(x, { stiffness: 140, damping: 18 });
-  const mouseYSpring = useSpring(y, { stiffness: 140, damping: 18 });
-
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], [maxTilt, -maxTilt]);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], [-maxTilt, maxTilt]);
-
-  const [isHovered, setIsHovered] = useState(false);
-  const [glarePosition, setGlarePosition] = useState({ x: 50, y: 50 });
-
-  const handleMouseEnter = () => {
-    if (!ref.current || isTouch || reducedMotion) return;
-    const rect = ref.current.getBoundingClientRect();
-    rectRef.current = {
-      left: rect.left,
-      top: rect.top,
-      width: rect.width || 1,
-      height: rect.height || 1,
-    };
-    setIsHovered(true);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!ref.current || isTouch || reducedMotion) return;
-    let rect = rectRef.current;
-    if (!rect) {
-      const domRect = ref.current.getBoundingClientRect();
-      rect = {
-        left: domRect.left,
-        top: domRect.top,
-        width: domRect.width || 1,
-        height: domRect.height || 1,
-      };
-      rectRef.current = rect;
-    }
-
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    const xPct = mouseX / rect.width - 0.5;
-    const yPct = mouseY / rect.height - 0.5;
-
-    x.set(xPct);
-    y.set(yPct);
-
-    if (glareEffect) {
-      setGlarePosition({
-        x: (mouseX / rect.width) * 100,
-        y: (mouseY / rect.height) * 100,
-      });
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    rectRef.current = null;
-    x.set(0);
-    y.set(0);
-  };
-
-  if (reducedMotion || isTouch) {
+  if (reducedMotion) {
     return (
       <div id={id} onClick={onClick} className={`w-full max-w-full min-w-0 ${className}`}>
         {children}
@@ -432,108 +366,30 @@ export const TiltCard: React.FC<{
   return (
     <motion.div
       id={id}
-      ref={ref}
       onClick={onClick}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      style={{
-        rotateX,
-        rotateY,
-        transformStyle: 'preserve-3d',
-        perspective: 1000,
-      }}
-      className={`relative transform-gpu will-change-transform w-full max-w-full min-w-0 ${className}`}
-    >
-      <div style={{ transform: 'translateZ(10px)' }} className="w-full h-full min-w-0">
-        {children}
-      </div>
-
-      {glareEffect && isHovered && (
-        <div
-          className="pointer-events-none absolute inset-0 rounded-2xl transition-opacity duration-300 z-30 transform-gpu"
-          style={{
-            background: `radial-gradient(circle 240px at ${glarePosition.x}% ${glarePosition.y}%, rgba(255,255,255,0.18), transparent 70%)`,
-          }}
-        />
-      )}
-    </motion.div>
-  );
-};
-
-// 6. Magnetic Element Wrapper (Buttons & Icons)
-export const Magnetic: React.FC<{
-  children: React.ReactNode;
-  strength?: number;
-  className?: string;
-}> = ({ children, strength = 0.25, className = '' }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const rectRef = useRef<{ left: number; top: number; width: number; height: number } | null>(null);
-  const { reducedMotion, isTouch } = useDeviceMotion();
-
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-
-  const springConfig = { stiffness: 180, damping: 18, mass: 0.1 };
-  const springX = useSpring(x, springConfig);
-  const springY = useSpring(y, springConfig);
-
-  const handleMouseEnter = () => {
-    if (!ref.current || isTouch || reducedMotion) return;
-    const rect = ref.current.getBoundingClientRect();
-    rectRef.current = {
-      left: rect.left,
-      top: rect.top,
-      width: rect.width || 1,
-      height: rect.height || 1,
-    };
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!ref.current || isTouch || reducedMotion) return;
-    let rect = rectRef.current;
-    if (!rect) {
-      const domRect = ref.current.getBoundingClientRect();
-      rect = {
-        left: domRect.left,
-        top: domRect.top,
-        width: domRect.width || 1,
-        height: domRect.height || 1,
-      };
-      rectRef.current = rect;
-    }
-
-    const middleX = e.clientX - (rect.left + rect.width / 2);
-    const middleY = e.clientY - (rect.top + rect.height / 2);
-    x.set(middleX * strength);
-    y.set(middleY * strength);
-  };
-
-  const handleMouseLeave = () => {
-    rectRef.current = null;
-    x.set(0);
-    y.set(0);
-  };
-
-  if (reducedMotion || isTouch) {
-    return <div className={className}>{children}</div>;
-  }
-
-  return (
-    <motion.div
-      ref={ref}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      style={{ x: springX, y: springY }}
-      className={`inline-block will-change-transform transform-gpu ${className}`}
+      whileHover={{ y: -3 }}
+      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      className={`w-full max-w-full min-w-0 ${className}`}
     >
       {children}
     </motion.div>
   );
 };
 
-// 7. Lightweight 3D Floating Mesh / Geometrics
+// 6. Responsive Interaction Wrapper (Stable, ergonomic button touch/hover response)
+export const Magnetic: React.FC<{
+  children: React.ReactNode;
+  strength?: number;
+  className?: string;
+}> = ({ children, className = '' }) => {
+  return (
+    <div className={`inline-block ${className}`}>
+      {children}
+    </div>
+  );
+};
+
+// 7. Subtle Architectural Decorative Accent
 export const Floating3DObject: React.FC<{
   size?: number;
   color?: string;
@@ -542,7 +398,6 @@ export const Floating3DObject: React.FC<{
   className?: string;
 }> = ({
   size = 60,
-  color = '#0052FF',
   delay = 0,
   duration = 6,
   className = '',
@@ -555,10 +410,9 @@ export const Floating3DObject: React.FC<{
 
   return (
     <motion.div
-      initial={{ y: 0, rotate: 0 }}
+      initial={{ y: 0 }}
       animate={{
-        y: [-10, 10, -10],
-        rotate: [0, 8, -8, 0],
+        y: [-6, 6, -6],
       }}
       transition={{
         duration,
@@ -568,7 +422,7 @@ export const Floating3DObject: React.FC<{
         delay,
       }}
       style={{ width: size, height: size }}
-      className={`pointer-events-none absolute rounded-3xl backdrop-blur-md bg-gradient-to-br from-blue-500/15 to-indigo-500/5 border border-blue-400/20 shadow-lg shadow-blue-500/5 ${className}`}
+      className={`pointer-events-none absolute rounded-2xl bg-slate-100/60 border border-slate-200/50 ${className}`}
     />
   );
 };

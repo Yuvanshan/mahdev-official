@@ -135,7 +135,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
             <div className="w-full h-1.5 bg-blue-200 rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all duration-300 ${
-                  cartSummary.isFreeShipping ? 'bg-emerald-500' : 'bg-[#0052FF]'
+                  cartSummary.isFreeShipping ? 'bg-emerald-500' : 'bg-blue-600'
                 }`}
                 style={{ width: `${progressPercent}%` }}
               />
@@ -375,7 +375,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
 
               <div className="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-slate-200">
                 <span>Grand Total</span>
-                <span className="font-mono text-base text-[#0052FF]">
+                <span className="font-mono text-base text-blue-600 font-bold">
                   ${cartSummary.grandTotal.toFixed(2)}
                 </span>
               </div>
@@ -393,7 +393,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
             <div className="space-y-2">
               <button
                 onClick={handleProceedToCheckout}
-                className="w-full py-3 px-4 rounded-xl bg-[#0052FF] hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
+                className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
               >
                 <span>Proceed to Checkout</span>
                 <ArrowRight className="w-4 h-4" />

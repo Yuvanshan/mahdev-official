@@ -77,8 +77,8 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
   return (
     <div className="w-full flex flex-col bg-white">
       <SEOHead
-        title="Mahdev Online Mart | Pure Ceylon Tea, Organic Spices & Lifestyle Tech"
-        description="Premium e-commerce storefront by Mahdev Pvt Ltd. Shop direct-origin Ceylon teas, Alba cinnamon quills, Ayurvedic wellness elixirs, and lifestyle electronics with island-wide delivery."
+        title="Mahdev Online Mart | Curated Decor Items & Smart Tech Gear"
+        description="Premium e-commerce storefront by Mahdev Pvt Ltd. Shop bespoke event & home decor, ambient stage lighting, smart electronics, and creator tech with island-wide delivery."
         canonicalUrl="https://mahdev.lk/mart"
       />
 

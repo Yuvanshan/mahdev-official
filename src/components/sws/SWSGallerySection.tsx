@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Maximize2,
   Filter,
+  MessageCircle,
 } from 'lucide-react';
 import { SWS_GALLERY_ITEMS, SWSGalleryItem } from '../../data/swsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
@@ -15,12 +16,11 @@ import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
-
-type GalleryFilter = 'All' | 'Weddings' | 'Corporate' | 'Birthdays & Socials' | 'Stage & Lighting' | 'Dining & Decor';
+import { openWhatsAppInquiry } from '../../utils/whatsapp';
 
 export const SWSGallerySection: React.FC = () => {
   const { gallery: rawGallery } = useFirestoreDataContext();
-  const [selectedCategory, setSelectedCategory] = useState<GalleryFilter>('All');
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
 
   const galleryItems = useMemo<SWSGalleryItem[]>(() => {
@@ -29,33 +29,40 @@ export const SWSGallerySection: React.FC = () => {
         (g) => g.division === 'sws' || (g as any).divisionId === 'sws'
       );
       if (swsGal.length > 0) {
-        return swsGal.map((g) => ({
-          id: g.id,
-          title: g.title,
-          category: (((g as any).category && (g as any).category !== 'All' ? (g as any).category : 'Weddings') as SWSGalleryItem['category']),
-          imageUrl: (g as any).imageUrl || (g as any).url || (g as any).image || '',
-          location: (g as any).location || 'Colombo, Sri Lanka',
-          year: (g as any).year || '2024',
-          description: (g as any).description || (g as any).caption || '',
-          tags: (g as any).tags || [(g as any).tag || 'Weddings'],
-        }));
+        return swsGal.map((g) => {
+          const cat = (g as any).category || (g as any).tag || 'Weddings';
+          return {
+            id: g.id,
+            title: g.title,
+            category: cat as any,
+            imageUrl: (g as any).imageUrl || (g as any).url || (g as any).image || '',
+            location: (g as any).location || 'Colombo, Sri Lanka',
+            year: (g as any).year || '2024',
+            description: (g as any).description || (g as any).caption || '',
+            tags: (g as any).tags || [cat],
+          };
+        });
       }
     }
     return [];
   }, [rawGallery]);
 
+  const categories = useMemo<string[]>(() => {
+    const set = new Set<string>();
+    galleryItems.forEach((item) => {
+      const cat = item.category as string;
+      if (cat && cat !== 'All') set.add(cat);
+    });
+    const customCats = Array.from(set);
+    if (customCats.length === 0) {
+      return ['All', 'Weddings', 'Corporate', 'Birthdays & Socials', 'Stage & Lighting', 'Dining & Decor'];
+    }
+    return ['All', ...customCats];
+  }, [galleryItems]);
+
   if (galleryItems.length === 0) {
     return null;
   }
-
-  const categories: GalleryFilter[] = [
-    'All',
-    'Weddings',
-    'Corporate',
-    'Birthdays & Socials',
-    'Stage & Lighting',
-    'Dining & Decor',
-  ];
 
   const filteredItems = galleryItems.filter((item) => {
     return selectedCategory === 'All' || item.category === selectedCategory;
@@ -130,16 +137,39 @@ export const SWSGallerySection: React.FC = () => {
             {/* Vignette Overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent opacity-75 group-hover:opacity-90 transition-opacity" />
 
-            {/* Top Category Badge */}
+            {/* Top Category Badge & WhatsApp Button */}
             <div className="absolute top-3 left-3">
               <Badge variant="default" size="sm" className="bg-black/60 backdrop-blur-md text-white text-[10px]">
                 {item.category}
               </Badge>
             </div>
 
-            {/* Expand Icon */}
-            <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <Maximize2 className="w-3.5 h-3.5" />
+            {/* Direct WhatsApp button with image + Expand Icon */}
+            <div className="absolute top-3 right-3 flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openWhatsAppInquiry({
+                    title: item.title,
+                    category: item.category,
+                    divisionName: 'SWS Event Management',
+                    imageUrl: item.imageUrl,
+                    location: item.location,
+                    description: item.description,
+                    type: 'gallery',
+                  });
+                }}
+                title="Send WhatsApp inquiry with this photo to 0750928078"
+                className="px-2.5 py-1 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white flex items-center gap-1 text-[11px] font-bold shadow-md opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer active:scale-95"
+              >
+                <MessageCircle className="w-3 h-3 fill-white/20" />
+                <span>WhatsApp</span>
+              </button>
+
+              <div className="w-7 h-7 rounded-full bg-white/20 backdrop-blur-md text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Maximize2 className="w-3.5 h-3.5" />
+              </div>
             </div>
 
             {/* Bottom Details */}
@@ -205,8 +235,8 @@ export const SWSGallerySection: React.FC = () => {
             </div>
 
             {/* Image Details Caption Bar */}
-            <div className="w-full max-w-3xl mt-4 bg-slate-900/90 backdrop-blur-md rounded-xl p-4 border border-white/10 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div>
+            <div className="w-full max-w-3xl mt-4 bg-slate-900/90 backdrop-blur-md rounded-2xl p-4 border border-white/10 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <Badge variant="electric" size="sm">
                     {activeItem.category}
@@ -215,23 +245,43 @@ export const SWSGallerySection: React.FC = () => {
                     {activeItem.location} ({activeItem.year})
                   </span>
                 </div>
-                <h4 className="font-display text-base font-bold text-white mt-1">
+                <h4 className="font-display text-base font-bold text-white">
                   {activeItem.title}
                 </h4>
-                <p className="text-xs text-slate-300 mt-0.5">{activeItem.description}</p>
+                <p className="text-xs text-slate-300">{activeItem.description}</p>
+                {/* Tags */}
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {activeItem.tags.map((t, idx) => (
+                    <span
+                      key={idx}
+                      className="text-[10px] font-medium bg-white/10 text-slate-200 px-2 py-0.5 rounded-md"
+                    >
+                      #{t}
+                    </span>
+                  ))}
+                </div>
               </div>
 
-              {/* Tags */}
-              <div className="flex flex-wrap gap-1.5 shrink-0">
-                {activeItem.tags.map((t, idx) => (
-                  <span
-                    key={idx}
-                    className="text-[10px] font-medium bg-white/10 text-slate-200 px-2 py-0.5 rounded-md"
-                  >
-                    #{t}
-                  </span>
-                ))}
-              </div>
+              {/* Direct WhatsApp Action Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  openWhatsAppInquiry({
+                    title: activeItem.title,
+                    category: activeItem.category,
+                    divisionName: 'SWS Event Management',
+                    imageUrl: activeItem.imageUrl,
+                    location: activeItem.location,
+                    description: activeItem.description,
+                    type: 'gallery',
+                  });
+                }}
+                title="Send inquiry with this photo to WhatsApp 0750928078"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs sm:text-sm font-bold shadow-md shadow-emerald-500/20 transition-all cursor-pointer active:scale-95 shrink-0"
+              >
+                <MessageCircle className="w-4 h-4 fill-white/20" />
+                <span>Inquire on WhatsApp (0750928078)</span>
+              </button>
             </div>
           </div>
         </div>

@@ -258,6 +258,8 @@ export const AdminDivisionsView: React.FC = () => {
           tagline: formData.tagline,
           description: formData.description,
           badge: formData.badge,
+          imageUrl: formData.heroImageUrl,
+          heroImageUrl: formData.heroImageUrl,
           route: formData.route,
           accentColor: formData.accentColor,
           gradient: formData.gradient,

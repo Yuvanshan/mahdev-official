@@ -129,7 +129,7 @@ export function getDefaultDivisions(): FirestoreDivision[] {
       isPublished: true,
       order: d.order,
       badge: rawDivision?.badge || d.name,
-      accentColor: rawDivision?.accentColor || '#0052FF',
+      accentColor: rawDivision?.accentColor || '#1d4ed8',
       gradient: rawDivision?.gradient || 'from-blue-600 to-indigo-700',
       iconName: rawDivision?.iconName || 'Sparkles',
       heroHeadline: rawDivision?.heroHeadline || d.name,

@@ -935,39 +935,47 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
             <h3 className="text-base font-bold text-slate-900 mb-2">Customer Profile Segments</h3>
             <p className="text-xs text-slate-500 mb-6">Registered client ratio and enterprise retainers</p>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-blue-100 text-[#0052FF] flex items-center justify-center font-bold">
-                    <Building className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="font-bold text-slate-900 text-sm">Corporate Enterprise Accounts</div>
-                    <div className="text-xs text-slate-500">Companies & Institutional Brands</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-base font-bold text-slate-900">{report.customerBreakdown.corporateCount} Accounts</div>
-                  <div className="text-xs text-indigo-600 font-semibold">38% Share</div>
-                </div>
-              </div>
+            {(() => {
+              const totalAccounts = report.customerBreakdown.corporateCount + report.customerBreakdown.individualCount;
+              const corpPct = totalAccounts > 0 ? Math.round((report.customerBreakdown.corporateCount / totalAccounts) * 100) : 0;
+              const indivPct = totalAccounts > 0 ? 100 - corpPct : 0;
 
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold">
-                    <Users className="w-4 h-4" />
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-blue-100 text-[#0052FF] flex items-center justify-center font-bold">
+                        <Building className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-900 text-sm">Corporate Enterprise Accounts</div>
+                        <div className="text-xs text-slate-500">Companies & Institutional Brands</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-base font-bold text-slate-900">{report.customerBreakdown.corporateCount} Accounts</div>
+                      <div className="text-xs text-indigo-600 font-semibold">{corpPct}% Share</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="font-bold text-slate-900 text-sm">Individual & Retail Consumers</div>
-                    <div className="text-xs text-slate-500">Mart Buyers & Private Bookings</div>
+
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold">
+                        <Users className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-900 text-sm">Individual & Retail Consumers</div>
+                        <div className="text-xs text-slate-500">Mart Buyers & Private Bookings</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-base font-bold text-slate-900">{report.customerBreakdown.individualCount} Accounts</div>
+                      <div className="text-xs text-emerald-600 font-semibold">{indivPct}% Share</div>
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-base font-bold text-slate-900">{report.customerBreakdown.individualCount} Accounts</div>
-                  <div className="text-xs text-emerald-600 font-semibold">62% Share</div>
-                </div>
-              </div>
-            </div>
+              );
+            })()}
           </div>
 
           {/* Privacy & Performance Compliance Audit Card */}

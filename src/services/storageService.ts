@@ -21,7 +21,8 @@ import {
   UploadResult,
   DeleteResult,
 } from '../types/storage';
-import { validateFile, validateSvgSecurity, optimizeImage } from '../utils/imageOptimizer';
+import { validateFile, validateSvgSecurity, optimizeImage, compressDataUrl } from '../utils/imageOptimizer';
+import { safeStorage } from '../utils/safeStorage';
 import { authService } from './authService';
 import { adminService, syncAdminFirebaseAuth } from './adminService';
 
@@ -327,11 +328,12 @@ class StorageService {
 
         // If user is verified administrative personnel or standard customer, fallback to high-fidelity Data URL 
         // to prevent unblocking workflow when external Storage bucket rules require server claims
-        downloadUrl = await new Promise<string>((resolve) => {
+        const rawDataUrl = await new Promise<string>((resolve) => {
           const reader = new FileReader();
           reader.onload = (e) => resolve(e.target?.result as string);
           reader.readAsDataURL(fileToUpload);
         });
+        downloadUrl = await compressDataUrl(rawDataUrl, 1280, 0.75);
         options?.onProgress?.(100);
       }
 
@@ -467,7 +469,14 @@ class StorageService {
       } else {
         items.unshift(item);
       }
-      localStorage.setItem(MEDIA_CATALOG_STORAGE_KEY, JSON.stringify(items.slice(0, 150)));
+      // Keep up to 30 items in local cache and prevent storing massive raw base64 data
+      const safeItems = items.slice(0, 30).map((i) => {
+        if (i.url && typeof i.url === 'string' && i.url.startsWith('data:') && i.url.length > 30000) {
+          return { ...i, url: i.url.slice(0, 120) + '...[compacted]' };
+        }
+        return i;
+      });
+      safeStorage.setItem(MEDIA_CATALOG_STORAGE_KEY, JSON.stringify(safeItems));
     } catch (err) {
       console.warn('[StorageService] Failed to index media item:', err);
     }
@@ -476,7 +485,7 @@ class StorageService {
   private removeIndexedItem(storagePath: string): void {
     try {
       const items = this.getIndexedItems().filter((i) => i.storagePath !== storagePath);
-      localStorage.setItem(MEDIA_CATALOG_STORAGE_KEY, JSON.stringify(items));
+      safeStorage.setItem(MEDIA_CATALOG_STORAGE_KEY, JSON.stringify(items));
     } catch {}
   }
 }

@@ -49,6 +49,7 @@ import { AccountLayout } from './views/account/AccountLayout';
 import { AdminLayout } from './views/admin/AdminLayout';
 import { MaintenanceView } from './views/MaintenanceView';
 import { InitialAppLoader } from './components/common/InitialAppLoader';
+import { DocumentScrollProgress } from './components/motion/ParallelScroll';
 
 function AppContent() {
   const {
@@ -139,8 +140,10 @@ function AppContent() {
   };
 
   // Extract path and query params for redirection
-  const [basePath, searchParamsString] = currentPath.split('?');
-  const normalizedPath = basePath.toLowerCase().replace(/\/$/, '') || '/';
+  const [basePathWithHash, searchParamsString] = currentPath.split('?');
+  const basePath = basePathWithHash.split('#')[0];
+  const normalizedPath =
+    (basePath.startsWith('/') ? basePath : `/${basePath}`).toLowerCase().replace(/\/$/, '') || '/';
   const redirectParam = searchParamsString
     ? new URLSearchParams(searchParamsString).get('redirect') || undefined
     : undefined;
@@ -148,16 +151,68 @@ function AppContent() {
   const isAdminRoute = normalizedPath === '/admin' || normalizedPath.startsWith('/admin/');
 
   // Determine current division from path or known aliases
-  const divisionKey = (Object.keys(DIVISIONS) as DivisionId[]).find((key) => {
-    const route = DIVISIONS[key].route;
-    if (route === normalizedPath) return true;
-    if (key === 'sws' && ['/sws-events', '/sws', '/events', '/event-management'].includes(normalizedPath)) return true;
-    if (key === 'u1' && ['/u1-studio', '/u1', '/studio', '/photography'].includes(normalizedPath)) return true;
-    if (key === 'it' && ['/it-solutions', '/it', '/mahdev-it', '/solutions', '/software'].includes(normalizedPath)) return true;
-    if (key === 'travels' && ['/mahdev-travels', '/travels', '/tourism', '/tours'].includes(normalizedPath)) return true;
-    if (key === 'mart' && ['/online-mart', '/mart', '/mahdev-mart', '/shop', '/store'].includes(normalizedPath)) return true;
-    return false;
-  });
+  const divisionKey =
+    (Object.keys(DIVISIONS) as DivisionId[]).find((key) => {
+      const route = DIVISIONS[key].route;
+      if (route === normalizedPath) return true;
+      if (
+        key === 'sws' &&
+        [
+          '/sws-events',
+          '/sws',
+          '/events',
+          '/event-management',
+          '/sws-event-management',
+          '/sws-event',
+          '/events-management',
+          '/decorations',
+          '/decor',
+        ].includes(normalizedPath)
+      )
+        return true;
+      if (
+        key === 'u1' &&
+        ['/u1-studio', '/u1', '/studio', '/photography', '/cinema', '/u1-cinema'].includes(
+          normalizedPath
+        )
+      )
+        return true;
+      if (
+        key === 'it' &&
+        ['/it-solutions', '/it', '/mahdev-it', '/solutions', '/software', '/it-services'].includes(
+          normalizedPath
+        )
+      )
+        return true;
+      if (
+        key === 'travels' &&
+        ['/mahdev-travels', '/travels', '/tourism', '/tours', '/travel'].includes(normalizedPath)
+      )
+        return true;
+      if (
+        key === 'mart' &&
+        ['/online-mart', '/mart', '/mahdev-mart', '/shop', '/store'].includes(normalizedPath)
+      )
+        return true;
+      return false;
+    }) ||
+    (() => {
+      const matched = divisions.find(
+        (d) =>
+          d.route === normalizedPath ||
+          `/${d.slug}` === normalizedPath ||
+          `/${d.id}` === normalizedPath
+      );
+      if (!matched) return undefined;
+      const rawId = matched.id || matched.slug;
+      if (rawId === 'sws' || rawId === 'sws-event-management' || rawId === 'sws-events')
+        return 'sws';
+      if (rawId === 'u1' || rawId === 'u1-studio') return 'u1';
+      if (rawId === 'it' || rawId === 'it-solutions') return 'it';
+      if (rawId === 'travels' || rawId === 'mahdev-travels') return 'travels';
+      if (rawId === 'mart' || rawId === 'online-mart' || rawId === 'mahdev-mart') return 'mart';
+      return (rawId as DivisionId);
+    })();
 
   // Track page views and division views automatically
   useEffect(() => {
@@ -306,12 +361,25 @@ function AppContent() {
       return <OrderConfirmationView orderId={orderId} onNavigate={navigate} />;
     }
 
-    if (normalizedPath === '/sws' || divisionKey === 'sws') {
+    if (
+      normalizedPath === '/sws' ||
+      normalizedPath === '/sws-event-management' ||
+      normalizedPath === '/sws-events' ||
+      normalizedPath === '/event-management' ||
+      normalizedPath === '/events' ||
+      divisionKey === 'sws'
+    ) {
       return <SWSView onNavigate={navigate} />;
     }
 
-    if (normalizedPath.startsWith('/sws/')) {
-      const subSlug = normalizedPath.replace('/sws/', '').trim();
+    if (
+      normalizedPath.startsWith('/sws/') ||
+      normalizedPath.startsWith('/sws-event-management/') ||
+      normalizedPath.startsWith('/sws-events/')
+    ) {
+      const subSlug = normalizedPath
+        .replace(/^\/(sws|sws-event-management|sws-events)\//, '')
+        .trim();
       const validSubsections = [
         'services',
         'packages',
@@ -322,7 +390,7 @@ function AppContent() {
         'booking',
         'contact',
       ];
-      if (validSubsections.includes(subSlug)) {
+      if (!subSlug || validSubsections.includes(subSlug)) {
         return <SWSView onNavigate={navigate} />;
       }
 
@@ -530,11 +598,43 @@ function AppContent() {
       const divSlug = normalizedPath.replace(/^\/(divisions|division)\//, '').trim();
       const matchedDiv =
         (Object.keys(DIVISIONS) as DivisionId[]).find((key) => key === divSlug) ||
-        divisions.find((d) => d.slug === divSlug || d.id === divSlug);
+        divisions.find(
+          (d) =>
+            d.slug === divSlug ||
+            d.id === divSlug ||
+            d.route === `/${divSlug}` ||
+            (d.route && d.route.replace(/^\//, '') === divSlug)
+        );
 
-      if (matchedDiv) {
+      if (
+        matchedDiv ||
+        [
+          'sws',
+          'sws-event-management',
+          'sws-events',
+          'u1',
+          'u1-studio',
+          'it',
+          'it-solutions',
+          'travels',
+          'mart',
+          'online-mart',
+        ].includes(divSlug)
+      ) {
+        const rawId = typeof matchedDiv === 'string' ? matchedDiv : (matchedDiv?.id || divSlug);
         const divId =
-          typeof matchedDiv === 'string' ? matchedDiv : (matchedDiv.id as DivisionId);
+          rawId === 'sws' || rawId === 'sws-event-management' || rawId === 'sws-events'
+            ? 'sws'
+            : rawId === 'u1' || rawId === 'u1-studio'
+            ? 'u1'
+            : rawId === 'it' || rawId === 'it-solutions'
+            ? 'it'
+            : rawId === 'travels' || rawId === 'mahdev-travels'
+            ? 'travels'
+            : rawId === 'mart' || rawId === 'online-mart'
+            ? 'mart'
+            : (rawId as DivisionId);
+
         if (divId === 'sws') return <SWSView onNavigate={navigate} />;
         if (divId === 'u1') return <U1View onNavigate={navigate} />;
         if (divId === 'it') return <ITView onNavigate={navigate} />;
@@ -665,7 +765,10 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-[#0052FF] selection:text-white w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-blue-600 selection:text-white w-full max-w-full overflow-x-hidden">
+      {/* Top Document Scroll Progress Bar */}
+      <DocumentScrollProgress />
+
       {/* Interactive Magnetic Custom Cursor for Desktop */}
       <CustomCursor />
 

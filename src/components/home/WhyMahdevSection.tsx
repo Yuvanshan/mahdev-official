@@ -1,83 +1,133 @@
 import React from 'react';
-import { CheckCircle2, ShieldCheck } from 'lucide-react';
+import {
+  ShieldCheck,
+  Zap,
+  Layers,
+  PhoneCall,
+  CheckCircle2,
+  Award,
+  Star,
+  Clock,
+  Heart,
+  Building,
+  Sparkles,
+  Check,
+} from 'lucide-react';
+import { motion } from 'motion/react';
 import { SectionContainer } from '../ui/SectionContainer';
-import { IconRenderer } from '../ui/IconRenderer';
-import { ScrollReveal } from '../motion/MotionWrappers';
-import { WHY_MAHDEV_DIFFERENTIATORS } from '../../data/homeData';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { EnterpriseStandardGuarantee } from '../../types/cms';
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  ShieldCheck,
+  Zap,
+  Layers,
+  PhoneCall,
+  CheckCircle2,
+  Award,
+  Star,
+  Clock,
+  Heart,
+  Building,
+  Sparkles,
+  Check,
+};
+
+const DEFAULT_GUARANTEES: EnterpriseStandardGuarantee[] = [
+  {
+    id: 'std-1',
+    iconName: 'ShieldCheck',
+    title: 'Direct Holding Governance',
+    description: 'Zero third-party brokerages. You contract directly with certified in-house technical directors and crews.',
+    tag: '100% In-House',
+  },
+  {
+    id: 'std-2',
+    iconName: 'Zap',
+    title: 'Turnkey Execution Speed',
+    description: 'From 3D CAD stage renders and software sprint cycles to immediate nationwide logistics.',
+    tag: 'Turnkey SLA',
+  },
+  {
+    id: 'std-3',
+    iconName: 'Layers',
+    title: '5,000+ Verified Assets',
+    description: 'State-of-the-art concert audio, LED walls, German trussing, cinema cameras, and vehicle fleets.',
+    tag: 'Fully Owned',
+  },
+  {
+    id: 'std-4',
+    iconName: 'PhoneCall',
+    title: 'Direct Client Line: 075 092 8078',
+    description: 'Dedicated account managers ensuring uninterrupted coordination across all divisions 24/7.',
+    tag: 'Always Active',
+  },
+];
 
 export const WhyMahdevSection: React.FC = () => {
+  const { homepageConfig } = useFirestoreDataContext();
+  const whyConfig = homepageConfig?.whyMahdev;
+
+  if (whyConfig?.enabled === false) {
+    return null;
+  }
+
+  const badge = whyConfig?.badge || 'Operational Standards';
+  const title = whyConfig?.title || 'The Enterprise Standard';
+  const subtitle =
+    whyConfig?.subtitle ||
+    'Rigorous quality control, in-house technical mastery, and clear accountability across every project.';
+  const guarantees =
+    whyConfig?.guarantees && whyConfig.guarantees.length > 0
+      ? whyConfig.guarantees
+      : DEFAULT_GUARANTEES;
+
   return (
-    <SectionContainer
-      id="why-mahdev"
-      background="white"
-      paddingY="xl"
-      hasBorderBottom
-    >
-      <ScrollReveal direction="up">
-        <div className="max-w-2xl mb-12">
-          <span className="text-[11px] font-bold uppercase tracking-widest text-[#0052FF] block mb-2">
-            Why Partner With Mahdev
-          </span>
-          <h2 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 mb-2">
-            The Enterprise Advantage
-          </h2>
-          <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-            Direct holding governance, dedicated technical crews, and transparent accountability across every engagement.
-          </p>
-        </div>
-      </ScrollReveal>
+    <SectionContainer id="why-mahdev" background="white" paddingY="xl" hasBorderBottom>
+      <div className="max-w-2xl mb-10">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 block mb-1">
+          {badge}
+        </span>
+        <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 mb-2">
+          {title}
+        </h2>
+        <p className="text-slate-500 text-sm">
+          {subtitle}
+        </p>
+      </div>
 
-      {/* Differentiators Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {WHY_MAHDEV_DIFFERENTIATORS.map((diff, idx) => (
-          <ScrollReveal key={diff.id} direction="up" delay={idx * 0.05}>
-            <div className="rounded-xl bg-slate-50/70 border border-slate-200/90 p-6 hover:border-blue-400 hover:bg-white transition-all duration-200 h-full flex flex-col justify-between">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        {guarantees.map((item, idx) => {
+          const Icon = (item.iconName && ICON_MAP[item.iconName]) || ShieldCheck;
+          return (
+            <motion.div
+              key={item.id || item.title || idx}
+              whileHover={{ y: -3 }}
+              transition={{ duration: 0.2 }}
+              className="rounded-2xl bg-slate-50/80 border border-slate-200/80 p-5 sm:p-6 flex flex-col justify-between hover:border-blue-400 hover:bg-white hover:shadow-xs transition-all"
+            >
               <div>
-                <div className="w-9 h-9 rounded-lg bg-blue-50 text-[#0052FF] flex items-center justify-center mb-4">
-                  <IconRenderer name={diff.iconName} className="w-4 h-4" />
+                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
+                  <Icon className="w-4 h-4" />
                 </div>
-
                 <h3 className="font-display text-base font-bold text-slate-900 mb-1.5">
-                  {diff.title}
+                  {item.title}
                 </h3>
-                <p className="text-xs text-slate-600 leading-relaxed mb-4">
-                  {diff.shortDescription}
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {item.description}
                 </p>
               </div>
 
-              <div className="pt-3 border-t border-slate-200/60 flex items-center gap-1.5 text-xs font-medium text-slate-700">
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#0052FF]" />
-                <span>{diff.badge}</span>
+              <div className="pt-3 mt-4 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-bold text-blue-600">
+                <span className="flex items-center gap-1 text-slate-700">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+                  {item.tag}
+                </span>
+                <span>Verified</span>
               </div>
-            </div>
-          </ScrollReveal>
-        ))}
-
-        {/* 6th Card: Delivery SLA */}
-        <ScrollReveal direction="up" delay={0.3}>
-          <div className="rounded-xl bg-slate-50/70 border border-slate-200/90 p-6 hover:border-blue-400 hover:bg-white transition-all duration-200 h-full flex flex-col justify-between">
-            <div>
-              <div className="w-9 h-9 rounded-lg bg-blue-50 text-[#0052FF] flex items-center justify-center mb-4">
-                <ShieldCheck className="w-4 h-4" />
-              </div>
-
-              <h3 className="font-display text-base font-bold text-slate-900 mb-1.5">
-                Service Level Assurance
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed mb-4">
-                Structured delivery timelines, verified checklists, and direct escalation to executive directors.
-              </p>
-            </div>
-
-            <div className="pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs font-medium text-slate-700">
-              <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#0052FF]" />
-                <span>Executive Oversight</span>
-              </span>
-              <span className="font-bold text-[#0052FF]">Verified</span>
-            </div>
-          </div>
-        </ScrollReveal>
+            </motion.div>
+          );
+        })}
       </div>
     </SectionContainer>
   );

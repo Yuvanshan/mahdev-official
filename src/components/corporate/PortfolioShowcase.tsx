@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ExternalLink, Filter, Sparkles, TrendingUp, Layers, CheckCircle2, ChevronRight, Image as ImageIcon, X } from 'lucide-react';
+import { ExternalLink, Filter, Sparkles, TrendingUp, Layers, CheckCircle2, ChevronRight, Image as ImageIcon, X, MessageCircle } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body, Caption } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
@@ -13,6 +13,7 @@ import {
 } from '../motion/MotionWrappers';
 import { PortfolioProject, DivisionId } from '../../types';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { openWhatsAppInquiry } from '../../utils/whatsapp';
 
 interface PortfolioShowcaseProps {
   onInquireProject?: (project: PortfolioProject) => void;
@@ -217,9 +218,30 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                         </span>
                       </div>
 
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#0052FF] bg-white px-3 py-1.5 rounded-full shadow-md group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                        Explore Case Study <ChevronRight className="w-3.5 h-3.5" />
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openWhatsAppInquiry({
+                              title: project.title,
+                              category: project.category,
+                              divisionName: project.divisionId ? project.divisionId.toUpperCase() : undefined,
+                              imageUrl: project.imageUrl,
+                              description: project.summary,
+                              type: 'portfolio',
+                            });
+                          }}
+                          title="WhatsApp Inquiry with Image (0750928078)"
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/70 hover:bg-emerald-600 hover:text-white border border-emerald-500/40 px-2.5 py-1.5 rounded-full transition-all cursor-pointer active:scale-95"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>WhatsApp</span>
+                        </button>
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#0052FF] bg-white px-3 py-1.5 rounded-full shadow-md group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                          Explore <ChevronRight className="w-3.5 h-3.5" />
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -376,7 +398,31 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                 </div>
               )}
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const allImages = [
+                      selectedProject.imageUrl,
+                      ...(selectedProject.galleryImages || []),
+                    ];
+                    const activeImg = allImages[activeGalleryIndex] || selectedProject.imageUrl;
+                    openWhatsAppInquiry({
+                      title: selectedProject.title,
+                      category: selectedProject.category,
+                      divisionName: selectedProject.divisionId ? selectedProject.divisionId.toUpperCase() : undefined,
+                      imageUrl: activeImg,
+                      description: selectedProject.summary,
+                      type: 'portfolio',
+                    });
+                  }}
+                  title="Send inquiry with currently viewed image to WhatsApp 0750928078"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs sm:text-sm font-bold shadow-md shadow-emerald-500/20 transition-all cursor-pointer active:scale-95"
+                >
+                  <MessageCircle className="w-4 h-4 fill-white/20" />
+                  <span>WhatsApp Inquiry</span>
+                </button>
+
                 <Button
                   size="sm"
                   variant="outline"

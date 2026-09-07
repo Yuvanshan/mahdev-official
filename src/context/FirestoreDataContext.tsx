@@ -357,7 +357,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     };
 
-    // Fast initial fetch
+    // Initial fetch: wait for real Firestore data to hydrate before dismissing loader to prevent visual glitch
     refreshAll()
       .then(() => {
         if (isMounted) {
@@ -365,13 +365,16 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       })
       .catch((err) => {
-        console.warn('[FirestoreDataContext] Initial fast hydration warning:', err);
+        console.warn('[FirestoreDataContext] Initial hydration warning:', err);
+        if (isMounted) {
+          markReady();
+        }
       });
 
-    // Safety timeout: ensure loading state completes promptly without stalling
+    // Fallback timeout: only used if network is unreachable or blocked, generous enough to avoid prematurely flashing defaults
     const safetyTimer = setTimeout(() => {
       markReady();
-    }, 850);
+    }, 4500);
 
     // 1. Core Realtime Centralized Listeners (Single Source of Truth, zero duplicate listeners)
     const unsubCompany = firestoreSettingsService.subscribeCompanySettings((data) => {

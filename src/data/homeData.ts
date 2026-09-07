@@ -112,17 +112,17 @@ export const FEATURED_SERVICES: FeaturedService[] = [
     divisionId: 'mart',
     divisionName: 'Mahdev Online Mart',
     divisionRoute: '/mart',
-    title: 'Enterprise Hardware & Curated Tech Mart',
-    description: 'Verified cinema gear, IT hardware, corporate bulk procurement solutions, and authenticated lifestyle accessories with warranty.',
+    title: 'Curated Decor & Tech Hardware Mart',
+    description: 'Bespoke event and interior decor, ambient stage lighting fixtures, authenticated smart electronics, and creator tech gear.',
     features: [
-      '100% Genuine Authorized Brand Stock',
-      'Bulk Corporate Pricing & Tax Invoicing',
+      'Authentic Event & Stage Decor Pieces',
+      'Smart Electronics & Creator Tech Gear',
       'Fast Island-wide Express Doorstep Delivery',
       'Dedicated After-Sales & Warranty Support'
     ],
     iconName: 'ShoppingBag',
     popular: false,
-    badge: 'Commerce & Retail',
+    badge: 'Decor & Smart Tech',
     accentColor: '#0052FF',
     turnaroundTime: '24-48h Dispatch'
   }
@@ -330,24 +330,24 @@ export const TRUSTED_COMPANIES: TrustedCompany[] = [
 export const WHY_MAHDEV_DIFFERENTIATORS: DifferentiatorItem[] = [
   {
     id: 'diff-ecosystem',
-    title: 'Multi-Service Ecosystem',
-    shortDescription: 'One trusted enterprise partner handling your events, visual media, technology, travel, and procurement without fragmented vendor management.',
-    fullDescription: 'Instead of dealing with multiple disjointed agencies, clients benefit from a single corporate partner with unified standards of quality, transparent billing, and synchronized project execution.',
+    title: 'Unified Ecosystem',
+    shortDescription: 'A single corporate partner managing events, media, tech, and travel without fragmented vendor coordination.',
+    fullDescription: 'Instead of dealing with multiple disjointed agencies, clients benefit from a single corporate partner with unified standards of quality and execution.',
     iconName: 'Layers',
-    badge: 'Holistic Synergy',
+    badge: 'Unified Synergy',
     highlightPoints: [
       'Single point of accountability across 5 divisions',
-      'Synchronized project timelines and cross-functional support',
-      'Consolidated corporate invoicing and dedicated account manager'
+      'Synchronized timelines and cross-functional teams',
+      'Consolidated invoicing and dedicated account lead'
     ]
   },
   {
     id: 'diff-creative',
-    title: 'Creative Expertise & Artistry',
-    shortDescription: 'Masterful storytelling, bespoke spatial aesthetics, and cinema-grade visual fidelity across every production.',
-    fullDescription: 'From high-impact conference staging with acoustic mastery to editorial photojournalism and brand commercials, our creative teams possess deep artistic training and elite equipment.',
+    title: 'Creative Artistry',
+    shortDescription: 'Cinema-grade visual fidelity, spatial aesthetics, and bespoke storytelling across every production.',
+    fullDescription: 'From high-impact conference staging to editorial photojournalism and brand commercials, our creative teams deliver refined artistic execution.',
     iconName: 'Sparkles',
-    badge: 'Artistic Mastery',
+    badge: 'Creative Mastery',
     highlightPoints: [
       'Cinema 8K production rigs and fine-art composition',
       'Artisanal stage design and custom lighting architecture',
@@ -356,24 +356,24 @@ export const WHY_MAHDEV_DIFFERENTIATORS: DifferentiatorItem[] = [
   },
   {
     id: 'diff-tech',
-    title: 'Technology-Driven Solutions',
-    shortDescription: 'Resilient cloud software, automated workflows, and modern web architectures engineered for scale.',
-    fullDescription: 'Our IT division engineers robust, type-safe software platforms and automated systems that power modern enterprise efficiency with high uptime and strict data integrity.',
+    title: 'Engineered Systems',
+    shortDescription: 'Modern cloud architectures, automated workflows, and enterprise platforms built for scale.',
+    fullDescription: 'Our IT division engineers robust, type-safe software platforms and automated systems that power modern enterprise efficiency.',
     iconName: 'Cpu',
     badge: 'Engineered Precision',
     highlightPoints: [
       'High-performance React, TypeScript & cloud architectures',
-      '99.99% uptime guarantees on enterprise systems',
+      'High uptime guarantees on enterprise systems',
       'Proactive cybersecurity and strict code quality standards'
     ]
   },
   {
     id: 'diff-customer',
-    title: 'Customer-Focused Service',
-    shortDescription: 'Attentive personal concierges, transparent communication, and tailored solutions built around your exact goals.',
-    fullDescription: 'We treat every engagement—from a private family celebration to a multinational software rollout—with dedicated care, prompt responses, and proactive problem solving.',
+    title: 'Dedicated Support',
+    shortDescription: 'Direct project managers, transparent milestone tracking, and rapid response across all engagements.',
+    fullDescription: 'We treat every engagement with dedicated care, prompt responses, and proactive communication.',
     iconName: 'Heart',
-    badge: 'Client Commitment',
+    badge: 'Client Focus',
     highlightPoints: [
       'Dedicated project leads for every client engagement',
       'Transparent milestone tracking and proactive updates',
@@ -382,11 +382,11 @@ export const WHY_MAHDEV_DIFFERENTIATORS: DifferentiatorItem[] = [
   },
   {
     id: 'diff-growth',
-    title: 'Growing Reach Across Sri Lanka',
-    shortDescription: 'Established operational footprint in Colombo with island-wide logistics, regional event staging, and global traveler hospitality.',
-    fullDescription: 'With strong local roots and expanding operational capacity, Mahdev delivers consistent quality whether executing in Colombo or remote heritage destinations across the island.',
+    title: 'Islandwide Reach',
+    shortDescription: 'Operational capacity and dedicated crews deploying across all 9 provinces in Sri Lanka.',
+    fullDescription: 'With strong local roots and nationwide operational capacity, Mahdev delivers consistent quality across the island.',
     iconName: 'Globe',
-    badge: 'Nationwide Presence',
+    badge: 'Nationwide Delivery',
     highlightPoints: [
       'Island-wide logistics and on-ground deployment teams',
       'Strong local network of certified vendors and venues',

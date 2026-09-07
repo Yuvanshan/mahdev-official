@@ -34,8 +34,8 @@ export const MartHeroSection: React.FC<MartHeroSectionProps> = ({
       {/* Background Graphic */}
       <div className="absolute inset-0 bg-slate-950">
         <img
-          src="https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=2000&q=80"
-          alt="Ceylon Tea & Spices"
+          src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=2000&q=80"
+          alt="Curated Event Decor & Smart Tech"
           className="w-full h-full object-cover object-center opacity-25 scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/50" />
@@ -56,16 +56,16 @@ export const MartHeroSection: React.FC<MartHeroSectionProps> = ({
               </Badge>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                 <Sparkles className="w-3 h-3 text-emerald-300" />
-                Curated Ceylon Sourcing & Premium Goods
+                Curated Decor & Smart Tech Collections
               </span>
             </div>
 
             <h1 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
-              Direct-from-Origin Ceylon Teas, Organic Spices & Lifestyle Tech
+              Curated Event & Home Decor, Ambient Lighting & Smart Tech
             </h1>
 
             <p className="text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed mt-2">
-              Authentic single-estate Ceylon teas, Alba grade cinnamon, cold-pressed Ayurvedic elixirs, and premium tech accessories delivered island-wide.
+              Handpicked event & stage decor, ambient lighting fixtures, luxury interior accents, and authenticated modern tech accessories delivered island-wide.
             </p>
           </ScrollReveal>
 
@@ -82,7 +82,7 @@ export const MartHeroSection: React.FC<MartHeroSectionProps> = ({
                 <Search className="w-5 h-5 text-slate-400 ml-3 shrink-0" />
                 <input
                   type="text"
-                  placeholder="Search Ceylon tea, Alba cinnamon, virgin coconut oil, headphones..."
+                  placeholder="Search event decor, stage light bars, candelabras, wireless chargers, microphones..."
                   value={searchQuery}
                   onChange={(e) => onSearchChange(e.target.value)}
                   className="w-full px-3 py-2.5 text-xs sm:text-sm text-slate-900 bg-transparent placeholder:text-slate-400 focus:outline-none"
@@ -118,7 +118,7 @@ export const MartHeroSection: React.FC<MartHeroSectionProps> = ({
             <div className="pt-6 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-slate-300">
               <div className="flex items-center gap-2.5">
                 <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>100% Certified Authentic Origin</span>
+                <span>Verified Quality & Warranty</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Truck className="w-4 h-4 text-blue-400 shrink-0" />

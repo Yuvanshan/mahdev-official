@@ -7,11 +7,13 @@ import {
   Sparkles,
   Layers,
   FileText,
+  MessageCircle,
 } from 'lucide-react';
 import { SWSService } from '../../data/swsData';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { IconRenderer } from '../ui/IconRenderer';
+import { openWhatsAppInquiry } from '../../utils/whatsapp';
 
 interface SWSServiceCardProps {
   service: SWSService;
@@ -105,7 +107,7 @@ export const SWSServiceCard: React.FC<SWSServiceCardProps> = ({
         </div>
       </div>
 
-      {/* Card Actions Footer with 3 distinct CTAs */}
+      {/* Card Actions Footer with direct WhatsApp inquiry */}
       <div className="p-4 sm:p-5 bg-slate-50/80 border-t border-slate-100 flex flex-col gap-2">
         <div className="grid grid-cols-2 gap-2">
           {/* 1. View Details CTA */}
@@ -119,16 +121,27 @@ export const SWSServiceCard: React.FC<SWSServiceCardProps> = ({
             View Details
           </Button>
 
-          {/* 2. Request Quote CTA */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onRequestQuote(service)}
-            leftIcon={<FileText className="w-3.5 h-3.5 text-blue-600" />}
-            className="text-xs py-2 bg-blue-50/60 hover:bg-blue-100/80 border-blue-200 text-blue-800"
+          {/* 2. Direct WhatsApp CTA with Image */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              openWhatsAppInquiry({
+                title: service.name,
+                category: service.category,
+                divisionName: 'SWS Event Management',
+                imageUrl: service.imageUrl,
+                price: service.startingPrice,
+                description: service.description,
+                type: 'service',
+              });
+            }}
+            title="Send WhatsApp inquiry with image to 0750928078"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-[#25D366] hover:bg-[#20bd5a] shadow-xs hover:shadow-md hover:shadow-emerald-500/20 transition-all cursor-pointer active:scale-95"
           >
-            Request Quote
-          </Button>
+            <MessageCircle className="w-3.5 h-3.5 fill-white/20 shrink-0" />
+            <span className="truncate">WhatsApp</span>
+          </button>
         </div>
 
         {/* 3. Book Now CTA */}
@@ -140,7 +153,7 @@ export const SWSServiceCard: React.FC<SWSServiceCardProps> = ({
           rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
           className="w-full text-xs font-semibold py-2 shadow-sm"
         >
-          Book Now
+          Book Service
         </Button>
       </div>
     </div>

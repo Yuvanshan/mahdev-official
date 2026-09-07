@@ -26,6 +26,7 @@ import { ImageUploader } from '../../components/common/ImageUploader';
 import { StorageCategory, UploadedMediaItem } from '../../types/storage';
 import { storageService } from '../../services/storageService';
 import { formatBytes } from '../../utils/imageOptimizer';
+import { safeStorage } from '../../utils/safeStorage';
 
 export interface StoredMediaItem {
   id: string;
@@ -176,7 +177,7 @@ export const AdminMediaView: React.FC = () => {
 
   const saveMedia = (items: StoredMediaItem[]) => {
     setMediaItems(items);
-    localStorage.setItem('mahdev_admin_media_v1', JSON.stringify(items));
+    safeStorage.setItem('mahdev_admin_media_v1', JSON.stringify(items));
   };
 
   const handleCopyUrl = (item: StoredMediaItem) => {

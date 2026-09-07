@@ -19,10 +19,12 @@ import {
   Clock,
   Briefcase,
   TrendingUp,
+  MessageCircle,
 } from 'lucide-react';
 import { ITService } from '../../data/itData';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
+import { openWhatsAppInquiry } from '../../utils/whatsapp';
 
 interface ITServiceDetailModalProps {
   service: ITService | null;
@@ -247,7 +249,26 @@ export const ITServiceDetailModal: React.FC<ITServiceDetailModalProps> = ({
             Close Blueprint
           </Button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                openWhatsAppInquiry({
+                  title: service.name,
+                  category: service.badge || 'IT Engineering',
+                  divisionName: 'Mahdev IT Solutions',
+                  price: service.startingTimeline ? `Timeline: ${service.startingTimeline}` : undefined,
+                  description: service.shortDescription || service.fullDescription,
+                  type: 'service',
+                });
+              }}
+              title="Inquire about this IT solution on WhatsApp 0750928078"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold shadow-md shadow-emerald-500/20 transition-all cursor-pointer active:scale-95"
+            >
+              <MessageCircle className="w-3.5 h-3.5 fill-white/20" />
+              <span>WhatsApp (0750928078)</span>
+            </button>
+
             <Button
               variant="outline"
               size="sm"

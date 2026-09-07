@@ -27,9 +27,9 @@ const OFFICIAL_MILESTONES = [
     title: 'The Beginning',
     subtitle: 'SWS Event Management',
     description:
-      'Started SWS Event Management, marking the beginning of our journey in event management and creative experiences.',
-    badge: 'Foundational Debut',
-    keyOutcome: 'Established SWS Event Management brand and core event production operations.',
+      'Launched SWS Event Management, establishing our foundation in creative event production.',
+    badge: 'Foundation',
+    keyOutcome: 'Core event management and spatial production operations established.',
     icon: Sparkles,
     gradient: 'from-blue-600 to-indigo-600',
   },
@@ -37,22 +37,22 @@ const OFFICIAL_MILESTONES = [
     id: 'ms-2023',
     year: '2023',
     title: 'U1 Studio',
-    subtitle: 'Photography & Creative Media',
+    subtitle: 'Photography & Media',
     description:
-      'Launched U1 Studio, expanding our services into professional photography and creative media.',
-    badge: 'Creative Media',
-    keyOutcome: 'Expanded into cinema media, fine-art photography, and studio productions.',
+      'Launched U1 Studio, expanding into professional cinematography and fine-art photography.',
+    badge: 'Media & Film',
+    keyOutcome: 'Cinema 8K production, studio suites, and wedding photojournalism.',
     icon: Layers,
     gradient: 'from-indigo-600 to-purple-600',
   },
   {
     id: 'ms-2024',
     year: '2024',
-    title: 'Islandwide Expansion',
-    subtitle: 'All Sri Lankan Provinces',
+    title: 'Islandwide Reach',
+    subtitle: 'All 9 Provinces',
     description:
-      'Expanded our services across Sri Lanka, bringing our expertise and services to clients nationwide.',
-    badge: 'National Reach',
+      'Expanded delivery infrastructure nationwide to serve corporate and private clients islandwide.',
+    badge: 'National Scale',
     keyOutcome: 'Operational capacity scaled across all 9 provinces in Sri Lanka.',
     icon: MapPin,
     gradient: 'from-blue-600 to-cyan-600',
@@ -63,9 +63,9 @@ const OFFICIAL_MILESTONES = [
     title: 'IT & Solutions',
     subtitle: 'Digital Transformation',
     description:
-      'Introduced IT & Solutions, expanding our capabilities into technology, software, and digital business solutions.',
-    badge: 'Digital Innovation',
-    keyOutcome: 'Launched full-stack web, cloud, and modern software development services.',
+      'Introduced IT & Solutions, expanding into custom software engineering and cloud systems.',
+    badge: 'Tech Innovation',
+    keyOutcome: 'Full-stack web, cloud architectures, and digital business systems.',
     icon: Code2,
     gradient: 'from-cyan-600 to-blue-600',
   },
@@ -73,11 +73,11 @@ const OFFICIAL_MILESTONES = [
     id: 'ms-2026',
     year: '2026',
     title: 'Mahdev Pvt Ltd',
-    subtitle: 'Private Limited Company Registration',
+    subtitle: 'Corporate Incorporation',
     description:
-      'Officially registered Mahdev Pvt Ltd as a private company, bringing our growing services and ventures under one organization.',
-    badge: 'Corporate Incorporation',
-    keyOutcome: 'Unified five business divisions under a registered private enterprise governance.',
+      'Officially registered Mahdev Pvt Ltd, unifying all specialized divisions under corporate governance.',
+    badge: 'Corporate Entity',
+    keyOutcome: 'Unified business divisions under registered private enterprise governance.',
     icon: Building2,
     gradient: 'from-blue-600 to-indigo-700',
   },
@@ -89,7 +89,7 @@ const OFFICIAL_ACHIEVEMENTS = [
     id: 'projects',
     metric: '1,800+',
     label: 'Projects Completed',
-    description: 'Successfully completed more than 1,800 projects across our services.',
+    description: 'Completed projects across events, media, and digital systems.',
     icon: Briefcase,
     badge: 'Deliverables',
     highlight: true,
@@ -98,7 +98,7 @@ const OFFICIAL_ACHIEVEMENTS = [
     id: 'success-rate',
     metric: '98%',
     label: 'Success Rate',
-    description: 'Maintaining a strong commitment to quality, reliability, and successful project delivery.',
+    description: 'Committed to verified quality and reliable client delivery.',
     icon: CheckCircle2,
     badge: 'Quality Standard',
   },
@@ -106,33 +106,33 @@ const OFFICIAL_ACHIEVEMENTS = [
     id: 'growth',
     metric: '5+',
     label: 'Years of Growth',
-    description: 'Growing from an event management service into a multi-service company.',
+    description: 'Consistent expansion across diverse industry sectors.',
     icon: TrendingUp,
     badge: 'Track Record',
   },
   {
     id: 'divisions',
-    metric: '3+',
-    label: 'Core Business Divisions',
-    description: 'Event Management, Photography & Creative Media, and IT & Digital Solutions.',
+    metric: '5',
+    label: 'Business Divisions',
+    description: 'Events, Studio Media, IT Solutions, Travels, and Mart.',
     icon: Layers,
-    badge: 'Multidisciplinary',
+    badge: 'Divisions',
   },
   {
     id: 'coverage',
-    metric: 'Islandwide',
-    label: 'Service Coverage',
-    description: 'Serving clients across Sri Lanka with our expanding range of services.',
+    metric: '9 / 9',
+    label: 'Provinces Covered',
+    description: 'Nationwide execution and logistics delivery across Sri Lanka.',
     icon: MapPin,
-    badge: 'Sri Lanka Wide',
+    badge: 'Nationwide',
   },
   {
     id: 'vision',
     metric: 'One Vision',
-    label: 'Multiple Solutions',
+    label: 'Unified Standard',
     description: 'Creating Moments. Capturing Memories. Delivering Innovation.',
     icon: Sparkles,
-    badge: 'Enterprise Creed',
+    badge: 'Core Creed',
     highlight: true,
   },
 ];
@@ -185,10 +185,10 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
     if (milestonesCms?.achievements && milestonesCms.achievements.length > 0) {
       return milestonesCms.achievements;
     }
-    return [];
+    return OFFICIAL_ACHIEVEMENTS;
   }, [milestonesCms]);
 
-  // Display milestones from Firestore (editable via Admin Portal)
+  // Display milestones from Firestore (editable via Admin Portal) or fallback to official milestones
   const displayMilestones = React.useMemo(() => {
     if (milestones && milestones.length > 0) {
       const valid = milestones.filter(
@@ -198,7 +198,7 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
         return [...valid].sort((a, b) => (Number(a.year) || 0) - (Number(b.year) || 0) || (a.order || 0) - (b.order || 0));
       }
     }
-    return [];
+    return OFFICIAL_MILESTONES;
   }, [milestones]);
 
   if (homepageConfig.milestones && homepageConfig.milestones.enabled === false) {
