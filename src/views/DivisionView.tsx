@@ -40,14 +40,18 @@ interface DivisionViewProps {
 export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNavigate }) => {
   const { divisions, services, companySettings } = useFirestoreDataContext();
 
-  // Normalize IDs across short keys ('sws', 'u1', 'it', 'travels', 'mart') and slug variants ('u1-studio', 'it-solutions', 'online-mart')
+  // Normalize IDs across short keys ('sws', 'u1', 'it', 'travels', 'mart') and slug variants
   const normalizedKey: DivisionId =
-    divisionId === 'u1-studio'
+    divisionId === 'u1-studio' || divisionId === 'u1-cinema'
       ? 'u1'
-      : divisionId === 'it-solutions'
+      : divisionId === 'it-solutions' || divisionId === 'mahdev-it'
       ? 'it'
-      : divisionId === 'online-mart'
+      : divisionId === 'online-mart' || divisionId === 'mahdev-mart'
       ? 'mart'
+      : divisionId === 'sws-event-management' || divisionId === 'sws-events'
+      ? 'sws'
+      : divisionId === 'mahdev-travels'
+      ? 'travels'
       : (divisionId as DivisionId);
 
   const canonicalDocId =
@@ -57,6 +61,8 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
       ? 'it-solutions'
       : normalizedKey === 'mart'
       ? 'online-mart'
+      : normalizedKey === 'sws'
+      ? 'sws-event-management'
       : normalizedKey;
 
   // Retrieve cached data synchronously to eliminate initial render glitch
@@ -96,7 +102,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
     heroSubheadline: 'Tailored solutions and high-standard enterprise operations across Sri Lanka.',
     iconName: 'Sparkles',
     contactEmail: companySettings?.email || COMPANY_INFO.email,
-    contactPhone: '075 092 8078',
+    contactPhone: companySettings?.primaryPhone || '075 092 8078',
     aboutHeading: 'The Art of Extraordinary Craftsmanship',
     aboutText: 'Committed to superior execution, certified precision, and industry-defining standards across Sri Lanka.',
     mission: 'To deliver uncompromising quality, creative excellence, and measurable impact for every client.',
@@ -135,39 +141,56 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
   // Standard corporate phone mandated across all divisions
   const corporatePhone = '075 092 8078';
 
+  // Extract live division image and logo from Firestore
+  const divisionImage =
+    (firestoreDiv as any)?.imageUrl ||
+    (firestoreDiv as any)?.heroImageUrl ||
+    (firestoreDiv as any)?.hero?.bgImage ||
+    (baseDivision as any)?.imageUrl;
+
+  const divisionLogo =
+    (firestoreDiv as any)?.logoUrl ||
+    (firestoreDiv as any)?.logo;
+
   // Merge Firestore live overrides with base structure
   const division = {
     ...baseDivision,
     contactPhone:
       (firestoreDiv as any)?.contactPhone ||
       (firestoreDiv as any)?.contactNumber ||
+      companySettings?.primaryPhone ||
       baseDivision.contactPhone ||
       corporatePhone,
     contactEmail:
       (firestoreDiv as any)?.contactEmail ||
-      baseDivision.contactEmail ||
       companySettings?.email ||
+      baseDivision.contactEmail ||
       COMPANY_INFO.email,
     aboutHeading:
       (firestoreDiv as any)?.aboutHeading ||
+      (firestoreDiv as any)?.about?.heading ||
       baseDivision.aboutHeading ||
       'The Art of Extraordinary Craftsmanship',
     aboutText:
       (firestoreDiv as any)?.aboutText ||
+      (firestoreDiv as any)?.about?.text ||
       (firestoreDiv as any)?.description ||
       baseDivision.aboutText ||
       baseDivision.description,
     mission:
       (firestoreDiv as any)?.mission ||
+      (firestoreDiv as any)?.about?.mission ||
       baseDivision.mission ||
       'To craft exceptional results that honor tradition while pioneering modern aesthetic luxury.',
     vision:
       (firestoreDiv as any)?.vision ||
+      (firestoreDiv as any)?.about?.vision ||
       baseDivision.vision ||
       'To be the preeminent institution recognized for bespoke craftsmanship across South Asia.',
     heroHeadline:
       (firestoreDiv as any)?.heroHeadline ||
       (firestoreDiv as any)?.hero?.title ||
+      (firestoreDiv as any)?.name ||
       baseDivision.heroHeadline,
     heroSubheadline:
       (firestoreDiv as any)?.heroSubheadline ||
@@ -175,7 +198,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
       (firestoreDiv as any)?.description ||
       baseDivision.heroSubheadline,
     stats:
-      (firestoreDiv as any)?.stats?.length
+      (firestoreDiv as any)?.stats && (firestoreDiv as any).stats.length > 0
         ? (firestoreDiv as any).stats
         : baseDivision.stats,
     ...(firestoreDiv
@@ -190,6 +213,8 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
           gradient: (firestoreDiv as any).gradient || baseDivision.gradient,
         }
       : {}),
+    imageUrl: divisionImage,
+    logoUrl: divisionLogo,
     coreServices:
       liveDivisionServices.length > 0
         ? liveDivisionServices.map((s) => ({
@@ -259,10 +284,42 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
     }
   };
 
-  // Other sister divisions for cross-navigation
-  const sisterDivisions = DIVISION_LIST.filter(
-    (d) => d.id !== normalizedKey && d.id !== divisionId
-  );
+  // Other sister divisions for cross-navigation (sourced live from Firestore)
+  const sisterDivisions = useMemo(() => {
+    const list = divisions && divisions.length > 0 ? divisions : DIVISION_LIST;
+    const currentCanonical = normalizedKey;
+
+    const seen = new Set<string>([currentCanonical, divisionId]);
+    const result = [];
+
+    for (const d of list) {
+      const rawId = (d.id || (d as any).slug || '').toLowerCase();
+      const canonicalId =
+        rawId === 'u1' || rawId === 'u1-studio' || rawId === 'u1-cinema'
+          ? 'u1'
+          : rawId === 'sws' || rawId === 'sws-event-management' || rawId === 'sws-events'
+          ? 'sws'
+          : rawId === 'it' || rawId === 'it-solutions' || rawId === 'mahdev-it'
+          ? 'it'
+          : rawId === 'travels' || rawId === 'mahdev-travels'
+          ? 'travels'
+          : rawId === 'mart' || rawId === 'online-mart' || rawId === 'mahdev-mart'
+          ? 'mart'
+          : rawId;
+
+      if (!canonicalId || seen.has(canonicalId)) continue;
+      seen.add(canonicalId);
+      result.push({
+        id: canonicalId,
+        name: d.name,
+        badge: (d as any).badge || (d as any).hero?.badge || 'Specialized Division',
+        tagline: (d as any).tagline || (d as any).hero?.subtitle || (d as any).shortDescription || '',
+        iconName: (d as any).iconName || 'Sparkles',
+        route: d.route || `/${(d as any).slug || canonicalId}`,
+      });
+    }
+    return result;
+  }, [divisions, normalizedKey, divisionId]);
 
   return (
     <div className="w-full flex flex-col bg-white">
@@ -353,11 +410,41 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
             <div className="lg:col-span-5">
               <SlideIn direction="up" delay={0.3}>
                 <div className="rounded-2xl bg-white border border-slate-200 p-6 sm:p-7 shadow-lg shadow-blue-500/5 space-y-6">
+                  {/* Division Uploaded Hero Image if available from Firestore */}
+                  {division.imageUrl && (
+                    <div className="relative w-full h-48 sm:h-56 rounded-xl overflow-hidden border border-slate-200 shadow-2xs">
+                      <img
+                        src={division.imageUrl}
+                        alt={division.name}
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                      <div className="absolute bottom-3 left-3 right-3 text-white flex items-center justify-between">
+                        <Badge variant="electric" size="sm">
+                          {division.badge}
+                        </Badge>
+                        <span className="text-[11px] font-mono text-white/90">
+                          {division.shortName}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Division Header */}
                   <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#0052FF] flex items-center justify-center shadow-2xs">
-                        <IconRenderer name={division.iconName} className="w-5 h-5" />
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#0052FF] flex items-center justify-center shadow-2xs overflow-hidden">
+                        {division.logoUrl ? (
+                          <img
+                            src={division.logoUrl}
+                            alt={division.name}
+                            className="w-full h-full object-contain p-1"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <IconRenderer name={division.iconName} className="w-5 h-5" />
+                        )}
                       </div>
                       <div>
                         <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">

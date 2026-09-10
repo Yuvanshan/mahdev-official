@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { ArrowRight, CheckCircle2, Filter, Sparkles } from 'lucide-react';
 import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import { SectionContainer } from '../ui/SectionContainer';
@@ -16,24 +16,8 @@ interface FeaturedServicesSectionProps {
   onInquireService?: (service: any) => void;
 }
 
-export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = ({
-  onNavigate,
-  onInquireService,
-}) => {
-  const [activeTab, setActiveTab] = useState<DivisionId | 'all'>('all');
+export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (props) => {
   const { services, homepageConfig } = useFirestoreDataContext();
-  const { reducedMotion, isTouch } = useDeviceMotion();
-
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ['start end', 'end start'],
-  });
-
-  const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 22, mass: 0.1 });
-  const yCol1 = useTransform(smoothProgress, [0, 1], ['-15px', '15px']);
-  const yCol2 = useTransform(smoothProgress, [0, 1], ['15px', '-15px']);
-  const yCol3 = useTransform(smoothProgress, [0, 1], ['-10px', '10px']);
 
   if (homepageConfig.featuredServices && !homepageConfig.featuredServices.enabled) {
     return null;
@@ -47,19 +31,77 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
     return null;
   }
 
-  const filteredServices =
-    activeTab === 'all'
-      ? activeServices
-      : activeServices.filter((srv) => (srv.divisionId || srv.division) === activeTab);
+  return <FeaturedServicesSectionContent {...props} activeServices={activeServices} />;
+};
 
-  const filterTabs: { id: DivisionId | 'all'; label: string }[] = [
-    { id: 'all', label: 'All Services' },
-    { id: 'sws', label: 'Events & Decor' },
-    { id: 'u1', label: 'Photography & Film' },
-    { id: 'it', label: 'Software & Cloud' },
-    { id: 'travels', label: 'Travel Packages' },
-    { id: 'mart', label: 'Online Hardware' },
-  ];
+const FeaturedServicesSectionContent: React.FC<
+  FeaturedServicesSectionProps & { activeServices: any[] }
+> = ({ onNavigate, onInquireService, activeServices }) => {
+  const { homepageConfig, divisions } = useFirestoreDataContext();
+  const { reducedMotion, isTouch } = useDeviceMotion();
+
+  const [activeTab, setActiveTab] = useState<string>('all');
+
+  const filterTabs = useMemo(() => {
+    const tabs = [{ id: 'all', label: 'All Services' }];
+    const seen = new Set<string>(['all']);
+
+    if (divisions && divisions.length > 0) {
+      divisions.forEach((d) => {
+        const rawId = (d.slug || d.id || '').toLowerCase();
+        const tabId =
+          rawId === 'u1' || rawId === 'u1-studio' || rawId === 'u1-cinema'
+            ? 'u1'
+            : rawId === 'sws' || rawId === 'sws-event-management' || rawId === 'sws-events'
+            ? 'sws'
+            : rawId === 'it' || rawId === 'it-solutions' || rawId === 'mahdev-it'
+            ? 'it'
+            : rawId === 'travels' || rawId === 'mahdev-travels'
+            ? 'travels'
+            : rawId === 'mart' || rawId === 'online-mart' || rawId === 'mahdev-mart'
+            ? 'mart'
+            : rawId;
+
+        if (!tabId || seen.has(tabId)) return;
+        seen.add(tabId);
+        tabs.push({
+          id: tabId,
+          label: d.shortName || d.name,
+        });
+      });
+    } else {
+      tabs.push(
+        { id: 'sws', label: 'Events & Decor' },
+        { id: 'u1', label: 'Photography & Film' },
+        { id: 'it', label: 'Software & Cloud' },
+        { id: 'travels', label: 'Travel Packages' },
+        { id: 'mart', label: 'Online Hardware' }
+      );
+    }
+    return tabs;
+  }, [divisions]);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start end', 'end start'],
+  });
+
+  const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 22, mass: 0.1 });
+  const yCol1 = useTransform(smoothProgress, [0, 1], ['-15px', '15px']);
+  const yCol2 = useTransform(smoothProgress, [0, 1], ['15px', '-15px']);
+  const yCol3 = useTransform(smoothProgress, [0, 1], ['-10px', '10px']);
+
+  const filteredServices = useMemo(() => {
+    if (activeTab === 'all') return activeServices;
+    return activeServices.filter((srv) => {
+      const dId = srv.divisionId || srv.division;
+      if (dId === activeTab) return true;
+      const matched = divisions?.find((d) => d.id === activeTab || d.slug === activeTab);
+      if (matched && (dId === matched.id || dId === matched.slug)) return true;
+      return false;
+    });
+  }, [activeServices, activeTab, divisions]);
 
   const sectionMeta = homepageConfig.featuredServices || {
     badge: 'Enterprise Solutions',
@@ -139,11 +181,15 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
           <div className="relative z-10">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredServices.map((service, idx) => {
-                const divId = (service.divisionId || service.division || 'sws') as DivisionId;
-                const divConfig = DIVISIONS[divId];
-                const divRoute = (divConfig && divConfig.route) || `/${divId}`;
+                const divId = (service.divisionId || service.division || 'sws') as string;
+                const liveDiv = divisions?.find((d) => d.id === divId || d.slug === divId);
+                const fallbackDiv = (DIVISIONS as any)[divId];
+                const divRoute = (liveDiv && liveDiv.route) || (liveDiv && `/${liveDiv.slug || liveDiv.id}`) || (fallbackDiv && fallbackDiv.route) || `/${divId}`;
                 const divisionBadgeText =
-                  service.divisionName || (divConfig && divConfig.shortName) || (divId ? String(divId).toUpperCase() : 'ENTERPRISE');
+                  service.divisionName ||
+                  (liveDiv && (liveDiv.shortName || liveDiv.name)) ||
+                  (fallbackDiv && fallbackDiv.shortName) ||
+                  (divId ? String(divId).toUpperCase() : 'ENTERPRISE');
 
                 // Determine parallel transform for 3-column layout
                 const colIdx = idx % 3;

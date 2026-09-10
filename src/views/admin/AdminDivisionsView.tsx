@@ -20,6 +20,7 @@ import {
   ArrowDown,
   ListOrdered,
   Crown,
+  Clock,
 } from 'lucide-react';
 import { CmsDivision } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
@@ -30,9 +31,10 @@ import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
 import { DivisionId } from '../../types';
+import { getRentalAssetCount } from '../../utils/assetMetrics';
 
 export const AdminDivisionsView: React.FC = () => {
-  const { saveDivision, divisions: firestoreDivisions, companySettings } = useFirestoreDataContext();
+  const { saveDivision, divisions: firestoreDivisions, companySettings, products } = useFirestoreDataContext();
   const [divisions, setDivisions] = useState<CmsDivision[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'deleted'>('all');
@@ -41,7 +43,7 @@ export const AdminDivisionsView: React.FC = () => {
   // Modal States
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingDivision, setEditingDivision] = useState<CmsDivision | null>(null);
-  const [modalTab, setModalTab] = useState<'general' | 'hero' | 'narrative' | 'seo'>('general');
+  const [modalTab, setModalTab] = useState<'general' | 'hero' | 'narrative' | 'seo' | 'comingSoon'>('general');
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -81,6 +83,11 @@ export const AdminDivisionsView: React.FC = () => {
     iconName: 'Sparkles',
     isActive: true,
     order: 1,
+    isComingSoon: false,
+    comingSoonTitle: '',
+    comingSoonMessage: '',
+    comingSoonExpectedLaunch: '',
+    rentalAssetCount: '',
     seo: {
       metaTitle: '',
       metaDescription: '',
@@ -151,6 +158,11 @@ export const AdminDivisionsView: React.FC = () => {
       iconName: 'Sparkles',
       isActive: true,
       order: divisions.length + 1,
+      isComingSoon: false,
+      comingSoonTitle: '',
+      comingSoonMessage: '',
+      comingSoonExpectedLaunch: '',
+      rentalAssetCount: '',
       seo: {
         metaTitle: '',
         metaDescription: '',
@@ -204,6 +216,11 @@ export const AdminDivisionsView: React.FC = () => {
       iconName: div.iconName,
       isActive: div.isActive,
       order: typeof div.order === 'number' && div.order > 0 ? div.order : defaultOrder,
+      isComingSoon: !!(div.isComingSoon || div.comingSoon || div.status === 'coming_soon' || (fsMatch as any)?.isComingSoon || (fsMatch as any)?.comingSoon),
+      comingSoonTitle: (div as any).comingSoonTitle || (fsMatch as any)?.comingSoonTitle || '',
+      comingSoonMessage: (div as any).comingSoonMessage || (fsMatch as any)?.comingSoonMessage || '',
+      comingSoonExpectedLaunch: (div as any).comingSoonExpectedLaunch || (fsMatch as any)?.comingSoonExpectedLaunch || '',
+      rentalAssetCount: (div as any).rentalAssetCount || (fsMatch as any)?.rentalAssetCount || '',
       seo: {
         metaTitle: div.seo?.metaTitle || `${div.name} | Mahdev Group`,
         metaDescription: div.seo?.metaDescription || div.description,
@@ -273,6 +290,12 @@ export const AdminDivisionsView: React.FC = () => {
           mission: formData.mission,
           vision: formData.vision,
           stats: formData.stats,
+          isComingSoon: formData.isComingSoon,
+          comingSoon: formData.isComingSoon,
+          comingSoonTitle: formData.comingSoonTitle,
+          comingSoonMessage: formData.comingSoonMessage,
+          comingSoonExpectedLaunch: formData.comingSoonExpectedLaunch,
+          rentalAssetCount: formData.rentalAssetCount,
           hero: {
             title: formData.heroHeadline,
             subtitle: formData.heroSubheadline,
@@ -280,7 +303,7 @@ export const AdminDivisionsView: React.FC = () => {
             bgImage: formData.heroImageUrl,
           },
           order: orderNum,
-          status: formData.isActive ? 'active' : 'inactive',
+          status: formData.isComingSoon ? 'coming_soon' : (formData.isActive ? 'active' : 'inactive'),
           isPublished: formData.isActive,
           iconName: formData.iconName,
         });
@@ -301,6 +324,42 @@ export const AdminDivisionsView: React.FC = () => {
       addToast('error', 'Save Failed', err.message || 'An error occurred.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleToggleComingSoon = async (div: CmsDivision) => {
+    const isCurrentlyComingSoon = !!(div.isComingSoon || div.comingSoon || div.status === 'coming_soon');
+    const nextVal = !isCurrentlyComingSoon;
+    const canonicalKey =
+      div.divisionKey === 'u1'
+        ? 'u1-studio'
+        : div.divisionKey === 'it'
+        ? 'it-solutions'
+        : div.divisionKey === 'mart'
+        ? 'online-mart'
+        : div.divisionKey || div.id;
+
+    try {
+      if (saveDivision) {
+        await saveDivision(canonicalKey, {
+          isComingSoon: nextVal,
+          comingSoon: nextVal,
+          status: nextVal ? 'coming_soon' : (div.isActive ? 'active' : 'inactive'),
+        });
+      }
+      await cmsService.update<CmsDivision>('divisions', div.id, {
+        isComingSoon: nextVal,
+        comingSoon: nextVal,
+        status: nextVal ? 'coming_soon' : (div.isActive ? 'active' : 'inactive'),
+      });
+      loadDivisions();
+      addToast(
+        'success',
+        nextVal ? 'Division Set to Coming Soon' : 'Division Restored to Live Portal',
+        `"${div.name}" is now ${nextVal ? 'displaying the Coming Soon landing page to visitors' : 'fully accessible as a live division portal'}.`
+      );
+    } catch (err: any) {
+      addToast('error', 'Update Failed', err?.message || 'Failed to update division status');
     }
   };
 
@@ -619,14 +678,37 @@ export const AdminDivisionsView: React.FC = () => {
                           <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
                             Archived
                           </span>
-                        ) : div.isActive ? (
-                          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 w-fit">
-                            <CheckCircle2 className="w-3 h-3" /> Active
-                          </span>
                         ) : (
-                          <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 w-fit">
-                            <XCircle className="w-3 h-3" /> Inactive
-                          </span>
+                          <div className="space-y-1">
+                            {div.isActive ? (
+                              <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 w-fit">
+                                <CheckCircle2 className="w-3 h-3" /> Active
+                              </span>
+                            ) : (
+                              <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 w-fit">
+                                <XCircle className="w-3 h-3" /> Inactive
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleToggleComingSoon(div)}
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 border ${
+                                div.isComingSoon || div.comingSoon || div.status === 'coming_soon'
+                                  ? 'bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200'
+                                  : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 hover:text-slate-800'
+                              }`}
+                              title={
+                                div.isComingSoon || div.comingSoon || div.status === 'coming_soon'
+                                  ? 'Click to switch to Live Active Portal'
+                                  : 'Click to enable Coming Soon page'
+                              }
+                            >
+                              <Clock className="w-2.5 h-2.5" />
+                              {div.isComingSoon || div.comingSoon || div.status === 'coming_soon'
+                                ? 'Coming Soon'
+                                : 'Set Coming Soon'}
+                            </button>
+                          </div>
                         )}
                       </td>
                       <td className="py-3.5 px-4 text-right">
@@ -681,6 +763,7 @@ export const AdminDivisionsView: React.FC = () => {
               { id: 'general', label: 'Identity & Info' },
               { id: 'hero', label: 'Hero & Visuals' },
               { id: 'narrative', label: 'Inside Text & About' },
+              { id: 'comingSoon', label: 'Coming Soon & Inventory' },
               { id: 'seo', label: 'SEO & Social' },
             ].map((t) => (
               <button
@@ -1134,6 +1217,111 @@ export const AdminDivisionsView: React.FC = () => {
                       )}
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: COMING SOON & INVENTORY */}
+          {modalTab === 'comingSoon' && (
+            <div className="space-y-5">
+              {/* Coming Soon Mode Banner */}
+              <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/60 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-amber-600" />
+                    <span className="font-bold text-slate-900 text-sm">Division Coming Soon Mode</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.isComingSoon}
+                      onChange={(e) => {
+                        setFormData({ ...formData, isComingSoon: e.target.checked });
+                        setIsDirty(true);
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                  </label>
+                </div>
+                <p className="text-slate-600 leading-relaxed text-xs">
+                  When enabled, visitors who click or browse to <code className="px-1.5 py-0.5 bg-white border border-amber-300 rounded font-mono text-amber-900 font-bold">{formData.route}</code> will immediately see the luxury, branded <strong>Coming Soon page</strong> with VIP email registration, launch timeline, and direct hotline contact instead of the active portal.
+                </p>
+              </div>
+
+              {/* Coming Soon Custom Content */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Custom Coming Soon Title (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.comingSoonTitle}
+                    onChange={(e) => {
+                      setFormData({ ...formData, comingSoonTitle: e.target.value });
+                      setIsDirty(true);
+                    }}
+                    placeholder={`e.g. ${formData.name || 'Division'} is Arriving Soon`}
+                    className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">Default: &quot;{formData.name || 'Division'} • Coming Soon&quot;</p>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Announcement Message / Story
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={formData.comingSoonMessage}
+                    onChange={(e) => {
+                      setFormData({ ...formData, comingSoonMessage: e.target.value });
+                      setIsDirty(true);
+                    }}
+                    placeholder="e.g. We are currently calibrating state-of-the-art studio equipment, finalizing elite visual production suites, and curating premier creative packages. Sign up below for priority VIP launch invitations."
+                    className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Expected Launch Timeline
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.comingSoonExpectedLaunch}
+                    onChange={(e) => {
+                      setFormData({ ...formData, comingSoonExpectedLaunch: e.target.value });
+                      setIsDirty(true);
+                    }}
+                    placeholder="e.g. Q4 2026 or Late 2026"
+                    className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">Displayed on the public countdown and status badge.</p>
+                </div>
+
+                <div className="pt-4 border-t border-slate-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Layers className="w-4 h-4 text-blue-600" />
+                    <label className="block font-semibold text-slate-800">
+                      Rental Assets / Inventory Count Display
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    value={formData.rentalAssetCount}
+                    onChange={(e) => {
+                      setFormData({ ...formData, rentalAssetCount: e.target.value });
+                      setIsDirty(true);
+                    }}
+                    placeholder="e.g. 5,000+ or 1,200+ (Leave blank to auto-calculate from active rental products)"
+                    className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Controls the inventory badge across the public site (e.g. SWS rentals). Auto-calculated count from active products added for rent: <span className="font-bold text-blue-600 font-mono">{getRentalAssetCount(products)}</span>.
+                  </p>
                 </div>
               </div>
             </div>

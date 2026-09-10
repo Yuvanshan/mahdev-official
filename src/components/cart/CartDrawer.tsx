@@ -15,11 +15,14 @@ import {
   CheckCircle2,
   AlertCircle,
   ExternalLink,
+  MessageCircle,
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { motion, AnimatePresence } from 'motion/react';
+import { formatCurrency, formatLKR } from '../../utils/currency';
+import { openWhatsAppOrder } from '../../utils/whatsapp';
 
 interface CartDrawerProps {
   onNavigate?: (path: string) => void;
@@ -124,7 +127,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                   </strong>
                 ) : (
                   <span>
-                    Add <strong>${(cartSummary.freeShippingThreshold - cartSummary.subtotal).toFixed(2)}</strong> more for FREE delivery
+                    Add <strong>{formatCurrency(Math.max(0, cartSummary.freeShippingThreshold - cartSummary.subtotal), 'LKR')}</strong> more for FREE delivery
                   </span>
                 )}
               </span>
@@ -193,9 +196,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                 <div className="flex-1 min-w-0 space-y-1">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <span className="text-[9px] uppercase font-bold text-blue-600 tracking-wider">
-                        {item.divisionName}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[9px] uppercase font-bold text-blue-600 tracking-wider">
+                          {item.divisionName}
+                        </span>
+                        <span className="text-[9px] font-mono font-bold text-slate-500 bg-slate-100 px-1 py-0.2 rounded">
+                          SKU: {(item as any).sku || item.id.toUpperCase().slice(-8)}
+                        </span>
+                      </div>
                       <h4 className="font-display text-xs font-bold text-slate-900 line-clamp-1">
                         {item.name}
                       </h4>
@@ -256,11 +264,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                     <div className="text-right">
                       {item.originalPrice && item.originalPrice > item.unitPrice && (
                         <span className="text-[10px] text-slate-400 line-through mr-1.5 font-mono">
-                          ${(item.originalPrice * item.quantity).toFixed(2)}
+                          {formatCurrency(item.originalPrice * item.quantity, 'LKR')}
                         </span>
                       )}
                       <span className="font-mono text-xs font-bold text-slate-900">
-                        ${item.itemTotal.toFixed(2)}
+                        {formatCurrency(item.itemTotal, 'LKR')}
                       </span>
                     </div>
                   </div>
@@ -338,7 +346,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
               <div className="flex justify-between text-slate-600">
                 <span>Subtotal ({cartSummary.totalQuantity} items)</span>
                 <span className="font-mono font-bold text-slate-900">
-                  ${cartSummary.subtotal.toFixed(2)}
+                  {formatCurrency(cartSummary.subtotal, 'LKR')}
                 </span>
               </div>
 
@@ -346,7 +354,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                 <div className="flex justify-between text-emerald-600 text-[11px]">
                   <span>Product Savings</span>
                   <span className="font-mono font-bold">
-                    -${cartSummary.productDiscountTotal.toFixed(2)}
+                    -{formatCurrency(cartSummary.productDiscountTotal, 'LKR')}
                   </span>
                 </div>
               )}
@@ -355,7 +363,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                 <div className="flex justify-between text-emerald-600 text-[11px]">
                   <span>Promo Discount ({appliedCoupon?.code})</span>
                   <span className="font-mono font-bold">
-                    -${cartSummary.couponDiscountTotal.toFixed(2)}
+                    -{formatCurrency(cartSummary.couponDiscountTotal, 'LKR')}
                   </span>
                 </div>
               )}
@@ -367,7 +375,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                     {cartSummary.isFreeShipping ? (
                       <span className="text-emerald-600 font-bold">FREE</span>
                     ) : (
-                      `$${cartSummary.shippingFee.toFixed(2)}`
+                      formatCurrency(cartSummary.shippingFee, 'LKR')
                     )}
                   </span>
                 </div>
@@ -376,7 +384,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
               <div className="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-slate-200">
                 <span>Grand Total</span>
                 <span className="font-mono text-base text-blue-600 font-bold">
-                  ${cartSummary.grandTotal.toFixed(2)}
+                  {formatCurrency(cartSummary.grandTotal, 'LKR')}
                 </span>
               </div>
             </div>
@@ -385,21 +393,46 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
             <div className="p-2.5 rounded-lg bg-blue-50/80 border border-blue-100 text-[10px] text-slate-600 flex items-start gap-2">
               <ShieldCheck className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
               <span>
-                <strong>Enterprise Checkout Architecture:</strong> Phase 12 collects all customer, delivery, and booking specifications and transitions into payment processing.
+                <strong>Enterprise Checkout Architecture:</strong> Instant checkout with official SKU numbers or direct WhatsApp dispatch.
               </span>
             </div>
 
-            {/* Primary Action Button */}
+            {/* Action Buttons */}
             <div className="space-y-2">
               <button
+                onClick={() => {
+                  openWhatsAppOrder({
+                    customerName: 'Valued Customer',
+                    customerPhone: '075 092 8078',
+                    items: cartItems.map((it) => ({
+                      name: it.name,
+                      sku: (it as any).sku || it.id.toUpperCase().slice(-8),
+                      quantity: it.quantity,
+                      price: it.unitPrice,
+                      selectedVariant: it.selectedVariant?.name,
+                    })),
+                    subtotal: cartSummary.subtotal,
+                    shippingFee: cartSummary.shippingFee,
+                    discount: cartSummary.productDiscountTotal + cartSummary.couponDiscountTotal,
+                    grandTotal: cartSummary.grandTotal,
+                    notes: 'Direct Order from Cart with SKU codes',
+                  });
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>Order via WhatsApp (SKU Included)</span>
+              </button>
+
+              <button
                 onClick={handleProceedToCheckout}
-                className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
+                className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
               >
                 <span>Proceed to Checkout</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
-              <div className="flex items-center justify-between text-[11px]">
+              <div className="flex items-center justify-between text-[11px] pt-1">
                 <button
                   onClick={clearCart}
                   className="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"

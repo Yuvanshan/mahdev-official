@@ -34,10 +34,10 @@ const VALID_COUPONS: CouponCode[] = [
   },
   {
     code: 'CEYLON15',
-    description: '15% Off Orders above $50 on Pure Ceylon Goods',
+    description: '15% Off Orders above Rs. 10,000 on Pure Ceylon Goods',
     discountType: 'percentage',
     discountValue: 15,
-    minOrderAmount: 50,
+    minOrderAmount: 10000,
   },
   {
     code: 'FREESHIP',
@@ -47,17 +47,17 @@ const VALID_COUPONS: CouponCode[] = [
   },
   {
     code: 'WELCOME5',
-    description: '$5.00 Instant Welcome Credit (Min order $25)',
+    description: 'Rs. 1,000 Instant Welcome Credit (Min order Rs. 5,000)',
     discountType: 'fixed',
-    discountValue: 5,
-    minOrderAmount: 25,
+    discountValue: 1000,
+    minOrderAmount: 5000,
   },
 ];
 
 const CART_STORAGE_KEY = 'mahdev_cart_v1';
 const COUPON_STORAGE_KEY = 'mahdev_coupon_v1';
-const FREE_SHIPPING_THRESHOLD = 75; // $75 for automatic free shipping
-const STANDARD_SHIPPING_RATE = 5.0; // $5 standard shipping
+const FREE_SHIPPING_THRESHOLD = 15000; // 15,000 LKR for automatic free courier delivery
+const STANDARD_SHIPPING_RATE = 650; // 650 LKR standard islandwide shipping
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 

@@ -43,7 +43,18 @@ interface ParallelLayerProps {
 /**
  * ParallelLayer animates vertically at a differential speed relative to scroll progress.
  */
-export const ParallelLayer: React.FC<ParallelLayerProps> = ({
+export const ParallelLayer: React.FC<ParallelLayerProps> = (props) => {
+  const { reducedMotion, isTouch } = useDeviceMotion();
+  if (reducedMotion || isTouch) {
+    return <div className={props.className}>{props.children}</div>;
+  }
+  if (props.progress) {
+    return <ParallelLayerWithProgress {...props} progress={props.progress} />;
+  }
+  return <ParallelLayerWithLocalScroll {...props} />;
+};
+
+const ParallelLayerWithProgress: React.FC<ParallelLayerProps & { progress: MotionValue<number> }> = ({
   children,
   speed = 0.1,
   className = '',
@@ -51,43 +62,48 @@ export const ParallelLayer: React.FC<ParallelLayerProps> = ({
   fade = false,
   scale = false,
 }) => {
-  const localRef = useRef<HTMLDivElement>(null);
-  const { reducedMotion, isTouch } = useDeviceMotion();
+  const distance = speed * 120;
+  const rawY = useTransform(progress, [0, 1], [-distance, distance]);
+  const smoothY = useSpring(rawY, { stiffness: 90, damping: 22, mass: 0.1 });
+  const rawOpacity = useTransform(progress, [0, 0.2, 0.8, 1], [0.5, 1, 1, 0.5]);
+  const rawScale = useTransform(progress, [0, 0.5, 1], [0.98, 1, 0.98]);
 
-  // If progress is not passed from a parent ParallelSection, create local scroll tracking
+  const motionStyle: any = { y: smoothY };
+  if (fade) motionStyle.opacity = rawOpacity;
+  if (scale) motionStyle.scale = rawScale;
+
+  return (
+    <motion.div style={motionStyle} className={className}>
+      {children}
+    </motion.div>
+  );
+};
+
+const ParallelLayerWithLocalScroll: React.FC<ParallelLayerProps> = ({
+  children,
+  speed = 0.1,
+  className = '',
+  fade = false,
+  scale = false,
+}) => {
+  const localRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress: localScroll } = useScroll({
     target: localRef,
     offset: ['start end', 'end start'],
   });
 
-  const activeProgress = progress || localScroll;
-
-  // Calculate distance in pixels based on speed multiplier
   const distance = speed * 120;
-  const rawY = useTransform(activeProgress, [0, 1], [-distance, distance]);
+  const rawY = useTransform(localScroll, [0, 1], [-distance, distance]);
   const smoothY = useSpring(rawY, { stiffness: 90, damping: 22, mass: 0.1 });
+  const rawOpacity = useTransform(localScroll, [0, 0.2, 0.8, 1], [0.5, 1, 1, 0.5]);
+  const rawScale = useTransform(localScroll, [0, 0.5, 1], [0.98, 1, 0.98]);
 
-  const rawOpacity = useTransform(activeProgress, [0, 0.2, 0.8, 1], [0.5, 1, 1, 0.5]);
-  const rawScale = useTransform(activeProgress, [0, 0.5, 1], [0.98, 1, 0.98]);
-
-  if (reducedMotion || isTouch) {
-    return <div className={className}>{children}</div>;
-  }
-
-  const motionStyle: any = {
-    y: smoothY,
-  };
-
-  if (fade) {
-    motionStyle.opacity = rawOpacity;
-  }
-
-  if (scale) {
-    motionStyle.scale = rawScale;
-  }
+  const motionStyle: any = { y: smoothY };
+  if (fade) motionStyle.opacity = rawOpacity;
+  if (scale) motionStyle.scale = rawScale;
 
   return (
-    <motion.div ref={!progress ? localRef : undefined} style={motionStyle} className={className}>
+    <motion.div ref={localRef} style={motionStyle} className={className}>
       {children}
     </motion.div>
   );
@@ -100,42 +116,10 @@ interface ParallelWatermarkProps {
 }
 
 /**
- * Ultra-subtle architectural watermark index (e.g. "01 // GROUP OVERVIEW")
- * that drifts gracefully in the background plane during scroll.
+ * Architectural Parallel Watermark: Kept empty by default to prevent synthetic "AI website" numbered watermarks
  */
-export const ParallelWatermark: React.FC<ParallelWatermarkProps> = ({
-  text,
-  speed = -0.15,
-  className = '',
-}) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const { reducedMotion } = useDeviceMotion();
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ['start end', 'end start'],
-  });
-
-  const rawY = useTransform(scrollYProgress, [0, 1], [-40 * (speed / 0.1), 40 * (speed / 0.1)]);
-  const smoothY = useSpring(rawY, { stiffness: 80, damping: 20 });
-
-  if (reducedMotion) {
-    return (
-      <div className={`pointer-events-none select-none font-mono text-slate-200/50 dark:text-slate-800/40 text-[5rem] sm:text-[7rem] lg:text-[9rem] font-black tracking-tighter leading-none absolute -top-10 right-4 z-0 ${className}`}>
-        {text}
-      </div>
-    );
-  }
-
-  return (
-    <div ref={ref} className="pointer-events-none select-none absolute inset-0 overflow-hidden z-0">
-      <motion.div
-        style={{ y: smoothY }}
-        className={`font-mono text-slate-900/[0.03] text-[5rem] sm:text-[7.5rem] lg:text-[10rem] font-black tracking-tighter leading-none absolute -top-8 right-2 sm:right-8 whitespace-nowrap ${className}`}
-      >
-        {text}
-      </motion.div>
-    </div>
-  );
+export const ParallelWatermark: React.FC<ParallelWatermarkProps> = () => {
+  return null;
 };
 
 /**

@@ -57,30 +57,57 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
   // Dynamic divisions sorted by order
   const displayDivisions = useMemo(() => {
     if (divisions && divisions.length > 0) {
-      return divisions
-        .filter((d) => d.status !== 'inactive')
-        .map((d) => {
-          const config = (DIVISIONS as any)[d.id] || DIVISION_LIST.find((item) => item.id === d.id) || {};
-          return {
-            ...config,
-            id: d.id,
-            name: d.name || config.name,
-            route: config.route || `/${d.slug || d.id}`,
-            badge: d.hero?.badge || config.badge || 'Enterprise Division',
-            iconName: config.iconName || 'Building',
-            accentColor: (config as any).accentColor || (config as any).color || '#1d4ed8',
-            tagline: d.hero?.subtitle || config.tagline || '',
-            isPrimary: (config as any).isPrimary || d.id === 'sws',
-          };
+      const seen = new Set<string>();
+      const result = [];
+      for (const d of divisions) {
+        if (d.status === 'inactive') continue;
+        const rawId = (d.id || d.slug || '').toLowerCase();
+        const canonicalId =
+          rawId === 'u1' || rawId === 'u1-studio' || rawId === 'u1-cinema'
+            ? 'u1'
+            : rawId === 'sws' || rawId === 'sws-event-management' || rawId === 'sws-events'
+            ? 'sws'
+            : rawId === 'it' || rawId === 'it-solutions' || rawId === 'mahdev-it'
+            ? 'it'
+            : rawId === 'travels' || rawId === 'mahdev-travels'
+            ? 'travels'
+            : rawId === 'mart' || rawId === 'online-mart' || rawId === 'mahdev-mart'
+            ? 'mart'
+            : rawId;
+
+        if (!canonicalId || seen.has(canonicalId)) continue;
+        seen.add(canonicalId);
+
+        const config = (DIVISIONS as any)[canonicalId] || (DIVISIONS as any)[d.id] || DIVISION_LIST.find((item) => item.id === canonicalId || item.id === d.id) || {};
+        result.push({
+          ...config,
+          id: canonicalId,
+          name: d.name || config.name,
+          route: config.route || `/${d.slug || canonicalId}`,
+          badge: d.hero?.badge || config.badge || 'Enterprise Division',
+          iconName: config.iconName || 'Building',
+          accentColor: (config as any).accentColor || (config as any).color || '#1d4ed8',
+          tagline: d.hero?.subtitle || config.tagline || '',
+          isPrimary: (config as any).isPrimary || canonicalId === 'sws',
         });
+      }
+      return result;
     }
     return Object.values(DIVISIONS);
   }, [divisions]);
 
-  // Detect current division if on child route
-  const currentDivisionKey = Object.keys(DIVISIONS).find(
-    (key) => DIVISIONS[key as DivisionId].route === currentPath
-  ) as DivisionId | undefined;
+  // Detect current division if on child route (supporting aliases like /sws-event-management)
+  const normalizedNavPath = currentPath.toLowerCase().replace(/\/$/, '') || '/';
+  const currentDivisionKey = (Object.keys(DIVISIONS) as DivisionId[]).find((key) => {
+    const r = DIVISIONS[key].route;
+    if (r === normalizedNavPath) return true;
+    if (key === 'sws' && ['/sws', '/sws-event-management', '/sws-events', '/events', '/event-management'].includes(normalizedNavPath)) return true;
+    if (key === 'u1' && ['/u1', '/u1-studio', '/u1-cinema'].includes(normalizedNavPath)) return true;
+    if (key === 'it' && ['/it', '/it-solutions', '/mahdev-it'].includes(normalizedNavPath)) return true;
+    if (key === 'travels' && ['/travels', '/mahdev-travels'].includes(normalizedNavPath)) return true;
+    if (key === 'mart' && ['/mart', '/online-mart', '/mahdev-mart'].includes(normalizedNavPath)) return true;
+    return false;
+  });
 
   const currentDivision = currentDivisionKey ? DIVISIONS[currentDivisionKey] : null;
 
@@ -319,8 +346,53 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
               })}
             </nav>
 
-            {/* Right: Cart, Customer Account & CTA */}
-            <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
+            {/* Right: Hotline, WhatsApp, Cart, Customer Account & Mobile Toggle */}
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              {/* Mobile Top Bar Call Hotline: 075 092 8078 */}
+              <a
+                href={getTelLink(primaryPhone)}
+                className="inline-flex md:hidden items-center gap-1 px-2 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200/80 text-[11px] font-mono font-bold text-blue-700 active:scale-95 transition-all shadow-2xs shrink-0"
+                title={`Call Corporate Hotline ${primaryPhone}`}
+                aria-label={`Call Corporate Hotline ${primaryPhone}`}
+              >
+                <Phone className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <span>075 092 8078</span>
+              </a>
+
+              {/* Mobile Top Bar WhatsApp: 075 092 8078 */}
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex md:hidden items-center justify-center p-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 text-emerald-700 active:scale-95 transition-all shadow-2xs shrink-0"
+                title="WhatsApp Corporate 075 092 8078"
+                aria-label="WhatsApp Corporate 075 092 8078"
+              >
+                <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+              </a>
+
+              {/* Desktop Hotline Link */}
+              <a
+                href={getTelLink(primaryPhone)}
+                className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100/90 hover:bg-blue-50 border border-slate-200/80 text-xs font-mono font-bold text-slate-800 hover:text-blue-600 transition-colors shadow-2xs shrink-0"
+                title={`Call Corporate Hotline ${primaryPhone}`}
+              >
+                <Phone className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <span>{primaryPhone}</span>
+              </a>
+
+              {/* Desktop WhatsApp Link */}
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden lg:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 text-xs font-mono font-bold text-emerald-800 hover:text-emerald-900 transition-colors shadow-2xs shrink-0"
+                title={`WhatsApp Corporate ${primaryPhone}`}
+              >
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>WhatsApp {primaryPhone}</span>
+              </a>
+
               {/* Universal Cart Trigger Button */}
               <button
                 type="button"
@@ -506,7 +578,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
               </div>
               {displayDivisions.map((division) => (
                 <button
-                  key={division.id}
+                  key={`mobile-nav-${division.id}`}
                   onClick={() => handleLinkClick(division.route)}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left text-sm font-medium cursor-pointer ${
                     currentPath === division.route
@@ -578,25 +650,21 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
               {/* Call Hotline */}
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2">
-                <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                  <span>Official Hotlines</span>
+                <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span>Corporate Contact Hotline</span>
+                  </span>
+                  <span className="text-[10px] text-blue-600 font-bold">Direct Line</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
                   <a
                     href={getTelLink(primaryPhone)}
-                    className="flex items-center justify-center gap-1.5 py-2 px-2.5 bg-white rounded-lg border border-slate-200 text-xs font-mono font-bold text-slate-900 hover:text-blue-600 hover:border-blue-300 transition-colors shadow-2xs"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-white rounded-lg border border-slate-200 text-sm font-mono font-bold text-slate-900 hover:text-blue-600 hover:border-blue-300 transition-colors shadow-2xs"
                   >
-                    <span>{primaryPhone}</span>
+                    <Phone className="w-4 h-4 text-blue-600" />
+                    <span>075 092 8078</span>
                   </a>
-                  {secondaryPhone && (
-                    <a
-                      href={getTelLink(secondaryPhone)}
-                      className="flex items-center justify-center gap-1.5 py-2 px-2.5 bg-white rounded-lg border border-slate-200 text-xs font-mono font-bold text-slate-900 hover:text-blue-600 hover:border-blue-300 transition-colors shadow-2xs"
-                    >
-                      <span>{secondaryPhone}</span>
-                    </a>
-                  )}
                 </div>
               </div>
 
@@ -606,10 +674,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                   href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 py-2 px-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold hover:bg-emerald-100 transition-colors"
+                  className="flex items-center justify-center gap-2 py-2.5 px-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold hover:bg-emerald-100 transition-colors shadow-2xs"
+                  title="WhatsApp Corporate 075 092 8078"
                 >
-                  <MessageCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span>WhatsApp</span>
+                  <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>WhatsApp 075 092 8078</span>
                 </a>
 
                 <a

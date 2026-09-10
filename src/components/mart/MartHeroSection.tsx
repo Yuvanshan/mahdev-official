@@ -13,6 +13,7 @@ import { MART_CATEGORIES } from '../../data/martData';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 interface MartHeroSectionProps {
   searchQuery: string;
@@ -29,14 +30,48 @@ export const MartHeroSection: React.FC<MartHeroSectionProps> = ({
   onSelectCategory,
   onExploreAll,
 }) => {
+  const { divisions } = useFirestoreDataContext();
+
+  const martDiv = divisions?.find(
+    (d) =>
+      d.id === 'mart' ||
+      d.id === 'mahdev-mart' ||
+      d.slug === 'mart' ||
+      d.slug === 'mahdev-mart'
+  );
+
+  const heroImage =
+    (martDiv as any)?.imageUrl ||
+    (martDiv as any)?.heroImageUrl ||
+    (martDiv as any)?.hero?.bgImage ||
+    'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=2000&q=80';
+
+  const badgeText =
+    (martDiv as any)?.hero?.badge ||
+    martDiv?.badge ||
+    'MAHDEV ONLINE MART';
+
+  const headline =
+    (martDiv as any)?.heroHeadline ||
+    (martDiv as any)?.hero?.title ||
+    martDiv?.name ||
+    'Curated Event & Home Decor, Ambient Lighting & Smart Tech';
+
+  const subheadline =
+    (martDiv as any)?.heroSubheadline ||
+    (martDiv as any)?.hero?.subtitle ||
+    martDiv?.description ||
+    'Handpicked event & stage decor, ambient lighting fixtures, luxury interior accents, and authenticated modern tech accessories delivered island-wide.';
+
   return (
     <div className="relative overflow-hidden bg-slate-950 text-white border-b border-slate-800">
       {/* Background Graphic */}
       <div className="absolute inset-0 bg-slate-950">
         <img
-          src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=2000&q=80"
-          alt="Curated Event Decor & Smart Tech"
+          src={heroImage}
+          alt={martDiv?.name || 'Curated Event Decor & Smart Tech'}
           className="w-full h-full object-cover object-center opacity-25 scale-105"
+          referrerPolicy="no-referrer"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/50" />
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/70 to-transparent" />
@@ -52,7 +87,7 @@ export const MartHeroSection: React.FC<MartHeroSectionProps> = ({
                 className="bg-[#0052FF]/30 text-blue-300 border border-[#0052FF]/40 font-mono text-[11px]"
               >
                 <ShoppingBag className="w-3.5 h-3.5 mr-1" />
-                MAHDEV ONLINE MART
+                {badgeText}
               </Badge>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                 <Sparkles className="w-3 h-3 text-emerald-300" />
@@ -61,11 +96,11 @@ export const MartHeroSection: React.FC<MartHeroSectionProps> = ({
             </div>
 
             <h1 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
-              Curated Event & Home Decor, Ambient Lighting & Smart Tech
+              {headline}
             </h1>
 
             <p className="text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed mt-2">
-              Handpicked event & stage decor, ambient lighting fixtures, luxury interior accents, and authenticated modern tech accessories delivered island-wide.
+              {subheadline}
             </p>
           </ScrollReveal>
 

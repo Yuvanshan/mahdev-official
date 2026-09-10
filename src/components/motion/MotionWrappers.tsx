@@ -318,8 +318,25 @@ export const ParallaxContainer: React.FC<{
   offset?: number;
   className?: string;
 }> = ({ children, offset = 30, className = '' }) => {
-  const ref = useRef<HTMLDivElement>(null);
   const { reducedMotion, isTouch } = useDeviceMotion();
+
+  if (reducedMotion || isTouch) {
+    return <div className={`overflow-hidden w-full max-w-full ${className}`}>{children}</div>;
+  }
+
+  return (
+    <ActiveParallaxContainer offset={offset} className={className}>
+      {children}
+    </ActiveParallaxContainer>
+  );
+};
+
+const ActiveParallaxContainer: React.FC<{
+  children: React.ReactNode;
+  offset?: number;
+  className?: string;
+}> = ({ children, offset = 30, className = '' }) => {
+  const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ['start end', 'end start'],
@@ -327,10 +344,6 @@ export const ParallaxContainer: React.FC<{
 
   const y = useTransform(scrollYProgress, [0, 1], [-offset, offset]);
   const smoothY = useSpring(y, { stiffness: 80, damping: 20 });
-
-  if (reducedMotion || isTouch) {
-    return <div className={`overflow-hidden w-full max-w-full ${className}`}>{children}</div>;
-  }
 
   return (
     <div ref={ref} className={`overflow-hidden w-full max-w-full ${className}`}>

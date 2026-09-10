@@ -63,7 +63,13 @@ export interface FirestoreDivision {
   features?: string[];
   coreServices?: Array<{ title: string; description: string; iconName?: string }>;
   cardHighlight?: string;
-  status?: 'active' | 'inactive' | 'maintenance';
+  isComingSoon?: boolean;
+  comingSoon?: boolean;
+  comingSoonTitle?: string;
+  comingSoonMessage?: string;
+  comingSoonExpectedLaunch?: string;
+  rentalAssetCount?: string;
+  status?: 'active' | 'inactive' | 'maintenance' | 'coming_soon';
   seo?: {
     metaTitle: string;
     metaDescription: string;
@@ -98,6 +104,7 @@ export interface FirestoreService {
   status?: 'active' | 'inactive' | 'draft';
   badge?: string;
   features?: string[];
+  sku?: string;
   turnaroundTime?: string;
   popular?: boolean;
   iconName?: string;
@@ -337,6 +344,7 @@ export interface FirestoreCompanySettings {
   socials: Record<string, string>;
   socialLinks?: Record<string, string>;
   workingHours: Record<string, string>;
+  rentalAssetCount?: string;
   updatedAt: string;
 }
 
@@ -366,6 +374,7 @@ export interface FirestoreSiteSettings {
   phoneNumbers?: string[] | string;
   email?: string;
   addresses?: Array<{ name: string; address: string; city: string; country?: string }> | Record<string, unknown>;
+  rentalAssetCount?: string;
   maintenanceMode: boolean;
   maintenanceTitle?: string;
   maintenanceMessage?: string;
@@ -539,6 +548,7 @@ export interface FirestoreGallery {
   aspectRatio?: string;
   tags?: string[];
   order?: number;
+  sku?: string;
   status: 'published' | 'hidden';
   createdAt?: string;
   updatedAt?: string;

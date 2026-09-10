@@ -64,6 +64,10 @@ export const SWSServicesSection: React.FC<SWSServicesSectionProps> = ({
     return [];
   }, [rawServices]);
 
+  if (allServices.length === 0) {
+    return null;
+  }
+
   const categories: { id: FilterCategory; label: string; count: number; icon: React.ReactNode }[] = [
     { id: 'all', label: `All ${allServices.length} Services`, count: allServices.length, icon: <Layers className="w-3.5 h-3.5" /> },
     { id: 'decor', label: 'Decorations & Theming', count: allServices.filter((s) => s.category === 'decor').length, icon: <Heart className="w-3.5 h-3.5" /> },

@@ -15,6 +15,8 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
     domainUrl: 'https://mahdev.lk/sws',
     accentColor: '#B91C1C',
     gradient: 'from-rose-900 to-slate-900',
+    image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=85',
+    imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=85',
     heroHeadline: 'Immersive Event Decor, Grand Staging & Equipment Rentals',
     heroSubheadline:
       'From luxury wedding mandaps, floral stage decor, and full event furniture/AV rentals to corporate summits and concert arenas, SWS is Mahdev’s primary flagship division.',
@@ -65,6 +67,8 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
     domainUrl: 'https://mahdev.lk/u1',
     accentColor: '#D97706',
     gradient: 'from-amber-900 to-slate-900',
+    image: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=1200&q=85',
+    imageUrl: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=1200&q=85',
     heroHeadline: 'High-End Photography & Cinematic Visual Storytelling',
     heroSubheadline:
       'Mastering the delicate harmony between natural light, fine-art composition, and cutting-edge 8K cinema gear to immortalize your sacred milestones forever.',
@@ -115,6 +119,8 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
     domainUrl: 'https://mahdev.lk/it',
     accentColor: '#2563EB',
     gradient: 'from-blue-900 to-slate-900',
+    image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1200&q=85',
+    imageUrl: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1200&q=85',
     heroHeadline: 'Engineering Scalable IT Solutions & Digital Ecosystems',
     heroSubheadline:
       'We architect mission-critical software, intuitive web platforms, and automated cloud workflows that empower modern enterprises to scale without limits.',
@@ -165,6 +171,8 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
     domainUrl: 'https://mahdev.lk/travels',
     accentColor: '#0D9488',
     gradient: 'from-teal-900 to-slate-900',
+    image: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1200&q=85',
+    imageUrl: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1200&q=85',
     heroHeadline: 'Tailored Journeys Across Extraordinary Horizons',
     heroSubheadline:
       'Experience unmatched hospitality, handpicked heritage villas, private charters, and guided expeditions designed with flawless logistics.',
@@ -215,6 +223,8 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
     domainUrl: 'https://mahdev.lk/mart',
     accentColor: '#6366F1',
     gradient: 'from-indigo-900 to-slate-900',
+    image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1200&q=85',
+    imageUrl: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1200&q=85',
     heroHeadline: 'Curated Event Decor & Smart Tech Hardware',
     heroSubheadline:
       'Explore bespoke event decor, ambient stage lighting, studio creator accessories, and authenticated tech hardware with island-wide logistics.',

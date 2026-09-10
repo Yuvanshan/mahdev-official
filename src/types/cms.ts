@@ -43,6 +43,13 @@ export interface CmsDivision extends BaseCmsEntity {
   iconName: string;
   stats: { label: string; value: string; subtext?: string }[];
   galleryImages?: { url: string; title: string; caption?: string }[];
+  isComingSoon?: boolean;
+  comingSoon?: boolean;
+  comingSoonTitle?: string;
+  comingSoonMessage?: string;
+  comingSoonExpectedLaunch?: string;
+  rentalAssetCount?: string;
+  status?: 'active' | 'inactive' | 'maintenance' | 'coming_soon';
   seo?: {
     metaTitle: string;
     metaDescription: string;
@@ -70,6 +77,7 @@ export interface CmsService extends BaseCmsEntity {
   price?: number;
   order?: number;
   currency: string;
+  sku?: string;
   turnaroundTime: string;
   isActive: boolean;
 }
@@ -119,6 +127,7 @@ export interface CmsPackage extends BaseCmsEntity {
   serviceTitle: string;
   divisionId: DivisionId;
   name: string;
+  sku?: string;
   tagline?: string;
   price: number;
   currency: string;
@@ -137,6 +146,7 @@ export interface CmsPortfolioProject extends BaseCmsEntity {
   divisionId: DivisionId;
   title: string;
   category: string;
+  sku?: string;
   client: string;
   year: string;
   summary: string;
@@ -158,6 +168,7 @@ export type CmsPortfolioItem = CmsPortfolioProject;
 export interface CmsGalleryItem extends BaseCmsEntity {
   divisionId: DivisionId;
   title: string;
+  sku?: string;
   category?: string;
   mediaType?: 'image' | 'video';
   type?: 'image' | 'video';

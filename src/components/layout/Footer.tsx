@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, ArrowRight, Shield, FileText, Check, ExternalLink, Globe } from 'lucide-react';
+import { Mail, Phone, MessageCircle, MapPin, ArrowRight, Shield, FileText, Check, ExternalLink, Globe } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -140,27 +140,34 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                   <span className="break-all">{email}</span>
                 </a>
                 
-                <div className="space-y-1">
+                <div className="space-y-1.5 pt-0.5">
                   <div className="flex items-center gap-2">
                     <Phone className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-slate-400 text-[11px]">Hotline:</span>
                       <a
                         href={getTelLink(primaryPhone)}
-                        className="hover:text-blue-400 transition-colors font-medium"
+                        className="hover:text-blue-400 transition-colors font-medium font-mono text-white"
+                        title={`Call Corporate Hotline ${primaryPhone}`}
                       >
                         {primaryPhone}
                       </a>
-                      {secondaryPhone && (
-                        <>
-                          <span className="text-slate-600">/</span>
-                          <a
-                            href={getTelLink(secondaryPhone)}
-                            className="hover:text-blue-400 transition-colors font-medium"
-                          >
-                            {secondaryPhone}
-                          </a>
-                        </>
-                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <MessageCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-slate-400 text-[11px]">WhatsApp:</span>
+                      <a
+                        href="https://wa.me/94750928078?text=Hello%20Mahdev%20Pvt%20Ltd"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-emerald-300 transition-colors font-medium font-mono text-emerald-400"
+                        title="Corporate WhatsApp 075 092 8078"
+                      >
+                        075 092 8078
+                      </a>
                     </div>
                   </div>
                 </div>

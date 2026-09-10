@@ -1,18 +1,20 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { ArrowRight, MapPin, Layers, ExternalLink } from 'lucide-react';
+import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
-import { ScrollReveal } from '../motion/MotionWrappers';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { DIVISIONS } from '../../config/divisions';
 import { DivisionId } from '../../types';
+import { ParallelWatermark } from '../motion/ParallelScroll';
+import { useDeviceMotion } from '../motion/MotionWrappers';
 
 interface FeaturedWorkSectionProps {
   onNavigate: (route: string) => void;
 }
 
-export const FeaturedWorkSection: React.FC<FeaturedWorkSectionProps> = ({ onNavigate }) => {
+export const FeaturedWorkSection: React.FC<FeaturedWorkSectionProps> = (props) => {
   const { portfolio, homepageConfig } = useFirestoreDataContext();
 
   if (homepageConfig.portfolio && !homepageConfig.portfolio.enabled) {
@@ -28,6 +30,22 @@ export const FeaturedWorkSection: React.FC<FeaturedWorkSectionProps> = ({ onNavi
     return null;
   }
 
+  return <FeaturedWorkSectionContent {...props} activeProjects={activeProjects} />;
+};
+
+const FeaturedWorkSectionContent: React.FC<
+  FeaturedWorkSectionProps & { activeProjects: any[] }
+> = ({ onNavigate, activeProjects }) => {
+  const { reducedMotion, isTouch } = useDeviceMotion();
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start end', 'end start'],
+  });
+  const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 22, mass: 0.1 });
+  const yHero = useTransform(smoothProgress, [0, 1], ['-15px', '15px']);
+
   const getDivisionLabel = (divId: string | undefined) => {
     if (!divId) return 'Mahdev Group';
     const found = DIVISIONS[divId as DivisionId];
@@ -38,14 +56,15 @@ export const FeaturedWorkSection: React.FC<FeaturedWorkSectionProps> = ({ onNavi
   const gridProjects = activeProjects.slice(1);
 
   return (
-    <SectionContainer
-      id="portfolio"
-      background="white"
-      paddingY="xl"
-      hasBorderBottom
-    >
-      {/* Section Header */}
-      <ScrollReveal direction="up">
+    <div ref={containerRef} className="relative overflow-hidden">
+      <ParallelWatermark text="04 // PORTFOLIO" />
+      <SectionContainer
+        id="portfolio"
+        background="white"
+        paddingY="xl"
+        hasBorderBottom
+      >
+        {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
           <div className="max-w-2xl">
             <span className="text-xs font-bold uppercase tracking-widest text-blue-600 block mb-2 font-mono">
@@ -69,14 +88,13 @@ export const FeaturedWorkSection: React.FC<FeaturedWorkSectionProps> = ({ onNavi
             </button>
           </div>
         </div>
-      </ScrollReveal>
 
-      {/* Editorial Grid */}
-      <div className="space-y-8">
-        {/* Full-Width Feature Hero Project */}
-        {featuredHeroProject && (
-          <ScrollReveal direction="up" delay={0.05}>
-            <div
+        {/* Editorial Grid */}
+        <div className="space-y-8">
+          {/* Full-Width Feature Hero Project */}
+          {featuredHeroProject && (
+            <motion.div
+              style={!reducedMotion && !isTouch ? { y: yHero } : undefined}
               onClick={() =>
                 onNavigate(`/project/${featuredHeroProject.slug || featuredHeroProject.id}`)
               }
@@ -97,14 +115,14 @@ export const FeaturedWorkSection: React.FC<FeaturedWorkSectionProps> = ({ onNavi
               <div className="lg:col-span-5 p-8 sm:p-10 lg:p-12 flex flex-col justify-between bg-slate-950 text-white">
                 <div>
                   <div className="flex flex-wrap items-center gap-2 mb-4">
-                    <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-blue-600 text-white shadow-xs">
+                    <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-blue-600 text-white shadow-xs font-mono">
                       {getDivisionLabel(featuredHeroProject.divisionId || featuredHeroProject.division)}
                     </span>
                     <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-800 text-slate-300">
                       {featuredHeroProject.category}
                     </span>
                     {featuredHeroProject.location && (
-                      <span className="inline-flex items-center gap-1 text-xs text-slate-400 ml-auto">
+                      <span className="inline-flex items-center gap-1 text-xs text-slate-400 ml-auto font-mono">
                         <MapPin className="w-3.5 h-3.5 text-slate-400" />
                         {featuredHeroProject.location}
                       </span>
@@ -130,86 +148,84 @@ export const FeaturedWorkSection: React.FC<FeaturedWorkSectionProps> = ({ onNavi
                   </div>
                 </div>
               </div>
-            </div>
-          </ScrollReveal>
-        )}
+            </motion.div>
+          )}
 
-        {/* Asymmetric Editorial Grid for Remaining Projects */}
-        {gridProjects.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pt-4">
-            {gridProjects.map((project, idx) => {
-              const isLargeSpan = idx % 5 === 0;
+          {/* Asymmetric Editorial Grid for Remaining Projects */}
+          {gridProjects.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pt-4">
+              {gridProjects.map((project, idx) => {
+                const isLargeSpan = idx % 5 === 0;
 
-              return (
-                <ScrollReveal
-                  key={project.id}
-                  direction="up"
-                  delay={idx * 0.06}
-                  className={isLargeSpan ? 'md:col-span-2 lg:col-span-2' : 'col-span-1'}
-                >
+                return (
                   <div
-                    onClick={() =>
-                      onNavigate(`/project/${project.slug || project.id}`)
-                    }
-                    className="group h-full rounded-3xl overflow-hidden bg-white border border-slate-200/80 hover:border-blue-400 shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
+                    key={project.id}
+                    className={isLargeSpan ? 'md:col-span-2 lg:col-span-2' : 'col-span-1'}
                   >
-                    <div>
-                      {/* Large Project Image */}
-                      <div className="relative aspect-16/10 overflow-hidden bg-slate-100">
-                        <img
-                          src={project.imageUrl}
-                          alt={project.title}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                          loading="lazy"
-                        />
-                        <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2">
-                          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/95 text-slate-900 shadow-xs backdrop-blur-xs">
-                            {project.category}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Content */}
-                      <div className="p-6 sm:p-7">
-                        <div className="flex items-center justify-between text-xs text-slate-500 font-semibold mb-2">
-                          <span className="text-blue-600 uppercase tracking-wider font-bold">
-                            {getDivisionLabel(project.divisionId || project.division)}
-                          </span>
-                          {project.location && (
-                            <span className="inline-flex items-center gap-1">
-                              <MapPin className="w-3 h-3 text-slate-400" />
-                              {project.location}
+                    <div
+                      onClick={() =>
+                        onNavigate(`/project/${project.slug || project.id}`)
+                      }
+                      className="group h-full rounded-3xl overflow-hidden bg-white border border-slate-200/80 hover:border-blue-400 shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
+                    >
+                      <div>
+                        {/* Large Project Image */}
+                        <div className="relative aspect-16/10 overflow-hidden bg-slate-100">
+                          <img
+                            src={project.imageUrl}
+                            alt={project.title}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            loading="lazy"
+                          />
+                          <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2">
+                            <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/95 text-slate-900 shadow-xs backdrop-blur-xs">
+                              {project.category}
                             </span>
-                          )}
+                          </div>
                         </div>
 
-                        <h4 className="font-display text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors mb-2 leading-snug">
-                          {project.title}
-                        </h4>
+                        {/* Content */}
+                        <div className="p-6 sm:p-7">
+                          <div className="flex items-center justify-between text-xs text-slate-500 font-semibold mb-2">
+                            <span className="text-blue-600 uppercase tracking-wider font-bold font-mono">
+                              {getDivisionLabel(project.divisionId || project.division)}
+                            </span>
+                            {project.location && (
+                              <span className="inline-flex items-center gap-1 font-mono">
+                                <MapPin className="w-3 h-3 text-slate-400" />
+                                {project.location}
+                              </span>
+                            )}
+                          </div>
 
-                        <p className="text-xs sm:text-sm text-slate-600 line-clamp-2 leading-relaxed">
-                          {project.summary || project.description}
-                        </p>
+                          <h4 className="font-display text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors mb-2 leading-snug">
+                            {project.title}
+                          </h4>
+
+                          <p className="text-xs sm:text-sm text-slate-600 line-clamp-2 leading-relaxed">
+                            {project.summary || project.description}
+                          </p>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* View project arrow */}
-                    <div className="px-6 sm:px-7 pb-6 pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                      <span className="text-slate-400 font-normal">
-                        {project.client || 'Client Project'}
-                      </span>
-                      <div className="inline-flex items-center gap-1.5">
-                        <span>View Project</span>
-                        <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                      {/* View project arrow */}
+                      <div className="px-6 sm:px-7 pb-6 pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                        <span className="text-slate-400 font-normal">
+                          {project.client || 'Client Project'}
+                        </span>
+                        <div className="inline-flex items-center gap-1.5">
+                          <span>View Project</span>
+                          <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </ScrollReveal>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </SectionContainer>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </SectionContainer>
+    </div>
   );
 };

@@ -43,7 +43,7 @@ export const DIVISION_DOCUMENT_MAP: Record<string, {
     slug: 'sws',
     shortDescription: 'Premier luxury wedding and stage decorations, audio-visual production, mandap architecture, and concert staging.',
     description: DIVISIONS.sws.description,
-    imageUrl: '/assets/images/hero_sws.jpg',
+    imageUrl: DIVISIONS.sws.imageUrl || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=85',
     logoUrl: '/assets/images/sws_logo.png',
     route: '/sws',
     order: 1,
@@ -54,7 +54,7 @@ export const DIVISION_DOCUMENT_MAP: Record<string, {
     slug: 'u1-studio',
     shortDescription: 'State-of-the-art photography, 8K cinematic films, wedding photojournalism, and studio fashion productions.',
     description: DIVISIONS.u1.description,
-    imageUrl: '/assets/images/hero_u1.jpg',
+    imageUrl: DIVISIONS.u1.imageUrl || 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=1200&q=85',
     logoUrl: '/assets/images/u1_logo.png',
     route: '/u1',
     order: 2,
@@ -65,7 +65,7 @@ export const DIVISION_DOCUMENT_MAP: Record<string, {
     slug: 'it-solutions',
     shortDescription: 'Enterprise software engineering, modern cloud architecture, scalable web/mobile platforms, and cybersecurity.',
     description: DIVISIONS.it.description,
-    imageUrl: '/assets/images/hero_it.jpg',
+    imageUrl: DIVISIONS.it.imageUrl || 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=85',
     logoUrl: '/assets/images/it_logo.png',
     route: '/it',
     order: 3,
@@ -76,7 +76,7 @@ export const DIVISION_DOCUMENT_MAP: Record<string, {
     slug: 'travels',
     shortDescription: 'Bespoke travel curation, VIP corporate retreats, luxury island expeditions, and chauffeur services.',
     description: DIVISIONS.travels.description,
-    imageUrl: '/assets/images/hero_travels.jpg',
+    imageUrl: DIVISIONS.travels.imageUrl || 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=85',
     logoUrl: '/assets/images/travels_logo.png',
     route: '/travels',
     order: 4,
@@ -87,24 +87,51 @@ export const DIVISION_DOCUMENT_MAP: Record<string, {
     slug: 'online-mart',
     shortDescription: 'Curated e-commerce storefront delivering verified camera gear, audio hardware, and computing essentials.',
     description: DIVISIONS.mart.description,
-    imageUrl: '/assets/images/hero_mart.jpg',
+    imageUrl: DIVISIONS.mart.imageUrl || 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1200&q=85',
     logoUrl: '/assets/images/mart_logo.png',
     route: '/mart',
     order: 5,
   },
 };
 
+export function getCanonicalDivisionId(id: string): string {
+  const lower = (id || '').toLowerCase().trim();
+  if (lower === 'u1' || lower === 'u1-studio' || lower === 'u1-cinema') return 'u1';
+  if (lower === 'sws' || lower === 'sws-event-management' || lower === 'sws-events') return 'sws';
+  if (lower === 'it' || lower === 'it-solutions' || lower === 'mahdev-it') return 'it';
+  if (lower === 'travels' || lower === 'mahdev-travels') return 'travels';
+  if (lower === 'mart' || lower === 'online-mart' || lower === 'mahdev-mart') return 'mart';
+  return lower;
+}
+
 export function getDivisionFallbackOrder(id: string): number {
-  if (id === 'sws') return 1;
-  if (id === 'u1' || id === 'u1-studio') return 2;
-  if (id === 'it' || id === 'it-solutions') return 3;
-  if (id === 'travels') return 4;
-  if (id === 'mart' || id === 'online-mart') return 5;
+  const canonical = getCanonicalDivisionId(id);
+  if (canonical === 'sws') return 1;
+  if (canonical === 'u1') return 2;
+  if (canonical === 'it') return 3;
+  if (canonical === 'travels') return 4;
+  if (canonical === 'mart') return 5;
   return 99;
 }
 
 export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
-  return [...list].sort((a, b) => {
+  const seen = new Set<string>();
+  const deduplicated: FirestoreDivision[] = [];
+
+  for (const item of list) {
+    if (!item) continue;
+    const canonicalKey = getCanonicalDivisionId(item.id || item.slug || '');
+    if (seen.has(canonicalKey)) {
+      continue;
+    }
+    seen.add(canonicalKey);
+    deduplicated.push({
+      ...item,
+      id: item.id || canonicalKey,
+    });
+  }
+
+  return deduplicated.sort((a, b) => {
     const orderA = typeof a.order === 'number' && a.order > 0 ? a.order : getDivisionFallbackOrder(a.id);
     const orderB = typeof b.order === 'number' && b.order > 0 ? b.order : getDivisionFallbackOrder(b.id);
     return orderA - orderB;

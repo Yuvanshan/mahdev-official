@@ -399,8 +399,8 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                     </div>
                     <div>
                       <span className="text-xs font-bold block">WhatsApp Corporate</span>
-                      <span className="text-xs text-emerald-300">
-                        {company.primaryPhone || COMPANY_INFO.primaryPhone}
+                      <span className="text-xs text-emerald-300 font-mono font-bold">
+                        075 092 8078
                       </span>
                     </div>
                   </div>
@@ -414,23 +414,16 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                       <Phone className="w-5 h-5" />
                     </div>
                     <div>
-                      <span className="text-xs font-bold block">Corporate Phone Hotlines</span>
+                      <span className="text-xs font-bold block">Corporate Phone Hotline</span>
                       <span className="text-[11px] text-slate-400">Direct Line & Executive Desk</span>
                     </div>
                   </div>
                   <div className="pl-13 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                     <a
-                      href={getTelLink(company.primaryPhone || COMPANY_INFO.primaryPhone)}
-                      className="font-medium text-white hover:text-blue-400 transition-colors"
+                      href={getTelLink('075 092 8078')}
+                      className="font-medium text-white hover:text-blue-400 transition-colors font-mono font-bold text-base"
                     >
-                      {company.primaryPhone || COMPANY_INFO.primaryPhone}
-                    </a>
-                    <span className="text-slate-600">•</span>
-                    <a
-                      href={getTelLink(company.secondaryPhone || COMPANY_INFO.secondaryPhone)}
-                      className="font-medium text-white hover:text-blue-400 transition-colors"
-                    >
-                      {company.secondaryPhone || COMPANY_INFO.secondaryPhone}
+                      075 092 8078
                     </a>
                   </div>
                 </div>

@@ -24,32 +24,52 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
 
   const displayDivisions = React.useMemo(() => {
     if (divisions && divisions.length > 0) {
-      return divisions
-        .filter((d) => d.status !== 'inactive')
-        .map((d) => {
-          const config = (DIVISIONS as any)[d.id] || DIVISION_LIST.find((item) => item.id === d.id) || {};
-          return {
-            ...config,
-            id: d.id,
-            name: d.name || config.name,
-            shortName: config.shortName || d.name,
-            tagline: d.hero?.subtitle || config.tagline || '',
-            description: d.description || config.description,
-            route: config.route || `/${d.slug || d.id}`,
-            badge: d.hero?.badge || config.badge || 'Enterprise Division',
-            iconName: config.iconName || 'Building',
-            color: config.color || '#0052FF',
-            coreServices:
-              (d as any).coreServices && (d as any).coreServices.length > 0
-                ? (d as any).coreServices
-                : config.coreServices || [],
-            stats:
-              (d as any).stats && (d as any).stats.length > 0
-                ? (d as any).stats
-                : config.stats || [],
-            cardHighlight: (d as any).cardHighlight || config.cardHighlight || '',
-          };
+      const seen = new Set<string>();
+      const result = [];
+
+      for (const d of divisions) {
+        if (d.status === 'inactive') continue;
+        const rawId = (d.id || d.slug || '').toLowerCase();
+        const canonicalId =
+          rawId === 'u1' || rawId === 'u1-studio' || rawId === 'u1-cinema'
+            ? 'u1'
+            : rawId === 'sws' || rawId === 'sws-event-management' || rawId === 'sws-events'
+            ? 'sws'
+            : rawId === 'it' || rawId === 'it-solutions' || rawId === 'mahdev-it'
+            ? 'it'
+            : rawId === 'travels' || rawId === 'mahdev-travels'
+            ? 'travels'
+            : rawId === 'mart' || rawId === 'online-mart' || rawId === 'mahdev-mart'
+            ? 'mart'
+            : rawId;
+
+        if (!canonicalId || seen.has(canonicalId)) continue;
+        seen.add(canonicalId);
+
+        const config = (DIVISIONS as any)[canonicalId] || (DIVISIONS as any)[d.id] || DIVISION_LIST.find((item) => item.id === canonicalId || item.id === d.id) || {};
+        result.push({
+          ...config,
+          id: canonicalId,
+          name: d.name || config.name,
+          shortName: config.shortName || d.name,
+          tagline: d.hero?.subtitle || config.tagline || '',
+          description: d.description || config.description,
+          route: config.route || `/${d.slug || canonicalId}`,
+          badge: d.hero?.badge || config.badge || 'Enterprise Division',
+          iconName: config.iconName || 'Building',
+          color: config.color || '#0052FF',
+          coreServices:
+            (d as any).coreServices && (d as any).coreServices.length > 0
+              ? (d as any).coreServices
+              : config.coreServices || [],
+          stats:
+            (d as any).stats && (d as any).stats.length > 0
+              ? (d as any).stats
+              : config.stats || [],
+          cardHighlight: (d as any).cardHighlight || config.cardHighlight || '',
         });
+      }
+      return result;
     }
     return DIVISION_LIST;
   }, [divisions]);

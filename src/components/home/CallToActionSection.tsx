@@ -1,13 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ArrowRight, CheckCircle2, Compass, Mail, Phone, Send, Sparkles, MapPin } from 'lucide-react';
+import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { Input, Textarea, Select } from '../ui/Input';
-import {
-  ScrollReveal,
-  Magnetic,
-} from '../motion/MotionWrappers';
 import { BRAND_CONFIG } from '../../config/brand';
 import { COMPANY_INFO, getTelLink, getMailtoLink, getMapSearchUrl } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
@@ -15,6 +12,8 @@ import { DIVISION_LIST } from '../../config/divisions';
 import { firestoreContactsService } from '../../services/firestore/contacts';
 import { notificationService } from '../../services/notificationService';
 import { analyticsService } from '../../services/analyticsService';
+import { ParallelWatermark } from '../motion/ParallelScroll';
+import { useDeviceMotion } from '../motion/MotionWrappers';
 
 interface CallToActionSectionProps {
   onExploreServices?: () => void;
@@ -27,8 +26,19 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
   onPrimaryClick,
   onSecondaryClick,
 }) => {
-  const { homepageConfig, companySettings } = useFirestoreDataContext();
+  const { homepageConfig, companySettings, divisions } = useFirestoreDataContext();
   const company = companySettings?.name ? companySettings : COMPANY_INFO;
+  const { reducedMotion, isTouch } = useDeviceMotion();
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start end', 'end start'],
+  });
+
+  const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 22, mass: 0.1 });
+  const yLeft = useTransform(smoothProgress, [0, 1], ['-15px', '15px']);
+  const yRight = useTransform(smoothProgress, [0, 1], ['15px', '-15px']);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -88,18 +98,22 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
   };
 
   return (
-    <SectionContainer
-      id="contact"
-      background="white"
-      paddingY="xl"
-      hasBorderBottom
-    >
-      <div className="relative rounded-2xl overflow-hidden bg-slate-900 p-8 sm:p-12 lg:p-14 text-white border border-slate-800 shadow-xl">
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
-          {/* Left Narrative Column */}
-          <div className="lg:col-span-6 space-y-6">
-            <ScrollReveal direction="up">
-              <span className="text-[11px] font-bold uppercase tracking-widest text-blue-400 block mb-2">
+    <div ref={containerRef} className="relative overflow-hidden">
+      <ParallelWatermark text="08 // INITIATE" />
+      <SectionContainer
+        id="contact"
+        background="white"
+        paddingY="xl"
+        hasBorderBottom
+      >
+        <div className="relative rounded-2xl overflow-hidden bg-slate-900 p-8 sm:p-12 lg:p-14 text-white border border-slate-800 shadow-xl">
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+            {/* Left Narrative Column with Parallel Motion */}
+            <motion.div
+              style={!reducedMotion && !isTouch ? { y: yLeft } : undefined}
+              className="lg:col-span-6 space-y-6"
+            >
+              <span className="text-[11px] font-mono uppercase tracking-wider text-blue-400 block mb-2 font-semibold">
                 {cta.badge || "Get In Touch"}
               </span>
 
@@ -188,23 +202,22 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
 
               {/* Action Buttons */}
               <div className="pt-4 flex flex-wrap items-center gap-4">
-                <Magnetic strength={0.25}>
-                  <Button
-                    variant="outline"
-                    onClick={onExploreServices}
-                    rightIcon={<Compass className="w-4 h-4" />}
-                    className="bg-white/10 text-white border-white/20 hover:bg-white/20 cursor-pointer"
-                  >
-                    {cta.secondaryButtonText || 'Explore Services'}
-                  </Button>
-                </Magnetic>
+                <Button
+                  variant="outline"
+                  onClick={onExploreServices}
+                  rightIcon={<Compass className="w-4 h-4" />}
+                  className="bg-white/10 text-white border-white/20 hover:bg-white/20 cursor-pointer"
+                >
+                  {cta.secondaryButtonText || 'Explore Services'}
+                </Button>
               </div>
-            </ScrollReveal>
-          </div>
+            </motion.div>
 
-          {/* Right Column: Direct Corporate Dispatch Form */}
-          <div className="lg:col-span-6">
-            <ScrollReveal direction="up" delay={0.2}>
+            {/* Right Column: Direct Corporate Dispatch Form with Parallel Motion */}
+            <motion.div
+              style={!reducedMotion && !isTouch ? { y: yRight } : undefined}
+              className="lg:col-span-6"
+            >
               <div className="w-full">
                 <div className="p-6 sm:p-8 rounded-2xl bg-white text-slate-900 shadow-2xl border border-slate-200">
                   {submitted ? (
@@ -290,10 +303,15 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
                           }
                           options={[
                             { value: 'general', label: 'Mahdev HQ (General)' },
-                            ...DIVISION_LIST.map((d) => ({
-                              value: d.id,
-                              label: d.name,
-                            })),
+                            ...(divisions && divisions.length > 0
+                              ? divisions.map((d) => ({
+                                  value: d.slug || d.id,
+                                  label: d.name,
+                                }))
+                              : DIVISION_LIST.map((d) => ({
+                                  value: d.id,
+                                  label: d.name,
+                                }))),
                           ]}
                         />
                       </div>
@@ -310,27 +328,25 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
                         placeholder="Tell us about your event, production, software requirement, or travel plan..."
                       />
 
-                      <Magnetic strength={0.2} className="w-full">
-                        <Button
-                          id="cta-submit-btn"
-                          type="submit"
-                          variant="electric"
-                          size="md"
-                          disabled={loading}
-                          rightIcon={<Send className="w-4 h-4" />}
-                          className="w-full justify-center shadow-md shadow-blue-500/20"
-                        >
-                          {loading ? 'Routing Inquiry...' : 'Submit Inquiry'}
-                        </Button>
-                      </Magnetic>
+                      <Button
+                        id="cta-submit-btn"
+                        type="submit"
+                        variant="electric"
+                        size="md"
+                        disabled={loading}
+                        rightIcon={<Send className="w-4 h-4" />}
+                        className="w-full justify-center shadow-md shadow-blue-500/20 font-bold"
+                      >
+                        {loading ? 'Routing Inquiry...' : 'Submit Inquiry'}
+                      </Button>
                     </form>
                   )}
                 </div>
               </div>
-            </ScrollReveal>
+            </motion.div>
           </div>
         </div>
-      </div>
-    </SectionContainer>
+      </SectionContainer>
+    </div>
   );
 };

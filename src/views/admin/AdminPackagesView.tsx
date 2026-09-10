@@ -13,6 +13,8 @@ import {
   Sparkles,
   Check,
   X,
+  Barcode,
+  Copy,
 } from 'lucide-react';
 import { CmsPackage } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
@@ -42,6 +44,7 @@ export const AdminPackagesView: React.FC = () => {
   // Form State
   const [formData, setFormData] = useState({
     name: '',
+    sku: '',
     divisionId: 'sws' as DivisionId,
     tagline: '',
     price: 350000,
@@ -55,6 +58,23 @@ export const AdminPackagesView: React.FC = () => {
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [copiedSku, setCopiedSku] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard?.writeText(text);
+    setCopiedSku(text);
+    addToast('info', 'SKU Copied', `Copied "${text}" to clipboard.`);
+    setTimeout(() => setCopiedSku(null), 2000);
+  };
+
+  const generatePackageSku = (division: string, name?: string): string => {
+    const divCode = (division || 'SWS').replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase();
+    const cleanName = name
+      ? name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase()
+      : 'PKG';
+    const rand = Math.floor(100 + Math.random() * 900);
+    return `PKG-${divCode}-${cleanName || 'GEN'}-${rand}`;
+  };
 
   const addToast = (type: ToastMessage['type'], title: string, message: string) => {
     const id = Date.now().toString();
@@ -65,12 +85,23 @@ export const AdminPackagesView: React.FC = () => {
   };
 
   const loadPackages = () => {
-    const data = cmsService.getAll<CmsPackage>('packages', {
-      search: searchQuery,
+    let data = cmsService.getAll<CmsPackage>('packages', {
       divisionId: divisionFilter,
       status: statusFilter,
       includeDeleted: statusFilter === 'deleted' || statusFilter === 'all',
     });
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      data = data.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          (p.tagline && p.tagline.toLowerCase().includes(q)) ||
+          (p.sku && p.sku.toLowerCase().includes(q)) ||
+          (p.badge && p.badge.toLowerCase().includes(q))
+      );
+    }
+
     setPackages(data);
   };
 
@@ -84,6 +115,7 @@ export const AdminPackagesView: React.FC = () => {
     setEditingPackage(null);
     setFormData({
       name: '',
+      sku: generatePackageSku('sws'),
       divisionId: 'sws',
       tagline: 'Comprehensive turnkey production & full executive management',
       price: 350000,
@@ -104,6 +136,7 @@ export const AdminPackagesView: React.FC = () => {
     setEditingPackage(pkg);
     setFormData({
       name: pkg.name,
+      sku: pkg.sku || generatePackageSku(pkg.divisionId, pkg.name),
       divisionId: pkg.divisionId,
       tagline: pkg.tagline || '',
       price: pkg.price,
@@ -153,8 +186,10 @@ export const AdminPackagesView: React.FC = () => {
     setIsSaving(true);
     try {
       const cleanFeatures = formData.features.map((f) => f.trim()).filter(Boolean);
+      const finalSku = (formData.sku || generatePackageSku(formData.divisionId, formData.name)).trim().toUpperCase();
       const payload = {
         ...formData,
+        sku: finalSku,
         features: cleanFeatures.length > 0 ? cleanFeatures : ['Professional Service Deliverable'],
       };
 
@@ -297,7 +332,23 @@ export const AdminPackagesView: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <span className="text-[10px] text-blue-600 font-bold uppercase">{pkg.divisionId}</span>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[10px] text-blue-600 font-bold uppercase">{pkg.divisionId}</span>
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(pkg.sku || `PKG-${pkg.divisionId.toUpperCase()}-${pkg.id.slice(-4)}`)}
+                              className="inline-flex items-center gap-1 font-mono text-[9px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-1.5 py-0.5 rounded border border-slate-200 transition-colors cursor-pointer"
+                              title="Click to copy SKU"
+                            >
+                              <Barcode className="w-2.5 h-2.5 text-slate-500" />
+                              <span>{pkg.sku || `PKG-${pkg.divisionId.toUpperCase()}-${pkg.id.slice(-4)}`}</span>
+                              {copiedSku === (pkg.sku || `PKG-${pkg.divisionId.toUpperCase()}-${pkg.id.slice(-4)}`) ? (
+                                <Check className="w-2.5 h-2.5 text-emerald-600" />
+                              ) : (
+                                <Copy className="w-2.5 h-2.5 text-slate-400" />
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -378,8 +429,8 @@ export const AdminPackagesView: React.FC = () => {
         maxWidth="2xl"
       >
         <form onSubmit={handleSave} className="space-y-4 text-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="sm:col-span-2">
               <label className="block font-semibold text-slate-700 mb-1">Package Name *</label>
               <input
                 type="text"
@@ -395,22 +446,52 @@ export const AdminPackagesView: React.FC = () => {
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Division *</label>
-              <select
-                value={formData.divisionId}
-                onChange={(e) => {
-                  setFormData({ ...formData, divisionId: e.target.value as DivisionId });
-                  setIsDirty(true);
-                }}
-                className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              >
-                <option value="sws">SWS Event Management</option>
-                <option value="u1">U1 Studio</option>
-                <option value="it">Mahdev IT & Solutions</option>
-                <option value="travels">Mahdev Travels</option>
-                <option value="mart">Mahdev Online Mart</option>
-              </select>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-semibold text-slate-700">Package SKU *</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newSku = generatePackageSku(formData.divisionId, formData.name);
+                    setFormData((prev) => ({ ...prev, sku: newSku }));
+                    setIsDirty(true);
+                  }}
+                  className="text-[10px] text-blue-600 font-semibold hover:underline cursor-pointer"
+                >
+                  Generate
+                </button>
+              </div>
+              <div className="relative">
+                <Barcode className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={formData.sku}
+                  onChange={(e) => {
+                    setFormData({ ...formData, sku: e.target.value.toUpperCase() });
+                    setIsDirty(true);
+                  }}
+                  placeholder="e.g. PKG-SWS-PRES-101"
+                  className="w-full pl-8 pr-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono uppercase text-xs"
+                />
+              </div>
             </div>
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 mb-1">Division *</label>
+            <select
+              value={formData.divisionId}
+              onChange={(e) => {
+                setFormData({ ...formData, divisionId: e.target.value as DivisionId });
+                setIsDirty(true);
+              }}
+              className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            >
+              <option value="sws">SWS Event Management</option>
+              <option value="u1">U1 Studio</option>
+              <option value="it">Mahdev IT & Solutions</option>
+              <option value="travels">Mahdev Travels</option>
+              <option value="mart">Mahdev Online Mart</option>
+            </select>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">

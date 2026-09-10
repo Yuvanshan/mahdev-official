@@ -50,6 +50,7 @@ export interface BookingLocation {
 
 export interface BookingPackageOption {
   id: string;
+  sku?: string;
   name: string;
   description: string;
   duration: string;
@@ -82,8 +83,11 @@ export interface Booking {
   bookingType: BookingType;
   serviceId: string;
   serviceName: string;
+  serviceSku?: string;
+  serviceImageUrl?: string;
   packageId: string;
   packageName: string;
+  packageSku?: string;
   date: string; // YYYY-MM-DD
   time: string; // e.g. "09:00 AM - 12:00 PM"
   location: BookingLocation;
@@ -104,7 +108,10 @@ export interface BookingSubmissionInput {
   bookingType: BookingType;
   divisionId: 'sws' | 'u1' | 'travels' | 'it' | 'consulting' | 'other';
   serviceId: string;
+  serviceSku?: string;
+  serviceImageUrl?: string;
   packageId: string;
+  packageSku?: string;
   date: string;
   time: string;
   location: BookingLocation;

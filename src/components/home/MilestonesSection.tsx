@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Calendar,
   CheckCircle2,
@@ -16,8 +16,8 @@ import {
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body, Caption } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
-import { ScrollReveal, TiltCard, Magnetic } from '../motion/MotionWrappers';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { ParallelWatermark } from '../motion/ParallelScroll';
 
 // Official verified 2022-2026 company trajectory
 const OFFICIAL_MILESTONES = [
@@ -216,17 +216,18 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
   const CurrentIcon = (currentMilestone as any)?.icon || Building2;
 
   return (
-    <SectionContainer
-      id="milestones"
-      background="white"
-      paddingY="xl"
-      hasBorderBottom
-    >
-      {/* Section Header */}
-      <ScrollReveal direction="up">
+    <div className="relative overflow-hidden">
+      <ParallelWatermark text="07 // TRAJECTORY" />
+      <SectionContainer
+        id="milestones"
+        background="white"
+        paddingY="xl"
+        hasBorderBottom
+      >
+        {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#0052FF] text-xs font-bold uppercase tracking-wider mb-3">
-            <Award className="w-3.5 h-3.5 text-[#0052FF]" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-600 text-xs font-mono font-semibold uppercase tracking-wider mb-3">
+            <Award className="w-3.5 h-3.5 text-blue-600" />
             <span>Our Trajectory & Key Achievements</span>
           </div>
           <H2 className="text-slate-900 mb-3">Our Milestones</H2>
@@ -234,24 +235,23 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
             The official journey of Mahdev Pvt Ltd from our beginnings to a registered multi-service enterprise.
           </Body>
         </div>
-      </ScrollReveal>
 
-      {/* Interactive Timeline Rail */}
-      <div className="relative max-w-5xl mx-auto mb-14">
-        {/* Milestone Steps Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 relative z-10 mb-8">
-          {displayMilestones.map((ms, index) => {
-            const milestoneKey = ms.id ? `step-${ms.id}` : `step-${ms.year}-${index}`;
-            const isSelected = currentMilestone?.id === ms.id || (ms.id && currentMilestone?.id ? currentMilestone.id === ms.id : currentMilestone?.year === ms.year);
-            return (
-              <Magnetic key={milestoneKey} strength={0.12}>
+        {/* Interactive Timeline Rail */}
+        <div className="relative max-w-5xl mx-auto mb-14">
+          {/* Milestone Steps Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 relative z-10 mb-8">
+            {displayMilestones.map((ms, index) => {
+              const milestoneKey = ms.id ? `step-${ms.id}` : `step-${ms.year}-${index}`;
+              const isSelected = currentMilestone?.id === ms.id || (ms.id && currentMilestone?.id ? currentMilestone.id === ms.id : currentMilestone?.year === ms.year);
+              return (
                 <button
+                  key={milestoneKey}
                   type="button"
                   id={`milestone-step-${ms.id || `${ms.year}-${index}`}`}
                   onClick={() => setActiveMilestoneId(ms.id || ms.year)}
-                  className={`w-full p-4 rounded-xl cursor-pointer transition-all duration-300 border text-center h-full flex flex-col justify-between select-none ${
+                  className={`w-full p-4 rounded-xl cursor-pointer transition-all duration-200 border text-center h-full flex flex-col justify-between select-none ${
                     isSelected
-                      ? 'bg-blue-50/95 border-[#0052FF] shadow-sm ring-2 ring-blue-500/20'
+                      ? 'bg-blue-50/95 border-blue-600 shadow-sm ring-1 ring-blue-600/30'
                       : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-slate-50/80 shadow-2xs'
                   }`}
                 >
@@ -259,7 +259,7 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
                   <div
                     className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center text-xs font-bold mb-2 transition-all ${
                       isSelected
-                        ? 'bg-[#0052FF] text-white shadow-md shadow-blue-500/30 scale-105'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
                         : 'bg-slate-100 text-slate-700 border border-slate-300'
                     }`}
                   >
@@ -269,20 +269,18 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
                     <div className="font-display font-bold text-sm text-slate-900 mb-0.5">
                       {ms.title}
                     </div>
-                    <div className="text-[11px] font-semibold text-[#0052FF] truncate">
+                    <div className="text-[11px] font-semibold text-blue-600 truncate">
                       {ms.badge || 'Official Milestone'}
                     </div>
                   </div>
                 </button>
-              </Magnetic>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
 
-        {/* Active Milestone Highlight Card */}
-        {currentMilestone && (
-          <ScrollReveal key={currentMilestone.id ? `active-ms-${currentMilestone.id}` : `active-ms-${currentMilestone.year}`} direction="up" delay={0.05}>
-            <TiltCard maxTilt={4} glareEffect>
+          {/* Active Milestone Highlight Card */}
+          {currentMilestone && (
+            <div key={currentMilestone.id ? `active-ms-${currentMilestone.id}` : `active-ms-${currentMilestone.year}`}>
               <div className="p-6 sm:p-9 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white border border-slate-800 shadow-xl">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-800">
                   <div className="flex items-center gap-3.5">
@@ -290,7 +288,7 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
                       <CurrentIcon className="w-6 h-6" />
                     </div>
                     <div>
-                      <span className="text-xs font-bold text-blue-400 uppercase tracking-wider block">
+                      <span className="text-xs font-mono font-semibold text-blue-400 uppercase tracking-wider block">
                         {currentMilestone.year} Milestone
                       </span>
                       <h3 className="font-display text-xl sm:text-2xl font-bold text-white">
@@ -324,18 +322,16 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
                   )}
                 </div>
               </div>
-            </TiltCard>
-          </ScrollReveal>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
 
-      {/* Integrated Key Achievements / By The Numbers Grid */}
-      <div className="max-w-5xl mx-auto pt-8 border-t border-slate-200">
-        <ScrollReveal direction="up">
+        {/* Integrated Key Achievements / By The Numbers Grid */}
+        <div className="max-w-5xl mx-auto pt-8 border-t border-slate-200">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
             <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-[#0052FF]" />
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-900">
+              <ShieldCheck className="w-4 h-4 text-blue-600" />
+              <span className="text-xs font-mono font-semibold uppercase tracking-wider text-slate-900">
                 {milestonesCms?.achievementsTitle || 'Key Verified Achievements'}
               </span>
             </div>
@@ -343,14 +339,13 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
               {milestonesCms?.achievementsSubtitle || 'Official Company Metrics'}
             </span>
           </div>
-        </ScrollReveal>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
-          {displayAchievements.map((item, idx) => {
-            const Icon = (item as any).icon || getAchievementIcon(item.iconName);
-            return (
-              <ScrollReveal key={item.id || idx} direction="up" delay={idx * 0.04}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
+            {displayAchievements.map((item, idx) => {
+              const Icon = (item as any).icon || getAchievementIcon(item.iconName);
+              return (
                 <div
+                  key={item.id || idx}
                   className={`p-4 rounded-xl border transition-all duration-200 flex flex-col justify-between h-full ${
                     item.highlight
                       ? 'bg-blue-50/70 border-blue-200/90 shadow-2xs'
@@ -359,11 +354,11 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
                 >
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <div className="w-7 h-7 rounded-lg bg-blue-100/90 text-[#0052FF] flex items-center justify-center">
+                      <div className="w-7 h-7 rounded-lg bg-blue-100/90 text-blue-600 flex items-center justify-center">
                         <Icon className="w-3.5 h-3.5" />
                       </div>
                       {item.badge && (
-                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                        <span className="text-[9px] font-mono font-semibold text-slate-500 uppercase tracking-wider">
                           {item.badge}
                         </span>
                       )}
@@ -371,7 +366,7 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
                     <div className="font-display text-2xl font-bold tracking-tight text-slate-900 mb-0.5">
                       {item.metric}
                     </div>
-                    <div className="text-xs font-bold text-[#0052FF] mb-1 leading-tight">
+                    <div className="text-xs font-bold text-blue-600 mb-1 leading-tight">
                       {item.label}
                     </div>
                   </div>
@@ -379,24 +374,24 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
                     {item.description}
                   </p>
                 </div>
-              </ScrollReveal>
-            );
-          })}
-        </div>
-
-        {/* View Company Journey Button */}
-        {onNavigate && (
-          <div className="mt-10 text-center">
-            <button
-              onClick={() => onNavigate('/milestones')}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 font-semibold text-sm hover:border-[#0052FF] hover:text-[#0052FF] hover:shadow-md transition-all cursor-pointer group"
-            >
-              <span>View Full Company Journey & Timeline</span>
-              <ChevronRight className="w-4 h-4 text-[#0052FF] group-hover:translate-x-1 transition-transform" />
-            </button>
+              );
+            })}
           </div>
-        )}
-      </div>
-    </SectionContainer>
+
+          {/* View Company Journey Button */}
+          {onNavigate && (
+            <div className="mt-10 text-center">
+              <button
+                onClick={() => onNavigate('/milestones')}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 font-semibold text-sm hover:border-blue-600 hover:text-blue-600 hover:shadow-md transition-all cursor-pointer group"
+              >
+                <span>View Full Company Journey & Timeline</span>
+                <ChevronRight className="w-4 h-4 text-blue-600 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+          )}
+        </div>
+      </SectionContainer>
+    </div>
   );
 };

@@ -33,6 +33,7 @@ import {
   ShieldCheck,
   ArrowRight,
   Database,
+  Layers,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
@@ -53,12 +54,14 @@ import { BrandLogo } from '../../components/layout/BrandLogo';
 import { adminService, syncAdminFirebaseAuth } from '../../services/adminService';
 import { auth } from '../../lib/firebase';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { getRentalAssetCount } from '../../utils/assetMetrics';
 
 export const AdminSettingsView: React.FC = () => {
   const {
     updateSiteSettings: updateContextSiteSettings,
     updateCompanySettings: updateContextCompanySettings,
     refreshAll,
+    products,
   } = useFirestoreDataContext();
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -1828,6 +1831,63 @@ export const AdminSettingsView: React.FC = () => {
                 placeholder="PV-00289410"
               />
             </div>
+          </div>
+
+          {/* Rental Assets & Inventory Metrics */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4 lg:col-span-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-blue-600" />
+                <div>
+                  <h3 className="font-display text-sm font-bold text-slate-900">Rental Assets & Equipment Inventory Metrics</h3>
+                  <p className="text-[11px] text-slate-500">Configure the public rental asset metric badge displayed across marketing headers, SWS portals, and search ribbons.</p>
+                </div>
+              </div>
+              <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200 font-mono self-start sm:self-auto">
+                Auto-calculated: {getRentalAssetCount(products)}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Public Asset Count Metric (Custom Override)
+                </label>
+                <input
+                  type="text"
+                  value={companyData.rentalAssetCount || systemSettings.rentalAssetCount || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCompanyData({ ...companyData, rentalAssetCount: val });
+                    setSystemSettings({ ...systemSettings, rentalAssetCount: val });
+                  }}
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:bg-white focus:outline-none"
+                  placeholder="e.g. 5,000+ or 1,200+ (Leave blank to use auto-calculated count)"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  When left blank or cleared, the website automatically computes the live rental stock ({getRentalAssetCount(products)}) based on active products added for rent.
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 flex flex-col justify-between">
+                <div>
+                  <span className="text-xs font-bold text-slate-700 block mb-1">Live Catalog Rental Inventory</span>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Currently detecting <strong className="text-blue-600">{products.filter((p) => p.isRental || p.tags?.includes('rental') || (p as any).divisionKey === 'sws').length}</strong> rental products registered in the database.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCompanyData({ ...companyData, rentalAssetCount: '' });
+                    setSystemSettings({ ...systemSettings, rentalAssetCount: '' });
+                  }}
+                  className="mt-2 text-xs text-blue-600 hover:text-blue-800 font-bold hover:underline self-start cursor-pointer"
+                >
+                  Reset to Auto-Calculate from Products
+                </button>
+              </div>
+            </div>
 
             <div className="pt-2 flex justify-end">
               <Button
@@ -1838,7 +1898,7 @@ export const AdminSettingsView: React.FC = () => {
                 className="gap-2"
               >
                 {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                <span>Save Commerce Settings</span>
+                <span>Save Commerce & Rental Settings</span>
               </Button>
             </div>
           </div>

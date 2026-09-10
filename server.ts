@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
+import fs from 'fs';
 import crypto from 'crypto';
 import { createServer as createViteServer } from 'vite';
 import {
@@ -923,10 +924,10 @@ async function startServer() {
     description: 'Premier South Asian enterprise uniting 5 specialized business divisions.',
     domain: 'mahdev.lk',
     email: 'info.mahdev.lk@gmail.com',
-    primaryPhone: '+94 77 000 0000',
-    secondaryPhone: '+94 11 200 0000',
-    phones: ['076 898 8970', '075 092 8078'],
-    whatsappNumber: '+94 77 000 0000',
+    primaryPhone: '075 092 8078',
+    secondaryPhone: '075 092 8078',
+    phones: ['075 092 8078'],
+    whatsappNumber: '+94 75 092 8078',
     address: 'Colombo, Western Province, Sri Lanka',
   };
 
@@ -940,7 +941,7 @@ async function startServer() {
     faviconUrl: '',
     currencyCode: 'LKR',
     currencySymbol: 'Rs. ',
-    phoneNumbers: ['+94 77 000 0000', '+94 11 200 0000'],
+    phoneNumbers: ['075 092 8078'],
     email: 'info.mahdev.lk@gmail.com',
     maintenanceMode: false,
     updatedAt: new Date().toISOString(),
@@ -1392,7 +1393,7 @@ async function startServer() {
           recipient: {
             name: 'Yuvanshan Prabakaran',
             email: 'info.mahdev.lk@gmail.com',
-            phone: '+94770000000',
+            phone: '+94750928078',
             role: 'admin',
           },
           title: `📩 New Corporate Inquiry: ${inquirySubject}`,
@@ -1548,6 +1549,20 @@ async function startServer() {
       appType: 'spa',
     });
     app.use(vite.middlewares);
+
+    // Development SPA fallback for deep links like /sws-event-management
+    app.use('*', async (req: Request, res: Response, next: NextFunction) => {
+      const url = req.originalUrl;
+      try {
+        const indexPath = path.resolve(process.cwd(), 'index.html');
+        let template = fs.readFileSync(indexPath, 'utf-8');
+        template = await vite.transformIndexHtml(url, template);
+        res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
+      } catch (e: any) {
+        vite.ssrFixStacktrace(e);
+        next(e);
+      }
+    });
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));

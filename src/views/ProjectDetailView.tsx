@@ -15,7 +15,10 @@ import {
   ChevronRight,
   Eye,
   Award,
+  MessageCircle,
+  Barcode,
 } from 'lucide-react';
+import { openWhatsAppInquiry } from '../utils/whatsapp';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { FirestorePortfolio } from '../types/firestore';
 import { DIVISIONS } from '../config/divisions';
@@ -198,7 +201,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
             </p>
 
             {/* Project Specification Matrix */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-6 rounded-2xl bg-slate-50 border border-slate-200/80 mb-12">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 p-6 rounded-2xl bg-slate-50 border border-slate-200/80 mb-6">
               <div>
                 <span className="text-xs uppercase tracking-wider font-bold text-slate-400 block mb-1">
                   Division
@@ -234,6 +237,49 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                   {project.category}
                 </span>
               </div>
+
+              <div>
+                <span className="text-xs uppercase tracking-wider font-bold text-slate-400 block mb-1">
+                  SKU Reference
+                </span>
+                <span className="text-xs font-mono font-bold text-slate-700 bg-white px-2 py-1 rounded border border-slate-200 inline-flex items-center gap-1">
+                  <Barcode className="w-3 h-3 text-slate-400" />
+                  {(project as any).sku || `PORT-${effectiveDivisionId.toUpperCase()}-${project.id.slice(-4)}`}
+                </span>
+              </div>
+            </div>
+
+            {/* Quick WhatsApp Inquiry Action Banner */}
+            <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl mb-12">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                  <MessageCircle className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-emerald-950">Inquire About This Project Scope</h4>
+                  <p className="text-[11px] text-emerald-700">Send direct WhatsApp inquiry with project link, SKU and JPEG preview to 075 092 8078.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const itemLink = typeof window !== 'undefined' ? window.location.href : undefined;
+                  openWhatsAppInquiry({
+                    title: project.title,
+                    sku: (project as any).sku || `PORT-${effectiveDivisionId.toUpperCase()}-${project.id.slice(-4)}`,
+                    category: project.category,
+                    divisionName: divisionMeta.name,
+                    imageUrl: project.imageUrl,
+                    itemUrl: itemLink,
+                    description: project.summary,
+                    type: 'portfolio',
+                  });
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all cursor-pointer active:scale-95"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>Inquire on WhatsApp (075 092 8078)</span>
+              </button>
             </div>
           </ScrollReveal>
 
@@ -509,6 +555,27 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              type="button"
+              onClick={() => {
+                const itemLink = typeof window !== 'undefined' ? window.location.href : undefined;
+                openWhatsAppInquiry({
+                  title: project.title,
+                  sku: (project as any).sku || `PORT-${effectiveDivisionId.toUpperCase()}-${project.id.slice(-4)}`,
+                  category: project.category,
+                  divisionName: divisionMeta.name,
+                  imageUrl: project.imageUrl,
+                  itemUrl: itemLink,
+                  description: project.summary,
+                  type: 'portfolio',
+                });
+              }}
+              className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all cursor-pointer w-full sm:w-auto active:scale-95"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span>Inquire via WhatsApp (075 092 8078)</span>
+            </button>
+
             <Button
               variant="primary"
               size="lg"

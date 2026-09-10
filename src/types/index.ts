@@ -29,6 +29,8 @@ export interface DivisionConfig {
   domainUrl?: string;
   accentColor: string;
   gradient: string;
+  image?: string;
+  imageUrl?: string;
   heroHeadline: string;
   heroSubheadline: string;
   coreServices: CoreServiceFeature[];
@@ -68,6 +70,7 @@ export interface ServiceItem {
   features: string[];
   iconName: string;
   popular?: boolean;
+  sku?: string;
 }
 
 export interface ProductItem {
@@ -157,6 +160,7 @@ export interface PortfolioProject {
     value: string;
   }[];
   tags?: string[];
+  sku?: string;
 }
 
 export interface MilestoneItem {

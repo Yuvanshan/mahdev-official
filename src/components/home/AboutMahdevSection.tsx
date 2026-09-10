@@ -13,9 +13,17 @@ interface AboutMahdevSectionProps {
 }
 
 export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExploreDivisions }) => {
-  const { companySettings } = useFirestoreDataContext();
-  const establishedYear = companySettings.establishedYear || '2022';
-  const hotline = '075 092 8078';
+  const { companySettings, homepageConfig, divisions } = useFirestoreDataContext();
+  const establishedYear = companySettings?.establishedYear || '2022';
+  const hotline = companySettings?.primaryPhone || '075 092 8078';
+  const intro = homepageConfig?.intro;
+  const badge = intro?.badge || 'Enterprise Architecture';
+  const headline = intro?.headline || 'A Unified Enterprise of Specialized Industry Leaders';
+  const description =
+    intro?.description ||
+    companySettings?.description ||
+    'Mahdev Group unites luxury event production, cinema filmmaking, custom software engineering, Ceylon travel, and retail commerce under unified governance and strict quality standards.';
+
   const { reducedMotion, isTouch } = useDeviceMotion();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -28,6 +36,8 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
   const yLeft = useTransform(smoothProgress, [0, 1], ['-10px', '25px']);
   const yCol1 = useTransform(smoothProgress, [0, 1], ['-24px', '24px']);
   const yCol2 = useTransform(smoothProgress, [0, 1], ['24px', '-24px']);
+
+  const divisionCount = divisions && divisions.length > 0 ? `${divisions.length} Units` : '5 Units';
 
   const col1Metrics = [
     {
@@ -46,7 +56,7 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
 
   const col2Metrics = [
     {
-      value: '5 Units',
+      value: divisionCount,
       label: 'Specialized Units',
       caption: 'Events, Media, IT, Travel, Mart',
       icon: Users,
@@ -70,14 +80,14 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
             className="lg:col-span-6 space-y-5"
           >
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[11px] font-mono uppercase tracking-wider text-blue-700">
-              <span>Enterprise Architecture</span>
+              <span>{badge}</span>
             </div>
 
             <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
-              Integrated Operations. Autonomous Mastery.
+              {headline}
             </h2>
             <p className="text-slate-600 text-sm sm:text-base leading-relaxed font-normal">
-              Mahdev Group unites luxury event production, cinema filmmaking, custom software engineering, Ceylon travel, and retail commerce under unified governance and strict quality standards.
+              {description}
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">

@@ -50,6 +50,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
       liveUrl: p.liveUrl,
       impactMetrics: p.impactMetrics || [],
       tags: p.tags || ['Enterprise', 'Production'],
+      sku: (p as any).sku,
     }));
   }, [portfolio]);
 
@@ -223,11 +224,14 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
+                            const itemLink = typeof window !== 'undefined' ? `${window.location.origin}/project/${project.id}` : undefined;
                             openWhatsAppInquiry({
                               title: project.title,
+                              sku: project.sku || `PORT-${project.divisionId.toUpperCase()}-${project.id.slice(-4)}`,
                               category: project.category,
                               divisionName: project.divisionId ? project.divisionId.toUpperCase() : undefined,
                               imageUrl: project.imageUrl,
+                              itemUrl: itemLink,
                               description: project.summary,
                               type: 'portfolio',
                             });
@@ -407,11 +411,14 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                       ...(selectedProject.galleryImages || []),
                     ];
                     const activeImg = allImages[activeGalleryIndex] || selectedProject.imageUrl;
+                    const itemLink = typeof window !== 'undefined' ? `${window.location.origin}/project/${selectedProject.id}` : undefined;
                     openWhatsAppInquiry({
                       title: selectedProject.title,
+                      sku: selectedProject.sku || `PORT-${selectedProject.divisionId.toUpperCase()}-${selectedProject.id.slice(-4)}`,
                       category: selectedProject.category,
                       divisionName: selectedProject.divisionId ? selectedProject.divisionId.toUpperCase() : undefined,
                       imageUrl: activeImg,
+                      itemUrl: itemLink,
                       description: selectedProject.summary,
                       type: 'portfolio',
                     });

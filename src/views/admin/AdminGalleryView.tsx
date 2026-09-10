@@ -11,6 +11,9 @@ import {
   Sparkles,
   Layers,
   FolderTree,
+  Copy,
+  Barcode,
+  Check,
 } from 'lucide-react';
 import { CmsGalleryItem, CmsCategory } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
@@ -60,6 +63,7 @@ export const AdminGalleryView: React.FC = () => {
   // Form State
   const [formData, setFormData] = useState({
     title: '',
+    sku: '',
     divisionId: 'sws' as DivisionId,
     category: 'Weddings',
     caption: '',
@@ -73,6 +77,23 @@ export const AdminGalleryView: React.FC = () => {
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [copiedSku, setCopiedSku] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard?.writeText(text);
+    setCopiedSku(text);
+    addToast('info', 'SKU Copied', `Copied "${text}" to clipboard.`);
+    setTimeout(() => setCopiedSku(null), 2000);
+  };
+
+  const generateGallerySku = (division: string, title?: string): string => {
+    const divCode = (division || 'SWS').replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase();
+    const cleanTitle = title
+      ? title.replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase()
+      : 'GAL';
+    const rand = Math.floor(100 + Math.random() * 900);
+    return `GAL-${divCode}-${cleanTitle || 'GEN'}-${rand}`;
+  };
 
   const addToast = (type: ToastMessage['type'], title: string, message: string) => {
     const id = Date.now().toString();
@@ -83,13 +104,25 @@ export const AdminGalleryView: React.FC = () => {
   };
 
   const loadData = () => {
-    const data = cmsService.getAll<CmsGalleryItem>('gallery', {
-      search: searchQuery,
+    let data = cmsService.getAll<CmsGalleryItem>('gallery', {
       divisionId: divisionFilter,
       category: categoryFilter !== 'all' ? categoryFilter : undefined,
       status: statusFilter,
       includeDeleted: statusFilter === 'deleted' || statusFilter === 'all',
     });
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      data = data.filter(
+        (g) =>
+          g.title.toLowerCase().includes(q) ||
+          (g.caption && g.caption.toLowerCase().includes(q)) ||
+          (g.sku && g.sku.toLowerCase().includes(q)) ||
+          (g.category && g.category.toLowerCase().includes(q)) ||
+          (Array.isArray(g.tags) && g.tags.some((t) => t.toLowerCase().includes(q)))
+      );
+    }
+
     setGalleryItems(data);
 
     // Refresh categories from CMS and current gallery items
@@ -120,6 +153,7 @@ export const AdminGalleryView: React.FC = () => {
     setEditingItem(null);
     setFormData({
       title: '',
+      sku: generateGallerySku('sws'),
       divisionId: 'sws',
       category: 'Weddings',
       caption: '',
@@ -143,6 +177,7 @@ export const AdminGalleryView: React.FC = () => {
     const isPreset = PRESET_GALLERY_CATEGORIES.includes(existingCat);
     setFormData({
       title: item.title,
+      sku: item.sku || generateGallerySku(item.divisionId, item.title),
       divisionId: item.divisionId,
       category: isPreset ? existingCat : 'Other / Custom',
       caption: item.caption || '',
@@ -212,8 +247,11 @@ export const AdminGalleryView: React.FC = () => {
         finalThumbnailUrl = await compressDataUrl(finalMediaUrl, 400, 0.7);
       }
 
+      const finalSku = (formData.sku || generateGallerySku(formData.divisionId, formData.title)).trim().toUpperCase();
+
       const payload = {
         ...formData,
+        sku: finalSku,
         mediaUrl: finalMediaUrl,
         thumbnailUrl: finalThumbnailUrl,
         category: resolvedCategory,
@@ -378,7 +416,23 @@ export const AdminGalleryView: React.FC = () => {
 
               <div className="p-4 grow flex flex-col justify-between space-y-2">
                 <div>
-                  <h4 className="font-display font-bold text-slate-900 text-xs truncate">{item.title}</h4>
+                  <div className="flex items-center justify-between gap-1">
+                    <h4 className="font-display font-bold text-slate-900 text-xs truncate">{item.title}</h4>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(item.sku || `GAL-${item.divisionId.toUpperCase()}-${item.id.slice(-4)}`)}
+                      className="inline-flex items-center gap-1 font-mono text-[9px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-1.5 py-0.5 rounded border border-slate-200 transition-colors cursor-pointer shrink-0"
+                      title="Click to copy SKU"
+                    >
+                      <Barcode className="w-2.5 h-2.5 text-slate-500" />
+                      <span>{item.sku || `GAL-${item.divisionId.toUpperCase()}-${item.id.slice(-4)}`}</span>
+                      {copiedSku === (item.sku || `GAL-${item.divisionId.toUpperCase()}-${item.id.slice(-4)}`) ? (
+                        <Check className="w-2.5 h-2.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-2.5 h-2.5 text-slate-400" />
+                      )}
+                    </button>
+                  </div>
                   {item.caption && <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{item.caption}</p>}
                 </div>
 
@@ -441,19 +495,51 @@ export const AdminGalleryView: React.FC = () => {
         maxWidth="lg"
       >
         <form onSubmit={handleSave} className="space-y-4 text-xs">
-          <div>
-            <label className="block font-semibold text-slate-700 mb-1">Asset Title *</label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => {
-                setFormData({ ...formData, title: e.target.value });
-                setIsDirty(true);
-              }}
-              placeholder="e.g. Lotus Tower Drone Sunset Panorama"
-              className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
-            {formErrors.title && <p className="text-red-600 text-[10px] mt-0.5">{formErrors.title}</p>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Asset Title *</label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => {
+                  setFormData({ ...formData, title: e.target.value });
+                  setIsDirty(true);
+                }}
+                placeholder="e.g. Lotus Tower Drone Sunset Panorama"
+                className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+              {formErrors.title && <p className="text-red-600 text-[10px] mt-0.5">{formErrors.title}</p>}
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-semibold text-slate-700">Gallery SKU *</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newSku = generateGallerySku(formData.divisionId, formData.title);
+                    setFormData((prev) => ({ ...prev, sku: newSku }));
+                    setIsDirty(true);
+                  }}
+                  className="text-[10px] text-blue-600 font-semibold hover:underline cursor-pointer"
+                >
+                  Generate
+                </button>
+              </div>
+              <div className="relative">
+                <Barcode className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={formData.sku}
+                  onChange={(e) => {
+                    setFormData({ ...formData, sku: e.target.value.toUpperCase() });
+                    setIsDirty(true);
+                  }}
+                  placeholder="e.g. GAL-SWS-WED-101"
+                  className="w-full pl-8 pr-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono uppercase text-xs"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

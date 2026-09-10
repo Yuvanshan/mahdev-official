@@ -15,6 +15,9 @@ import {
   Image as ImageIcon,
   ExternalLink,
   Layers,
+  Eye,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { CmsProduct, CmsCategory } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
@@ -25,6 +28,7 @@ import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { QuickCategoryCreator } from '../../components/admin/QuickCategoryCreator';
 import { DivisionId } from '../../types';
+import { formatCurrency, formatLKR } from '../../utils/currency';
 
 export const AdminProductsView: React.FC = () => {
   const [products, setProducts] = useState<CmsProduct[]>([]);
@@ -34,9 +38,11 @@ export const AdminProductsView: React.FC = () => {
   const [stockFilter, setStockFilter] = useState<string>('all');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  // Modal States
+  // Modal & Inspector States
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<CmsProduct | null>(null);
+  const [inspectedProduct, setInspectedProduct] = useState<CmsProduct | null>(null);
+  const [copiedSku, setCopiedSku] = useState<string | null>(null);
   const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
   const [isGalleryPickerOpen, setIsGalleryPickerOpen] = useState(false);
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
@@ -57,9 +63,9 @@ export const AdminProductsView: React.FC = () => {
     divisionName: 'Mahdev Online Mart',
     categoryId: 'cat-cameras',
     categoryName: 'Cinema & Studio Cameras',
-    price: 999,
-    compareAtPrice: 1199,
-    currency: 'USD',
+    price: 45000,
+    compareAtPrice: 52000,
+    currency: 'LKR',
     shortDescription: '',
     description: '',
     imageUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80',
@@ -114,9 +120,9 @@ export const AdminProductsView: React.FC = () => {
       divisionName: 'Mahdev Online Mart',
       categoryId: defaultCat.id,
       categoryName: defaultCat.name,
-      price: 199,
-      compareAtPrice: 249,
-      currency: 'USD',
+      price: 25000,
+      compareAtPrice: 28500,
+      currency: 'LKR',
       shortDescription: '',
       description: '',
       imageUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80',
@@ -126,7 +132,7 @@ export const AdminProductsView: React.FC = () => {
       lowStockThreshold: 8,
       isFeatured: false,
       tags: ['Hardware', 'Authorized'],
-      specifications: { Warranty: '1-Year Island-wide' },
+      specifications: { Warranty: '1-Year Island-wide Official Warranty' },
       warrantyInfo: '1-Year Official Manufacturer Warranty',
       isActive: true,
     });
@@ -147,7 +153,7 @@ export const AdminProductsView: React.FC = () => {
       categoryName: prod.categoryName,
       price: prod.price,
       compareAtPrice: prod.compareAtPrice || prod.price,
-      currency: prod.currency || 'USD',
+      currency: prod.currency || 'LKR',
       shortDescription: prod.shortDescription || '',
       description: prod.description || '',
       imageUrl: prod.imageUrl,
@@ -309,17 +315,28 @@ export const AdminProductsView: React.FC = () => {
         </div>
       </div>
 
-      {/* Toolbar Filter */}
+      {/* Toolbar Filter & SKU Search */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
-        <div className="relative w-full md:w-80">
+        <div className="relative w-full md:w-96">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by SKU, title, category..."
-            className="w-full pl-10 pr-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            placeholder="Search by SKU no (e.g. SKU-...), title, category..."
+            className="w-full pl-10 pr-10 py-2 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-medium"
           />
+          {searchQuery && (
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setInspectedProduct(null);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 font-bold text-xs"
+            >
+              ×
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto">
@@ -349,6 +366,207 @@ export const AdminProductsView: React.FC = () => {
           </select>
         </div>
       </div>
+
+      {/* SKU Quick Inspector & Media Details Card (When SKU is searched or inspected) */}
+      {(() => {
+        const activeItem =
+          inspectedProduct ||
+          (searchQuery.trim().length >= 2
+            ? products.find(
+                (p) =>
+                  p.sku.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
+                  p.name.toLowerCase().includes(searchQuery.trim().toLowerCase())
+              )
+            : null);
+
+        if (!activeItem) return null;
+
+        const copyWhatsAppResponse = () => {
+          const text = `✅ *Mahdev Inventory Confirmation*\n• *Item:* ${activeItem.name}\n• *SKU:* \`${activeItem.sku}\`\n• *Price:* ${formatCurrency(activeItem.price, 'LKR')}\n• *Stock:* ${activeItem.stockQuantity} available\n• *Warranty:* ${activeItem.warrantyInfo || 'Official Manufacturer Warranty'}\n• *Reference Image:* ${activeItem.imageUrl}`;
+          navigator.clipboard.writeText(text);
+          setCopiedSku(activeItem.sku);
+          addToast('success', 'Copied to Clipboard', `WhatsApp reply copied for SKU ${activeItem.sku}`);
+          setTimeout(() => setCopiedSku(null), 3000);
+        };
+
+        return (
+          <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-slate-50 p-5 rounded-2xl border-2 border-blue-200 shadow-sm animate-fadeIn">
+            <div className="flex flex-col sm:flex-row items-start justify-between gap-3 pb-3 border-b border-blue-100">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse" />
+                <h3 className="font-display text-sm font-bold text-slate-900">
+                  SKU Search & Media Inspector
+                </h3>
+                <span className="bg-blue-600 text-white font-mono text-[11px] font-bold px-2.5 py-0.5 rounded-md tracking-wider">
+                  {activeItem.sku}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={copyWhatsAppResponse}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
+                >
+                  {copiedSku === activeItem.sku ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copy WhatsApp Response</span>
+                    </>
+                  )}
+                </button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleOpenEdit(activeItem)}
+                  className="text-xs"
+                >
+                  <Edit2 className="w-3 h-3 mr-1" />
+                  Edit Product
+                </Button>
+                <button
+                  onClick={() => setInspectedProduct(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-white"
+                  title="Close Inspector"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-5 pt-4">
+              {/* Image Preview Column */}
+              <div className="md:col-span-4 lg:col-span-3">
+                <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-white aspect-square shadow-xs group">
+                  <img
+                    src={activeItem.imageUrl}
+                    alt={activeItem.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <a
+                    href={activeItem.imageUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute bottom-2 right-2 bg-slate-900/80 text-white p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity text-[10px] flex items-center gap-1"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    <span>View HD</span>
+                  </a>
+                </div>
+                {activeItem.galleryImages && activeItem.galleryImages.length > 0 && (
+                  <div className="flex gap-1.5 mt-2 overflow-x-auto pb-1">
+                    {activeItem.galleryImages.map((img, idx) => (
+                      <a
+                        key={idx}
+                        href={img}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden shrink-0 bg-white"
+                      >
+                        <img src={img} alt="Gallery" className="w-full h-full object-cover" />
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Product Specifications & Live Details */}
+              <div className="md:col-span-8 lg:col-span-9 space-y-3">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <span className="text-[10px] font-bold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                      {activeItem.divisionName}
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+                      {activeItem.categoryName}
+                    </span>
+                    <span className="text-[10px] font-mono font-bold text-slate-500">
+                      ID: {activeItem.id}
+                    </span>
+                  </div>
+                  <h4 className="font-display text-base font-bold text-slate-900 leading-snug">
+                    {activeItem.name}
+                  </h4>
+                  {activeItem.shortDescription && (
+                    <p className="text-xs text-slate-600 mt-1">{activeItem.shortDescription}</p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white p-3 rounded-xl border border-slate-200 text-xs">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                      Price (LKR)
+                    </span>
+                    <span className="font-mono text-sm font-bold text-blue-700">
+                      {formatCurrency(activeItem.price, 'LKR')}
+                    </span>
+                    {activeItem.compareAtPrice && activeItem.compareAtPrice > activeItem.price && (
+                      <span className="text-[10px] text-slate-400 line-through block font-mono">
+                        {formatCurrency(activeItem.compareAtPrice, 'LKR')}
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                      Stock Level
+                    </span>
+                    <span className="font-mono text-sm font-bold text-slate-900">
+                      {activeItem.stockQuantity} Units
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      Alert at ≤ {activeItem.lowStockThreshold || 10}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                      Status
+                    </span>
+                    <span className="text-[11px] font-bold text-emerald-700 inline-flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      {activeItem.stockStatus === 'in_stock'
+                        ? 'Available'
+                        : activeItem.stockStatus === 'low_stock'
+                        ? 'Low Stock'
+                        : 'Out of Stock'}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                      Warranty
+                    </span>
+                    <span className="text-[11px] text-slate-700 font-medium line-clamp-1">
+                      {activeItem.warrantyInfo || 'Official Warranty'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Technical Specifications */}
+                {activeItem.specifications && Object.keys(activeItem.specifications).length > 0 && (
+                  <div className="bg-white p-3 rounded-xl border border-slate-200">
+                    <span className="text-[11px] font-bold text-slate-700 block mb-1.5">
+                      Technical Specifications & Parameters
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-xs">
+                      {Object.entries(activeItem.specifications).map(([key, val]) => (
+                        <div key={key} className="flex justify-between border-b border-slate-100 py-0.5">
+                          <span className="text-slate-500">{key}:</span>
+                          <span className="font-medium text-slate-800">{String(val)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Products Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
@@ -395,10 +613,10 @@ export const AdminProductsView: React.FC = () => {
                       <span className="text-[10px] text-blue-600 font-bold uppercase">{prod.divisionName}</span>
                     </td>
                     <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
-                      ${prod.price?.toFixed(2)}
+                      {formatCurrency(prod.price, 'LKR')}
                       {prod.compareAtPrice && prod.compareAtPrice > prod.price && (
-                        <span className="text-slate-400 line-through text-[10px] ml-1 font-normal">
-                          ${prod.compareAtPrice.toFixed(2)}
+                        <span className="text-slate-400 line-through text-[10px] ml-1.5 font-normal">
+                          {formatCurrency(prod.compareAtPrice, 'LKR')}
                         </span>
                       )}
                     </td>
@@ -441,6 +659,16 @@ export const AdminProductsView: React.FC = () => {
                           </Button>
                         ) : (
                           <>
+                            <button
+                              onClick={() => {
+                                setInspectedProduct(prod);
+                                window.scrollTo({ top: 120, behavior: 'smooth' });
+                              }}
+                              className="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                              title="Inspect SKU & Image Details"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
                             <button
                               onClick={() => handleOpenEdit(prod)}
                               className="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
@@ -559,32 +787,32 @@ export const AdminProductsView: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Sale Price (USD) *</label>
+              <label className="block font-semibold text-slate-700 mb-1">Sale Price (LKR / Rs.) *</label>
               <input
                 type="number"
                 min="0"
-                step="0.01"
+                step="1"
                 value={formData.price}
                 onChange={(e) => {
                   setFormData({ ...formData, price: parseFloat(e.target.value) || 0 });
                   setIsDirty(true);
                 }}
-                className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
+                className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono font-bold text-slate-900"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Compare-At Price</label>
+              <label className="block font-semibold text-slate-700 mb-1">Compare-At Price (LKR / Rs.)</label>
               <input
                 type="number"
                 min="0"
-                step="0.01"
+                step="1"
                 value={formData.compareAtPrice}
                 onChange={(e) => {
                   setFormData({ ...formData, compareAtPrice: parseFloat(e.target.value) || 0 });
                   setIsDirty(true);
                 }}
-                className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
+                className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono text-slate-600"
               />
             </div>
 

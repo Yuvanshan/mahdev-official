@@ -18,6 +18,8 @@ import {
   ArrowDown,
   Image as ImageIcon,
   FolderTree,
+  Copy,
+  Barcode,
 } from 'lucide-react';
 import { CmsService, CmsCategory } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
@@ -58,6 +60,7 @@ export const AdminServicesView: React.FC = () => {
     divisionName: 'SWS Event Management',
     category: '',
     title: '',
+    sku: '',
     description: '',
     imageUrl: '',
     features: [''],
@@ -71,6 +74,14 @@ export const AdminServicesView: React.FC = () => {
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [copiedSku, setCopiedSku] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard?.writeText(text);
+    setCopiedSku(text);
+    addToast('info', 'SKU Copied', `Copied "${text}" to clipboard.`);
+    setTimeout(() => setCopiedSku(null), 2000);
+  };
 
   const addToast = (type: ToastMessage['type'], title: string, message: string) => {
     const id = Date.now().toString();
@@ -82,11 +93,22 @@ export const AdminServicesView: React.FC = () => {
 
   const loadServices = () => {
     let data = cmsService.getAll<CmsService>('services', {
-      search: searchQuery,
       divisionId: divisionFilter,
       status: statusFilter,
       includeDeleted: statusFilter === 'deleted' || statusFilter === 'all',
     });
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      data = data.filter(
+        (s) =>
+          s.title.toLowerCase().includes(q) ||
+          s.description.toLowerCase().includes(q) ||
+          (s.sku && s.sku.toLowerCase().includes(q)) ||
+          s.divisionName.toLowerCase().includes(q) ||
+          (s.category && s.category.toLowerCase().includes(q))
+      );
+    }
 
     if (categoryFilter !== 'all') {
       data = data.filter(
@@ -132,6 +154,15 @@ export const AdminServicesView: React.FC = () => {
     }
   };
 
+  const generateServiceSku = (division: string, title?: string): string => {
+    const divCode = (division || 'SWS').replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase();
+    const cleanTitle = title
+      ? title.replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase()
+      : 'SRV';
+    const rand = Math.floor(100 + Math.random() * 900);
+    return `SRV-${divCode}-${cleanTitle || 'GEN'}-${rand}`;
+  };
+
   const handleOpenCreate = () => {
     setEditingService(null);
     setFormData({
@@ -139,6 +170,7 @@ export const AdminServicesView: React.FC = () => {
       divisionName: 'SWS Event Management',
       category: '',
       title: '',
+      sku: generateServiceSku('sws'),
       description: '',
       imageUrl: '',
       features: ['24/7 Dedicated Concierge', 'Custom Architectural CAD Renderings', 'High Reliability Delivery'],
@@ -162,6 +194,7 @@ export const AdminServicesView: React.FC = () => {
       divisionName: srv.divisionName,
       category: srv.category || '',
       title: srv.title,
+      sku: srv.sku || generateServiceSku(srv.divisionId, srv.title),
       description: srv.description,
       imageUrl: srv.imageUrl || (srv.images && srv.images[0]) || '',
       features: srv.features.length > 0 ? [...srv.features] : [''],
@@ -252,8 +285,11 @@ export const AdminServicesView: React.FC = () => {
         });
       }
 
+      const finalSku = (formData.sku || generateServiceSku(formData.divisionId, formData.title)).trim().toUpperCase();
+
       const payload = {
         ...formData,
+        sku: finalSku,
         category: resolvedCategory,
         imageUrl: img || undefined,
         images: img ? [img] : undefined,
@@ -449,10 +485,24 @@ export const AdminServicesView: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 mt-0.5">
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                             <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">
                               {srv.divisionName}
                             </span>
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(srv.sku || `SRV-${srv.divisionId.toUpperCase()}-${srv.id.slice(-4)}`)}
+                              className="inline-flex items-center gap-1 font-mono text-[9px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-1.5 py-0.5 rounded border border-slate-200 transition-colors cursor-pointer"
+                              title="Click to copy SKU"
+                            >
+                              <Barcode className="w-2.5 h-2.5 text-slate-500" />
+                              <span>{srv.sku || `SRV-${srv.divisionId.toUpperCase()}-${srv.id.slice(-4)}`}</span>
+                              {copiedSku === (srv.sku || `SRV-${srv.divisionId.toUpperCase()}-${srv.id.slice(-4)}`) ? (
+                                <Check className="w-2.5 h-2.5 text-emerald-600" />
+                              ) : (
+                                <Copy className="w-2.5 h-2.5 text-slate-400" />
+                              )}
+                            </button>
                             {(srv.category || srv.badge) && (
                               <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200/50">
                                 <FolderTree className="w-2.5 h-2.5 text-blue-500" />
@@ -543,8 +593,8 @@ export const AdminServicesView: React.FC = () => {
         maxWidth="2xl"
       >
         <form onSubmit={handleSave} className="space-y-4 text-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="sm:col-span-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="sm:col-span-1 lg:col-span-1">
               <label className="block font-semibold text-slate-700 mb-1">Service Title *</label>
               <input
                 type="text"
@@ -559,7 +609,37 @@ export const AdminServicesView: React.FC = () => {
               {formErrors.title && <p className="text-red-600 text-[10px] mt-0.5">{formErrors.title}</p>}
             </div>
 
-            <div className="sm:col-span-1">
+            <div className="sm:col-span-1 lg:col-span-1">
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-semibold text-slate-700">Service SKU *</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newSku = generateServiceSku(formData.divisionId, formData.title);
+                    setFormData((prev) => ({ ...prev, sku: newSku }));
+                    setIsDirty(true);
+                  }}
+                  className="text-[10px] text-blue-600 font-semibold hover:underline cursor-pointer"
+                >
+                  Generate
+                </button>
+              </div>
+              <div className="relative">
+                <Barcode className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={formData.sku}
+                  onChange={(e) => {
+                    setFormData({ ...formData, sku: e.target.value.toUpperCase() });
+                    setIsDirty(true);
+                  }}
+                  placeholder="e.g. SRV-SWS-CIN-101"
+                  className="w-full pl-8 pr-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono uppercase text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="sm:col-span-1 lg:col-span-1">
               <label className="block font-semibold text-slate-700 mb-1">Division *</label>
               <select
                 value={formData.divisionId}
@@ -574,7 +654,7 @@ export const AdminServicesView: React.FC = () => {
               </select>
             </div>
 
-            <div className="sm:col-span-1">
+            <div className="sm:col-span-1 lg:col-span-1">
               <div className="flex items-center justify-between mb-1">
                 <label className="block font-semibold text-slate-700">Category</label>
                 <QuickCategoryCreator

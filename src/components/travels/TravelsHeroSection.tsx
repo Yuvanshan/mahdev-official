@@ -10,6 +10,7 @@ import { motion } from 'motion/react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { getTelLink } from '../../config/company';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 interface TravelsHeroSectionProps {
   onPlanTrip: () => void;
@@ -22,16 +23,63 @@ export const TravelsHeroSection: React.FC<TravelsHeroSectionProps> = ({
   onExplorePackages,
   onExploreDestinations,
 }) => {
-  const hotline = '075 092 8078';
+  const { divisions, companySettings } = useFirestoreDataContext();
+
+  const travelsDiv = divisions?.find(
+    (d) =>
+      d.id === 'travels' ||
+      d.id === 'mahdev-travels' ||
+      d.slug === 'travels' ||
+      d.slug === 'mahdev-travels'
+  );
+
+  const hotline =
+    (travelsDiv as any)?.contactPhone ||
+    (travelsDiv as any)?.contactNumber ||
+    companySettings?.primaryPhone ||
+    '075 092 8078';
+
+  const heroImage =
+    (travelsDiv as any)?.imageUrl ||
+    (travelsDiv as any)?.heroImageUrl ||
+    (travelsDiv as any)?.hero?.bgImage ||
+    'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=2000&q=85';
+
+  const badgeText =
+    (travelsDiv as any)?.hero?.badge ||
+    travelsDiv?.badge ||
+    'Mahdev Travels • Curated Ceylon Journeys';
+
+  const headline =
+    (travelsDiv as any)?.heroHeadline ||
+    (travelsDiv as any)?.hero?.title ||
+    travelsDiv?.name ||
+    'Bespoke Expeditions Across Sri Lanka';
+
+  const subheadline =
+    (travelsDiv as any)?.heroSubheadline ||
+    (travelsDiv as any)?.hero?.subtitle ||
+    travelsDiv?.description ||
+    'Private luxury chauffeur fleet, tea country heritage villas, wildlife safaris, and coastal sanctuaries curated for discerning travelers.';
+
+  const statsList =
+    (travelsDiv as any)?.stats && (travelsDiv as any).stats.length > 0
+      ? (travelsDiv as any).stats
+      : [
+          { value: '100%', label: 'Private Chauffeurs' },
+          { value: '24/7', label: 'On-Ground Concierge' },
+          { value: '9 Provinces', label: 'Islandwide Coverage' },
+        ];
 
   return (
     <div className="relative overflow-hidden bg-slate-950 text-white min-h-[75vh] flex items-center justify-center border-b border-slate-800">
       {/* Background */}
       <div className="absolute inset-0 bg-slate-950">
         <img
-          src="https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=2000&q=85"
-          alt="Sigiriya Rock Fortress Sri Lanka"
+          src={heroImage}
+          alt={travelsDiv?.name || 'Sigiriya Rock Fortress Sri Lanka'}
           className="w-full h-full object-cover object-center opacity-30"
+          referrerPolicy="no-referrer"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-slate-950/40" />
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-transparent to-slate-950/90" />
@@ -46,7 +94,7 @@ export const TravelsHeroSection: React.FC<TravelsHeroSectionProps> = ({
           className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 text-xs font-semibold text-amber-300 backdrop-blur-md mb-6"
         >
           <Compass className="w-3.5 h-3.5 text-amber-400" />
-          <span>Mahdev Travels • Curated Ceylon Journeys</span>
+          <span>{badgeText}</span>
         </motion.div>
 
         <motion.h1
@@ -55,7 +103,7 @@ export const TravelsHeroSection: React.FC<TravelsHeroSectionProps> = ({
           transition={{ duration: 0.5, delay: 0.1 }}
           className="font-display text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white max-w-3xl mx-auto leading-tight"
         >
-          Bespoke Expeditions Across Sri Lanka
+          {headline}
         </motion.h1>
 
         <motion.p
@@ -64,7 +112,7 @@ export const TravelsHeroSection: React.FC<TravelsHeroSectionProps> = ({
           transition={{ duration: 0.5, delay: 0.15 }}
           className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed mt-4"
         >
-          Private luxury chauffeur fleet, tea country heritage villas, wildlife safaris, and coastal sanctuaries curated for discerning travelers.
+          {subheadline}
         </motion.p>
 
         {/* CTAs */}
@@ -109,18 +157,12 @@ export const TravelsHeroSection: React.FC<TravelsHeroSectionProps> = ({
           transition={{ duration: 0.6, delay: 0.3 }}
           className="mt-12 pt-6 border-t border-white/10 grid grid-cols-3 gap-4 max-w-2xl mx-auto text-center"
         >
-          <div>
-            <div className="font-display text-2xl font-extrabold text-white">100%</div>
-            <div className="text-xs text-slate-400 font-medium">Private Chauffeurs</div>
-          </div>
-          <div>
-            <div className="font-display text-2xl font-extrabold text-amber-300">24/7</div>
-            <div className="text-xs text-slate-400 font-medium">On-Ground Concierge</div>
-          </div>
-          <div>
-            <div className="font-display text-2xl font-extrabold text-emerald-400">9 Provinces</div>
-            <div className="text-xs text-slate-400 font-medium">Islandwide Coverage</div>
-          </div>
+          {statsList.slice(0, 3).map((st: any, idx: number) => (
+            <div key={idx}>
+              <div className="font-display text-2xl font-extrabold text-white">{st.value}</div>
+              <div className="text-xs text-slate-400 font-medium">{st.label}</div>
+            </div>
+          ))}
         </motion.div>
       </div>
     </div>

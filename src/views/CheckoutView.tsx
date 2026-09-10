@@ -19,6 +19,7 @@ import {
   Sparkles,
   Info,
   Clock,
+  MessageCircle,
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { orderService, SHIPPING_METHODS } from '../services/orderService';
@@ -32,6 +33,8 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { SEOHead } from '../components/layout/SEOHead';
 import { analyticsService } from '../services/analyticsService';
+import { formatCurrency, formatLKR } from '../utils/currency';
+import { openWhatsAppOrder } from '../utils/whatsapp';
 
 interface CheckoutViewProps {
   onNavigate: (path: string) => void;
@@ -179,13 +182,99 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
         createdOrder.id,
         createdOrder.total,
         createdOrder.items.length,
-        'USD'
+        'LKR'
       );
 
       clearCart();
       setIsSubmitting(false);
       onNavigate(`/order/${createdOrder.id}`);
     }, 600);
+  };
+
+  const handleWhatsAppCheckout = () => {
+    if (!agreedToTerms) {
+      setFormErrors({ terms: 'Please agree to the Terms of Service to proceed.' });
+      return;
+    }
+
+    const deliveryPayload: OrderDeliveryInfo = cartSummary.requiresShippingAddress
+      ? {
+          methodId: selectedShippingMethod.id,
+          methodName: selectedShippingMethod.name,
+          cost: shippingCost,
+          estimatedDelivery: selectedShippingMethod.estimatedDelivery,
+          address,
+          specialInstructions: deliveryNotes,
+        }
+      : {
+          methodId: 'digital_instant',
+          methodName: 'Instant Digital / Electronic Access',
+          cost: 0,
+          estimatedDelivery: 'Immediate',
+        };
+
+    const validation = orderService.validateCheckout(
+      customer,
+      deliveryPayload,
+      bookingInfo,
+      cartSummary.requiresShippingAddress,
+      cartSummary.requiresBookingInfo
+    );
+
+    if (!validation.isValid) {
+      setFormErrors(validation.errors);
+      const firstErrorKey = Object.keys(validation.errors)[0];
+      const el = document.getElementById(firstErrorKey);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    setFormErrors({});
+    setIsSubmitting(true);
+
+    const createdOrder = orderService.createOrder(
+      {
+        customer,
+        deliveryInfo: deliveryPayload,
+        bookingInfo: cartSummary.requiresBookingInfo ? bookingInfo : undefined,
+        customerNotes,
+        appliedCouponCode: appliedCoupon?.code,
+      },
+      cartSummary
+    );
+
+    analyticsService.trackPurchaseCompleted(
+      createdOrder.id,
+      createdOrder.total,
+      createdOrder.items.length,
+      'LKR'
+    );
+
+    openWhatsAppOrder({
+      orderId: createdOrder.id,
+      customerName: customer.fullName || 'Valued Customer',
+      customerPhone: customer.phone,
+      deliveryAddress: cartSummary.requiresShippingAddress
+        ? `${address.street}, ${address.city}, ${address.country}`
+        : undefined,
+      city: address.city,
+      notes: customerNotes || bookingInfo.specialRequirements,
+      items: cartItems.map((it) => ({
+        name: it.name,
+        sku: (it as any).sku || it.id.toUpperCase().slice(-8),
+        quantity: it.quantity,
+        price: it.unitPrice,
+        selectedVariant: it.selectedVariant?.name,
+      })),
+      subtotal: cartSummary.subtotal,
+      shippingFee: shippingCost,
+      discount: cartSummary.couponDiscountTotal + cartSummary.productDiscountTotal,
+      grandTotal: finalTotal,
+    });
+
+    clearCart();
+    setIsSubmitting(false);
+    onNavigate(`/order/${createdOrder.id}`);
   };
 
   if (cartItems.length === 0) {
@@ -428,7 +517,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                                 {isFreeApplicable ? (
                                   <span className="text-emerald-700 font-bold">FREE</span>
                                 ) : (
-                                  `$${method.cost.toFixed(2)}`
+                                  formatCurrency(method.cost, 'LKR')
                                 )}
                               </span>
                             </div>
@@ -709,6 +798,10 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                           {item.name}
                         </h4>
                         <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono">
+                          <span className="font-bold text-slate-700 bg-slate-100 px-1 py-0.2 rounded">
+                            SKU: {(item as any).sku || item.id.toUpperCase().slice(-8)}
+                          </span>
+                          <span>•</span>
                           <span>Qty: {item.quantity}</span>
                           {item.selectedVariant && (
                             <>
@@ -719,7 +812,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                         </div>
                       </div>
                       <span className="font-mono text-xs font-bold text-slate-900 shrink-0">
-                        ${item.itemTotal.toFixed(2)}
+                        {formatCurrency(item.itemTotal, 'LKR')}
                       </span>
                     </div>
                   ))}
@@ -730,7 +823,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                   {appliedCoupon ? (
                     <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-xs">
                       <span className="text-emerald-800 font-medium text-[11px]">
-                        Promo <strong>{appliedCoupon.code}</strong> Applied (-${cartSummary.couponDiscountTotal.toFixed(2)})
+                        Promo <strong>{appliedCoupon.code}</strong> Applied (-{formatCurrency(cartSummary.couponDiscountTotal, 'LKR')})
                       </span>
                       <button
                         type="button"
@@ -768,7 +861,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                   <div className="flex justify-between text-slate-600">
                     <span>Subtotal</span>
                     <span className="font-mono font-bold text-slate-900">
-                      ${cartSummary.subtotal.toFixed(2)}
+                      {formatCurrency(cartSummary.subtotal, 'LKR')}
                     </span>
                   </div>
 
@@ -776,7 +869,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                     <div className="flex justify-between text-emerald-600 text-[11px]">
                       <span>Product Savings</span>
                       <span className="font-mono font-bold">
-                        -${cartSummary.productDiscountTotal.toFixed(2)}
+                        -{formatCurrency(cartSummary.productDiscountTotal, 'LKR')}
                       </span>
                     </div>
                   )}
@@ -785,7 +878,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                     <div className="flex justify-between text-emerald-600 text-[11px]">
                       <span>Coupon Discount ({appliedCoupon?.code})</span>
                       <span className="font-mono font-bold">
-                        -${cartSummary.couponDiscountTotal.toFixed(2)}
+                        -{formatCurrency(cartSummary.couponDiscountTotal, 'LKR')}
                       </span>
                     </div>
                   )}
@@ -798,7 +891,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                       {shippingCost === 0 ? (
                         <span className="text-emerald-600 font-bold">FREE</span>
                       ) : (
-                        `$${shippingCost.toFixed(2)}`
+                        formatCurrency(shippingCost, 'LKR')
                       )}
                     </span>
                   </div>
@@ -806,7 +899,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                   <div className="flex justify-between text-base font-bold text-slate-900 pt-2 border-t border-slate-200">
                     <span>Total Payable</span>
                     <span className="font-mono text-lg text-[#0052FF]">
-                      ${finalTotal.toFixed(2)}
+                      {formatCurrency(finalTotal, 'LKR')}
                     </span>
                   </div>
                 </div>
@@ -836,16 +929,26 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                   )}
                 </div>
 
-                {/* Transition to Payment Notice & Submit Button */}
-                <div className="space-y-3 pt-2">
+                {/* WhatsApp Order & Online Payment Buttons */}
+                <div className="space-y-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleWhatsAppCheckout}
+                    disabled={isSubmitting}
+                    className="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
+                  >
+                    <MessageCircle className="w-4.5 h-4.5" />
+                    <span>Order via WhatsApp with SKU ({formatCurrency(finalTotal, 'LKR')})</span>
+                  </button>
+
                   <div className="p-3 rounded-xl bg-slate-900 text-white text-[11px] space-y-1.5">
                     <div className="flex items-center gap-1.5 text-amber-400 font-bold">
                       <CreditCard className="w-4 h-4" />
-                      <span>Payment Gateway Transition (Phase 13 Readiness)</span>
+                      <span>Direct Gateway Checkout (Phase 13 Readiness)</span>
                     </div>
                     <p className="text-slate-300 leading-relaxed text-[10px]">
-                      Placing your order will generate your permanent <strong>Order ID (ORD-2026-XXXX)</strong>,
-                      record your delivery & booking specifications, and transition directly into the Payment Processing Screen.
+                      Or place your order online to generate a permanent <strong>Order ID (ORD-2026-XXXX)</strong>,
+                      locking in delivery specifications and transitioning directly into the payment gateway screen.
                     </p>
                   </div>
 
@@ -857,7 +960,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                     rightIcon={<ArrowRight className="w-4 h-4" />}
                     className="py-3.5 text-xs font-bold cursor-pointer"
                   >
-                    {isSubmitting ? 'Generating Order...' : `Place Order & Transition to Payment ($${finalTotal.toFixed(2)})`}
+                    {isSubmitting ? 'Generating Order...' : `Standard Order & Online Payment (${formatCurrency(finalTotal, 'LKR')})`}
                   </Button>
                 </div>
               </div>

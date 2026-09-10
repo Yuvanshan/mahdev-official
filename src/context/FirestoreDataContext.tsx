@@ -30,7 +30,12 @@ import {
   getDefaultSiteSettings,
   getDefaultHomepageSettings,
 } from '../services/firestore/settings';
-import { firestoreDivisionsService, getDefaultDivisions } from '../services/firestore/divisions';
+import {
+  firestoreDivisionsService,
+  getDefaultDivisions,
+  sortDivisions,
+  getCanonicalDivisionId,
+} from '../services/firestore/divisions';
 import { firestoreCategoriesService } from '../services/firestore/categories';
 import { firestoreServicesService } from '../services/firestore/services';
 import { firestoreProductsService } from '../services/firestore/products';
@@ -113,10 +118,10 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       if (typeof window !== 'undefined') {
         const cached = localStorage.getItem('mahdev_cached_divisions');
-        if (cached) return JSON.parse(cached);
+        if (cached) return sortDivisions(JSON.parse(cached));
       }
     } catch {}
-    return getDefaultDivisions();
+    return sortDivisions(getDefaultDivisions());
   });
   const [categories, setCategories] = useState<FirestoreCategory[]>(() => {
     try {
@@ -279,7 +284,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         return merged;
       });
       setHomepageConfig(home);
-      setDivisions(divs);
+      setDivisions(sortDivisions(divs));
       setCategories(cats);
       setServices(srvs);
       setProducts(prods);
@@ -430,11 +435,12 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const unsubDivs = firestoreDivisionsService.subscribeDivisions((data) => {
       if (isMounted) {
-        setDivisions(data);
+        const sorted = sortDivisions(data);
+        setDivisions(sorted);
         try {
-          localStorage.setItem('mahdev_cached_divisions', JSON.stringify(data));
+          localStorage.setItem('mahdev_cached_divisions', JSON.stringify(sorted));
         } catch {}
-        cmsService.syncEntityFromFirestore('divisions', data);
+        cmsService.syncEntityFromFirestore('divisions', sorted);
         checkInitialReady();
       }
     });
@@ -795,8 +801,17 @@ export function useDivisions() {
   const { divisions, activeDivisions, isInitialLoading, isReady } = useFirestoreDataContext();
   const getDivisionById = useCallback(
     (id: string | DivisionId) => {
-      const cleanId = id.replace('div-', '');
-      return divisions.find((d) => d.id === id || d.id === `div-${cleanId}` || d.id === cleanId);
+      const cleanId = String(id).replace('div-', '');
+      const canonical = getCanonicalDivisionId(cleanId);
+      return divisions.find(
+        (d) =>
+          d.id === id ||
+          d.id === canonical ||
+          d.id === `div-${cleanId}` ||
+          d.id === cleanId ||
+          d.slug === id ||
+          d.slug === canonical
+      );
     },
     [divisions]
   );
@@ -812,8 +827,19 @@ export function useDivisions() {
 export function useDivision(divisionId: DivisionId | string) {
   const { divisions } = useFirestoreDataContext();
   return useMemo(() => {
-    const cleanId = divisionId.replace('div-', '');
-    return divisions.find((d) => d.id === divisionId || d.id === `div-${cleanId}` || d.id === cleanId) || null;
+    const cleanId = String(divisionId).replace('div-', '');
+    const canonical = getCanonicalDivisionId(cleanId);
+    return (
+      divisions.find(
+        (d) =>
+          d.id === divisionId ||
+          d.id === canonical ||
+          d.id === `div-${cleanId}` ||
+          d.id === cleanId ||
+          d.slug === divisionId ||
+          d.slug === canonical
+      ) || null
+    );
   }, [divisions, divisionId]);
 }
 

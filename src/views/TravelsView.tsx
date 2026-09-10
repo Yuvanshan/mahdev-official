@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Compass,
   ChevronLeft,
@@ -34,7 +34,7 @@ interface TravelsViewProps {
 }
 
 export const TravelsView: React.FC<TravelsViewProps> = ({ onNavigate }) => {
-  const { companySettings } = useFirestoreDataContext();
+  const { divisions, companySettings } = useFirestoreDataContext();
   const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
   const [selectedPackageForDetail, setSelectedPackageForDetail] = useState<TravelPackage | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
@@ -60,7 +60,34 @@ export const TravelsView: React.FC<TravelsViewProps> = ({ onNavigate }) => {
     }
   };
 
-  const sisterDivisions = DIVISION_LIST.filter((d) => d.id !== 'travels');
+  const sisterDivisions = useMemo(() => {
+    const list = divisions && divisions.length > 0 ? divisions : DIVISION_LIST;
+    const seen = new Set<string>(['travels']);
+    const result = [];
+    for (const d of list) {
+      const rawId = (d.id || (d as any).slug || '').toLowerCase();
+      const canonicalId =
+        rawId === 'u1' || rawId === 'u1-studio' || rawId === 'u1-cinema'
+          ? 'u1'
+          : rawId === 'sws' || rawId === 'sws-event-management' || rawId === 'sws-events'
+          ? 'sws'
+          : rawId === 'it' || rawId === 'it-solutions' || rawId === 'mahdev-it'
+          ? 'it'
+          : rawId === 'travels' || rawId === 'mahdev-travels'
+          ? 'travels'
+          : rawId === 'mart' || rawId === 'online-mart' || rawId === 'mahdev-mart'
+          ? 'mart'
+          : rawId;
+
+      if (!canonicalId || seen.has(canonicalId)) continue;
+      seen.add(canonicalId);
+      result.push({
+        ...d,
+        id: canonicalId,
+      });
+    }
+    return result;
+  }, [divisions]);
 
   return (
     <div className="w-full flex flex-col bg-white">
@@ -195,33 +222,50 @@ export const TravelsView: React.FC<TravelsViewProps> = ({ onNavigate }) => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {sisterDivisions.map((sister) => (
-            <div
-              key={sister.id}
-              onClick={() => onNavigate(sister.route)}
-              className="p-5 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="p-2 rounded-lg bg-blue-50 text-[#0052FF] group-hover:bg-[#0052FF] group-hover:text-white transition-colors">
-                    <IconRenderer name={sister.iconName} className="w-4 h-4" />
-                  </div>
-                  <Badge size="sm" variant="default" className="text-[10px]">
-                    {sister.badge}
-                  </Badge>
-                </div>
-                <h4 className="font-display text-sm font-bold text-slate-900 group-hover:text-[#0052FF] transition-colors mb-1">
-                  {sister.name}
-                </h4>
-                <p className="text-xs text-slate-500 line-clamp-2">{sister.tagline}</p>
-              </div>
+          {sisterDivisions.map((sister) => {
+            const sisterRoute = sister.route || `/division/${(sister as any).slug || sister.id}`;
+            const sisterLogo = (sister as any).logoUrl || (sister as any).imageUrl;
+            const sisterTagline = sister.tagline || (sister as any).description;
+            const sisterBadge = (sister as any).badge || 'Mahdev Division';
+            const sisterShortName = (sister as any).shortName || sister.name;
 
-              <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs font-semibold text-slate-700 group-hover:text-[#0052FF]">
-                <span>Explore {sister.shortName}</span>
-                <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+            return (
+              <div
+                key={sister.id}
+                onClick={() => onNavigate(sisterRoute)}
+                className="p-5 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2 rounded-lg bg-blue-50 text-[#0052FF] group-hover:bg-[#0052FF] group-hover:text-white transition-colors overflow-hidden">
+                      {sisterLogo ? (
+                        <img
+                          src={sisterLogo}
+                          alt={sister.name}
+                          className="w-5 h-5 object-contain"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <IconRenderer name={sister.iconName || 'Layers'} className="w-4 h-4" />
+                      )}
+                    </div>
+                    <Badge size="sm" variant="default" className="text-[10px]">
+                      {sisterBadge}
+                    </Badge>
+                  </div>
+                  <h4 className="font-display text-sm font-bold text-slate-900 group-hover:text-[#0052FF] transition-colors mb-1">
+                    {sister.name}
+                  </h4>
+                  <p className="text-xs text-slate-500 line-clamp-2">{sisterTagline}</p>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs font-semibold text-slate-700 group-hover:text-[#0052FF]">
+                  <span>Explore {sisterShortName}</span>
+                  <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </SectionContainer>
 

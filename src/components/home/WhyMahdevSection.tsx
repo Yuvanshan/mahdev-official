@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   ShieldCheck,
   Zap,
@@ -13,10 +13,12 @@ import {
   Sparkles,
   Check,
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { EnterpriseStandardGuarantee } from '../../types/cms';
+import { ParallelWatermark } from '../motion/ParallelScroll';
+import { useDeviceMotion } from '../motion/MotionWrappers';
 
 const ICON_MAP: Record<string, React.ElementType> = {
   ShieldCheck,
@@ -65,70 +67,101 @@ const DEFAULT_GUARANTEES: EnterpriseStandardGuarantee[] = [
 ];
 
 export const WhyMahdevSection: React.FC = () => {
-  const { homepageConfig } = useFirestoreDataContext();
+  const { homepageConfig, companySettings } = useFirestoreDataContext();
   const whyConfig = homepageConfig?.whyMahdev;
 
   if (whyConfig?.enabled === false) {
     return null;
   }
 
+  return <WhyMahdevSectionContent whyConfig={whyConfig} companyPhone={companySettings?.primaryPhone} />;
+};
+
+const WhyMahdevSectionContent: React.FC<{ whyConfig: any; companyPhone?: string }> = ({ whyConfig, companyPhone }) => {
+  const { reducedMotion, isTouch } = useDeviceMotion();
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start end', 'end start'],
+  });
+
+  const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 22, mass: 0.1 });
+  const yEven = useTransform(smoothProgress, [0, 1], ['-12px', '12px']);
+  const yOdd = useTransform(smoothProgress, [0, 1], ['12px', '-12px']);
+
   const badge = whyConfig?.badge || 'Operational Standards';
   const title = whyConfig?.title || 'The Enterprise Standard';
   const subtitle =
     whyConfig?.subtitle ||
     'Rigorous quality control, in-house technical mastery, and clear accountability across every project.';
-  const guarantees =
+  const guarantees = (
     whyConfig?.guarantees && whyConfig.guarantees.length > 0
       ? whyConfig.guarantees
-      : DEFAULT_GUARANTEES;
+      : DEFAULT_GUARANTEES
+  ).map((g: any) => {
+    if (g.id === 'std-4' && companyPhone) {
+      return {
+        ...g,
+        title: `Direct Client Line: ${companyPhone}`,
+      };
+    }
+    return g;
+  });
 
   return (
-    <SectionContainer id="why-mahdev" background="white" paddingY="xl" hasBorderBottom>
-      <div className="max-w-2xl mb-10">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 block mb-1">
-          {badge}
-        </span>
-        <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 mb-2">
-          {title}
-        </h2>
-        <p className="text-slate-500 text-sm">
-          {subtitle}
-        </p>
-      </div>
+    <div ref={containerRef} className="relative overflow-hidden">
+      <ParallelWatermark text="05 // STANDARDS" />
+      <SectionContainer id="why-mahdev" background="white" paddingY="xl" hasBorderBottom>
+        <div className="relative z-10 max-w-2xl mb-10">
+          <span className="text-[11px] font-mono uppercase tracking-wider text-blue-600 block mb-1 font-semibold">
+            {badge}
+          </span>
+          <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 mb-2">
+            {title}
+          </h2>
+          <p className="text-slate-500 text-sm">
+            {subtitle}
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-        {guarantees.map((item, idx) => {
-          const Icon = (item.iconName && ICON_MAP[item.iconName]) || ShieldCheck;
-          return (
-            <motion.div
-              key={item.id || item.title || idx}
-              whileHover={{ y: -3 }}
-              transition={{ duration: 0.2 }}
-              className="rounded-2xl bg-slate-50/80 border border-slate-200/80 p-5 sm:p-6 flex flex-col justify-between hover:border-blue-400 hover:bg-white hover:shadow-xs transition-all"
-            >
-              <div>
-                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
-                  <Icon className="w-4 h-4" />
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          {guarantees.map((item, idx) => {
+            const Icon = (item.iconName && ICON_MAP[item.iconName]) || ShieldCheck;
+            const yOffset = idx % 2 === 0 ? yEven : yOdd;
+
+            return (
+              <motion.div
+                key={item.id || item.title || idx}
+                style={!reducedMotion && !isTouch ? { y: yOffset } : undefined}
+                whileHover={{ y: -3 }}
+                transition={{ duration: 0.2 }}
+                className="rounded-2xl bg-slate-50/80 border border-slate-200/80 p-5 sm:p-6 flex flex-col justify-between hover:border-blue-400 hover:bg-white hover:shadow-xs transition-all"
+              >
+                <div>
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <h3 className="font-display text-base font-bold text-slate-900 mb-1.5">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    {item.description}
+                  </p>
                 </div>
-                <h3 className="font-display text-base font-bold text-slate-900 mb-1.5">
-                  {item.title}
-                </h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  {item.description}
-                </p>
-              </div>
 
-              <div className="pt-3 mt-4 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-bold text-blue-600">
-                <span className="flex items-center gap-1 text-slate-700">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
-                  {item.tag}
-                </span>
-                <span>Verified</span>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
-    </SectionContainer>
+                <div className="pt-3 mt-4 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-bold text-blue-600">
+                  <span className="flex items-center gap-1 text-slate-700">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+                    {item.tag}
+                  </span>
+                  <span>Verified</span>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </SectionContainer>
+    </div>
   );
 };

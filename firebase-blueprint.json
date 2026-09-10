@@ -61,6 +61,7 @@
         "bookingEnabled": { "type": "boolean", "description": "Whether clients can book appointments" },
         "isPublished": { "type": "boolean", "description": "Publish visibility status" },
         "order": { "type": "number", "description": "Display sort order index" },
+        "sku": { "type": "string", "description": "Unique SKU / service reference code" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
@@ -151,6 +152,7 @@
         "category": { "type": "string", "description": "Project category" },
         "location": { "type": "string", "description": "Project geographic location" },
         "date": { "type": "string", "description": "Execution or launch date" },
+        "sku": { "type": "string", "description": "Unique SKU / project reference code" },
         "isPublished": { "type": "boolean", "description": "Publish status" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
@@ -311,6 +313,7 @@
         "aspectRatio": { "type": "string", "description": "Visual aspect ratio" },
         "tags": { "type": "array", "description": "Collection of searchable tags" },
         "order": { "type": "number", "description": "Display order index" },
+        "sku": { "type": "string", "description": "Unique SKU / photo reference code" },
         "status": { "type": "string", "enum": ["published", "hidden"], "description": "Visibility status" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }

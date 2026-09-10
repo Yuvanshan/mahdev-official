@@ -95,44 +95,68 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
 
   // Dynamically map divisions using live updates from Admin Portal / FirestoreDataContext
   const bentoDivisions = useMemo<BentoDivisionItem[]>(() => {
-    const getCanonicalRoute = (id: string, fallbackRoute: string) => {
-      if (id === 'sws') return '/sws';
-      if (id === 'u1') return '/u1';
-      if (id === 'it') return '/it';
-      if (id === 'travels') return '/travels';
-      if (id === 'mart') return '/mart';
-      return fallbackRoute.startsWith('/') ? fallbackRoute : `/${fallbackRoute}`;
+    const getCanonicalRoute = (id: string, fallbackRoute?: string) => {
+      if (id === 'sws' || id === 'sws-event-management') return '/sws';
+      if (id === 'u1' || id === 'u1-studio') return '/u1';
+      if (id === 'it' || id === 'it-solutions') return '/it';
+      if (id === 'travels' || id === 'mahdev-travels') return '/travels';
+      if (id === 'mart' || id === 'online-mart') return '/mart';
+      const r = fallbackRoute || `/${id}`;
+      return r.startsWith('/') ? r : `/${r}`;
     };
 
-    return DEFAULT_DIVISION_BENTO_DATA.map((fallback) => {
-      const liveDiv = divisions?.find(
-        (d) =>
-          d.id === fallback.id || d.slug === fallback.id || (d as any).divisionKey === fallback.id
-      );
-      if (liveDiv) {
-        return {
-          ...fallback,
-          name: liveDiv.name || fallback.name,
-          badge: liveDiv.badge || fallback.badge,
-          subtitle: liveDiv.tagline || liveDiv.shortDescription || fallback.subtitle,
-          summary: liveDiv.description || liveDiv.aboutText || fallback.summary,
-          image:
-            liveDiv.imageUrl ||
-            liveDiv.heroImageUrl ||
-            (liveDiv.hero as any)?.bgImage ||
-            fallback.image,
-          route: getCanonicalRoute(fallback.id, liveDiv.route || fallback.route),
-          metrics:
-            liveDiv.stats && liveDiv.stats.length > 0
-              ? liveDiv.stats.map((s) => `${s.value} ${s.label}`)
-              : fallback.metrics,
-        };
-      }
-      return {
-        ...fallback,
-        route: getCanonicalRoute(fallback.id, fallback.route),
+    if (divisions && divisions.length > 0) {
+      const canonicalOrder = ['sws', 'u1', 'it', 'travels', 'mart'];
+      const canonicalMap: Record<string, string> = {
+        'sws-event-management': 'sws',
+        'u1-studio': 'u1',
+        'it-solutions': 'it',
+        'mahdev-travels': 'travels',
+        'online-mart': 'mart',
       };
-    });
+
+      const seen = new Set<string>();
+      const list: BentoDivisionItem[] = [];
+
+      for (const d of divisions) {
+        const id = canonicalMap[d.id] || d.slug || d.id;
+        if (seen.has(id)) continue;
+        seen.add(id);
+
+        const img = d.heroImageUrl || d.imageUrl || (d.hero as any)?.bgImage || d.logoUrl || '';
+        const metrics =
+          d.stats && d.stats.length > 0
+            ? d.stats.map((s) => `${s.value} ${s.label}`)
+            : ['Island-wide SLA', 'In-House Crew', 'Verified Quality'];
+
+        list.push({
+          id,
+          name: d.name,
+          badge: d.badge || (d.hero as any)?.badge || 'Specialized Division',
+          subtitle: d.tagline || d.shortDescription || (d.hero as any)?.subtitle || '',
+          summary: d.description || d.aboutText || d.shortDescription || '',
+          image: img,
+          route: getCanonicalRoute(id, d.route),
+          metrics,
+          isFeatured: id === 'sws',
+        });
+      }
+
+      // Sort so sws is first (featured) if available, followed by canonical order
+      list.sort((a, b) => {
+        const idxA = canonicalOrder.indexOf(a.id);
+        const idxB = canonicalOrder.indexOf(b.id);
+        const orderA = idxA !== -1 ? idxA : 99;
+        const orderB = idxB !== -1 ? idxB : 99;
+        return orderA - orderB;
+      });
+
+      if (list.length > 0) {
+        return list;
+      }
+    }
+
+    return DEFAULT_DIVISION_BENTO_DATA;
   }, [divisions]);
 
   const sws = bentoDivisions[0];

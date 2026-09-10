@@ -3,6 +3,7 @@ import { Calendar, ArrowRight, Phone, ShieldCheck, Award, Users, Layers } from '
 import { motion } from 'motion/react';
 import { Button } from '../ui/Button';
 import { getTelLink } from '../../config/company';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 interface SWSHeroSectionProps {
   onBookNow: () => void;
@@ -16,16 +17,64 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
   onRequestQuote,
   onExploreRentals,
 }) => {
-  const hotline = '075 092 8078';
+  const { divisions, companySettings } = useFirestoreDataContext();
+
+  const swsDiv = divisions?.find(
+    (d) =>
+      d.id === 'sws' ||
+      d.id === 'sws-event-management' ||
+      d.slug === 'sws' ||
+      d.slug === 'sws-event-management'
+  );
+
+  const hotline =
+    (swsDiv as any)?.contactPhone ||
+    (swsDiv as any)?.contactNumber ||
+    companySettings?.primaryPhone ||
+    '075 092 8078';
+
+  const heroImage =
+    (swsDiv as any)?.imageUrl ||
+    (swsDiv as any)?.heroImageUrl ||
+    (swsDiv as any)?.hero?.bgImage ||
+    'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
+
+  const badgeText =
+    (swsDiv as any)?.hero?.badge ||
+    swsDiv?.badge ||
+    'SWS Event Management • Mahdev Flagship Division';
+
+  const headline =
+    (swsDiv as any)?.heroHeadline ||
+    (swsDiv as any)?.hero?.title ||
+    swsDiv?.name ||
+    'Turnkey Luxury Event Production & Decor';
+
+  const subheadline =
+    (swsDiv as any)?.heroSubheadline ||
+    (swsDiv as any)?.hero?.subtitle ||
+    swsDiv?.description ||
+    'Full-scale floral mandaps, stage engineering, and 5,000+ rental inventory units delivered nationwide across Sri Lanka.';
+
+  const statsList =
+    (swsDiv as any)?.stats && (swsDiv as any).stats.length > 0
+      ? (swsDiv as any).stats
+      : [
+          { value: '450+', label: 'Events Curated' },
+          { value: '5,000+', label: 'Rental Units' },
+          { value: '9 Provinces', label: 'Islandwide Delivery' },
+          { value: '100%', label: 'In-House Staging' },
+        ];
 
   return (
     <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden bg-slate-950 text-white pt-20 pb-16 sm:pt-24 sm:pb-20">
       {/* Background Image with Cinematic Vignette */}
       <div className="absolute inset-0 z-0">
         <img
-          src="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85"
-          alt="SWS Luxury Event Decor & Rentals"
+          src={heroImage}
+          alt={swsDiv?.name || 'SWS Luxury Event Decor & Rentals'}
           className="w-full h-full object-cover opacity-30"
+          referrerPolicy="no-referrer"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/40" />
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/50 to-slate-950/90" />
@@ -40,7 +89,7 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
           className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-400/30 text-xs font-semibold text-blue-300 backdrop-blur-md mb-6"
         >
           <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-          <span>SWS Event Management • Mahdev Flagship Division</span>
+          <span>{badgeText}</span>
         </motion.div>
 
         {/* High-Impact Headline */}
@@ -50,7 +99,7 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
           transition={{ duration: 0.5, delay: 0.1 }}
           className="font-display text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white max-w-4xl mx-auto leading-[1.12]"
         >
-          Turnkey Luxury Event Production & Decor
+          {headline}
         </motion.h1>
 
         {/* 1-Sentence High-Signal Value Statement */}
@@ -60,7 +109,7 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
           transition={{ duration: 0.5, delay: 0.15 }}
           className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed mt-4"
         >
-          Full-scale floral mandaps, stage engineering, and 5,000+ rental inventory units delivered nationwide across Sri Lanka.
+          {subheadline}
         </motion.p>
 
         {/* Clean, Non-Cluttered Action CTAs */}
@@ -109,22 +158,12 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
           transition={{ duration: 0.6, delay: 0.3 }}
           className="mt-12 sm:mt-16 pt-6 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto"
         >
-          <div className="p-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xs">
-            <div className="font-display text-2xl font-extrabold text-white">450+</div>
-            <div className="text-xs text-slate-400 font-medium">Events Curated</div>
-          </div>
-          <div className="p-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xs">
-            <div className="font-display text-2xl font-extrabold text-white">5,000+</div>
-            <div className="text-xs text-slate-400 font-medium">Rental Units</div>
-          </div>
-          <div className="p-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xs">
-            <div className="font-display text-2xl font-extrabold text-white">9 Provinces</div>
-            <div className="text-xs text-slate-400 font-medium">Islandwide Delivery</div>
-          </div>
-          <div className="p-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xs">
-            <div className="font-display text-2xl font-extrabold text-white">100%</div>
-            <div className="text-xs text-slate-400 font-medium">In-House Staging</div>
-          </div>
+          {statsList.slice(0, 4).map((st: any, idx: number) => (
+            <div key={idx} className="p-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xs">
+              <div className="font-display text-2xl font-extrabold text-white">{st.value}</div>
+              <div className="text-xs text-slate-400 font-medium">{st.label}</div>
+            </div>
+          ))}
         </motion.div>
       </div>
     </section>
