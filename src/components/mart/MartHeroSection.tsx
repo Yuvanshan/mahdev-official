@@ -40,11 +40,15 @@ export const MartHeroSection: React.FC<MartHeroSectionProps> = ({
       d.slug === 'mahdev-mart'
   );
 
-  const heroImage =
+  const rawHeroImage =
     (martDiv as any)?.imageUrl ||
     (martDiv as any)?.heroImageUrl ||
-    (martDiv as any)?.hero?.bgImage ||
-    'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=2000&q=80';
+    (martDiv as any)?.hero?.bgImage;
+
+  const heroImage =
+    typeof rawHeroImage === 'string' && rawHeroImage.trim() !== ''
+      ? rawHeroImage.trim()
+      : 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=2000&q=80';
 
   const badgeText =
     (martDiv as any)?.hero?.badge ||

@@ -170,7 +170,12 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
     }
   };
 
-  // 1. Loading State (Admin Auth Token or Live Database Hydration)
+  // 1. Authentication Guard: If not authenticated, show Admin Login View immediately
+  if (!isAuthenticated || !admin) {
+    return <AdminLoginView onNavigate={onNavigate} onSuccess={() => setActiveSection('dashboard')} />;
+  }
+
+  // 2. Loading State for authenticated admin (Data Hydration)
   if (isLoading || (isInitialLoading && !isReady)) {
     return (
       <InitialAppLoader
@@ -178,11 +183,6 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
         subMessage="Securing administrative session..."
       />
     );
-  }
-
-  // 2. Authentication Guard: If not authenticated, show Admin Login View
-  if (!isAuthenticated || !admin) {
-    return <AdminLoginView onNavigate={onNavigate} onSuccess={() => setActiveSection('dashboard')} />;
   }
 
   // Render appropriate view based on active section
@@ -357,7 +357,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
             <div className="flex-1 min-w-0">
               <div className="text-xs font-bold text-white truncate">{admin.name}</div>
               <div className="text-[10px] text-blue-400 font-mono uppercase truncate">
-                {admin.role.replace('_', ' ')}
+                {String(admin.role || 'Admin').replace(/_/g, ' ')}
               </div>
             </div>
           </div>
@@ -400,7 +400,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
                 Administrative Workspace
               </span>
               <h1 className="font-display text-base font-bold text-slate-900 capitalize">
-                {activeSection.replace('-', ' ')}
+                {String(activeSection || 'dashboard').replace(/-/g, ' ')}
               </h1>
             </div>
           </div>
@@ -408,8 +408,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
           {/* Top Bar Right Tools */}
           <div className="flex items-center gap-3">
             <AdminNotificationCenter onNavigate={(path) => {
-              if (path.startsWith('/admin')) {
-                const cleaned = path.replace(/^\/admin\/?/, '').split('?')[0].split('/')[0];
+              if (path && path.startsWith('/admin')) {
+                const cleaned = String(path).replace(/^\/admin\/?/, '').split('?')[0].split('/')[0];
                 const section = (cleaned || 'dashboard') as AdminSectionId;
                 handleSelectSection(section);
               } else {

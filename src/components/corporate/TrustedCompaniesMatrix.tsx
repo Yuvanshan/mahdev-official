@@ -12,13 +12,14 @@ import {
 } from '../motion/MotionWrappers';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { FirestoreTrustedCompany } from '../../types/firestore';
+import { DataLoadingOverlay } from '../common/DataLoadingOverlay';
 
 interface TrustedCompaniesMatrixProps {
   onExplorePartners?: () => void;
 }
 
 export const TrustedCompaniesMatrix: React.FC<TrustedCompaniesMatrixProps> = ({ onExplorePartners }) => {
-  const { trustedCompanies, homepageConfig } = useFirestoreDataContext();
+  const { trustedCompanies, homepageConfig, isInitialLoading, isFetching } = useFirestoreDataContext();
   const [selectedCompany, setSelectedCompany] = useState<FirestoreTrustedCompany | null>(null);
 
   if (homepageConfig.companies && !homepageConfig.companies.enabled) {
@@ -28,6 +29,16 @@ export const TrustedCompaniesMatrix: React.FC<TrustedCompaniesMatrixProps> = ({ 
   const activeCompanies = trustedCompanies.filter((c) => (c as any).status !== 'archived');
 
   if (activeCompanies.length === 0) {
+    if (isInitialLoading || isFetching) {
+      return (
+        <SectionContainer id="companies" background="white" paddingY="lg">
+          <DataLoadingOverlay
+            message="Loading enterprise partners..."
+            subMessage="Connecting to verified partner database in Firestore"
+          />
+        </SectionContainer>
+      );
+    }
     return null;
   }
 
@@ -78,7 +89,7 @@ export const TrustedCompaniesMatrix: React.FC<TrustedCompaniesMatrixProps> = ({ 
                       {/* Header: Monogram Logo & Industry Badge */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 shadow-2xs flex items-center justify-center font-display font-bold text-slate-800 text-sm group-hover:bg-[#0052FF] group-hover:text-white group-hover:border-[#0052FF] transition-all duration-300">
-                          {company.logoUrl ? (
+                          {company.logoUrl && company.logoUrl.trim() !== '' ? (
                             <img src={company.logoUrl} alt={company.name} className="w-8 h-8 object-contain" />
                           ) : (
                             initials

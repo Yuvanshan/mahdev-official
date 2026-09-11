@@ -129,7 +129,11 @@ export const SWSGallerySection: React.FC = () => {
             className="group relative rounded-2xl overflow-hidden bg-slate-950 aspect-[4/3] cursor-pointer border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-500"
           >
             <img
-              src={item.imageUrl}
+              src={
+                item.imageUrl && item.imageUrl.trim() !== ''
+                  ? item.imageUrl.trim()
+                  : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
+              }
               alt={item.title}
               loading="lazy"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108"
@@ -228,7 +232,11 @@ export const SWSGallerySection: React.FC = () => {
           >
             <div className="relative rounded-2xl overflow-hidden max-h-[75vh] w-auto border border-white/10 shadow-2xl bg-black">
               <img
-                src={activeItem.imageUrl}
+                src={
+                  activeItem.imageUrl && activeItem.imageUrl.trim() !== ''
+                    ? activeItem.imageUrl.trim()
+                    : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80'
+                }
                 alt={activeItem.title}
                 className="max-h-[70vh] w-auto max-w-full object-contain"
               />
@@ -276,11 +284,11 @@ export const SWSGallerySection: React.FC = () => {
                     type: 'gallery',
                   });
                 }}
-                title="Send inquiry with this photo to WhatsApp 0750928078"
+                title="Send inquiry with this photo to WhatsApp"
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs sm:text-sm font-bold shadow-md shadow-emerald-500/20 transition-all cursor-pointer active:scale-95 shrink-0"
               >
                 <MessageCircle className="w-4 h-4 fill-white/20" />
-                <span>Inquire on WhatsApp (0750928078)</span>
+                <span>Inquire on WhatsApp</span>
               </button>
             </div>
           </div>

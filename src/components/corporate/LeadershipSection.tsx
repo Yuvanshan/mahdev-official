@@ -50,7 +50,11 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({ onContactL
                   <div>
                     <div className="relative h-64 w-full overflow-hidden bg-slate-900">
                       <img
-                        src={member.photoUrl}
+                        src={
+                          member.photoUrl && member.photoUrl.trim() !== ''
+                            ? member.photoUrl.trim()
+                            : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80'
+                        }
                         alt={member.name}
                         className="w-full h-full object-cover object-top opacity-90 group-hover:scale-105 group-hover:opacity-100 transition-all duration-500"
                         referrerPolicy="no-referrer"
@@ -171,7 +175,11 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({ onContactL
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start">
               <img
-                src={selectedMember.photoUrl}
+                src={
+                  selectedMember.photoUrl && selectedMember.photoUrl.trim() !== ''
+                    ? selectedMember.photoUrl.trim()
+                    : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80'
+                }
                 alt={selectedMember.name}
                 className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover object-top border-2 border-blue-500 shadow-md shrink-0"
                 referrerPolicy="no-referrer"

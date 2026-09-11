@@ -54,7 +54,7 @@ export const WhatsAppInquiryButton: React.FC<WhatsAppInquiryButtonProps> = ({
     <button
       type="button"
       onClick={handleClick}
-      title="Inquire directly via WhatsApp (0750928078)"
+      title="Inquire directly via WhatsApp"
       className={`inline-flex items-center justify-center rounded-xl transition-all duration-200 cursor-pointer select-none active:scale-[0.98] ${sizeClasses} ${variantClasses} ${className}`}
     >
       {showIcon && <MessageCircle className="w-4 h-4 shrink-0 fill-current/10" />}

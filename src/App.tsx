@@ -141,8 +141,8 @@ function AppContent() {
   };
 
   // Extract path and query params for redirection
-  const [basePathWithHash, searchParamsString] = currentPath.split('?');
-  const basePath = basePathWithHash.split('#')[0];
+  const [basePathWithHash, searchParamsString] = (currentPath ? String(currentPath) : '/').split('?');
+  const basePath = (basePathWithHash || '/').split('#')[0];
   const normalizedPath =
     (basePath.startsWith('/') ? basePath : `/${basePath}`).toLowerCase().replace(/\/$/, '') || '/';
   const redirectParam = searchParamsString
@@ -244,7 +244,34 @@ function AppContent() {
         (normalized === 'sws' && (d.id === 'sws-event-management' || d.slug === 'sws-event-management'))
     );
 
-    if (!matched) return false;
+    if (!matched) {
+      try {
+        const cachedStr = typeof window !== 'undefined' ? localStorage.getItem('mahdev_cached_divisions') : null;
+        if (cachedStr) {
+          const cachedDivs = JSON.parse(cachedStr);
+          const cachedMatched = cachedDivs.find(
+            (d: any) =>
+              d.id === rawDivId ||
+              d.id === normalized ||
+              d.slug === rawDivId ||
+              d.slug === normalized ||
+              (normalized === 'u1' && (d.id === 'u1-studio' || d.slug === 'u1-studio')) ||
+              (normalized === 'it' && (d.id === 'it-solutions' || d.slug === 'it-solutions')) ||
+              (normalized === 'travels' && (d.id === 'mahdev-travels' || d.slug === 'mahdev-travels')) ||
+              (normalized === 'mart' && (d.id === 'online-mart' || d.slug === 'online-mart')) ||
+              (normalized === 'sws' && (d.id === 'sws-event-management' || d.slug === 'sws-event-management'))
+          );
+          if (cachedMatched) {
+            return !!(
+              cachedMatched.isComingSoon ||
+              cachedMatched.comingSoon ||
+              cachedMatched.status === 'coming_soon'
+            );
+          }
+        }
+      } catch {}
+      return false;
+    }
     return !!(
       (matched as any).isComingSoon ||
       (matched as any).comingSoon ||
@@ -416,13 +443,15 @@ function AppContent() {
     if (
       normalizedPath.startsWith('/sws/') ||
       normalizedPath.startsWith('/sws-event-management/') ||
-      normalizedPath.startsWith('/sws-events/')
+      normalizedPath.startsWith('/sws-events/') ||
+      normalizedPath.startsWith('/event-management/') ||
+      normalizedPath.startsWith('/events/')
     ) {
       if (isDivisionComingSoon('sws')) {
         return <DivisionComingSoonView divisionId="sws" onNavigate={navigate} />;
       }
       const subSlug = normalizedPath
-        .replace(/^\/(sws|sws-event-management|sws-events)\//, '')
+        .replace(/^\/(sws-event-management|sws-events|event-management|events|sws)\//, '')
         .trim();
       const validSubsections = [
         'services',
@@ -455,18 +484,35 @@ function AppContent() {
       );
     }
 
-    if (normalizedPath === '/u1' || divisionKey === 'u1') {
+    if (
+      normalizedPath === '/u1' ||
+      normalizedPath === '/u1-studio' ||
+      normalizedPath === '/u1-cinema' ||
+      normalizedPath === '/studio' ||
+      normalizedPath === '/photography' ||
+      normalizedPath === '/cinema' ||
+      divisionKey === 'u1'
+    ) {
       if (isDivisionComingSoon('u1')) {
         return <DivisionComingSoonView divisionId="u1" onNavigate={navigate} />;
       }
       return <U1View onNavigate={navigate} />;
     }
 
-    if (normalizedPath.startsWith('/u1/')) {
+    if (
+      normalizedPath.startsWith('/u1/') ||
+      normalizedPath.startsWith('/u1-studio/') ||
+      normalizedPath.startsWith('/u1-cinema/') ||
+      normalizedPath.startsWith('/studio/') ||
+      normalizedPath.startsWith('/photography/') ||
+      normalizedPath.startsWith('/cinema/')
+    ) {
       if (isDivisionComingSoon('u1')) {
         return <DivisionComingSoonView divisionId="u1" onNavigate={navigate} />;
       }
-      const subSlug = normalizedPath.replace('/u1/', '').trim();
+      const subSlug = normalizedPath
+        .replace(/^\/(u1-studio|u1-cinema|studio|photography|cinema|u1)\//, '')
+        .trim();
       const validSubsections = [
         'cinema',
         'media',
@@ -477,7 +523,7 @@ function AppContent() {
         'quote',
         'booking',
       ];
-      if (validSubsections.includes(subSlug)) {
+      if (!subSlug || validSubsections.includes(subSlug)) {
         return <U1View onNavigate={navigate} />;
       }
 
@@ -497,18 +543,50 @@ function AppContent() {
       );
     }
 
-    if (normalizedPath === '/it' || divisionKey === 'it') {
+    if (
+      normalizedPath === '/it' ||
+      normalizedPath === '/it-solutions' ||
+      normalizedPath === '/mahdev-it' ||
+      normalizedPath === '/solutions' ||
+      normalizedPath === '/software' ||
+      normalizedPath === '/it-services' ||
+      divisionKey === 'it'
+    ) {
       if (isDivisionComingSoon('it')) {
         return <DivisionComingSoonView divisionId="it" onNavigate={navigate} />;
       }
       return <ITView onNavigate={navigate} />;
     }
 
-    if (normalizedPath.startsWith('/it/')) {
+    if (
+      normalizedPath.startsWith('/it/') ||
+      normalizedPath.startsWith('/it-solutions/') ||
+      normalizedPath.startsWith('/mahdev-it/') ||
+      normalizedPath.startsWith('/it-services/') ||
+      normalizedPath.startsWith('/solutions/') ||
+      normalizedPath.startsWith('/software/')
+    ) {
       if (isDivisionComingSoon('it')) {
         return <DivisionComingSoonView divisionId="it" onNavigate={navigate} />;
       }
-      const subSlug = normalizedPath.replace('/it/', '').trim();
+      const subSlug = normalizedPath
+        .replace(/^\/(it-solutions|mahdev-it|it-services|solutions|software|it)\//, '')
+        .trim();
+      const validSubsections = [
+        'services',
+        'packages',
+        'portfolio',
+        'solutions',
+        'contact',
+        'quote',
+        'booking',
+        'technologies',
+        'process',
+      ];
+      if (!subSlug || validSubsections.includes(subSlug)) {
+        return <ITView onNavigate={navigate} />;
+      }
+
       const itService = services.find(
         (s) => s.division === 'it' && (s.slug === subSlug || s.id === subSlug)
       );
@@ -525,18 +603,48 @@ function AppContent() {
       );
     }
 
-    if (normalizedPath === '/travels' || divisionKey === 'travels') {
+    if (
+      normalizedPath === '/travels' ||
+      normalizedPath === '/mahdev-travels' ||
+      normalizedPath === '/tourism' ||
+      normalizedPath === '/tours' ||
+      normalizedPath === '/travel' ||
+      divisionKey === 'travels'
+    ) {
       if (isDivisionComingSoon('travels')) {
         return <DivisionComingSoonView divisionId="travels" onNavigate={navigate} />;
       }
       return <TravelsView onNavigate={navigate} />;
     }
 
-    if (normalizedPath.startsWith('/travels/')) {
+    if (
+      normalizedPath.startsWith('/travels/') ||
+      normalizedPath.startsWith('/mahdev-travels/') ||
+      normalizedPath.startsWith('/tourism/') ||
+      normalizedPath.startsWith('/tours/') ||
+      normalizedPath.startsWith('/travel/')
+    ) {
       if (isDivisionComingSoon('travels')) {
         return <DivisionComingSoonView divisionId="travels" onNavigate={navigate} />;
       }
-      const subSlug = normalizedPath.replace('/travels/', '').trim();
+      const subSlug = normalizedPath
+        .replace(/^\/(mahdev-travels|tourism|tours|travel|travels)\//, '')
+        .trim();
+      const validSubsections = [
+        'services',
+        'packages',
+        'tours',
+        'destinations',
+        'fleet',
+        'quote',
+        'booking',
+        'contact',
+        'gallery',
+      ];
+      if (!subSlug || validSubsections.includes(subSlug)) {
+        return <TravelsView onNavigate={navigate} />;
+      }
+
       const travelsService = services.find(
         (s) => s.division === 'travels' && (s.slug === subSlug || s.id === subSlug)
       );
@@ -555,14 +663,30 @@ function AppContent() {
 
     if (
       normalizedPath === '/mart' ||
-      normalizedPath.startsWith('/mart/') ||
+      normalizedPath === '/online-mart' ||
+      normalizedPath === '/mahdev-mart' ||
+      normalizedPath === '/shop' ||
+      normalizedPath === '/store' ||
       divisionKey === 'mart'
     ) {
       if (isDivisionComingSoon('mart')) {
         return <DivisionComingSoonView divisionId="mart" onNavigate={navigate} />;
       }
-      if (normalizedPath.startsWith('/mart/') && normalizedPath !== '/mart') {
-        const subSlug = normalizedPath.replace('/mart/', '').trim();
+      if (
+        (normalizedPath.startsWith('/mart/') && normalizedPath !== '/mart') ||
+        (normalizedPath.startsWith('/online-mart/') && normalizedPath !== '/online-mart') ||
+        (normalizedPath.startsWith('/mahdev-mart/') && normalizedPath !== '/mahdev-mart') ||
+        (normalizedPath.startsWith('/shop/') && normalizedPath !== '/shop') ||
+        (normalizedPath.startsWith('/store/') && normalizedPath !== '/store')
+      ) {
+        const subSlug = normalizedPath
+          .replace(/^\/(online-mart|mahdev-mart|shop|store|mart)\//, '')
+          .trim();
+        const validSubsections = ['products', 'categories', 'cart', 'deals', 'popular', 'featured', 'all'];
+        if (validSubsections.includes(subSlug)) {
+          return <MartView onNavigate={navigate} />;
+        }
+
         const martProduct =
           products.find(
             (p) => p.division === 'mart' && (p.slug === subSlug || p.id === subSlug)
@@ -668,7 +792,7 @@ function AppContent() {
             d.slug === divSlug ||
             d.id === divSlug ||
             d.route === `/${divSlug}` ||
-            (d.route && d.route.replace(/^\//, '') === divSlug)
+            (typeof d.route === 'string' && d.route.replace(/^\//, '') === divSlug)
         );
 
       if (

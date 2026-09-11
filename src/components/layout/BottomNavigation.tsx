@@ -11,8 +11,8 @@ interface BottomNavigationProps {
 export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath, onNavigate }) => {
   const { totalQuantity, openCart } = useCart();
 
-  const [basePath] = currentPath.split('?');
-  const normalizedPath = basePath.toLowerCase().replace(/\/$/, '') || '/';
+  const [basePath] = (currentPath ? String(currentPath) : '/').split('?');
+  const normalizedPath = (basePath || '/').toLowerCase().replace(/\/$/, '') || '/';
 
   const navItems = [
     {

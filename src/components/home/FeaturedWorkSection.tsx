@@ -103,7 +103,11 @@ const FeaturedWorkSectionContent: React.FC<
               {/* Large Project Image */}
               <div className="lg:col-span-7 relative aspect-16/10 lg:aspect-auto min-h-[320px] sm:min-h-[420px] overflow-hidden bg-slate-900">
                 <img
-                  src={featuredHeroProject.imageUrl}
+                  src={
+                    (featuredHeroProject.imageUrl && featuredHeroProject.imageUrl.trim() !== '')
+                      ? featuredHeroProject.imageUrl.trim()
+                      : 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'
+                  }
                   alt={featuredHeroProject.title}
                   className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-700 ease-out"
                   loading="lazy"
@@ -172,7 +176,11 @@ const FeaturedWorkSectionContent: React.FC<
                         {/* Large Project Image */}
                         <div className="relative aspect-16/10 overflow-hidden bg-slate-100">
                           <img
-                            src={project.imageUrl}
+                            src={
+                              (project.imageUrl && project.imageUrl.trim() !== '')
+                                ? project.imageUrl.trim()
+                                : 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80'
+                            }
                             alt={project.title}
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                             loading="lazy"

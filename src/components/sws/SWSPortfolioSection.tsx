@@ -98,7 +98,11 @@ export const SWSPortfolioSection: React.FC<SWSPortfolioSectionProps> = ({
             >
               <div className="flex items-center gap-3">
                 <img
-                  src={item.imageUrl}
+                  src={
+                    item.imageUrl && item.imageUrl.trim() !== ''
+                      ? item.imageUrl.trim()
+                      : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=400&q=80'
+                  }
                   alt={item.title}
                   className="w-14 h-14 rounded-lg object-cover shrink-0"
                 />
@@ -125,7 +129,11 @@ export const SWSPortfolioSection: React.FC<SWSPortfolioSectionProps> = ({
           {/* Main Visual Header */}
           <div className="relative rounded-xl overflow-hidden aspect-[16/9] max-h-[360px] bg-slate-950">
             <img
-              src={activeCase.imageUrl}
+              src={
+                activeCase.imageUrl && activeCase.imageUrl.trim() !== ''
+                  ? activeCase.imageUrl.trim()
+                  : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80'
+              }
               alt={activeCase.title}
               className="w-full h-full object-cover"
             />

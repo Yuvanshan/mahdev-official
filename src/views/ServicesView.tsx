@@ -28,6 +28,7 @@ import {
 } from '../components/motion/MotionWrappers';
 import { CallToActionSection } from '../components/home/CallToActionSection';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
+import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
 import { DIVISIONS, DIVISION_LIST } from '../config/divisions';
 import { DivisionId } from '../types';
 import { openWhatsAppInquiry } from '../utils/whatsapp';
@@ -44,12 +45,27 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
 }) => {
   const [selectedDivision, setSelectedDivision] = useState<DivisionId | 'all'>(initialDivision);
   const [searchQuery, setSearchQuery] = useState('');
-  const { services, companySettings, siteSettings, divisions, products } = useFirestoreDataContext();
+  const { services, companySettings, siteSettings, divisions, products, isInitialLoading, isFetching } = useFirestoreDataContext();
 
   const rentalCount = getRentalAssetCount(
     products,
     (companySettings as any)?.rentalAssetCount || (siteSettings as any)?.rentalAssetCount
   );
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  if (services.length === 0 && (isInitialLoading || isFetching)) {
+    return (
+      <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-white">
+        <DataLoadingOverlay
+          message="Loading enterprise services..."
+          subMessage="Retrieving verified services from Firestore cloud database"
+        />
+      </div>
+    );
+  }
 
   const orderedDivisions = React.useMemo(() => {
     if (divisions && divisions.length > 0) {
@@ -70,10 +86,6 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
     }
     return DIVISION_LIST;
   }, [divisions]);
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
 
   const activeServices = useMemo(() => {
     return services.filter((s) => (s as any).status !== 'archived');

@@ -42,7 +42,7 @@ PRODID:-//${COMPANY_INFO.legalName}//Universal Booking System//EN
 BEGIN:VEVENT
 UID:${booking.id}@${COMPANY_INFO.domain}
 DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z
-DTSTART:${booking.date.replace(/-/g, '')}T090000Z
+DTSTART:${String(booking.date || '').replace(/-/g, '')}T090000Z
 SUMMARY:${booking.serviceName} (${booking.divisionName})
 DESCRIPTION:Booking ID: ${booking.id}\\nPackage: ${booking.packageName}\\nLocation: ${booking.location.address}\\nNotes: ${booking.notes}
 LOCATION:${booking.location.address}

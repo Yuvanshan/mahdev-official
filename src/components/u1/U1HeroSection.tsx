@@ -31,11 +31,15 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
     companySettings?.primaryPhone ||
     '075 092 8078';
 
-  const heroImage =
+  const rawHeroImage =
     (u1Div as any)?.imageUrl ||
     (u1Div as any)?.heroImageUrl ||
-    (u1Div as any)?.hero?.bgImage ||
-    'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&w=2000&q=85';
+    (u1Div as any)?.hero?.bgImage;
+
+  const heroImage =
+    typeof rawHeroImage === 'string' && rawHeroImage.trim() !== ''
+      ? rawHeroImage.trim()
+      : 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&w=2000&q=85';
 
   const badgeText =
     (u1Div as any)?.hero?.badge ||
@@ -141,9 +145,10 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
           <a
             href={getTelLink(hotline)}
             className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-white/15 bg-slate-900/80 text-slate-200 text-sm font-semibold hover:border-blue-400 hover:text-white transition-all backdrop-blur-sm"
+            title={`Call Production Desk ${hotline}`}
           >
             <Phone className="w-4 h-4 text-emerald-400" />
-            <span>{hotline}</span>
+            <span>Direct Line</span>
           </a>
         </motion.div>
 

@@ -10,6 +10,7 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { DIVISIONS } from '../../config/divisions';
 import { ParallelWatermark } from '../motion/ParallelScroll';
 import { useDeviceMotion } from '../motion/MotionWrappers';
+import { DataLoadingOverlay } from '../common/DataLoadingOverlay';
 
 interface FeaturedServicesSectionProps {
   onNavigate: (route: string) => void;
@@ -17,7 +18,7 @@ interface FeaturedServicesSectionProps {
 }
 
 export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (props) => {
-  const { services, homepageConfig } = useFirestoreDataContext();
+  const { services, homepageConfig, isInitialLoading, isFetching } = useFirestoreDataContext();
 
   if (homepageConfig.featuredServices && !homepageConfig.featuredServices.enabled) {
     return null;
@@ -28,6 +29,16 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
     .sort((a, b) => (a.order ?? (a as any).sortOrder ?? 0) - (b.order ?? (b as any).sortOrder ?? 0));
 
   if (activeServices.length === 0) {
+    if (isInitialLoading || isFetching) {
+      return (
+        <SectionContainer background="white" paddingY="lg">
+          <DataLoadingOverlay
+            message="Loading featured enterprise services..."
+            subMessage="Connecting to verified services database in Firestore"
+          />
+        </SectionContainer>
+      );
+    }
     return null;
   }
 
@@ -214,15 +225,19 @@ const FeaturedServicesSectionContent: React.FC<
                     )}
 
                     <div>
-                      {((service as any).imageUrl || (service as any).images?.[0]) && (
-                        <div className="mb-4 aspect-16/9 rounded-xl overflow-hidden bg-slate-100 border border-slate-100 relative">
-                          <img
-                            src={(service as any).imageUrl || (service as any).images?.[0]}
-                            alt={service.title || service.name}
-                            className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
-                          />
-                        </div>
-                      )}
+                      {(() => {
+                        const rawImg = (service as any).imageUrl || (service as any).images?.[0];
+                        const srvImg = typeof rawImg === 'string' ? rawImg.trim() : '';
+                        return srvImg ? (
+                          <div className="mb-4 aspect-16/9 rounded-xl overflow-hidden bg-slate-100 border border-slate-100 relative">
+                            <img
+                              src={srvImg}
+                              alt={service.title || service.name}
+                              className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
+                            />
+                          </div>
+                        ) : null;
+                      })()}
 
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">

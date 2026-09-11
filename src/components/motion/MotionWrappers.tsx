@@ -284,11 +284,20 @@ export const ImageReveal: React.FC<{
   delay?: number;
 }> = ({ src, alt, className = '', aspectRatio = 'aspect-video', delay = 0 }) => {
   const { reducedMotion } = useDeviceMotion();
+  const validSrc = src && typeof src === 'string' && src.trim() !== '' ? src.trim() : null;
+
+  if (!validSrc) {
+    return (
+      <div className={`overflow-hidden rounded-2xl bg-slate-900 ${aspectRatio} ${className} flex items-center justify-center text-slate-500 text-xs`}>
+        {alt || 'Mahdev'}
+      </div>
+    );
+  }
 
   if (reducedMotion) {
     return (
       <div className={`overflow-hidden rounded-2xl ${aspectRatio} ${className}`}>
-        <img src={src} alt={alt} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+        <img src={validSrc} alt={alt} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
       </div>
     );
   }
@@ -302,7 +311,7 @@ export const ImageReveal: React.FC<{
       className={`relative overflow-hidden rounded-2xl ${aspectRatio} ${className} group`}
     >
       <motion.img
-        src={src}
+        src={validSrc}
         alt={alt}
         className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
         referrerPolicy="no-referrer"

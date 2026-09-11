@@ -32,6 +32,7 @@ import { COMPANY_INFO, getTelLink } from '../config/company';
 import { firestoreInquiriesService } from '../services/firestore/inquiries';
 import { firestoreContactsService } from '../services/firestore/contacts';
 import { notificationService } from '../services/notificationService';
+import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
 
 interface DivisionViewProps {
   divisionId: string;
@@ -39,7 +40,18 @@ interface DivisionViewProps {
 }
 
 export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNavigate }) => {
-  const { divisions, services, companySettings } = useFirestoreDataContext();
+  const { divisions, services, companySettings, isInitialLoading, isFetching } = useFirestoreDataContext();
+
+  if (divisions.length === 0 && (isInitialLoading || isFetching)) {
+    return (
+      <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-white">
+        <DataLoadingOverlay
+          message="Loading business division..."
+          subMessage="Fetching latest division assets & services from Firestore"
+        />
+      </div>
+    );
+  }
 
   // Normalize IDs across short keys ('sws', 'u1', 'it', 'travels', 'mart') and slug variants
   const normalizedKey: DivisionId =
@@ -421,10 +433,10 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
               <SlideIn direction="up" delay={0.3}>
                 <div className="rounded-2xl bg-white border border-slate-200 p-6 sm:p-7 shadow-lg shadow-blue-500/5 space-y-6">
                   {/* Division Uploaded Hero Image if available from Firestore */}
-                  {division.imageUrl && (
+                  {division.imageUrl && division.imageUrl.trim() !== '' && (
                     <div className="relative w-full h-48 sm:h-56 rounded-xl overflow-hidden border border-slate-200 shadow-2xs">
                       <img
-                        src={division.imageUrl}
+                        src={division.imageUrl.trim()}
                         alt={division.name}
                         className="w-full h-full object-cover"
                         referrerPolicy="no-referrer"
@@ -445,9 +457,9 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
                   <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#0052FF] flex items-center justify-center shadow-2xs overflow-hidden">
-                        {division.logoUrl ? (
+                        {division.logoUrl && division.logoUrl.trim() !== '' ? (
                           <img
-                            src={division.logoUrl}
+                            src={division.logoUrl.trim()}
                             alt={division.name}
                             className="w-full h-full object-contain p-1"
                             referrerPolicy="no-referrer"

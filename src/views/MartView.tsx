@@ -24,6 +24,7 @@ import { DIVISION_LIST } from '../config/divisions';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useCart } from '../context/CartContext';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
+import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
 
 interface MartViewProps {
   onNavigate: (route: string) => void;
@@ -31,12 +32,24 @@ interface MartViewProps {
 
 export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
   const { addToCart, totalQuantity: totalCartCount, openCart } = useCart();
-  const { products: rawProducts, categories: rawCategories, divisions, companySettings } = useFirestoreDataContext();
+  const { products: rawProducts, categories: rawCategories, divisions, companySettings, isInitialLoading, isFetching } = useFirestoreDataContext();
   const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedProductForDetail, setSelectedProductForDetail] = useState<Product | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  if ((rawProducts.length === 0 || divisions.length === 0) && (isInitialLoading || isFetching)) {
+    return (
+      <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-slate-950 text-white">
+        <DataLoadingOverlay
+          dark
+          message="Loading Mahdev Online Mart..."
+          subMessage="Connecting to live inventory & catalog database in Firestore"
+        />
+      </div>
+    );
+  }
 
   // Check URL query parameters or path for sub-routes
   useEffect(() => {
@@ -236,7 +249,8 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {sisterDivisions.map((sister) => {
             const sisterRoute = sister.route || `/division/${(sister as any).slug || sister.id}`;
-            const sisterLogo = (sister as any).logoUrl || (sister as any).imageUrl;
+            const rawSisterLogo = (sister as any).logoUrl || (sister as any).imageUrl;
+            const sisterLogo = typeof rawSisterLogo === 'string' && rawSisterLogo.trim() !== '' ? rawSisterLogo.trim() : null;
             const sisterTagline = sister.tagline || (sister as any).description;
             const sisterBadge = (sister as any).badge || 'Mahdev Division';
             const sisterShortName = (sister as any).shortName || sister.name;

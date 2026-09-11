@@ -61,7 +61,7 @@ const DEFAULT_GUARANTEES: EnterpriseStandardGuarantee[] = [
   {
     id: 'std-4',
     iconName: 'PhoneCall',
-    title: 'Direct Client Line: 075 092 8078',
+    title: 'Dedicated Client Support Desk',
     description: 'Dedicated account managers ensuring uninterrupted coordination across all divisions 24/7.',
     tag: 'Always Active',
   },

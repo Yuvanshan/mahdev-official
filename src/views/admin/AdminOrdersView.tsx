@@ -126,7 +126,7 @@ export const AdminOrdersView: React.FC = () => {
         orderId,
         `Status updated to ${newStatus.toUpperCase()}`
       );
-      addToast('success', 'Status Updated', `Order ${orderId} marked as ${newStatus.replace('_', ' ').toUpperCase()}`);
+      addToast('success', 'Status Updated', `Order ${orderId} marked as ${String(newStatus || '').replace(/_/g, ' ').toUpperCase()}`);
       loadOrders();
     }
   };
@@ -638,7 +638,7 @@ export const AdminOrdersView: React.FC = () => {
                   <div className="flex justify-between">
                     <span className="text-slate-500">Payment Method:</span>
                     <span className="font-semibold capitalize text-slate-900">
-                      {selectedOrder.paymentMethod ? selectedOrder.paymentMethod.replace('_', ' ') : 'Credit Card (Stripe)'}
+                      {selectedOrder.paymentMethod ? String(selectedOrder.paymentMethod).replace(/_/g, ' ') : 'Credit Card (Stripe)'}
                     </span>
                   </div>
                   <div className="flex justify-between">

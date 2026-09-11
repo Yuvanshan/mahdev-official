@@ -51,7 +51,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
         p.id === projectSlugOrId ||
         p.slug === projectSlugOrId ||
         p.slug === decodeURIComponent(projectSlugOrId) ||
-        p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') === projectSlugOrId.toLowerCase()
+        (p.title && String(p.title).toLowerCase().replace(/[^a-z0-9]+/g, '-') === String(projectSlugOrId).toLowerCase())
     );
   }, [portfolio, projectSlugOrId]);
 
@@ -407,9 +407,9 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                   poster={project.imageUrl}
                   className="w-full h-full object-cover"
                 />
-              ) : project.videoUrl.includes('youtube.com') || project.videoUrl.includes('youtu.be') ? (
+              ) : project.videoUrl && (project.videoUrl.includes('youtube.com') || project.videoUrl.includes('youtu.be')) ? (
                 <iframe
-                  src={project.videoUrl.replace('watch?v=', 'embed/')}
+                  src={String(project.videoUrl).replace('watch?v=', 'embed/')}
                   title={project.title}
                   className="w-full h-full"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

@@ -28,14 +28,27 @@ import { DIVISION_LIST } from '../config/divisions';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { getRentalAssetCount } from '../utils/assetMetrics';
+import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
 
 interface SWSViewProps {
   onNavigate: (route: string) => void;
 }
 
 export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
-  const { divisions, companySettings, siteSettings, products } = useFirestoreDataContext();
+  const { divisions, companySettings, siteSettings, products, isInitialLoading, isFetching } = useFirestoreDataContext();
   const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
+
+  if (divisions.length === 0 && (isInitialLoading || isFetching)) {
+    return (
+      <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-slate-950 text-white">
+        <DataLoadingOverlay
+          dark
+          message="Loading SWS Event Management..."
+          subMessage="Fetching division assets & services from Firestore"
+        />
+      </div>
+    );
+  }
 
   const swsDiv = divisions?.find(
     (d) =>

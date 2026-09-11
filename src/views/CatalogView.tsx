@@ -10,6 +10,7 @@ import {
 } from '../types/catalog';
 import { catalogService } from '../services/catalogService';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
+import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
 
 interface CatalogViewProps {
   initialDivision?: string;
@@ -24,8 +25,12 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   initialProductId,
   onNavigate,
 }) => {
-  const { products: firestoreProducts, categories: firestoreCategories, isInitialLoading } =
-    useFirestoreDataContext();
+  const {
+    products: firestoreProducts,
+    categories: firestoreCategories,
+    isInitialLoading,
+    isFetching,
+  } = useFirestoreDataContext();
 
   const [filters, setFilters] = useState<CatalogFilterOptions>({
     divisionId: initialDivision,
@@ -109,16 +114,23 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
       />
 
       {/* Main Grid Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1">
-        <CatalogProductGrid
-          products={paginatedResult.items}
-          totalProducts={paginatedResult.total}
-          currentPage={paginatedResult.page}
-          totalPages={paginatedResult.totalPages}
-          onPageChange={setCurrentPage}
-          onSelectProduct={setSelectedProduct}
-          onResetFilters={handleResetFilters}
-        />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1 relative min-h-[400px]">
+        {isInitialLoading || (isFetching && firestoreProducts.length === 0) ? (
+          <DataLoadingOverlay
+            message="Loading Products & Inventory"
+            subMessage="Retrieving live catalog items from Firestore..."
+          />
+        ) : (
+          <CatalogProductGrid
+            products={paginatedResult.items}
+            totalProducts={paginatedResult.total}
+            currentPage={paginatedResult.page}
+            totalPages={paginatedResult.totalPages}
+            onPageChange={setCurrentPage}
+            onSelectProduct={setSelectedProduct}
+            onResetFilters={handleResetFilters}
+          />
+        )}
       </main>
 
       {/* Product Detail & Specification Modal */}

@@ -97,7 +97,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
   }, [divisions]);
 
   // Detect current division if on child route (supporting aliases like /sws-event-management)
-  const normalizedNavPath = currentPath.toLowerCase().replace(/\/$/, '') || '/';
+  const normalizedNavPath = (currentPath ? String(currentPath) : '/').toLowerCase().replace(/\/$/, '') || '/';
   const currentDivisionKey = (Object.keys(DIVISIONS) as DivisionId[]).find((key) => {
     const r = DIVISIONS[key].route;
     if (r === normalizedNavPath) return true;
@@ -348,25 +348,24 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
             {/* Right: Hotline, WhatsApp, Cart, Customer Account & Mobile Toggle */}
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-              {/* Mobile Top Bar Call Hotline: 075 092 8078 */}
+              {/* Mobile Top Bar Call Action */}
               <a
                 href={getTelLink(primaryPhone)}
-                className="inline-flex md:hidden items-center gap-1 px-2 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200/80 text-[11px] font-mono font-bold text-blue-700 active:scale-95 transition-all shadow-2xs shrink-0"
+                className="inline-flex md:hidden items-center justify-center p-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200/80 text-blue-700 active:scale-95 transition-all shadow-2xs shrink-0"
                 title={`Call Corporate Hotline ${primaryPhone}`}
                 aria-label={`Call Corporate Hotline ${primaryPhone}`}
               >
                 <Phone className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                <span>075 092 8078</span>
               </a>
 
-              {/* Mobile Top Bar WhatsApp: 075 092 8078 */}
+              {/* Mobile Top Bar WhatsApp */}
               <a
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex md:hidden items-center justify-center p-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 text-emerald-700 active:scale-95 transition-all shadow-2xs shrink-0"
-                title="WhatsApp Corporate 075 092 8078"
-                aria-label="WhatsApp Corporate 075 092 8078"
+                title="WhatsApp Corporate"
+                aria-label="WhatsApp Corporate"
               >
                 <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
               </a>
@@ -386,11 +385,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden lg:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 text-xs font-mono font-bold text-emerald-800 hover:text-emerald-900 transition-colors shadow-2xs shrink-0"
-                title={`WhatsApp Corporate ${primaryPhone}`}
+                className="hidden lg:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 text-xs font-semibold text-emerald-800 hover:text-emerald-900 transition-colors shadow-2xs shrink-0"
+                title="Corporate WhatsApp"
               >
                 <MessageCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>WhatsApp {primaryPhone}</span>
+                <span>WhatsApp</span>
               </a>
 
               {/* Universal Cart Trigger Button */}
@@ -675,10 +674,10 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 py-2.5 px-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold hover:bg-emerald-100 transition-colors shadow-2xs"
-                  title="WhatsApp Corporate 075 092 8078"
+                  title="WhatsApp Corporate"
                 >
                   <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>WhatsApp 075 092 8078</span>
+                  <span>Corporate WhatsApp</span>
                 </a>
 
                 <a

@@ -14,6 +14,7 @@ import {
 import { PortfolioProject, DivisionId } from '../../types';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
+import { DataLoadingOverlay } from '../common/DataLoadingOverlay';
 
 interface PortfolioShowcaseProps {
   onInquireProject?: (project: PortfolioProject) => void;
@@ -26,7 +27,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
   onNavigate,
   initialDivision = 'all',
 }) => {
-  const { portfolio } = useFirestoreDataContext();
+  const { portfolio, isInitialLoading, isFetching } = useFirestoreDataContext();
   const [selectedDivision, setSelectedDivision] = useState<DivisionId | 'all'>(initialDivision);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedProject, setSelectedProject] = useState<PortfolioProject | null>(null);
@@ -156,26 +157,38 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
       </div>
 
       {/* Portfolio Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProjects.map((project, idx) => (
-          <ScrollReveal key={project.id} direction="up" delay={idx * 0.06}>
-            <TiltCard
-              maxTilt={6}
-              glareEffect
-              onClick={() => {
-                if (onNavigate) {
-                  onNavigate(`/project/${project.id}`);
-                } else {
-                  setSelectedProject(project);
-                  setActiveGalleryIndex(0);
-                }
-              }}
-              className="h-[460px] cursor-pointer"
-            >
+      {isInitialLoading || (isFetching && portfolio.length === 0) ? (
+        <div className="relative min-h-[360px] rounded-3xl border border-slate-200 bg-slate-50/50 overflow-hidden">
+          <DataLoadingOverlay
+            message="Loading Corporate Portfolio"
+            subMessage="Retrieving landmark projects from Firestore..."
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProjects.map((project, idx) => (
+            <ScrollReveal key={project.id} direction="up" delay={idx * 0.06}>
+              <TiltCard
+                maxTilt={6}
+                glareEffect
+                onClick={() => {
+                  if (onNavigate) {
+                    onNavigate(`/project/${project.id}`);
+                  } else {
+                    setSelectedProject(project);
+                    setActiveGalleryIndex(0);
+                  }
+                }}
+                className="h-[460px] cursor-pointer"
+              >
               <div className="group relative rounded-3xl overflow-hidden bg-slate-950 border border-slate-800 shadow-md h-full flex flex-col justify-end p-6 sm:p-7 text-white transition-all duration-500 hover:shadow-2xl">
                 {/* Image background with scale effect */}
                 <img
-                  src={project.imageUrl}
+                  src={
+                    project.imageUrl && project.imageUrl.trim() !== ''
+                      ? project.imageUrl.trim()
+                      : 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'
+                  }
                   alt={project.title}
                   className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 group-hover:opacity-75 transition-all duration-700 ease-out"
                   referrerPolicy="no-referrer"
@@ -236,7 +249,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                               type: 'portfolio',
                             });
                           }}
-                          title="WhatsApp Inquiry with Image (0750928078)"
+                          title="WhatsApp Inquiry with Image"
                           className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/70 hover:bg-emerald-600 hover:text-white border border-emerald-500/40 px-2.5 py-1.5 rounded-full transition-all cursor-pointer active:scale-95"
                         >
                           <MessageCircle className="w-3.5 h-3.5" />
@@ -254,6 +267,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
           </ScrollReveal>
         ))}
       </div>
+      )}
 
       {/* Rich Project Detail Modal with Image Gallery Lightbox */}
       <Modal
@@ -270,8 +284,10 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                 const allImages = [
                   selectedProject.imageUrl,
                   ...(selectedProject.galleryImages || []),
-                ];
-                const activeImg = allImages[activeGalleryIndex] || selectedProject.imageUrl;
+                ].filter((img): img is string => typeof img === 'string' && img.trim() !== '');
+                const fallbackImg =
+                  'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80';
+                const activeImg = allImages[activeGalleryIndex] || allImages[0] || fallbackImg;
 
                 return (
                   <div>
@@ -423,7 +439,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                       type: 'portfolio',
                     });
                   }}
-                  title="Send inquiry with currently viewed image to WhatsApp 0750928078"
+                  title="Send inquiry with currently viewed image to WhatsApp"
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs sm:text-sm font-bold shadow-md shadow-emerald-500/20 transition-all cursor-pointer active:scale-95"
                 >
                   <MessageCircle className="w-4 h-4 fill-white/20" />

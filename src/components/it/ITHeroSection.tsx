@@ -135,9 +135,10 @@ export const ITHeroSection: React.FC<ITHeroSectionProps> = ({
                 <a
                   href={getTelLink(hotline)}
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900/80 text-slate-200 text-xs sm:text-sm font-semibold hover:border-blue-400 hover:text-white transition-all backdrop-blur-sm"
+                  title={`Call IT Engineering ${hotline}`}
                 >
                   <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>{hotline}</span>
+                  <span>Direct Line</span>
                 </a>
               </div>
             </ScrollReveal>

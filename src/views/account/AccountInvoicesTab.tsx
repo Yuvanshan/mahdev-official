@@ -99,7 +99,7 @@ export const AccountInvoicesTab: React.FC<AccountInvoicesTabProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                   <span className="font-mono text-xs font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                    INV-{order.id.replace('ORD-', '')}
+                    INV-{String(order.id || '').replace('ORD-', '')}
                   </span>
                   <span
                     className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
@@ -191,7 +191,7 @@ export const AccountInvoicesTab: React.FC<AccountInvoicesTabProps> = ({
 
               <div className="text-right">
                 <span className="font-mono text-sm font-bold text-slate-900 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200 block">
-                  INV-{selectedInvoice.id.replace('ORD-', '')}
+                  INV-{String(selectedInvoice.id || '').replace('ORD-', '')}
                 </span>
                 <span className="text-xs text-slate-400 mt-1 block">
                   Date:{' '}

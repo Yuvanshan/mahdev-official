@@ -10,17 +10,29 @@ import { SEOHead } from '../components/layout/SEOHead';
 import { DIVISIONS, DIVISION_LIST } from '../config/divisions';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { CallToActionSection } from '../components/home/CallToActionSection';
+import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
 
 interface DivisionsPageViewProps {
   onNavigate: (route: string) => void;
 }
 
 export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate }) => {
-  const { divisions, companySettings } = useFirestoreDataContext();
+  const { divisions, companySettings, isInitialLoading, isFetching } = useFirestoreDataContext();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
+
+  if (divisions.length === 0 && (isInitialLoading || isFetching)) {
+    return (
+      <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-white">
+        <DataLoadingOverlay
+          message="Loading corporate divisions..."
+          subMessage="Fetching latest division statuses & configurations from Firestore"
+        />
+      </div>
+    );
+  }
 
   const displayDivisions = React.useMemo(() => {
     if (divisions && divisions.length > 0) {
@@ -46,6 +58,8 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
         if (!canonicalId || seen.has(canonicalId)) continue;
         seen.add(canonicalId);
 
+        const config = (DIVISIONS as any)[canonicalId] || DIVISION_LIST.find((item) => item.id === canonicalId) || {};
+
         const isComingSoon = !!(
           (d as any).isComingSoon ||
           (d as any).comingSoon ||
@@ -55,10 +69,10 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
         result.push({
           ...config,
           id: canonicalId,
-          name: d.name || config.name,
-          shortName: config.shortName || d.name,
+          name: d.name || config.name || canonicalId.toUpperCase(),
+          shortName: config.shortName || d.name || canonicalId.toUpperCase(),
           tagline: d.hero?.subtitle || config.tagline || '',
-          description: d.description || config.description,
+          description: d.description || config.description || '',
           route: config.route || `/${d.slug || canonicalId}`,
           badge: d.hero?.badge || config.badge || 'Enterprise Division',
           iconName: config.iconName || 'Building',

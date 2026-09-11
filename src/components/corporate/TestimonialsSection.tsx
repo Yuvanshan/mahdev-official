@@ -144,7 +144,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
                   <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="relative">
-                        {review.authorPhotoUrl ? (
+                        {review.authorPhotoUrl && review.authorPhotoUrl.trim() !== '' ? (
                           <img
                             src={review.authorPhotoUrl}
                             alt={review.authorName}

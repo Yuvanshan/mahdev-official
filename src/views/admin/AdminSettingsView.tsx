@@ -1873,7 +1873,7 @@ export const AdminSettingsView: React.FC = () => {
                 <div>
                   <span className="text-xs font-bold text-slate-700 block mb-1">Live Catalog Rental Inventory</span>
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    Currently detecting <strong className="text-blue-600">{products.filter((p) => p.isRental || p.tags?.includes('rental') || (p as any).divisionKey === 'sws').length}</strong> rental products registered in the database.
+                    Currently detecting <strong className="text-blue-600">{products.filter((p: any) => p.isRental || p.tags?.includes('rental') || p.divisionKey === 'sws' || p.divisionId === 'sws').length}</strong> rental products registered in the database.
                   </p>
                 </div>
                 <button

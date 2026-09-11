@@ -99,7 +99,7 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
       { id: 'all', label: 'All Inventory', icon: 'grid' },
       ...unique.map((cat) => ({
         id: cat,
-        label: cat.charAt(0).toUpperCase() + cat.slice(1).replace('-', ' '),
+        label: cat ? String(cat).charAt(0).toUpperCase() + String(cat).slice(1).replace(/-/g, ' ') : 'Category',
         icon: 'box',
       })),
     ];
@@ -229,7 +229,11 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
                 {/* Image Container */}
                 <div className="relative h-52 w-full overflow-hidden bg-slate-100">
                   <img
-                    src={item.imageUrl}
+                    src={
+                      item.imageUrl && item.imageUrl.trim() !== ''
+                        ? item.imageUrl.trim()
+                        : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
+                    }
                     alt={item.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
@@ -383,7 +387,11 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
             {/* Modal Header Image */}
             <div className="relative h-60 w-full bg-slate-900 shrink-0">
               <img
-                src={activeDetailItem.imageUrl}
+                src={
+                  activeDetailItem.imageUrl && activeDetailItem.imageUrl.trim() !== ''
+                    ? activeDetailItem.imageUrl.trim()
+                    : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
+                }
                 alt={activeDetailItem.name}
                 className="w-full h-full object-cover"
               />

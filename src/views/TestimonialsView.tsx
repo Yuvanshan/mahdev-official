@@ -20,6 +20,7 @@ import { useGoogleReviews, useFirestoreDataContext } from '../context/FirestoreD
 import { DivisionId } from '../types/firestore';
 import { DIVISIONS } from '../config/divisions';
 import { CallToActionSection } from '../components/home/CallToActionSection';
+import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
 
 interface TestimonialsViewProps {
   onNavigate: (route: string) => void;
@@ -27,7 +28,7 @@ interface TestimonialsViewProps {
 
 export const TestimonialsView: React.FC<TestimonialsViewProps> = ({ onNavigate }) => {
   const { allReviews, config } = useGoogleReviews();
-  const { companySettings } = useFirestoreDataContext();
+  const { companySettings, isInitialLoading, isFetching } = useFirestoreDataContext();
 
   const [selectedBranch, setSelectedBranch] = useState<'all' | 'trincomalee' | 'colombo'>('all');
   const [selectedDivision, setSelectedDivision] = useState<DivisionId | 'all'>('all');
@@ -37,6 +38,17 @@ export const TestimonialsView: React.FC<TestimonialsViewProps> = ({ onNavigate }
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
+
+  if (allReviews.length === 0 && (isInitialLoading || isFetching)) {
+    return (
+      <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-white">
+        <DataLoadingOverlay
+          message="Loading customer reviews..."
+          subMessage="Fetching verified Google reviews from Firestore"
+        />
+      </div>
+    );
+  }
 
   // Filter out any hidden reviews for public site
   const visibleReviews = allReviews.filter((r) => !r.isHidden);

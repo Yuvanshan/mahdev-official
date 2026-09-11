@@ -287,7 +287,11 @@ const DecorationVideoShowcaseContent: React.FC<
                     {/* Thumbnail with mini play overlay */}
                     <div className="relative w-24 h-16 rounded-lg overflow-hidden shrink-0 bg-slate-950 border border-slate-800">
                       <img
-                        src={video.thumbnailUrl}
+                        src={
+                          video.thumbnailUrl && video.thumbnailUrl.trim() !== ''
+                            ? video.thumbnailUrl.trim()
+                            : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80'
+                        }
                         alt={video.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />

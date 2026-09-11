@@ -149,7 +149,7 @@ const HappyClientsAndProjectsSectionContent: React.FC<
                     onExploreClients ? 'cursor-pointer' : 'cursor-default'
                   }`}
                 >
-                  {company.logoUrl ? (
+                  {company.logoUrl && company.logoUrl.trim() !== '' ? (
                     <img
                       src={company.logoUrl}
                       alt={company.name}

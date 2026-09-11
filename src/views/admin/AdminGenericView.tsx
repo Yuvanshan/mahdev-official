@@ -468,7 +468,7 @@ export const AdminGenericView: React.FC<AdminGenericViewProps> = ({
     <div className="space-y-6">
       <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
         <h2 className="font-display text-lg font-bold text-slate-900 uppercase">
-          {sectionId.replace('-', ' ')} Manager
+          {String(sectionId || 'section').replace(/-/g, ' ')} Manager
         </h2>
         <p className="text-xs text-slate-500">
           Executive repository and content management controls for {sectionId}.
@@ -480,7 +480,7 @@ export const AdminGenericView: React.FC<AdminGenericViewProps> = ({
           <Layers className="w-6 h-6" />
         </div>
         <h3 className="font-display text-base font-bold text-slate-900 capitalize">
-          {sectionId.replace('-', ' ')} Repository Active
+          {String(sectionId || 'section').replace(/-/g, ' ')} Repository Active
         </h3>
         <p className="text-xs text-slate-500 max-w-sm mx-auto">
           All data objects for {sectionId} are synced with the production core registry and rendered in real-time.

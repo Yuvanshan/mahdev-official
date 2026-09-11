@@ -97,7 +97,7 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
   const getFullWhatsAppUrl = (refId?: string) => {
     const title = selectedPkg?.name || selectedSrv?.name || selectedRent?.name || `${eventType} Event Production`;
     const sku = (selectedPkg as any)?.sku || (selectedSrv as any)?.sku || (selectedRent as any)?.sku || `SRV-SWS-${eventType.slice(0, 3).toUpperCase()}`;
-    const img = selectedSrv?.imageUrl || selectedPkg?.imageUrl || selectedRent?.imageUrl || 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80';
+    const img = selectedSrv?.imageUrl || (selectedPkg as any)?.imageUrl || selectedRent?.imageUrl || 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80';
 
     const text = buildWhatsAppMessage({
       title,

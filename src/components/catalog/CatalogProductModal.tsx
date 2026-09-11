@@ -157,7 +157,7 @@ export const CatalogProductModal: React.FC<CatalogProductModalProps> = ({
                 <div>
                   {/* Brand & Type */}
                   <div className="text-xs text-neutral-400 uppercase tracking-wider font-semibold mb-1">
-                    {product.brand} • <span className="text-neutral-700 capitalize">{product.productType.replace('_', ' ')}</span>
+                    {product.brand} • <span className="text-neutral-700 capitalize">{product.productType ? String(product.productType).replace(/_/g, ' ') : 'Product'}</span>
                   </div>
 
                   {/* Title */}
@@ -314,7 +314,7 @@ export const CatalogProductModal: React.FC<CatalogProductModalProps> = ({
                     className="w-full py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors cursor-pointer"
                   >
                     <MessageCircle className="w-4 h-4 shrink-0" />
-                    <span>Inquire via WhatsApp (075 092 8078)</span>
+                    <span>Inquire via WhatsApp</span>
                   </button>
 
                   {['bookable_service', 'package', 'service'].includes(product.productType) && (

@@ -312,7 +312,7 @@ export const AdminBannersView: React.FC = () => {
                 <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 uppercase">
-                      {banner.placement.replace('_', ' ')}
+                      {String(banner.placement || 'general').replace(/_/g, ' ')}
                     </span>
                     {banner.badgeText && (
                       <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">

@@ -421,7 +421,7 @@ export const AdminCustomersView: React.FC = () => {
                             <td className="p-3 font-mono font-bold text-slate-900">${o.total.toFixed(2)}</td>
                             <td className="p-3">
                               <span className="capitalize font-semibold text-[11px] text-slate-700">
-                                {o.status.replace('_', ' ')}
+                                {String(o.status || 'pending').replace(/_/g, ' ')}
                               </span>
                             </td>
                             <td className="p-3">

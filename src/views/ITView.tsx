@@ -26,18 +26,31 @@ import { ITService } from '../data/itData';
 import { DIVISION_LIST } from '../config/divisions';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
+import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
 
 interface ITViewProps {
   onNavigate: (route: string) => void;
 }
 
 export const ITView: React.FC<ITViewProps> = ({ onNavigate }) => {
-  const { divisions, companySettings } = useFirestoreDataContext();
+  const { divisions, companySettings, isInitialLoading, isFetching } = useFirestoreDataContext();
   const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
   const [selectedServiceForDetail, setSelectedServiceForDetail] = useState<ITService | null>(null);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [quoteModalService, setQuoteModalService] = useState<ITService | null>(null);
   const [quoteModalType, setQuoteModalType] = useState<ITModalType>('quote');
+
+  if (divisions.length === 0 && (isInitialLoading || isFetching)) {
+    return (
+      <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-slate-950 text-white">
+        <DataLoadingOverlay
+          dark
+          message="Loading IT Solutions & Cloud..."
+          subMessage="Fetching enterprise architecture & services from Firestore"
+        />
+      </div>
+    );
+  }
 
   const handleOpenQuoteModal = (service?: ITService, type: ITModalType = 'quote') => {
     setQuoteModalService(service || null);
@@ -200,7 +213,8 @@ export const ITView: React.FC<ITViewProps> = ({ onNavigate }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {sisterDivisions.map((sister) => {
             const sisterRoute = sister.route || `/division/${(sister as any).slug || sister.id}`;
-            const sisterLogo = (sister as any).logoUrl || (sister as any).imageUrl;
+            const rawSisterLogo = (sister as any).logoUrl || (sister as any).imageUrl;
+            const sisterLogo = typeof rawSisterLogo === 'string' && rawSisterLogo.trim() !== '' ? rawSisterLogo.trim() : null;
             const sisterTagline = sister.tagline || (sister as any).description;
             const sisterBadge = (sister as any).badge || 'Mahdev Division';
             const sisterShortName = (sister as any).shortName || sister.name;

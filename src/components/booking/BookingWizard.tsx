@@ -255,7 +255,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
           openWhatsAppInquiry({
             title: selectedService!.name,
             sku: (selectedService as any)?.sku,
-            category: selectedService!.category,
+            category: (selectedService as any)?.category || (selectedService as any)?.categoryName || 'Service',
             divisionName: selectedService!.divisionName,
             packageName: selectedPackage.name,
             bookingId: result.booking.id,

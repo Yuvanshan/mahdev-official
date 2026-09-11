@@ -34,10 +34,10 @@ import { DivisionId } from '../../types';
 import { getRentalAssetCount } from '../../utils/assetMetrics';
 
 export const AdminDivisionsView: React.FC = () => {
-  const { saveDivision, divisions: firestoreDivisions, companySettings, products } = useFirestoreDataContext();
+  const { saveDivision, refreshAll, divisions: firestoreDivisions, companySettings, products } = useFirestoreDataContext();
   const [divisions, setDivisions] = useState<CmsDivision[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'deleted'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'coming_soon' | 'deleted'>('all');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Modal States
@@ -107,13 +107,70 @@ export const AdminDivisionsView: React.FC = () => {
   };
 
   const loadDivisions = () => {
+    const rawStatus = statusFilter === 'coming_soon' ? 'all' : statusFilter;
     const data = cmsService.getAll<CmsDivision>('divisions', {
       search: searchQuery,
-      status: statusFilter,
+      status: rawStatus,
       includeDeleted: statusFilter === 'deleted' || statusFilter === 'all',
     });
+
+    // Merge with latest Firestore state
+    const merged = data.map((d) => {
+      const canonicalKey =
+        d.divisionKey === 'u1'
+          ? 'u1-studio'
+          : d.divisionKey === 'it'
+          ? 'it-solutions'
+          : d.divisionKey === 'mart'
+          ? 'online-mart'
+          : d.divisionKey === 'travels'
+          ? 'travels'
+          : d.divisionKey === 'sws'
+          ? 'sws'
+          : d.divisionKey || d.id;
+
+      const fsMatch = firestoreDivisions.find(
+        (fd) =>
+          fd.id === d.divisionKey ||
+          fd.id === canonicalKey ||
+          fd.id === d.id ||
+          fd.slug === d.divisionKey ||
+          fd.slug === canonicalKey ||
+          fd.slug === d.id
+      );
+
+      if (fsMatch) {
+        const isComingSoon = Boolean(
+          fsMatch.isComingSoon ||
+            fsMatch.comingSoon ||
+            fsMatch.status === 'coming_soon'
+        );
+        return {
+          ...d,
+          isComingSoon,
+          comingSoon: isComingSoon,
+          status: (isComingSoon
+            ? 'coming_soon'
+            : d.status === 'coming_soon'
+            ? d.isActive
+              ? 'active'
+              : 'inactive'
+            : d.status) as CmsDivision['status'],
+          comingSoonTitle: (fsMatch as any).comingSoonTitle || d.comingSoonTitle,
+          comingSoonMessage: (fsMatch as any).comingSoonMessage || d.comingSoonMessage,
+          comingSoonExpectedLaunch: (fsMatch as any).comingSoonExpectedLaunch || d.comingSoonExpectedLaunch,
+          order: typeof fsMatch.order === 'number' ? fsMatch.order : d.order,
+        };
+      }
+      return d;
+    });
+
+    const filtered = statusFilter === 'coming_soon'
+      ? merged.filter((d) => d.isComingSoon || d.comingSoon || d.status === 'coming_soon')
+      : merged;
+
     // Sort ascending by order
-    const sorted = [...data].sort((a, b) => {
+    const sorted = [...filtered].sort((a, b) => {
       const ordA = typeof a.order === 'number' ? a.order : 99;
       const ordB = typeof b.order === 'number' ? b.order : 99;
       return ordA - ordB;
@@ -125,7 +182,7 @@ export const AdminDivisionsView: React.FC = () => {
     loadDivisions();
     const unsub = cmsService.subscribe('divisions', loadDivisions);
     return () => unsub();
-  }, [searchQuery, statusFilter]);
+  }, [searchQuery, statusFilter, firestoreDivisions]);
 
   const handleOpenCreate = () => {
     setEditingDivision(null);
@@ -317,6 +374,9 @@ export const AdminDivisionsView: React.FC = () => {
         await cmsService.create<CmsDivision>('divisions', payload);
         addToast('success', 'Division Created', `"${formData.name}" registered & live synced with Firestore.`);
       }
+      if (refreshAll) {
+        await refreshAll();
+      }
       setIsDirty(false);
       setIsEditorOpen(false);
       loadDivisions();
@@ -330,14 +390,19 @@ export const AdminDivisionsView: React.FC = () => {
   const handleToggleComingSoon = async (div: CmsDivision) => {
     const isCurrentlyComingSoon = !!(div.isComingSoon || div.comingSoon || div.status === 'coming_soon');
     const nextVal = !isCurrentlyComingSoon;
+    const rawKey = (div.divisionKey || (div as any).slug || div.id || '').toLowerCase();
     const canonicalKey =
-      div.divisionKey === 'u1'
+      rawKey === 'u1' || rawKey === 'u1-studio' || rawKey === 'u1-cinema'
         ? 'u1-studio'
-        : div.divisionKey === 'it'
+        : rawKey === 'it' || rawKey === 'it-solutions' || rawKey === 'mahdev-it'
         ? 'it-solutions'
-        : div.divisionKey === 'mart'
+        : rawKey === 'mart' || rawKey === 'online-mart' || rawKey === 'mahdev-mart'
         ? 'online-mart'
-        : div.divisionKey || div.id;
+        : rawKey === 'sws' || rawKey === 'sws-event-management' || rawKey === 'sws-events'
+        ? 'sws'
+        : rawKey === 'travels' || rawKey === 'mahdev-travels'
+        ? 'travels'
+        : rawKey;
 
     try {
       if (saveDivision) {
@@ -352,11 +417,14 @@ export const AdminDivisionsView: React.FC = () => {
         comingSoon: nextVal,
         status: nextVal ? 'coming_soon' : (div.isActive ? 'active' : 'inactive'),
       });
+      if (refreshAll) {
+        await refreshAll();
+      }
       loadDivisions();
       addToast(
         'success',
         nextVal ? 'Division Set to Coming Soon' : 'Division Restored to Live Portal',
-        `"${div.name}" is now ${nextVal ? 'displaying the Coming Soon landing page to visitors' : 'fully accessible as a live division portal'}.`
+        `"${div.name}" is now ${nextVal ? 'displaying the Coming Soon landing page on the website' : 'fully accessible as a live division portal'}.`
       );
     } catch (err: any) {
       addToast('error', 'Update Failed', err?.message || 'Failed to update division status');
@@ -414,8 +482,8 @@ export const AdminDivisionsView: React.FC = () => {
     // SWS as 1st, U1 as 2nd, IT as 3rd, Travels as 4th, Mart as 5th
     const defaultKeyOrder = ['sws', 'u1', 'it', 'travels', 'mart'];
     const sorted = [...divisions].sort((a, b) => {
-      const keyA = a.divisionKey || a.id.replace('div-', '');
-      const keyB = b.divisionKey || b.id.replace('div-', '');
+      const keyA = a.divisionKey || (a.id ? String(a.id).replace('div-', '') : '');
+      const keyB = b.divisionKey || (b.id ? String(b.id).replace('div-', '') : '');
       const idxA = defaultKeyOrder.indexOf(keyA);
       const idxB = defaultKeyOrder.indexOf(keyB);
       return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
@@ -453,6 +521,11 @@ export const AdminDivisionsView: React.FC = () => {
     loadDivisions();
   };
 
+  const comingSoonDivisions = divisions.filter(
+    (d) => d.isComingSoon || d.comingSoon || d.status === 'coming_soon'
+  );
+  const comingSoonCount = comingSoonDivisions.length;
+
   return (
     <div className="space-y-6">
       <AdminToast toasts={toasts} onDismiss={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))} />
@@ -465,6 +538,12 @@ export const AdminDivisionsView: React.FC = () => {
             <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
               {divisions.length} Units
             </span>
+            {comingSoonCount > 0 && (
+              <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Clock className="w-3 h-3 text-amber-600" />
+                {comingSoonCount} Coming Soon
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-500">
             Manage autonomous business pillars, logos, hero copy, imagery, and SEO metadata.
@@ -478,6 +557,37 @@ export const AdminDivisionsView: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* Coming Soon Active Alert Banner */}
+      {comingSoonCount > 0 && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-2xl border border-amber-200 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold shadow-xs shrink-0">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-amber-950 text-sm">
+                  Coming Soon Mode Enabled ({comingSoonCount} {comingSoonCount === 1 ? 'Division' : 'Divisions'})
+                </span>
+                <span className="bg-amber-200 text-amber-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Live on Website
+                </span>
+              </div>
+              <p className="text-amber-800 text-xs mt-0.5">
+                Active for: <strong>{comingSoonDivisions.map((d) => d.shortName || d.name).join(', ')}</strong>. Visitors to these routes see the Coming Soon landing page with VIP registration.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setStatusFilter(statusFilter === 'coming_soon' ? 'all' : 'coming_soon')}
+            className="px-3 py-1.5 bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 rounded-xl font-bold transition-all text-xs shrink-0 cursor-pointer shadow-2xs"
+          >
+            {statusFilter === 'coming_soon' ? 'Show All Divisions' : 'Filter Coming Soon'}
+          </button>
+        </div>
+      )}
 
       {/* Website Division Display Sequence Ribbon */}
       <div className="bg-gradient-to-r from-blue-50/80 via-slate-50 to-white p-4 rounded-2xl border border-blue-100/80 shadow-2xs">
@@ -516,24 +626,36 @@ export const AdminDivisionsView: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2 pt-1">
           {divisions.map((d, idx) => {
             const isFirst = (d.order || idx + 1) === 1;
+            const isComingSoon = !!(d.isComingSoon || d.comingSoon || d.status === 'coming_soon');
             return (
               <div
                 key={d.id}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
                   isFirst
                     ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                    : isComingSoon
+                    ? 'bg-amber-50 text-amber-950 border-amber-200 shadow-2xs'
                     : 'bg-white text-slate-800 border-slate-200 hover:border-blue-200'
                 }`}
               >
                 <span
                   className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
-                    isFirst ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+                    isFirst
+                      ? 'bg-white/20 text-white'
+                      : isComingSoon
+                      ? 'bg-amber-200 text-amber-950'
+                      : 'bg-slate-100 text-slate-700'
                   }`}
                 >
                   #{d.order || idx + 1}
                 </span>
                 <span className="truncate max-w-[130px]">{d.shortName || d.name}</span>
                 {isFirst && <Crown className="w-3.5 h-3.5 text-amber-300 ml-0.5" />}
+                {isComingSoon && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded bg-amber-200 text-amber-950 text-[9px] font-extrabold uppercase tracking-wide">
+                    Coming Soon
+                  </span>
+                )}
               </div>
             );
           })}
@@ -560,8 +682,9 @@ export const AdminDivisionsView: React.FC = () => {
             onChange={(e) => setStatusFilter(e.target.value as any)}
             className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 font-semibold cursor-pointer"
           >
-            <option value="all">All Divisions</option>
-            <option value="active">Active Only</option>
+            <option value="all">All Divisions ({divisions.length})</option>
+            <option value="active">Active Live Only</option>
+            <option value="coming_soon">Coming Soon Enabled ({comingSoonCount})</option>
             <option value="inactive">Inactive Only</option>
             <option value="deleted">Archived (Soft Deleted)</option>
           </select>
@@ -593,11 +716,16 @@ export const AdminDivisionsView: React.FC = () => {
                 divisions.map((div, idx) => {
                   const currentOrder = div.order || idx + 1;
                   const isFirst = currentOrder === 1;
+                  const isComingSoonActive = !!(div.isComingSoon || div.comingSoon || div.status === 'coming_soon');
                   return (
                     <tr
                       key={div.id}
                       className={`hover:bg-slate-50/80 transition-colors ${
-                        div.isDeleted ? 'bg-slate-50/50 opacity-60' : ''
+                        div.isDeleted
+                          ? 'bg-slate-50/50 opacity-60'
+                          : isComingSoonActive
+                          ? 'bg-amber-50/50 border-l-4 border-l-amber-500 shadow-2xs'
+                          : ''
                       }`}
                     >
                       {/* Order Controls */}
@@ -659,9 +787,16 @@ export const AdminDivisionsView: React.FC = () => {
                           </div>
                           <div>
                             <span className="font-bold text-slate-900 block">{div.name}</span>
-                            <span className="text-[10px] text-blue-600 uppercase font-bold tracking-wider">
-                              {div.badge || div.divisionKey}
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                              <span className="text-[10px] text-blue-600 uppercase font-bold tracking-wider">
+                                {div.badge || div.divisionKey}
+                              </span>
+                              {(div.isComingSoon || div.comingSoon || div.status === 'coming_soon') && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-400 text-slate-950 border border-amber-500 shadow-2xs">
+                                  <Clock className="w-2.5 h-2.5" /> Coming Soon Active
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -692,10 +827,10 @@ export const AdminDivisionsView: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleToggleComingSoon(div)}
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 border ${
+                              className={`w-full flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer border ${
                                 div.isComingSoon || div.comingSoon || div.status === 'coming_soon'
-                                  ? 'bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200'
-                                  : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 hover:text-slate-800'
+                                  ? 'bg-amber-100 text-amber-950 border-amber-300 hover:bg-amber-200 shadow-2xs'
+                                  : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-900'
                               }`}
                               title={
                                 div.isComingSoon || div.comingSoon || div.status === 'coming_soon'
@@ -703,10 +838,19 @@ export const AdminDivisionsView: React.FC = () => {
                                   : 'Click to enable Coming Soon page'
                               }
                             >
-                              <Clock className="w-2.5 h-2.5" />
-                              {div.isComingSoon || div.comingSoon || div.status === 'coming_soon'
-                                ? 'Coming Soon'
-                                : 'Set Coming Soon'}
+                              <span className="flex items-center gap-1">
+                                <Clock className={`w-3 h-3 ${div.isComingSoon || div.comingSoon || div.status === 'coming_soon' ? 'text-amber-700' : 'text-slate-400'}`} />
+                                {div.isComingSoon || div.comingSoon || div.status === 'coming_soon'
+                                  ? 'Coming Soon'
+                                  : 'Portal Live'}
+                              </span>
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold ${
+                                div.isComingSoon || div.comingSoon || div.status === 'coming_soon'
+                                  ? 'bg-amber-200 text-amber-950'
+                                  : 'text-blue-600 hover:underline'
+                              }`}>
+                                {div.isComingSoon || div.comingSoon || div.status === 'coming_soon' ? 'Switch Live' : 'Set Coming Soon'}
+                              </span>
                             </button>
                           </div>
                         )}

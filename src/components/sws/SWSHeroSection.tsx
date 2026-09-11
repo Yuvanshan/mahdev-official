@@ -7,14 +7,21 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { getRentalAssetCount } from '../../utils/assetMetrics';
 
 interface SWSHeroSectionProps {
-  onOpenBooking: () => void;
+  onOpenBooking?: () => void;
+  onBookNow?: () => void;
+  onRequestQuote?: () => void;
+  onExploreServices?: () => void;
   onExploreRentals?: () => void;
 }
 
 export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
   onOpenBooking,
+  onBookNow,
+  onRequestQuote,
+  onExploreServices,
   onExploreRentals,
 }) => {
+  const handleBook = onBookNow || onOpenBooking || (() => {});
   const { divisions, companySettings, siteSettings, products } = useFirestoreDataContext();
 
   const swsDiv = divisions?.find(
@@ -36,11 +43,15 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
     companySettings?.primaryPhone ||
     '075 092 8078';
 
-  const heroImage =
+  const rawHeroImage =
     (swsDiv as any)?.imageUrl ||
     (swsDiv as any)?.heroImageUrl ||
-    (swsDiv as any)?.hero?.bgImage ||
-    'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
+    (swsDiv as any)?.hero?.bgImage;
+
+  const heroImage =
+    typeof rawHeroImage === 'string' && rawHeroImage.trim() !== ''
+      ? rawHeroImage.trim()
+      : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
 
   const badgeText =
     (swsDiv as any)?.hero?.badge ||
@@ -129,7 +140,7 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
           <Button
             variant="electric"
             size="lg"
-            onClick={onBookNow}
+            onClick={handleBook}
             leftIcon={<Calendar className="w-4 h-4" />}
             rightIcon={<ArrowRight className="w-4 h-4" />}
             className="font-bold px-7 py-3 text-sm shadow-lg shadow-blue-600/25"
@@ -152,9 +163,10 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
           <a
             href={getTelLink(hotline)}
             className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-white/15 bg-slate-900/80 text-slate-200 text-sm font-semibold hover:border-blue-400 hover:text-white transition-all backdrop-blur-sm"
+            title={`Call SWS Desk ${hotline}`}
           >
             <Phone className="w-4 h-4 text-emerald-400" />
-            <span>{hotline}</span>
+            <span>Direct Desk</span>
           </a>
         </motion.div>
 

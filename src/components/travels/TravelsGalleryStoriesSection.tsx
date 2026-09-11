@@ -218,7 +218,7 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs sm:text-sm font-bold shadow-md transition-all cursor-pointer active:scale-95"
               >
                 <MessageCircle className="w-4 h-4 fill-white/20" />
-                <span>Inquire on WhatsApp (0750928078)</span>
+                <span>Inquire on WhatsApp</span>
               </button>
             </div>
           </div>

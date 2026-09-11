@@ -231,7 +231,7 @@ export const AdminUsersView: React.FC = () => {
                     ? 'bg-blue-100 text-blue-800 border border-blue-200'
                     : 'bg-slate-100 text-slate-700'
                 }`}>
-                  {user.role.replace('_', ' ')}
+                  {String(user.role || 'user').replace(/_/g, ' ')}
                 </span>
               </div>
 

@@ -29,25 +29,27 @@ export const Image: React.FC<ImageProps> = ({
     auto: '',
   };
 
-  const imageSrc = hasError && fallbackSrc ? fallbackSrc : src;
+  const validSrc = src && typeof src === 'string' && src.trim() !== '' ? src.trim() : null;
+  const validFallback = fallbackSrc && typeof fallbackSrc === 'string' && fallbackSrc.trim() !== '' ? fallbackSrc.trim() : null;
+  const imageSrc = hasError ? validFallback : (validSrc || validFallback);
 
   return (
     <div
       className={`relative overflow-hidden bg-slate-100 rounded-xl transform-gpu will-change-transform ${aspectStyles[aspectRatio]} ${className}`}
     >
       {/* Premium Shimmer Skeleton while loading */}
-      {!isLoaded && !hasError && (
+      {!isLoaded && !hasError && imageSrc && (
         <div className="absolute inset-0 bg-slate-200/70 overflow-hidden z-10">
           <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent animate-[shimmer_1.5s_infinite]" />
         </div>
       )}
 
-      {hasError && !fallbackSrc ? (
+      {!imageSrc || (hasError && !validFallback) ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100 text-slate-400 text-xs p-4 text-center select-none">
           <div className="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center font-display font-bold text-slate-400 mb-1">
             M
           </div>
-          <span className="text-[11px]">Mahdev Asset</span>
+          <span className="text-[11px]">{alt || 'Mahdev Asset'}</span>
         </div>
       ) : (
         <img

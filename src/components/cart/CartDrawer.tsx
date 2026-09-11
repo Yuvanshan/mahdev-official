@@ -224,9 +224,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                         {item.selectedVariant.name}
                       </span>
                     )}
-                    {item.productType !== 'physical' && (
+                    {item.productType && item.productType !== 'physical' && (
                       <span className="text-[10px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                        {item.productType.replace('_', ' ')}
+                        {String(item.productType).replace(/_/g, ' ')}
                       </span>
                     )}
                   </div>

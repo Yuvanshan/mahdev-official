@@ -34,7 +34,11 @@ export const SWSServiceCard: React.FC<SWSServiceCardProps> = ({
       <div>
         <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
           <img
-            src={service.imageUrl}
+            src={
+              service.imageUrl && service.imageUrl.trim() !== ''
+                ? service.imageUrl.trim()
+                : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
+            }
             alt={service.name}
             loading="lazy"
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -136,7 +140,7 @@ export const SWSServiceCard: React.FC<SWSServiceCardProps> = ({
                 type: 'service',
               });
             }}
-            title="Send WhatsApp inquiry with image to 0750928078"
+            title="Send WhatsApp inquiry with image"
             className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-[#25D366] hover:bg-[#20bd5a] shadow-xs hover:shadow-md hover:shadow-emerald-500/20 transition-all cursor-pointer active:scale-95"
           >
             <MessageCircle className="w-3.5 h-3.5 fill-white/20 shrink-0" />

@@ -95,7 +95,9 @@ export const SWSPackagesSection: React.FC<SWSPackagesSectionProps> = ({ onBookPa
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-6">
         {packages.map((pkg) => {
           const currentIndex = activeImageIndices[pkg.id] || 0;
-          const currentImage = pkg.images[currentIndex] || pkg.images[0];
+          const validImages = (pkg.images || []).filter((img): img is string => typeof img === 'string' && img.trim() !== '');
+          const fallbackPkgImg = 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80';
+          const currentImage = validImages[currentIndex] || validImages[0] || fallbackPkgImg;
 
           return (
             <div

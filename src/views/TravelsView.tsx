@@ -28,19 +28,32 @@ import { TravelPackage, TravelDestination, DayTour, Vehicle } from '../data/trav
 import { DIVISION_LIST } from '../config/divisions';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
+import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
 
 interface TravelsViewProps {
   onNavigate: (route: string) => void;
 }
 
 export const TravelsView: React.FC<TravelsViewProps> = ({ onNavigate }) => {
-  const { divisions, companySettings } = useFirestoreDataContext();
+  const { divisions, companySettings, isInitialLoading, isFetching } = useFirestoreDataContext();
   const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
   const [selectedPackageForDetail, setSelectedPackageForDetail] = useState<TravelPackage | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [bookingPackage, setBookingPackage] = useState<TravelPackage | null>(null);
   const [bookingTour, setBookingTour] = useState<DayTour | null>(null);
   const [bookingVehicle, setBookingVehicle] = useState<Vehicle | null>(null);
+
+  if (divisions.length === 0 && (isInitialLoading || isFetching)) {
+    return (
+      <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-slate-950 text-white">
+        <DataLoadingOverlay
+          dark
+          message="Loading Mahdev Travels..."
+          subMessage="Fetching travel packages & fleet availability from Firestore"
+        />
+      </div>
+    );
+  }
 
   const handleOpenBooking = (
     pkg?: TravelPackage | null,

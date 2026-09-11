@@ -117,7 +117,7 @@ export const AdminCategoriesView: React.FC = () => {
 
     setIsSaving(true);
     try {
-      const slug = formData.slug.trim() || formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const slug = (formData.slug || '').trim() || String(formData.name || 'category').toLowerCase().replace(/[^a-z0-9]+/g, '-');
       const payload = { ...formData, slug };
 
       if (editingCategory) {

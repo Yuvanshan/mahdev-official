@@ -56,12 +56,14 @@ export interface WhatsAppOrderPayload {
 /**
  * Derives a clean, lookup-friendly SKU code from titles when an explicit SKU is omitted
  */
-export function deriveLookupSku(title: string, divisionName?: string): string {
+export function deriveLookupSku(title?: string, divisionName?: string): string {
   const prefix = divisionName
-    ? divisionName.replace(/[^A-Z0-9]/gi, '').slice(0, 3).toUpperCase()
+    ? String(divisionName).replace(/[^A-Z0-9]/gi, '').slice(0, 3).toUpperCase()
     : 'MDV';
-  const cleanTitle = title.replace(/[^A-Z0-9]/gi, '').slice(0, 6).toUpperCase();
-  return `${prefix}-${cleanTitle || 'REF'}`;
+  const cleanTitle = title
+    ? String(title).replace(/[^A-Z0-9]/gi, '').slice(0, 6).toUpperCase()
+    : 'ITEM';
+  return `${prefix || 'MDV'}-${cleanTitle || 'REF'}`;
 }
 
 /**

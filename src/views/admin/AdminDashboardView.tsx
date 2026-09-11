@@ -810,7 +810,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Settled Revenue ({dateFilter.replace('_', ' ')})
+              Settled Revenue ({String(dateFilter || 'all_time').replace(/_/g, ' ')})
             </span>
             <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <DollarSign className="w-4 h-4" />
@@ -1082,7 +1082,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             <Clock className="w-8 h-8 text-slate-400 mx-auto" />
             <h4 className="font-bold text-xs text-slate-700">No sufficient data yet.</h4>
             <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
-              No orders or bookings were recorded in Firestore for the selected period ({dateFilter.replace('_', ' ')}). New transactions will automatically plot here in real-time.
+              No orders or bookings were recorded in Firestore for the selected period ({String(dateFilter || 'all_time').replace(/_/g, ' ')}). New transactions will automatically plot here in real-time.
             </p>
           </div>
         ) : (
@@ -1214,7 +1214,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           : 'bg-amber-100 text-amber-800'
                       }`}
                     >
-                      {item.status.replace('_', ' ')}
+                      {String(item.status || 'alert').replace(/_/g, ' ')}
                     </span>
                     <Button
                       variant="outline"

@@ -107,7 +107,6 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
         service: `${divisionName} VIP Launch Alert`,
         message: `Registered for early VIP access & launch announcement for ${divisionName}.`,
         status: 'new',
-        priority: 'high',
       });
       setIsSubscribed(true);
     } catch (err) {

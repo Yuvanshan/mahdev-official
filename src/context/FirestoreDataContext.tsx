@@ -53,6 +53,7 @@ import { bookingService } from '../services/bookingService';
 export interface FirestoreDataContextValue {
   isInitialLoading: boolean;
   isReady: boolean;
+  isFetching: boolean;
   error: Error | null;
   companySettings: FirestoreCompanySettings;
   siteSettings: FirestoreSiteSettings;
@@ -85,6 +86,7 @@ const FirestoreDataContext = createContext<FirestoreDataContextValue | null>(nul
 export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
   const [isReady, setIsReady] = useState<boolean>(false);
+  const [isFetching, setIsFetching] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
   const [companySettings, setCompanySettings] = useState<FirestoreCompanySettings>(() => {
@@ -216,6 +218,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Explicit Manual Refresh: loads all collections concurrently from Firestore
   const refreshAll = useCallback(async () => {
+    setIsFetching(true);
     try {
       setError(null);
       const [
@@ -340,25 +343,18 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (err) {
       console.error('[FirestoreDataContext] Refresh error:', err);
       setError(err instanceof Error ? err : new Error(String(err)));
+    } finally {
+      setIsFetching(false);
     }
   }, []);
 
   useEffect(() => {
     let isMounted = true;
-    let initialCount = 0;
-    const requiredSources = 4; // company, site, home, divisions
 
     const markReady = () => {
       if (isMounted) {
         setIsInitialLoading(false);
         setIsReady(true);
-      }
-    };
-
-    const checkInitialReady = () => {
-      initialCount++;
-      if (initialCount >= requiredSources) {
-        markReady();
       }
     };
 
@@ -376,7 +372,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       });
 
-    // Fallback timeout: only used if network is unreachable or blocked, generous enough to avoid prematurely flashing defaults
+    // Fallback timeout: only used if network is unreachable or blocked
     const safetyTimer = setTimeout(() => {
       markReady();
     }, 4500);
@@ -398,7 +394,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           } catch {}
           return merged;
         });
-        checkInitialReady();
       }
     });
 
@@ -418,7 +413,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           } catch {}
           return merged;
         });
-        checkInitialReady();
       }
     });
 
@@ -429,7 +423,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(data));
         } catch {}
         cmsService.syncHomepageConfig(data);
-        checkInitialReady();
       }
     });
 
@@ -441,7 +434,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           localStorage.setItem('mahdev_cached_divisions', JSON.stringify(sorted));
         } catch {}
         cmsService.syncEntityFromFirestore('divisions', sorted);
-        checkInitialReady();
       }
     });
 
@@ -449,7 +441,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       if (isMounted) {
         setCategories(data);
         cmsService.syncEntityFromFirestore('categories', data);
-        checkInitialReady();
       }
     });
 
@@ -458,7 +449,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         setServices(data);
         bookingService.syncWithFirestore(data);
         cmsService.syncEntityFromFirestore('services', data);
-        checkInitialReady();
       }
     });
 
@@ -467,7 +457,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         setProducts(data);
         catalogService.syncWithFirestore(data, categories);
         cmsService.syncEntityFromFirestore('products', data);
-        checkInitialReady();
       }
     });
 
@@ -604,10 +593,35 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const saveDivision = useCallback(async (id: string, data: Partial<FirestoreDivision>) => {
     await firestoreDivisionsService.saveDivision(id, data);
-    const canonicalId = id === 'u1' ? 'u1-studio' : id === 'it' ? 'it-solutions' : id === 'mart' ? 'online-mart' : id;
+    const canonicalId =
+      id === 'u1' || id === 'u1-studio'
+        ? 'u1-studio'
+        : id === 'it' || id === 'it-solutions'
+        ? 'it-solutions'
+        : id === 'mart' || id === 'online-mart'
+        ? 'online-mart'
+        : id === 'sws' || id === 'sws-event-management'
+        ? 'sws'
+        : id === 'travels' || id === 'mahdev-travels'
+        ? 'travels'
+        : id;
+
     setDivisions((prev) => {
       const updated = prev.map((d) => {
-        if (d.id === id || d.id === canonicalId || d.slug === id || d.slug === canonicalId) {
+        const dCanonical =
+          d.id === 'u1' || d.id === 'u1-studio'
+            ? 'u1-studio'
+            : d.id === 'it' || d.id === 'it-solutions'
+            ? 'it-solutions'
+            : d.id === 'mart' || d.id === 'online-mart'
+            ? 'online-mart'
+            : d.id === 'sws' || d.id === 'sws-event-management'
+            ? 'sws'
+            : d.id === 'travels' || d.id === 'mahdev-travels'
+            ? 'travels'
+            : d.id;
+
+        if (d.id === id || d.id === canonicalId || d.slug === id || d.slug === canonicalId || dCanonical === canonicalId) {
           return { ...d, ...data, id: d.id };
         }
         return d;
@@ -615,6 +629,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
         localStorage.setItem('mahdev_cached_divisions', JSON.stringify(updated));
       } catch {}
+      cmsService.syncEntityFromFirestore('divisions', updated);
       return updated;
     });
   }, []);
@@ -623,6 +638,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     () => ({
       isInitialLoading,
       isReady,
+      isFetching,
       error,
       companySettings,
       siteSettings,

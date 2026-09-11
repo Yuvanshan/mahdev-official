@@ -91,10 +91,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     if (heroConfig?.showcaseItems && heroConfig.showcaseItems.length > 0) {
       return heroConfig.showcaseItems.map((item) => ({
         ...item,
+        name: item.name || item.id?.toUpperCase() || 'Division',
         highlight:
-          item.id === 'sws' && item.highlight?.includes('5,000+')
-            ? item.highlight.replace('5,000+', rentalCount)
-            : item.highlight,
+          item.id === 'sws' && typeof item.highlight === 'string' && item.highlight.includes('5,000+')
+            ? item.highlight.replace('5,000+', rentalCount || '5,000+')
+            : item.highlight || '',
         route: getCanonicalRoute(item.id, item.route || `/${item.id}`),
       }));
     }
@@ -117,7 +118,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         if (seen.has(id)) continue;
         seen.add(id);
 
-        const img = d.heroImageUrl || d.imageUrl || (d.hero as any)?.bgImage || d.logoUrl || '';
+        const defaultItemFallback =
+          DEFAULT_HERO_SHOWCASE_ITEMS.find((s) => s.id === id) || DEFAULT_HERO_SHOWCASE_ITEMS[0];
+        const rawImg = d.heroImageUrl || d.imageUrl || (d.hero as any)?.bgImage || d.logoUrl;
+        const img =
+          rawImg && typeof rawImg === 'string' && rawImg.trim() !== ''
+            ? rawImg.trim()
+            : defaultItemFallback.image;
+
         const defaultHighlight =
           id === 'sws'
             ? `${rentalCount} Rental Inventory • Mandaps • Stage Lighting`
@@ -125,7 +133,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
         items.push({
           id,
-          name: d.name,
+          name: d.name || d.shortName || id.toUpperCase(),
           badge: d.badge || (d.hero as any)?.badge || 'Enterprise Division',
           tagline: (d.hero as any)?.subtitle || d.tagline || d.shortDescription || '',
           highlight: defaultHighlight,
@@ -200,12 +208,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
   // Current active showcase WhatsApp URL containing division image & details
   const activeWhatsAppUrl = useMemo(() => {
+    const title = currentItem?.name || currentItem?.id?.toUpperCase() || 'Mahdev Divisions';
     return getWhatsAppInquiryUrl({
-      title: currentItem.name,
-      divisionName: currentItem.name,
-      category: currentItem.badge,
-      imageUrl: currentItem.image,
-      description: currentItem.highlight || currentItem.tagline,
+      title,
+      divisionName: title,
+      category: currentItem?.badge || 'Enterprise Division',
+      imageUrl: currentItem?.image || '',
+      description: currentItem?.highlight || currentItem?.tagline || '',
       type: 'general',
     });
   }, [currentItem]);
@@ -267,39 +276,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               {description}
             </motion.p>
 
-            {/* Corporate Hotline & WhatsApp Indicators - Mobile & Web */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.18 }}
-              className="flex flex-wrap items-center gap-2 pt-1"
-            >
-              <a
-                href={getTelLink(hotline)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-slate-300 text-xs font-mono hover:border-slate-700 hover:text-white transition-colors shadow-2xs"
-                title="Direct Corporate Hotline 075 092 8078"
-              >
-                <Phone className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                <span>Hotline: <strong className="text-white">075 092 8078</strong></span>
-              </a>
-              <a
-                href={activeWhatsAppUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-950/50 border border-emerald-500/30 text-emerald-300 text-xs font-mono hover:bg-emerald-900/50 transition-colors shadow-2xs"
-                title="Corporate WhatsApp 075 092 8078"
-              >
-                <MessageCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>WhatsApp: <strong className="text-emerald-200">075 092 8078</strong></span>
-              </a>
-            </motion.div>
-
-            {/* Direct CTAs: Explore + Call Hotline + Direct WhatsApp with Image */}
+            {/* Direct CTAs: Explore + Call + Direct WhatsApp */}
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1"
+              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2"
             >
               <button
                 id="hero-explore-mahdev-btn"
@@ -313,21 +295,21 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <a
                 href={getTelLink(hotline)}
                 className="inline-flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl border border-slate-800 bg-slate-900/90 text-slate-200 text-sm font-medium hover:border-slate-700 hover:text-white transition-colors backdrop-blur-sm"
-                title="Call Corporate Hotline 075 092 8078"
+                title="Call Corporate Line"
               >
                 <Phone className="w-4 h-4 text-blue-400 shrink-0" />
-                <span>Call 075 092 8078</span>
+                <span>Call Us</span>
               </a>
 
               <a
                 href={activeWhatsAppUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                title="Send inquiry to Corporate WhatsApp 075 092 8078"
+                title="Send inquiry via WhatsApp"
                 className="inline-flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-sm font-semibold shadow-xs transition-colors cursor-pointer"
               >
                 <MessageCircle className="w-4 h-4 shrink-0" />
-                <span>WhatsApp 075 092 8078</span>
+                <span>WhatsApp</span>
               </a>
             </motion.div>
 
@@ -347,7 +329,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   onClick={() => onNavigate(item.route)}
                   className="px-3 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-white bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer"
                 >
-                  {item.name.replace('Mahdev ', '')}
+                  {String(item.name || item.id || 'Division').replace('Mahdev ', '')}
                 </button>
               ))}
             </motion.div>
@@ -399,18 +381,22 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <div className="relative rounded-xl overflow-hidden aspect-[4/3] sm:aspect-[16/10] bg-slate-950 border border-slate-800/80 group">
                 <AnimatePresence mode="wait">
                   <motion.div
-                    key={currentItem.id}
+                    key={currentItem?.id || 'default'}
                     initial={{ opacity: 0, scale: 1.03 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.98 }}
                     transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                     className="absolute inset-0"
                   >
-                    <img
-                      src={currentItem.image}
-                      alt={currentItem.name}
-                      className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-700 ease-out"
-                    />
+                    {currentItem?.image && currentItem.image.trim() !== '' ? (
+                      <img
+                        src={currentItem.image}
+                        alt={currentItem?.name || 'Division'}
+                        className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-700 ease-out"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-slate-900" />
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent" />
 
                     {/* Card Content Overlay */}
@@ -418,7 +404,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                       {/* Top Metadata Row */}
                       <div className="flex items-center justify-between">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-mono font-semibold uppercase tracking-wider bg-slate-950/80 text-slate-300 border border-slate-700/80 backdrop-blur-md">
-                          {currentItem.badge}
+                          {currentItem?.badge || 'Enterprise Division'}
                         </span>
                         <span className="text-[10px] font-mono text-slate-400 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-slate-800 backdrop-blur-md">
                           Incorporated 2022
@@ -429,10 +415,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                       <div className="space-y-3">
                         <div>
                           <h3 className="text-xl font-bold text-white tracking-tight">
-                            {currentItem.name}
+                            {currentItem?.name || 'Division'}
                           </h3>
                           <p className="text-xs text-slate-300 font-normal mt-0.5 line-clamp-1">
-                            {currentItem.highlight}
+                            {currentItem?.highlight || ''}
                           </p>
                         </div>
 
@@ -442,14 +428,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-medium hover:bg-emerald-500 hover:text-white transition-colors cursor-pointer"
-                            title="Inquire via WhatsApp 075 092 8078"
+                            title="Inquire via WhatsApp"
                           >
                             <MessageCircle className="w-3.5 h-3.5 shrink-0" />
-                            <span>WhatsApp (075 092 8078)</span>
+                            <span>Inquire via WhatsApp</span>
                           </a>
 
                           <button
-                            onClick={() => onNavigate(currentItem.route)}
+                            onClick={() => onNavigate(currentItem?.route || '/')}
                             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white text-slate-900 text-xs font-semibold hover:bg-slate-100 transition-colors cursor-pointer shadow-xs group/btn"
                           >
                             <span>View Division</span>

@@ -38,7 +38,11 @@ export const SWSServiceDetailModal: React.FC<SWSServiceDetailModalProps> = ({
 
   if (!isOpen || !service) return null;
 
-  const images = service.gallery && service.gallery.length > 0 ? service.gallery : [service.imageUrl];
+  const rawImages = service.gallery && service.gallery.length > 0 ? service.gallery : [service.imageUrl];
+  const images = rawImages.filter((img): img is string => typeof img === 'string' && img.trim() !== '');
+  if (images.length === 0) {
+    images.push('https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80');
+  }
 
   const handlePrevImage = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -238,11 +242,11 @@ export const SWSServiceDetailModal: React.FC<SWSServiceDetailModalProps> = ({
                   type: 'service',
                 });
               }}
-              title="Inquire about this service on WhatsApp 0750928078"
+              title="Inquire about this service on WhatsApp"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold shadow-md shadow-emerald-500/20 transition-all cursor-pointer active:scale-95"
             >
               <MessageCircle className="w-3.5 h-3.5 fill-white/20" />
-              <span>WhatsApp (0750928078)</span>
+              <span>Inquire on WhatsApp</span>
             </button>
 
             <Button

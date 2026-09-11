@@ -44,7 +44,7 @@ export const TrustedCompaniesSection: React.FC<TrustedCompaniesSectionProps> = (
                 onExplorePartners ? 'cursor-pointer' : 'cursor-default'
               }`}
             >
-              {company.logoUrl ? (
+              {company.logoUrl && company.logoUrl.trim() !== '' ? (
                 <img
                   src={company.logoUrl}
                   alt={company.name}

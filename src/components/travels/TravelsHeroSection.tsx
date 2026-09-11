@@ -39,11 +39,15 @@ export const TravelsHeroSection: React.FC<TravelsHeroSectionProps> = ({
     companySettings?.primaryPhone ||
     '075 092 8078';
 
-  const heroImage =
+  const rawHeroImage =
     (travelsDiv as any)?.imageUrl ||
     (travelsDiv as any)?.heroImageUrl ||
-    (travelsDiv as any)?.hero?.bgImage ||
-    'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=2000&q=85';
+    (travelsDiv as any)?.hero?.bgImage;
+
+  const heroImage =
+    typeof rawHeroImage === 'string' && rawHeroImage.trim() !== ''
+      ? rawHeroImage.trim()
+      : 'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=2000&q=85';
 
   const badgeText =
     (travelsDiv as any)?.hero?.badge ||
@@ -144,9 +148,10 @@ export const TravelsHeroSection: React.FC<TravelsHeroSectionProps> = ({
           <a
             href={getTelLink(hotline)}
             className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-white/15 bg-slate-900/80 text-slate-200 text-sm font-semibold hover:border-amber-400 hover:text-white transition-all backdrop-blur-sm"
+            title={`Call Concierge ${hotline}`}
           >
             <Phone className="w-4 h-4 text-emerald-400" />
-            <span>{hotline}</span>
+            <span>Direct Concierge</span>
           </a>
         </motion.div>
 

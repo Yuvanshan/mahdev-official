@@ -162,7 +162,7 @@ export const AccountBookingsTab: React.FC<AccountBookingsTabProps> = ({
                         : 'bg-amber-50 text-amber-800 border-amber-200'
                     }`}
                   >
-                    Payment: {b.paymentStatus.toUpperCase().replace('_', ' ')}
+                    Payment: {String(b.paymentStatus || 'pending').toUpperCase().replace(/_/g, ' ')}
                   </span>
 
                   <span

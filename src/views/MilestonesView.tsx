@@ -9,17 +9,29 @@ import { SEOHead } from '../components/layout/SEOHead';
 import { BRAND_CONFIG } from '../config/brand';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { CallToActionSection } from '../components/home/CallToActionSection';
+import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
 
 interface MilestonesViewProps {
   onNavigate: (route: string) => void;
 }
 
 export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) => {
-  const { milestones, companySettings } = useFirestoreDataContext();
+  const { milestones, companySettings, isInitialLoading, isFetching } = useFirestoreDataContext();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
+
+  if (milestones.length === 0 && (isInitialLoading || isFetching)) {
+    return (
+      <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-white">
+        <DataLoadingOverlay
+          message="Loading corporate milestones..."
+          subMessage="Fetching verified historical timeline from Firestore"
+        />
+      </div>
+    );
+  }
 
   const defaultMilestones = [
     {

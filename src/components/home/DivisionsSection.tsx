@@ -7,6 +7,7 @@ import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { getRentalAssetCount } from '../../utils/assetMetrics';
 import { ParallelWatermark } from '../motion/ParallelScroll';
 import { useDeviceMotion } from '../motion/MotionWrappers';
+import { DataLoadingOverlay } from '../common/DataLoadingOverlay';
 
 interface DivisionsSectionProps {
   onNavigate: (route: string) => void;
@@ -84,7 +85,7 @@ const DEFAULT_DIVISION_BENTO_DATA: BentoDivisionItem[] = [
 ];
 
 export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }) => {
-  const { companySettings, siteSettings, homepageConfig, divisions, products } = useFirestoreDataContext();
+  const { companySettings, siteSettings, homepageConfig, divisions, products, isInitialLoading, isFetching } = useFirestoreDataContext();
 
   const sectionConfig = homepageConfig?.divisionsSection;
   if (sectionConfig?.enabled === false) return null;
@@ -94,6 +95,18 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
   const sectionSubtitle =
     sectionConfig?.subtitle ||
     `Autonomous specialized units governed under ${companySettings?.name || 'Mahdev Group'} with direct in-house technical crews.`;
+
+  if (divisions.length === 0 && (isInitialLoading || isFetching)) {
+    return (
+      <section className="relative w-full py-24 sm:py-32 bg-slate-950 overflow-hidden">
+        <DataLoadingOverlay
+          dark
+          message="Loading operating divisions..."
+          subMessage="Fetching latest division statuses & configurations from Firestore"
+        />
+      </section>
+    );
+  }
 
   const rentalAssetCountStr = getRentalAssetCount(
     products,
@@ -136,7 +149,14 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
           (d as any).status === 'coming_soon'
         );
 
-        const img = d.heroImageUrl || d.imageUrl || (d.hero as any)?.bgImage || d.logoUrl || '';
+        const defaultFallbackItem =
+          DEFAULT_DIVISION_BENTO_DATA.find((item) => item.id === id) || DEFAULT_DIVISION_BENTO_DATA[0];
+        const rawImg = d.heroImageUrl || d.imageUrl || (d.hero as any)?.bgImage || d.logoUrl;
+        const img =
+          rawImg && typeof rawImg === 'string' && rawImg.trim() !== ''
+            ? rawImg.trim()
+            : defaultFallbackItem.image;
+
         const metrics =
           d.stats && d.stats.length > 0
             ? d.stats.map((s) => `${s.value} ${s.label}`)
@@ -236,7 +256,7 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
             </p>
             <div className="flex items-center gap-2 mt-2 text-xs font-medium text-slate-500">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Direct inquiries active at 075 092 8078</span>
+              <span>Direct concierge inquiries active</span>
             </div>
           </div>
         </div>
@@ -252,11 +272,15 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
               onClick={() => onNavigate(sws.route)}
               className="lg:col-span-7 group relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-200/80 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-end min-h-[400px] lg:min-h-[440px]"
             >
-              <img
-                src={sws.image}
-                alt={sws.name}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-103 transition-transform duration-700 ease-out"
-              />
+              {sws.image && sws.image.trim() !== '' ? (
+                <img
+                  src={sws.image}
+                  alt={sws.name}
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-103 transition-transform duration-700 ease-out"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-slate-900" />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/65 to-transparent" />
 
               <div className="relative p-6 sm:p-8 space-y-3.5 z-10">
@@ -303,7 +327,7 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
                     <button
                       type="button"
                       onClick={(e) => handleWhatsAppInquiry(e, sws)}
-                      title="Inquire via WhatsApp (0750928078)"
+                      title="Inquire via WhatsApp"
                       className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-[#25D366] hover:bg-[#20bd5a] px-3.5 py-2 rounded-xl transition-colors shadow-xs cursor-pointer"
                     >
                       <MessageCircle className="w-3.5 h-3.5" />
@@ -335,11 +359,15 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
                   onClick={() => onNavigate(div.route)}
                   className="group relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-200/80 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-end min-h-[210px] p-6"
                 >
-                  <img
-                    src={div.image}
-                    alt={div.name}
-                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-103 transition-transform duration-700 ease-out"
-                  />
+                  {div.image && div.image.trim() !== '' ? (
+                    <img
+                      src={div.image}
+                      alt={div.name}
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-103 transition-transform duration-700 ease-out"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-slate-900" />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent" />
 
                   <div className="relative z-10 space-y-2">
@@ -367,7 +395,7 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
                         className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
-                        <span>Inquire 0750928078</span>
+                        <span>Inquire</span>
                       </button>
                       <span className="font-medium text-slate-300 group-hover:text-white flex items-center gap-1 transition-colors">
                         Explore <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
@@ -390,11 +418,15 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
                 onClick={() => onNavigate(div.route)}
                 className="lg:col-span-6 group relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-200/80 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-end min-h-[230px] p-6 sm:p-7"
               >
-                <img
-                  src={div.image}
-                  alt={div.name}
-                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-103 transition-transform duration-700 ease-out"
-                />
+                {div.image && div.image.trim() !== '' ? (
+                  <img
+                    src={div.image}
+                    alt={div.name}
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-103 transition-transform duration-700 ease-out"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-slate-900" />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent" />
 
                 <div className="relative z-10 space-y-2.5">
