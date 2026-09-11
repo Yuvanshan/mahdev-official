@@ -350,6 +350,7 @@ class CmsService {
     } else if (entity === 'portfolio') {
       mapped = rawItems.map((p) => ({
         id: p.id,
+        sku: p.sku || (p as any).code || undefined,
         divisionId: p.division || (p as any).divisionId || 'sws',
         title: p.title || (p as any).name || 'Portfolio Project',
         category: p.category || 'Production',
@@ -373,6 +374,7 @@ class CmsService {
     } else if (entity === 'gallery') {
       mapped = rawItems.map((g) => ({
         id: g.id,
+        sku: g.sku || (g as any).code || undefined,
         divisionId: g.division || (g as any).divisionId || 'sws',
         title: g.title || 'Gallery Media',
         category: (g as any).category || g.tag || 'General',
@@ -1014,6 +1016,7 @@ class CmsService {
       } else if (entity === 'portfolio') {
         await firestorePortfolioService.savePortfolio(item.id, {
           id: item.id,
+          sku: item.sku || undefined,
           title: item.title,
           division: item.divisionId || item.division || 'sws',
           category: item.category || 'Production',
@@ -1034,6 +1037,7 @@ class CmsService {
       } else if (entity === 'gallery') {
         await firestoreGalleryService.saveGallery(item.id, {
           id: item.id,
+          sku: item.sku || undefined,
           title: item.title,
           division: item.divisionId || item.division || 'sws',
           type: item.type || item.mediaType || 'image',

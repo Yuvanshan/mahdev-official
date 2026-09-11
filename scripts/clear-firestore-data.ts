@@ -78,7 +78,7 @@ async function clearAllFirestoreData() {
       role: 'superAdmin',
       fullName: 'Yuvanshan Prabakaran',
       displayName: 'Yuvanshan Prabakaran',
-      phone: '+94 77 123 4567',
+      phone: '+94 75 092 8078',
       updatedAt: new Date().toISOString(),
     }, { merge: true });
 

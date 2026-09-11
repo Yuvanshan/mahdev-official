@@ -31,7 +31,7 @@ In accordance with enterprise banking and zero-trust security standards, sensiti
     "customerId": "usr_99812",
     "customerEmail": "client@enterprise.lk",
     "customerName": "Kasun Fernando",
-    "customerPhone": "+94 77 123 4567",
+    "customerPhone": "+94 75 092 8078",
     "shippingAddress": {
       "street": "42 Galle Road",
       "city": "Colombo",
@@ -121,7 +121,7 @@ In accordance with enterprise banking and zero-trust security standards, sensiti
     "recipient": {
       "name": "Kasun Fernando",
       "email": "kasun@enterprise.lk",
-      "phone": "+94 77 123 4567"
+      "phone": "+94 75 092 8078"
     },
     "data": {
       "orderId": "ORD-2026-8941",

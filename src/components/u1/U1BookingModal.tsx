@@ -18,6 +18,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
+import { buildWhatsAppMessage, MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
 
 interface U1BookingModalProps {
   isOpen: boolean;
@@ -66,6 +67,33 @@ export const U1BookingModal: React.FC<U1BookingModalProps> = ({
 
   if (!isOpen) return null;
 
+  const selectedPkg = selectedPackageId ? U1_PACKAGES.find((p) => p.id === selectedPackageId) : null;
+  const selectedSrv = selectedServiceId ? U1_SERVICES.find((s) => s.id === selectedServiceId) : null;
+  const selectedName = selectedPkg?.name || selectedSrv?.name || 'Studio Session';
+  const selectedSku = (selectedPkg as any)?.sku || (selectedSrv as any)?.sku || `SRV-U1-${selectedSrv?.id?.slice(0, 4)?.toUpperCase() || 'STU'}`;
+  const selectedImg = selectedSrv?.imageUrl || selectedPkg?.imageUrl || 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1200&q=80';
+
+  const getFullWhatsAppUrl = (refId?: string) => {
+    const text = buildWhatsAppMessage({
+      title: selectedName,
+      sku: selectedSku,
+      category: 'Creative Photography & Cinema',
+      divisionName: 'U1 Studio',
+      packageName: selectedPkg?.name,
+      bookingId: refId || bookingRef || 'WEB-U1-BOOKING',
+      date: sessionDate || 'Date to be confirmed',
+      time: sessionTimeSlot,
+      location: locationType === 'studio' ? 'Colombo Studio Cyclorama' : locationAddress,
+      customerName,
+      customerPhone,
+      customerEmail,
+      customerNotes: notes,
+      imageUrl: selectedImg,
+      type: 'booking',
+    });
+    return `https://wa.me/${MAHDEV_WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName || !customerEmail || !customerPhone) return;
@@ -73,6 +101,12 @@ export const U1BookingModal: React.FC<U1BookingModalProps> = ({
     const ref = `U1-STU-${Math.floor(100000 + Math.random() * 900000)}`;
     setBookingRef(ref);
     setIsSubmitted(true);
+
+    try {
+      window.open(getFullWhatsAppUrl(ref), '_blank');
+    } catch (err) {
+      console.warn('[U1BookingModal] WhatsApp redirect error:', err);
+    }
   };
 
   const resetForm = () => {
@@ -84,12 +118,6 @@ export const U1BookingModal: React.FC<U1BookingModalProps> = ({
     setNotes('');
     onClose();
   };
-
-  const selectedName = selectedPackageId
-    ? U1_PACKAGES.find((p) => p.id === selectedPackageId)?.name || 'Custom Package'
-    : selectedServiceId
-    ? U1_SERVICES.find((s) => s.id === selectedServiceId)?.name || 'Custom Service'
-    : 'Studio Session';
 
   const whatsappMessage = encodeURIComponent(
     `Hello U1 Studio (Mahdev), I would like to schedule a session for ${selectedName} on ${sessionDate || 'TBD'} (${sessionTimeSlot}) at ${locationType === 'studio' ? 'Colombo Studio' : locationAddress}. Name: ${customerName}. Ref: ${bookingRef || 'Direct Web Booking'}.`
@@ -180,7 +208,7 @@ export const U1BookingModal: React.FC<U1BookingModalProps> = ({
               {/* Actions */}
               <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <a
-                  href={`https://wa.me/94750928078?text=${whatsappMessage}`}
+                  href={getFullWhatsAppUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold shadow-md transition-colors"

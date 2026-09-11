@@ -22,10 +22,12 @@ import {
   Check,
   Share2,
   ShoppingCart,
+  MessageCircle,
 } from 'lucide-react';
 import { CatalogProduct, ProductVariantOption } from '../../types/catalog';
 import { catalogService } from '../../services/catalogService';
 import { useCart } from '../../context/CartContext';
+import { openWhatsAppInquiry } from '../../utils/whatsapp';
 
 interface CatalogProductModalProps {
   product: CatalogProduct | null;
@@ -291,6 +293,29 @@ export const CatalogProductModal: React.FC<CatalogProductModalProps> = ({
                       <span>Checkout</span>
                     </button>
                   </div>
+
+                  {/* Direct WhatsApp Instant Inquiry */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const itemUrl = typeof window !== 'undefined' ? `${window.location.origin}/catalog?sku=${encodeURIComponent(product.sku || product.id)}` : undefined;
+                      openWhatsAppInquiry({
+                        title: product.name,
+                        sku: product.sku || product.id,
+                        category: product.categoryName,
+                        divisionName: product.divisionId === 'sws' ? 'SWS Event Management' : product.divisionId === 'u1' ? 'U1 Studio' : 'Mahdev Online Mart',
+                        price: currentPrice,
+                        imageUrl: selectedImage || product.imageUrl,
+                        itemUrl,
+                        description: product.shortDescription || product.description,
+                        type: 'product',
+                      });
+                    }}
+                    className="w-full py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors cursor-pointer"
+                  >
+                    <MessageCircle className="w-4 h-4 shrink-0" />
+                    <span>Inquire via WhatsApp (075 092 8078)</span>
+                  </button>
 
                   {['bookable_service', 'package', 'service'].includes(product.productType) && (
                     <a

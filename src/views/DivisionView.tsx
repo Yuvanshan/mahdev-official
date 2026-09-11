@@ -26,6 +26,7 @@ import { SEOHead } from '../components/layout/SEOHead';
 import { SlideIn, ScrollReveal } from '../components/motion/MotionWrappers';
 import { DIVISIONS, DIVISION_LIST } from '../config/divisions';
 import { DivisionId } from '../types';
+import { DivisionComingSoonView } from './DivisionComingSoonView';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { firestoreInquiriesService } from '../services/firestore/inquiries';
@@ -125,6 +126,15 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
         d.slug === canonicalDocId ||
         d.slug === normalizedKey
     ) || cachedDivision;
+
+  // Immediate guard: If division is marked as Coming Soon, display DivisionComingSoonView
+  if (
+    (firestoreDiv as any)?.isComingSoon ||
+    (firestoreDiv as any)?.comingSoon ||
+    (firestoreDiv as any)?.status === 'coming_soon'
+  ) {
+    return <DivisionComingSoonView divisionId={divisionId} onNavigate={onNavigate} />;
+  }
 
   // Live Firestore services matching this division
   const liveDivisionServices = useMemo(() => {

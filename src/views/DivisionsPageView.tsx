@@ -46,7 +46,12 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
         if (!canonicalId || seen.has(canonicalId)) continue;
         seen.add(canonicalId);
 
-        const config = (DIVISIONS as any)[canonicalId] || (DIVISIONS as any)[d.id] || DIVISION_LIST.find((item) => item.id === canonicalId || item.id === d.id) || {};
+        const isComingSoon = !!(
+          (d as any).isComingSoon ||
+          (d as any).comingSoon ||
+          (d as any).status === 'coming_soon'
+        );
+
         result.push({
           ...config,
           id: canonicalId,
@@ -58,6 +63,7 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
           badge: d.hero?.badge || config.badge || 'Enterprise Division',
           iconName: config.iconName || 'Building',
           color: config.color || '#0052FF',
+          isComingSoon,
           coreServices:
             (d as any).coreServices && (d as any).coreServices.length > 0
               ? (d as any).coreServices
@@ -130,6 +136,12 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
                             <Sparkles className="w-2.5 h-2.5 text-amber-600" />
                             Primary Division
+                          </span>
+                        )}
+                        {division.isComingSoon && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400 text-slate-950 flex items-center gap-1 shadow-xs">
+                            <Sparkles className="w-2.5 h-2.5" />
+                            Coming Soon
                           </span>
                         )}
                       </div>

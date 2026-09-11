@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
+import { getRentalAssetCount } from '../../utils/assetMetrics';
 import { ParallelWatermark } from '../motion/ParallelScroll';
 import { useDeviceMotion } from '../motion/MotionWrappers';
 
@@ -21,6 +22,7 @@ interface BentoDivisionItem {
   route: string;
   metrics: string[];
   isFeatured?: boolean;
+  isComingSoon?: boolean;
 }
 
 const DEFAULT_DIVISION_BENTO_DATA: BentoDivisionItem[] = [
@@ -82,7 +84,7 @@ const DEFAULT_DIVISION_BENTO_DATA: BentoDivisionItem[] = [
 ];
 
 export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }) => {
-  const { companySettings, homepageConfig, divisions } = useFirestoreDataContext();
+  const { companySettings, siteSettings, homepageConfig, divisions, products } = useFirestoreDataContext();
 
   const sectionConfig = homepageConfig?.divisionsSection;
   if (sectionConfig?.enabled === false) return null;
@@ -92,6 +94,11 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
   const sectionSubtitle =
     sectionConfig?.subtitle ||
     `Autonomous specialized units governed under ${companySettings?.name || 'Mahdev Group'} with direct in-house technical crews.`;
+
+  const rentalAssetCountStr = getRentalAssetCount(
+    products,
+    (companySettings as any)?.rentalAssetCount || (siteSettings as any)?.rentalAssetCount
+  );
 
   // Dynamically map divisions using live updates from Admin Portal / FirestoreDataContext
   const bentoDivisions = useMemo<BentoDivisionItem[]>(() => {
@@ -123,22 +130,34 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
         if (seen.has(id)) continue;
         seen.add(id);
 
+        const isComingSoon = !!(
+          (d as any).isComingSoon ||
+          (d as any).comingSoon ||
+          (d as any).status === 'coming_soon'
+        );
+
         const img = d.heroImageUrl || d.imageUrl || (d.hero as any)?.bgImage || d.logoUrl || '';
         const metrics =
           d.stats && d.stats.length > 0
             ? d.stats.map((s) => `${s.value} ${s.label}`)
+            : id === 'sws'
+            ? [`${rentalAssetCountStr} Rentals`, 'Floral Mandaps', 'Stage Lighting', 'Audio/Visual']
             : ['Island-wide SLA', 'In-House Crew', 'Verified Quality'];
 
         list.push({
           id,
           name: d.name,
           badge: d.badge || (d.hero as any)?.badge || 'Specialized Division',
-          subtitle: d.tagline || d.shortDescription || (d.hero as any)?.subtitle || '',
+          subtitle:
+            id === 'sws'
+              ? `Luxury Weddings, Stage Decor & ${rentalAssetCountStr} Rental Units`
+              : d.tagline || d.shortDescription || (d.hero as any)?.subtitle || '',
           summary: d.description || d.aboutText || d.shortDescription || '',
           image: img,
           route: getCanonicalRoute(id, d.route),
           metrics,
           isFeatured: id === 'sws',
+          isComingSoon,
         });
       }
 
@@ -156,8 +175,17 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
       }
     }
 
-    return DEFAULT_DIVISION_BENTO_DATA;
-  }, [divisions]);
+    return DEFAULT_DIVISION_BENTO_DATA.map((item) => {
+      if (item.id === 'sws') {
+        return {
+          ...item,
+          subtitle: `Luxury Weddings, Stage Decor & ${rentalAssetCountStr} Rental Units`,
+          metrics: [`${rentalAssetCountStr} Rentals`, 'Floral Mandaps', 'Stage Lighting', 'Audio/Visual'],
+        };
+      }
+      return item;
+    });
+  }, [divisions, rentalAssetCountStr]);
 
   const sws = bentoDivisions[0];
 
@@ -237,8 +265,13 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
                     {sws.badge}
                   </span>
                   <span className="px-2.5 py-1 rounded-md text-[10px] font-medium bg-white/10 text-white backdrop-blur-md border border-white/10">
-                    5,000+ Rental Inventory
+                    {rentalAssetCountStr} Rental Inventory
                   </span>
+                  {sws.isComingSoon && (
+                    <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-400 text-slate-950 flex items-center gap-1 shadow-sm">
+                      <Sparkles className="w-3 h-3" /> Coming Soon
+                    </span>
+                  )}
                 </div>
 
                 <div>
@@ -310,9 +343,16 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent" />
 
                   <div className="relative z-10 space-y-2">
-                    <span className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-mono font-semibold uppercase tracking-wider text-white ${badgeBg}`}>
-                      {div.badge}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-mono font-semibold uppercase tracking-wider text-white ${badgeBg}`}>
+                        {div.badge}
+                      </span>
+                      {div.isComingSoon && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-400 text-slate-950">
+                          <Sparkles className="w-2.5 h-2.5" /> Coming Soon
+                        </span>
+                      )}
+                    </div>
                     <h3 className="font-display text-lg font-bold text-white group-hover:text-slate-200 transition-colors">
                       {div.name}
                     </h3>
@@ -358,9 +398,16 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent" />
 
                 <div className="relative z-10 space-y-2.5">
-                  <span className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-mono font-semibold uppercase tracking-wider text-white ${badgeBg}`}>
-                    {div.badge}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-mono font-semibold uppercase tracking-wider text-white ${badgeBg}`}>
+                      {div.badge}
+                    </span>
+                    {div.isComingSoon && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-400 text-slate-950">
+                        <Sparkles className="w-2.5 h-2.5" /> Coming Soon
+                      </span>
+                    )}
+                  </div>
                   <h3 className="font-display text-xl font-bold text-white group-hover:text-slate-200 transition-colors">
                     {div.name}
                   </h3>

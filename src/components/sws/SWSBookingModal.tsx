@@ -27,6 +27,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
+import { buildWhatsAppMessage, MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
 
 interface SWSBookingModalProps {
   isOpen: boolean;
@@ -89,6 +90,34 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
 
   if (!isOpen) return null;
 
+  const selectedSrv = selectedServiceId ? SWS_SERVICES.find((s) => s.id === selectedServiceId) : null;
+  const selectedPkg = selectedPackageId ? SWS_PACKAGES.find((p) => p.id === selectedPackageId) : null;
+  const selectedRent = selectedRentalId ? SWS_RENTAL_INVENTORY.find((r) => r.id === selectedRentalId) : null;
+
+  const getFullWhatsAppUrl = (refId?: string) => {
+    const title = selectedPkg?.name || selectedSrv?.name || selectedRent?.name || `${eventType} Event Production`;
+    const sku = (selectedPkg as any)?.sku || (selectedSrv as any)?.sku || (selectedRent as any)?.sku || `SRV-SWS-${eventType.slice(0, 3).toUpperCase()}`;
+    const img = selectedSrv?.imageUrl || selectedPkg?.imageUrl || selectedRent?.imageUrl || 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80';
+
+    const text = buildWhatsAppMessage({
+      title,
+      sku,
+      category: eventType,
+      divisionName: 'SWS Event Management',
+      packageName: selectedPkg?.name,
+      bookingId: refId || inquiryRef || 'SWS-DIRECT-WEB',
+      date: eventDate || 'Date to be confirmed',
+      location: venueLocation,
+      customerName: clientName,
+      customerPhone: clientPhone,
+      customerEmail: clientEmail,
+      customerNotes: specialRequirements,
+      imageUrl: img,
+      type: 'booking',
+    });
+    return `https://wa.me/${MAHDEV_WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientName || !clientEmail || !clientPhone) return;
@@ -96,6 +125,12 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
     const ref = `SWS-EVT-${Math.floor(100000 + Math.random() * 900000)}`;
     setInquiryRef(ref);
     setIsSubmitted(true);
+
+    try {
+      window.open(getFullWhatsAppUrl(ref), '_blank');
+    } catch (err) {
+      console.warn('[SWSBookingModal] WhatsApp redirect error:', err);
+    }
   };
 
   const resetForm = () => {
@@ -193,7 +228,7 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
               {/* WhatsApp Quick Link */}
               <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <a
-                  href={`https://wa.me/94750928078?text=${whatsappMessage}`}
+                  href={getFullWhatsAppUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold shadow-md transition-colors"

@@ -85,7 +85,7 @@ async function runTestSuite() {
           customerId: 'usr-ci-1',
           customerEmail: 'ci@mahdev.lk',
           customerName: 'CI Test Runner',
-          customerPhone: '+94 77 123 4567',
+          customerPhone: '+94 75 092 8078',
           shippingAddress: {
             street: '15 Gregory Road',
             city: 'Colombo 07',

@@ -35,6 +35,7 @@ import {
 import { bookingService } from '../../services/bookingService';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { evaluateBotRisk, checkActionThrottle } from '../../utils/securityProtection';
+import { openWhatsAppInquiry } from '../../utils/whatsapp';
 
 interface BookingWizardProps {
   initialDivision?: string;
@@ -249,6 +250,30 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
       setIsSubmitting(false);
 
       if (result.success && result.booking) {
+        // Automatically launch WhatsApp with booking parameters & SKU
+        try {
+          openWhatsAppInquiry({
+            title: selectedService!.name,
+            sku: (selectedService as any)?.sku,
+            category: selectedService!.category,
+            divisionName: selectedService!.divisionName,
+            packageName: selectedPackage.name,
+            bookingId: result.booking.id,
+            date: selectedDate,
+            time: selectedTimeSlot,
+            location: submissionInput.location.address,
+            customerName: fullName,
+            customerPhone: phone,
+            customerEmail: email,
+            customerNotes: notes,
+            price: selectedPackage.price,
+            imageUrl: selectedService!.imageUrl,
+            type: 'booking',
+          });
+        } catch (e) {
+          console.warn('[BookingWizard] WhatsApp launch error:', e);
+        }
+
         onBookingCreated(result.booking);
       } else if (result.errors) {
         setErrors(result.errors);

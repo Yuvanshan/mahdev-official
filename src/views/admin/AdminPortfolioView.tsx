@@ -15,9 +15,14 @@ import {
   Tag,
   Building,
   Star,
+  Barcode,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { CmsPortfolioProject } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
+import { firestorePortfolioService } from '../../services/firestore/portfolio';
+import { purgeRemovedStudioPostsFromFirestore } from '../../services/firestore/databaseManagement';
 import { Button } from '../../components/ui/Button';
 import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
@@ -53,6 +58,7 @@ export const AdminPortfolioView: React.FC = () => {
   // Form State
   const [formData, setFormData] = useState({
     title: '',
+    sku: '',
     divisionId: 'sws' as DivisionId,
     category: 'Gala & Summits',
     client: '',
@@ -69,6 +75,23 @@ export const AdminPortfolioView: React.FC = () => {
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [copiedSku, setCopiedSku] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard?.writeText(text);
+    setCopiedSku(text);
+    addToast('info', 'SKU Copied', `Copied "${text}" to clipboard.`);
+    setTimeout(() => setCopiedSku(null), 2000);
+  };
+
+  const generatePortfolioSku = (division: string, title?: string): string => {
+    const divCode = (division || 'SWS').replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase();
+    const cleanTitle = title
+      ? title.replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase()
+      : 'PRJ';
+    const rand = Math.floor(100 + Math.random() * 900);
+    return `PORT-${divCode}-${cleanTitle || 'GEN'}-${rand}`;
+  };
 
   const addToast = (type: ToastMessage['type'], title: string, message: string) => {
     const id = Date.now().toString();
@@ -98,6 +121,7 @@ export const AdminPortfolioView: React.FC = () => {
     setEditingItem(null);
     setFormData({
       title: '',
+      sku: generatePortfolioSku('sws'),
       divisionId: 'sws',
       category: 'Gala & Summits',
       client: '',
@@ -121,6 +145,7 @@ export const AdminPortfolioView: React.FC = () => {
     setEditingItem(item);
     setFormData({
       title: item.title,
+      sku: item.sku || generatePortfolioSku(item.divisionId, item.title),
       divisionId: item.divisionId,
       category: item.category,
       client: item.client || '',
@@ -156,8 +181,11 @@ export const AdminPortfolioView: React.FC = () => {
 
     setIsSaving(true);
     try {
+      const finalSku = (formData.sku || generatePortfolioSku(formData.divisionId, formData.title)).trim().toUpperCase();
+
       const payload: Partial<CmsPortfolioProject> = {
         title: formData.title,
+        sku: finalSku,
         divisionId: formData.divisionId,
         category: formData.category,
         client: formData.client,
@@ -192,17 +220,44 @@ export const AdminPortfolioView: React.FC = () => {
     }
   };
 
-  const handleDeleteConfirm = (permanent: boolean) => {
+  const handleDeleteConfirm = async (permanent: boolean) => {
     if (!deletingItem) return;
-    if (permanent) {
-      cmsService.hardDelete('portfolio', deletingItem.id);
-      addToast('warning', 'Permanent Deletion', `"${deletingItem.title}" removed permanently.`);
-    } else {
-      cmsService.softDelete('portfolio', deletingItem.id);
-      addToast('info', 'Case Study Archived', `"${deletingItem.title}" archived.`);
+    try {
+      if (permanent) {
+        cmsService.hardDelete('portfolio', deletingItem.id);
+        await firestorePortfolioService.deletePortfolio(deletingItem.id);
+        addToast('warning', 'Permanent Deletion', `"${deletingItem.title}" removed permanently from Firestore & CMS.`);
+      } else {
+        cmsService.softDelete('portfolio', deletingItem.id);
+        addToast('info', 'Case Study Archived', `"${deletingItem.title}" archived.`);
+      }
+    } catch (err: any) {
+      console.warn('[AdminPortfolio] Deletion sync error:', err);
     }
     setDeletingItem(null);
     loadData();
+  };
+
+  const [isPurgingStudio, setIsPurgingStudio] = useState(false);
+
+  const handlePurgeStudioPosts = async () => {
+    if (!window.confirm('Are you sure you want to permanently delete all removed/archived Studio posts from Firestore? This cannot be undone.')) {
+      return;
+    }
+    setIsPurgingStudio(true);
+    try {
+      const res = await purgeRemovedStudioPostsFromFirestore(false);
+      addToast(
+        res.success ? 'success' : 'warning',
+        'Studio Posts Cleaned',
+        `Cleaned ${res.galleryDeleted} gallery items and ${res.portfolioDeleted} portfolio items from Firestore.`
+      );
+      loadData();
+    } catch (err: any) {
+      addToast('error', 'Cleanup Failed', err.message || 'Could not purge studio posts.');
+    } finally {
+      setIsPurgingStudio(false);
+    }
   };
 
   const handleRestore = (item: CmsPortfolioProject) => {
@@ -230,6 +285,16 @@ export const AdminPortfolioView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePurgeStudioPosts}
+            disabled={isPurgingStudio}
+            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200"
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+            {isPurgingStudio ? 'Cleaning Firestore...' : 'Purge Removed Studio Posts'}
+          </Button>
           <Button variant="electric" size="sm" onClick={handleOpenCreate}>
             <Plus className="w-3.5 h-3.5 mr-1.5" />
             Add Case Study
@@ -320,7 +385,23 @@ export const AdminPortfolioView: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <span className="text-[10px] text-slate-500 font-mono">{item.category}</span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] text-slate-500 font-mono">{item.category}</span>
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(item.sku || `PORT-${item.divisionId.toUpperCase()}-${item.id.slice(-4)}`)}
+                              className="inline-flex items-center gap-1 font-mono text-[9px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-1.5 py-0.5 rounded border border-slate-200 transition-colors cursor-pointer"
+                              title="Click to copy SKU"
+                            >
+                              <Barcode className="w-2.5 h-2.5 text-slate-500" />
+                              <span>{item.sku || `PORT-${item.divisionId.toUpperCase()}-${item.id.slice(-4)}`}</span>
+                              {copiedSku === (item.sku || `PORT-${item.divisionId.toUpperCase()}-${item.id.slice(-4)}`) ? (
+                                <Check className="w-2.5 h-2.5 text-emerald-600" />
+                              ) : (
+                                <Copy className="w-2.5 h-2.5 text-slate-400" />
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -396,8 +477,8 @@ export const AdminPortfolioView: React.FC = () => {
         maxWidth="2xl"
       >
         <form onSubmit={handleSave} className="space-y-4 text-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-1">
               <label className="block font-semibold text-slate-700 mb-1">Project Title *</label>
               <input
                 type="text"
@@ -406,14 +487,44 @@ export const AdminPortfolioView: React.FC = () => {
                   setFormData({ ...formData, title: e.target.value });
                   setIsDirty(true);
                 }}
-                placeholder="e.g. Ceylon Petroleum Global Energy Gala"
+                placeholder="e.g. Ceylon Petroleum Gala"
                 className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
               {formErrors.title && <p className="text-red-600 text-[10px] mt-0.5">{formErrors.title}</p>}
             </div>
 
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">Client / Organization *</label>
+            <div className="sm:col-span-1">
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-semibold text-slate-700">Project SKU *</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newSku = generatePortfolioSku(formData.divisionId, formData.title);
+                    setFormData((prev) => ({ ...prev, sku: newSku }));
+                    setIsDirty(true);
+                  }}
+                  className="text-[10px] text-blue-600 font-semibold hover:underline cursor-pointer"
+                >
+                  Generate
+                </button>
+              </div>
+              <div className="relative">
+                <Barcode className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={formData.sku}
+                  onChange={(e) => {
+                    setFormData({ ...formData, sku: e.target.value.toUpperCase() });
+                    setIsDirty(true);
+                  }}
+                  placeholder="e.g. PORT-SWS-GAL-101"
+                  className="w-full pl-8 pr-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono uppercase text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="sm:col-span-1">
+              <label className="block font-semibold text-slate-700 mb-1">Client / Partner *</label>
               <input
                 type="text"
                 value={formData.client}
@@ -421,7 +532,7 @@ export const AdminPortfolioView: React.FC = () => {
                   setFormData({ ...formData, client: e.target.value });
                   setIsDirty(true);
                 }}
-                placeholder="e.g. Forbes Marshall Ceylon"
+                placeholder="e.g. Forbes Marshall"
                 className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
               {formErrors.client && <p className="text-red-600 text-[10px] mt-0.5">{formErrors.client}</p>}

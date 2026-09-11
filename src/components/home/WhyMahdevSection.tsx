@@ -17,6 +17,7 @@ import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { EnterpriseStandardGuarantee } from '../../types/cms';
+import { getRentalAssetCount } from '../../utils/assetMetrics';
 import { ParallelWatermark } from '../motion/ParallelScroll';
 import { useDeviceMotion } from '../motion/MotionWrappers';
 
@@ -67,17 +68,32 @@ const DEFAULT_GUARANTEES: EnterpriseStandardGuarantee[] = [
 ];
 
 export const WhyMahdevSection: React.FC = () => {
-  const { homepageConfig, companySettings } = useFirestoreDataContext();
+  const { homepageConfig, companySettings, siteSettings, products } = useFirestoreDataContext();
   const whyConfig = homepageConfig?.whyMahdev;
 
   if (whyConfig?.enabled === false) {
     return null;
   }
 
-  return <WhyMahdevSectionContent whyConfig={whyConfig} companyPhone={companySettings?.primaryPhone} />;
+  const rentalCount = getRentalAssetCount(
+    products,
+    (companySettings as any)?.rentalAssetCount || (siteSettings as any)?.rentalAssetCount
+  );
+
+  return (
+    <WhyMahdevSectionContent
+      whyConfig={whyConfig}
+      companyPhone={companySettings?.primaryPhone}
+      rentalCount={rentalCount}
+    />
+  );
 };
 
-const WhyMahdevSectionContent: React.FC<{ whyConfig: any; companyPhone?: string }> = ({ whyConfig, companyPhone }) => {
+const WhyMahdevSectionContent: React.FC<{
+  whyConfig: any;
+  companyPhone?: string;
+  rentalCount?: string;
+}> = ({ whyConfig, companyPhone, rentalCount = '5,000+' }) => {
   const { reducedMotion, isTouch } = useDeviceMotion();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -100,6 +116,12 @@ const WhyMahdevSectionContent: React.FC<{ whyConfig: any; companyPhone?: string 
       ? whyConfig.guarantees
       : DEFAULT_GUARANTEES
   ).map((g: any) => {
+    if (g.id === 'std-3') {
+      return {
+        ...g,
+        title: `${rentalCount} Verified Assets`,
+      };
+    }
     if (g.id === 'std-4' && companyPhone) {
       return {
         ...g,

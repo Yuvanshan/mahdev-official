@@ -28,6 +28,7 @@ import {
   SWSService,
 } from '../../data/swsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { getRentalAssetCount } from '../../utils/assetMetrics';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
@@ -43,12 +44,25 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
   onBookRental,
   onRequestQuote,
 }) => {
-  const { products: rawProducts, services: rawServices } = useFirestoreDataContext();
+  const { products: rawProducts, services: rawServices, companySettings, siteSettings, divisions } = useFirestoreDataContext();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeDetailItem, setActiveDetailItem] = useState<SWSRentalItem | null>(null);
   const [rentalDays, setRentalDays] = useState<number>(1);
   const [rentalQty, setRentalQty] = useState<number>(1);
+
+  const swsDiv = divisions?.find(
+    (d) =>
+      d.id === 'sws' ||
+      d.id === 'sws-event-management' ||
+      d.slug === 'sws' ||
+      d.slug === 'sws-event-management'
+  );
+
+  const rentalCount = getRentalAssetCount(
+    rawProducts,
+    (swsDiv as any)?.rentalAssetCount || (companySettings as any)?.rentalAssetCount || (siteSettings as any)?.rentalAssetCount
+  );
 
   const inventory = useMemo<SWSRentalItem[]>(() => {
     const items: SWSRentalItem[] = [];
@@ -150,7 +164,7 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
                 <Layers className="w-3.5 h-3.5" />
                 Comprehensive Rental Inventory
               </span>
-              <span className="text-xs font-semibold text-slate-500">5,000+ Units in Active Stock</span>
+              <span className="text-xs font-semibold text-slate-500">{rentalCount} Units in Active Stock</span>
             </div>
             <H2 className="text-slate-900">
               Event Furniture, Staging & AV Equipment Rentals

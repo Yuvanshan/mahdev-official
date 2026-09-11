@@ -26,6 +26,7 @@ import {
 import {
   clearAllFirestoreCollections,
   seedPristineProductionSettings,
+  purgeRemovedStudioPostsFromFirestore,
 } from '../../services/firestore/databaseManagement';
 import { orderService } from '../../services/orderService';
 import { bookingService } from '../../services/bookingService';
@@ -119,6 +120,26 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
     } catch (err: any) {
       setActionMessage({
         text: `Failed to purge test records: ${err?.message || err}`,
+        type: 'error',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePurgeStudioPosts = async () => {
+    setIsLoading(true);
+    setActionMessage(null);
+    try {
+      const res = await purgeRemovedStudioPostsFromFirestore(false);
+      setActionMessage({
+        text: `Purged removed Studio posts from Firestore: ${res.galleryDeleted} gallery records and ${res.portfolioDeleted} portfolio records permanently deleted.`,
+        type: res.success ? 'success' : 'error',
+      });
+      await runDiagnostics();
+    } catch (err: any) {
+      setActionMessage({
+        text: `Failed to purge studio posts: ${err?.message || err}`,
         type: 'error',
       });
     } finally {
@@ -222,6 +243,17 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
             className="text-xs font-semibold text-amber-700 hover:bg-amber-50 border-amber-200"
           >
             Purge Test Records
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePurgeStudioPosts}
+            disabled={isLoading || isClearing}
+            leftIcon={<Trash2 className="w-3.5 h-3.5 text-rose-500" />}
+            className="text-xs font-semibold text-rose-600 hover:bg-rose-50 border-rose-200"
+          >
+            Purge Removed Studio Posts
           </Button>
 
           <Button

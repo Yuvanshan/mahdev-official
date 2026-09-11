@@ -4,20 +4,18 @@ import { motion } from 'motion/react';
 import { Button } from '../ui/Button';
 import { getTelLink } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { getRentalAssetCount } from '../../utils/assetMetrics';
 
 interface SWSHeroSectionProps {
-  onBookNow: () => void;
-  onRequestQuote: () => void;
-  onExploreServices: () => void;
+  onOpenBooking: () => void;
   onExploreRentals?: () => void;
 }
 
 export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
-  onBookNow,
-  onRequestQuote,
+  onOpenBooking,
   onExploreRentals,
 }) => {
-  const { divisions, companySettings } = useFirestoreDataContext();
+  const { divisions, companySettings, siteSettings, products } = useFirestoreDataContext();
 
   const swsDiv = divisions?.find(
     (d) =>
@@ -25,6 +23,11 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
       d.id === 'sws-event-management' ||
       d.slug === 'sws' ||
       d.slug === 'sws-event-management'
+  );
+
+  const rentalCount = getRentalAssetCount(
+    products,
+    (swsDiv as any)?.rentalAssetCount || (companySettings as any)?.rentalAssetCount || (siteSettings as any)?.rentalAssetCount
   );
 
   const hotline =
@@ -54,14 +57,18 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
     (swsDiv as any)?.heroSubheadline ||
     (swsDiv as any)?.hero?.subtitle ||
     swsDiv?.description ||
-    'Full-scale floral mandaps, stage engineering, and 5,000+ rental inventory units delivered nationwide across Sri Lanka.';
+    `Full-scale floral mandaps, stage engineering, and ${rentalCount} rental inventory units delivered nationwide across Sri Lanka.`;
 
   const statsList =
     (swsDiv as any)?.stats && (swsDiv as any).stats.length > 0
-      ? (swsDiv as any).stats
+      ? (swsDiv as any).stats.map((s: any) =>
+          s.label?.toLowerCase().includes('rental')
+            ? { ...s, value: rentalCount }
+            : s
+        )
       : [
           { value: '450+', label: 'Events Curated' },
-          { value: '5,000+', label: 'Rental Units' },
+          { value: rentalCount, label: 'Rental Units' },
           { value: '9 Provinces', label: 'Islandwide Delivery' },
           { value: '100%', label: 'In-House Staging' },
         ];
@@ -138,7 +145,7 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
               leftIcon={<Layers className="w-4 h-4" />}
               className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-md px-6 py-3 text-sm font-semibold"
             >
-              Browse 5,000+ Rentals
+              Browse {rentalCount} Rentals
             </Button>
           )}
 

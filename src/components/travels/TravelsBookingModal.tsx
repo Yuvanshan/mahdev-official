@@ -21,6 +21,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { COMPANY_INFO, getTelLink, getMailtoLink } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { buildWhatsAppMessage, MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
 
 interface TravelsBookingModalProps {
   isOpen: boolean;
@@ -71,6 +72,27 @@ export const TravelsBookingModal: React.FC<TravelsBookingModalProps> = ({
 
   if (!isOpen) return null;
 
+  const getWhatsAppBookingLink = (customRef?: string) => {
+    const effectiveRef = customRef || ticketRef || 'MAH-TRV-DIRECT';
+    const effectiveSku = `PKG-TRV-${packageType.slice(0, 4).toUpperCase()}`;
+    const text = buildWhatsAppMessage({
+      title: packageType,
+      sku: effectiveSku,
+      category: 'Luxury Travel & Private Expeditions',
+      divisionName: 'Mahdev Travels',
+      bookingId: effectiveRef,
+      date: startDate || 'Flexible Start Date',
+      location: `Sri Lanka (${country || 'International Traveler'})`,
+      customerName: fullName,
+      customerPhone: phone,
+      customerEmail: email,
+      customerNotes: `Guests: ${adults} Adults, ${children} Children | Transport: ${transportPreference} | Hotel: ${hotelTier} | Notes: ${specialRequirements || 'None'}`,
+      imageUrl: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=85',
+      type: 'booking',
+    });
+    return `https://wa.me/${MAHDEV_WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !email || !phone) return;
@@ -80,13 +102,12 @@ export const TravelsBookingModal: React.FC<TravelsBookingModalProps> = ({
     const ref = `MAH-TRV-${randomCode}`;
     setTicketRef(ref);
     setIsSubmitted(true);
-  };
 
-  const getWhatsAppBookingLink = () => {
-    const text = encodeURIComponent(
-      `Hello Mahdev Travels Concierge,\n\nI would like to book a private journey.\n\n*Reference:* ${ticketRef}\n*Name:* ${fullName}\n*Email:* ${email}\n*Phone:* ${phone}\n*Country:* ${country || 'Not specified'}\n*Journey Option:* ${packageType}\n*Start Date:* ${startDate || 'Flexible'}\n*Guests:* ${adults} Adults, ${children} Children\n*Transport Preference:* ${transportPreference}\n*Hotel Tier:* ${hotelTier}\n*Notes & Preferences:* ${specialRequirements || 'None'}\n\nPlease share the detailed proposal and availability.`
-    );
-    return `https://wa.me/94750928078?text=${text}`;
+    try {
+      window.open(getWhatsAppBookingLink(ref), '_blank');
+    } catch (err) {
+      console.warn('[TravelsBookingModal] WhatsApp launch error:', err);
+    }
   };
 
   return (

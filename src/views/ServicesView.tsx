@@ -31,6 +31,7 @@ import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { DIVISIONS, DIVISION_LIST } from '../config/divisions';
 import { DivisionId } from '../types';
 import { openWhatsAppInquiry } from '../utils/whatsapp';
+import { getRentalAssetCount } from '../utils/assetMetrics';
 
 interface ServicesViewProps {
   onNavigate: (route: string) => void;
@@ -43,7 +44,12 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
 }) => {
   const [selectedDivision, setSelectedDivision] = useState<DivisionId | 'all'>(initialDivision);
   const [searchQuery, setSearchQuery] = useState('');
-  const { services, companySettings, divisions } = useFirestoreDataContext();
+  const { services, companySettings, siteSettings, divisions, products } = useFirestoreDataContext();
+
+  const rentalCount = getRentalAssetCount(
+    products,
+    (companySettings as any)?.rentalAssetCount || (siteSettings as any)?.rentalAssetCount
+  );
 
   const orderedDivisions = React.useMemo(() => {
     if (divisions && divisions.length > 0) {
@@ -373,7 +379,7 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
                 <Badge variant="electric" size="sm" className="bg-blue-600/80 text-white border-blue-400/30">
                   SWS Events Rental Hub
                 </Badge>
-                <span className="text-xs font-semibold text-blue-300">5,000+ Units in Active Stock</span>
+                <span className="text-xs font-semibold text-blue-300">{rentalCount} Units in Active Stock</span>
               </div>
               <H2 className="text-white text-2xl sm:text-3xl font-display font-bold tracking-tight mb-3">
                 Event Equipment & Luxury Furniture Rentals

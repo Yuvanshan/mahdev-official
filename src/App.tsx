@@ -20,6 +20,7 @@ import { catalogService } from './services/catalogService';
 import { motion, AnimatePresence } from 'motion/react';
 
 import { DivisionView } from './views/DivisionView';
+import { DivisionComingSoonView } from './views/DivisionComingSoonView';
 import { SWSView } from './views/SWSView';
 import { U1View } from './views/U1View';
 import { ITView } from './views/ITView';
@@ -214,6 +215,43 @@ function AppContent() {
       return (rawId as DivisionId);
     })();
 
+  // Live Firestore check for Coming Soon status across all divisions
+  const isDivisionComingSoon = (rawDivId: string): boolean => {
+    if (!rawDivId) return false;
+    const normalized =
+      rawDivId === 'u1' || rawDivId === 'u1-studio' || rawDivId === 'u1-cinema'
+        ? 'u1'
+        : rawDivId === 'it' || rawDivId === 'it-solutions' || rawDivId === 'mahdev-it'
+        ? 'it'
+        : rawDivId === 'travels' || rawDivId === 'mahdev-travels'
+        ? 'travels'
+        : rawDivId === 'mart' || rawDivId === 'online-mart' || rawDivId === 'mahdev-mart'
+        ? 'mart'
+        : rawDivId === 'sws' || rawDivId === 'sws-event-management' || rawDivId === 'sws-events'
+        ? 'sws'
+        : rawDivId;
+
+    const matched = divisions.find(
+      (d) =>
+        d.id === rawDivId ||
+        d.id === normalized ||
+        d.slug === rawDivId ||
+        d.slug === normalized ||
+        (normalized === 'u1' && (d.id === 'u1-studio' || d.slug === 'u1-studio')) ||
+        (normalized === 'it' && (d.id === 'it-solutions' || d.slug === 'it-solutions')) ||
+        (normalized === 'travels' && (d.id === 'mahdev-travels' || d.slug === 'mahdev-travels')) ||
+        (normalized === 'mart' && (d.id === 'online-mart' || d.slug === 'online-mart')) ||
+        (normalized === 'sws' && (d.id === 'sws-event-management' || d.slug === 'sws-event-management'))
+    );
+
+    if (!matched) return false;
+    return !!(
+      (matched as any).isComingSoon ||
+      (matched as any).comingSoon ||
+      (matched as any).status === 'coming_soon'
+    );
+  };
+
   // Track page views and division views automatically
   useEffect(() => {
     analyticsService.trackPageView(normalizedPath, document.title, divisionKey);
@@ -369,6 +407,9 @@ function AppContent() {
       normalizedPath === '/events' ||
       divisionKey === 'sws'
     ) {
+      if (isDivisionComingSoon('sws')) {
+        return <DivisionComingSoonView divisionId="sws" onNavigate={navigate} />;
+      }
       return <SWSView onNavigate={navigate} />;
     }
 
@@ -377,6 +418,9 @@ function AppContent() {
       normalizedPath.startsWith('/sws-event-management/') ||
       normalizedPath.startsWith('/sws-events/')
     ) {
+      if (isDivisionComingSoon('sws')) {
+        return <DivisionComingSoonView divisionId="sws" onNavigate={navigate} />;
+      }
       const subSlug = normalizedPath
         .replace(/^\/(sws|sws-event-management|sws-events)\//, '')
         .trim();
@@ -412,10 +456,16 @@ function AppContent() {
     }
 
     if (normalizedPath === '/u1' || divisionKey === 'u1') {
+      if (isDivisionComingSoon('u1')) {
+        return <DivisionComingSoonView divisionId="u1" onNavigate={navigate} />;
+      }
       return <U1View onNavigate={navigate} />;
     }
 
     if (normalizedPath.startsWith('/u1/')) {
+      if (isDivisionComingSoon('u1')) {
+        return <DivisionComingSoonView divisionId="u1" onNavigate={navigate} />;
+      }
       const subSlug = normalizedPath.replace('/u1/', '').trim();
       const validSubsections = [
         'cinema',
@@ -448,10 +498,16 @@ function AppContent() {
     }
 
     if (normalizedPath === '/it' || divisionKey === 'it') {
+      if (isDivisionComingSoon('it')) {
+        return <DivisionComingSoonView divisionId="it" onNavigate={navigate} />;
+      }
       return <ITView onNavigate={navigate} />;
     }
 
     if (normalizedPath.startsWith('/it/')) {
+      if (isDivisionComingSoon('it')) {
+        return <DivisionComingSoonView divisionId="it" onNavigate={navigate} />;
+      }
       const subSlug = normalizedPath.replace('/it/', '').trim();
       const itService = services.find(
         (s) => s.division === 'it' && (s.slug === subSlug || s.id === subSlug)
@@ -470,10 +526,16 @@ function AppContent() {
     }
 
     if (normalizedPath === '/travels' || divisionKey === 'travels') {
+      if (isDivisionComingSoon('travels')) {
+        return <DivisionComingSoonView divisionId="travels" onNavigate={navigate} />;
+      }
       return <TravelsView onNavigate={navigate} />;
     }
 
     if (normalizedPath.startsWith('/travels/')) {
+      if (isDivisionComingSoon('travels')) {
+        return <DivisionComingSoonView divisionId="travels" onNavigate={navigate} />;
+      }
       const subSlug = normalizedPath.replace('/travels/', '').trim();
       const travelsService = services.find(
         (s) => s.division === 'travels' && (s.slug === subSlug || s.id === subSlug)
@@ -496,6 +558,9 @@ function AppContent() {
       normalizedPath.startsWith('/mart/') ||
       divisionKey === 'mart'
     ) {
+      if (isDivisionComingSoon('mart')) {
+        return <DivisionComingSoonView divisionId="mart" onNavigate={navigate} />;
+      }
       if (normalizedPath.startsWith('/mart/') && normalizedPath !== '/mart') {
         const subSlug = normalizedPath.replace('/mart/', '').trim();
         const martProduct =
@@ -634,6 +699,10 @@ function AppContent() {
             : rawId === 'mart' || rawId === 'online-mart'
             ? 'mart'
             : (rawId as DivisionId);
+
+        if (isDivisionComingSoon(divId)) {
+          return <DivisionComingSoonView divisionId={divId} onNavigate={navigate} />;
+        }
 
         if (divId === 'sws') return <SWSView onNavigate={navigate} />;
         if (divId === 'u1') return <U1View onNavigate={navigate} />;

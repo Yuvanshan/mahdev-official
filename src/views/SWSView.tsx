@@ -27,14 +27,29 @@ import { SWSService, SWSPackage, SWSRentalItem } from '../data/swsData';
 import { DIVISION_LIST } from '../config/divisions';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
+import { getRentalAssetCount } from '../utils/assetMetrics';
 
 interface SWSViewProps {
   onNavigate: (route: string) => void;
 }
 
 export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
-  const { divisions, companySettings } = useFirestoreDataContext();
+  const { divisions, companySettings, siteSettings, products } = useFirestoreDataContext();
   const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
+
+  const swsDiv = divisions?.find(
+    (d) =>
+      d.id === 'sws' ||
+      d.id === 'sws-event-management' ||
+      d.slug === 'sws' ||
+      d.slug === 'sws-event-management'
+  );
+
+  const rentalCount = getRentalAssetCount(
+    products,
+    (swsDiv as any)?.rentalAssetCount || (companySettings as any)?.rentalAssetCount || (siteSettings as any)?.rentalAssetCount
+  );
+
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [isQuoteMode, setIsQuoteMode] = useState(false);
   const [activeServiceForBooking, setActiveServiceForBooking] = useState<SWSService | null>(null);
@@ -121,7 +136,7 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
     <div className="w-full flex flex-col">
       <SEOHead
         title="SWS Event Management | Luxury Weddings, Decor, Stage Productions & Equipment Rentals"
-        description="SWS Event Management by Mahdev Pvt Ltd (Est. 2022). Comprehensive event design, wedding decorations, corporate summits, stage engineering, 5,000+ rental inventory units, photography, catering, and complete packages in Sri Lanka."
+        description={`SWS Event Management by Mahdev Pvt Ltd (Est. 2022). Comprehensive event design, wedding decorations, corporate summits, stage engineering, ${rentalCount} rental inventory units, photography, catering, and complete packages in Sri Lanka.`}
         canonicalUrl="https://mahdev.lk/sws"
       />
 
@@ -150,7 +165,7 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
                 onClick={() => scrollToAnchor('rentals')}
                 className="hover:text-blue-600 transition-colors cursor-pointer text-blue-600 font-bold"
               >
-                Rentals & Equipment (5,000+)
+                Rentals & Equipment ({rentalCount})
               </button>
               <button
                 onClick={() => scrollToAnchor('packages')}

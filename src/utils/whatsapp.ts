@@ -99,6 +99,12 @@ export function resolveItemDirectUrl(options: WhatsAppInquiryOptions, effectiveS
   if (options.type === 'service') {
     return `${origin}/services?sku=${encodeURIComponent(effectiveSku)}`;
   }
+  if (options.type === 'package') {
+    return `${origin}/services?packageSku=${encodeURIComponent(effectiveSku)}`;
+  }
+  if (options.type === 'portfolio') {
+    return `${origin}/portfolio?sku=${encodeURIComponent(effectiveSku)}`;
+  }
   if (options.type === 'gallery') {
     return `${origin}/gallery?sku=${encodeURIComponent(effectiveSku)}`;
   }

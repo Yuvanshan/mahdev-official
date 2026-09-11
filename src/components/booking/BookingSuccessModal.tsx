@@ -14,7 +14,8 @@ import {
   FileText,
 } from 'lucide-react';
 import { Booking } from '../../types/booking';
-import { COMPANY_INFO, getWhatsAppUrl } from '../../config/company';
+import { COMPANY_INFO } from '../../config/company';
+import { buildWhatsAppMessage, MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
 
 interface BookingSuccessModalProps {
   booking: Booking;
@@ -173,16 +174,28 @@ END:VCALENDAR`;
             </button>
 
             <a
-              href={getWhatsAppUrl(
-                COMPANY_INFO.primaryPhone,
-                `Hello Mahdev Concierge, I have just made a booking [ID: ${booking.id}] for ${booking.serviceName}.`
-              )}
+              href={`https://wa.me/${MAHDEV_WHATSAPP_NUMBER}?text=${encodeURIComponent(
+                buildWhatsAppMessage({
+                  title: booking.serviceName,
+                  sku: (booking as any).sku,
+                  bookingId: booking.id,
+                  packageName: booking.packageName,
+                  date: booking.date,
+                  time: booking.time,
+                  location: booking.location?.address,
+                  customerName: booking.customer?.fullName,
+                  customerPhone: booking.customer?.phone,
+                  customerEmail: booking.customer?.email,
+                  price: booking.price,
+                  type: 'booking',
+                })
+              )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-xs"
+              className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
             >
               <MessageCircle className="w-4 h-4" />
-              <span>WhatsApp Concierge</span>
+              <span>Confirm on WhatsApp (075 092 8078)</span>
             </a>
           </div>
 

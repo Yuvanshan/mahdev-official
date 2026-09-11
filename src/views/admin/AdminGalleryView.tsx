@@ -25,6 +25,8 @@ import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { QuickCategoryCreator } from '../../components/admin/QuickCategoryCreator';
 import { DivisionId } from '../../types';
 import { compressDataUrl } from '../../utils/imageOptimizer';
+import { firestoreGalleryService } from '../../services/firestore/gallery';
+import { purgeRemovedStudioPostsFromFirestore } from '../../services/firestore/databaseManagement';
 
 const PRESET_GALLERY_CATEGORIES = [
   'Weddings',
@@ -275,17 +277,48 @@ export const AdminGalleryView: React.FC = () => {
     }
   };
 
-  const handleDeleteConfirm = (permanent: boolean) => {
+  const [isPurgingStudio, setIsPurgingStudio] = useState(false);
+
+  const handleDeleteConfirm = async (permanent: boolean) => {
     if (!deletingItem) return;
-    if (permanent) {
-      cmsService.hardDelete('gallery', deletingItem.id);
-      addToast('warning', 'Permanent Deletion', `"${deletingItem.title}" permanently removed.`);
-    } else {
-      cmsService.softDelete('gallery', deletingItem.id);
-      addToast('info', 'Gallery Item Archived', `"${deletingItem.title}" archived.`);
+    const itemToDelete = deletingItem;
+    try {
+      if (permanent) {
+        cmsService.hardDelete('gallery', itemToDelete.id);
+        try {
+          await firestoreGalleryService.deleteGallery(itemToDelete.id);
+        } catch (fErr) {
+          console.warn('[AdminGallery] Firestore deletion warning:', fErr);
+        }
+        addToast('warning', 'Permanent Deletion', `"${itemToDelete.title}" permanently removed from Firestore & storage.`);
+      } else {
+        cmsService.softDelete('gallery', itemToDelete.id);
+        addToast('info', 'Gallery Item Archived', `"${itemToDelete.title}" archived.`);
+      }
+    } finally {
+      setDeletingItem(null);
+      loadData();
     }
-    setDeletingItem(null);
-    loadData();
+  };
+
+  const handlePurgeStudioPosts = async () => {
+    if (!window.confirm('Are you sure you want to permanently delete all removed/archived Studio posts from Firestore? This cannot be undone.')) {
+      return;
+    }
+    setIsPurgingStudio(true);
+    try {
+      const res = await purgeRemovedStudioPostsFromFirestore(false);
+      addToast(
+        res.success ? 'success' : 'warning',
+        'Studio Posts Cleaned',
+        `Cleaned ${res.galleryDeleted} gallery items and ${res.portfolioDeleted} portfolio items from Firestore.`
+      );
+      loadData();
+    } catch (err: any) {
+      addToast('error', 'Cleanup Failed', err.message || 'Could not purge studio posts.');
+    } finally {
+      setIsPurgingStudio(false);
+    }
   };
 
   const handleRestore = (item: CmsGalleryItem) => {
@@ -313,6 +346,16 @@ export const AdminGalleryView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePurgeStudioPosts}
+            disabled={isPurgingStudio}
+            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200"
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+            {isPurgingStudio ? 'Cleaning Firestore...' : 'Purge Removed Studio Posts'}
+          </Button>
           <Button variant="primary" size="sm" onClick={handleOpenCreate}>
             <Plus className="w-3.5 h-3.5 mr-1.5" />
             Add Gallery Asset

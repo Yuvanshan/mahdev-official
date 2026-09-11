@@ -506,6 +506,7 @@ export interface FirestorePortfolio {
   divisionId: DivisionId | string;
   division?: DivisionId | string; // backwards compatibility
   divisionName?: string;
+  sku?: string;
   images?: string[];
   category: string;
   location?: string;

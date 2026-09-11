@@ -24,7 +24,7 @@ const orderResult = validateAndCreateAuthoritativeOrder({
   customerId: 'usr-demo-101',
   customerEmail: 'ruwan.w@colombomed.lk',
   customerName: 'Dr. Ruwan Wickremasinghe',
-  customerPhone: '+94 77 982 1144',
+  customerPhone: '+94 75 092 8078',
   shippingAddress: {
     street: '15 Gregory Road',
     city: 'Colombo 07',
@@ -93,7 +93,7 @@ async function runNotificationTest() {
     recipient: {
       name: 'Dr. Ruwan Wickremasinghe',
       email: 'ruwan.w@colombomed.lk',
-      phone: '+94 77 982 1144',
+      phone: '+94 75 092 8078',
     },
     data: {
       orderId: 'ORD-2026-8941',

@@ -1,3 +1,4 @@
+
 import {
   collection,
   doc,
@@ -124,4 +125,94 @@ export async function seedPristineProductionSettings(): Promise<void> {
   };
 
   await setDoc(doc(db, 'settings', 'homepage'), homepagePayload, { merge: true });
+}
+
+/**
+ * Permanently removes studio posts ('u1', 'u1-studio', 'u1-cinema') from Firestore
+ * that have been removed/archived or marked for purge.
+ */
+export interface StudioCleanupResult {
+  success: boolean;
+  galleryDeleted: number;
+  portfolioDeleted: number;
+  totalDeleted: number;
+  errors: string[];
+}
+
+export async function purgeRemovedStudioPostsFromFirestore(
+  purgeAllStudioPosts: boolean = false
+): Promise<StudioCleanupResult> {
+  let galleryDeleted = 0;
+  let portfolioDeleted = 0;
+  const errors: string[] = [];
+
+  const studioDivisionKeys = ['u1', 'u1-studio', 'u1-cinema'];
+
+  // 1. Scan and purge from 'gallery' collection in Firestore
+  try {
+    const gallerySnap = await getDocs(collection(db, 'gallery'));
+    for (const docSnap of gallerySnap.docs) {
+      const data = docSnap.data();
+      const div = String(data.division || data.divisionId || '').toLowerCase();
+      const isStudio = studioDivisionKeys.includes(div);
+
+      if (isStudio) {
+        const isArchivedOrDeleted =
+          data.isDeleted === true ||
+          data.status === 'deleted' ||
+          data.status === 'archived' ||
+          data.status === 'hidden' ||
+          data.isActive === false;
+
+        if (purgeAllStudioPosts || isArchivedOrDeleted) {
+          try {
+            await deleteDoc(docSnap.ref);
+            galleryDeleted++;
+          } catch (delErr: any) {
+            errors.push(`Gallery doc ${docSnap.id}: ${delErr?.message || delErr}`);
+          }
+        }
+      }
+    }
+  } catch (err: any) {
+    errors.push(`Gallery collection scan: ${err?.message || err}`);
+  }
+
+  // 2. Scan and purge from 'portfolio' collection in Firestore
+  try {
+    const portfolioSnap = await getDocs(collection(db, 'portfolio'));
+    for (const docSnap of portfolioSnap.docs) {
+      const data = docSnap.data();
+      const div = String(data.division || data.divisionId || '').toLowerCase();
+      const isStudio = studioDivisionKeys.includes(div);
+
+      if (isStudio) {
+        const isArchivedOrDeleted =
+          data.isDeleted === true ||
+          data.status === 'deleted' ||
+          data.status === 'archived' ||
+          data.status === 'hidden' ||
+          data.isActive === false;
+
+        if (purgeAllStudioPosts || isArchivedOrDeleted) {
+          try {
+            await deleteDoc(docSnap.ref);
+            portfolioDeleted++;
+          } catch (delErr: any) {
+            errors.push(`Portfolio doc ${docSnap.id}: ${delErr?.message || delErr}`);
+          }
+        }
+      }
+    }
+  } catch (err: any) {
+    errors.push(`Portfolio collection scan: ${err?.message || err}`);
+  }
+
+  return {
+    success: errors.length === 0,
+    galleryDeleted,
+    portfolioDeleted,
+    totalDeleted: galleryDeleted + portfolioDeleted,
+    errors,
+  };
 }

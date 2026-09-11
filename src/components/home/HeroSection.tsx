@@ -6,6 +6,7 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { getTelLink } from '../../config/company';
 import { HeroShowcaseSlideItem } from '../../types/cms';
 import { getWhatsAppInquiryUrl } from '../../utils/whatsapp';
+import { getRentalAssetCount } from '../../utils/assetMetrics';
 import { ParallelWatermark } from '../motion/ParallelScroll';
 
 interface HeroSectionProps {
@@ -68,8 +69,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onExploreMahdev,
   onContactUs,
 }) => {
-  const { homepageConfig, divisions, companySettings } = useFirestoreDataContext();
+  const { homepageConfig, divisions, companySettings, siteSettings, products } = useFirestoreDataContext();
   const heroConfig = homepageConfig?.hero;
+
+  const rentalCount = getRentalAssetCount(
+    products,
+    (companySettings as any)?.rentalAssetCount || (siteSettings as any)?.rentalAssetCount
+  );
 
   // Derive dynamic Hero Media Slider slides from CMS configuration or Firestore divisions
   const showcaseItems = useMemo<HeroShowcaseSlideItem[]>(() => {
@@ -85,6 +91,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     if (heroConfig?.showcaseItems && heroConfig.showcaseItems.length > 0) {
       return heroConfig.showcaseItems.map((item) => ({
         ...item,
+        highlight:
+          item.id === 'sws' && item.highlight?.includes('5,000+')
+            ? item.highlight.replace('5,000+', rentalCount)
+            : item.highlight,
         route: getCanonicalRoute(item.id, item.route || `/${item.id}`),
       }));
     }
@@ -108,12 +118,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         seen.add(id);
 
         const img = d.heroImageUrl || d.imageUrl || (d.hero as any)?.bgImage || d.logoUrl || '';
+        const defaultHighlight =
+          id === 'sws'
+            ? `${rentalCount} Rental Inventory • Mandaps • Stage Lighting`
+            : d.heroSubheadline || d.tagline || d.shortDescription || 'Verified Direct In-House Delivery';
+
         items.push({
           id,
           name: d.name,
           badge: d.badge || (d.hero as any)?.badge || 'Enterprise Division',
           tagline: (d.hero as any)?.subtitle || d.tagline || d.shortDescription || '',
-          highlight: d.heroSubheadline || d.tagline || d.shortDescription || 'Verified Direct In-House Delivery',
+          highlight: defaultHighlight,
           image: img,
           route: getCanonicalRoute(id, d.route || `/${id}`),
         });
@@ -124,8 +139,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       }
     }
 
-    return DEFAULT_HERO_SHOWCASE_ITEMS;
-  }, [heroConfig?.showcaseItems, divisions]);
+    return DEFAULT_HERO_SHOWCASE_ITEMS.map((item) => {
+      if (item.id === 'sws') {
+        return {
+          ...item,
+          highlight: `${rentalCount} Rental Inventory • Mandaps • Stage Lighting`,
+        };
+      }
+      return item;
+    });
+  }, [heroConfig?.showcaseItems, divisions, rentalCount]);
 
   const [activeTab, setActiveTab] = useState<string>(() => showcaseItems[0]?.id || 'sws');
   const [isPaused, setIsPaused] = useState(false);

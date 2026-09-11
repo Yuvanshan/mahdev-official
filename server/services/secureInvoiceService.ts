@@ -105,7 +105,7 @@ export function generateSecureFiscalInvoice(input: GenerateInvoiceInput): Genera
       registrationNumber: 'PV-00289410',
       vatNumber: 'VAT-LK-998821034',
       address: '41/22, Pickerings Road, Kotahena, Colombo 13, Sri Lanka',
-      phone: '076 898 8970 / 075 092 8078',
+      phone: '075 092 8078',
       email: 'info.mahdev.lk@gmail.com',
     },
     client: {
