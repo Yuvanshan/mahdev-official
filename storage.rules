@@ -38,6 +38,14 @@ service firebase.storage {
       return request.resource.contentType.matches('image/(jpeg|jpg|png|webp|svg\\+xml|x-icon|vnd\\.microsoft\\.icon|ico)');
     }
 
+    function isValidVideo() {
+      return request.resource.contentType.matches('video/(mp4|webm|ogg|quicktime|x-matroska)');
+    }
+
+    function isValidMedia() {
+      return isValidVectorOrImage() || isValidVideo();
+    }
+
     function isValidDoc() {
       return request.resource.contentType.matches('(application/pdf|image/jpeg|image/png|image/webp)');
     }
@@ -47,17 +55,22 @@ service firebase.storage {
     // =========================================================================
     match /branding/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff() && isValidVectorOrImage() && request.resource.size < 5 * 1024 * 1024;
+      allow write: if isStaff() && isValidMedia() && request.resource.size < 100 * 1024 * 1024;
     }
 
     match /company/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff() && isValidVectorOrImage() && request.resource.size < 10 * 1024 * 1024;
+      allow write: if isStaff() && isValidMedia() && request.resource.size < 100 * 1024 * 1024;
     }
 
     match /divisions/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff() && isValidVectorOrImage() && request.resource.size < 10 * 1024 * 1024;
+      allow write: if isStaff() && isValidMedia() && request.resource.size < 100 * 1024 * 1024;
+    }
+
+    match /videos/{allPaths=**} {
+      allow read: if true;
+      allow write: if isStaff() && isValidVideo() && request.resource.size < 100 * 1024 * 1024;
     }
 
     match /services/{allPaths=**} {
@@ -72,22 +85,22 @@ service firebase.storage {
 
     match /portfolio/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff() && isValidVectorOrImage() && request.resource.size < 10 * 1024 * 1024;
+      allow write: if isStaff() && isValidMedia() && request.resource.size < 100 * 1024 * 1024;
     }
 
     match /gallery/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff() && isValidVectorOrImage() && request.resource.size < 10 * 1024 * 1024;
+      allow write: if isStaff() && isValidMedia() && request.resource.size < 100 * 1024 * 1024;
     }
 
     match /banners/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff() && isValidVectorOrImage() && request.resource.size < 10 * 1024 * 1024;
+      allow write: if isStaff() && isValidMedia() && request.resource.size < 100 * 1024 * 1024;
     }
 
     match /general/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff() && isValidVectorOrImage() && request.resource.size < 10 * 1024 * 1024;
+      allow write: if isStaff() && isValidMedia() && request.resource.size < 100 * 1024 * 1024;
     }
 
     match /testimonials/{allPaths=**} {

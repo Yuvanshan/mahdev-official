@@ -43,7 +43,7 @@ export const SWSPackagesSection: React.FC<SWSPackagesSectionProps> = ({ onBookPa
           price: typeof s.price === 'number' ? `$${s.price.toLocaleString()}` : String(s.price || ''),
           priceSubtext: (s as any).priceNote || (s as any).priceSubtext || 'Turnkey rate',
           guestEstimate: (s as any).guestRange || (s as any).guestEstimate || 'All scales',
-          idealFor: (s as any).idealFor || 'Corporate & Social Events',
+          idealFor: (s as any).idealFor || 'Executive & Social Events',
           availability: (s as any).availability || 'Available on request',
           popular: !!(s as any).popular,
           badge: s.badge || 'Package Suite',

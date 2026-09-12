@@ -315,7 +315,7 @@ export const IT_SERVICES: ITService[] = [
       'Employees wasting hours searching through thousands of PDF manuals, policies, and contracts',
       'Overwhelmed customer support teams unable to handle 24/7 multi-lingual inquiries',
       'Manual quality-control bottlenecks in manufacturing leading to defective product shipments',
-      'Security risks of employees pasting confidential corporate data into public consumer AI tools',
+      'Security risks of employees pasting confidential enterprise data into public consumer AI tools',
     ],
     features: [
       'Private Retrieval-Augmented Generation (RAG) querying your internal PDFs, ERP, and databases',

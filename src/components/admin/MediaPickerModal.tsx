@@ -130,7 +130,7 @@ const MEDIA_PRESETS: MediaAssetPreset[] = [
   // Logos
   {
     id: 'med-lg-01',
-    title: 'Mahdev Corporate Monogram Badge',
+    title: 'Mahdev Official Monogram Badge',
     category: 'logos',
     url: 'https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?auto=format&fit=crop&w=400&q=80',
     thumbnail: 'https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?auto=format&fit=crop&w=200&q=80',
@@ -139,7 +139,7 @@ const MEDIA_PRESETS: MediaAssetPreset[] = [
   // Banners
   {
     id: 'med-bn-01',
-    title: 'Corporate Executive Synergy Banner',
+    title: 'Enterprise Executive Synergy Banner',
     category: 'banners',
     url: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1600&q=80',
     thumbnail: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=400&q=80',

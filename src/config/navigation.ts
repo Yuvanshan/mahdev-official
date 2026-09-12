@@ -39,7 +39,7 @@ export const MAIN_NAV_ITEMS: NavigationLink[] = [
         id: 'travels',
         label: 'Mahdev Travels',
         href: '/travels',
-        description: 'Bespoke holiday curation, corporate offsites, and luxury transport.',
+        description: 'Bespoke holiday curation, executive retreats, and luxury transport.',
         badge: 'Travel',
         iconName: 'Plane',
       },
@@ -88,7 +88,7 @@ export const FOOTER_SECTIONS: FooterSection[] = [
     title: 'Company',
     links: [
       { label: 'About Mahdev', href: '/about' },
-      { label: 'Corporate Leadership', href: '/about#leadership' },
+      { label: 'Executive Leadership', href: '/about#leadership' },
       { label: 'Our Milestones', href: '/#milestones' },
       { label: 'Portfolio & Case Studies', href: '/portfolio' },
       { label: 'Partner Companies', href: '/#companies' },

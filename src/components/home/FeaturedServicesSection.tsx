@@ -45,6 +45,135 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
   return <FeaturedServicesSectionContent {...props} activeServices={activeServices} />;
 };
 
+const FeaturedServiceCard: React.FC<{
+  service: any;
+  idx: number;
+  colTransform: any;
+  reducedMotion: boolean;
+  isTouch: boolean;
+  onNavigate: (route: string) => void;
+  divisions?: any[];
+}> = ({ service, idx, colTransform, reducedMotion, isTouch, onNavigate, divisions }) => {
+  const [activeImgIdx, setActiveImgIdx] = useState(0);
+
+  const serviceImages: string[] = useMemo(() => {
+    if (Array.isArray(service.images) && service.images.length > 0) {
+      return service.images.filter(Boolean).slice(0, 5);
+    }
+    const single = (service as any).imageUrl || (service as any).image;
+    return single ? [single] : [];
+  }, [service]);
+
+  const divId = (service.divisionId || service.division || 'sws') as string;
+  const liveDiv = divisions?.find((d) => d.id === divId || d.slug === divId);
+  const fallbackDiv = (DIVISIONS as any)[divId];
+  const divRoute = (liveDiv && liveDiv.route) || (liveDiv && `/${liveDiv.slug || liveDiv.id}`) || (fallbackDiv && fallbackDiv.route) || `/${divId}`;
+  const divisionBadgeText =
+    service.divisionName ||
+    (liveDiv && (liveDiv.shortName || liveDiv.name)) ||
+    (fallbackDiv && fallbackDiv.shortName) ||
+    divId.toUpperCase();
+
+  return (
+    <motion.div
+      key={service.id}
+      style={!reducedMotion && !isTouch ? { y: colTransform } : undefined}
+      whileHover={{ y: -3 }}
+      transition={{ duration: 0.2 }}
+      className="group relative flex flex-col justify-between rounded-2xl bg-white border border-purple-100/90 p-5 sm:p-6 shadow-xs hover:border-purple-400 hover:shadow-md transition-all duration-200 h-full"
+    >
+      {service.popular && (
+        <div className="absolute top-4 right-4 z-10">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-semibold">
+            <Sparkles className="w-3 h-3 text-amber-500" />
+            Popular
+          </span>
+        </div>
+      )}
+
+      <div>
+        {serviceImages.length > 0 && (
+          <div className="mb-4 aspect-16/9 rounded-xl overflow-hidden bg-purple-50/50 border border-purple-100 relative">
+            <img
+              src={serviceImages[activeImgIdx] || serviceImages[0]}
+              alt={service.title || service.name}
+              className="w-full h-full object-cover transition-all duration-300"
+            />
+            {serviceImages.length > 1 && (
+              <>
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/60 backdrop-blur-xs px-2 py-1 rounded-full z-10">
+                  {serviceImages.map((_, dIdx) => (
+                    <button
+                      key={dIdx}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveImgIdx(dIdx);
+                      }}
+                      className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                        activeImgIdx === dIdx ? 'w-3.5 bg-purple-400' : 'w-1.5 bg-white/60 hover:bg-white'
+                      }`}
+                      title={`Photo ${dIdx + 1}`}
+                    />
+                  ))}
+                </div>
+                <span className="absolute top-2 left-2 bg-black/60 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full backdrop-blur-xs">
+                  {activeImgIdx + 1} / {serviceImages.length}
+                </span>
+              </>
+            )}
+          </div>
+        )}
+
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
+            <IconRenderer name={service.iconName || 'Sparkles'} className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-purple-700 block">
+              {divisionBadgeText}
+            </span>
+            <span className="text-[11px] text-slate-500">{service.badge || 'Enterprise'}</span>
+          </div>
+        </div>
+
+        <h3 className="font-display text-base font-bold text-slate-900 mb-1.5 group-hover:text-purple-700 transition-colors">
+          {service.title || service.name}
+        </h3>
+        <p className="text-xs text-slate-600 leading-relaxed mb-4 line-clamp-2">
+          {service.description}
+        </p>
+
+        {service.features && service.features.length > 0 && (
+          <div className="space-y-1.5 mb-5 pt-3 border-t border-purple-50">
+            {service.features.slice(0, 3).map((feature: string, fIdx: number) => (
+              <div key={fIdx} className="flex items-center gap-2 text-xs text-slate-700">
+                <CheckCircle2 className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                <span className="truncate">{feature}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="pt-4 border-t border-purple-50 flex items-center justify-between gap-3">
+        <span className="text-[11px] font-medium text-slate-500">
+          {service.turnaroundTime || (service.startingPrice || service.price ? `From LKR ${(service.startingPrice || service.price).toLocaleString()}` : 'Direct SLA')}
+        </span>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => onNavigate(divRoute)}
+          rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+          className="text-xs hover:border-purple-600 hover:text-purple-600 cursor-pointer"
+        >
+          Details
+        </Button>
+      </div>
+    </motion.div>
+  );
+};
+
 const FeaturedServicesSectionContent: React.FC<
   FeaturedServicesSectionProps & { activeServices: any[] }
 > = ({ onNavigate, onInquireService, activeServices }) => {
@@ -150,7 +279,7 @@ const FeaturedServicesSectionContent: React.FC<
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                   activeTab === tab.id
-                    ? 'bg-white text-blue-600 shadow-xs border border-slate-200/80'
+                    ? 'bg-white text-purple-700 shadow-xs border border-purple-200'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                 }`}
               >
@@ -161,8 +290,8 @@ const FeaturedServicesSectionContent: React.FC<
         </div>
 
         {filteredServices.length === 0 ? (
-          <div className="relative z-10 rounded-2xl border border-dashed border-slate-200 p-12 text-center bg-slate-50/50 max-w-xl mx-auto space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+          <div className="relative z-10 rounded-2xl border border-dashed border-purple-200 p-12 text-center bg-purple-50/20 max-w-xl mx-auto space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center mx-auto">
               <Sparkles className="w-6 h-6" />
             </div>
             <h3 className="font-display text-lg font-bold text-slate-900">Custom Division Solutions</h3>
@@ -192,101 +321,19 @@ const FeaturedServicesSectionContent: React.FC<
           <div className="relative z-10">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredServices.map((service, idx) => {
-                const divId = (service.divisionId || service.division || 'sws') as string;
-                const liveDiv = divisions?.find((d) => d.id === divId || d.slug === divId);
-                const fallbackDiv = (DIVISIONS as any)[divId];
-                const divRoute = (liveDiv && liveDiv.route) || (liveDiv && `/${liveDiv.slug || liveDiv.id}`) || (fallbackDiv && fallbackDiv.route) || `/${divId}`;
-                const divisionBadgeText =
-                  service.divisionName ||
-                  (liveDiv && (liveDiv.shortName || liveDiv.name)) ||
-                  (fallbackDiv && fallbackDiv.shortName) ||
-                  (divId ? String(divId).toUpperCase() : 'ENTERPRISE');
-
-                // Determine parallel transform for 3-column layout
                 const colIdx = idx % 3;
-                const colTransform =
-                  colIdx === 0 ? yCol1 : colIdx === 1 ? yCol2 : yCol3;
-
+                const colTransform = colIdx === 0 ? yCol1 : colIdx === 1 ? yCol2 : yCol3;
                 return (
-                  <motion.div
+                  <FeaturedServiceCard
                     key={service.id}
-                    style={!reducedMotion && !isTouch ? { y: colTransform } : undefined}
-                    whileHover={{ y: -3 }}
-                    transition={{ duration: 0.2 }}
-                    className="group relative flex flex-col justify-between rounded-2xl bg-white border border-slate-200/90 p-6 sm:p-7 shadow-xs hover:border-blue-400 hover:shadow-md transition-all duration-200 h-full"
-                  >
-                    {service.popular && (
-                      <div className="absolute top-4 right-4">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-semibold">
-                          <Sparkles className="w-3 h-3 text-amber-500" />
-                          Popular
-                        </span>
-                      </div>
-                    )}
-
-                    <div>
-                      {(() => {
-                        const rawImg = (service as any).imageUrl || (service as any).images?.[0];
-                        const srvImg = typeof rawImg === 'string' ? rawImg.trim() : '';
-                        return srvImg ? (
-                          <div className="mb-4 aspect-16/9 rounded-xl overflow-hidden bg-slate-100 border border-slate-100 relative">
-                            <img
-                              src={srvImg}
-                              alt={service.title || service.name}
-                              className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
-                            />
-                          </div>
-                        ) : null;
-                      })()}
-
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                          <IconRenderer name={service.iconName || 'Sparkles'} className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 block">
-                            {divisionBadgeText}
-                          </span>
-                          <span className="text-[11px] text-slate-500">{service.badge || 'Enterprise'}</span>
-                        </div>
-                      </div>
-
-                      <h3 className="font-display text-base font-bold text-slate-900 mb-1.5 group-hover:text-blue-600 transition-colors">
-                        {service.title || service.name}
-                      </h3>
-                      <p className="text-xs text-slate-600 leading-relaxed mb-4 line-clamp-2">
-                        {service.description}
-                      </p>
-
-                      {/* Key Features Bullet List */}
-                      {service.features && service.features.length > 0 && (
-                        <div className="space-y-1.5 mb-5 pt-3 border-t border-slate-100">
-                          {service.features.slice(0, 3).map((feature, fIdx) => (
-                            <div key={fIdx} className="flex items-center gap-2 text-xs text-slate-700">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                              <span className="truncate">{feature}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Card Action Footer */}
-                    <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
-                      <span className="text-[11px] font-medium text-slate-500">
-                        {service.turnaroundTime || (service.startingPrice || service.price ? `From LKR ${(service.startingPrice || service.price).toLocaleString()}` : 'Direct SLA')}
-                      </span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onNavigate(divRoute)}
-                        rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
-                        className="text-xs hover:border-blue-600 hover:text-blue-600 cursor-pointer"
-                      >
-                        Details
-                      </Button>
-                    </div>
-                  </motion.div>
+                    service={service}
+                    idx={idx}
+                    colTransform={colTransform}
+                    reducedMotion={reducedMotion}
+                    isTouch={isTouch}
+                    onNavigate={onNavigate}
+                    divisions={divisions}
+                  />
                 );
               })}
             </div>

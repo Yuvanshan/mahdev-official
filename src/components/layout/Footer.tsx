@@ -28,6 +28,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   const trincomaleeAddress = companySettings?.offices?.trincomalee?.address || '95/15, Iluppaikkulam, Kanniya Road, Trincomalee, Sri Lanka';
   const trincomaleeMapQuery = companySettings?.offices?.trincomalee?.mapQuery || '95/15 Iluppaikkulam, Kanniya Road, Trincomalee, Sri Lanka';
 
+  const currentYear = new Date().getFullYear();
+  const legalName = companySettings?.name
+    ? (companySettings.name.includes('(Pvt) Ltd') || companySettings.name.includes('Pvt Ltd') ? companySettings.name : `${companySettings.name} (Pvt) Ltd`)
+    : 'Mahdev (Pvt) Ltd';
+  const regNumber = companySettings?.registrationNumber || 'PV 00260901';
+
   const [activeLegalModal, setActiveLegalModal] = useState<{
     title: string;
     content: string;
@@ -42,7 +48,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
       'Privacy Policy':
         `${companyName} values your privacy. This policy outlines how we collect, safeguard, and use information across our parent enterprise and all child divisions (SWS Event Management, U1 Studio, IT & Solutions, Mahdev Travels, and Mahdev Online Mart). We never sell your personal data.`,
       'Terms & Conditions':
-        `By utilizing ${companyName} digital services, consulting divisions, or commercial portals, you agree to our standard corporate terms of service, intellectual property standards, and lawful engagement guidelines.`,
+        `By utilizing ${companyName} digital services, consulting divisions, or commercial portals, you agree to our standard terms of service, intellectual property standards, and lawful engagement guidelines.`,
       'Refund Policy':
         'Service cancellations and commercial product returns adhere to division-specific terms. Event management and studio productions follow staged milestone retainer agreements, while e-commerce orders qualify for standard 7-day verified returns.',
       'Shipping Policy':
@@ -66,30 +72,30 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
   return (
     <>
-      <footer className="w-full bg-slate-950 text-slate-300 border-t border-slate-900 mt-auto">
-        {/* Top Corporate Highlight Strip */}
-        <div className="border-b border-slate-800/80 py-8 sm:py-10 px-3 sm:px-6 lg:px-8">
+      <footer className="w-full bg-[#130724] text-purple-200/80 border-t border-purple-900/50 mt-auto">
+        {/* Top Highlight Strip */}
+        <div className="border-b border-purple-900/40 py-8 sm:py-10 px-3 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
             <div className="lg:col-span-7">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-900/40 border border-blue-500/30 text-blue-400 text-xs font-semibold mb-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-900/50 border border-purple-500/30 text-purple-300 text-xs font-semibold mb-3">
                 <Shield className="w-3.5 h-3.5" />
                 <span>The {companyName} Enterprise</span>
               </div>
               <h3 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight">
                 {tagline}
               </h3>
-              <p className="text-slate-400 text-sm mt-2 max-w-xl">
+              <p className="text-purple-200/70 text-sm mt-2 max-w-xl">
                 {description}
               </p>
             </div>
 
             {/* Newsletter Subscription Foundation */}
-            <div className="lg:col-span-5 bg-slate-900/90 rounded-xl p-4 sm:p-5 border border-slate-800">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-300 block mb-1">
+            <div className="lg:col-span-5 bg-[#1E0B36]/90 rounded-xl p-4 sm:p-5 border border-purple-900/50">
+              <span className="text-xs font-bold uppercase tracking-wider text-purple-200 block mb-1">
                 Executive Dispatch
               </span>
-              <p className="text-xs text-slate-400 mb-3">
-                Receive quarterly technology briefings, project releases, and corporate announcements.
+              <p className="text-xs text-purple-300/70 mb-3">
+                Receive quarterly technology briefings, project releases, and company announcements.
               </p>
               {newsletterSubscribed ? (
                 <div className="flex items-center gap-2 text-emerald-400 text-xs font-medium py-2">
@@ -101,10 +107,10 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                   <input
                     type="email"
                     required
-                    placeholder="Enter corporate email"
+                    placeholder="Enter your email"
                     value={newsletterEmail}
                     onChange={(e) => setNewsletterEmail(e.target.value)}
-                    className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3.5 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0052FF]"
+                    className="flex-1 bg-[#130724] border border-purple-800 rounded-lg px-3.5 py-2 text-xs text-white placeholder:text-purple-300/40 focus:outline-none focus:ring-2 focus:ring-purple-600"
                   />
                   <Button variant="electric" size="sm" type="submit" className="shrink-0">
                     Subscribe
@@ -126,29 +132,29 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 onClick={() => onNavigate('/')}
               />
 
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-xs text-purple-200/70 leading-relaxed">
                 Operating high-performance divisions across Sri Lanka and international partner networks.
               </p>
 
               {/* Direct Contact Anchors */}
-              <div className="space-y-3 pt-2 text-xs text-slate-300">
+              <div className="space-y-3 pt-2 text-xs text-purple-200/80">
                 <a
                   href={getMailtoLink(email)}
-                  className="flex items-center gap-2 text-slate-300 hover:text-blue-400 transition-colors group"
+                  className="flex items-center gap-2 text-purple-200/90 hover:text-purple-300 transition-colors group"
                 >
-                  <Mail className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <Mail className="w-3.5 h-3.5 text-purple-400 shrink-0" />
                   <span className="break-all">{email}</span>
                 </a>
                 
                 <div className="space-y-1.5 pt-0.5">
                   <div className="flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                    <Phone className="w-3.5 h-3.5 text-purple-400 shrink-0" />
                     <div className="flex items-center gap-1.5">
-                      <span className="text-slate-400 text-[11px]">Hotline:</span>
+                      <span className="text-purple-300/70 text-[11px]">Hotline:</span>
                       <a
                         href={getTelLink(primaryPhone)}
-                        className="hover:text-blue-400 transition-colors font-medium font-mono text-white"
-                        title={`Call Corporate Hotline ${primaryPhone}`}
+                        className="hover:text-purple-300 transition-colors font-medium font-mono text-white"
+                        title={`Call Hotline ${primaryPhone}`}
                       >
                         {primaryPhone}
                       </a>
@@ -158,13 +164,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                   <div className="flex items-center gap-2">
                     <MessageCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                     <div className="flex items-center gap-1.5">
-                      <span className="text-slate-400 text-[11px]">WhatsApp:</span>
+                      <span className="text-purple-300/70 text-[11px]">WhatsApp:</span>
                       <a
                         href="https://wa.me/94750928078?text=Hello%20Mahdev%20Pvt%20Ltd"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="hover:text-emerald-300 transition-colors font-medium font-mono text-emerald-400"
-                        title="Corporate WhatsApp 075 092 8078"
+                        title="WhatsApp 075 092 8078"
                       >
                         075 092 8078
                       </a>
@@ -172,82 +178,67 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                   </div>
                 </div>
 
-                <div className="pt-1 space-y-2 border-t border-slate-800/80">
-                  <a
-                    href={getMapSearchUrl(colomboMapQuery)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-start gap-2 hover:text-blue-400 transition-colors group"
-                  >
-                    <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-semibold text-slate-200 block text-[11px]">Colombo Office:</span>
-                      <span className="text-[11px] text-slate-400">{colomboAddress}</span>
-                    </div>
-                  </a>
-
-                  <a
-                    href={getMapSearchUrl(trincomaleeMapQuery)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-start gap-2 hover:text-blue-400 transition-colors group"
-                  >
-                    <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-semibold text-slate-200 block text-[11px]">Trincomalee Office:</span>
-                      <span className="text-[11px] text-slate-400">{trincomaleeAddress}</span>
-                    </div>
-                  </a>
+                <div className="pt-1 space-y-2 border-t border-purple-900/40">
+                  <div className="flex items-start gap-2 text-[11px] text-purple-300/70">
+                    <MapPin className="w-3.5 h-3.5 text-purple-400 shrink-0 mt-0.5" />
+                    <span>Colombo: {colomboAddress}</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-[11px] text-purple-300/70">
+                    <MapPin className="w-3.5 h-3.5 text-purple-400 shrink-0 mt-0.5" />
+                    <span>Trincomalee: {trincomaleeAddress}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Navigation Link Columns */}
-            {FOOTER_SECTIONS.map((section) => (
-              <div key={section.title} className="space-y-4">
-                <h4 className="font-display text-sm font-semibold text-white tracking-tight">
+            {/* Link Columns */}
+            {FOOTER_SECTIONS.map((section, idx) => (
+              <div key={idx} className="space-y-4">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-purple-200">
                   {section.title}
                 </h4>
-                <ul className="space-y-2.5 text-xs text-slate-400">
-                  {section.links.map((link) => {
-                    return (
-                      <li key={link.label}>
-                        <button
-                          onClick={() => {
-                            if (link.href.startsWith('/')) {
-                              onNavigate(link.href);
-                            } else {
-                              onNavigate('/' + link.href);
-                            }
-                          }}
-                          className="hover:text-blue-400 transition-colors text-left cursor-pointer inline-flex items-center gap-1.5"
-                        >
-                          <span>{link.label}</span>
-                          {link.badge && (
-                            <Badge size="sm" variant="electric" className="text-[9px] py-0 px-1.5">
-                              {link.badge}
-                            </Badge>
-                          )}
-                        </button>
-                      </li>
-                    );
-                  })}
+                <ul className="space-y-2 text-xs">
+                  {section.links.map((link, linkIdx) => (
+                    <li key={linkIdx}>
+                      <a
+                        href={link.href}
+                        onClick={(e) => {
+                          if (link.href.startsWith('/')) {
+                            e.preventDefault();
+                            onNavigate(link.href);
+                          } else {
+                            handleLegalClick(e, link.label);
+                          }
+                        }}
+                        className="text-purple-300/70 hover:text-white transition-colors flex items-center justify-between group"
+                      >
+                        <span>{link.label}</span>
+                        {link.badge && (
+                          <span className="text-[10px] bg-purple-900/80 text-purple-300 px-1.5 py-0.5 rounded-full border border-purple-500/30">
+                            {link.badge}
+                          </span>
+                        )}
+                      </a>
+                    </li>
+                  ))}
                 </ul>
               </div>
             ))}
           </div>
 
-          {/* Bottom Copyright and Socials */}
-          <div className="mt-14 pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 text-center sm:text-left">
-            <p>
-              © {new Date().getFullYear()} {companyName}. All rights reserved. {domain}
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-              <span className="hover:text-slate-300 transition-colors">Colombo Office</span>
-              <span>•</span>
-              <span className="hover:text-slate-300 transition-colors">Trincomalee Office</span>
-              <span>•</span>
-              <span className="hover:text-slate-300 transition-colors">Islandwide Operations</span>
+          {/* Bottom Bar: Copyright & Verified Registrations */}
+          <div className="border-t border-purple-900/40 mt-12 sm:mt-16 pt-6 sm:pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-purple-300/60">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
+              <span>
+                © {currentYear} {legalName}. All rights reserved.
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+              <span>Democratic Socialist Republic of Sri Lanka</span>
+              <span>Reg: {regNumber}</span>
+              <span>VAT / SVAT Compliant</span>
             </div>
           </div>
         </div>
@@ -263,7 +254,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <p>{activeLegalModal?.content}</p>
           <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-500 flex items-center gap-2">
             <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
-            <span>{companyName} Corporate Legal Registry • Document Ref: MDV-2026-LEG</span>
+            <span>{companyName} Legal Registry • Document Ref: MDV-2026-LEG</span>
           </div>
           <div className="pt-2 flex justify-end">
             <Button size="sm" variant="primary" onClick={() => setActiveLegalModal(null)}>

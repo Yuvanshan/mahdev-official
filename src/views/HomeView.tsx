@@ -105,13 +105,25 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
     }
   };
 
+  const effectiveBrandName = companySettings?.name
+    ? (companySettings.name.includes('(Pvt) Ltd') || companySettings.name.includes('Pvt Ltd') ? companySettings.name : `${companySettings.name} (Pvt) Ltd`)
+    : (siteSettings?.siteName || 'Mahdev (Pvt) Ltd');
+  const defaultPageTitle = `${effectiveBrandName} - Creating Moments | Capturing Memories | Delivering Innovation`;
+  const rawPageTitle = homepageConfig?.seo?.pageTitle;
+  const isCorporateTitle =
+    rawPageTitle &&
+    (rawPageTitle.toLowerCase().includes('corporate') ||
+      rawPageTitle.toLowerCase().includes('corporate ecosystem') ||
+      rawPageTitle.toLowerCase().includes('corporate eco'));
+  const effectivePageTitle = rawPageTitle && !isCorporateTitle ? rawPageTitle : defaultPageTitle;
+
   return (
     <div className="w-full flex flex-col pb-24 lg:pb-0">
       <SEOHead
-        title={homepageConfig?.seo?.pageTitle && homepageConfig.seo.pageTitle !== 'Corporate Ecosystem' ? homepageConfig.seo.pageTitle : 'Mahdev Pvt Ltd – Creating. Capturing. Innovating.'}
-        description={homepageConfig?.seo?.metaDescription || `${brandName} — Creating. Capturing. Innovating. Multi-division enterprise spanning Event Management, Studio Cinema, IT & Cloud, Travels, and E-Commerce.`}
+        title={effectivePageTitle}
+        description={homepageConfig?.seo?.metaDescription || `${effectiveBrandName} - Creating Moments | Capturing Memories | Delivering Innovation. Multi-division enterprise spanning Event Management, Studio Cinema, IT & Cloud, Travels, and E-Commerce.`}
         canonicalUrl={homepageConfig?.seo?.canonicalUrl || 'https://mahdev.lk'}
-        ogTitle={homepageConfig?.seo?.pageTitle && homepageConfig.seo.pageTitle !== 'Corporate Ecosystem' ? homepageConfig.seo.pageTitle : 'Mahdev Pvt Ltd – Creating. Capturing. Innovating.'}
+        ogTitle={effectivePageTitle}
         ogDescription={homepageConfig?.seo?.metaDescription}
       />
 

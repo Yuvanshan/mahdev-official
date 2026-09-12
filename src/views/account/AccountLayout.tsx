@@ -194,7 +194,7 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
                   </h3>
                   <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
                   <span className="inline-block text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.2 rounded-md mt-0.5 border border-blue-100">
-                    {user.accountType === 'corporate' ? 'Corporate Client' : 'Individual Client'}
+                    {user.accountType === 'corporate' ? 'Business Client' : 'Individual Client'}
                   </span>
                 </div>
               </div>

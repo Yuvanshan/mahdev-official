@@ -68,7 +68,7 @@ export const BookingView: React.FC<BookingViewProps> = ({
     },
     {
       q: 'What payment methods are supported for deposits?',
-      a: 'We accept international bank wire transfers, credit/debit cards, and direct corporate purchase orders for enterprise IT and event production contracts.',
+      a: 'We accept international bank wire transfers, credit/debit cards, and purchase orders for enterprise IT and event production contracts.',
     },
     {
       q: 'Do you provide on-site technical and logistics directors?',
@@ -102,7 +102,7 @@ export const BookingView: React.FC<BookingViewProps> = ({
               Enterprise Service Level Guarantee
             </h4>
             <p className="text-xs text-neutral-600 leading-relaxed">
-              Every contract backed by Mahdev Pvt Ltd corporate insurance, bonded crews, and redundant equipment backups.
+              Every contract backed by Mahdev Pvt Ltd comprehensive commercial insurance, bonded crews, and redundant equipment backups.
             </p>
           </div>
 

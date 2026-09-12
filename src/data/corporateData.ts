@@ -62,7 +62,7 @@ export const COMPANY_VALUES: CompanyValue[] = [
     id: 'val-integrity',
     title: 'Institutional Integrity',
     tagline: 'Transparency and steadfast trust.',
-    description: 'We operate with candid communication, honest pricing structures, and strict confidentiality. Our clients trust us with their most critical corporate systems and intimate family milestones.',
+    description: 'We operate with candid communication, honest pricing structures, and strict confidentiality. Our clients trust us with their most critical enterprise systems and intimate family milestones.',
     iconName: 'Shield',
     commitment: 'Full financial transparency and strict client NDAs.'
   },
@@ -98,7 +98,7 @@ export const LEADERSHIP_TEAM: LeadershipMember[] = [
     name: 'Yuvanshan S.',
     title: 'Founder & Managing Director',
     role: 'Executive Leadership & Strategic Direction',
-    bio: 'Pioneered Mahdev Pvt Ltd from its inception in 2022, steering the group\'s multi-sector vision, corporate capital strategy, and high-standard operational culture across Sri Lanka.',
+    bio: 'Pioneered Mahdev Pvt Ltd from its inception in 2022, steering the group\'s multi-sector vision, strategic capital growth, and high-standard operational culture across Sri Lanka.',
     photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop',
     divisionFocus: 'Group Executive Board',
     linkedin: 'https://linkedin.com',
@@ -111,7 +111,7 @@ export const LEADERSHIP_TEAM: LeadershipMember[] = [
     name: 'Dinesh Perera',
     title: 'Chief Technology Officer',
     role: 'Head of IT & Digital Architecture',
-    bio: 'Directs Mahdev IT & Solutions, leading full-stack engineering, cloud infrastructure, and cybersecurity initiatives for corporate and governmental clientele.',
+    bio: 'Directs Mahdev IT & Solutions, leading full-stack engineering, cloud infrastructure, and cybersecurity initiatives for commercial and enterprise clientele.',
     photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=800&auto=format&fit=crop',
     divisionFocus: 'Mahdev IT & Solutions',
     linkedin: 'https://linkedin.com',
@@ -164,7 +164,7 @@ export const VERIFIED_MILESTONES: MilestoneItem[] = [
   {
     id: 'ms-2022',
     year: '2022',
-    title: 'Corporate Inception & Core Trilateral Launch',
+    title: 'Founding & Core Trilateral Launch',
     description: 'Mahdev established headquarters in Colombo, launching SWS Event Management & Decorations, U1 Studio Photography & Cinema, and Mahdev IT Solutions as foundational pillars.',
     divisionId: 'sws',
     badge: 'Inception',
@@ -197,7 +197,7 @@ export const VERIFIED_MILESTONES: MilestoneItem[] = [
   {
     id: 'ms-2025',
     year: '2025 - Present',
-    title: 'Unified Corporate Synergy & Digital Mesh',
+    title: 'Unified Enterprise Synergy & Digital Mesh',
     description: 'Consolidated parent governance and centralized technological architecture to deliver cross-division synergy for individuals and multinational brands alike.',
     badge: 'Synergy Era',
     keyOutcome: 'One trusted parent company providing 360-degree innovation, creative mastery, and guaranteed delivery.',
@@ -211,7 +211,7 @@ export const TRUSTED_COMPANIES_DATA: TrustedCompany[] = [
     id: 'co-ceylon-enterprises',
     name: 'Ceylon Enterprises Group',
     industry: 'Conglomerate & Trade',
-    partnershipType: 'Enterprise IT & Corporate Events',
+    partnershipType: 'Enterprise IT & Events',
     website: 'https://example.com/ceylon-enterprises',
     description: 'Collaborating on annual nationwide shareholder summits, custom internal ERP integrations, and executive media productions.',
     featured: true
@@ -287,7 +287,7 @@ export const PORTFOLIO_PROJECTS_DATA: PortfolioProject[] = [
     id: 'proj-sws-1',
     divisionId: 'sws',
     title: 'South Asia Economic Forum & VIP Gala',
-    category: 'Corporate Summit & Gala',
+    category: 'International Summit & Gala',
     client: 'International Trade Chamber',
     year: '2025',
     summary: 'A 3-day high-security diplomatic summit hosting 2,200 foreign delegates with real-time interpretation, 40m curved 4K LED backdrops, and banquet staging.',
@@ -314,7 +314,7 @@ export const PORTFOLIO_PROJECTS_DATA: PortfolioProject[] = [
       { label: 'Countries Represented', value: '28' },
       { label: 'Uptime & SLA', value: '100%' }
     ],
-    tags: ['Events', 'Staging', 'Corporate', 'LED Matrix', 'VIP Protocol']
+    tags: ['Events', 'Staging', 'Summit', 'LED Matrix', 'VIP Protocol']
   },
   {
     id: 'proj-sws-2',
@@ -553,7 +553,7 @@ export const TESTIMONIALS_DATA: Testimonial[] = [
     author: 'Malik Jayawardena',
     role: 'Executive Director',
     company: 'Ceylon Enterprises Group',
-    quote: 'Mahdev Pvt Ltd represents a new breed of enterprise partner in Sri Lanka. They managed both our 2,000-person corporate summit and built our internal digital portal. The seamless synergy saved us hundreds of coordination hours.',
+    quote: 'Mahdev Pvt Ltd represents a new breed of enterprise partner in Sri Lanka. They managed both our 2,000-person summit and built our internal digital portal. The seamless synergy saved us hundreds of coordination hours.',
     rating: 5,
     divisionId: 'sws',
     divisionName: 'SWS Event Management & IT',
@@ -693,7 +693,7 @@ export const LEGAL_POLICIES_CONTENT: Record<
       {
         heading: '2. Information We Collect',
         content: [
-          'Direct Inquiries & Bookings: Full name, corporate email address, contact telephone number, postal address, company organization, and specific service specifications provided through forms or direct engagement.',
+          'Direct Inquiries & Bookings: Full name, email address, contact telephone number, postal address, company organization, and specific service specifications provided through forms or direct engagement.',
           'Event & Media Records: Photography, visual recordings, and guest rosters captured during contracted events with explicit prior authorization.',
           'Digital & Technical Data: IP addresses, browser types, session timestamps, and functional cookies necessary for portal navigation and security authentication.',
           'Commercial & Transactional Data: Invoicing records, billing addresses, and payment transaction identifiers processed through verified, encrypted merchant gateways.'
@@ -705,13 +705,13 @@ export const LEGAL_POLICIES_CONTENT: Record<
           'To prepare accurate service proposals, schedule milestone deliverables, and execute contracted division agreements.',
           'To ensure uninterrupted cloud software availability, customer technical support, and critical service notices.',
           'To coordinate travel arrangements, hotel reservations, helicopter charters, and VIP concierge logistics with verified hospitality providers.',
-          'To comply with Sri Lankan corporate law, tax filing mandates, and international commercial regulations.'
+          'To comply with Sri Lankan commercial law, tax filing mandates, and international commercial regulations.'
         ]
       },
       {
         heading: '4. Non-Disclosure & Security Safeguards',
         content: [
-          'We do not sell, rent, trade, or monetize your personal or corporate data under any circumstances.',
+          'We do not sell, rent, trade, or monetize your personal or client data under any circumstances.',
           'All digital records are protected using industry-standard TLS 1.3 encryption in transit and AES-256 encryption at rest within secure cloud environments.',
           'Access to client records is strictly restricted to authorized division leads and personnel bound by confidentiality agreements.'
         ]
@@ -736,14 +736,14 @@ export const LEGAL_POLICIES_CONTENT: Record<
   },
   terms: {
     title: 'Terms & Conditions',
-    subtitle: 'Standard corporate engagement terms, intellectual property rules, and service provisions.',
+    subtitle: 'Standard engagement terms, intellectual property rules, and service provisions.',
     effectiveDate: 'January 1, 2024',
     lastUpdated: 'February 15, 2026',
     sections: [
       {
         heading: '1. Agreement to Terms',
         content: [
-          'By accessing this website (mahdev.lk), engaging any Mahdev Pvt Ltd division (SWS Event Management, U1 Studio, Mahdev IT & Solutions, Mahdev Travels, Mahdev Online Mart), or executing a Statement of Work (SOW), you agree to be bound by these Corporate Terms & Conditions.',
+          'By accessing this website (mahdev.lk), engaging any Mahdev Pvt Ltd division (SWS Event Management, U1 Studio, Mahdev IT & Solutions, Mahdev Travels, Mahdev Online Mart), or executing a Statement of Work (SOW), you agree to be bound by these Terms & Conditions.',
           'If you are entering into this agreement on behalf of a company or legal entity, you represent that you possess the authority to bind such entity to these provisions.'
         ]
       },
@@ -765,7 +765,7 @@ export const LEGAL_POLICIES_CONTENT: Record<
       {
         heading: '4. Invoicing, Payments & Taxes',
         content: [
-          'Standard corporate payment terms are net 14 or net 30 as specified in individual contract schedules.',
+          'Standard commercial payment terms are net 14 or net 30 as specified in individual contract schedules.',
           'All invoices are denominated in Sri Lankan Rupees (LKR) or United States Dollars (USD) as agreed, and are subject to applicable government VAT/SVAT taxes in accordance with Sri Lankan law.'
         ]
       },
@@ -861,7 +861,7 @@ export const LEGAL_POLICIES_CONTENT: Record<
       {
         heading: '5. International Freight & Special Consignments',
         content: [
-          'International equipment orders and corporate bulk procurement consignments are shipped via DHL Express / FedEx with door-to-door customs clearance assistance.',
+          'International equipment orders and enterprise bulk procurement consignments are shipped via DHL Express / FedEx with door-to-door customs clearance assistance.',
           'Import duties and tariffs outside Sri Lanka are the responsibility of the consignee unless agreed under DDP (Delivered Duty Paid) contract terms.'
         ]
       }

@@ -38,6 +38,8 @@ export interface CmsDivision extends BaseCmsEntity {
   heroHeadline: string;
   heroSubheadline: string;
   heroImageUrl?: string;
+  heroVideoUrl?: string;
+  heroMediaType?: 'image' | 'video';
   logoUrl?: string;
   contactEmail: string;
   iconName: string;
@@ -174,6 +176,7 @@ export interface CmsGalleryItem extends BaseCmsEntity {
   type?: 'image' | 'video';
   url?: string;
   mediaUrl?: string;
+  images?: string[];
   thumbnailUrl?: string;
   caption: string;
   aspectRatio?: string;

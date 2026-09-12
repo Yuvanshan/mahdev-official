@@ -29,7 +29,7 @@ export const IntroSection: React.FC<IntroSectionProps> = () => {
     badge: 'Parent Company Architecture',
     headline: 'A Unified Enterprise of Specialized Industry Leaders',
     subheadline: 'Mahdev Pvt Ltd acts as the strategic and operational holding foundation behind five distinguished business divisions.',
-    description: 'From landmark corporate galas and cinematic storytelling to cloud infrastructure, island expeditions, and hardware commerce, Mahdev bridges diverse disciplines into one dependable partner.',
+    description: 'From landmark galas and cinematic storytelling to cloud infrastructure, island expeditions, and hardware commerce, Mahdev bridges diverse disciplines into one dependable partner.',
   };
 
   const rawHeadline = intro.headline || 'A Unified Enterprise of Specialized Industry Leaders';
@@ -59,7 +59,7 @@ export const IntroSection: React.FC<IntroSectionProps> = () => {
     {
       icon: TrendingUp,
       title: 'Proven Track Record',
-      desc: 'Thousands of satisfied attendees, corporate delegates, travelers, and platform users nationwide.',
+      desc: 'Thousands of satisfied attendees, delegates, travelers, and platform users nationwide.',
       metric: '99.6% Retention',
     },
   ];
@@ -93,7 +93,7 @@ export const IntroSection: React.FC<IntroSectionProps> = () => {
             <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-800">
               <div className="flex items-center gap-2.5 p-3 rounded-lg bg-slate-50 border border-slate-200/80">
                 <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                <span className="font-medium text-xs sm:text-sm">Single Corporate Accountability</span>
+                <span className="font-medium text-xs sm:text-sm">Single Point of Accountability</span>
               </div>
               <div className="flex items-center gap-2.5 p-3 rounded-lg bg-slate-50 border border-slate-200/80">
                 <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />

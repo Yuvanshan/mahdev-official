@@ -188,7 +188,7 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
               style={{ backgroundColor: accentColor }}
             />
             <span className="text-[11px] font-bold tracking-widest uppercase text-slate-300">
-              Corporate Subsidiary • Coming Soon
+              New Operating Division • Launching Soon
             </span>
           </div>
 

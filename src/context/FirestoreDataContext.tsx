@@ -84,8 +84,9 @@ export interface FirestoreDataContextValue {
 const FirestoreDataContext = createContext<FirestoreDataContextValue | null>(null);
 
 export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
-  const [isReady, setIsReady] = useState<boolean>(false);
+  // Instant Stale-While-Revalidate: Ready immediately using cached or default data, refresh in background
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(false);
+  const [isReady, setIsReady] = useState<boolean>(true);
   const [isFetching, setIsFetching] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 

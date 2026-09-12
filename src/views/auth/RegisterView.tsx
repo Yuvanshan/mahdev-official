@@ -196,7 +196,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              Corporate Partner
+              Business Partner
             </button>
           </div>
 

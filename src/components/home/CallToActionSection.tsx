@@ -53,7 +53,7 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
   const cta = homepageConfig?.ctaSection || {
     badge: "LET'S BUILD TOGETHER",
     headline: "Let's Create Something Remarkable.",
-    subheadline: 'Connect with Mahdev Pvt Ltd corporate headquarters or route your project directly to one of our specialized divisions.',
+    subheadline: 'Connect with Mahdev Pvt Ltd headquarters or route your project directly to one of our specialized divisions.',
     primaryButtonText: 'Schedule Consultation',
     primaryButtonLink: '#contact',
     secondaryButtonText: 'Explore Services',
@@ -71,22 +71,22 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
     // Persist to Firestore and dispatch email to info.mahdev.lk@gmail.com
     firestoreContactsService
       .submitContact({
-        fullName: formData.name || 'Corporate Inquirer',
+        fullName: formData.name || 'Inquirer',
         email: formData.email,
         phone: formData.phone || '',
         division: formData.division,
-        subject: `Direct Corporate Inquiry - ${formData.division.toUpperCase()}`,
+        subject: `Direct Inquiry - ${formData.division.toUpperCase()}`,
         message: formData.message,
       })
       .then(() => {
         notificationService.notifyAdminContactInquiry({
-          name: formData.name || 'Corporate Inquirer',
+          name: formData.name || 'Inquirer',
           email: formData.email,
-          subject: `Direct Corporate Inquiry - ${formData.division.toUpperCase()}`,
+          subject: `Direct Inquiry - ${formData.division.toUpperCase()}`,
           message: formData.message,
         }).catch(() => {});
 
-        analyticsService.trackContactSubmitted(formData.division, 'Direct Corporate Inquiry');
+        analyticsService.trackContactSubmitted(formData.division, 'Direct Inquiry');
       })
       .catch((err) => {
         console.warn('[CTA Submit] Notice:', err);
@@ -123,7 +123,7 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
 
               <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
                 {cta.subheadline ||
-                  'Direct your inquiry to our corporate executive office or select a specialized division for targeted execution.'}
+                  'Direct your inquiry to our executive office or select a specialized division for targeted execution.'}
               </p>
 
               {/* Direct Contacts Bar */}
@@ -229,7 +229,7 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
                         Inquiry Received
                       </h4>
                       <p className="text-xs sm:text-sm text-slate-600 max-w-xs mx-auto">
-                        Thank you for reaching out to Mahdev Pvt Ltd. A corporate representative from the selected division will contact you within 24 hours.
+                        Thank you for reaching out to Mahdev Pvt Ltd. A representative from the selected division will contact you within 24 hours.
                       </p>
                       <Button
                         size="sm"
@@ -252,7 +252,7 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
                     <form onSubmit={handleSubmit} className="space-y-4">
                       <div className="border-b border-slate-100 pb-3 mb-4">
                         <h4 className="font-display text-lg font-bold text-slate-900">
-                          Direct Corporate Inquiry
+                          Direct Project Inquiry
                         </h4>
                         <p className="text-xs text-slate-500">
                           Guaranteed 24-hour turnaround across all divisions

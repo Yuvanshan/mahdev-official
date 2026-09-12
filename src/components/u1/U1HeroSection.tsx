@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, Calendar, ArrowRight, Phone, Film, Sparkles, Award } from 'lucide-react';
+import { Camera, Calendar, ArrowRight, Phone, Film, ChevronLeft } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Button } from '../ui/Button';
 import { getTelLink } from '../../config/company';
@@ -31,6 +31,14 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
     companySettings?.primaryPhone ||
     '075 092 8078';
 
+  const rawHeroVideo =
+    (u1Div as any)?.heroVideoUrl ||
+    (u1Div as any)?.videoUrl ||
+    (u1Div?.hero as any)?.videoUrl ||
+    '';
+
+  const [videoFailed, setVideoFailed] = React.useState(false);
+
   const rawHeroImage =
     (u1Div as any)?.imageUrl ||
     (u1Div as any)?.heroImageUrl ||
@@ -40,6 +48,23 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
     typeof rawHeroImage === 'string' && rawHeroImage.trim() !== ''
       ? rawHeroImage.trim()
       : 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&w=2000&q=85';
+
+  const isExplicitVideo = (u1Div as any)?.heroMediaType === 'video';
+  const isExplicitImage = (u1Div as any)?.heroMediaType === 'image';
+  const isVideoUrl =
+    rawHeroVideo.includes('.mp4') ||
+    rawHeroVideo.includes('.webm') ||
+    rawHeroVideo.includes('.ogg') ||
+    rawHeroVideo.includes('youtube.com') ||
+    rawHeroVideo.includes('youtu.be');
+
+  const isVideo =
+    !videoFailed &&
+    (isExplicitVideo
+      ? rawHeroVideo.trim() !== ''
+      : isExplicitImage
+      ? false
+      : isVideoUrl && rawHeroVideo.trim() !== '');
 
   const badgeText =
     (u1Div as any)?.hero?.badge ||
@@ -52,120 +77,124 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
     u1Div?.name ||
     'Fine Art Photography & Cinema';
 
-  const subheadline =
-    (u1Div as any)?.heroSubheadline ||
-    (u1Div as any)?.hero?.subtitle ||
-    u1Div?.description ||
-    'Ultra-HD cinema wedding films, editorial studio portraiture, and commercial brand storytelling captured with medium-format precision.';
-
-  const statsList =
-    (u1Div as any)?.stats && (u1Div as any).stats.length > 0
-      ? (u1Div as any).stats
-      : [
-          { value: '8K Cinema', label: 'Camera Rigs' },
-          { value: 'Aerial Drones', label: 'Licensed Operators' },
-          { value: 'Color Grading', label: 'DaVinci Suite' },
-          { value: 'Heirloom', label: 'Flush-Mount Albums' },
-        ];
-
   return (
-    <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden bg-slate-950 text-white pt-20 pb-16 sm:pt-24 sm:pb-20">
-      {/* Background Editorial Visuals */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src={heroImage}
-          alt={u1Div?.name || 'U1 Studio Photography & Cinema'}
-          className="w-full h-full object-cover opacity-25"
-          referrerPolicy="no-referrer"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/40" />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/50 to-slate-950/90" />
+    <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-slate-950 text-white">
+      {/* ================= FULL SCREEN WIDTH BACKGROUND VIDEO / PICTURE COVER ================= */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        {isVideo ? (
+          rawHeroVideo.includes('youtube.com') || rawHeroVideo.includes('youtu.be') ? (
+            <iframe
+              src={
+                rawHeroVideo.includes('embed')
+                  ? rawHeroVideo
+                  : `https://www.youtube.com/embed/${rawHeroVideo.split('v=')[1] || rawHeroVideo.split('/').pop()}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0`
+              }
+              title="U1 Studio Showcase Video"
+              className="w-full h-full object-cover pointer-events-none scale-125 border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            />
+          ) : (
+            <video
+              src={rawHeroVideo}
+              autoPlay
+              loop
+              muted
+              playsInline
+              onError={() => setVideoFailed(true)}
+              className="w-full h-full object-cover"
+              title="U1 Studio Showcase Video"
+            />
+          )
+        ) : (
+          <img
+            src={heroImage}
+            alt={u1Div?.name || 'U1 Studio Photography & Cinema'}
+            className="w-full h-full object-cover"
+            referrerPolicy="no-referrer"
+          />
+        )}
+
+        {/* Left-Side Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 sm:via-slate-950/70 md:via-slate-950/50 to-transparent pointer-events-none z-10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-black/30 pointer-events-none z-10" />
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 w-full text-center">
-        {/* Sleek Division Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-400/30 text-xs font-semibold text-blue-300 backdrop-blur-md mb-6"
-        >
-          <Camera className="w-3.5 h-3.5 text-blue-400" />
-          <span>{badgeText}</span>
-        </motion.div>
+      {/* ================= HERO CONTENT OVER VIDEO ON LEFT SIDE ================= */}
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-28 z-20 w-full">
+        <div className="max-w-3xl space-y-6">
+          
+          {/* Breadcrumb Back Link */}
+          <div>
+            <a
+              href="/"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-bold text-white transition-all backdrop-blur-md cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4 text-blue-400" />
+              <span>Back to Home</span>
+            </a>
+          </div>
 
-        {/* Master Heading */}
-        <motion.h1
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="font-display text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white max-w-3xl mx-auto leading-[1.12]"
-        >
-          {headline}
-        </motion.h1>
-
-        {/* Concise Value Statement */}
-        <motion.p
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.15 }}
-          className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed mt-4"
-        >
-          {subheadline}
-        </motion.p>
-
-        {/* Action CTAs */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex flex-wrap items-center justify-center gap-3 pt-6"
-        >
-          <Button
-            variant="electric"
-            size="lg"
-            onClick={onBookSession}
-            leftIcon={<Calendar className="w-4 h-4" />}
-            rightIcon={<ArrowRight className="w-4 h-4" />}
-            className="font-bold px-7 py-3 text-sm shadow-lg shadow-blue-600/25"
+          {/* Division Badge in Electric Blue */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
           >
-            Book Shoot / Session
-          </Button>
-
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={onExplorePortfolio}
-            leftIcon={<Film className="w-4 h-4" />}
-            className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-md px-6 py-3 text-sm font-semibold"
-          >
-            View Visual Works
-          </Button>
-
-          <a
-            href={getTelLink(hotline)}
-            className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-white/15 bg-slate-900/80 text-slate-200 text-sm font-semibold hover:border-blue-400 hover:text-white transition-all backdrop-blur-sm"
-            title={`Call Production Desk ${hotline}`}
-          >
-            <Phone className="w-4 h-4 text-emerald-400" />
-            <span>Direct Line</span>
-          </a>
-        </motion.div>
-
-        {/* Capabilities Matrix */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="mt-12 sm:mt-16 pt-6 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto"
-        >
-          {statsList.slice(0, 4).map((st: any, idx: number) => (
-            <div key={idx} className="p-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xs">
-              <div className="font-display text-2xl font-extrabold text-white">{st.value}</div>
-              <div className="text-xs text-slate-400 font-medium">{st.label}</div>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0052FF]/20 border border-[#0052FF]/40 text-xs font-bold text-blue-300 backdrop-blur-md shadow-lg">
+              <Camera className="w-3.5 h-3.5 text-blue-400" />
+              <span className="tracking-wide">{badgeText}</span>
             </div>
-          ))}
-        </motion.div>
+          </motion.div>
+
+          {/* High-Impact Headline */}
+          <motion.h1
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="font-display text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-white leading-[1.08] drop-shadow-md"
+          >
+            {headline}
+          </motion.h1>
+
+          {/* Action CTAs in Electric Blue */}
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex flex-wrap items-center gap-3.5 pt-2"
+          >
+            <Button
+              variant="electric"
+              size="lg"
+              onClick={onBookSession}
+              leftIcon={<Calendar className="w-4 h-4" />}
+              rightIcon={<ArrowRight className="w-4 h-4" />}
+              className="font-bold px-7 py-3.5 text-sm sm:text-base bg-[#0052FF] hover:bg-blue-600 shadow-lg shadow-blue-600/30"
+            >
+              Book Shoot / Session
+            </Button>
+
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={onExplorePortfolio}
+              leftIcon={<Film className="w-4 h-4" />}
+              className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-md px-6 py-3.5 text-sm font-semibold"
+            >
+              View Visual Works
+            </Button>
+
+            <a
+              href={getTelLink(hotline)}
+              className="inline-flex items-center gap-2 px-4 py-3.5 rounded-xl border border-white/20 bg-white/10 text-white text-sm font-semibold hover:bg-white/20 transition-all backdrop-blur-md"
+              title={`Call Production Desk ${hotline}`}
+            >
+              <Phone className="w-4 h-4 text-blue-400" />
+              <span>{hotline}</span>
+            </a>
+          </motion.div>
+
+        </div>
       </div>
     </section>
   );

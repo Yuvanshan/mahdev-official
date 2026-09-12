@@ -109,7 +109,7 @@ export async function seedPristineProductionSettings(): Promise<void> {
 
   const homepagePayload = {
     hero: {
-      badgeText: 'CORPORATE ECOSYSTEM • EST. 2022',
+      badgeText: 'ENTERPRISE ECOSYSTEM • EST. 2022',
       titleLine1: 'Creating Moments...',
       titleHighlight: 'Capturing Memories...',
       titleLine2: '& Delivering Innovation...',

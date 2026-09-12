@@ -19,7 +19,7 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
     imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=85',
     heroHeadline: 'Immersive Event Decor, Grand Staging & Equipment Rentals',
     heroSubheadline:
-      'From luxury wedding mandaps, floral stage decor, and full event furniture/AV rentals to corporate summits and concert arenas, SWS is Mahdev’s primary flagship division.',
+      'From luxury wedding mandaps, floral stage decor, and full event furniture/AV rentals to grand summits and concert arenas, SWS is Mahdev’s primary flagship division.',
     iconName: 'Sparkles',
     contactEmail: COMPANY_INFO.email,
     contactPhone: '075 092 8078',
@@ -44,7 +44,7 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
         iconName: 'Volume2',
       },
       {
-        title: 'Corporate Galas, Summits & Turnkey Packages',
+        title: 'Conferences, Summits & Turnkey Packages',
         description: 'Keynote staging, executive summits, end-to-end event planning, gourmet catering, and master coordination.',
         iconName: 'Building2',
       },
@@ -165,7 +165,7 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
     shortName: 'Mahdev Travels',
     tagline: 'Curating Journeys... Bespoke Island Escapes & VIP Expeditions',
     description:
-      'Bespoke travel curation, VIP corporate retreats, luxury island expeditions, chauffeur services, and personalized global holiday itineraries.',
+      'Bespoke travel curation, VIP executive retreats, luxury island expeditions, chauffeur services, and personalized global holiday itineraries.',
     badge: 'Travel & Expeditions',
     route: '/travels',
     domainUrl: 'https://mahdev.lk/travels',
@@ -180,7 +180,7 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
     contactEmail: COMPANY_INFO.email,
     contactPhone: '075 092 8078',
     aboutHeading: 'Unlocking Extraordinary Island Horizons',
-    aboutText: 'Mahdev Travels curates bespoke travel expeditions and VIP corporate retreats. We combine five-star private sanctuary bookings, private helicopter transfers, and discreet chauffeur services.',
+    aboutText: 'Mahdev Travels curates bespoke travel expeditions and VIP executive retreats. We combine five-star private sanctuary bookings, private helicopter transfers, and discreet chauffeur services.',
     mission: 'To connect global travelers with the deepest soul of Sri Lanka through unparalleled luxury and private access.',
     vision: 'To be the most coveted bespoke luxury expedition brand in the Indian Ocean.',
     coreServices: [
@@ -190,8 +190,8 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
         iconName: 'MapPin',
       },
       {
-        title: 'Corporate Retreats & VIP Transport',
-        description: 'Executive fleet logistics, discreet luxury shuttles, and curated company offsite venues.',
+        title: 'Executive Retreats & VIP Transport',
+        description: 'Executive fleet logistics, discreet luxury shuttles, and curated offsite venues.',
         iconName: 'Car',
       },
       {
@@ -247,7 +247,7 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
         iconName: 'Truck',
       },
       {
-        title: 'Corporate Procurement Solutions',
+        title: 'Enterprise Procurement Solutions',
         description: 'Bulk enterprise orders, customized billing, tax invoices, and dedicated account reps.',
         iconName: 'Briefcase',
       },

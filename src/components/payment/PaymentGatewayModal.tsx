@@ -463,7 +463,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
                     <div className="flex items-center gap-2">
                       <FileCheck className="w-4 h-4 text-purple-600" />
                       <span className="text-xs font-bold text-slate-900">
-                        Telegraphic Transfer / Corporate Bank Wire
+                        Telegraphic Transfer / Business Bank Wire
                       </span>
                     </div>
                     <Badge size="sm" variant="default" className="bg-purple-100 text-purple-800 text-[10px]">

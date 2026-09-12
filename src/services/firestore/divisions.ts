@@ -209,6 +209,32 @@ export const firestoreDivisionsService = {
       return cachedDivisions.data;
     }
 
+    // Check localStorage cache for instant zero-latency return
+    if (!forceRefresh && typeof window !== 'undefined') {
+      try {
+        const localRaw = localStorage.getItem('mahdev_cached_divisions');
+        if (localRaw) {
+          const parsed = JSON.parse(localRaw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const data = sortDivisions(parsed);
+            cachedDivisions = { data, timestamp: now };
+            // Kick off background refresh without blocking caller
+            getDocs(collection(db, 'divisions')).then((snap) => {
+              if (!snap.empty) {
+                const fresh = snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreDivision[];
+                const sorted = sortDivisions(fresh);
+                cachedDivisions = { data: sorted, timestamp: Date.now() };
+                try {
+                  localStorage.setItem('mahdev_cached_divisions', JSON.stringify(sorted));
+                } catch {}
+              }
+            }).catch(() => {});
+            return data;
+          }
+        }
+      } catch {}
+    }
+
     try {
       const snap = await getDocs(collection(db, 'divisions'));
       if (!snap.empty) {

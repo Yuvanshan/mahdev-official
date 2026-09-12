@@ -149,78 +149,9 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
     <div className="w-full flex flex-col">
       <SEOHead
         title="SWS Event Management | Luxury Weddings, Decor, Stage Productions & Equipment Rentals"
-        description={`SWS Event Management by Mahdev Pvt Ltd (Est. 2022). Comprehensive event design, wedding decorations, corporate summits, stage engineering, ${rentalCount} rental inventory units, photography, catering, and complete packages in Sri Lanka.`}
+        description={`SWS Event Management by Mahdev Pvt Ltd (Est. 2022). Comprehensive event design, wedding decorations, grand summits, stage engineering, ${rentalCount} rental inventory units, photography, catering, and complete packages in Sri Lanka.`}
         canonicalUrl="https://mahdev.lk/sws"
       />
-
-      {/* Sub-Header Navigation Ribbon */}
-      <div className="sticky top-16 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-xs hidden md:block">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-12 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => onNavigate('/')}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span>Mahdev Group</span>
-            </button>
-
-            <span className="h-4 w-px bg-slate-200" />
-
-            <nav className="flex items-center gap-5 text-xs font-semibold text-slate-600">
-              <button
-                onClick={() => scrollToAnchor('services')}
-                className="hover:text-blue-600 transition-colors cursor-pointer"
-              >
-                Services
-              </button>
-              <button
-                onClick={() => scrollToAnchor('rentals')}
-                className="hover:text-blue-600 transition-colors cursor-pointer text-blue-600 font-bold"
-              >
-                Rentals & Equipment ({rentalCount})
-              </button>
-              <button
-                onClick={() => scrollToAnchor('packages')}
-                className="hover:text-blue-600 transition-colors cursor-pointer"
-              >
-                Turnkey Packages
-              </button>
-              <button
-                onClick={() => scrollToAnchor('gallery')}
-                className="hover:text-blue-600 transition-colors cursor-pointer"
-              >
-                Cinematic Gallery
-              </button>
-              <button
-                onClick={() => scrollToAnchor('portfolio')}
-                className="hover:text-blue-600 transition-colors cursor-pointer"
-              >
-                Portfolio & Cases
-              </button>
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <a
-              href={getTelLink(primaryPhone)}
-              className="text-xs font-bold text-slate-700 hover:text-blue-600 flex items-center gap-1.5"
-            >
-              <Phone className="w-3.5 h-3.5 text-blue-600" />
-              <span>{primaryPhone}</span>
-            </a>
-            <Button
-              size="sm"
-              variant="electric"
-              onClick={() => handleBookNow()}
-              leftIcon={<Calendar className="w-3 h-3" />}
-              className="text-xs py-1.5 px-3.5"
-            >
-              Book Event
-            </Button>
-          </div>
-        </div>
-      </div>
 
       {/* 1. SWS CINEMATIC HERO SECTION */}
       <SWSHeroSection

@@ -62,7 +62,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
 
             <H2 className="text-slate-900 mb-2.5">What Our Clients Say</H2>
             <Body className="text-slate-600 text-sm sm:text-base">
-              Real customer feedback from our Google Maps & Google Business Profile across weddings, corporate events, cinema, and digital projects.
+              Real customer feedback from our Google Maps & Google Business Profile across weddings, executive events, cinema, and digital projects.
             </Body>
           </div>
 

@@ -112,63 +112,6 @@ export const U1View: React.FC<U1ViewProps> = ({ onNavigate }) => {
         canonicalUrl="https://mahdev.lk/u1"
       />
 
-      {/* Sticky Sub-Header Quick-Ribbon */}
-      <div className="sticky top-16 z-30 bg-slate-950/95 backdrop-blur-md border-b border-white/10 shadow-md text-white hidden md:block">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-12 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => onNavigate('/')}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-300 hover:text-white transition-colors cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span>Mahdev Group</span>
-            </button>
-
-            <span className="h-4 w-px bg-white/15" />
-
-            <nav className="flex items-center gap-5 text-xs font-semibold text-slate-300">
-              <button
-                onClick={() => scrollToAnchor('services')}
-                className="hover:text-white transition-colors cursor-pointer"
-              >
-                11 Studio Services
-              </button>
-              <button
-                onClick={() => scrollToAnchor('portfolio')}
-                className="hover:text-white transition-colors cursor-pointer"
-              >
-                Visual Portfolio
-              </button>
-              <button
-                onClick={() => scrollToAnchor('packages')}
-                className="hover:text-white transition-colors cursor-pointer"
-              >
-                Packages
-              </button>
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <a
-              href={getTelLink(primaryPhone)}
-              className="text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5"
-            >
-              <Phone className="w-3.5 h-3.5 text-blue-400" />
-              <span>{primaryPhone}</span>
-            </a>
-            <Button
-              size="sm"
-              variant="electric"
-              onClick={handleOpenGeneralBooking}
-              leftIcon={<Calendar className="w-3 h-3" />}
-              className="text-xs py-1.5 px-3.5 shadow-sm"
-            >
-              Book Studio
-            </Button>
-          </div>
-        </div>
-      </div>
-
       {/* 1. U1 CINEMATIC IMAGE-FIRST HERO */}
       <U1HeroSection
         onBookSession={handleOpenGeneralBooking}

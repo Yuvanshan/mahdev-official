@@ -39,7 +39,7 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
       location: 'Colombo / Islandwide',
       type: 'Full-time',
       experience: '3+ Years',
-      description: 'Lead large-scale wedding galas, stage lighting architectures, corporate summits, and concert staging executions.',
+      description: 'Lead large-scale wedding galas, stage lighting architectures, industry summits, and concert staging executions.',
     },
     {
       id: 'job-2',
@@ -66,7 +66,7 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
       location: 'Colombo HQ',
       type: 'Full-time',
       experience: '1+ Years',
-      description: 'Curate luxury corporate offsites, VIP island itineraries, transport logistics, and multilingual client hospitality.',
+      description: 'Curate luxury executive retreats, VIP island itineraries, transport logistics, and multilingual client hospitality.',
     },
   ];
 
@@ -79,7 +79,7 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
     <div className="pt-24 pb-12 bg-white">
       <SEOHead
         title="Careers & Opportunities | Mahdev Pvt Ltd"
-        description="Join the team at Mahdev Pvt Ltd. Explore career openings in event management, cinematography, software engineering, and corporate operations."
+        description="Join the team at Mahdev Pvt Ltd. Explore career openings in event management, cinematography, software engineering, and business operations."
         canonicalUrl="https://mahdev.lk/careers"
       />
 

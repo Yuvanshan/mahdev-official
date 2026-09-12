@@ -87,7 +87,7 @@ export const U1_SERVICES: U1Service[] = [
     tagline: 'Cinematic 4K/8K Motion Pictures & Films',
     category: 'media',
     description:
-      'Cinema-grade films, dynamic promotional reels, corporate documentaries, and drone cinematography recorded with 10-bit logarithmic color.',
+      'Cinema-grade films, dynamic promotional reels, documentary cinema, and drone cinematography recorded with 10-bit logarithmic color.',
     detailedDescription:
       'We shoot motion with director-level storytelling. Using motorized gimbals, anamorphic lenses, high-frame-rate 120fps recording, and studio-grade sound capture, our films captivate audiences and preserve the tempo of live moments.',
     imageUrl:
@@ -143,7 +143,7 @@ export const U1_SERVICES: U1Service[] = [
     tagline: 'Executive Headshots, Editorial & Fashion',
     category: 'portrait',
     description:
-      'Personal branding, corporate executive portraits, fashion modelling portfolios, and artistic fine-art character studies.',
+      'Personal branding, executive portraits, fashion modelling portfolios, and artistic fine-art character studies.',
     detailedDescription:
       'A great portrait reveals identity and commanding presence. Shot in our private Colombo studio with sculpted Profoto strobe lighting or outdoor golden-hour locations, our portraits elevate personal brands and modeling careers.',
     imageUrl:
@@ -194,7 +194,7 @@ export const U1_SERVICES: U1Service[] = [
   {
     id: 'event-photography',
     name: 'Event Photography',
-    tagline: 'High-Impact Corporate Galas, Concerts & Summits',
+    tagline: 'High-Impact Executive Galas, Concerts & Summits',
     category: 'media',
     description:
       'Fast-paced documentary coverage, VIP reception portraits, keynote stage action, and swift on-site media dispatch.',
@@ -211,7 +211,7 @@ export const U1_SERVICES: U1Service[] = [
       'Full venue, stage, audience, and VIP step-and-repeat coverage',
       'Same-night social media press kit (20 curated photos)',
       'Complete digital download gallery within 48 hours',
-      'Comprehensive metadata tagging for corporate archiving',
+      'Comprehensive metadata tagging for enterprise archiving',
     ],
     duration: 'Hourly to Multi-Day Summit',
     startingPrice: 'LKR 55,000',
@@ -417,7 +417,7 @@ export const U1_PACKAGES: U1Package[] = [
     tier: 'Studio Master Session',
     tagline: 'Commanding personal branding for executives, artists & models',
     description:
-      'Experience magazine-grade lighting in our private Colombo studio. Perfect for corporate leadership headshots, fashion modeling portfolios, and artist profiles.',
+      'Experience magazine-grade lighting in our private Colombo studio. Perfect for executive leadership headshots, fashion modeling portfolios, and artist profiles.',
     duration: '2.5 Hours in Studio',
     price: 'LKR 48,000',
     priceNote: 'Includes full makeup styling consultation in-studio',
@@ -566,7 +566,7 @@ export const U1_PORTFOLIO_ITEMS: U1PortfolioItem[] = [
     },
     description:
       'High-octane keynote address with synchronized dynamic blue wash lighting and multi-camera live broadcast.',
-    tags: ['Corporate Event', 'Keynote', 'Cinema Stage', 'Dialog'],
+    tags: ['Executive Event', 'Keynote', 'Cinema Stage', 'Dialog'],
   },
   {
     id: 'port-6',
@@ -625,8 +625,8 @@ export const U1_PORTFOLIO_ITEMS: U1PortfolioItem[] = [
       aperture: 'f/2.5',
     },
     description:
-      'Corporate leadership portrait for annual report publication with natural rim light separation.',
-    tags: ['Executive', 'Headshot', 'Corporate', 'Leadership'],
+      'Executive leadership portrait for annual report publication with natural rim light separation.',
+    tags: ['Executive', 'Headshot', 'Portraits', 'Leadership'],
   },
   {
     id: 'port-9',

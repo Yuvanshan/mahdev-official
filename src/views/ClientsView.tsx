@@ -40,7 +40,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ onNavigate }) => {
                 Institutional Collaborations
               </Badge>
               <span className="text-xs font-semibold text-slate-500">
-                Corporate • Government • Private Sector
+                Commercial • Government • Private Sector
               </span>
             </div>
             <H1 className="text-slate-900 text-3xl sm:text-4xl lg:text-5xl font-display font-bold tracking-tight mb-4">
@@ -69,7 +69,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ onNavigate }) => {
               B2B Strategic Alliances
             </Badge>
             <H2 className="text-white text-2xl sm:text-3xl lg:text-4xl font-display font-bold">
-              Become a Corporate Partner with {companyName}
+              Become a Strategic Partner with {companyName}
             </H2>
             <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl">
               Gain access to integrated cross-division capabilities, preferred enterprise SLAs, dedicated account directors, and volume procurement pricing across all five business divisions.

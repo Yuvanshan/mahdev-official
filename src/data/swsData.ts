@@ -66,8 +66,9 @@ export interface SWSPackage {
 export interface SWSGalleryItem {
   id: string;
   title: string;
-  category: 'Weddings' | 'Corporate' | 'Birthdays & Socials' | 'Stage & Lighting' | 'Dining & Decor';
+  category: 'Weddings' | 'Conferences' | 'Corporate' | 'Birthdays & Socials' | 'Stage & Lighting' | 'Dining & Decor';
   imageUrl: string;
+  images?: string[];
   location: string;
   year: string;
   description: string;
@@ -202,13 +203,13 @@ export const SWS_SERVICES: SWSService[] = [
   },
   {
     id: 'corporate-events',
-    name: 'Corporate Events',
+    name: 'Executive & Business Events',
     category: 'production',
     tagline: 'Executive Summits, Product Launches & Galas',
     description:
       'Branded stage builds, high-lumen digital backdrops, modular exhibition booths, VIP hospitality lounges, and registration desks.',
     detailedDescription:
-      'We deliver precision-engineered corporate event environments that uphold your brand identity. From annual general meetings and high-profile product unveilings to award banquets, SWS handles spatial planning, branded physical structures, and smooth logistical execution.',
+      'We deliver precision-engineered event environments that uphold your brand identity. From annual general meetings and high-profile product unveilings to award banquets, SWS handles spatial planning, branded physical structures, and smooth logistical execution.',
     startingPrice: 'LKR 350,000',
     priceNote: 'Custom quote based on stage dimensions & branding scale',
     imageUrl:
@@ -340,7 +341,7 @@ export const SWS_SERVICES: SWSService[] = [
     category: 'media',
     tagline: '4K Cinematic Teasers, Films & Drone Reels',
     description:
-      'Cinematic 4K/60p wedding films, corporate recap highlights, multi-camera live switching, and licensed aerial drone sweeping perspectives.',
+      'Cinematic 4K/60p wedding films, executive recap highlights, multi-camera live switching, and licensed aerial drone sweeping perspectives.',
     detailedDescription:
       'We shoot motion like cinema. Using motorized gimbals, cinema lenses, wireless lavalier audio recorders, and 4K aerial drones, we deliver moving visual stories that make viewers relive every laugh, tear, and cheer.',
     startingPrice: 'LKR 145,000',
@@ -507,7 +508,7 @@ export const SWS_SERVICES: SWSService[] = [
     category: 'rentals',
     tagline: 'P2.6 / P3.9 Seamless Indoor & Outdoor LED Matrices',
     description:
-      'High-brightness modular LED screen walls for stage backdrops, corporate presentations, live video relays, and cinema wedding visual showcases.',
+      'High-brightness modular LED screen walls for stage backdrops, keynote presentations, live video relays, and cinema wedding visual showcases.',
     detailedDescription:
       'Crystal-clear visual impact under any ambient light. We provide customized curveable LED panels with NovaStar 4K processors, live video switchers, and dedicated broadcast technicians.',
     startingPrice: 'LKR 95,000 / day',
@@ -731,7 +732,7 @@ export const SWS_PACKAGES: SWSPackage[] = [
     tier: 'Signature Grandeur',
     tagline: 'Our flagship all-inclusive wedding and gala production suite',
     description:
-      'The most sought-after package by modern couples and corporate hosts. Features lavish floral volume, full cinema coverage, and dynamic lighting.',
+      'The most sought-after package by modern couples and event hosts. Features lavish floral volume, full cinema coverage, and dynamic lighting.',
     includedServices: [
       'Grand 30ft Customized Floral Stage / Mandap Architecture',
       'Walkway Pillar Florals & Mirror Carpet Aisle',
@@ -755,7 +756,7 @@ export const SWS_PACKAGES: SWSPackage[] = [
     availability: 'Limited Weekend Availability (30 Days Advance)',
     popular: true,
     badge: 'Most Popular Choice',
-    idealFor: 'Grand Weddings, High-Profile Receptions, Corporate Galas',
+    idealFor: 'Grand Weddings, High-Profile Receptions, Executive Galas',
     guestEstimate: '200 - 400 Guests',
   },
   {
@@ -792,7 +793,7 @@ export const SWS_PACKAGES: SWSPackage[] = [
   },
   {
     id: 'corporate-summit-suite',
-    name: 'Corporate Summit & Expo Suite',
+    name: 'Executive Summit & Expo Suite',
     tier: 'Executive Enterprise',
     tagline: 'High-precision production for conferences, launches & award nights',
     description:
@@ -808,13 +809,13 @@ export const SWS_PACKAGES: SWSPackage[] = [
       'Technical Director, AV Technicians & On-Site IT Support by Mahdev IT',
     ],
     price: 'LKR 750,000',
-    priceSubtext: 'Corporate tax invoice, SLA agreement & dedicated corporate lead',
+    priceSubtext: 'Tax invoice, SLA agreement & dedicated production lead',
     images: [
       'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
       'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1200&q=80',
     ],
     availability: 'Available Weekdays & Weekends (14 Days Notice)',
-    badge: 'Corporate Ready',
+    badge: 'Enterprise Ready',
     idealFor: 'Annual Conferences, Tech Summits, Product Unveilings, Award Nights',
     guestEstimate: '100 - 800 Attendees',
   },
@@ -834,12 +835,12 @@ export const SWS_GALLERY_ITEMS: SWSGalleryItem[] = [
   {
     id: 'gal-2',
     title: 'Dialog Axiata National Tech Summit',
-    category: 'Corporate',
+    category: 'Conferences',
     imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
     location: 'BMICH Main Arena, Colombo',
     year: '2024',
     description: 'Curved 4K LED screen backdrop with synchronized intelligent blue lighting and live audio broadcast.',
-    tags: ['Keynote Stage', 'LED Video Wall', 'Corporate'],
+    tags: ['Keynote Stage', 'LED Video Wall', 'Summit'],
   },
   {
     id: 'gal-3',
@@ -884,7 +885,7 @@ export const SWS_GALLERY_ITEMS: SWSGalleryItem[] = [
   {
     id: 'gal-7',
     title: 'Commercial Brand Launch Stage',
-    category: 'Corporate',
+    category: 'Conferences',
     imageUrl: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1200&q=80',
     location: 'Hilton Colombo Main Hall',
     year: '2024',
@@ -957,14 +958,14 @@ export const SWS_PORTFOLIO_ITEMS: SWSPortfolioItem[] = [
     id: 'port-2',
     title: 'Hemas Holdings 75th Anniversary Gala',
     client: 'Hemas Holdings PLC',
-    eventType: 'Corporate Jubilee & Awards Ceremony',
+    eventType: 'Enterprise Jubilee & Awards Ceremony',
     date: 'October 2024',
     location: 'Shangri-La Ballroom, Colombo',
     guestCount: '600 Executives & International Dignitaries',
     summary:
-      'A high-profile corporate gala featuring curved P2.6 LED video arrays, bespoke executive awards stage, and VIP hospitality protocol.',
+      'A high-profile enterprise gala featuring curved P2.6 LED video arrays, bespoke executive awards stage, and VIP hospitality protocol.',
     detailedCase:
-      'We designed an immersive corporate gala honoring 75 years of heritage. The stage featured a 40x12ft LED screen displaying bespoke historical documentaries produced by U1 Studio, paired with high-impact DMX lighting cues synced to live keynote speeches.',
+      'We designed an immersive enterprise gala honoring 75 years of heritage. The stage featured a 40x12ft LED screen displaying bespoke historical documentaries produced by U1 Studio, paired with high-impact DMX lighting cues synced to live keynote speeches.',
     imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
     gallery: [
       'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
@@ -974,10 +975,10 @@ export const SWS_PORTFOLIO_ITEMS: SWSPortfolioItem[] = [
       'P2.6 LED curve wall with custom motion countdown and heritage timeline graphics',
       'Simultaneous live-feed relay to 4 satellite hospitality lounges',
       'Flawless acoustic tuning for 600 attendees and international CEO addresses',
-      'Strict corporate brand guideline adherence across all physical fabrications',
+      'Strict brand guideline adherence across all physical fabrications',
     ],
     servicesDelivered: [
-      'Corporate Events',
+      'Executive Events',
       'Stage Decorations',
       'Event Equipment & LED Wall',
       'Live Broadcasting',
@@ -986,7 +987,7 @@ export const SWS_PORTFOLIO_ITEMS: SWSPortfolioItem[] = [
       quote:
         'The technical execution and production quality provided by SWS was world-class. Our board and international partners were thoroughly impressed.',
       author: 'Kavinda Perera',
-      designation: 'Head of Corporate Communications, Hemas',
+      designation: 'Head of Brand Communications, Hemas',
     },
   },
   {
@@ -1264,7 +1265,7 @@ export const SWS_RENTAL_INVENTORY: SWSRentalItem[] = [
     categoryLabel: 'Concert Audio & Sound',
     tagline: 'Complete active line-array tops + dual 18" subwoofers + live engineer',
     description:
-      'Crystal-clear speech intelligibility and deep chest-thumping musical dynamics for weddings, live bands, and corporate keynotes up to 1,500 guests.',
+      'Crystal-clear speech intelligibility and deep chest-thumping musical dynamics for weddings, live bands, and executive keynotes up to 1,500 guests.',
     dailyRate: 'LKR 95,000',
     unit: 'per day (with crew)',
     minOrderQuantity: 1,
@@ -1375,7 +1376,7 @@ export const SWS_RENTAL_INVENTORY: SWSRentalItem[] = [
     categoryLabel: '4K LED Video Walls',
     tagline: 'High-refresh 3,840Hz fine pixel pitch screen with NovaStar 4K processing',
     description:
-      'Unsurpassed image sharpness for luxury wedding backdrop visuals, live camera feeds, 4K corporate presentations, and cinematic highlight reels.',
+      'Unsurpassed image sharpness for luxury wedding backdrop visuals, live camera feeds, 4K keynote presentations, and cinematic highlight reels.',
     dailyRate: 'LKR 140,000',
     unit: 'per 16x9ft array / day',
     minOrderQuantity: 1,

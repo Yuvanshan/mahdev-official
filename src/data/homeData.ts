@@ -94,7 +94,7 @@ export const FEATURED_SERVICES: FeaturedService[] = [
     divisionName: 'Mahdev Travels',
     divisionRoute: '/travels',
     title: 'Bespoke Island Expeditions & VIP Concierge',
-    description: 'Handcrafted luxury journeys across Sri Lanka, corporate retreat management, private helicopter charters, and 5-star villa curation.',
+    description: 'Handcrafted luxury journeys across Sri Lanka, executive retreat management, private helicopter charters, and 5-star villa curation.',
     features: [
       'Personalized Day-by-Day Curated Itineraries',
       'Premium Chauffeur Fleet & Luxury Vehicles',
@@ -135,7 +135,7 @@ export const FEATURED_WORK: FeaturedWorkItem[] = [
     divisionName: 'SWS Event Management',
     divisionRoute: '/sws',
     title: 'South Asia Economic Forum & Gala',
-    category: 'Corporate Summit & VIP Gala',
+    category: 'Global Summit & VIP Gala',
     client: 'International Trade Chamber',
     year: '2025',
     summary: 'A 3-day high-security summit hosting 2,200 foreign delegates with real-time interpretation, immersive LED tunnel entryways, and banquet staging.',
@@ -251,7 +251,7 @@ export const COMPANY_MILESTONES: (MilestoneItem & { id: string; badge: string; k
     id: 'ms-2022',
     year: '2022',
     title: 'Founding & Core Trilateral Launch',
-    description: 'Mahdev established corporate headquarters in Colombo, launching SWS Event Management & Decorations, U1 Studio Photography & Cinema, and Mahdev IT Solutions as foundational pillars.',
+    description: 'Mahdev established headquarters in Colombo, launching SWS Event Management & Decorations, U1 Studio Photography & Cinema, and Mahdev IT Solutions as foundational pillars.',
     divisionId: 'sws',
     badge: 'Inception',
     keyOutcome: 'Delivered 80+ luxury wedding decors, 8K photo/cinema projects, and enterprise cloud portals in year one.',
@@ -280,7 +280,7 @@ export const COMPANY_MILESTONES: (MilestoneItem & { id: string; badge: string; k
   {
     id: 'ms-2025',
     year: '2025 - Present',
-    title: 'Unified Corporate Synergy & Digital Mesh',
+    title: 'Unified Enterprise Synergy & Digital Mesh',
     description: 'Consolidated parent governance and centralized technological architecture to deliver cross-division synergy for individuals and multinational brands alike.',
     badge: 'Synergy Era',
     keyOutcome: 'One trusted parent company providing 360-degree innovation and creative mastery.',
@@ -293,7 +293,7 @@ export const TRUSTED_COMPANIES: TrustedCompany[] = [
     id: 'co-1',
     name: 'Ceylon Enterprises Group',
     industry: 'Conglomerate & Trade',
-    partnershipType: 'Enterprise IT & Corporate Events'
+    partnershipType: 'Enterprise IT & Events'
   },
   {
     id: 'co-2',
@@ -331,8 +331,8 @@ export const WHY_MAHDEV_DIFFERENTIATORS: DifferentiatorItem[] = [
   {
     id: 'diff-ecosystem',
     title: 'Unified Ecosystem',
-    shortDescription: 'A single corporate partner managing events, media, tech, and travel without fragmented vendor coordination.',
-    fullDescription: 'Instead of dealing with multiple disjointed agencies, clients benefit from a single corporate partner with unified standards of quality and execution.',
+    shortDescription: 'A single reliable partner managing events, media, tech, and travel without fragmented vendor coordination.',
+    fullDescription: 'Instead of dealing with multiple disjointed agencies, clients benefit from a single partner with unified standards of quality and execution.',
     iconName: 'Layers',
     badge: 'Unified Synergy',
     highlightPoints: [

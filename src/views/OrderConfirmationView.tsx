@@ -297,7 +297,7 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
               </div>
 
               <p className="text-xs text-slate-300 leading-relaxed">
-                Connect directly to our multi-gateway transaction processor (Stripe International Cards, LankaPay National Switch IPG, and Corporate Telegraphic Transfer). Payment status is verified cryptographically on the server before updating your order.
+                Connect directly to our multi-gateway transaction processor (Stripe International Cards, LankaPay National Switch IPG, and Bank Telegraphic Transfer). Payment status is verified cryptographically on the server before updating your order.
               </p>
 
               <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">

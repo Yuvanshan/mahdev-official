@@ -378,7 +378,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
                       <Mail className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Corporate / Personal Email *</span>
+                      <span>Email Address *</span>
                     </label>
                     <input
                       id="email"
@@ -762,7 +762,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                   value={customerNotes}
                   onChange={(e) => setCustomerNotes(e.target.value)}
                   rows={2}
-                  placeholder="Any corporate PO numbers, packaging preferences, or specific invoicing notes..."
+                  placeholder="Any purchase order (PO) numbers, packaging preferences, or specific invoicing notes..."
                   className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                 />
               </div>

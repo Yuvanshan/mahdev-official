@@ -117,7 +117,7 @@ export const MaintenanceView: React.FC<MaintenanceViewProps> = ({ onAdminLogin }
             </div>
             <div className="min-w-0">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                Corporate Inquiries
+                Direct Inquiries
               </span>
               <span className="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors truncate block">
                 {email}

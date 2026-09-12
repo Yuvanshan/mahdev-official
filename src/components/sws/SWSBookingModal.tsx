@@ -243,7 +243,7 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
               </div>
 
               <div className="text-[11px] text-slate-400">
-                Our lead wedding & corporate event producer will call you within 24 business hours.
+                Our lead wedding & event producer will call you within 24 business hours.
               </div>
             </div>
           ) : (
@@ -262,7 +262,7 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
                   >
                     <option value="Wedding">Wedding & Poruwa / Church Ceremony</option>
                     <option value="Engagement">Engagement & Ring Exchange</option>
-                    <option value="Corporate">Corporate Summit / Gala / Product Launch</option>
+                    <option value="Corporate">Business Summit / Gala / Product Launch</option>
                     <option value="Birthday">Milestone Birthday / Social Party</option>
                     <option value="Concert">Concert / Musical Event Stage</option>
                     <option value="Other">Other Bespoke Event</option>

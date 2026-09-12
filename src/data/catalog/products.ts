@@ -372,7 +372,7 @@ export const MASTER_CATALOG_PRODUCTS: CatalogProduct[] = [
     categorySlug: 'audio-creator-gear',
     shortDescription: '24-bit/192kHz broadcast-grade studio microphone with zero-latency monitoring, tap-to-mute, and shock mount.',
     description:
-      'Engineered for streamers, podcasters, vocalists, and remote corporate meetings. Plug-and-play USB-C connectivity with heavy metal anti-vibration desk stand and integrated pop filter.',
+      'Engineered for streamers, podcasters, vocalists, and remote executive meetings. Plug-and-play USB-C connectivity with heavy metal anti-vibration desk stand and integrated pop filter.',
     imageUrl: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=800&q=80',
     gallery: [
       'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=800&q=80',

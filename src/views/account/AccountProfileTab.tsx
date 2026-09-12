@@ -113,7 +113,7 @@ export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) =>
       <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
         <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
           <User className="w-4 h-4 text-blue-600" />
-          <h3 className="font-display text-sm font-bold text-slate-900">Personal & Corporate Identity</h3>
+          <h3 className="font-display text-sm font-bold text-slate-900">Personal & Business Identity</h3>
         </div>
 
         {/* Avatar Picker */}
@@ -344,7 +344,7 @@ export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) =>
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >
               <option value="whatsapp">24/7 WhatsApp Concierge</option>
-              <option value="email">Corporate Email Dispatches</option>
+              <option value="email">Official Email Dispatches</option>
               <option value="phone">Direct Phone Call</option>
             </select>
           </div>

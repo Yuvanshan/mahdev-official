@@ -262,6 +262,68 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  // Static uploads directory serving
+  const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  app.use('/uploads', express.static(uploadsDir));
+
+  // High-Capacity Media & Video Upload Endpoint (supports videos up to 100MB)
+  app.post(
+    '/api/upload/media',
+    express.raw({ type: ['*/*'], limit: '100mb' }),
+    async (req: Request, res: Response) => {
+      try {
+        const rawFilename = (req.headers['x-filename'] as string) || `media_${Date.now()}`;
+        const rawContentType = (req.headers['content-type'] as string) || '';
+
+        const fileBuffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body || '');
+        if (!fileBuffer || fileBuffer.length === 0) {
+          res.status(400).json({ success: false, error: 'Empty file payload received.' });
+          return;
+        }
+
+        const isVideo =
+          rawContentType.startsWith('video/') ||
+          rawFilename.toLowerCase().endsWith('.mp4') ||
+          rawFilename.toLowerCase().endsWith('.webm') ||
+          rawFilename.toLowerCase().endsWith('.ogg') ||
+          rawFilename.toLowerCase().endsWith('.mov') ||
+          rawFilename.toLowerCase().endsWith('.m4v');
+
+        const subfolder = isVideo ? 'videos' : 'images';
+        const targetDir = path.join(uploadsDir, subfolder);
+        if (!fs.existsSync(targetDir)) {
+          fs.mkdirSync(targetDir, { recursive: true });
+        }
+
+        const ext = path.extname(rawFilename) || (isVideo ? '.mp4' : '.jpg');
+        const base = path.basename(rawFilename, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
+        const safeName = `${Date.now()}_${base}${ext}`;
+        const filePath = path.join(targetDir, safeName);
+
+        fs.writeFileSync(filePath, fileBuffer);
+        const publicUrl = `/uploads/${subfolder}/${safeName}`;
+
+        console.log(
+          `[Media Upload] Successfully stored ${subfolder} asset: ${publicUrl} (${(fileBuffer.length / (1024 * 1024)).toFixed(2)} MB)`
+        );
+
+        res.json({
+          success: true,
+          url: publicUrl,
+          filename: safeName,
+          sizeBytes: fileBuffer.length,
+          contentType: rawContentType || (isVideo ? 'video/mp4' : 'image/jpeg'),
+        });
+      } catch (err: any) {
+        console.error('[Media Upload] Error saving file:', err);
+        res.status(500).json({ success: false, error: err?.message || 'Failed to save media upload.' });
+      }
+    }
+  );
+
   // JSON Body Parser with strict payload size limit (prevents memory exhaustion DOS)
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));

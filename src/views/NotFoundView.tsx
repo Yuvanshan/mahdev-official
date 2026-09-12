@@ -61,7 +61,7 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
     badgeText = 'PRODUCT NOT FOUND';
     headingText = 'Product Not Found';
     messageText = attemptedSlug
-      ? `We couldn't locate a product matching "${attemptedSlug}" in our corporate catalog. It may have been archived, discontinued, or the URL has changed.`
+      ? `We couldn't locate a product matching "${attemptedSlug}" in our catalog. It may have been archived, discontinued, or the URL has changed.`
       : 'The product you requested does not exist in our catalog or may currently be offline.';
   } else if (resourceType === 'service') {
     badgeText = 'SERVICE NOT FOUND';
@@ -84,7 +84,7 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
     >
       <SEOHead
         title={`404 — ${headingText} | ${companyName}`}
-        description="The requested page or resource could not be located within the Mahdev Pvt Ltd corporate network."
+        description="The requested page or resource could not be located within the Mahdev Pvt Ltd network."
         noIndex={true}
       />
 
@@ -273,7 +273,7 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
         >
           <div className="flex items-center justify-between mb-4">
             <H3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Corporate Operating Divisions
+              Operating Divisions
             </H3>
             <span className="text-[11px] text-slate-400">Jump directly to a division</span>
           </div>

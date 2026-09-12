@@ -70,16 +70,28 @@ function AppContent() {
 
   // Dynamic favicon and document title synchronization from Firestore
   useEffect(() => {
-    const brandName = companySettings?.name || siteSettings?.siteName || 'Mahdev Pvt Ltd';
-    if (brandName && !document.title.includes(brandName)) {
-      document.title = `${brandName} – Creating. Capturing. Innovating.`;
+    const brandName = companySettings?.name
+      ? (companySettings.name.includes('(Pvt) Ltd') || companySettings.name.includes('Pvt Ltd') ? companySettings.name : `${companySettings.name} (Pvt) Ltd`)
+      : (siteSettings?.siteName || 'Mahdev (Pvt) Ltd');
+    const defaultTitle = `${brandName} - Creating Moments | Capturing Memories | Delivering Innovation`;
+
+    if (
+      !document.title ||
+      document.title.includes('Mahdev Pvt Ltd – Creating') ||
+      document.title.toLowerCase().includes('corporate eco') ||
+      document.title.toLowerCase().includes('corporate ecosystem') ||
+      document.title.toLowerCase().includes('corporate') ||
+      document.title === 'Vite App' ||
+      document.title.trim() === ''
+    ) {
+      document.title = defaultTitle;
     }
 
     const uploadedFavicon = siteSettings?.faviconUrl || companySettings?.faviconUrl;
     const effectiveFavicon =
       uploadedFavicon && uploadedFavicon.trim() !== ''
         ? uploadedFavicon
-        : 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="%230052FF"/><text x="50%" y="55%" dominant-baseline="central" text-anchor="middle" fill="white" font-family="sans-serif" font-weight="900" font-size="18">M</text></svg>';
+        : '/favicon.png';
 
     const rels = ['icon', 'shortcut icon', 'apple-touch-icon'];
     rels.forEach((rel) => {
@@ -967,9 +979,6 @@ function AppContent() {
 
       {/* Global Cart Slide-Over Drawer */}
       <CartDrawer onNavigate={navigate} />
-
-      {/* Live CMS Top Announcement / Promotional Banner */}
-      <AnnouncementBanner onNavigate={navigate} />
 
       {/* Sticky Top Navigation */}
       <Navigation currentPath={normalizedPath} onNavigate={navigate} />

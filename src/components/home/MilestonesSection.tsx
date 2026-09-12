@@ -51,7 +51,7 @@ const OFFICIAL_MILESTONES = [
     title: 'Islandwide Reach',
     subtitle: 'All 9 Provinces',
     description:
-      'Expanded delivery infrastructure nationwide to serve corporate and private clients islandwide.',
+      'Expanded delivery infrastructure nationwide to serve commercial and private clients islandwide.',
     badge: 'National Scale',
     keyOutcome: 'Operational capacity scaled across all 9 provinces in Sri Lanka.',
     icon: MapPin,
@@ -73,10 +73,10 @@ const OFFICIAL_MILESTONES = [
     id: 'ms-2026',
     year: '2026',
     title: 'Mahdev Pvt Ltd',
-    subtitle: 'Corporate Incorporation',
+    subtitle: 'Company Incorporation',
     description:
-      'Officially registered Mahdev Pvt Ltd, unifying all specialized divisions under corporate governance.',
-    badge: 'Corporate Entity',
+      'Officially registered Mahdev Pvt Ltd, unifying all specialized divisions under established leadership.',
+    badge: 'Registered Entity',
     keyOutcome: 'Unified business divisions under registered private enterprise governance.',
     icon: Building2,
     gradient: 'from-blue-600 to-indigo-700',

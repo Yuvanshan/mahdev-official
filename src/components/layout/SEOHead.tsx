@@ -42,7 +42,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
 
   useEffect(() => {
     // 1. Dynamic Favicon synchronization from Firestore
-    const favicon = siteSettings?.faviconUrl || companySettings?.faviconUrl;
+    const favicon = siteSettings?.faviconUrl || companySettings?.faviconUrl || '/favicon.png';
     if (favicon && favicon.trim()) {
       const rels = ['icon', 'shortcut icon', 'apple-touch-icon'];
       rels.forEach((rel) => {
@@ -57,15 +57,26 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     }
 
     // 2. Dynamic Title
-    const baseCompanyName = companySettings?.name || siteSettings?.siteName || 'Mahdev Pvt Ltd';
-    const dynamicFullTitle = title.includes(baseCompanyName)
-      ? title
-      : `${title} | ${baseCompanyName}`;
+    const baseCompanyName = companySettings?.name
+      ? (companySettings.name.includes('(Pvt) Ltd') || companySettings.name.includes('Pvt Ltd') ? companySettings.name : `${companySettings.name} (Pvt) Ltd`)
+      : (siteSettings?.siteName || 'Mahdev (Pvt) Ltd');
+
+    let sanitizedTitle = title;
+    if (
+      sanitizedTitle.toLowerCase().includes('corporate eco') ||
+      sanitizedTitle.toLowerCase().includes('corporate ecosystem')
+    ) {
+      sanitizedTitle = `${baseCompanyName} - Creating Moments | Capturing Memories | Delivering Innovation`;
+    }
+
+    const dynamicFullTitle = sanitizedTitle.includes(baseCompanyName)
+      ? sanitizedTitle
+      : `${sanitizedTitle} | ${baseCompanyName}`;
     document.title = dynamicFullTitle;
 
     // Check if there is an admin-configured SEO override in CMS
     let effectiveTitle = dynamicFullTitle;
-    let effectiveDesc = description || siteSettings?.metaDescription || companySettings?.description || 'Mahdev Pvt Ltd – Creating. Capturing. Innovating. Multi-division enterprise group.';
+    let effectiveDesc = description || siteSettings?.metaDescription || companySettings?.description || 'Mahdev (Pvt) Ltd - Creating Moments | Capturing Memories | Delivering Innovation.';
     let effectiveOgTitle = ogTitle || dynamicFullTitle;
     let effectiveOgDesc = ogDescription || effectiveDesc;
     let effectiveCanonical = canonicalUrl;

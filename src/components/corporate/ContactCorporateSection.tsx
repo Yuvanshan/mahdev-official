@@ -125,7 +125,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
         email: formData.email,
         phone: formData.phone || '',
         division: formData.division,
-        subject: formData.serviceType || 'Corporate Contact Inquiry',
+        subject: formData.serviceType || 'General Contact Inquiry',
         message: formData.message,
       }).catch((err) => console.warn('[Contact] Firestore save notice:', err));
 
@@ -152,12 +152,12 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
           details: formData.message,
         }).catch(() => {});
       } else {
-        analyticsService.trackContactSubmitted('general', 'Corporate Contact Inquiry');
+        analyticsService.trackContactSubmitted('general', 'General Contact Inquiry');
 
         notificationService.notifyAdminContactInquiry({
           name: formData.name,
           email: formData.email,
-          subject: 'Corporate Contact Inquiry',
+          subject: 'General Contact Inquiry',
           message: formData.message,
         }).catch(() => {});
       }
@@ -181,10 +181,10 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
     <SectionContainer id="contact" background="white" paddingY="xl" hasBorderBottom>
       <ScrollReveal direction="up">
         <div className="text-center max-w-2xl mx-auto mb-14">
-          <Caption className="text-[#0052FF] mb-2 block">Direct Corporate Dispatch</Caption>
+          <Caption className="text-[#0052FF] mb-2 block">Direct Inquiry</Caption>
           <H2 className="text-slate-900 mb-3">Connect With Mahdev</H2>
           <Body className="text-slate-600 text-base">
-            Reach out to our Colombo executive headquarters or direct your brief to a specific division. Guaranteed 24-hour turnaround across all inquiries.
+            Reach out to our Colombo executive office or direct your brief to a specific division. Guaranteed 24-hour turnaround across all inquiries.
           </Body>
         </div>
       </ScrollReveal>
@@ -231,7 +231,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                     </div>
 
                     <Button size="sm" variant="outline" onClick={handleReset}>
-                      Submit Another Corporate Inquiry
+                      Submit Another Inquiry
                     </Button>
                   </div>
                 ) : (
@@ -260,7 +260,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
 
                     <div className="border-b border-slate-100 pb-4 mb-2">
                       <h3 className="font-display text-xl font-bold text-slate-900">
-                        Corporate Project Brief
+                        Project Brief & Scope
                       </h3>
                       <p className="text-xs text-slate-500 mt-0.5">
                         Fill out your requirements below to connect directly with our engineering or production leads.
@@ -281,7 +281,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                       />
                       <Input
                         id="contact-email"
-                        label="Corporate Email *"
+                        label="Email Address *"
                         type="email"
                         placeholder="kasun@enterprise.lk"
                         value={formData.email}
@@ -314,7 +314,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                           setFormData({ ...formData, division: e.target.value })
                         }
                         options={[
-                          { value: 'general', label: 'Mahdev Corporate HQ (General)' },
+                          { value: 'general', label: 'Mahdev Main Office (General)' },
                           ...DIVISION_LIST.map((d) => ({
                             value: d.id,
                             label: `${d.name} (${d.badge})`,
@@ -357,7 +357,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                           rightIcon={<Send className="w-4 h-4" />}
                           className="w-full justify-center shadow-lg shadow-blue-500/20 text-sm font-bold"
                         >
-                          {loading ? 'Transmitting Corporate Inquiry...' : 'Submit Corporate Inquiry'}
+                          {loading ? 'Transmitting Inquiry...' : 'Submit Inquiry'}
                         </Button>
                       </Magnetic>
                     </div>
@@ -398,7 +398,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                       <MessageCircle className="w-5 h-5" />
                     </div>
                     <div>
-                      <span className="text-xs font-bold block">WhatsApp Corporate</span>
+                      <span className="text-xs font-bold block">Direct WhatsApp</span>
                       <span className="text-xs text-emerald-300 font-mono font-bold">
                         075 092 8078
                       </span>
@@ -414,7 +414,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                       <Phone className="w-5 h-5" />
                     </div>
                     <div>
-                      <span className="text-xs font-bold block">Corporate Phone Hotline</span>
+                      <span className="text-xs font-bold block">Direct Phone Hotline</span>
                       <span className="text-[11px] text-slate-400">Direct Line & Executive Desk</span>
                     </div>
                   </div>
@@ -437,7 +437,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                     <Mail className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
-                    <span className="text-xs font-bold block">Official Corporate Email</span>
+                    <span className="text-xs font-bold block">Official Email</span>
                     <span className="text-xs text-slate-300 break-all font-mono">
                       {company.email || COMPANY_INFO.email}
                     </span>
@@ -473,7 +473,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                         {company.offices?.colombo?.name || 'Colombo Office'}
                       </h4>
                       <Badge variant="electric" size="sm" className="text-[9px] py-0 px-1.5">
-                        Corporate Headquarters
+                        Main Office
                       </Badge>
                     </div>
                   </div>

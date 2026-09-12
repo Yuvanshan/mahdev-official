@@ -26,7 +26,7 @@ export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) =>
     return (
       <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-white">
         <DataLoadingOverlay
-          message="Loading corporate milestones..."
+          message="Loading company milestones..."
           subMessage="Fetching verified historical timeline from Firestore"
         />
       </div>
@@ -43,7 +43,7 @@ export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) =>
       details: [
         'Established full-service event staging and decor operations',
         'Built initial core team of event designers and production technicians',
-        'Delivered memorable wedding galas, celebrations, and corporate gatherings',
+        'Delivered memorable wedding galas, celebrations, and business gatherings',
       ],
       icon: Sparkles,
     },
@@ -68,7 +68,7 @@ export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) =>
       badge: 'National Reach',
       details: [
         'Delivered high-profile events across all 9 provinces in Sri Lanka',
-        'Crossed 500+ completed wedding and corporate event staging projects',
+        'Crossed 500+ completed wedding and event staging projects',
         'Formed strategic vendor partnerships for rapid islandwide deployment',
       ],
       icon: MapPin,
@@ -82,7 +82,7 @@ export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) =>
       details: [
         'Custom enterprise software engineering and responsive web platforms',
         'Cloud hosting, modern mobile apps, and secure digital workflows',
-        'Expanded client base to fintech, retail, hospitality, and corporate sectors',
+        'Expanded client base to fintech, retail, hospitality, and enterprise sectors',
       ],
       icon: Code2,
     },
@@ -91,11 +91,11 @@ export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) =>
       title: 'Mahdev Pvt Ltd Incorporation & Expansion',
       subtitle: 'Parent Holding Company & Multi-Division Growth',
       description: 'Officially registered Mahdev Pvt Ltd as a private company, bringing our growing services and ventures under one unified organization. Opened new Colombo branch, introduced Mahdev Travels, and achieved 1000+ completed projects and 1800+ happy customers.',
-      badge: 'Corporate Incorporation',
+      badge: 'Company Incorporation',
       details: [
-        'Incorporated Mahdev Pvt Ltd as a formal parent corporate entity',
+        'Incorporated Mahdev Pvt Ltd as a formal parent company',
         'Established secondary headquarters in Colombo alongside Trincomalee office',
-        'Introduced Mahdev Travels for bespoke corporate and leisure tour curation',
+        'Introduced Mahdev Travels for bespoke business and leisure tour curation',
         'Milestone achievement of 1,000+ projects and 1,800+ satisfied clients',
       ],
       icon: Building2,

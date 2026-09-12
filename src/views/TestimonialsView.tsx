@@ -113,7 +113,7 @@ export const TestimonialsView: React.FC<TestimonialsViewProps> = ({ onNavigate }
                 Verified Customer Reviews
               </H1>
               <Body className="text-slate-600 text-base sm:text-lg">
-                Direct testimonials and ratings published on Google Maps by wedding couples, corporate directors, cinema clients, and tech partners of {companySettings?.name || 'Mahdev Pvt Ltd'}.
+                Direct testimonials and ratings published on Google Maps by wedding couples, business leaders, cinema clients, and tech partners of {companySettings?.name || 'Mahdev Pvt Ltd'}.
               </Body>
 
               {/* Direct Branch Google Maps Review Links */}

@@ -58,7 +58,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
               Authentication Required
             </h2>
             <p className="text-xs text-slate-500 leading-relaxed">
-              You must be signed in to access your protected Mahdev client orders, bookings, and corporate account preferences.
+              You must be signed in to access your protected Mahdev client orders, bookings, and business account preferences.
             </p>
           </div>
           <div className="pt-2 flex flex-col gap-2.5">

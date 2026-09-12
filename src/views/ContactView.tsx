@@ -23,7 +23,7 @@ export const ContactView: React.FC<ContactViewProps> = ({ onNavigate }) => {
           <div className="max-w-3xl">
             <div className="flex items-center gap-2 mb-3">
               <Badge variant="electric" size="sm">
-                Corporate Headquarters
+                Head Office & Inquiries
               </Badge>
               <span className="text-xs font-semibold text-slate-500">
                 Colombo & Trincomalee, Sri Lanka

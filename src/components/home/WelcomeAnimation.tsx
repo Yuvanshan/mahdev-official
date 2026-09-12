@@ -132,7 +132,7 @@ export const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({
           <div className="absolute top-6 left-0 right-0 px-6 sm:px-10 flex items-center justify-between z-10">
             <div className="flex items-center gap-2 text-xs font-semibold tracking-widest text-slate-400 uppercase">
               <span className="w-2 h-2 rounded-full bg-[#0052FF] animate-pulse" />
-              <span>Official Corporate Portal</span>
+              <span>Official Portal</span>
             </div>
 
             <button
@@ -153,25 +153,17 @@ export const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               className="relative mb-6"
             >
-              {uploadedLogo && uploadedLogo.trim() !== '' ? (
-                <div className="relative p-2 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl flex items-center justify-center">
-                  <img
-                    src={uploadedLogo}
-                    alt={brandName}
-                    className="h-16 sm:h-20 w-auto object-contain max-w-[240px]"
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
-              ) : (
-                <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-[#0052FF] to-[#0038B8] p-[1px] shadow-2xl shadow-blue-500/30 flex items-center justify-center">
-                  <div className="w-full h-full bg-[#0B1528] rounded-[15px] flex items-center justify-center relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-tr from-[#0052FF]/30 to-transparent" />
-                    <span className="text-2xl sm:text-3xl font-black tracking-tight text-white font-serif">
-                      {brandInitial}
-                    </span>
-                  </div>
-                </div>
-              )}
+              <div className="relative p-2 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl flex items-center justify-center">
+                <img
+                  src={uploadedLogo && uploadedLogo.trim() !== '' ? uploadedLogo : '/logo.png'}
+                  alt={brandName}
+                  className="h-16 sm:h-20 w-auto object-contain max-w-[240px]"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = '/logo.png';
+                  }}
+                />
+              </div>
 
               {/* Glowing ring animation */}
               <div className="absolute -inset-2 rounded-3xl border border-blue-400/30 animate-pulse pointer-events-none" />
@@ -185,7 +177,7 @@ export const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({
               className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-400/20 text-[#60A5FA] text-xs font-semibold tracking-wider uppercase mb-3"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Multi-Division Corporate Group</span>
+              <span>Multi-Division Enterprise Group</span>
             </motion.div>
 
             {/* Main Headline */}
@@ -251,7 +243,7 @@ export const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({
                 onClick={handleDismiss}
                 className="w-full py-2.5 px-5 rounded-xl bg-gradient-to-r from-[#0052FF] to-[#0040CC] hover:from-[#0047E0] hover:to-[#0035A8] text-white text-xs sm:text-sm font-semibold tracking-wide shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Enter Corporate Experience</span>
+                <span>Explore Mahdev</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </motion.div>

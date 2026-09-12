@@ -54,7 +54,7 @@ const HappyClientsAndProjectsSectionContent: React.FC<
       id: 'stat-clients',
       label: 'Clients Served',
       value: happyClientsCount,
-      subtext: 'Corporate & private sectors',
+      subtext: 'Business & private clients',
       icon: Users,
     },
     {

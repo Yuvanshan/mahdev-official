@@ -93,7 +93,7 @@ export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavi
               Home
             </button>
             <ChevronRight className="w-3.5 h-3.5" />
-            <span>Corporate Governance</span>
+            <span>Governance & Policies</span>
             <ChevronRight className="w-3.5 h-3.5" />
             <span className="text-slate-900">{meta.name}</span>
           </div>
@@ -199,7 +199,7 @@ export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavi
                   Questions on Compliance?
                 </span>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Our Corporate Governance and Legal team in Colombo is available to assist with contract questions.
+                  Our Legal and Compliance team in Colombo is available to assist with contract questions.
                 </p>
                 <Button
                   size="sm"
@@ -239,7 +239,7 @@ export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavi
                 </div>
                 <div>
                   <h4 className="font-display font-bold text-sm">
-                    {legalName} Corporate Office
+                    {legalName} Head Office
                   </h4>
                   <p className="text-xs text-slate-300">
                     Colombo: {colomboAddress} • {contactEmail}

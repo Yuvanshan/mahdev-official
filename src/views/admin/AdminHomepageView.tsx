@@ -33,6 +33,7 @@ import {
   Smartphone,
   Monitor,
   SlidersHorizontal,
+  Upload,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
@@ -49,6 +50,8 @@ import {
 } from '../../types/cms';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { DEFAULT_HOMEPAGE_SECTIONS } from '../../services/firestore/settings';
+import { compressDataUrl } from '../../utils/imageOptimizer';
+import { uploadMediaAsset } from '../../services/mediaUploadService';
 
 export const AdminHomepageView: React.FC = () => {
   const { homepageConfig, updateHomepageConfig } = useFirestoreDataContext();
@@ -58,6 +61,8 @@ export const AdminHomepageView: React.FC = () => {
   >('sections');
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
   const [mediaPickerTarget, setMediaPickerTarget] = useState<'hero' | 'seo' | string>('hero');
@@ -170,6 +175,35 @@ export const AdminHomepageView: React.FC = () => {
       },
     }));
     setIsDirty(true);
+  };
+
+  const handleHeroMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingMedia(true);
+    setUploadProgress(10);
+    try {
+      const isVideo =
+        file.type.startsWith('video/') ||
+        file.name.toLowerCase().endsWith('.mp4') ||
+        file.name.toLowerCase().endsWith('.webm') ||
+        file.name.toLowerCase().endsWith('.ogg') ||
+        file.name.toLowerCase().endsWith('.mov');
+
+      addToast('info', 'Uploading Media', `Uploading ${isVideo ? 'video' : 'picture'} (${(file.size / (1024 * 1024)).toFixed(1)} MB)...`);
+      const mediaUrl = await uploadMediaAsset(file, (pct) => setUploadProgress(pct));
+      updateNested('hero', 'mediaUrl', mediaUrl);
+      updateNested('hero', 'mediaType', isVideo ? 'video' : 'image');
+      addToast('success', 'Upload Complete', `${isVideo ? 'Video' : 'Picture'} uploaded successfully.`);
+    } catch (err: any) {
+      console.error('Failed to process media upload:', err);
+      addToast('error', 'Upload Failed', err.message || 'Could not upload media file.');
+    } finally {
+      setIsUploadingMedia(false);
+      setUploadProgress(0);
+      e.target.value = '';
+    }
   };
 
   return (
@@ -408,15 +442,14 @@ export const AdminHomepageView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Media Type</label>
+                <label className="block font-bold text-blue-900 uppercase tracking-wider mb-1">Hero Media Display</label>
                 <select
                   value={config.hero.mediaType}
                   onChange={(e) => updateNested('hero', 'mediaType', e.target.value as any)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:outline-none"
+                  className="w-full px-3.5 py-2 bg-blue-50/50 border border-blue-200 rounded-xl font-medium focus:bg-white focus:outline-none"
                 >
-                  <option value="gradient">Clean Corporate Gradient</option>
-                  <option value="image">Backdrop Background Image</option>
-                  <option value="video">Cinematic Video Embed</option>
+                  <option value="video">Cinematic Video (Upload or Embed)</option>
+                  <option value="image">Showcase HD Picture (Upload or URL)</option>
                 </select>
               </div>
 
@@ -432,7 +465,7 @@ export const AdminHomepageView: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-blue-600 uppercase tracking-wider mb-1">Title Highlight (Blue)</label>
+                  <label className="block font-bold text-blue-700 uppercase tracking-wider mb-1">Title Highlight (Electric Blue)</label>
                   <input
                     type="text"
                     value={config.hero.titleHighlight}
@@ -456,36 +489,133 @@ export const AdminHomepageView: React.FC = () => {
               <div className="md:col-span-2">
                 <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Supporting Description</label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={config.hero.description}
                   onChange={(e) => updateNested('hero', 'description', e.target.value)}
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
                 />
               </div>
 
-              {config.hero.mediaType === 'image' && (
-                <div className="md:col-span-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block font-bold text-slate-700 uppercase tracking-wider">Backdrop Image URL</label>
+              {/* Media Upload & URL Configuration (Video or Image) */}
+              <div className="md:col-span-2 p-4 bg-blue-50/30 rounded-2xl border border-blue-100 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h4 className="font-bold text-blue-950 text-xs uppercase tracking-wider">
+                      Full-Screen Hero Media Backdrop ({config.hero.mediaType === 'video' ? 'Cinematic Video' : 'HD Picture Cover'})
+                    </h4>
+                    <p className="text-[11px] text-blue-700/80">
+                      Full-bleed background across the screen with smooth left-side gradient overlay behind bold headlines.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-blue-200 shadow-2xs">
                     <button
                       type="button"
-                      onClick={() => {
-                        setMediaPickerTarget('hero');
-                        setIsMediaPickerOpen(true);
-                      }}
-                      className="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                      onClick={() => updateNested('hero', 'mediaType', 'image')}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        config.hero.mediaType === 'image'
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
                     >
-                      <ImageIcon className="w-3.5 h-3.5" /> Select Media Library
+                      Picture
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateNested('hero', 'mediaType', 'video')}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        config.hero.mediaType === 'video'
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Video
                     </button>
                   </div>
-                  <input
-                    type="url"
-                    value={config.hero.mediaUrl}
-                    onChange={(e) => updateNested('hero', 'mediaUrl', e.target.value)}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-                  />
                 </div>
-              )}
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold shadow-xs transition ${
+                    isUploadingMedia
+                      ? 'bg-blue-400 text-white cursor-wait opacity-80'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+                  }`}>
+                    <Upload className="w-3.5 h-3.5" />
+                    {isUploadingMedia
+                      ? `Uploading ${uploadProgress}%...`
+                      : `Upload ${config.hero.mediaType === 'video' ? 'Video (MP4/WebM)' : 'Picture (HD)'}`}
+                    <input
+                      type="file"
+                      disabled={isUploadingMedia}
+                      accept={config.hero.mediaType === 'video' ? 'video/mp4,video/webm,video/ogg,video/quicktime,video/*' : 'image/*'}
+                      onChange={handleHeroMediaUpload}
+                      className="hidden"
+                    />
+                  </label>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setMediaPickerTarget('hero');
+                      setIsMediaPickerOpen(true);
+                    }}
+                    className="text-xs flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <ImageIcon className="w-3.5 h-3.5" /> Media Library
+                  </Button>
+
+                  <div className="grow min-w-[200px]">
+                    <input
+                      type="url"
+                      value={config.hero.mediaUrl}
+                      onChange={(e) => updateNested('hero', 'mediaUrl', e.target.value)}
+                      placeholder={config.hero.mediaType === 'video' ? 'Video URL or YouTube embed...' : 'Picture Image URL...'}
+                      className="w-full px-3 py-1.5 bg-white border border-blue-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Media Preview Player */}
+                {config.hero.mediaUrl && (
+                  <div className="relative w-full max-w-md h-44 rounded-xl overflow-hidden border border-blue-200 bg-slate-900 shadow-sm mt-2">
+                    {config.hero.mediaType === 'video' ? (
+                      config.hero.mediaUrl.includes('youtube.com') || config.hero.mediaUrl.includes('youtu.be') ? (
+                        <iframe
+                          src={
+                            config.hero.mediaUrl.includes('embed')
+                              ? config.hero.mediaUrl
+                              : `https://www.youtube.com/embed/${config.hero.mediaUrl.split('v=')[1] || config.hero.mediaUrl.split('/').pop()}?autoplay=1&mute=1&loop=1&controls=0`
+                          }
+                          title="Hero Video Preview"
+                          className="w-full h-full object-cover pointer-events-none"
+                        />
+                      ) : (
+                        <video
+                          src={config.hero.mediaUrl}
+                          controls
+                          muted
+                          className="w-full h-full object-cover"
+                        />
+                      )
+                    ) : (
+                      <img
+                        src={config.hero.mediaUrl}
+                        alt="Hero Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => updateNested('hero', 'mediaUrl', '')}
+                      className="absolute top-2 right-2 bg-black/70 hover:bg-red-600 text-white p-1 rounded-lg text-xs transition cursor-pointer"
+                      title="Remove media"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* Call to Action Buttons */}
               <div>

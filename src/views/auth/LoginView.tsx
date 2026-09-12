@@ -117,7 +117,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onNavigate, redirectPath =
                     </div>
                   </div>
                   <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200 shrink-0">
-                    {acc.accountType === 'corporate' ? 'Corporate' : 'Individual'}
+                    {acc.accountType === 'corporate' ? 'Business' : 'Individual'}
                   </span>
                 </button>
               ))}

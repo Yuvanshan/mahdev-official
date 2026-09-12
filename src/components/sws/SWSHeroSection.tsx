@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, ArrowRight, Phone, ShieldCheck, Award, Users, Layers } from 'lucide-react';
+import { Calendar, ArrowRight, Phone, Layers, ChevronLeft } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Button } from '../ui/Button';
 import { getTelLink } from '../../config/company';
@@ -17,8 +17,6 @@ interface SWSHeroSectionProps {
 export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
   onOpenBooking,
   onBookNow,
-  onRequestQuote,
-  onExploreServices,
   onExploreRentals,
 }) => {
   const handleBook = onBookNow || onOpenBooking || (() => {});
@@ -43,6 +41,14 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
     companySettings?.primaryPhone ||
     '075 092 8078';
 
+  const rawHeroVideo =
+    (swsDiv as any)?.heroVideoUrl ||
+    (swsDiv as any)?.videoUrl ||
+    (swsDiv?.hero as any)?.videoUrl ||
+    '';
+
+  const [videoFailed, setVideoFailed] = React.useState(false);
+
   const rawHeroImage =
     (swsDiv as any)?.imageUrl ||
     (swsDiv as any)?.heroImageUrl ||
@@ -52,6 +58,23 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
     typeof rawHeroImage === 'string' && rawHeroImage.trim() !== ''
       ? rawHeroImage.trim()
       : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
+
+  const isExplicitVideo = (swsDiv as any)?.heroMediaType === 'video';
+  const isExplicitImage = (swsDiv as any)?.heroMediaType === 'image';
+  const isVideoUrl =
+    rawHeroVideo.includes('.mp4') ||
+    rawHeroVideo.includes('.webm') ||
+    rawHeroVideo.includes('.ogg') ||
+    rawHeroVideo.includes('youtube.com') ||
+    rawHeroVideo.includes('youtu.be');
+
+  const isVideo =
+    !videoFailed &&
+    (isExplicitVideo
+      ? rawHeroVideo.trim() !== ''
+      : isExplicitImage
+      ? false
+      : isVideoUrl && rawHeroVideo.trim() !== '');
 
   const badgeText =
     (swsDiv as any)?.hero?.badge ||
@@ -64,126 +87,126 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
     swsDiv?.name ||
     'Turnkey Luxury Event Production & Decor';
 
-  const subheadline =
-    (swsDiv as any)?.heroSubheadline ||
-    (swsDiv as any)?.hero?.subtitle ||
-    swsDiv?.description ||
-    `Full-scale floral mandaps, stage engineering, and ${rentalCount} rental inventory units delivered nationwide across Sri Lanka.`;
-
-  const statsList =
-    (swsDiv as any)?.stats && (swsDiv as any).stats.length > 0
-      ? (swsDiv as any).stats.map((s: any) =>
-          s.label?.toLowerCase().includes('rental')
-            ? { ...s, value: rentalCount }
-            : s
-        )
-      : [
-          { value: '450+', label: 'Events Curated' },
-          { value: rentalCount, label: 'Rental Units' },
-          { value: '9 Provinces', label: 'Islandwide Delivery' },
-          { value: '100%', label: 'In-House Staging' },
-        ];
-
   return (
-    <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden bg-slate-950 text-white pt-20 pb-16 sm:pt-24 sm:pb-20">
-      {/* Background Image with Cinematic Vignette */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src={heroImage}
-          alt={swsDiv?.name || 'SWS Luxury Event Decor & Rentals'}
-          className="w-full h-full object-cover opacity-30"
-          referrerPolicy="no-referrer"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/40" />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/50 to-slate-950/90" />
+    <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-slate-950 text-white">
+      {/* ================= FULL SCREEN WIDTH BACKGROUND VIDEO / PICTURE COVER ================= */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        {isVideo ? (
+          rawHeroVideo.includes('youtube.com') || rawHeroVideo.includes('youtu.be') ? (
+            <iframe
+              src={
+                rawHeroVideo.includes('embed')
+                  ? rawHeroVideo
+                  : `https://www.youtube.com/embed/${rawHeroVideo.split('v=')[1] || rawHeroVideo.split('/').pop()}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0`
+              }
+              title="SWS Showcase Video"
+              className="w-full h-full object-cover pointer-events-none scale-125 border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            />
+          ) : (
+            <video
+              src={rawHeroVideo}
+              autoPlay
+              loop
+              muted
+              playsInline
+              onError={() => setVideoFailed(true)}
+              className="w-full h-full object-cover"
+              title="SWS Showcase Video"
+            />
+          )
+        ) : (
+          <img
+            src={heroImage}
+            alt={swsDiv?.name || 'SWS Luxury Event Decor & Rentals'}
+            className="w-full h-full object-cover"
+            referrerPolicy="no-referrer"
+          />
+        )}
+
+        {/* Left-Side Gradient Overlay: high contrast on left side for heading & CTAs */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 sm:via-slate-950/70 md:via-slate-950/50 to-transparent pointer-events-none z-10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-black/30 pointer-events-none z-10" />
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full text-center">
-        {/* Sleek Division Status Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-400/30 text-xs font-semibold text-blue-300 backdrop-blur-md mb-6"
-        >
-          <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-          <span>{badgeText}</span>
-        </motion.div>
-
-        {/* High-Impact Headline */}
-        <motion.h1
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="font-display text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white max-w-4xl mx-auto leading-[1.12]"
-        >
-          {headline}
-        </motion.h1>
-
-        {/* 1-Sentence High-Signal Value Statement */}
-        <motion.p
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.15 }}
-          className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed mt-4"
-        >
-          {subheadline}
-        </motion.p>
-
-        {/* Clean, Non-Cluttered Action CTAs */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex flex-wrap items-center justify-center gap-3 pt-6"
-        >
-          <Button
-            variant="electric"
-            size="lg"
-            onClick={handleBook}
-            leftIcon={<Calendar className="w-4 h-4" />}
-            rightIcon={<ArrowRight className="w-4 h-4" />}
-            className="font-bold px-7 py-3 text-sm shadow-lg shadow-blue-600/25"
-          >
-            Book Consultation
-          </Button>
-
-          {onExploreRentals && (
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={onExploreRentals}
-              leftIcon={<Layers className="w-4 h-4" />}
-              className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-md px-6 py-3 text-sm font-semibold"
+      {/* ================= HERO CONTENT OVER VIDEO ON LEFT SIDE ================= */}
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-28 z-20 w-full">
+        <div className="max-w-3xl space-y-6">
+          
+          {/* Breadcrumb Back Link */}
+          <div>
+            <a
+              href="/"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-bold text-white transition-all backdrop-blur-md cursor-pointer"
             >
-              Browse {rentalCount} Rentals
-            </Button>
-          )}
+              <ChevronLeft className="w-4 h-4 text-blue-400" />
+              <span>Back to Home</span>
+            </a>
+          </div>
 
-          <a
-            href={getTelLink(hotline)}
-            className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-white/15 bg-slate-900/80 text-slate-200 text-sm font-semibold hover:border-blue-400 hover:text-white transition-all backdrop-blur-sm"
-            title={`Call SWS Desk ${hotline}`}
+          {/* Division Badge in Electric Blue */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
           >
-            <Phone className="w-4 h-4 text-emerald-400" />
-            <span>Direct Desk</span>
-          </a>
-        </motion.div>
-
-        {/* Crisp Metrics Strip */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="mt-12 sm:mt-16 pt-6 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto"
-        >
-          {statsList.slice(0, 4).map((st: any, idx: number) => (
-            <div key={idx} className="p-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xs">
-              <div className="font-display text-2xl font-extrabold text-white">{st.value}</div>
-              <div className="text-xs text-slate-400 font-medium">{st.label}</div>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0052FF]/20 border border-[#0052FF]/40 text-xs font-bold text-blue-300 backdrop-blur-md shadow-lg">
+              <span className="w-2 h-2 rounded-full bg-[#0052FF] animate-pulse" />
+              <span className="tracking-wide">{badgeText}</span>
             </div>
-          ))}
-        </motion.div>
+          </motion.div>
+
+          {/* High-Impact Headline */}
+          <motion.h1
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="font-display text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-white leading-[1.08] drop-shadow-md"
+          >
+            {headline}
+          </motion.h1>
+
+          {/* Clean, Non-Cluttered Action CTAs in Electric Blue */}
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex flex-wrap items-center gap-3.5 pt-2"
+          >
+            <Button
+              variant="electric"
+              size="lg"
+              onClick={handleBook}
+              leftIcon={<Calendar className="w-4 h-4" />}
+              rightIcon={<ArrowRight className="w-4 h-4" />}
+              className="font-bold px-7 py-3.5 text-sm sm:text-base bg-[#0052FF] hover:bg-blue-600 shadow-lg shadow-blue-600/30"
+            >
+              Book Consultation
+            </Button>
+
+            {onExploreRentals && (
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={onExploreRentals}
+                leftIcon={<Layers className="w-4 h-4" />}
+                className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-md px-6 py-3.5 text-sm font-semibold"
+              >
+                Browse {rentalCount} Rentals
+              </Button>
+            )}
+
+            <a
+              href={getTelLink(hotline)}
+              className="inline-flex items-center gap-2 px-4 py-3.5 rounded-xl border border-white/20 bg-white/10 text-white text-sm font-semibold hover:bg-white/20 transition-all backdrop-blur-md"
+              title={`Call SWS Desk ${hotline}`}
+            >
+              <Phone className="w-4 h-4 text-blue-400" />
+              <span>{hotline}</span>
+            </a>
+          </motion.div>
+
+        </div>
       </div>
     </section>
   );

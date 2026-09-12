@@ -31,6 +31,9 @@ export interface FirestoreDivision {
   description: string;
   imageUrl?: string;
   heroImageUrl?: string;
+  heroVideoUrl?: string;
+  videoUrl?: string;
+  heroMediaType?: 'image' | 'video';
   logoUrl?: string;
   logo?: string; // backwards compatibility
   route?: string;
@@ -49,6 +52,8 @@ export interface FirestoreDivision {
     subtitle: string;
     badge: string;
     bgImage: string;
+    videoUrl?: string;
+    mediaType?: 'image' | 'video';
     ctaText?: string;
     secondaryCtaText?: string;
   };
@@ -541,6 +546,8 @@ export interface FirestoreGallery {
   division: DivisionId | string;
   title: string;
   url: string;
+  mediaUrl?: string;
+  images?: string[];
   type: 'image' | 'video';
   tag?: string;
   category?: string;

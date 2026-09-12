@@ -21,6 +21,8 @@ import {
   ListOrdered,
   Crown,
   Clock,
+  Upload,
+  Video,
 } from 'lucide-react';
 import { CmsDivision } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
@@ -32,12 +34,16 @@ import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
 import { DivisionId } from '../../types';
 import { getRentalAssetCount } from '../../utils/assetMetrics';
+import { compressDataUrl } from '../../utils/imageOptimizer';
+import { uploadMediaAsset } from '../../services/mediaUploadService';
 
 export const AdminDivisionsView: React.FC = () => {
   const { saveDivision, refreshAll, divisions: firestoreDivisions, companySettings, products } = useFirestoreDataContext();
   const [divisions, setDivisions] = useState<CmsDivision[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'coming_soon' | 'deleted'>('all');
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Modal States
@@ -49,7 +55,7 @@ export const AdminDivisionsView: React.FC = () => {
 
   // Media Picker
   const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
-  const [mediaPickerTarget, setMediaPickerTarget] = useState<'logo' | 'hero' | 'ogImage'>('hero');
+  const [mediaPickerTarget, setMediaPickerTarget] = useState<'logo' | 'hero' | 'heroVideo' | 'ogImage'>('hero');
 
   // Confirm Delete State
   const [deletingDivision, setDeletingDivision] = useState<CmsDivision | null>(null);
@@ -69,6 +75,8 @@ export const AdminDivisionsView: React.FC = () => {
     heroHeadline: '',
     heroSubheadline: '',
     heroImageUrl: '',
+    heroVideoUrl: '',
+    heroMediaType: 'image' as 'image' | 'video',
     contactEmail: '',
     contactPhone: '075 092 8078',
     aboutHeading: '',
@@ -201,6 +209,8 @@ export const AdminDivisionsView: React.FC = () => {
       heroHeadline: '',
       heroSubheadline: '',
       heroImageUrl: '',
+      heroVideoUrl: '',
+      heroMediaType: 'image' as 'image' | 'video',
       contactEmail: companySettings?.email || 'info.mahdev.lk@gmail.com',
       contactPhone: '075 092 8078',
       aboutHeading: '',
@@ -241,6 +251,9 @@ export const AdminDivisionsView: React.FC = () => {
       (d) => d.id === div.divisionKey || d.id === canonicalKey || d.slug === div.divisionKey || d.slug === canonicalKey
     );
 
+    const resolvedVideoUrl = div.heroVideoUrl || (fsMatch as any)?.heroVideoUrl || (fsMatch as any)?.videoUrl || (fsMatch?.hero as any)?.videoUrl || '';
+    const resolvedMediaType = (div.heroMediaType || (fsMatch as any)?.heroMediaType || (fsMatch?.hero as any)?.mediaType || (resolvedVideoUrl ? 'video' : 'image')) as 'image' | 'video';
+
     setFormData({
       divisionKey: div.divisionKey,
       name: div.name,
@@ -255,6 +268,8 @@ export const AdminDivisionsView: React.FC = () => {
       heroHeadline: div.heroHeadline || (fsMatch as any)?.heroHeadline || fsMatch?.hero?.title || '',
       heroSubheadline: div.heroSubheadline || (fsMatch as any)?.heroSubheadline || fsMatch?.hero?.subtitle || '',
       heroImageUrl: div.heroImageUrl || (fsMatch?.hero as any)?.imageUrl || fsMatch?.hero?.bgImage || '',
+      heroVideoUrl: resolvedVideoUrl,
+      heroMediaType: resolvedMediaType,
       contactEmail: div.contactEmail || (fsMatch as any)?.contactEmail || companySettings?.email || 'info.mahdev.lk@gmail.com',
       contactPhone: (div as any).contactPhone || (div as any).contactNumber || (fsMatch as any)?.contactPhone || (fsMatch as any)?.contactNumber || companySettings?.primaryPhone || '075 092 8078',
       aboutHeading: (div as any).aboutHeading || (fsMatch as any)?.aboutHeading || '',
@@ -303,6 +318,56 @@ export const AdminDivisionsView: React.FC = () => {
     return Object.keys(errors).length === 0;
   };
 
+  const handleHeroImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingMedia(true);
+    setUploadProgress(10);
+    try {
+      addToast('info', 'Uploading Picture', `Uploading HD picture (${(file.size / (1024 * 1024)).toFixed(1)} MB)...`);
+      const url = await uploadMediaAsset(file, (p) => setUploadProgress(p));
+      setFormData((prev) => ({
+        ...prev,
+        heroImageUrl: url,
+        heroMediaType: 'image',
+      }));
+      setIsDirty(true);
+      addToast('success', 'Hero Picture Uploaded', 'HD picture saved and linked.');
+    } catch (err: any) {
+      addToast('error', 'Upload Failed', err.message || 'Could not process image.');
+    } finally {
+      setIsUploadingMedia(false);
+      setUploadProgress(0);
+      e.target.value = '';
+    }
+  };
+
+  const handleHeroVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingMedia(true);
+    setUploadProgress(10);
+    try {
+      addToast('info', 'Uploading Video', `Uploading video loop (${(file.size / (1024 * 1024)).toFixed(1)} MB)...`);
+      const url = await uploadMediaAsset(file, (p) => setUploadProgress(p));
+      setFormData((prev) => ({
+        ...prev,
+        heroVideoUrl: url,
+        heroMediaType: 'video',
+      }));
+      setIsDirty(true);
+      addToast('success', 'Hero Video Uploaded', 'Video loop saved and linked.');
+    } catch (err: any) {
+      addToast('error', 'Upload Failed', err.message || 'Could not process video.');
+    } finally {
+      setIsUploadingMedia(false);
+      setUploadProgress(0);
+      e.target.value = '';
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -334,6 +399,9 @@ export const AdminDivisionsView: React.FC = () => {
           badge: formData.badge,
           imageUrl: formData.heroImageUrl,
           heroImageUrl: formData.heroImageUrl,
+          heroVideoUrl: formData.heroVideoUrl,
+          videoUrl: formData.heroVideoUrl,
+          heroMediaType: formData.heroMediaType,
           route: formData.route,
           accentColor: formData.accentColor,
           gradient: formData.gradient,
@@ -358,6 +426,8 @@ export const AdminDivisionsView: React.FC = () => {
             subtitle: formData.heroSubheadline,
             badge: formData.badge,
             bgImage: formData.heroImageUrl,
+            videoUrl: formData.heroVideoUrl,
+            mediaType: formData.heroMediaType,
           },
           order: orderNum,
           status: formData.isComingSoon ? 'coming_soon' : (formData.isActive ? 'active' : 'inactive'),
@@ -1161,17 +1231,32 @@ export const AdminDivisionsView: React.FC = () => {
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block font-semibold text-slate-700">Hero Backdrop Image URL</label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMediaPickerTarget('hero');
-                        setIsMediaPickerOpen(true);
-                      }}
-                      className="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
-                    >
-                      <ImageIcon className="w-3 h-3" /> Select Media
-                    </button>
+                    <label className="block font-semibold text-slate-700 text-xs">Hero Backdrop Picture</label>
+                    <div className="flex items-center gap-2">
+                      <label className={`text-xs font-semibold hover:underline flex items-center gap-1 ${
+                        isUploadingMedia ? 'text-blue-400 cursor-wait' : 'text-blue-600 cursor-pointer'
+                      }`}>
+                        <Upload className="w-3 h-3" />
+                        {isUploadingMedia ? `Uploading ${uploadProgress}%...` : 'Upload Picture'}
+                        <input
+                          type="file"
+                          disabled={isUploadingMedia}
+                          accept="image/*"
+                          onChange={handleHeroImageUpload}
+                          className="hidden"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMediaPickerTarget('hero');
+                          setIsMediaPickerOpen(true);
+                        }}
+                        className="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <ImageIcon className="w-3 h-3" /> Select Picture
+                      </button>
+                    </div>
                   </div>
                   <input
                     type="url"
@@ -1180,10 +1265,148 @@ export const AdminDivisionsView: React.FC = () => {
                       setFormData({ ...formData, heroImageUrl: e.target.value });
                       setIsDirty(true);
                     }}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full px-3 py-2 border rounded-xl border-slate-200 font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="https://images.unsplash.com/... or uploaded picture URL"
+                    className="w-full px-3 py-2 border rounded-xl border-slate-200 font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                   />
                 </div>
+              </div>
+
+              {/* Hero Video URL & Media Type Selection */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <label className="block font-bold text-slate-900 text-xs sm:text-sm">
+                      Hero Media Type Selection (Picture or Video)
+                    </label>
+                    <p className="text-[11px] text-slate-500">
+                      Choose whether this division hero displays a video loop or high-resolution picture cover.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData({ ...formData, heroMediaType: 'image' });
+                        setIsDirty(true);
+                      }}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        formData.heroMediaType === 'image'
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Picture
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData({ ...formData, heroMediaType: 'video' });
+                        setIsDirty(true);
+                      }}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        formData.heroMediaType === 'video'
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Video
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-semibold text-slate-700 text-xs">
+                      Hero Video URL (MP4, WebM, or YouTube URL)
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <label className={`text-xs font-semibold hover:underline flex items-center gap-1 ${
+                        isUploadingMedia ? 'text-blue-400 cursor-wait' : 'text-blue-600 cursor-pointer'
+                      }`}>
+                        <Upload className="w-3 h-3" />
+                        {isUploadingMedia ? `Uploading ${uploadProgress}%...` : 'Upload Video'}
+                        <input
+                          type="file"
+                          disabled={isUploadingMedia}
+                          accept="video/mp4,video/webm,video/ogg,video/quicktime,video/*"
+                          onChange={handleHeroVideoUpload}
+                          className="hidden"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMediaPickerTarget('heroVideo');
+                          setIsMediaPickerOpen(true);
+                        }}
+                        className="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <ImageIcon className="w-3 h-3" /> Select Video
+                      </button>
+                    </div>
+                  </div>
+                  <input
+                    type="url"
+                    value={formData.heroVideoUrl}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData({
+                        ...formData,
+                        heroVideoUrl: val,
+                      });
+                      setIsDirty(true);
+                    }}
+                    placeholder="https://.../video.mp4 or https://youtube.com/watch?v=..."
+                    className="w-full px-3 py-2 border rounded-xl border-slate-200 font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Direct MP4/WebM video will autoplay, loop, and mute across the entire hero screen width. YouTube links will embed automatically.
+                  </p>
+                </div>
+
+                {/* Live Media Preview */}
+                {(formData.heroVideoUrl || formData.heroImageUrl) && (
+                  <div className="pt-2">
+                    <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                      Active Hero Backdrop Preview ({formData.heroMediaType === 'video' && formData.heroVideoUrl ? 'Video Loop' : 'Picture Cover'}):
+                    </label>
+                    <div className="relative rounded-xl overflow-hidden aspect-16/7 bg-slate-950 border border-slate-200 shadow-inner max-h-48 flex items-center justify-center">
+                      {formData.heroMediaType === 'video' && formData.heroVideoUrl ? (
+                        formData.heroVideoUrl.includes('youtube.com') || formData.heroVideoUrl.includes('youtu.be') ? (
+                          <iframe
+                            src={
+                              formData.heroVideoUrl.includes('embed')
+                                ? formData.heroVideoUrl
+                                : `https://www.youtube.com/embed/${formData.heroVideoUrl.split('v=')[1] || formData.heroVideoUrl.split('/').pop()}?autoplay=1&mute=1&loop=1&controls=0`
+                            }
+                            title="Preview"
+                            className="w-full h-full object-cover pointer-events-none"
+                          />
+                        ) : (
+                          <video
+                            src={formData.heroVideoUrl}
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            className="w-full h-full object-cover"
+                          />
+                        )
+                      ) : (
+                        <img
+                          src={formData.heroImageUrl || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=85'}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                      {/* Gradient preview on left side */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/60 to-transparent pointer-events-none" />
+                      <div className="absolute bottom-2 left-3 text-white text-xs font-bold drop-shadow-md">
+                        {formData.heroHeadline || formData.name || 'Hero Headline'}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1593,6 +1816,8 @@ export const AdminDivisionsView: React.FC = () => {
             setFormData({ ...formData, logoUrl: url });
           } else if (mediaPickerTarget === 'hero') {
             setFormData({ ...formData, heroImageUrl: url });
+          } else if (mediaPickerTarget === 'heroVideo') {
+            setFormData({ ...formData, heroVideoUrl: url, heroMediaType: 'video' });
           } else if (mediaPickerTarget === 'ogImage') {
             setFormData({
               ...formData,

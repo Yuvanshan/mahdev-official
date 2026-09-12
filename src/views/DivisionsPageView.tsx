@@ -27,7 +27,7 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
     return (
       <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-white">
         <DataLoadingOverlay
-          message="Loading corporate divisions..."
+          message="Loading divisions..."
           subMessage="Fetching latest division statuses & configurations from Firestore"
         />
       </div>
@@ -108,7 +108,7 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
           <div className="max-w-3xl">
             <div className="flex items-center gap-2 mb-3">
               <Badge variant="electric" size="sm">
-                Corporate Portfolio
+                Our Divisions
               </Badge>
               <span className="text-xs font-semibold text-slate-500">
                 5 Operating Divisions • Nationwide Services
@@ -261,7 +261,7 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
 
                         <div className="p-3 rounded-xl bg-blue-600/15 border border-blue-500/25 text-xs text-blue-200">
                           <span className="font-semibold text-white block mb-0.5">Parent Enterprise Governance</span>
-                          Backed by Mahdev Pvt Ltd corporate infrastructure, contracts, and insurance.
+                          Backed by Mahdev Pvt Ltd enterprise infrastructure, contracts, and insurance.
                         </div>
                       </div>
                     </div>

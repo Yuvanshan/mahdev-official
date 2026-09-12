@@ -57,7 +57,7 @@ export const MASTER_BOOKABLE_SERVICES: BookableServiceItem[] = [
   {
     id: 'sws-corporate-gala-production',
     sku: 'BK-SWS-GLA01',
-    name: 'Corporate Summit, Banquet & Annual Gala Setup',
+    name: 'Enterprise Summit, Banquet & Annual Gala Setup',
     bookingType: 'event',
     divisionId: 'sws',
     divisionName: 'SWS Event Management',
@@ -83,7 +83,7 @@ export const MASTER_BOOKABLE_SERVICES: BookableServiceItem[] = [
           '20ft x 10ft P3 Ultra HD Seamless LED Wall',
           'Yamaha Digital Audio & Wireless Shure Mic System',
           'Multi-Camera 4K Live Broadcast Switching',
-          'Corporate Stage & Branded Backdrops',
+          'Executive Stage & Branded Backdrops',
         ],
       },
     ],

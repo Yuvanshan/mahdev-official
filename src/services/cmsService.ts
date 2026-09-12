@@ -1752,7 +1752,7 @@ class CmsService {
         corporateLocation: COMPANY_INFO.offices.colombo.fullAddress,
       },
       seo: {
-        pageTitle: 'Corporate Ecosystem | Mahdev Pvt Ltd',
+        pageTitle: 'Mahdev (Pvt) Ltd - Creating Moments | Capturing Memories | Delivering Innovation',
         metaDescription: 'Creating Moments... Capturing Memories... & Delivering Innovation... Integrated enterprise spanning Event Decorations & Management, Photography & Studio Cinema, IT Solutions & Software, Travels, and Online Mart.',
         ogImage: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
         canonicalUrl: 'https://mahdev.lk/',

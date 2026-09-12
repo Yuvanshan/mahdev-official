@@ -59,7 +59,7 @@ const DEFAULT_MILESTONES = [
     title: 'Mahdev Pvt Ltd',
     description: 'Officially registered Mahdev Pvt Ltd as a private company, bringing our growing services and ventures under one organization.',
     divisionId: 'all',
-    badge: 'Corporate Holding',
+    badge: 'Company Group',
     keyOutcome: 'Incorporated as a unified private enterprise.',
   },
 ];

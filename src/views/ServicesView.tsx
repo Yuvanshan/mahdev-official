@@ -39,6 +39,175 @@ interface ServicesViewProps {
   initialDivision?: DivisionId | 'all';
 }
 
+const ServiceCardItem: React.FC<{
+  service: any;
+  idx: number;
+  onNavigate: (route: string) => void;
+}> = ({ service, idx, onNavigate }) => {
+  const [activeImgIdx, setActiveImgIdx] = useState(0);
+
+  const serviceImages: string[] = useMemo(() => {
+    if (Array.isArray(service.images) && service.images.length > 0) {
+      return service.images.filter(Boolean).slice(0, 5);
+    }
+    const single = service.imageUrl || service.image;
+    return single ? [single] : [];
+  }, [service]);
+
+  const divId = (service.divisionId || service.division || 'sws') as DivisionId;
+  const divConfig = DIVISIONS[divId];
+  const divRoute = (divConfig && divConfig.route) || `/${divId}`;
+  const divisionBadgeText =
+    service.divisionName ||
+    (divConfig && divConfig.shortName) ||
+    (divId ? String(divId).toUpperCase() : 'ENTERPRISE');
+
+  return (
+    <div className="min-w-[85vw] sm:min-w-0 snap-center shrink-0 sm:shrink">
+      <ScrollReveal direction="up" delay={idx * 0.04}>
+        <TiltCard maxTilt={5} className="h-full">
+          <div className="group relative flex flex-col justify-between rounded-2xl bg-white border border-purple-100/90 p-5 sm:p-6 shadow-xs hover:border-purple-400 hover:shadow-xl hover:shadow-purple-500/5 transition-all duration-300 h-full">
+            {service.popular && (
+              <div className="absolute top-4 right-4 z-10">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-semibold shadow-xs">
+                  <Sparkles className="w-3 h-3 text-amber-500" />
+                  Popular
+                </span>
+              </div>
+            )}
+
+            <div>
+              {/* Multi-Image Display (Max 5 images) */}
+              {serviceImages.length > 0 && (
+                <div className="relative mb-4 rounded-xl overflow-hidden aspect-[16/10] bg-purple-50/50 border border-purple-100">
+                  <img
+                    src={serviceImages[activeImgIdx] || serviceImages[0]}
+                    alt={service.title || service.name}
+                    className="w-full h-full object-cover transition-all duration-300"
+                  />
+                  {serviceImages.length > 1 && (
+                    <>
+                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/60 backdrop-blur-xs px-2 py-1 rounded-full z-10">
+                        {serviceImages.map((_, dIdx) => (
+                          <button
+                            key={dIdx}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveImgIdx(dIdx);
+                            }}
+                            className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                              activeImgIdx === dIdx ? 'w-4 bg-purple-400' : 'w-1.5 bg-white/60 hover:bg-white'
+                            }`}
+                            title={`Photo ${dIdx + 1}`}
+                          />
+                        ))}
+                      </div>
+                      <span className="absolute top-2 left-2 bg-black/60 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full backdrop-blur-xs">
+                        {activeImgIdx + 1} / {serviceImages.length}
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Division & Category Badges */}
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                  <IconRenderer name={service.iconName || 'Sparkles'} className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-purple-700 block">
+                    {divisionBadgeText}
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    {service.badge || 'Enterprise Grade'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Service Title */}
+              <h3 className="font-display text-lg font-bold text-slate-900 mb-2 group-hover:text-purple-700 transition-colors">
+                {service.title || service.name}
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed mb-4">
+                {service.description}
+              </p>
+
+              {/* Key Features */}
+              {service.features && service.features.length > 0 && (
+                <div className="space-y-1.5 mb-5 pt-3 border-t border-purple-50">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    What's Included:
+                  </span>
+                  {service.features.slice(0, 4).map((feature: string, fIdx: number) => (
+                    <div key={fIdx} className="flex items-start gap-2 text-xs text-slate-700">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-purple-600 shrink-0 mt-0.5" />
+                      <span className="leading-snug">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Card Footer Actions */}
+            <div className="pt-4 border-t border-purple-50 space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-500 font-medium">Pricing / SLA:</span>
+                <span className="font-bold text-slate-900">
+                  {service.turnaroundTime ||
+                    (service.startingPrice || service.price
+                      ? `LKR ${(service.startingPrice || service.price).toLocaleString()}`
+                      : 'Custom Scope')}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-1.5">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onNavigate(divRoute)}
+                  className="text-[11px] px-2 cursor-pointer justify-center"
+                >
+                  Division
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    openWhatsAppInquiry({
+                      title: service.title || service.name,
+                      category: service.category,
+                      divisionName: divisionBadgeText,
+                      imageUrl: serviceImages[activeImgIdx] || serviceImages[0],
+                      price: service.startingPrice || service.price,
+                      description: service.description,
+                      type: 'service',
+                    });
+                  }}
+                  title="Send WhatsApp inquiry with image to 0750928078"
+                  className="inline-flex items-center justify-center gap-1 text-[11px] font-bold text-white bg-[#25D366] hover:bg-[#20bd5a] px-2 py-1.5 rounded-xl transition-all cursor-pointer active:scale-95"
+                >
+                  <MessageCircle className="w-3.5 h-3.5 fill-white/20 shrink-0" />
+                  <span>WhatsApp</span>
+                </button>
+                <Button
+                  size="sm"
+                  variant="electric"
+                  onClick={() => onNavigate(`/book/service/${service.id}`)}
+                  rightIcon={<Calendar className="w-3 h-3" />}
+                  className="text-[11px] px-2 cursor-pointer justify-center"
+                >
+                  Book
+                </Button>
+              </div>
+            </div>
+          </div>
+        </TiltCard>
+      </ScrollReveal>
+    </div>
+  );
+};
+
 export const ServicesView: React.FC<ServicesViewProps> = ({
   onNavigate,
   initialDivision = 'all',
@@ -253,129 +422,14 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
 
             {/* Responsive Grid on Desktop / Smooth Horizontal Carousel on Mobile */}
             <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 sm:overflow-visible">
-              {filteredServices.map((service, idx) => {
-                const divId = (service.divisionId || service.division || 'sws') as DivisionId;
-                const divConfig = DIVISIONS[divId];
-                const divRoute = (divConfig && divConfig.route) || `/${divId}`;
-                const divisionBadgeText =
-                  service.divisionName ||
-                  (divConfig && divConfig.shortName) ||
-                  (divId ? String(divId).toUpperCase() : 'ENTERPRISE');
-
-                return (
-                  <div
-                    key={service.id}
-                    className="min-w-[85vw] sm:min-w-0 snap-center shrink-0 sm:shrink"
-                  >
-                    <ScrollReveal direction="up" delay={idx * 0.04}>
-                      <TiltCard maxTilt={5} className="h-full">
-                        <div className="group relative flex flex-col justify-between rounded-2xl bg-white border border-slate-200/90 p-6 sm:p-7 shadow-xs hover:border-[#0052FF] hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 h-full">
-                          {service.popular && (
-                            <div className="absolute top-4 right-4">
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-semibold">
-                                <Sparkles className="w-3 h-3 text-amber-500" />
-                                Popular
-                              </span>
-                            </div>
-                          )}
-
-                          <div>
-                            {/* Division & Category Badges */}
-                            <div className="flex items-center gap-3 mb-4">
-                              <div className="w-11 h-11 rounded-xl bg-blue-50 text-[#0052FF] flex items-center justify-center group-hover:bg-[#0052FF] group-hover:text-white transition-colors">
-                                <IconRenderer name={service.iconName || 'Sparkles'} className="w-5 h-5" />
-                              </div>
-                              <div>
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-[#0052FF] block">
-                                  {divisionBadgeText}
-                                </span>
-                                <span className="text-xs text-slate-500">
-                                  {service.badge || 'Enterprise Grade'}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Service Title */}
-                            <h3 className="font-display text-lg font-bold text-slate-900 mb-2 group-hover:text-[#0052FF] transition-colors">
-                              {service.title || service.name}
-                            </h3>
-                            <p className="text-xs text-slate-600 leading-relaxed mb-5">
-                              {service.description}
-                            </p>
-
-                            {/* Key Features Bullet List */}
-                            {service.features && service.features.length > 0 && (
-                              <div className="space-y-2 mb-6 pt-3 border-t border-slate-100">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                                  What's Included:
-                                </span>
-                                {service.features.slice(0, 4).map((feature, fIdx) => (
-                                  <div key={fIdx} className="flex items-start gap-2 text-xs text-slate-700">
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-[#0052FF] shrink-0 mt-0.5" />
-                                    <span className="leading-snug">{feature}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Card Footer Actions */}
-                          <div className="pt-4 border-t border-slate-100 space-y-3">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-slate-500 font-medium">Pricing / SLA:</span>
-                              <span className="font-bold text-slate-900">
-                                {service.turnaroundTime ||
-                                  (service.startingPrice || service.price
-                                    ? `LKR ${(service.startingPrice || service.price).toLocaleString()}`
-                                    : 'Custom Scope')}
-                              </span>
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-1.5">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => onNavigate(divRoute)}
-                                className="text-[11px] px-2 cursor-pointer justify-center"
-                              >
-                                Division
-                              </Button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  openWhatsAppInquiry({
-                                    title: service.title || service.name,
-                                    category: service.category,
-                                    divisionName: divisionBadgeText,
-                                    imageUrl: (service as any).imageUrl || (service as any).image,
-                                    price: service.startingPrice || service.price,
-                                    description: service.description,
-                                    type: 'service',
-                                  });
-                                }}
-                                title="Send WhatsApp inquiry with image to 0750928078"
-                                className="inline-flex items-center justify-center gap-1 text-[11px] font-bold text-white bg-[#25D366] hover:bg-[#20bd5a] px-2 py-1.5 rounded-xl transition-all cursor-pointer active:scale-95"
-                              >
-                                <MessageCircle className="w-3.5 h-3.5 fill-white/20 shrink-0" />
-                                <span>WhatsApp</span>
-                              </button>
-                              <Button
-                                size="sm"
-                                variant="electric"
-                                onClick={() => onNavigate(`/book/service/${service.id}`)}
-                                rightIcon={<Calendar className="w-3 h-3" />}
-                                className="text-[11px] px-2 cursor-pointer justify-center"
-                              >
-                                Book
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </TiltCard>
-                    </ScrollReveal>
-                  </div>
-                );
-              })}
+              {filteredServices.map((service, idx) => (
+                <ServiceCardItem
+                  key={service.id}
+                  service={service}
+                  idx={idx}
+                  onNavigate={onNavigate}
+                />
+              ))}
             </div>
           </div>
         )}

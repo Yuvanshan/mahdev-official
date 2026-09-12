@@ -22,6 +22,7 @@ export const SWSGallerySection: React.FC = () => {
   const { gallery: rawGallery } = useFirestoreDataContext();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
+  const [activeSubImageIdx, setActiveSubImageIdx] = useState<number>(0);
 
   const galleryItems = useMemo<SWSGalleryItem[]>(() => {
     if (rawGallery && rawGallery.length > 0) {
@@ -31,11 +32,15 @@ export const SWSGallerySection: React.FC = () => {
       if (swsGal.length > 0) {
         return swsGal.map((g) => {
           const cat = (g as any).category || (g as any).tag || 'Weddings';
+          const images = (g as any).images && (g as any).images.length > 0
+            ? (g as any).images.slice(0, 3)
+            : ((g as any).imageUrl || (g as any).url || (g as any).image ? [(g as any).imageUrl || (g as any).url || (g as any).image] : []);
           return {
             id: g.id,
             title: g.title,
             category: cat as any,
-            imageUrl: (g as any).imageUrl || (g as any).url || (g as any).image || '',
+            imageUrl: images[0] || (g as any).imageUrl || (g as any).url || '',
+            images: images,
             location: (g as any).location || 'Colombo, Sri Lanka',
             year: (g as any).year || '2024',
             description: (g as any).description || (g as any).caption || '',
@@ -50,12 +55,13 @@ export const SWSGallerySection: React.FC = () => {
   const categories = useMemo<string[]>(() => {
     const set = new Set<string>();
     galleryItems.forEach((item) => {
-      const cat = item.category as string;
+      let cat = item.category as string;
+      if (cat === 'Corporate') cat = 'Conferences';
       if (cat && cat !== 'All') set.add(cat);
     });
     const customCats = Array.from(set);
     if (customCats.length === 0) {
-      return ['All', 'Weddings', 'Corporate', 'Birthdays & Socials', 'Stage & Lighting', 'Dining & Decor'];
+      return ['All', 'Weddings', 'Conferences', 'Birthdays & Socials', 'Stage & Lighting', 'Dining & Decor'];
     }
     return ['All', ...customCats];
   }, [galleryItems]);
@@ -65,7 +71,9 @@ export const SWSGallerySection: React.FC = () => {
   }
 
   const filteredItems = galleryItems.filter((item) => {
-    return selectedCategory === 'All' || item.category === selectedCategory;
+    if (selectedCategory === 'All') return true;
+    if (selectedCategory === 'Conferences') return item.category === 'Conferences' || item.category === 'Corporate';
+    return item.category === selectedCategory;
   });
 
   const activeItem = activeLightboxIndex !== null ? filteredItems[activeLightboxIndex] : null;
@@ -125,8 +133,11 @@ export const SWSGallerySection: React.FC = () => {
         {filteredItems.map((item, index) => (
           <div
             key={item.id}
-            onClick={() => setActiveLightboxIndex(index)}
-            className="group relative rounded-2xl overflow-hidden bg-slate-950 aspect-[4/3] cursor-pointer border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-500"
+            onClick={() => {
+              setActiveLightboxIndex(index);
+              setActiveSubImageIdx(0);
+            }}
+            className="group relative rounded-2xl overflow-hidden bg-slate-950 aspect-[4/3] cursor-pointer border border-purple-100 shadow-sm hover:shadow-xl hover:border-purple-300 transition-all duration-500"
           >
             <img
               src={
@@ -142,10 +153,15 @@ export const SWSGallerySection: React.FC = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent opacity-75 group-hover:opacity-90 transition-opacity" />
 
             {/* Top Category Badge & WhatsApp Button */}
-            <div className="absolute top-3 left-3">
-              <Badge variant="default" size="sm" className="bg-black/60 backdrop-blur-md text-white text-[10px]">
+            <div className="absolute top-3 left-3 flex items-center gap-1.5">
+              <Badge variant="default" size="sm" className="bg-purple-950/70 backdrop-blur-md text-white text-[10px] border border-purple-800/40">
                 {item.category}
               </Badge>
+              {item.images && item.images.length > 1 && (
+                <span className="bg-black/60 backdrop-blur-md text-purple-200 text-[10px] font-bold px-2 py-0.5 rounded-full border border-purple-500/30">
+                  {item.images.length} Photos
+                </span>
+              )}
             </div>
 
             {/* Direct WhatsApp button with image + Expand Icon */}
@@ -178,13 +194,13 @@ export const SWSGallerySection: React.FC = () => {
 
             {/* Bottom Details */}
             <div className="absolute bottom-4 left-4 right-4 text-white space-y-1">
-              <div className="flex items-center gap-2 text-[11px] text-blue-300 font-medium">
+              <div className="flex items-center gap-2 text-[11px] text-purple-300 font-medium">
                 <MapPin className="w-3 h-3 shrink-0" />
                 <span className="truncate">{item.location}</span>
                 <span className="text-white/40">•</span>
                 <span>{item.year}</span>
               </div>
-              <h3 className="font-display text-base font-bold text-white group-hover:text-blue-200 transition-colors">
+              <h3 className="font-display text-base font-bold text-white group-hover:text-purple-200 transition-colors">
                 {item.title}
               </h3>
               <p className="text-xs text-slate-300 line-clamp-1 opacity-90">{item.description}</p>
@@ -230,17 +246,37 @@ export const SWSGallerySection: React.FC = () => {
             className="relative max-w-5xl w-full max-h-[90vh] flex flex-col items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="relative rounded-2xl overflow-hidden max-h-[75vh] w-auto border border-white/10 shadow-2xl bg-black">
+            <div className="relative rounded-2xl overflow-hidden max-h-[68vh] w-auto border border-white/10 shadow-2xl bg-black">
               <img
                 src={
-                  activeItem.imageUrl && activeItem.imageUrl.trim() !== ''
-                    ? activeItem.imageUrl.trim()
-                    : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80'
+                  (activeItem.images && activeItem.images[activeSubImageIdx]) ||
+                  activeItem.imageUrl ||
+                  'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80'
                 }
                 alt={activeItem.title}
-                className="max-h-[70vh] w-auto max-w-full object-contain"
+                className="max-h-[65vh] w-auto max-w-full object-contain"
               />
             </div>
+
+            {/* Thumbnail switcher for multiple photos (up to 3) */}
+            {activeItem.images && activeItem.images.length > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-3">
+                {activeItem.images.map((subImg, sIdx) => (
+                  <button
+                    key={sIdx}
+                    type="button"
+                    onClick={() => setActiveSubImageIdx(sIdx)}
+                    className={`relative w-14 h-10 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
+                      activeSubImageIdx === sIdx
+                        ? 'border-purple-400 ring-2 ring-purple-400/40 scale-105'
+                        : 'border-white/20 opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={subImg} alt={`Photo ${sIdx + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Image Details Caption Bar */}
             <div className="w-full max-w-3xl mt-4 bg-slate-900/90 backdrop-blur-md rounded-2xl p-4 border border-white/10 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

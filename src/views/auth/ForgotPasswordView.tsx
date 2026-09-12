@@ -75,7 +75,7 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({ onNaviga
               Reset Your Password
             </h1>
             <p className="text-xs text-slate-500 max-w-xs mx-auto">
-              Enter your registered corporate or personal email to receive a password reset authorization token.
+              Enter your registered business or personal email to receive a password reset authorization token.
             </p>
           </div>
 

@@ -26,7 +26,7 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({ onContactL
       <ScrollReveal direction="up">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <Caption className="text-[#0052FF] mb-2 block">Executive Stewardship</Caption>
-          <H2 className="text-slate-900 mb-3">Corporate Leadership</H2>
+          <H2 className="text-slate-900 mb-3">Executive Leadership</H2>
           <Body className="text-slate-600 text-base">
             Guided by experienced sector directors, creative visionaries, and cloud architects committed to institutional governance and client success.
           </Body>
@@ -130,7 +130,7 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({ onContactL
                     <ShieldCheck className="w-6 h-6" />
                   </div>
                   <Badge variant="electric" size="sm" className="mb-3">
-                    Corporate Governance
+                    Governance & Stewardship
                   </Badge>
                   <h3 className="font-display text-xl font-bold text-white mb-2">
                     Unified Board Stewardship

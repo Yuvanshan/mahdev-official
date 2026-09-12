@@ -377,7 +377,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
                   </div>
                   <h3 className="font-semibold text-neutral-900 text-base">Custom Consultation Available</h3>
                   <p className="text-xs text-neutral-500 max-w-md mx-auto">
-                    Online service scheduling for this division is currently managed via direct corporate dispatch. Contact our 24/7 executive hotline or request an instant bespoke quote.
+                    Online service scheduling for this division is currently managed via direct priority dispatch. Contact our 24/7 executive hotline or request an instant bespoke quote.
                   </p>
                 </div>
               ) : (

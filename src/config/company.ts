@@ -42,9 +42,9 @@ export interface CompanyInformation {
 
 export const COMPANY_INFO: CompanyInformation = {
   name: 'Mahdev',
-  legalName: 'Mahdev Pvt Ltd',
+  legalName: 'Mahdev (Pvt) Ltd',
   registrationNumber: 'PV-00289410',
-  tagline: 'Creating Moments... Capturing Memories... & Delivering Innovation...',
+  tagline: 'Creating Moments | Capturing Memories | Delivering Innovation',
   description:
     'Premier multi-division enterprise ecosystem delivering luxury event decorations, fine-art photography, scalable IT solutions, luxury travel expeditions, and verified tech commerce.',
   domain: 'mahdev.lk',

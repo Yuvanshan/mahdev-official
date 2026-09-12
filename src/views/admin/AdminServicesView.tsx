@@ -20,6 +20,7 @@ import {
   FolderTree,
   Copy,
   Barcode,
+  Upload,
 } from 'lucide-react';
 import { CmsService, CmsCategory } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
@@ -33,6 +34,7 @@ import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
 import { QuickCategoryCreator } from '../../components/admin/QuickCategoryCreator';
 import { DivisionId } from '../../types';
 import { formatCurrency, formatLKR } from '../../utils/currency';
+import { compressDataUrl } from '../../utils/imageOptimizer';
 
 export const AdminServicesView: React.FC = () => {
   const { refreshAll } = useFirestoreDataContext();
@@ -63,6 +65,7 @@ export const AdminServicesView: React.FC = () => {
     sku: '',
     description: '',
     imageUrl: '',
+    images: [] as string[],
     features: [''],
     iconName: 'Sparkles',
     popular: false,
@@ -73,6 +76,7 @@ export const AdminServicesView: React.FC = () => {
     isActive: true,
   });
 
+  const [imageUrlInput, setImageUrlInput] = useState('');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [copiedSku, setCopiedSku] = useState<string | null>(null);
 
@@ -173,6 +177,7 @@ export const AdminServicesView: React.FC = () => {
       sku: generateServiceSku('sws'),
       description: '',
       imageUrl: '',
+      images: [],
       features: ['24/7 Dedicated Concierge', 'Custom Architectural CAD Renderings', 'High Reliability Delivery'],
       iconName: 'Sparkles',
       popular: false,
@@ -182,12 +187,17 @@ export const AdminServicesView: React.FC = () => {
       turnaroundTime: '2-3 Weeks',
       isActive: true,
     });
+    setImageUrlInput('');
     setFormErrors({});
     setIsDirty(false);
     setIsEditorOpen(true);
   };
 
   const handleOpenEdit = (srv: CmsService) => {
+    const srvImages = (srv.images && srv.images.length > 0)
+      ? srv.images.slice(0, 5)
+      : (srv.imageUrl ? [srv.imageUrl] : []);
+
     setEditingService(srv);
     setFormData({
       divisionId: srv.divisionId,
@@ -196,7 +206,8 @@ export const AdminServicesView: React.FC = () => {
       title: srv.title,
       sku: srv.sku || generateServiceSku(srv.divisionId, srv.title),
       description: srv.description,
-      imageUrl: srv.imageUrl || (srv.images && srv.images[0]) || '',
+      imageUrl: srvImages[0] || srv.imageUrl || '',
+      images: srvImages,
       features: srv.features.length > 0 ? [...srv.features] : [''],
       iconName: srv.iconName || 'Sparkles',
       popular: srv.popular,
@@ -206,9 +217,96 @@ export const AdminServicesView: React.FC = () => {
       turnaroundTime: srv.turnaroundTime || '2-3 Weeks',
       isActive: srv.isActive,
     });
+    setImageUrlInput('');
     setFormErrors({});
     setIsDirty(false);
     setIsEditorOpen(true);
+  };
+
+  const handleImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const availableSlots = 5 - formData.images.length;
+    if (availableSlots <= 0) {
+      addToast('warning', 'Maximum Limit Reached', 'You can upload a maximum of 5 images per service.');
+      e.target.value = '';
+      return;
+    }
+
+    const filesToProcess = Array.from(files).slice(0, availableSlots);
+    if (files.length > availableSlots) {
+      addToast('info', 'Images Capped', `Only ${availableSlots} more image(s) can be added (maximum 5 images).`);
+    }
+
+    const newImages: string[] = [];
+    for (const file of filesToProcess) {
+      try {
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        const compressed = await compressDataUrl(base64, 1200, 0.82);
+        newImages.push(compressed);
+      } catch (err) {
+        console.error('Failed to compress image:', err);
+      }
+    }
+
+    if (newImages.length > 0) {
+      const merged = [...formData.images, ...newImages].slice(0, 5);
+      setFormData((prev) => ({
+        ...prev,
+        images: merged,
+        imageUrl: prev.imageUrl || merged[0] || '',
+      }));
+      setIsDirty(true);
+      addToast('success', 'Images Uploaded', `Successfully added ${newImages.length} image(s) (Total: ${merged.length}/5).`);
+    }
+    e.target.value = '';
+  };
+
+  const handleAddImageUrl = (url: string) => {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    if (formData.images.length >= 5) {
+      addToast('warning', 'Maximum Limit Reached', 'Maximum 5 images allowed per service.');
+      return;
+    }
+    const merged = [...formData.images, trimmed].slice(0, 5);
+    setFormData((prev) => ({
+      ...prev,
+      images: merged,
+      imageUrl: prev.imageUrl || merged[0] || '',
+    }));
+    setImageUrlInput('');
+    setIsDirty(true);
+    addToast('success', 'Image Added', `Added image to service (${merged.length}/5).`);
+  };
+
+  const handleRemoveImage = (index: number) => {
+    const nextImages = formData.images.filter((_, i) => i !== index);
+    setFormData((prev) => ({
+      ...prev,
+      images: nextImages,
+      imageUrl: nextImages[0] || '',
+    }));
+    setIsDirty(true);
+  };
+
+  const handleMakeCoverImage = (index: number) => {
+    if (index === 0) return;
+    const selected = formData.images[index];
+    const nextImages = [selected, ...formData.images.filter((_, i) => i !== index)];
+    setFormData((prev) => ({
+      ...prev,
+      images: nextImages,
+      imageUrl: selected,
+    }));
+    setIsDirty(true);
+    addToast('info', 'Primary Cover Updated', 'Image set as the primary cover.');
   };
 
   const handleDivisionChange = (divId: DivisionId) => {
@@ -261,7 +359,8 @@ export const AdminServicesView: React.FC = () => {
     setIsSaving(true);
     try {
       const cleanFeatures = formData.features.map((f) => f.trim()).filter(Boolean);
-      const img = formData.imageUrl.trim();
+      const finalImages = formData.images.slice(0, 5);
+      const primaryImage = finalImages[0] || formData.imageUrl.trim();
       const resolvedCategory = formData.category.trim() || formData.badge.trim() || 'General';
 
       // Ensure category exists in categories collection
@@ -291,36 +390,66 @@ export const AdminServicesView: React.FC = () => {
         ...formData,
         sku: finalSku,
         category: resolvedCategory,
-        imageUrl: img || undefined,
-        images: img ? [img] : undefined,
+        imageUrl: primaryImage || undefined,
+        images: finalImages.length > 0 ? finalImages : (primaryImage ? [primaryImage] : undefined),
         features: cleanFeatures.length > 0 ? cleanFeatures : ['Professional Service Consultation'],
+      };
+
+      const firestoreData = {
+        title: payload.title,
+        division: payload.divisionId as DivisionId,
+        divisionName: payload.divisionName,
+        category: payload.category,
+        sku: payload.sku,
+        description: payload.description,
+        imageUrl: payload.imageUrl,
+        images: payload.images,
+        features: payload.features,
+        price: payload.startingPrice,
+        startingPrice: payload.startingPrice,
+        currency: payload.currency,
+        badge: payload.badge,
+        popular: payload.popular,
+        isActive: payload.isActive,
       };
 
       if (editingService) {
         cmsService.update<CmsService>('services', editingService.id, payload);
-        addToast('success', 'Service Updated', `"${formData.title}" has been saved.`);
+        await firestoreServicesService.saveService(editingService.id, firestoreData);
+        addToast('success', 'Service Updated', `"${formData.title}" saved to Firestore.`);
       } else {
-        cmsService.create<CmsService>('services', payload);
-        addToast('success', 'Service Created', `"${formData.title}" is now available.`);
+        const created = cmsService.create<CmsService>('services', payload);
+        await firestoreServicesService.saveService(created.id, firestoreData);
+        addToast('success', 'Service Created', `"${formData.title}" saved to Firestore.`);
       }
+      await refreshAll();
       setIsDirty(false);
       setIsEditorOpen(false);
       loadServices();
     } catch (err: any) {
+      console.error('[AdminServices] Save error:', err);
       addToast('error', 'Error Saving Service', err.message || 'Operation failed.');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleDeleteConfirm = (permanent: boolean) => {
+  const handleDeleteConfirm = async (permanent: boolean) => {
     if (!deletingService) return;
-    if (permanent) {
-      cmsService.hardDelete('services', deletingService.id);
-      addToast('warning', 'Permanent Deletion', `"${deletingService.title}" was permanently removed.`);
-    } else {
-      cmsService.softDelete('services', deletingService.id);
-      addToast('info', 'Service Archived', `"${deletingService.title}" was archived.`);
+    try {
+      if (permanent) {
+        cmsService.hardDelete('services', deletingService.id);
+        await firestoreServicesService.deleteService(deletingService.id);
+        addToast('warning', 'Permanent Deletion', `"${deletingService.title}" was permanently removed from Firestore.`);
+      } else {
+        cmsService.softDelete('services', deletingService.id);
+        await firestoreServicesService.saveService(deletingService.id, { status: 'inactive', isPublished: false });
+        addToast('info', 'Service Archived', `"${deletingService.title}" was archived.`);
+      }
+      await refreshAll();
+    } catch (err: any) {
+      console.error('[AdminServices] Delete error:', err);
+      addToast('error', 'Delete Error', err.message || 'Failed to delete service.');
     }
     setDeletingService(null);
     loadServices();
@@ -714,49 +843,127 @@ export const AdminServicesView: React.FC = () => {
             {formErrors.description && <p className="text-red-600 text-[10px] mt-0.5">{formErrors.description}</p>}
           </div>
 
-          {/* Service Image / Cover */}
-          <div>
-            <label className="block font-semibold text-slate-700 mb-1">Service Cover Image</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="url"
-                value={formData.imageUrl}
-                onChange={(e) => {
-                  setFormData({ ...formData, imageUrl: e.target.value });
-                  setIsDirty(true);
-                }}
-                placeholder="https://images.unsplash.com/... or choose from gallery"
-                className="grow px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
-              />
+          {/* Service Images / Media (Max 5 Images) */}
+          <div className="p-4 bg-purple-50/30 rounded-2xl border border-purple-100 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block font-semibold text-purple-950 text-sm">
+                  Service Images (Max 5 Images)
+                </label>
+                <p className="text-[11px] text-purple-700/80">
+                  Upload up to 5 photos saved to Firestore and rendered on the website. The first image is the cover.
+                </p>
+              </div>
+              <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                formData.images.length >= 5
+                  ? 'bg-amber-100 text-amber-800'
+                  : 'bg-purple-100 text-purple-800'
+              }`}>
+                {formData.images.length} / 5 Images
+              </span>
+            </div>
+
+            {/* Actions: Upload & URL */}
+            <div className="flex flex-wrap items-center gap-2">
+              <label
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold cursor-pointer transition ${
+                  formData.images.length >= 5
+                    ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                    : 'bg-purple-600 hover:bg-purple-700 text-white border-purple-600 shadow-xs'
+                }`}
+              >
+                <Upload className="w-3.5 h-3.5" />
+                Upload Images
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImagesUpload}
+                  disabled={formData.images.length >= 5}
+                  className="hidden"
+                />
+              </label>
+
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setIsMediaPickerOpen(true)}
-                className="shrink-0 flex items-center gap-1.5 cursor-pointer"
+                disabled={formData.images.length >= 5}
+                className="flex items-center gap-1.5 cursor-pointer text-xs"
               >
                 <ImageIcon className="w-3.5 h-3.5" />
-                Choose Media
+                Media Library
               </Button>
-            </div>
-            {formData.imageUrl && (
-              <div className="mt-2 relative w-full h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 group">
-                <img
-                  src={formData.imageUrl}
-                  alt="Service Preview"
-                  className="w-full h-full object-cover"
+
+              <div className="flex items-center gap-1 grow min-w-[200px]">
+                <input
+                  type="url"
+                  value={imageUrlInput}
+                  onChange={(e) => setImageUrlInput(e.target.value)}
+                  placeholder="Paste image URL..."
+                  disabled={formData.images.length >= 5}
+                  className="grow px-3 py-1.5 border rounded-xl border-purple-200 bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none text-xs"
                 />
-                <button
+                <Button
                   type="button"
-                  onClick={() => {
-                    setFormData({ ...formData, imageUrl: '' });
-                    setIsDirty(true);
-                  }}
-                  className="absolute top-2 right-2 bg-slate-900/80 hover:bg-red-600 text-white p-1 rounded-lg text-[10px] transition-colors cursor-pointer"
-                  title="Remove image"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleAddImageUrl(imageUrlInput)}
+                  disabled={!imageUrlInput.trim() || formData.images.length >= 5}
+                  className="shrink-0 text-xs cursor-pointer"
                 >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+                  Add URL
+                </Button>
+              </div>
+            </div>
+
+            {/* Thumbnails grid */}
+            {formData.images.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-1">
+                {formData.images.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className={`group relative aspect-square rounded-xl overflow-hidden border-2 bg-slate-100 shadow-2xs ${
+                      idx === 0 ? 'border-purple-600 ring-2 ring-purple-600/20' : 'border-purple-100'
+                    }`}
+                  >
+                    <img
+                      src={img}
+                      alt={`Service image ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+
+                    {/* Cover badge */}
+                    {idx === 0 ? (
+                      <span className="absolute top-1.5 left-1.5 bg-purple-700 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
+                        Cover
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleMakeCoverImage(idx)}
+                        className="absolute bottom-1.5 left-1.5 bg-purple-900/80 hover:bg-purple-700 text-white text-[9px] font-medium px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                      >
+                        Set Cover
+                      </button>
+                    )}
+
+                    {/* Delete button */}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(idx)}
+                      className="absolute top-1.5 right-1.5 bg-slate-900/75 hover:bg-red-600 text-white p-1 rounded-lg text-[10px] transition cursor-pointer"
+                      title="Remove image"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-4 border-2 border-dashed border-purple-200/80 rounded-xl text-center bg-white/60 text-purple-900/70 text-xs">
+                No images added yet. Upload up to 5 images (stored in Firestore and displayed on the website).
               </div>
             )}
           </div>
@@ -914,8 +1121,8 @@ export const AdminServicesView: React.FC = () => {
         onClose={() => setIsMediaPickerOpen(false)}
         currentUrl={formData.imageUrl}
         onSelect={(url) => {
-          setFormData({ ...formData, imageUrl: url });
-          setIsDirty(true);
+          handleAddImageUrl(url);
+          setIsMediaPickerOpen(false);
         }}
       />
 

@@ -40,7 +40,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
       title: p.title,
       divisionId: ((p as any).divisionId || p.division || 'sws') as DivisionId,
       category: p.category || 'Production',
-      client: p.client || 'Corporate Client',
+      client: p.client || 'Private Client',
       year: p.year ? String(p.year) : '2025',
       summary: p.summary || '',
       fullDescription: p.fullDescription || p.summary || '',
@@ -160,7 +160,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
       {isInitialLoading || (isFetching && portfolio.length === 0) ? (
         <div className="relative min-h-[360px] rounded-3xl border border-slate-200 bg-slate-50/50 overflow-hidden">
           <DataLoadingOverlay
-            message="Loading Corporate Portfolio"
+            message="Loading Portfolio"
             subMessage="Retrieving landmark projects from Firestore..."
           />
         </div>

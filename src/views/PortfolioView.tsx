@@ -39,7 +39,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({ onNavigate }) => {
               Integrated Portfolio & Work
             </H1>
             <Body className="text-slate-600 text-base sm:text-lg">
-              Explore landmark engagements across all five Mahdev divisions—from large-scale corporate summits and 8K docuseries to mission-critical cloud software and curated VIP expeditions.
+              Explore landmark engagements across all five Mahdev divisions—from large-scale summits and 8K docuseries to mission-critical cloud software and curated VIP expeditions.
             </Body>
           </div>
         </ScrollReveal>

@@ -14,6 +14,8 @@ import {
   Copy,
   Barcode,
   Check,
+  Upload,
+  X,
 } from 'lucide-react';
 import { CmsGalleryItem, CmsCategory } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
@@ -27,6 +29,7 @@ import { DivisionId } from '../../types';
 import { compressDataUrl } from '../../utils/imageOptimizer';
 import { firestoreGalleryService } from '../../services/firestore/gallery';
 import { purgeRemovedStudioPostsFromFirestore } from '../../services/firestore/databaseManagement';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 const PRESET_GALLERY_CATEGORIES = [
   'Weddings',
@@ -41,6 +44,7 @@ const PRESET_GALLERY_CATEGORIES = [
 ];
 
 export const AdminGalleryView: React.FC = () => {
+  const { refreshAll } = useFirestoreDataContext();
   const [galleryItems, setGalleryItems] = useState<CmsGalleryItem[]>([]);
   const [availableCategories, setAvailableCategories] = useState<string[]>(
     PRESET_GALLERY_CATEGORIES.filter((c) => c !== 'Other / Custom')
@@ -69,8 +73,9 @@ export const AdminGalleryView: React.FC = () => {
     divisionId: 'sws' as DivisionId,
     category: 'Weddings',
     caption: '',
-    mediaUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=400&q=80',
+    mediaUrl: '',
+    thumbnailUrl: '',
+    images: [] as string[],
     type: 'image' as 'image' | 'video',
     aspectRatio: '16:9',
     tags: ['Stage', 'Lighting'],
@@ -78,6 +83,7 @@ export const AdminGalleryView: React.FC = () => {
     isActive: true,
   });
 
+  const [mediaUrlInput, setMediaUrlInput] = useState('');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [copiedSku, setCopiedSku] = useState<string | null>(null);
 
@@ -159,14 +165,16 @@ export const AdminGalleryView: React.FC = () => {
       divisionId: 'sws',
       category: 'Weddings',
       caption: '',
-      mediaUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=400&q=80',
+      mediaUrl: '',
+      thumbnailUrl: '',
+      images: [],
       type: 'image',
       aspectRatio: '16:9',
       tags: ['Weddings'],
       sortOrder: galleryItems.length + 1,
       isActive: true,
     });
+    setMediaUrlInput('');
     setCustomCategoryInput('');
     setFormErrors({});
     setIsDirty(false);
@@ -177,30 +185,128 @@ export const AdminGalleryView: React.FC = () => {
     setEditingItem(item);
     const existingCat = item.category || (Array.isArray(item.tags) && item.tags[0]) || 'Weddings';
     const isPreset = PRESET_GALLERY_CATEGORIES.includes(existingCat);
+    const itemImages = (item.images && item.images.length > 0)
+      ? item.images.slice(0, 3)
+      : (item.mediaUrl ? [item.mediaUrl] : []);
+
     setFormData({
       title: item.title,
       sku: item.sku || generateGallerySku(item.divisionId, item.title),
       divisionId: item.divisionId,
       category: isPreset ? existingCat : 'Other / Custom',
       caption: item.caption || '',
-      mediaUrl: item.mediaUrl,
-      thumbnailUrl: item.thumbnailUrl || item.mediaUrl,
+      mediaUrl: itemImages[0] || item.mediaUrl || '',
+      thumbnailUrl: item.thumbnailUrl || itemImages[0] || item.mediaUrl || '',
+      images: itemImages,
       type: item.type || 'image',
       aspectRatio: item.aspectRatio || '16:9',
       tags: item.tags || [],
       sortOrder: item.sortOrder || 1,
       isActive: item.isActive,
     });
+    setMediaUrlInput('');
     setCustomCategoryInput(isPreset ? '' : existingCat);
     setFormErrors({});
     setIsDirty(false);
     setIsEditorOpen(true);
   };
 
+  const handleImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const availableSlots = 3 - formData.images.length;
+    if (availableSlots <= 0) {
+      addToast('warning', 'Maximum Limit Reached', 'You can upload a maximum of 3 images for gallery.');
+      e.target.value = '';
+      return;
+    }
+
+    const filesToProcess = Array.from(files).slice(0, availableSlots);
+    if (files.length > availableSlots) {
+      addToast('info', 'Images Capped', `Only ${availableSlots} more image(s) can be added (maximum 3 images).`);
+    }
+
+    const newImages: string[] = [];
+    for (const file of filesToProcess) {
+      try {
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        const compressed = await compressDataUrl(base64, 1280, 0.82);
+        newImages.push(compressed);
+      } catch (err) {
+        console.error('Failed to compress gallery image:', err);
+      }
+    }
+
+    if (newImages.length > 0) {
+      const merged = [...formData.images, ...newImages].slice(0, 3);
+      setFormData((prev) => ({
+        ...prev,
+        images: merged,
+        mediaUrl: prev.mediaUrl || merged[0] || '',
+        thumbnailUrl: prev.thumbnailUrl || merged[0] || '',
+      }));
+      setIsDirty(true);
+      addToast('success', 'Images Uploaded', `Added ${newImages.length} image(s) to gallery (Total: ${merged.length}/3).`);
+    }
+    e.target.value = '';
+  };
+
+  const handleAddImageUrl = (url: string) => {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    if (formData.images.length >= 3) {
+      addToast('warning', 'Maximum Limit Reached', 'Maximum 3 images allowed for gallery item.');
+      return;
+    }
+    const merged = [...formData.images, trimmed].slice(0, 3);
+    setFormData((prev) => ({
+      ...prev,
+      images: merged,
+      mediaUrl: prev.mediaUrl || merged[0] || '',
+      thumbnailUrl: prev.thumbnailUrl || merged[0] || '',
+    }));
+    setMediaUrlInput('');
+    setIsDirty(true);
+    addToast('success', 'Image Added', `Added image to gallery (${merged.length}/3).`);
+  };
+
+  const handleRemoveImage = (index: number) => {
+    const nextImages = formData.images.filter((_, i) => i !== index);
+    setFormData((prev) => ({
+      ...prev,
+      images: nextImages,
+      mediaUrl: nextImages[0] || '',
+      thumbnailUrl: nextImages[0] || '',
+    }));
+    setIsDirty(true);
+  };
+
+  const handleMakeCoverImage = (index: number) => {
+    if (index === 0) return;
+    const selected = formData.images[index];
+    const nextImages = [selected, ...formData.images.filter((_, i) => i !== index)];
+    setFormData((prev) => ({
+      ...prev,
+      images: nextImages,
+      mediaUrl: selected,
+      thumbnailUrl: selected,
+    }));
+    setIsDirty(true);
+    addToast('info', 'Primary Photo Set', 'Selected photo is now the primary image.');
+  };
+
   const validateForm = () => {
     const errors: Record<string, string> = {};
     if (!formData.title.trim()) errors.title = 'Title is required';
-    if (!formData.mediaUrl.trim()) errors.mediaUrl = 'Media URL is required';
+    if (!formData.images.length && !formData.mediaUrl.trim()) {
+      errors.mediaUrl = 'At least 1 media image is required (max 3)';
+    }
     if (formData.category === 'Other / Custom' && !customCategoryInput.trim()) {
       errors.category = 'Please enter a custom category name';
     }
@@ -240,37 +346,54 @@ export const AdminGalleryView: React.FC = () => {
         });
       }
 
-      // Automatically compress and optimize base64 images to prevent quota exhaustion
-      let finalMediaUrl = formData.mediaUrl.trim();
-      let finalThumbnailUrl = formData.thumbnailUrl?.trim() || finalMediaUrl;
-
-      if (finalMediaUrl.startsWith('data:image/')) {
-        finalMediaUrl = await compressDataUrl(finalMediaUrl, 1280, 0.75);
-        finalThumbnailUrl = await compressDataUrl(finalMediaUrl, 400, 0.7);
-      }
+      const finalImages = formData.images.slice(0, 3);
+      const primaryMedia = finalImages[0] || formData.mediaUrl.trim();
+      const primaryThumbnail = finalImages[0] || formData.thumbnailUrl?.trim() || primaryMedia;
 
       const finalSku = (formData.sku || generateGallerySku(formData.divisionId, formData.title)).trim().toUpperCase();
 
       const payload = {
         ...formData,
         sku: finalSku,
-        mediaUrl: finalMediaUrl,
-        thumbnailUrl: finalThumbnailUrl,
+        mediaUrl: primaryMedia,
+        thumbnailUrl: primaryThumbnail,
+        images: finalImages.length > 0 ? finalImages : (primaryMedia ? [primaryMedia] : undefined),
         category: resolvedCategory,
         tags: Array.from(new Set([resolvedCategory, ...(formData.tags || [])])),
       };
 
+      const firestoreData = {
+        title: payload.title,
+        division: payload.divisionId,
+        url: primaryMedia,
+        mediaUrl: primaryMedia,
+        thumbnailUrl: primaryThumbnail,
+        images: payload.images,
+        category: payload.category,
+        caption: payload.caption,
+        aspectRatio: payload.aspectRatio,
+        tags: payload.tags,
+        order: payload.sortOrder,
+        sku: payload.sku,
+        type: payload.type,
+        status: payload.isActive ? ('published' as const) : ('hidden' as const),
+      };
+
       if (editingItem) {
         cmsService.update<CmsGalleryItem>('gallery', editingItem.id, payload);
-        addToast('success', 'Gallery Item Saved', `"${formData.title}" updated.`);
+        await firestoreGalleryService.saveGallery(editingItem.id, firestoreData);
+        addToast('success', 'Gallery Item Saved', `"${formData.title}" saved to Firestore.`);
       } else {
-        cmsService.create<CmsGalleryItem>('gallery', payload);
-        addToast('success', 'Gallery Item Created', `"${formData.title}" added.`);
+        const created = cmsService.create<CmsGalleryItem>('gallery', payload);
+        await firestoreGalleryService.saveGallery(created.id, firestoreData);
+        addToast('success', 'Gallery Item Created', `"${formData.title}" saved to Firestore.`);
       }
+      await refreshAll();
       setIsDirty(false);
       setIsEditorOpen(false);
       loadData();
     } catch (err: any) {
+      console.error('[AdminGallery] Save error:', err);
       addToast('error', 'Error Saving Gallery', err.message || 'Operation failed.');
     } finally {
       setIsSaving(false);
@@ -293,8 +416,14 @@ export const AdminGalleryView: React.FC = () => {
         addToast('warning', 'Permanent Deletion', `"${itemToDelete.title}" permanently removed from Firestore & storage.`);
       } else {
         cmsService.softDelete('gallery', itemToDelete.id);
+        try {
+          await firestoreGalleryService.saveGallery(itemToDelete.id, { status: 'hidden' });
+        } catch (fErr) {
+          console.warn('[AdminGallery] Firestore archive warning:', fErr);
+        }
         addToast('info', 'Gallery Item Archived', `"${itemToDelete.title}" archived.`);
       }
+      await refreshAll();
     } finally {
       setDeletingItem(null);
       loadData();
@@ -677,37 +806,129 @@ export const AdminGalleryView: React.FC = () => {
             </div>
           )}
 
-          <div>
-            <label className="block font-semibold text-slate-700 mb-1">Media URL *</label>
-            <div className="flex items-center gap-3">
-              <input
-                type="url"
-                value={formData.mediaUrl}
-                onChange={(e) => {
-                  setFormData({ ...formData, mediaUrl: e.target.value });
-                  setIsDirty(true);
-                }}
-                placeholder="https://images.unsplash.com/..."
-                className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
-              />
+          {/* Gallery Media Images (Max 3 Images) */}
+          <div className="p-4 bg-purple-50/30 rounded-2xl border border-purple-100 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block font-semibold text-purple-950 text-sm">
+                  Gallery Photos (Max 3 Images) *
+                </label>
+                <p className="text-[11px] text-purple-700/80">
+                  Upload up to 3 showcase photos stored in Firestore and visible on the website. First image acts as primary cover.
+                </p>
+              </div>
+              <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                formData.images.length >= 3
+                  ? 'bg-amber-100 text-amber-800'
+                  : 'bg-purple-100 text-purple-800'
+              }`}>
+                {formData.images.length} / 3 Images
+              </span>
+            </div>
+
+            {/* Actions: Upload & URL */}
+            <div className="flex flex-wrap items-center gap-2">
+              <label
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold cursor-pointer transition ${
+                  formData.images.length >= 3
+                    ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                    : 'bg-purple-600 hover:bg-purple-700 text-white border-purple-600 shadow-xs'
+                }`}
+              >
+                <Upload className="w-3.5 h-3.5" />
+                Upload Photos
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImagesUpload}
+                  disabled={formData.images.length >= 3}
+                  className="hidden"
+                />
+              </label>
+
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setIsMediaPickerOpen(true)}
-                className="shrink-0"
+                disabled={formData.images.length >= 3}
+                className="flex items-center gap-1.5 cursor-pointer text-xs"
               >
-                <ImageIcon className="w-3.5 h-3.5 mr-1" />
-                Select
+                <ImageIcon className="w-3.5 h-3.5" />
+                Media Library
               </Button>
-            </div>
-            {formData.mediaUrl && (
-              <div className="mt-2">
-                <img
-                  src={formData.mediaUrl}
-                  alt="Preview"
-                  className="h-32 w-full object-cover rounded-xl border border-slate-200"
+
+              <div className="flex items-center gap-1 grow min-w-[200px]">
+                <input
+                  type="url"
+                  value={mediaUrlInput}
+                  onChange={(e) => setMediaUrlInput(e.target.value)}
+                  placeholder="Paste image URL..."
+                  disabled={formData.images.length >= 3}
+                  className="grow px-3 py-1.5 border rounded-xl border-purple-200 bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none text-xs"
                 />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleAddImageUrl(mediaUrlInput)}
+                  disabled={!mediaUrlInput.trim() || formData.images.length >= 3}
+                  className="shrink-0 text-xs cursor-pointer"
+                >
+                  Add URL
+                </Button>
+              </div>
+            </div>
+
+            {formErrors.mediaUrl && <p className="text-red-600 text-[10px]">{formErrors.mediaUrl}</p>}
+
+            {/* Thumbnails grid */}
+            {formData.images.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                {formData.images.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className={`group relative aspect-video rounded-xl overflow-hidden border-2 bg-slate-100 shadow-2xs ${
+                      idx === 0 ? 'border-purple-600 ring-2 ring-purple-600/20' : 'border-purple-100'
+                    }`}
+                  >
+                    <img
+                      src={img}
+                      alt={`Gallery item ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+
+                    {/* Cover badge */}
+                    {idx === 0 ? (
+                      <span className="absolute top-1.5 left-1.5 bg-purple-700 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
+                        Cover
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleMakeCoverImage(idx)}
+                        className="absolute bottom-1.5 left-1.5 bg-purple-900/80 hover:bg-purple-700 text-white text-[9px] font-medium px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                      >
+                        Set as Cover
+                      </button>
+                    )}
+
+                    {/* Delete button */}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(idx)}
+                      className="absolute top-1.5 right-1.5 bg-slate-900/75 hover:bg-red-600 text-white p-1 rounded-lg text-[10px] transition cursor-pointer"
+                      title="Remove image"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-4 border-2 border-dashed border-purple-200/80 rounded-xl text-center bg-white/60 text-purple-900/70 text-xs">
+                No gallery photos added yet. Upload up to 3 images (stored in Firestore and showcased on the website).
               </div>
             )}
           </div>
@@ -758,8 +979,8 @@ export const AdminGalleryView: React.FC = () => {
         onClose={() => setIsMediaPickerOpen(false)}
         currentUrl={formData.mediaUrl}
         onSelect={(url) => {
-          setFormData({ ...formData, mediaUrl: url, thumbnailUrl: url });
-          setIsDirty(true);
+          handleAddImageUrl(url);
+          setIsMediaPickerOpen(false);
         }}
       />
 

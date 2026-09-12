@@ -122,68 +122,6 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
         canonicalUrl="https://mahdev.lk/mart"
       />
 
-      {/* Sticky Mart Sub-Header Ribbon */}
-      <div className="sticky top-16 z-30 bg-slate-950/95 backdrop-blur-md border-b border-white/10 shadow-md text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-12 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => onNavigate('/')}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-300 hover:text-white transition-colors cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span>Mahdev Group</span>
-            </button>
-
-            <span className="h-4 w-px bg-white/15 hidden sm:block" />
-
-            <nav className="hidden sm:flex items-center gap-5 text-xs font-semibold text-slate-300">
-              <button
-                onClick={() => {
-                  setSelectedCategoryId(null);
-                  scrollToAnchor('products');
-                }}
-                className="hover:text-white transition-colors cursor-pointer"
-              >
-                All Products
-              </button>
-              <button
-                onClick={() => scrollToAnchor('categories')}
-                className="hover:text-white transition-colors cursor-pointer"
-              >
-                Categories
-              </button>
-            </nav>
-          </div>
-
-          {/* Right Header Actions */}
-          <div className="flex items-center gap-4">
-            <a
-              href={getTelLink(primaryPhone)}
-              className="text-xs font-semibold text-slate-300 hover:text-white hidden md:flex items-center gap-1.5"
-            >
-              <Phone className="w-3.5 h-3.5 text-amber-400" />
-              <span>Helpline: {primaryPhone}</span>
-            </a>
-
-            {/* Cart Button with Reactive Badge */}
-            <button
-              type="button"
-              onClick={openCart}
-              className="relative inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0052FF] hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer shadow-sm"
-              aria-label="View Shopping Cart"
-            >
-              <ShoppingCart className="w-4 h-4" />
-              <span>Cart</span>
-              {totalCartCount > 0 && (
-                <span className="w-5 h-5 rounded-full bg-white text-[#0052FF] font-mono text-[10px] font-bold flex items-center justify-center">
-                  {totalCartCount}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-2 animate-fadeIn">
