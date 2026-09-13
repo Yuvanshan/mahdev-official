@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { resolveMediaUrl } from '../../services/firestoreMediaService';
 
 interface HeroVideoBackgroundProps {
   videoUrl?: string;
@@ -19,6 +20,16 @@ function extractYouTubeId(url: string): string | null {
   return match && match[2].length === 11 ? match[2] : null;
 }
 
+/**
+ * Extracts clean Vimeo video ID from various Vimeo URLs
+ */
+function extractVimeoId(url: string): string | null {
+  if (!url) return null;
+  const regExp = /(?:vimeo\.com\/(?:video\/|channels\/(?:\w+\/)?|groups\/[^\/]*\/videos\/|album\/(?:\d+\/)?video\/|))(\d+)/;
+  const match = url.match(regExp);
+  return match && match[1] ? match[1] : null;
+}
+
 export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
   videoUrl,
   imageUrl,
@@ -29,23 +40,62 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
 }) => {
   const [videoFailed, setVideoFailed] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
+  const [resolvedSrc, setResolvedSrc] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const trimmedVideo = videoUrl?.trim() || '';
+
+  useEffect(() => {
+    let isMounted = true;
+    if (!trimmedVideo) {
+      setResolvedSrc('');
+      return;
+    }
+    if (trimmedVideo.startsWith('firestore://media_blobs/')) {
+      resolveMediaUrl(trimmedVideo).then((url) => {
+        if (isMounted) setResolvedSrc(url);
+      });
+    } else {
+      setResolvedSrc(trimmedVideo);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [trimmedVideo]);
+
   const isYouTube = trimmedVideo.includes('youtube.com') || trimmedVideo.includes('youtu.be');
   const ytVideoId = isYouTube ? extractYouTubeId(trimmedVideo) : null;
 
-  const hasVideo = Boolean(
-    !videoFailed &&
-      trimmedVideo &&
-      (isYouTube ||
+  const isVimeo = trimmedVideo.includes('vimeo.com');
+  const vimeoId = isVimeo ? extractVimeoId(trimmedVideo) : null;
+
+  const isEmbedVideo = Boolean((isYouTube && ytVideoId) || (isVimeo && vimeoId));
+  const isHtmlVideo = Boolean(
+    (trimmedVideo || resolvedSrc) &&
+      !isEmbedVideo &&
+      (trimmedVideo.startsWith('firestore://') ||
         trimmedVideo.includes('.mp4') ||
         trimmedVideo.includes('.webm') ||
         trimmedVideo.includes('.ogg') ||
+        trimmedVideo.includes('.mov') ||
+        trimmedVideo.includes('.m4v') ||
         trimmedVideo.startsWith('data:video') ||
         trimmedVideo.startsWith('blob:') ||
-        trimmedVideo.startsWith('/uploads/'))
+        trimmedVideo.startsWith('/uploads/') ||
+        trimmedVideo.includes('firebasestorage.googleapis.com') ||
+        trimmedVideo.includes('cloudinary.com') ||
+        trimmedVideo.includes('/videos/') ||
+        trimmedVideo.startsWith('http') ||
+        resolvedSrc.startsWith('blob:'))
   );
+
+  const hasVideo = Boolean(!videoFailed && (trimmedVideo || resolvedSrc) && (isEmbedVideo || isHtmlVideo));
+
+  // Reset failure and readiness state whenever the video URL changes
+  useEffect(() => {
+    setVideoFailed(false);
+    setIsVideoReady(false);
+  }, [trimmedVideo]);
 
   // Fallback default image URL shown immediately and while video buffers/loads
   const effectiveImageUrl =
@@ -55,7 +105,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
 
   // Force HTML5 video autoplay reliably across all browser policies
   useEffect(() => {
-    if (!hasVideo || isYouTube) return;
+    if (!hasVideo || isEmbedVideo) return;
 
     const videoEl = videoRef.current;
     if (!videoEl) return;
@@ -112,21 +162,14 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
     ? `https://www.youtube-nocookie.com/embed/${ytVideoId}?autoplay=1&mute=1&loop=1&playlist=${ytVideoId}&controls=0&showinfo=0&rel=0&playsinline=1&modestbranding=1&enablejsapi=1`
     : null;
 
-  return (
-    <div className={`absolute inset-0 z-0 overflow-hidden select-none pointer-events-none ${className}`}>
-      {/* 
-        Default HD Poster / Fallback Image (always present underneath).
-        Provides instant visual clarity while the video buffers/loads, eliminating any black flash.
-      */}
-      <img
-        src={effectiveImageUrl}
-        alt={title}
-        className="absolute inset-0 w-full h-full object-cover z-0"
-        referrerPolicy="no-referrer"
-        loading="eager"
-      />
+  // Vimeo embed URL with required parameters for background autoplay & loop
+  const vimeoEmbedSrc = vimeoId
+    ? `https://player.vimeo.com/video/${vimeoId}?background=1&autoplay=1&loop=1&byline=0&title=0&muted=1`
+    : null;
 
-      {/* Video Layer (HTML5 or YouTube) with smooth fade-in once playback begins */}
+  return (
+    <div className={`absolute inset-0 z-0 overflow-hidden select-none pointer-events-none bg-[#061033] ${className}`}>
+      {/* Video Only Layer (HTML5, YouTube or Vimeo) - No default fallback image rendered */}
       {hasVideo && youTubeEmbedSrc ? (
         <iframe
           src={youTubeEmbedSrc}
@@ -134,11 +177,17 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
           className="absolute inset-0 w-full h-full object-cover scale-135 border-0 z-1"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         />
-      ) : hasVideo ? (
+      ) : hasVideo && vimeoEmbedSrc ? (
+        <iframe
+          src={vimeoEmbedSrc}
+          title={title}
+          className="absolute inset-0 w-full h-full object-cover scale-135 border-0 z-1"
+          allow="autoplay; fullscreen; picture-in-picture"
+        />
+      ) : hasVideo && (resolvedSrc || !trimmedVideo.startsWith('firestore://')) ? (
         <video
           ref={videoRef}
-          src={trimmedVideo}
-          poster={effectiveImageUrl}
+          src={resolvedSrc || trimmedVideo}
           autoPlay
           loop
           muted
@@ -158,12 +207,16 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
             setIsVideoReady(true);
           }}
           onError={() => {
-            setVideoFailed(true);
-            setIsVideoReady(false);
+            // If custom video fails, do not fall back to an image; retry with fallback cloud video
+            if (trimmedVideo !== 'firestore://media_blobs/vid_corporate_hero_v1') {
+              resolveMediaUrl('firestore://media_blobs/vid_corporate_hero_v1').then((fallbackUrl) => {
+                if (fallbackUrl) setResolvedSrc(fallbackUrl);
+              });
+            } else {
+              setVideoFailed(true);
+            }
           }}
-          className={`absolute inset-0 w-full h-full object-cover z-1 transition-opacity duration-700 ${
-            isVideoReady ? 'opacity-100' : 'opacity-0'
-          }`}
+          className="absolute inset-0 w-full h-full object-cover z-1"
           title={title}
         />
       ) : null}

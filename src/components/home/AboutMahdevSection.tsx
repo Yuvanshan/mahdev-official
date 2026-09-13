@@ -86,9 +86,6 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
             <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
               {headline}
             </h2>
-            <p className="text-slate-600 text-sm sm:text-base leading-relaxed font-normal">
-              {description}
-            </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Button

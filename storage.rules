@@ -60,27 +60,42 @@ service firebase.storage {
 
     match /company/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff() && isValidMedia() && request.resource.size < 100 * 1024 * 1024;
+      allow write: if (isSignedIn() || isStaff()) && isValidMedia() && request.resource.size < 100 * 1024 * 1024;
     }
 
     match /divisions/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff() && isValidMedia() && request.resource.size < 100 * 1024 * 1024;
+      allow write: if (isSignedIn() || isStaff()) && isValidMedia() && request.resource.size < 100 * 1024 * 1024;
     }
 
     match /videos/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff() && isValidVideo() && request.resource.size < 100 * 1024 * 1024;
+      allow write: if (isSignedIn() || isStaff()) && isValidVideo() && request.resource.size < 100 * 1024 * 1024;
+    }
+
+    match /images/{allPaths=**} {
+      allow read: if true;
+      allow write: if (isSignedIn() || isStaff()) && isValidMedia() && request.resource.size < 50 * 1024 * 1024;
+    }
+
+    match /hero/{allPaths=**} {
+      allow read: if true;
+      allow write: if (isSignedIn() || isStaff()) && isValidMedia() && request.resource.size < 100 * 1024 * 1024;
+    }
+
+    match /uploads/{allPaths=**} {
+      allow read: if true;
+      allow write: if (isSignedIn() || isStaff()) && isValidMedia() && request.resource.size < 100 * 1024 * 1024;
     }
 
     match /services/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff() && isValidVectorOrImage() && request.resource.size < 10 * 1024 * 1024;
+      allow write: if (isSignedIn() || isStaff()) && isValidVectorOrImage() && request.resource.size < 10 * 1024 * 1024;
     }
 
     match /products/{allPaths=**} {
       allow read: if true;
-      allow write: if isStaff() && isValidVectorOrImage() && request.resource.size < 10 * 1024 * 1024;
+      allow write: if (isSignedIn() || isStaff()) && isValidVectorOrImage() && request.resource.size < 10 * 1024 * 1024;
     }
 
     match /portfolio/{allPaths=**} {

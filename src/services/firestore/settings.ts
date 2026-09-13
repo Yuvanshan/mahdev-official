@@ -71,11 +71,11 @@ export function getDefaultHomepageSettings(): HomepageCmsConfig {
       titleLine2: '& Delivering Innovation...',
       description:
         'Mahdev Pvt Ltd is an integrated parent enterprise uniting luxury event and wedding decorations, fine-art photography and 8K cinema, scalable IT solutions, bespoke luxury travel, and verified tech commerce under a singular standard of perfection.',
-      mediaType: 'image',
-      mediaUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1920&q=85',
-      imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1920&q=85',
-      defaultImageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1920&q=85',
-      videoUrl: '',
+      mediaType: 'video',
+      mediaUrl: 'firestore://media_blobs/vid_corporate_hero_v1',
+      imageUrl: '',
+      defaultImageUrl: '',
+      videoUrl: 'firestore://media_blobs/vid_corporate_hero_v1',
       primaryCtaLabel: 'Explore Ecosystem',
       primaryCtaLink: '#divisions',
       secondaryCtaLabel: 'Get In Touch',
@@ -388,24 +388,9 @@ export const firestoreSettingsService = {
       return cachedCompanySettings.data;
     }
 
-    // Try server API first as fast local proxy
-    try {
-      const serverRes = await fetch('/api/settings/company');
-      if (serverRes.ok) {
-        const json = await serverRes.json();
-        if (json.success && json.settings && (json.settings.name || json.settings.logoUrl)) {
-          const merged = { ...getDefaultCompanySettings(), ...(cachedCompanySettings?.data || {}), ...json.settings };
-          cachedCompanySettings = { data: merged, timestamp: now };
-          return merged;
-        }
-      }
-    } catch {}
-
     try {
       const docRef = doc(db, 'settings', 'company');
-      const snapPromise = getDoc(docRef);
-      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000));
-      const snap = (await Promise.race([snapPromise, timeoutPromise])) as any;
+      const snap = await getDoc(docRef);
 
       if (snap && typeof snap.exists === 'function' && snap.exists()) {
         const data = snap.data() as FirestoreCompanySettings;
@@ -554,24 +539,9 @@ export const firestoreSettingsService = {
       return cachedSiteSettings.data;
     }
 
-    // Try server API first as fast local proxy
-    try {
-      const serverRes = await fetch('/api/settings/site');
-      if (serverRes.ok) {
-        const json = await serverRes.json();
-        if (json.success && json.settings && (json.settings.siteName || json.settings.logoUrl || json.settings.currency)) {
-          const merged = { ...getDefaultSiteSettings(), ...(cachedSiteSettings?.data || {}), ...json.settings };
-          cachedSiteSettings = { data: merged, timestamp: now };
-          return merged;
-        }
-      }
-    } catch {}
-
     try {
       const docRef = doc(db, 'settings', 'site');
-      const snapPromise = getDoc(docRef);
-      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000));
-      const snap = (await Promise.race([snapPromise, timeoutPromise])) as any;
+      const snap = await getDoc(docRef);
 
       if (snap && typeof snap.exists === 'function' && snap.exists()) {
         const data = snap.data() as FirestoreSiteSettings;
@@ -739,27 +709,40 @@ export const firestoreSettingsService = {
       if (snap && typeof snap.exists === 'function' && snap.exists()) {
         const rawData = snap.data() as HomepageCmsConfig;
         const def = getDefaultHomepageSettings();
+
+        // Ensure video and media URLs from Firestore take absolute precedence
+        const rawHero: any = rawData?.hero || {};
+        let firestoreVideo = (rawHero.videoUrl || (rawHero as any).heroVideoUrl || '').trim();
+        let firestoreMedia = (rawHero.mediaUrl || '').trim();
+
+        if (firestoreVideo.includes('assets.mixkit.co')) {
+          firestoreVideo = 'firestore://media_blobs/vid_corporate_hero_v1';
+        }
+        if (firestoreMedia.includes('assets.mixkit.co')) {
+          firestoreMedia = 'firestore://media_blobs/vid_corporate_hero_v1';
+        }
+
+        const effectiveVideo = firestoreVideo || (rawHero.mediaType === 'video' ? firestoreMedia : '') || def.hero.videoUrl;
+
         const data: HomepageCmsConfig = {
           ...def,
-          ...localSaved,
           ...rawData,
           hero: {
             ...def.hero,
-            ...(localSaved?.hero || {}),
-            ...(rawData?.hero || {}),
+            ...rawHero,
+            videoUrl: effectiveVideo,
+            mediaUrl: firestoreMedia || effectiveVideo || def.hero.mediaUrl,
+            mediaType: 'video',
           },
           milestones: {
             ...def.milestones,
-            ...(localSaved?.milestones || {}),
             ...(rawData?.milestones || {}),
             achievementsTitle: rawData?.milestones?.achievementsTitle || def.milestones.achievementsTitle,
             achievementsSubtitle: rawData?.milestones?.achievementsSubtitle || def.milestones.achievementsSubtitle,
             achievements:
               rawData?.milestones?.achievements && rawData.milestones.achievements.length > 0
                 ? rawData.milestones.achievements
-                : (localSaved?.milestones?.achievements && localSaved.milestones.achievements.length > 0
-                    ? localSaved.milestones.achievements
-                    : def.milestones.achievements),
+                : def.milestones.achievements,
           },
         };
         cachedHomepageSettings = { data, timestamp: now };
@@ -770,24 +753,6 @@ export const firestoreSettingsService = {
         }
         return data;
       }
-
-      // Check server API fallback
-      try {
-        const serverRes = await fetch('/api/settings/homepage');
-        if (serverRes.ok) {
-          const json = await serverRes.json();
-          if (json.success && json.settings) {
-            const merged = { ...getDefaultHomepageSettings(), ...localSaved, ...json.settings };
-            cachedHomepageSettings = { data: merged, timestamp: now };
-            if (typeof window !== 'undefined') {
-              try {
-                localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(merged));
-              } catch {}
-            }
-            return merged;
-          }
-        }
-      } catch {}
 
       const defaultHome = localSaved || cachedHomepageSettings?.data || getDefaultHomepageSettings();
       cachedHomepageSettings = { data: defaultHome, timestamp: now };
@@ -804,7 +769,26 @@ export const firestoreSettingsService = {
   async updateHomepageSettings(data: Partial<HomepageCmsConfig>): Promise<void> {
     const docRef = doc(db, 'settings', 'homepage');
     const existing = cachedHomepageSettings?.data || getDefaultHomepageSettings();
-    const merged = { ...existing, ...data, updatedAt: new Date().toISOString() };
+
+    // Harmonize hero video and media properties
+    const heroUpdates = data.hero ? { ...data.hero } : undefined;
+    if (heroUpdates) {
+      const v = (heroUpdates.videoUrl || (heroUpdates as any).heroVideoUrl || '').trim();
+      if (v) {
+        heroUpdates.videoUrl = v;
+        if (!heroUpdates.mediaUrl || heroUpdates.mediaType === 'video') {
+          heroUpdates.mediaUrl = v;
+        }
+        heroUpdates.mediaType = 'video';
+      }
+    }
+
+    const merged = {
+      ...existing,
+      ...data,
+      ...(heroUpdates ? { hero: { ...existing.hero, ...heroUpdates } } : {}),
+      updatedAt: new Date().toISOString(),
+    };
     const payload = sanitizeForFirestore(merged);
 
     cachedHomepageSettings = { data: payload, timestamp: Date.now() };
@@ -871,9 +855,29 @@ export const firestoreSettingsService = {
         if (snap.exists()) {
           const rawData = snap.data() as HomepageCmsConfig;
           const def = getDefaultHomepageSettings();
+          const rawHero: any = rawData?.hero || {};
+          let firestoreVideo = (rawHero.videoUrl || (rawHero as any).heroVideoUrl || '').trim();
+          let firestoreMedia = (rawHero.mediaUrl || '').trim();
+
+          if (firestoreVideo.includes('assets.mixkit.co')) {
+            firestoreVideo = 'firestore://media_blobs/vid_corporate_hero_v1';
+          }
+          if (firestoreMedia.includes('assets.mixkit.co')) {
+            firestoreMedia = 'firestore://media_blobs/vid_corporate_hero_v1';
+          }
+
+          const effectiveVideo = firestoreVideo || (rawHero.mediaType === 'video' ? firestoreMedia : '') || def.hero.videoUrl;
+
           const data: HomepageCmsConfig = {
             ...def,
             ...rawData,
+            hero: {
+              ...def.hero,
+              ...rawHero,
+              videoUrl: effectiveVideo,
+              mediaUrl: firestoreMedia || effectiveVideo || def.hero.mediaUrl,
+              mediaType: 'video',
+            },
             milestones: {
               ...def.milestones,
               ...(rawData?.milestones || {}),

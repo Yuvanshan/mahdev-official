@@ -137,12 +137,9 @@ const FeaturedServiceCard: React.FC<{
           </div>
         </div>
 
-        <h3 className="font-display text-base font-bold text-slate-900 mb-1.5 group-hover:text-purple-700 transition-colors">
+        <h3 className="font-display text-base font-bold text-slate-900 mb-3 group-hover:text-purple-700 transition-colors">
           {service.title || service.name}
         </h3>
-        <p className="text-xs text-slate-600 leading-relaxed mb-4 line-clamp-2">
-          {service.description}
-        </p>
 
         {service.features && service.features.length > 0 && (
           <div className="space-y-1.5 mb-5 pt-3 border-t border-purple-50">
@@ -258,16 +255,12 @@ const FeaturedServicesSectionContent: React.FC<
         paddingY="xl"
         hasBorderBottom
       >
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between mb-10 gap-6">
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between mb-8 gap-6">
           <div className="max-w-2xl">
             <span className="text-[11px] font-mono uppercase tracking-wider text-blue-600 mb-2 block font-semibold">
               {sectionMeta.badge || 'Enterprise Solutions'}
             </span>
-            <H2 className="text-slate-900 mb-3">{sectionMeta.title || 'Featured Services & Capabilities'}</H2>
-            <Body className="text-slate-600 text-base">
-              {sectionMeta.subtitle ||
-                'Explore flagship services delivered across our 5 specialized enterprise divisions, engineered to bring your vision to life.'}
-            </Body>
+            <H2 className="text-slate-900">{sectionMeta.title || 'Featured Services & Capabilities'}</H2>
           </div>
 
           {/* Division Filter Tabs */}

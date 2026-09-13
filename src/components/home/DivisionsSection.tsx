@@ -240,7 +240,7 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
       <ParallelWatermark text="03 // DIVISIONS" />
       <SectionContainer id="divisions" background="subtle" paddingY="xl" hasBorderBottom>
         {/* Editorial Header */}
-        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-[11px] font-mono uppercase tracking-wider text-slate-700 mb-2.5">
               <Layers className="w-3.5 h-3.5 text-blue-600" />
@@ -250,14 +250,9 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
               {sectionTitle}
             </h2>
           </div>
-          <div className="md:max-w-md">
-            <p className="text-slate-600 text-sm leading-relaxed font-normal">
-              {sectionSubtitle}
-            </p>
-            <div className="flex items-center gap-2 mt-2 text-xs font-medium text-slate-500">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Direct concierge inquiries active</span>
-            </div>
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Direct concierge inquiries active</span>
           </div>
         </div>
 
@@ -302,14 +297,7 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
                   <h3 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight group-hover:text-rose-200 transition-colors">
                     {sws.name}
                   </h3>
-                  <p className="text-slate-300 text-xs font-medium mt-1">
-                    {sws.subtitle}
-                  </p>
                 </div>
-
-                <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-xl">
-                  {sws.summary}
-                </p>
 
                 <div className="pt-4 border-t border-white/15 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap gap-1.5">
@@ -384,9 +372,6 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
                     <h3 className="font-display text-lg font-bold text-white group-hover:text-slate-200 transition-colors">
                       {div.name}
                     </h3>
-                    <p className="text-slate-300 text-xs line-clamp-1">
-                      {div.summary}
-                    </p>
 
                     <div className="pt-2 border-t border-white/15 flex items-center justify-between text-xs text-slate-300">
                       <button
@@ -443,9 +428,6 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
                   <h3 className="font-display text-xl font-bold text-white group-hover:text-slate-200 transition-colors">
                     {div.name}
                   </h3>
-                  <p className="text-slate-300 text-xs line-clamp-1 max-w-lg">
-                    {div.summary}
-                  </p>
 
                   <div className="pt-3 border-t border-white/15 flex items-center justify-between text-xs">
                     <div className="flex gap-2">

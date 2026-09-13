@@ -16,6 +16,7 @@ import { CartSummary, CartItem } from '../types/cart';
 import { notificationService } from './notificationService';
 import { db, sanitizeForFirestore } from '../lib/firebase';
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { firestoreOrdersService } from './firestore/orders';
 
 const ORDERS_STORAGE_KEY = 'mahdev_orders_v1';
 
@@ -56,6 +57,70 @@ class OrderService {
 
   constructor() {
     this.loadOrders();
+    this.initFirestoreSync();
+  }
+
+  private initFirestoreSync(): void {
+    try {
+      firestoreOrdersService.subscribeAllOrders((firestoreOrders) => {
+        if (!Array.isArray(firestoreOrders)) return;
+        
+        // Map Firestore orders to local Order model
+        const mappedOrders: Order[] = firestoreOrders.map((fo: any) => {
+          return {
+            id: fo.id,
+            customer: fo.customer || {
+              fullName: fo.customerName || 'Customer',
+              email: fo.customerEmail || '',
+              phone: fo.customerPhone || '',
+              preferredContact: 'email',
+            },
+            items: Array.isArray(fo.items) ? fo.items : [],
+            totalQuantity: fo.totalQuantity || (Array.isArray(fo.items) ? fo.items.reduce((s: number, i: any) => s + (i.quantity || 1), 0) : 1),
+            subtotal: fo.subtotal || fo.total || 0,
+            productDiscounts: fo.productDiscounts || 0,
+            couponDiscount: fo.couponDiscount || 0,
+            appliedCouponCode: fo.appliedCouponCode,
+            shippingFee: fo.shippingFee || 0,
+            tax: fo.tax || 0,
+            total: fo.total || 0,
+            currency: fo.currency || 'USD',
+            status: fo.status || fo.orderStatus || 'pending_payment',
+            paymentStatus: fo.paymentStatus || 'payment_pending',
+            paymentMethod: fo.paymentMethod || 'credit_card',
+            transactionId: fo.transactionId,
+            paymentGatewayReady: fo.paymentGatewayReady ?? true,
+            deliveryInfo: fo.deliveryInfo,
+            bookingInfo: fo.bookingInfo,
+            customerNotes: fo.customerNotes,
+            adminNotesList: fo.adminNotesList || [],
+            refunds: fo.refunds || [],
+            trackingNumber: fo.trackingNumber,
+            carrier: fo.carrier,
+            createdAt: fo.createdAt || new Date().toISOString(),
+            updatedAt: fo.updatedAt || new Date().toISOString(),
+          };
+        });
+
+        // Merge Firestore orders with existing orders, giving precedence to Firestore
+        const orderMap = new Map<string, Order>();
+        for (const local of this.orders) {
+          orderMap.set(local.id, local);
+        }
+        for (const remote of mappedOrders) {
+          orderMap.set(remote.id, remote);
+        }
+
+        const merged = Array.from(orderMap.values()).sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        this.orders = merged;
+        this.saveOrders();
+      });
+    } catch (e) {
+      console.warn('[OrderService] Firestore sync initialization error:', e);
+    }
   }
 
   private loadOrders(): void {
@@ -64,8 +129,8 @@ class OrderService {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
-          // Permanently purge any hardcoded test or demo orders
-          const testOrderIds = new Set(['ORD-2026-8941', 'ORD-2026-7219', 'ORD-2026-6104', 'ORD-2026-5530']);
+          // Permanently purge any hardcoded test or demo orders (never delete legitimate customer orders like ORD-2026-6104)
+          const testOrderIds = new Set(['ORD-2026-8941', 'ORD-2026-7219', 'ORD-2026-5530']);
           const testEmails = ['colombomed.lk', 'singhania.in', 'ceylondigital.lk', 'kandytech.lk', 'innovate.sg', 'example.com'];
           const genuine = parsed.filter((o: any) => {
             if (!o || !o.id) return false;
@@ -96,6 +161,23 @@ class OrderService {
       this.notify();
     } catch (e) {
       console.error('Failed to save orders to localStorage', e);
+    }
+  }
+
+  public syncOrderToFirestore(order: Order): void {
+    try {
+      const docRef = doc(db, 'orders', order.id);
+      setDoc(docRef, sanitizeForFirestore({
+        ...order,
+        id: order.id,
+        status: order.status,
+        paymentStatus: order.paymentStatus,
+        updatedAt: order.updatedAt || new Date().toISOString(),
+      }), { merge: true }).catch((err) => {
+        console.warn('[OrderService] Firestore order sync error:', err);
+      });
+    } catch (e) {
+      console.warn('[OrderService] Firestore order sync catch:', e);
     }
   }
 
@@ -236,6 +318,7 @@ class OrderService {
     };
 
     this.saveOrders();
+    this.syncOrderToFirestore(this.orders[index]);
     return this.orders[index];
   }
 
@@ -253,6 +336,7 @@ class OrderService {
     };
 
     this.saveOrders();
+    this.syncOrderToFirestore(this.orders[index]);
     return this.orders[index];
   }
 
@@ -281,6 +365,7 @@ class OrderService {
     };
 
     this.saveOrders();
+    this.syncOrderToFirestore(this.orders[index]);
     return this.orders[index];
   }
 
@@ -332,6 +417,7 @@ class OrderService {
     };
 
     this.saveOrders();
+    this.syncOrderToFirestore(this.orders[index]);
     return { success: true, order: this.orders[index] };
   }
 
@@ -352,6 +438,7 @@ class OrderService {
     };
 
     this.saveOrders();
+    this.syncOrderToFirestore(this.orders[index]);
     return this.orders[index];
   }
 
@@ -373,7 +460,7 @@ class OrderService {
 
   public async clearAllTestOrders(): Promise<{ removedCount: number }> {
     const initialCount = this.orders.length;
-    const testOrderIds = new Set(['ORD-2026-8941', 'ORD-2026-7219', 'ORD-2026-6104', 'ORD-2026-5530']);
+    const testOrderIds = new Set(['ORD-2026-8941', 'ORD-2026-7219', 'ORD-2026-5530']);
     const testEmails = ['colombomed.lk', 'singhania.in', 'ceylondigital.lk', 'kandytech.lk', 'innovate.sg', 'example.com'];
 
     const genuine = this.orders.filter((o) => {

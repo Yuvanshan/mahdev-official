@@ -114,12 +114,9 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
                 5 Operating Divisions • Nationwide Services
               </span>
             </div>
-            <H1 className="text-slate-900 text-3xl sm:text-4xl lg:text-5xl font-display font-bold tracking-tight mb-4">
+            <H1 className="text-slate-900 text-3xl sm:text-4xl lg:text-5xl font-display font-bold tracking-tight">
               Our Operating Business Divisions
             </H1>
-            <Body className="text-slate-600 text-base sm:text-lg">
-              {companySettings?.name || 'Mahdev Pvt Ltd'} operates through five specialized autonomous business divisions, each delivering industry-leading solutions with dedicated domain expertise and unified parent governance.
-            </Body>
           </div>
         </ScrollReveal>
       </SectionContainer>
@@ -168,10 +165,6 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
                           {division.tagline}
                         </p>
                       </div>
-
-                      <p className="text-sm text-slate-600 leading-relaxed">
-                        {division.description}
-                      </p>
 
                       {/* Capabilities Highlights */}
                       {division.coreServices && division.coreServices.length > 0 && (

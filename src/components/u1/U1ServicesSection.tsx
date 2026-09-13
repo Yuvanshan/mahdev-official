@@ -98,9 +98,6 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
             <H2 className="text-slate-900">
               Visual Craftsmanship & Creative Production
             </H2>
-            <Body className="text-slate-600 mt-2 max-w-2xl">
-              From high-fashion editorial portraits and cinematic wedding films to commercial catalog macros and heirloom flush-mount albums.
-            </Body>
           </ScrollReveal>
         </div>
 

@@ -460,36 +460,33 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
 
       {/* 2. EXECUTIVE NARRATIVE & ABOUT SECTION */}
       <SectionContainer background="white" paddingY="lg" hasBorderBottom>
-        <div className="max-w-4xl mx-auto space-y-8">
-          <div className="text-center space-y-3">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="text-center space-y-2">
             <Caption className="text-[#0052FF] font-semibold">Division Overview</Caption>
             <H2 className="text-slate-900 font-bold">
               {division.aboutHeading || 'The Art of Extraordinary Craftsmanship'}
             </H2>
-            <BodyLarge className="text-slate-600 max-w-3xl mx-auto leading-relaxed">
-              {division.aboutText || division.description}
-            </BodyLarge>
           </div>
 
           {/* Mission & Vision Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
               <div className="flex items-center gap-2 text-blue-600">
                 <Target className="w-5 h-5" />
                 <h4 className="font-display text-base font-bold text-slate-900">Our Mission</h4>
               </div>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                {division.mission || 'To craft exceptional results that honor tradition while pioneering modern aesthetic luxury.'}
+              <p className="text-sm font-medium text-slate-700">
+                {division.mission || 'Committed to superior execution and certified precision.'}
               </p>
             </div>
 
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
               <div className="flex items-center gap-2 text-indigo-600">
                 <Compass className="w-5 h-5" />
                 <h4 className="font-display text-base font-bold text-slate-900">Our Vision</h4>
               </div>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                {division.vision || 'To be the preeminent institution recognized for bespoke craftsmanship and benchmark execution across South Asia.'}
+              <p className="text-sm font-medium text-slate-700">
+                {division.vision || 'To pioneer innovation and benchmark execution across Sri Lanka.'}
               </p>
             </div>
           </div>
@@ -499,12 +496,9 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
       {/* 3. CORE SERVICES & CAPABILITIES */}
       <SectionContainer id="services-grid" background="subtle" paddingY="xl" hasBorderBottom>
         <ScrollReveal direction="up">
-          <div className="max-w-2xl mb-10">
+          <div className="max-w-2xl mb-8">
             <Caption className="text-[#0052FF] mb-1.5 block font-semibold">Specialized Offerings</Caption>
-            <H2 className="text-slate-900 mb-3 font-bold">Core Capabilities & Solutions</H2>
-            <Body className="text-slate-600">
-              {division.description}
-            </Body>
+            <H2 className="text-slate-900 font-bold">Core Capabilities & Solutions</H2>
           </div>
         </ScrollReveal>
 
@@ -520,10 +514,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
                 <div className="w-11 h-11 rounded-xl bg-blue-50 text-[#0052FF] flex items-center justify-center mb-4">
                   <IconRenderer name={service.iconName || 'Sparkles'} className="w-5 h-5" />
                 </div>
-                <CardTitle className="mb-2 text-lg font-bold text-slate-900">{service.title}</CardTitle>
-                <CardDescription className="text-slate-600 text-sm leading-relaxed">
-                  {service.description}
-                </CardDescription>
+                <CardTitle className="text-lg font-bold text-slate-900">{service.title}</CardTitle>
               </div>
 
               <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-[#0052FF]">

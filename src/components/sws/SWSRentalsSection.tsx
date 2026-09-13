@@ -169,9 +169,6 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
             <H2 className="text-slate-900">
               Event Furniture, Staging & AV Equipment Rentals
             </H2>
-            <Body className="text-slate-600 mt-2 max-w-2xl">
-              From crystal Chiavari chairs and luxury VIP velvet lounges to concert line-arrays, 4K LED video walls, silent power generators, and waterproof marquee canopies. Available for dry-hire or full turnkey managed staging across Sri Lanka.
-            </Body>
           </ScrollReveal>
         </div>
 

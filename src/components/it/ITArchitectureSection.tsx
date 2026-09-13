@@ -75,9 +75,6 @@ export const ITArchitectureSection: React.FC = () => {
           <H2 className="text-slate-900">
             Engineered with Zero Technical Debt and Infinite Scalability
           </H2>
-          <Body className="text-slate-600 mt-2">
-            We adhere to rigorous software craftsmanship principles: test-driven development, continuous static analysis, declarative infrastructure, and clean architecture boundaries.
-          </Body>
         </ScrollReveal>
       </div>
 

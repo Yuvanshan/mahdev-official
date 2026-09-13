@@ -4,11 +4,13 @@ import { motion } from 'motion/react';
 interface InitialAppLoaderProps {
   message?: string;
   subMessage?: string;
+  progress?: number;
 }
 
 export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
   message = 'Mahdev',
-  subMessage = 'Loading experience...',
+  subMessage = 'Synchronizing database...',
+  progress,
 }) => {
   const [cachedLogo, setCachedLogo] = useState<string>('/logo.png');
   const [imgError, setImgError] = useState(false);
@@ -36,6 +38,8 @@ export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
   }, []);
 
   const effectiveLogo = !imgError && cachedLogo ? cachedLogo : '/logo.png';
+  const hasNumericProgress = typeof progress === 'number' && !isNaN(progress);
+  const clampedProgress = hasNumericProgress ? Math.min(100, Math.max(0, Math.round(progress))) : null;
 
   return (
     <motion.div
@@ -63,22 +67,36 @@ export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
           />
         </div>
 
-        {/* Minimalist Micro-Progress Line */}
-        <div className="w-36 h-[2px] bg-slate-200/80 rounded-full overflow-hidden relative mb-4">
-          <div className="absolute inset-y-0 bg-slate-900 rounded-full animate-indeterminate" />
+        {/* Minimalist Micro-Progress Line with Real Progress */}
+        <div className="w-48 h-[3px] bg-slate-200/90 rounded-full overflow-hidden relative mb-3">
+          {clampedProgress !== null ? (
+            <div
+              className="h-full bg-blue-600 rounded-full transition-all duration-200 ease-out"
+              style={{ width: `${clampedProgress}%` }}
+            />
+          ) : (
+            <div className="absolute inset-y-0 bg-blue-600 rounded-full animate-indeterminate" />
+          )}
         </div>
 
-        {/* Quiet, Professional Subtitle */}
-        {subMessage && (
-          <p className="text-[11px] font-medium text-slate-400 tracking-wide">
-            {subMessage}
-          </p>
-        )}
+        {/* Percentage Counter and Status */}
+        <div className="flex items-center gap-2 mb-1">
+          {clampedProgress !== null && (
+            <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+              {clampedProgress}%
+            </span>
+          )}
+          {subMessage && (
+            <p className="text-[11px] font-medium text-slate-500 tracking-wide">
+              {subMessage}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Subtle Corporate Micro-Footer */}
-      <div className="absolute bottom-8 text-[10px] font-medium tracking-[0.2em] uppercase text-slate-300">
-        Enterprise Group
+      <div className="absolute bottom-8 text-[10px] font-medium tracking-[0.2em] uppercase text-slate-400">
+        Mahdev (Pvt) Ltd • Enterprise Cloud
       </div>
     </motion.div>
   );

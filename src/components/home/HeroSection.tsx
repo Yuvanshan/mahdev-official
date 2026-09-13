@@ -28,36 +28,40 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const titleLine2 = heroConfig?.titleLine2 || 'Delivering Innovation';
   const primaryCtaLabel = heroConfig?.primaryCtaLabel || 'Explore Divisions';
 
-  // Admin Uploaded Media from Firestore
-  const rawMediaUrl =
-    heroConfig?.mediaUrl?.trim() ||
-    (heroConfig as any)?.videoUrl?.trim() ||
+  // Admin Uploaded Media from Firestore & Local Storage
+  const rawCandidateVideo =
+    heroConfig?.videoUrl?.trim() ||
+    (heroConfig as any)?.heroVideoUrl?.trim() ||
+    (heroConfig?.mediaType === 'video' ? heroConfig?.mediaUrl?.trim() : '') ||
     '';
 
-  const rawDefaultImageUrl =
-    (heroConfig as any)?.defaultImageUrl?.trim() ||
-    (heroConfig as any)?.imageUrl?.trim() ||
-    '';
+  // Prevent 403 Forbidden on broken Mixkit hotlinks by routing directly to cloud Firestore video
+  const candidateVideoUrl = rawCandidateVideo.includes('assets.mixkit.co')
+    ? 'firestore://media_blobs/vid_corporate_hero_v1'
+    : rawCandidateVideo;
 
-  const rawImageUrl =
-    rawDefaultImageUrl ||
-    (!rawMediaUrl.includes('.mp4') &&
-     !rawMediaUrl.includes('.webm') &&
-     !rawMediaUrl.includes('.ogg') &&
-     !rawMediaUrl.startsWith('data:video') &&
-     !rawMediaUrl.includes('youtube.com') &&
-     !rawMediaUrl.includes('youtu.be') &&
-     !rawMediaUrl.startsWith('/uploads/videos/')
-      ? rawMediaUrl
-      : '');
+  const rawMedia = heroConfig?.mediaUrl?.trim() || '';
+  const isRawMediaVideo = Boolean(
+    rawMedia &&
+      (rawMedia.includes('.mp4') ||
+        rawMedia.includes('.webm') ||
+        rawMedia.includes('.ogg') ||
+        rawMedia.includes('.mov') ||
+        rawMedia.includes('.m4v') ||
+        rawMedia.includes('youtube.com') ||
+        rawMedia.includes('youtu.be') ||
+        rawMedia.includes('vimeo.com') ||
+        rawMedia.startsWith('firestore://') ||
+        (rawMedia.includes('firebasestorage.googleapis.com') && rawMedia.includes('videos')) ||
+        rawMedia.startsWith('/uploads/videos/') ||
+        rawMedia.startsWith('data:video'))
+  );
 
-  // Fallback high-impact visuals displayed immediately and while video loads
-  const effectiveImageUrl =
-    rawImageUrl ||
-    (heroConfig?.mediaType !== 'video' ? rawMediaUrl : '') ||
-    'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
-
-  const effectiveVideoUrl = heroConfig?.mediaType === 'image' ? '' : rawMediaUrl;
+  // Show the video only - guaranteed video stream from Firestore cloud
+  const effectiveVideoUrl =
+    candidateVideoUrl ||
+    (isRawMediaVideo ? rawMedia : '') ||
+    'firestore://media_blobs/vid_corporate_hero_v1';
 
   const divisionLinks = useMemo(() => {
     if (divisions && divisions.length > 0) {
@@ -94,11 +98,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       id="hero"
       className="relative w-full min-h-[85vh] lg:min-h-[92vh] flex items-center overflow-hidden bg-[#061033] text-white"
     >
-      {/* Reliable Full-Width Video Background with guaranteed autoplay & fallback poster */}
+      {/* Reliable Full-Width Video Background - Video Only */}
       <HeroVideoBackground
         videoUrl={effectiveVideoUrl}
-        imageUrl={effectiveImageUrl}
-        posterImageUrl={effectiveImageUrl}
         title="Mahdev Enterprise Showcase"
       />
 

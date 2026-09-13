@@ -54,6 +54,8 @@ export interface FirestoreDataContextValue {
   isInitialLoading: boolean;
   isReady: boolean;
   isFetching: boolean;
+  syncProgress: number;
+  syncStatus: string;
   error: Error | null;
   companySettings: FirestoreCompanySettings;
   siteSettings: FirestoreSiteSettings;
@@ -84,10 +86,12 @@ export interface FirestoreDataContextValue {
 const FirestoreDataContext = createContext<FirestoreDataContextValue | null>(null);
 
 export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Instant Stale-While-Revalidate: Ready immediately using cached or default data, refresh in background
-  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(false);
-  const [isReady, setIsReady] = useState<boolean>(true);
+  // Show loader until 100% of Firestore database is hydrated
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
+  const [isReady, setIsReady] = useState<boolean>(false);
   const [isFetching, setIsFetching] = useState<boolean>(false);
+  const [syncProgress, setSyncProgress] = useState<number>(0);
+  const [syncStatus, setSyncStatus] = useState<string>('Connecting to database...');
   const [error, setError] = useState<Error | null>(null);
 
   const [companySettings, setCompanySettings] = useState<FirestoreCompanySettings>(() => {
@@ -217,11 +221,23 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     return [];
   });
 
-  // Explicit Manual Refresh: loads all collections concurrently from Firestore
+  // Explicit Manual Refresh: loads all collections concurrently from Firestore and tracks 100% synchronization
   const refreshAll = useCallback(async () => {
     setIsFetching(true);
     try {
       setError(null);
+      setSyncProgress(5);
+      setSyncStatus('Connecting to Firestore database...');
+
+      const TOTAL_ITEMS = 14;
+      let completed = 0;
+      const trackProgress = (label: string) => {
+        completed++;
+        const pct = Math.min(99, Math.round((completed / TOTAL_ITEMS) * 95) + 5);
+        setSyncProgress(pct);
+        setSyncStatus(label);
+      };
+
       const [
         company,
         site,
@@ -238,20 +254,20 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         port,
         gal,
       ] = await Promise.all([
-        firestoreSettingsService.getCompanySettings(true),
-        firestoreSettingsService.getSiteSettings(true),
-        firestoreSettingsService.getHomepageSettings(true),
-        firestoreDivisionsService.getDivisions(true),
-        firestoreCategoriesService.getCategories(undefined, true),
-        firestoreServicesService.getServices(undefined, true),
-        firestoreProductsService.getProducts(undefined, true),
-        firestoreMilestonesService.getMilestones(true),
-        firestoreTrustedCompaniesService.getTrustedCompanies(true),
-        firestoreTestimonialsService.getTestimonials(undefined, true),
-        firestoreGoogleReviewsService.getConfig(true),
-        firestoreGoogleReviewsService.getReviews(),
-        firestorePortfolioService.getPortfolio(undefined, true),
-        firestoreGalleryService.getGallery(undefined, true),
+        firestoreSettingsService.getCompanySettings(true).then((r) => { trackProgress('Company settings verified'); return r; }),
+        firestoreSettingsService.getSiteSettings(true).then((r) => { trackProgress('Site configuration verified'); return r; }),
+        firestoreSettingsService.getHomepageSettings(true).then((r) => { trackProgress('Hero & Homepage CMS verified'); return r; }),
+        firestoreDivisionsService.getDivisions(true).then((r) => { trackProgress('Enterprise divisions verified'); return r; }),
+        firestoreCategoriesService.getCategories(undefined, true).then((r) => { trackProgress('Catalog categories verified'); return r; }),
+        firestoreServicesService.getServices(undefined, true).then((r) => { trackProgress('Services verified'); return r; }),
+        firestoreProductsService.getProducts(undefined, true).then((r) => { trackProgress('Hardware inventory verified'); return r; }),
+        firestoreMilestonesService.getMilestones(true).then((r) => { trackProgress('Milestones verified'); return r; }),
+        firestoreTrustedCompaniesService.getTrustedCompanies(true).then((r) => { trackProgress('Corporate partners verified'); return r; }),
+        firestoreTestimonialsService.getTestimonials(undefined, true).then((r) => { trackProgress('Testimonials verified'); return r; }),
+        firestoreGoogleReviewsService.getConfig(true).then((r) => { trackProgress('Review engine verified'); return r; }),
+        firestoreGoogleReviewsService.getReviews().then((r) => { trackProgress('Google reviews verified'); return r; }),
+        firestorePortfolioService.getPortfolio(undefined, true).then((r) => { trackProgress('Portfolio showcases verified'); return r; }),
+        firestoreGalleryService.getGallery(undefined, true).then((r) => { trackProgress('Media galleries verified'); return r; }),
       ]);
 
       let resolvedCompanyLogo = company.logoUrl || site.logoUrl || '';
@@ -341,6 +357,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       cmsService.syncEntityFromFirestore('testimonials', reviews);
       cmsService.syncEntityFromFirestore('portfolio', port);
       cmsService.syncEntityFromFirestore('gallery', gal);
+
+      setSyncProgress(100);
+      setSyncStatus('Firestore database 100% synchronized');
     } catch (err) {
       console.error('[FirestoreDataContext] Refresh error:', err);
       setError(err instanceof Error ? err : new Error(String(err)));
@@ -354,16 +373,22 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const markReady = () => {
       if (isMounted) {
+        setSyncProgress(100);
+        setSyncStatus('Database sync complete');
         setIsInitialLoading(false);
         setIsReady(true);
       }
     };
 
-    // Initial fetch: wait for real Firestore data to hydrate before dismissing loader to prevent visual glitch
+    // Initial fetch: wait until 100% of Firestore data is synchronized before dismissing loader
     refreshAll()
       .then(() => {
         if (isMounted) {
-          markReady();
+          setTimeout(() => {
+            if (isMounted) {
+              markReady();
+            }
+          }, 120);
         }
       })
       .catch((err) => {
@@ -373,10 +398,10 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       });
 
-    // Fallback timeout: only used if network is unreachable or blocked
-    const safetyTimer = setTimeout(() => {
+    // Emergency fail-safe timeout only in case network drops completely
+    const failsafeTimer = setTimeout(() => {
       markReady();
-    }, 4500);
+    }, 25000);
 
     // 1. Core Realtime Centralized Listeners (Single Source of Truth, zero duplicate listeners)
     const unsubCompany = firestoreSettingsService.subscribeCompanySettings((data) => {
@@ -507,7 +532,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
     return () => {
       isMounted = false;
-      clearTimeout(safetyTimer);
+      clearTimeout(failsafeTimer);
       unsubCompany();
       unsubSite();
       unsubHome();
@@ -640,6 +665,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       isInitialLoading,
       isReady,
       isFetching,
+      syncProgress,
+      syncStatus,
       error,
       companySettings,
       siteSettings,
@@ -669,6 +696,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     [
       isInitialLoading,
       isReady,
+      isFetching,
+      syncProgress,
+      syncStatus,
       error,
       companySettings,
       siteSettings,

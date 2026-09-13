@@ -135,16 +135,13 @@ const WhyMahdevSectionContent: React.FC<{
     <div ref={containerRef} className="relative overflow-hidden">
       <ParallelWatermark text="05 // STANDARDS" />
       <SectionContainer id="why-mahdev" background="white" paddingY="xl" hasBorderBottom>
-        <div className="relative z-10 max-w-2xl mb-10">
+        <div className="relative z-10 max-w-2xl mb-8">
           <span className="text-[11px] font-mono uppercase tracking-wider text-blue-600 block mb-1 font-semibold">
             {badge}
           </span>
-          <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 mb-2">
+          <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900">
             {title}
           </h2>
-          <p className="text-slate-500 text-sm">
-            {subtitle}
-          </p>
         </div>
 
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
@@ -164,12 +161,9 @@ const WhyMahdevSectionContent: React.FC<{
                   <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
                     <Icon className="w-4 h-4" />
                   </div>
-                  <h3 className="font-display text-base font-bold text-slate-900 mb-1.5">
+                  <h3 className="font-display text-base font-bold text-slate-900">
                     {item.title}
                   </h3>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    {item.description}
-                  </p>
                 </div>
 
                 <div className="pt-3 mt-4 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-bold text-blue-600">

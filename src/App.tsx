@@ -58,6 +58,8 @@ function AppContent() {
     companySettings,
     isInitialLoading,
     isReady,
+    syncProgress,
+    syncStatus,
     error,
     refreshAll,
     products,
@@ -315,12 +317,13 @@ function AppContent() {
     return <AdminLayout currentPath={normalizedPath} onNavigate={navigate} />;
   }
 
-  // 2. Initial Data Hydration Loader for public pages (prevents flash of unverified state)
+  // 2. Initial Data Hydration Loader for public pages (strict 100% sync from Firestore)
   if (!isAdminRoute && (isInitialLoading || !isReady)) {
     return (
       <InitialAppLoader
         message="Mahdev"
-        subMessage="Preparing your experience..."
+        subMessage={syncStatus || 'Synchronizing Firestore database...'}
+        progress={syncProgress}
       />
     );
   }

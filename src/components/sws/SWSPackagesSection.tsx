@@ -85,9 +85,6 @@ export const SWSPackagesSection: React.FC<SWSPackagesSectionProps> = ({ onBookPa
           <H2 className="text-slate-900">
             All-Inclusive Event Suites Crafted for Perfection
           </H2>
-          <Body className="text-slate-600 mt-2">
-            Combine decoration, audio-visual engineering, cinema photography, and floor management into one seamless, cost-effective contract.
-          </Body>
         </ScrollReveal>
       </div>
 

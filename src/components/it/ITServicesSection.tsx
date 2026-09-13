@@ -140,9 +140,6 @@ export const ITServicesSection: React.FC<ITServicesSectionProps> = ({
             <H2 className="text-slate-900">
               10 Specialized IT Services Designed for Enterprise Resilience
             </H2>
-            <Body className="text-slate-600 mt-2">
-              From web platforms and native mobile apps to custom manufacturing ERPs, cloud orchestration, and private AI agents—every system is engineered with 100% intellectual property ownership.
-            </Body>
           </ScrollReveal>
         </div>
 

@@ -99,9 +99,6 @@ export const SWSServicesSection: React.FC<SWSServicesSectionProps> = ({
             <H2 className="text-slate-900">
               End-to-End Production & Creative Services
             </H2>
-            <Body className="text-slate-600 mt-2 max-w-2xl">
-              Every element of your milestone is meticulously handled under one roof—from floral architecture and audio-visual engineering to gourmet catering and cinematic media.
-            </Body>
           </ScrollReveal>
         </div>
 

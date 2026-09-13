@@ -817,18 +817,27 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
           </div>
           <div className="mt-3">
-            <div className="font-mono text-2xl font-bold text-slate-900">
-              {formatCurrency(metrics.periodRevenue)}
-            </div>
-            <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-semibold mt-1">
-              <TrendingUp className="w-3 h-3" />
-              <span>
-                {metrics.settlementRate}% Settlement Rate ({metrics.paidOrders + metrics.paidBookings} paid records)
-              </span>
-            </div>
+            {isLoading ? (
+              <div className="space-y-2">
+                <div className="h-8 w-32 bg-slate-200 rounded animate-pulse" />
+                <div className="h-3.5 w-44 bg-slate-100 rounded animate-pulse" />
+              </div>
+            ) : (
+              <>
+                <div className="font-mono text-2xl font-bold text-slate-900">
+                  {formatCurrency(metrics.periodRevenue)}
+                </div>
+                <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-semibold mt-1">
+                  <TrendingUp className="w-3 h-3" />
+                  <span>
+                    {metrics.settlementRate}% Settlement Rate ({metrics.paidOrders + metrics.paidBookings} paid records)
+                  </span>
+                </div>
+              </>
+            )}
           </div>
           <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-mono">
-            <span>All-Time: {formatCurrency(metrics.allTimeRevenue)}</span>
+            <span>All-Time: {isLoading ? '...' : formatCurrency(metrics.allTimeRevenue)}</span>
             <span className="text-blue-600 font-bold group-hover:underline">Orders & Bookings →</span>
           </div>
         </div>
@@ -847,19 +856,28 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
           </div>
           <div className="mt-3">
-            <div className="font-mono text-2xl font-bold text-slate-900">
-              {metrics.totalOrders} {metrics.totalOrders === 1 ? 'Order' : 'Orders'}
-            </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-600 mt-1 font-medium">
-              <span className="text-emerald-600 font-bold">{metrics.paidOrders} Settled</span>
-              <span>•</span>
-              <span className="text-blue-600 font-bold">{metrics.dispatchedOrders} Dispatched</span>
-              <span>•</span>
-              <span className="text-amber-600 font-bold">{metrics.pendingOrders} Pending</span>
-            </div>
+            {isLoading ? (
+              <div className="space-y-2">
+                <div className="h-8 w-28 bg-slate-200 rounded animate-pulse" />
+                <div className="h-3.5 w-40 bg-slate-100 rounded animate-pulse" />
+              </div>
+            ) : (
+              <>
+                <div className="font-mono text-2xl font-bold text-slate-900">
+                  {metrics.totalOrders} {metrics.totalOrders === 1 ? 'Order' : 'Orders'}
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-600 mt-1 font-medium">
+                  <span className="text-emerald-600 font-bold">{metrics.paidOrders} Settled</span>
+                  <span>•</span>
+                  <span className="text-blue-600 font-bold">{metrics.dispatchedOrders} Dispatched</span>
+                  <span>•</span>
+                  <span className="text-amber-600 font-bold">{metrics.pendingOrders} Pending</span>
+                </div>
+              </>
+            )}
           </div>
           <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-mono">
-            <span>AOV: {formatCurrency(metrics.averageOrderValue)}</span>
+            <span>AOV: {isLoading ? '...' : formatCurrency(metrics.averageOrderValue)}</span>
             <span className="text-blue-600 font-bold group-hover:underline">Manage Orders →</span>
           </div>
         </div>
@@ -878,17 +896,26 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
           </div>
           <div className="mt-3">
-            <div className="font-mono text-2xl font-bold text-slate-900">
-              {metrics.totalBookings} {metrics.totalBookings === 1 ? 'Booking' : 'Bookings'}
-            </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-600 mt-1 font-medium">
-              <span className="text-purple-700 font-bold">{metrics.scheduledBookings} Scheduled</span>
-              <span>•</span>
-              <span className="text-emerald-700 font-bold">{metrics.completedBookings} Delivered</span>
-            </div>
+            {isLoading ? (
+              <div className="space-y-2">
+                <div className="h-8 w-28 bg-slate-200 rounded animate-pulse" />
+                <div className="h-3.5 w-40 bg-slate-100 rounded animate-pulse" />
+              </div>
+            ) : (
+              <>
+                <div className="font-mono text-2xl font-bold text-slate-900">
+                  {metrics.totalBookings} {metrics.totalBookings === 1 ? 'Booking' : 'Bookings'}
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-600 mt-1 font-medium">
+                  <span className="text-purple-700 font-bold">{metrics.scheduledBookings} Scheduled</span>
+                  <span>•</span>
+                  <span className="text-emerald-700 font-bold">{metrics.completedBookings} Delivered</span>
+                </div>
+              </>
+            )}
           </div>
           <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-mono">
-            <span className="text-amber-600 font-bold">Needs Approval: {metrics.pendingApprovalBookings}</span>
+            <span className="text-amber-600 font-bold">Needs Approval: {isLoading ? '...' : metrics.pendingApprovalBookings}</span>
             <span className="text-purple-600 font-bold group-hover:underline">Schedule →</span>
           </div>
         </div>
@@ -907,15 +934,24 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
           </div>
           <div className="mt-3">
-            <div className="font-mono text-2xl font-bold text-slate-900">
-              {metrics.totalProducts} Total SKUs
-            </div>
-            <div className="text-[11px] text-rose-700 mt-1 font-semibold">
-              {metrics.outOfStockProducts} depleted, {metrics.lowStockProducts} below threshold
-            </div>
+            {isLoading ? (
+              <div className="space-y-2">
+                <div className="h-8 w-28 bg-slate-200 rounded animate-pulse" />
+                <div className="h-3.5 w-40 bg-slate-100 rounded animate-pulse" />
+              </div>
+            ) : (
+              <>
+                <div className="font-mono text-2xl font-bold text-slate-900">
+                  {metrics.totalProducts} Total SKUs
+                </div>
+                <div className="text-[11px] text-rose-700 mt-1 font-semibold">
+                  {metrics.outOfStockProducts} depleted, {metrics.lowStockProducts} below threshold
+                </div>
+              </>
+            )}
           </div>
           <div className="mt-3 pt-3 border-t border-rose-100 flex items-center justify-between text-[11px] text-rose-800 font-mono font-bold">
-            <span>{metrics.activeProducts} Active in Store</span>
+            <span>{isLoading ? '...' : `${metrics.activeProducts} Active in Store`}</span>
             <span className="group-hover:underline">Inventory →</span>
           </div>
         </div>
@@ -929,10 +965,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             <span>Pending Receivables</span>
           </div>
           <div className="mt-2 font-mono text-lg font-bold text-slate-900">
-            {formatCurrency(metrics.pendingReceivablesTotal)}
+            {isLoading ? (
+              <div className="h-6 w-24 bg-slate-200 rounded animate-pulse" />
+            ) : (
+              formatCurrency(metrics.pendingReceivablesTotal)
+            )}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5 font-medium">
-            {metrics.pendingReceivablesCount} unpaid orders/bookings
+            {isLoading ? 'Loading records...' : `${metrics.pendingReceivablesCount} unpaid orders/bookings`}
           </div>
         </div>
 
@@ -942,10 +982,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             <span>Registered Accounts</span>
           </div>
           <div className="mt-2 font-mono text-lg font-bold text-slate-900">
-            {metrics.totalCustomers}
+            {isLoading ? (
+              <div className="h-6 w-16 bg-slate-200 rounded animate-pulse" />
+            ) : (
+              metrics.totalCustomers
+            )}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5 font-medium">
-            {metrics.corporateCustomers} Corporate • {metrics.individualCustomers} Individual
+            {isLoading ? 'Loading...' : `${metrics.corporateCustomers} Corporate • ${metrics.individualCustomers} Individual`}
           </div>
         </div>
 
@@ -955,10 +999,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             <span>Completed Deliveries</span>
           </div>
           <div className="mt-2 font-mono text-lg font-bold text-slate-900">
-            {metrics.completedOrders + metrics.completedBookings}
+            {isLoading ? (
+              <div className="h-6 w-16 bg-slate-200 rounded animate-pulse" />
+            ) : (
+              metrics.completedOrders + metrics.completedBookings
+            )}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5 font-medium">
-            {metrics.completedOrders} Orders • {metrics.completedBookings} Bookings
+            {isLoading ? 'Loading...' : `${metrics.completedOrders} Orders • ${metrics.completedBookings} Bookings`}
           </div>
         </div>
 
@@ -986,11 +1034,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </h3>
           </div>
           <span className="text-[11px] text-slate-500 font-mono">
-            {metrics.pendingApprovalBookings + metrics.pendingOrders + inventoryAlerts.length} live tasks requiring administrative action
+            {isLoading ? (
+              <span className="inline-block w-24 h-3 bg-slate-200 rounded animate-pulse" />
+            ) : (
+              `${metrics.pendingApprovalBookings + metrics.pendingOrders + inventoryAlerts.length} live tasks requiring administrative action`
+            )}
           </span>
         </div>
 
-        {metrics.pendingApprovalBookings === 0 && metrics.pendingOrders === 0 && inventoryAlerts.length === 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="p-3.5 rounded-xl bg-slate-100 animate-pulse h-18" />
+            <div className="p-3.5 rounded-xl bg-slate-100 animate-pulse h-18" />
+            <div className="p-3.5 rounded-xl bg-slate-100 animate-pulse h-18" />
+          </div>
+        ) : metrics.pendingApprovalBookings === 0 && metrics.pendingOrders === 0 && inventoryAlerts.length === 0 ? (
           <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 flex items-center gap-3 text-emerald-800 text-xs">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
             <span>All operational queues are clear. No pending booking approvals, dispatch delays, or inventory depletions.</span>
@@ -1077,7 +1135,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           </span>
         </div>
 
-        {timelineBuckets.length === 0 ? (
+        {isLoading ? (
+          <div className="h-44 bg-slate-50/70 rounded-xl border border-slate-100 p-4 flex items-end gap-2 animate-pulse">
+            {Array.from({ length: 10 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="flex-1 bg-slate-200/80 rounded-t"
+                style={{ height: `${25 + ((idx * 17) % 65)}%` }}
+              />
+            ))}
+          </div>
+        ) : timelineBuckets.length === 0 ? (
           <div className="py-12 px-6 text-center space-y-2 bg-slate-50/70 rounded-xl border border-dashed border-slate-200">
             <Clock className="w-8 h-8 text-slate-400 mx-auto" />
             <h4 className="font-bold text-xs text-slate-700">No sufficient data yet.</h4>
@@ -1132,7 +1200,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </span>
           </div>
 
-          {metrics.periodRevenue === 0 ? (
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, idx) => (
+                <div key={idx} className="space-y-1 animate-pulse">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="h-3 w-24 bg-slate-200 rounded" />
+                    <div className="h-3 w-16 bg-slate-200 rounded" />
+                  </div>
+                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div className="bg-slate-200 h-2 rounded-full" style={{ width: `${30 + idx * 20}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : metrics.periodRevenue === 0 ? (
             <div className="py-8 text-center text-xs text-slate-400">
               No division revenue recorded in this period.
             </div>

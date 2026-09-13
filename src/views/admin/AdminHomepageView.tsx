@@ -52,6 +52,7 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { DEFAULT_HOMEPAGE_SECTIONS } from '../../services/firestore/settings';
 import { compressDataUrl } from '../../utils/imageOptimizer';
 import { uploadMediaAsset } from '../../services/mediaUploadService';
+import { resolveMediaUrl } from '../../services/firestoreMediaService';
 
 export const AdminHomepageView: React.FC = () => {
   const { homepageConfig, updateHomepageConfig } = useFirestoreDataContext();
@@ -62,10 +63,32 @@ export const AdminHomepageView: React.FC = () => {
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [isUploadingDefaultImage, setIsUploadingDefaultImage] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
   const [mediaPickerTarget, setMediaPickerTarget] = useState<'hero' | 'seo' | string>('hero');
+  const [previewVideoSrc, setPreviewVideoSrc] = useState<string>('');
+
+  const currentHeroVideo = config.hero.videoUrl || (config.hero.mediaType === 'video' ? config.hero.mediaUrl : '');
+
+  useEffect(() => {
+    let isMounted = true;
+    if (!currentHeroVideo) {
+      setPreviewVideoSrc('');
+      return;
+    }
+    if (currentHeroVideo.startsWith('firestore://media_blobs/')) {
+      resolveMediaUrl(currentHeroVideo).then((url) => {
+        if (isMounted) setPreviewVideoSrc(url);
+      });
+    } else {
+      setPreviewVideoSrc(currentHeroVideo);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [currentHeroVideo]);
 
   // Available entities for multi-selectors
   const [allServices, setAllServices] = useState<CmsServiceEntity[]>([]);
@@ -189,20 +212,84 @@ export const AdminHomepageView: React.FC = () => {
         file.name.toLowerCase().endsWith('.mp4') ||
         file.name.toLowerCase().endsWith('.webm') ||
         file.name.toLowerCase().endsWith('.ogg') ||
-        file.name.toLowerCase().endsWith('.mov');
+        file.name.toLowerCase().endsWith('.mov') ||
+        file.name.toLowerCase().endsWith('.m4v');
 
       addToast('info', 'Uploading Media', `Uploading ${isVideo ? 'video' : 'picture'} (${(file.size / (1024 * 1024)).toFixed(1)} MB)...`);
       const mediaUrl = await uploadMediaAsset(file, (pct) => setUploadProgress(pct));
-      updateNested('hero', 'mediaUrl', mediaUrl);
-      updateNested('hero', 'mediaType', isVideo ? 'video' : 'image');
-      addToast('success', 'Upload Complete', `${isVideo ? 'Video' : 'Picture'} uploaded successfully.`);
+
+      // Update local state and immediately persist to Firestore
+      const updatedHero = {
+        ...config.hero,
+        mediaUrl,
+        mediaType: isVideo ? ('video' as const) : ('image' as const),
+        ...(isVideo ? { videoUrl: mediaUrl } : { defaultImageUrl: mediaUrl, imageUrl: mediaUrl }),
+      };
+
+      const updatedConfig: HomepageCmsConfig = {
+        ...config,
+        hero: updatedHero,
+      };
+
+      setConfig(updatedConfig);
+      await updateHomepageConfig(updatedConfig);
+      setIsDirty(false);
+      addToast('success', 'Media Uploaded & Saved', `${isVideo ? 'Hero video' : 'Picture'} saved to Firestore. Live on website!`);
     } catch (err: any) {
       console.error('Failed to process media upload:', err);
-      addToast('error', 'Upload Failed', err.message || 'Could not upload media file.');
+      addToast('error', 'Upload Notice', err.message || 'Could not upload media file.');
     } finally {
       setIsUploadingMedia(false);
       setUploadProgress(0);
       e.target.value = '';
+    }
+  };
+
+  const handleHeroDefaultImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingDefaultImage(true);
+    setUploadProgress(10);
+    try {
+      addToast('info', 'Uploading Default Poster', `Uploading default poster image (${(file.size / (1024 * 1024)).toFixed(1)} MB)...`);
+      const imageUrl = await uploadMediaAsset(file, (pct) => setUploadProgress(pct));
+
+      const updatedHero = {
+        ...config.hero,
+        defaultImageUrl: imageUrl,
+        imageUrl: imageUrl,
+      };
+
+      const updatedConfig: HomepageCmsConfig = {
+        ...config,
+        hero: updatedHero,
+      };
+
+      setConfig(updatedConfig);
+      await updateHomepageConfig(updatedConfig);
+      setIsDirty(false);
+      addToast('success', 'Default Poster Saved', 'Default image saved to Firestore. Displays while video loads.');
+    } catch (err: any) {
+      console.error('Failed to upload default poster:', err);
+      addToast('error', 'Upload Notice', err.message || 'Could not upload default image.');
+    } finally {
+      setIsUploadingDefaultImage(false);
+      setUploadProgress(0);
+      e.target.value = '';
+    }
+  };
+
+  const handleQuickSaveHeroMedia = async () => {
+    setIsSaving(true);
+    try {
+      await updateHomepageConfig(config);
+      setIsDirty(false);
+      addToast('success', 'Hero Media Published', 'Hero video, poster image, and headlines saved to Firestore.');
+    } catch (err: any) {
+      addToast('error', 'Save Notice', err.message || 'Could not save hero media settings.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -497,122 +584,264 @@ export const AdminHomepageView: React.FC = () => {
               </div>
 
               {/* Media Upload & URL Configuration (Video or Image) */}
-              <div className="md:col-span-2 p-4 bg-blue-50/30 rounded-2xl border border-blue-100 space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="md:col-span-2 p-5 bg-gradient-to-br from-blue-50/50 via-white to-slate-50 rounded-2xl border border-blue-200/90 shadow-2xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-blue-100 pb-3">
                   <div>
-                    <h4 className="font-bold text-blue-950 text-xs uppercase tracking-wider">
-                      Full-Screen Hero Media Backdrop ({config.hero.mediaType === 'video' ? 'Cinematic Video' : 'HD Picture Cover'})
-                    </h4>
-                    <p className="text-[11px] text-blue-700/80">
-                      Full-bleed background across the screen with smooth left-side gradient overlay behind bold headlines.
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse" />
+                      <h4 className="font-bold text-slate-900 text-xs sm:text-sm uppercase tracking-wider">
+                        Full-Screen Hero Media Backdrop
+                      </h4>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                        Firestore Sync Active
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Configure high-performance cinematic video loop and fallback poster image displayed while buffering.
                     </p>
                   </div>
-                  <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-blue-200 shadow-2xs">
+                  <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
                     <button
                       type="button"
-                      onClick={() => updateNested('hero', 'mediaType', 'image')}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      onClick={() => {
+                        updateNested('hero', 'mediaType', 'image');
+                        setIsDirty(true);
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                         config.hero.mediaType === 'image'
                           ? 'bg-blue-600 text-white shadow-xs'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      Picture
+                      Picture Cover
                     </button>
                     <button
                       type="button"
-                      onClick={() => updateNested('hero', 'mediaType', 'video')}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      onClick={() => {
+                        updateNested('hero', 'mediaType', 'video');
+                        setIsDirty(true);
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                         config.hero.mediaType === 'video'
                           ? 'bg-blue-600 text-white shadow-xs'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      Video
+                      Cinematic Video Loop
                     </button>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <label className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold shadow-xs transition ${
-                    isUploadingMedia
-                      ? 'bg-blue-400 text-white cursor-wait opacity-80'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
-                  }`}>
-                    <Upload className="w-3.5 h-3.5" />
-                    {isUploadingMedia
-                      ? `Uploading ${uploadProgress}%...`
-                      : `Upload ${config.hero.mediaType === 'video' ? 'Video (MP4/WebM)' : 'Picture (HD)'}`}
-                    <input
-                      type="file"
-                      disabled={isUploadingMedia}
-                      accept={config.hero.mediaType === 'video' ? 'video/mp4,video/webm,video/ogg,video/quicktime,video/*' : 'image/*'}
-                      onChange={handleHeroMediaUpload}
-                      className="hidden"
-                    />
-                  </label>
+                {/* 1. Dedicated Hero Video Loop Controls */}
+                <div className="p-4 bg-white rounded-xl border border-blue-100 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="block font-bold text-slate-800 text-xs uppercase tracking-wider">
+                        1. Hero Video Loop URL (MP4, WebM, MOV, YouTube, Vimeo, Firebase)
+                      </label>
+                      <p className="text-[11px] text-slate-500">
+                        Plays seamlessly in background, auto-looping without sound.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition ${
+                        isUploadingMedia
+                          ? 'bg-blue-400 text-white cursor-wait opacity-80'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+                      }`}>
+                        <Upload className="w-3.5 h-3.5" />
+                        {isUploadingMedia ? `Uploading ${uploadProgress}%...` : 'Upload Video File'}
+                        <input
+                          type="file"
+                          disabled={isUploadingMedia}
+                          accept="video/mp4,video/webm,video/ogg,video/quicktime,video/*"
+                          onChange={handleHeroMediaUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </div>
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setMediaPickerTarget('hero');
-                      setIsMediaPickerOpen(true);
-                    }}
-                    className="text-xs flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <ImageIcon className="w-3.5 h-3.5" /> Media Library
-                  </Button>
-
-                  <div className="grow min-w-[200px]">
+                  <div className="flex items-center gap-2">
                     <input
                       type="url"
-                      value={config.hero.mediaUrl}
-                      onChange={(e) => updateNested('hero', 'mediaUrl', e.target.value)}
-                      placeholder={config.hero.mediaType === 'video' ? 'Video URL or YouTube embed...' : 'Picture Image URL...'}
-                      className="w-full px-3 py-1.5 bg-white border border-blue-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      value={config.hero.videoUrl || (config.hero.mediaType === 'video' ? config.hero.mediaUrl : '')}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setConfig((prev) => ({
+                          ...prev,
+                          hero: {
+                            ...prev.hero,
+                            videoUrl: val,
+                            mediaUrl: val,
+                            mediaType: 'video',
+                          },
+                        }));
+                        setIsDirty(true);
+                      }}
+                      placeholder="https://.../cinematic-reel.mp4 or https://youtube.com/watch?v=... or https://vimeo.com/..."
+                      className="grow px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleQuickSaveHeroMedia}
+                      className="text-xs shrink-0 cursor-pointer font-semibold"
+                    >
+                      Save Video
+                    </Button>
                   </div>
                 </div>
 
-                {/* Media Preview Player */}
-                {config.hero.mediaUrl && (
-                  <div className="relative w-full max-w-md h-44 rounded-xl overflow-hidden border border-blue-200 bg-slate-900 shadow-sm mt-2">
-                    {config.hero.mediaType === 'video' ? (
-                      config.hero.mediaUrl.includes('youtube.com') || config.hero.mediaUrl.includes('youtu.be') ? (
-                        <iframe
-                          src={
-                            config.hero.mediaUrl.includes('embed')
-                              ? config.hero.mediaUrl
-                              : `https://www.youtube.com/embed/${config.hero.mediaUrl.split('v=')[1] || config.hero.mediaUrl.split('/').pop()}?autoplay=1&mute=1&loop=1&controls=0`
-                          }
-                          title="Hero Video Preview"
-                          className="w-full h-full object-cover pointer-events-none"
+                {/* 2. Dedicated Default Fallback Image (Poster) Controls */}
+                <div className="p-4 bg-white rounded-xl border border-blue-100 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="block font-bold text-slate-800 text-xs uppercase tracking-wider">
+                        2. Default Fallback Image (Poster Image - Shows while video loads)
+                      </label>
+                      <p className="text-[11px] text-slate-500">
+                        Displays immediately on load to eliminate any black flash while the video buffers.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition ${
+                        isUploadingDefaultImage
+                          ? 'bg-slate-400 text-white cursor-wait opacity-80'
+                          : 'bg-slate-800 hover:bg-slate-900 text-white cursor-pointer'
+                      }`}>
+                        <Upload className="w-3.5 h-3.5" />
+                        {isUploadingDefaultImage ? `Uploading ${uploadProgress}%...` : 'Upload Default Image'}
+                        <input
+                          type="file"
+                          disabled={isUploadingDefaultImage}
+                          accept="image/*"
+                          onChange={handleHeroDefaultImageUpload}
+                          className="hidden"
                         />
-                      ) : (
-                        <video
-                          src={config.hero.mediaUrl}
-                          controls
-                          muted
-                          className="w-full h-full object-cover"
-                        />
-                      )
-                    ) : (
-                      <img
-                        src={config.hero.mediaUrl}
-                        alt="Hero Preview"
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-                    <button
+                      </label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setMediaPickerTarget('hero');
+                          setIsMediaPickerOpen(true);
+                        }}
+                        className="text-xs flex items-center gap-1 cursor-pointer"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5" /> Library
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="url"
+                      value={config.hero.defaultImageUrl || config.hero.imageUrl || (config.hero.mediaType === 'image' ? config.hero.mediaUrl : '')}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setConfig((prev) => ({
+                          ...prev,
+                          hero: {
+                            ...prev.hero,
+                            defaultImageUrl: val,
+                            imageUrl: val,
+                            ...(prev.hero.mediaType === 'image' ? { mediaUrl: val } : {}),
+                          },
+                        }));
+                        setIsDirty(true);
+                      }}
+                      placeholder="https://images.unsplash.com/... or /uploads/... HD poster image URL"
+                      className="grow px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                    <Button
                       type="button"
-                      onClick={() => updateNested('hero', 'mediaUrl', '')}
-                      className="absolute top-2 right-2 bg-black/70 hover:bg-red-600 text-white p-1 rounded-lg text-xs transition cursor-pointer"
-                      title="Remove media"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleQuickSaveHeroMedia}
+                      className="text-xs shrink-0 cursor-pointer font-semibold"
                     >
-                      Remove
-                    </button>
+                      Save Poster
+                    </Button>
+                  </div>
+                </div>
+
+                {/* 3. Live Active Preview Box with Status Badge */}
+                {(config.hero.videoUrl || config.hero.mediaUrl || config.hero.defaultImageUrl) && (
+                  <div className="pt-1">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                        Active Live Preview ({config.hero.mediaType === 'video' ? 'Cinematic Video Loop' : 'Picture Backdrop'}):
+                      </span>
+                      <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        Autoplay & Loop Enabled
+                      </span>
+                    </div>
+
+                    <div className="relative w-full max-w-xl h-52 rounded-xl overflow-hidden border border-blue-200 bg-slate-950 shadow-md">
+                      {/* Underneath Poster Image */}
+                      <img
+                        src={
+                          config.hero.defaultImageUrl ||
+                          config.hero.imageUrl ||
+                          'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=85'
+                        }
+                        alt="Hero Poster"
+                        className="absolute inset-0 w-full h-full object-cover z-0"
+                      />
+
+                      {/* Video Player on Top if Video Mode */}
+                      {config.hero.mediaType === 'video' && (config.hero.videoUrl || config.hero.mediaUrl) ? (
+                        (config.hero.videoUrl || config.hero.mediaUrl).includes('youtube.com') ||
+                        (config.hero.videoUrl || config.hero.mediaUrl).includes('youtu.be') ? (
+                          <iframe
+                            src={
+                              (config.hero.videoUrl || config.hero.mediaUrl).includes('embed')
+                                ? (config.hero.videoUrl || config.hero.mediaUrl)
+                                : `https://www.youtube.com/embed/${(config.hero.videoUrl || config.hero.mediaUrl).split('v=')[1] || (config.hero.videoUrl || config.hero.mediaUrl).split('/').pop()}?autoplay=1&mute=1&loop=1&controls=0`
+                            }
+                            title="Hero Video Preview"
+                            className="w-full h-full object-cover pointer-events-none relative z-1"
+                          />
+                        ) : (
+                          <video
+                            src={previewVideoSrc || config.hero.videoUrl || config.hero.mediaUrl}
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            className="w-full h-full object-cover relative z-1"
+                          />
+                        )
+                      ) : null}
+
+                      {/* Left Dark Gradient Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/40 to-transparent pointer-events-none z-2" />
+
+                      {/* Mock Headline on Top */}
+                      <div className="absolute bottom-3 left-4 text-white z-3">
+                        <p className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">{config.hero.badgeText || 'Mahdev Group'}</p>
+                        <p className="text-sm font-bold leading-tight">{config.hero.titleLine1 || 'Creating Moments'}</p>
+                        <p className="text-xs font-semibold text-blue-300">{config.hero.titleHighlight || 'Capturing Memories'}</p>
+                      </div>
+
+                      <div className="absolute top-2 right-2 z-4 flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updateNested('hero', 'videoUrl', '');
+                            updateNested('hero', 'mediaUrl', '');
+                            setIsDirty(true);
+                          }}
+                          className="bg-black/75 hover:bg-red-600 text-white px-2 py-1 rounded-md text-[10px] font-bold transition cursor-pointer"
+                          title="Remove media"
+                        >
+                          Clear Video
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -988,7 +1217,7 @@ export const AdminHomepageView: React.FC = () => {
                       category: 'Weddings',
                       location: 'Colombo, Sri Lanka',
                       duration: '0:45',
-                      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-wedding-table-with-flower-decorations-and-cutlery-42797-large.mp4',
+                      videoUrl: 'firestore://media_blobs/vid_corporate_hero_v1',
                       thumbnailUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80',
                       description: 'Custom engineered stagecraft and lighting production.',
                       venueType: '5-Star Luxury Ballroom',

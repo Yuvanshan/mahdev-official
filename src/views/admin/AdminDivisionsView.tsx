@@ -365,7 +365,8 @@ export const AdminDivisionsView: React.FC = () => {
       setFormData((prev) => ({
         ...prev,
         heroImageUrl: url,
-        heroMediaType: 'image',
+        defaultImageUrl: url,
+        heroMediaType: prev.heroVideoUrl ? prev.heroMediaType : 'image',
       }));
       setIsDirty(true);
       addToast('success', 'Hero Picture Uploaded', 'HD picture saved and linked.');

@@ -1,0 +1,213 @@
+/**
+ * Firestore Media Storage & Chunking Service
+ * Provides reliable, Firestore-native storage for videos and high-res media.
+ * Solves Vercel serverless 404s and overcomes Firestore's 1MB single-document limit
+ * by chunking binary media into synchronized Firestore subcollections.
+ */
+
+import {
+  doc,
+  getDoc,
+  setDoc,
+  collection,
+  getDocs,
+  query,
+  orderBy,
+} from 'firebase/firestore';
+import { db } from '../lib/firebase';
+
+const CHUNK_SIZE_BYTES = 450 * 1024; // 450KB per chunk (~600KB in base64, safe under 1MB limit)
+const memoryBlobUrlCache = new Map<string, string>();
+
+export interface FirestoreMediaMetadata {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  chunkCount: number;
+  createdAt: string;
+}
+
+// Simple browser IndexedDB cache helper for zero-latency playback
+const IDB_NAME = 'mahdev_media_vault_v1';
+const IDB_STORE = 'blobs';
+
+function openMediaDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === 'undefined' || !window.indexedDB) {
+      return reject(new Error('IndexedDB not supported'));
+    }
+    const req = window.indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) {
+        db.createObjectStore(IDB_STORE);
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function getCachedBlobFromIdb(key: string): Promise<Blob | null> {
+  try {
+    const idb = await openMediaDB();
+    return new Promise((resolve) => {
+      const tx = idb.transaction(IDB_STORE, 'readonly');
+      const store = tx.objectStore(IDB_STORE);
+      const req = store.get(key);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function saveCachedBlobToIdb(key: string, blob: Blob): Promise<void> {
+  try {
+    const idb = await openMediaDB();
+    const tx = idb.transaction(IDB_STORE, 'readwrite');
+    const store = tx.objectStore(IDB_STORE);
+    store.put(blob, key);
+  } catch {}
+}
+
+/**
+ * Uploads a media file (video or image) directly into Firestore chunked documents.
+ * Returns a uniform resource string: `firestore://media_blobs/{id}`
+ */
+export async function uploadMediaToFirestore(
+  file: File,
+  onProgress?: (percent: number) => void
+): Promise<string> {
+  const blobId = `vid_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE_BYTES);
+
+  // 1. Write the parent metadata document
+  const metaDocRef = doc(db, 'media_blobs', blobId);
+  const metadata: FirestoreMediaMetadata = {
+    id: blobId,
+    name: file.name,
+    mimeType: file.type || 'video/mp4',
+    size: file.size,
+    chunkCount: totalChunks,
+    createdAt: new Date().toISOString(),
+  };
+
+  await setDoc(metaDocRef, metadata);
+  onProgress?.(5);
+
+  // 2. Upload each chunk sequentially to maintain order and report progress
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * CHUNK_SIZE_BYTES;
+    const end = Math.min(start + CHUNK_SIZE_BYTES, file.size);
+    const slice = file.slice(start, end);
+
+    const base64Data = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Strip data URL header (e.g. data:video/mp4;base64,) to save space
+        const commaIdx = result.indexOf(',');
+        resolve(commaIdx !== -1 ? result.slice(commaIdx + 1) : result);
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(slice);
+    });
+
+    const chunkDocRef = doc(db, 'media_blobs', blobId, 'chunks', String(i).padStart(4, '0'));
+    await setDoc(chunkDocRef, {
+      index: i,
+      data: base64Data,
+    });
+
+    const currentPct = Math.round(5 + ((i + 1) / totalChunks) * 90);
+    onProgress?.(currentPct);
+  }
+
+  // Pre-cache into IndexedDB and memory URL cache for instantaneous playback in current session
+  try {
+    await saveCachedBlobToIdb(blobId, file);
+    const localUrl = URL.createObjectURL(file);
+    memoryBlobUrlCache.set(blobId, localUrl);
+  } catch {}
+
+  onProgress?.(100);
+  return `firestore://media_blobs/${blobId}`;
+}
+
+/**
+ * Resolves a media URL:
+ * If it's a standard URL (http, https, data:), returns it immediately.
+ * If it's `firestore://media_blobs/{id}`, downloads and reconstructs the Blob from Firestore.
+ */
+export async function resolveMediaUrl(rawUrl: string | undefined): Promise<string> {
+  if (!rawUrl || typeof rawUrl !== 'string') return '';
+  const trimmed = rawUrl.trim();
+  if (!trimmed) return '';
+
+  if (!trimmed.startsWith('firestore://media_blobs/')) {
+    return trimmed;
+  }
+
+  const blobId = trimmed.replace('firestore://media_blobs/', '').split('/')[0];
+  if (!blobId) return trimmed;
+
+  // 1. Check in-memory cache
+  if (memoryBlobUrlCache.has(blobId)) {
+    return memoryBlobUrlCache.get(blobId)!;
+  }
+
+  // 2. Check IndexedDB persistent local cache
+  const cachedBlob = await getCachedBlobFromIdb(blobId);
+  if (cachedBlob) {
+    const objUrl = URL.createObjectURL(cachedBlob);
+    memoryBlobUrlCache.set(blobId, objUrl);
+    return objUrl;
+  }
+
+  // 3. Reconstruct from Firestore chunk documents
+  try {
+    const metaDocRef = doc(db, 'media_blobs', blobId);
+    const metaSnap = await getDoc(metaDocRef);
+    if (!metaSnap.exists()) {
+      console.warn('[FirestoreMedia] Media blob metadata not found:', blobId);
+      return '';
+    }
+    const meta = metaSnap.data() as FirestoreMediaMetadata;
+
+    const chunksCollRef = collection(db, 'media_blobs', blobId, 'chunks');
+    const chunksQuery = query(chunksCollRef, orderBy('index', 'asc'));
+    const chunkSnaps = await getDocs(chunksQuery);
+
+    if (chunkSnaps.empty) {
+      console.warn('[FirestoreMedia] Media blob chunks missing for:', blobId);
+      return '';
+    }
+
+    const chunkDataParts: Uint8Array[] = [];
+    chunkSnaps.forEach((snap) => {
+      const b64 = snap.data()?.data;
+      if (b64) {
+        const binaryString = atob(b64);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let j = 0; j < len; j++) {
+          bytes[j] = binaryString.charCodeAt(j);
+        }
+        chunkDataParts.push(bytes);
+      }
+    });
+
+    const reconstructedBlob = new Blob(chunkDataParts, { type: meta.mimeType || 'video/mp4' });
+    await saveCachedBlobToIdb(blobId, reconstructedBlob);
+
+    const objectUrl = URL.createObjectURL(reconstructedBlob);
+    memoryBlobUrlCache.set(blobId, objectUrl);
+    return objectUrl;
+  } catch (err) {
+    console.error('[FirestoreMedia] Error reconstructing media blob:', err);
+    return '';
+  }
+}

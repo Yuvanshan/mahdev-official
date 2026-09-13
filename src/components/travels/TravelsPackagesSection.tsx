@@ -83,9 +83,6 @@ export const TravelsPackagesSection: React.FC<TravelsPackagesSectionProps> = ({
           <H2 className="text-slate-900">
             Curated Multi-Day Expeditions & Luxury Retreats
           </H2>
-          <Body className="text-slate-600 mt-2">
-            Every itinerary is private, fully customizable, and backed by a dedicated chauffeur-guide, luxury air-conditioned vehicle, and 24/7 on-ground concierge support.
-          </Body>
         </ScrollReveal>
       </div>
 

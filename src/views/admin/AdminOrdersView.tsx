@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { Order, OrderStatus, OrderPaymentStatus } from '../../types/order';
 import { orderService } from '../../services/orderService';
+import { firestoreOrdersService } from '../../services/firestore/orders';
 import { useAdminAuth } from '../../context/AdminAuthContext';
 import { Button } from '../../components/ui/Button';
 import { AdminModal } from '../../components/admin/AdminModal';
@@ -38,6 +39,7 @@ import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 export const AdminOrdersView: React.FC = () => {
   const { admin, logAuditAction } = useAdminAuth();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
@@ -112,9 +114,78 @@ export const AdminOrdersView: React.FC = () => {
   };
 
   useEffect(() => {
-    loadOrders();
-    const unsub = orderService.subscribe(loadOrders);
-    return () => unsub();
+    let isMounted = true;
+
+    // Load cached orders first
+    const initial = orderService.getAllOrders();
+    if (initial.length > 0) {
+      setOrders(initial);
+      setIsLoading(false);
+    }
+
+    // Subscribe to Firestore orders directly
+    const unsubFirestore = firestoreOrdersService.subscribeAllOrders((firestoreOrders) => {
+      if (!isMounted) return;
+      if (Array.isArray(firestoreOrders)) {
+        const mapped: Order[] = firestoreOrders.map((fo: any) => ({
+          id: fo.id,
+          customer: fo.customer || {
+            fullName: fo.customerName || 'Customer',
+            email: fo.customerEmail || '',
+            phone: fo.customerPhone || '',
+            preferredContact: 'email',
+          },
+          items: Array.isArray(fo.items) ? fo.items : [],
+          totalQuantity: fo.totalQuantity || (Array.isArray(fo.items) ? fo.items.reduce((s: number, i: any) => s + (i.quantity || 1), 0) : 1),
+          subtotal: fo.subtotal || fo.total || 0,
+          productDiscounts: fo.productDiscounts || 0,
+          couponDiscount: fo.couponDiscount || 0,
+          appliedCouponCode: fo.appliedCouponCode,
+          shippingFee: fo.shippingFee || 0,
+          tax: fo.tax || 0,
+          total: fo.total || 0,
+          currency: fo.currency || 'USD',
+          status: fo.status || fo.orderStatus || 'pending_payment',
+          paymentStatus: fo.paymentStatus || 'payment_pending',
+          paymentMethod: fo.paymentMethod || 'credit_card',
+          transactionId: fo.transactionId,
+          paymentGatewayReady: fo.paymentGatewayReady ?? true,
+          deliveryInfo: fo.deliveryInfo,
+          bookingInfo: fo.bookingInfo,
+          customerNotes: fo.customerNotes,
+          adminNotesList: fo.adminNotesList || [],
+          refunds: fo.refunds || [],
+          trackingNumber: fo.trackingNumber,
+          carrier: fo.carrier,
+          createdAt: fo.createdAt || new Date().toISOString(),
+          updatedAt: fo.updatedAt || new Date().toISOString(),
+        }));
+
+        // Deduplicate
+        const map = new Map<string, Order>();
+        for (const o of mapped) map.set(o.id, o);
+        const sorted = Array.from(map.values()).sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setOrders(sorted);
+        setIsLoading(false);
+      }
+    });
+
+    const unsubService = orderService.subscribe(() => {
+      if (!isMounted) return;
+      const all = orderService.getAllOrders();
+      if (all.length > 0) {
+        setOrders(all);
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubFirestore();
+      unsubService();
+    };
   }, []);
 
   const handleUpdateOrderStatus = (orderId: string, newStatus: OrderStatus) => {
@@ -313,8 +384,13 @@ export const AdminOrdersView: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-5 h-5 text-blue-600" />
-            <h2 className="font-display text-lg font-bold text-slate-900">
-              Orders & Commercial Fulfillment ({orders.length})
+            <h2 className="font-display text-lg font-bold text-slate-900 flex items-center gap-2">
+              <span>Orders & Commercial Fulfillment</span>
+              {isLoading ? (
+                <span className="inline-block w-8 h-5 bg-slate-200 rounded-md animate-pulse align-middle" />
+              ) : (
+                <span className="text-slate-500 font-normal">({orders.length})</span>
+              )}
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -403,7 +479,41 @@ export const AdminOrdersView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
-              {filteredOrders.length === 0 ? (
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="py-4 px-4">
+                      <div className="h-4 w-28 bg-slate-200 rounded mb-1.5" />
+                      <div className="h-3 w-16 bg-slate-100 rounded" />
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="h-4 w-32 bg-slate-200 rounded mb-1.5" />
+                      <div className="h-3 w-40 bg-slate-100 rounded" />
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-slate-200 shrink-0" />
+                        <div className="space-y-1">
+                          <div className="h-3.5 w-24 bg-slate-200 rounded" />
+                          <div className="h-3 w-12 bg-slate-100 rounded" />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="h-5 w-16 bg-slate-200 rounded" />
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="h-5 w-20 bg-slate-200 rounded-full" />
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="h-5 w-16 bg-slate-200 rounded" />
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      <div className="h-7 w-20 bg-slate-200 rounded-lg ml-auto" />
+                    </td>
+                  </tr>
+                ))
+              ) : filteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-slate-500">
                     No commercial orders found matching filters.
