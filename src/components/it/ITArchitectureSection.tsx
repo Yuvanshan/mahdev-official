@@ -40,7 +40,7 @@ export const ITArchitectureSection: React.FC = () => {
     {
       title: 'Zero-Downtime CI/CD Deployments',
       desc: 'Automated blue/green or rolling Kubernetes deployments with canary analysis and instant automated rollback if error rates exceed 0.01%.',
-      icon: <GitBranch className="w-5 h-5 text-indigo-600" />,
+      icon: <GitBranch className="w-5 h-5 text-[#0052FF]" />,
       badge: 'Zero-Downtime Rollouts',
     },
   ];

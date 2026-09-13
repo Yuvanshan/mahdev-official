@@ -73,6 +73,9 @@ export function getDefaultHomepageSettings(): HomepageCmsConfig {
         'Mahdev Pvt Ltd is an integrated parent enterprise uniting luxury event and wedding decorations, fine-art photography and 8K cinema, scalable IT solutions, bespoke luxury travel, and verified tech commerce under a singular standard of perfection.',
       mediaType: 'image',
       mediaUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1920&q=85',
+      imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1920&q=85',
+      defaultImageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1920&q=85',
+      videoUrl: '',
       primaryCtaLabel: 'Explore Ecosystem',
       primaryCtaLink: '#divisions',
       secondaryCtaLabel: 'Get In Touch',
@@ -712,36 +715,59 @@ export const firestoreSettingsService = {
    */
   async getHomepageSettings(forceRefresh = false): Promise<HomepageCmsConfig> {
     const now = Date.now();
+
+    // 1. Memory cache check
     if (!forceRefresh && cachedHomepageSettings && now - cachedHomepageSettings.timestamp < CACHE_TTL_MS) {
       return cachedHomepageSettings.data;
     }
 
+    // 2. Check LocalStorage fallback before anything else
+    let localSaved: HomepageCmsConfig | null = null;
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('mahdev_cached_homepage_config');
+        if (stored) {
+          localSaved = JSON.parse(stored);
+        }
+      } catch {}
+    }
+
     try {
       const docRef = doc(db, 'settings', 'homepage');
-      const snapPromise = getDoc(docRef);
-      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000));
-      const snap = (await Promise.race([snapPromise, timeoutPromise])) as any;
+      const snap = await getDoc(docRef);
 
       if (snap && typeof snap.exists === 'function' && snap.exists()) {
         const rawData = snap.data() as HomepageCmsConfig;
         const def = getDefaultHomepageSettings();
         const data: HomepageCmsConfig = {
           ...def,
+          ...localSaved,
           ...rawData,
+          hero: {
+            ...def.hero,
+            ...(localSaved?.hero || {}),
+            ...(rawData?.hero || {}),
+          },
           milestones: {
             ...def.milestones,
+            ...(localSaved?.milestones || {}),
             ...(rawData?.milestones || {}),
             achievementsTitle: rawData?.milestones?.achievementsTitle || def.milestones.achievementsTitle,
             achievementsSubtitle: rawData?.milestones?.achievementsSubtitle || def.milestones.achievementsSubtitle,
             achievements:
               rawData?.milestones?.achievements && rawData.milestones.achievements.length > 0
                 ? rawData.milestones.achievements
-                : (cachedHomepageSettings?.data?.milestones?.achievements && cachedHomepageSettings.data.milestones.achievements.length > 0
-                    ? cachedHomepageSettings.data.milestones.achievements
+                : (localSaved?.milestones?.achievements && localSaved.milestones.achievements.length > 0
+                    ? localSaved.milestones.achievements
                     : def.milestones.achievements),
           },
         };
         cachedHomepageSettings = { data, timestamp: now };
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(data));
+          } catch {}
+        }
         return data;
       }
 
@@ -751,18 +777,24 @@ export const firestoreSettingsService = {
         if (serverRes.ok) {
           const json = await serverRes.json();
           if (json.success && json.settings) {
-            cachedHomepageSettings = { data: json.settings, timestamp: now };
-            return json.settings;
+            const merged = { ...getDefaultHomepageSettings(), ...localSaved, ...json.settings };
+            cachedHomepageSettings = { data: merged, timestamp: now };
+            if (typeof window !== 'undefined') {
+              try {
+                localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(merged));
+              } catch {}
+            }
+            return merged;
           }
         }
       } catch {}
 
-      const defaultHome = getDefaultHomepageSettings();
+      const defaultHome = localSaved || cachedHomepageSettings?.data || getDefaultHomepageSettings();
       cachedHomepageSettings = { data: defaultHome, timestamp: now };
       return defaultHome;
     } catch (err) {
       console.warn('[Firestore Settings] getHomepageSettings fallback:', err);
-      return cachedHomepageSettings?.data || getDefaultHomepageSettings();
+      return localSaved || cachedHomepageSettings?.data || getDefaultHomepageSettings();
     }
   },
 
@@ -785,9 +817,8 @@ export const firestoreSettingsService = {
     syncToServerApi('homepage', payload);
 
     try {
-      const writePromise = setDoc(docRef, payload, { merge: true });
-      const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, 5000));
-      await Promise.race([writePromise, timeoutPromise]);
+      await setDoc(docRef, payload, { merge: true });
+      console.log('[Firestore Settings] Homepage settings committed to Firestore.');
     } catch (err) {
       console.warn('[Firestore Settings] updateHomepageSettings write notice:', err);
     }

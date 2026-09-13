@@ -38,7 +38,9 @@ export interface CmsDivision extends BaseCmsEntity {
   heroHeadline: string;
   heroSubheadline: string;
   heroImageUrl?: string;
+  defaultImageUrl?: string;
   heroVideoUrl?: string;
+  videoUrl?: string;
   heroMediaType?: 'image' | 'video';
   logoUrl?: string;
   contactEmail: string;
@@ -401,6 +403,9 @@ export interface HomepageCmsConfig {
     description: string;
     mediaType: 'image' | 'video' | 'gradient';
     mediaUrl: string;
+    videoUrl?: string;
+    imageUrl?: string;
+    defaultImageUrl?: string;
     videoEmbedUrl?: string;
     primaryCtaLabel: string;
     primaryCtaLink: string;

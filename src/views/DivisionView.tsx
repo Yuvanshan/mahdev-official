@@ -33,6 +33,7 @@ import { firestoreInquiriesService } from '../services/firestore/inquiries';
 import { firestoreContactsService } from '../services/firestore/contacts';
 import { notificationService } from '../services/notificationService';
 import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
+import { HeroVideoBackground } from '../components/common/HeroVideoBackground';
 
 interface DivisionViewProps {
   divisionId: string;
@@ -364,70 +365,27 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
               (baseDivision as any)?.heroVideoUrl ||
               '';
             const divImg =
+              (firestoreDiv as any)?.defaultImageUrl ||
+              (firestoreDiv as any)?.heroImageUrl ||
+              (firestoreDiv?.hero as any)?.defaultImageUrl ||
+              (firestoreDiv?.hero as any)?.imageUrl ||
+              (firestoreDiv?.hero as any)?.bgImage ||
+              (firestoreDiv as any)?.imageUrl ||
               division.imageUrl?.trim() ||
-              (firestoreDiv as any)?.heroImageUrl?.trim() ||
               (baseDivision as any)?.imageUrl ||
               'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
 
-            const isExplicitVideo = (firestoreDiv as any)?.heroMediaType === 'video';
-            const isExplicitImage = (firestoreDiv as any)?.heroMediaType === 'image';
-            const isVideoUrl =
-              divVideo.includes('.mp4') ||
-              divVideo.includes('.webm') ||
-              divVideo.includes('.ogg') ||
-              divVideo.includes('youtube.com') ||
-              divVideo.includes('youtu.be');
-
-            const hasVideo =
-              !videoFailed &&
-              (isExplicitVideo
-                ? divVideo.trim() !== ''
-                : isExplicitImage
-                ? false
-                : isVideoUrl && divVideo.trim() !== '');
-
-            if (hasVideo) {
-              if (divVideo.includes('youtube.com') || divVideo.includes('youtu.be')) {
-                return (
-                  <iframe
-                    src={
-                      divVideo.includes('embed')
-                        ? divVideo
-                        : `https://www.youtube.com/embed/${divVideo.split('v=')[1] || divVideo.split('/').pop()}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0`
-                    }
-                    title={`${division.name} Video`}
-                    className="w-full h-full object-cover pointer-events-none scale-125 border-0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  />
-                );
-              }
-              return (
-                <video
-                  src={divVideo}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  onError={() => setVideoFailed(true)}
-                  className="w-full h-full object-cover"
-                  title={`${division.name} Video`}
-                />
-              );
-            }
+            const effectiveVideo = (firestoreDiv as any)?.heroMediaType === 'image' ? '' : divVideo;
 
             return (
-              <img
-                src={divImg}
-                alt={division.name}
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
+              <HeroVideoBackground
+                videoUrl={effectiveVideo}
+                imageUrl={divImg}
+                posterImageUrl={divImg}
+                title={`${division.name} Showcase`}
               />
             );
           })()}
-
-          {/* Left-Side Gradient Overlay: creates high-contrast cinematic backing for headline and CTAs */}
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 sm:via-slate-950/70 md:via-slate-950/50 to-transparent pointer-events-none z-10" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-black/30 pointer-events-none z-10" />
         </div>
 
         {/* Hero Content Over Video on Left Side */}

@@ -26,10 +26,10 @@ export const Badge: React.FC<BadgeProps> = ({
   };
 
   const variantStyles: Record<BadgeVariant, string> = {
-    default: 'bg-purple-50/60 text-purple-900 border border-purple-200/60',
-    electric: 'bg-purple-100/70 text-purple-700 border border-purple-200/80 font-semibold',
-    secondary: 'bg-purple-950 text-white border border-purple-950',
-    outline: 'bg-transparent text-purple-900 border border-purple-300',
+    default: 'bg-blue-50 text-[#0052FF] border border-blue-200/70',
+    electric: 'bg-gradient-to-r from-[#0052FF] to-[#003BB3] text-white border border-transparent font-semibold shadow-xs',
+    secondary: 'bg-[#FAF9F6] text-slate-800 border border-blue-200 shadow-2xs',
+    outline: 'bg-transparent text-[#0052FF] border border-blue-300',
     success: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
     warning: 'bg-amber-50 text-amber-800 border border-amber-200',
   };

@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { getTelLink } from '../../config/company';
 import { Button } from '../ui/Button';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { HeroVideoBackground } from '../common/HeroVideoBackground';
 
 interface ITHeroSectionProps {
   onRequestQuote: () => void;
@@ -38,11 +39,12 @@ export const ITHeroSection: React.FC<ITHeroSectionProps> = ({
     (itDiv?.hero as any)?.videoUrl ||
     '';
 
-  const [videoFailed, setVideoFailed] = React.useState(false);
-
   const rawHeroImage =
-    (itDiv as any)?.imageUrl ||
+    (itDiv as any)?.defaultImageUrl ||
     (itDiv as any)?.heroImageUrl ||
+    (itDiv?.hero as any)?.defaultImageUrl ||
+    (itDiv?.hero as any)?.imageUrl ||
+    (itDiv as any)?.imageUrl ||
     (itDiv as any)?.hero?.bgImage;
 
   const heroImage =
@@ -50,22 +52,7 @@ export const ITHeroSection: React.FC<ITHeroSectionProps> = ({
       ? rawHeroImage.trim()
       : 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=2000&q=85';
 
-  const isExplicitVideo = (itDiv as any)?.heroMediaType === 'video';
-  const isExplicitImage = (itDiv as any)?.heroMediaType === 'image';
-  const isVideoUrl =
-    rawHeroVideo.includes('.mp4') ||
-    rawHeroVideo.includes('.webm') ||
-    rawHeroVideo.includes('.ogg') ||
-    rawHeroVideo.includes('youtube.com') ||
-    rawHeroVideo.includes('youtu.be');
-
-  const isVideo =
-    !videoFailed &&
-    (isExplicitVideo
-      ? rawHeroVideo.trim() !== ''
-      : isExplicitImage
-      ? false
-      : isVideoUrl && rawHeroVideo.trim() !== '');
+  const effectiveVideoUrl = (itDiv as any)?.heroMediaType === 'image' ? '' : rawHeroVideo;
 
   const badgeText =
     (itDiv as any)?.hero?.badge ||
@@ -79,46 +66,14 @@ export const ITHeroSection: React.FC<ITHeroSectionProps> = ({
     'Enterprise Software, Cloud & AI Engineered for Uncompromising Scale';
 
   return (
-    <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-slate-950 text-white">
-      {/* ================= FULL SCREEN WIDTH BACKGROUND VIDEO / PICTURE COVER ================= */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        {isVideo ? (
-          rawHeroVideo.includes('youtube.com') || rawHeroVideo.includes('youtu.be') ? (
-            <iframe
-              src={
-                rawHeroVideo.includes('embed')
-                  ? rawHeroVideo
-                  : `https://www.youtube.com/embed/${rawHeroVideo.split('v=')[1] || rawHeroVideo.split('/').pop()}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0`
-              }
-              title="IT Showcase Video"
-              className="w-full h-full object-cover pointer-events-none scale-125 border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            />
-          ) : (
-            <video
-              src={rawHeroVideo}
-              autoPlay
-              loop
-              muted
-              playsInline
-              onError={() => setVideoFailed(true)}
-              className="w-full h-full object-cover"
-              title="IT Showcase Video"
-            />
-          )
-        ) : (
-          <img
-            src={heroImage}
-            alt={itDiv?.name || 'Mahdev IT Solutions'}
-            className="w-full h-full object-cover"
-            referrerPolicy="no-referrer"
-          />
-        )}
-
-        {/* Left-Side Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 sm:via-slate-950/70 md:via-slate-950/50 to-transparent pointer-events-none z-10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-black/30 pointer-events-none z-10" />
-      </div>
+    <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-[#061033] text-white">
+      {/* Reliable Full-Width Video Background with guaranteed autoplay and poster fallback */}
+      <HeroVideoBackground
+        videoUrl={effectiveVideoUrl}
+        imageUrl={heroImage}
+        posterImageUrl={heroImage}
+        title={itDiv?.name || 'Mahdev IT Solutions'}
+      />
 
       {/* ================= HERO CONTENT OVER VIDEO ON LEFT SIDE ================= */}
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-28 z-20 w-full">

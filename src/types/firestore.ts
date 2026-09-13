@@ -31,6 +31,7 @@ export interface FirestoreDivision {
   description: string;
   imageUrl?: string;
   heroImageUrl?: string;
+  defaultImageUrl?: string;
   heroVideoUrl?: string;
   videoUrl?: string;
   heroMediaType?: 'image' | 'video';
@@ -52,6 +53,8 @@ export interface FirestoreDivision {
     subtitle: string;
     badge: string;
     bgImage: string;
+    imageUrl?: string;
+    defaultImageUrl?: string;
     videoUrl?: string;
     mediaType?: 'image' | 'video';
     ctaText?: string;

@@ -272,14 +272,52 @@ export const firestoreDivisionsService = {
     const canonicalId = id === 'u1' ? 'u1-studio' : id === 'it' ? 'it-solutions' : id === 'mart' ? 'online-mart' : id;
     const alternateId = id === 'u1-studio' ? 'u1' : id === 'it-solutions' ? 'it' : id === 'online-mart' ? 'mart' : null;
 
+    const effectiveHeroVideo =
+      (data as any).heroVideoUrl ||
+      (data as any).videoUrl ||
+      data.hero?.videoUrl ||
+      '';
+
+    const effectiveHeroImage =
+      (data as any).defaultImageUrl ||
+      (data as any).heroImageUrl ||
+      (data as any).imageUrl ||
+      data.hero?.defaultImageUrl ||
+      data.hero?.imageUrl ||
+      data.hero?.bgImage ||
+      '';
+
+    const effectiveMediaType =
+      (data as any).heroMediaType ||
+      data.hero?.mediaType ||
+      (effectiveHeroVideo ? 'video' : 'image');
+
     const payload = sanitizeForFirestore({
       ...data,
       id: canonicalId,
+      heroVideoUrl: effectiveHeroVideo,
+      videoUrl: effectiveHeroVideo,
+      defaultImageUrl: effectiveHeroImage,
+      heroImageUrl: effectiveHeroImage,
+      imageUrl: effectiveHeroImage || (data as any).imageUrl,
+      heroMediaType: effectiveMediaType,
+      hero: {
+        title: (data as any).heroHeadline || (data as any).hero?.title || (data as any).name || '',
+        subtitle: (data as any).heroSubheadline || (data as any).hero?.subtitle || (data as any).description || '',
+        badge: (data as any).badge || (data as any).hero?.badge || '',
+        bgImage: effectiveHeroImage,
+        imageUrl: effectiveHeroImage,
+        defaultImageUrl: effectiveHeroImage,
+        videoUrl: effectiveHeroVideo,
+        mediaType: effectiveMediaType,
+        ...((data as any).hero || {}),
+      },
       updatedAt: new Date().toISOString(),
     });
 
     const docRef = doc(db, 'divisions', canonicalId);
     await setDoc(docRef, payload, { merge: true });
+    console.log(`[Firestore Divisions] Division "${canonicalId}" committed to Firestore.`);
 
     // If there is an alias ID, also keep it synchronized for backwards-compatibility
     if (alternateId) {
@@ -288,16 +326,39 @@ export const firestoreDivisionsService = {
       } catch {}
     }
 
-    if (cachedDivisions) {
-      const idx = cachedDivisions.data.findIndex((d) => d.id === canonicalId || d.id === id);
-      if (idx >= 0) {
-        cachedDivisions.data[idx] = { ...cachedDivisions.data[idx], ...payload, id: canonicalId } as FirestoreDivision;
-        cachedDivisions.data = sortDivisions(cachedDivisions.data);
-      } else {
-        cachedDivisions.data.push(payload as FirestoreDivision);
-        cachedDivisions.data = sortDivisions(cachedDivisions.data);
-      }
+    // Update in-memory cache
+    if (!cachedDivisions) {
+      cachedDivisions = { data: sortDivisions(getDefaultDivisions()), timestamp: Date.now() };
     }
+    const idx = cachedDivisions.data.findIndex((d) => d.id === canonicalId || d.id === id || d.id === alternateId);
+    if (idx >= 0) {
+      cachedDivisions.data[idx] = { ...cachedDivisions.data[idx], ...payload, id: canonicalId } as FirestoreDivision;
+    } else {
+      cachedDivisions.data.push(payload as FirestoreDivision);
+    }
+    cachedDivisions.data = sortDivisions(cachedDivisions.data);
+    cachedDivisions.timestamp = Date.now();
+
+    // Immediately update localStorage so any page refresh or view switch sees the new data instantly
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('mahdev_cached_divisions', JSON.stringify(cachedDivisions.data));
+        window.dispatchEvent(
+          new CustomEvent('mahdev_division_updated', {
+            detail: { id: canonicalId, division: payload },
+          })
+        );
+      } catch {}
+    }
+
+    // Sync to server backend
+    try {
+      fetch('/api/divisions/' + canonicalId, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).catch(() => {});
+    } catch {}
   },
 
   /**

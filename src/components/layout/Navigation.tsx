@@ -179,21 +179,21 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
       <header
         className={`sticky top-0 z-40 w-full transition-all duration-200 ${
           isScrolled
-            ? 'bg-[#FAF9F6]/90 backdrop-blur-md border-b border-purple-200/60 shadow-xs'
-            : 'bg-[#FAF9F6] border-b border-purple-100/70'
+            ? 'bg-[#FAF9F6]/90 backdrop-blur-md border-b border-blue-200/60 shadow-xs'
+            : 'bg-[#FAF9F6] border-b border-blue-100/70'
         }`}
       >
         {/* Division Context Notice (when inside a child division) */}
         {currentDivision && (
-          <div className="bg-[#1E0836] text-white text-xs py-1.5 px-4">
+          <div className="bg-[#061033] text-white text-xs py-1.5 px-4">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-purple-300">{currentDivision.name}</span>
-                <span className="text-purple-200/70 hidden sm:inline">— A Division of Mahdev (Pvt) Ltd</span>
+                <span className="font-semibold text-blue-300">{currentDivision.name}</span>
+                <span className="text-blue-200/70 hidden sm:inline">— A Division of Mahdev (Pvt) Ltd</span>
               </div>
               <button
                 onClick={() => onNavigate('/')}
-                className="text-xs text-purple-200 hover:text-white flex items-center gap-1 font-medium underline underline-offset-2 transition-colors cursor-pointer"
+                className="text-xs text-blue-200 hover:text-white flex items-center gap-1 font-medium underline underline-offset-2 transition-colors cursor-pointer"
               >
                 <span>Home</span>
                 <ArrowRight className="w-3 h-3" />
@@ -227,62 +227,61 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                         onClick={() => setIsServicesOpen(!isServicesOpen)}
                         className={`inline-flex items-center gap-1 px-3.5 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
                           isServicesOpen || currentDivision
-                            ? 'text-purple-800 bg-purple-100/60'
-                            : 'text-slate-700 hover:text-purple-900 hover:bg-purple-50/50'
+                            ? 'text-[#0052FF] bg-blue-50 font-semibold'
+                            : 'text-slate-700 hover:text-[#0052FF] hover:bg-blue-50/50'
                         }`}
                         aria-expanded={isServicesOpen}
                       >
                         <span>Divisions</span>
                         <ChevronDown
                           className={`w-4 h-4 transition-transform duration-200 ${
-                            isServicesOpen ? 'rotate-180 text-purple-700' : 'text-slate-400'
+                            isServicesOpen ? 'rotate-180 text-[#0052FF]' : 'text-slate-400'
                           }`}
                         />
                       </button>
 
                       {/* Dropdown Menu - perfectly constrained, responsive width, never overflows viewport */}
                       {isServicesOpen && (
-                        <div className="absolute left-0 mt-2 w-[360px] sm:w-[410px] max-w-[calc(100vw-2rem)] bg-[#FAF9F6] rounded-2xl shadow-2xl border border-purple-200/80 z-50 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col max-h-[calc(100vh-5rem)] overflow-hidden">
-                          <div className="px-4 py-3 bg-purple-50/60 border-b border-purple-100 flex items-center justify-between shrink-0">
+                        <div className="absolute left-0 mt-2 w-[360px] sm:w-[410px] max-w-[calc(100vw-2rem)] bg-[#FAF9F6] rounded-2xl shadow-2xl border border-blue-200/80 z-50 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col max-h-[calc(100vh-5rem)] overflow-hidden">
+                          <div className="px-4 py-3 bg-blue-50/80 border-b border-blue-100 flex items-center justify-between shrink-0">
                             <div>
-                              <span className="text-[11px] font-bold uppercase tracking-wider text-purple-900 block">
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-blue-900 block">
                                 Operating Divisions
                               </span>
-                              <span className="text-[10px] text-purple-600/70">
+                              <span className="text-[10px] text-blue-600/80">
                                 Autonomous specialized enterprise units
                               </span>
                             </div>
-                            <span className="text-[10px] font-mono font-semibold bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full border border-purple-200">
+                            <span className="text-[10px] font-mono font-semibold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full border border-blue-200">
                               {displayDivisions.length} Active
                             </span>
                           </div>
 
                           {/* Scrollable division items container */}
-                          <div className="p-2 space-y-1 overflow-y-auto overscroll-contain max-h-[360px] divide-y divide-purple-50 scrollbar-thin">
+                          <div className="p-2 space-y-1 overflow-y-auto overscroll-contain max-h-[360px] divide-y divide-blue-50 scrollbar-thin">
                             {displayDivisions.map((division) => (
                               <button
                                 key={division.id}
                                 onClick={() => handleLinkClick(division.route)}
                                 className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all cursor-pointer group ${
                                   currentPath === division.route
-                                    ? 'bg-purple-100/80 text-purple-900 ring-1 ring-purple-500/30'
-                                    : 'hover:bg-purple-50/70 text-slate-800'
+                                    ? 'bg-blue-100/80 text-blue-900 ring-1 ring-blue-500/30'
+                                    : 'hover:bg-blue-50/70 text-slate-800'
                                 }`}
                               >
                                 <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
                                   <div
-                                    className="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0 shadow-xs group-hover:scale-105 transition-transform"
-                                    style={{ backgroundColor: division.accentColor || '#7C3AED' }}
+                                    className="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0 shadow-xs group-hover:scale-105 transition-transform bg-[#0052FF]"
                                   >
                                     <IconRenderer name={division.iconName} className="w-4.5 h-4.5" />
                                   </div>
                                   <div className="min-w-0 flex-1">
                                     <div className="text-sm font-bold flex items-center gap-1.5 flex-wrap">
-                                      <span className="truncate group-hover:text-purple-700 transition-colors">
+                                      <span className="truncate group-hover:text-[#0052FF] transition-colors">
                                         {division.name}
                                       </span>
                                       {division.isPrimary && (
-                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-purple-100 text-purple-900 border border-purple-300 shrink-0">
+                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-blue-100 text-[#0052FF] border border-blue-300 shrink-0">
                                           PRIMARY
                                         </span>
                                       )}
@@ -304,7 +303,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                           </div>
 
                           {/* Action footer */}
-                          <div className="p-3 bg-purple-50/70 border-t border-purple-100 flex items-center gap-2 shrink-0">
+                          <div className="p-3 bg-blue-50/70 border-t border-blue-100 flex items-center gap-2 shrink-0">
                             <Button
                               variant="outline"
                               size="sm"
@@ -336,8 +335,8 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                     onClick={() => handleLinkClick(item.href)}
                     className={`px-3.5 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
                       currentPath === item.href
-                        ? 'text-purple-800 font-semibold bg-purple-100/70'
-                        : 'text-slate-700 hover:text-purple-900 hover:bg-purple-50/50'
+                        ? 'text-[#0052FF] font-semibold bg-blue-50'
+                        : 'text-slate-700 hover:text-[#0052FF] hover:bg-blue-50/50'
                     }`}
                   >
                     {item.label}
@@ -351,11 +350,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
               {/* Mobile Top Bar Call Action */}
               <a
                 href={getTelLink(primaryPhone)}
-                className="inline-flex md:hidden items-center justify-center p-2 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200/80 text-purple-700 active:scale-95 transition-all shadow-2xs shrink-0"
+                className="inline-flex md:hidden items-center justify-center p-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200/80 text-[#0052FF] active:scale-95 transition-all shadow-2xs shrink-0"
                 title={`Call Hotline ${primaryPhone}`}
                 aria-label={`Call Hotline ${primaryPhone}`}
               >
-                <Phone className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                <Phone className="w-3.5 h-3.5 text-[#0052FF] shrink-0" />
               </a>
 
               {/* Mobile Top Bar WhatsApp */}
@@ -363,20 +362,20 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex md:hidden items-center justify-center p-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200/80 text-purple-700 active:scale-95 transition-all shadow-2xs shrink-0"
+                className="inline-flex md:hidden items-center justify-center p-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200/80 text-[#0052FF] active:scale-95 transition-all shadow-2xs shrink-0"
                 title="WhatsApp"
                 aria-label="WhatsApp"
               >
-                <MessageCircle className="w-4 h-4 text-purple-600 shrink-0" />
+                <MessageCircle className="w-4 h-4 text-[#0052FF] shrink-0" />
               </a>
 
               {/* Desktop Hotline Link */}
               <a
                 href={getTelLink(primaryPhone)}
-                className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-50/80 hover:bg-purple-100/90 border border-purple-200/80 text-xs font-mono font-bold text-purple-950 hover:text-purple-700 transition-colors shadow-2xs shrink-0"
+                className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50/80 hover:bg-blue-100/90 border border-blue-200/80 text-xs font-mono font-bold text-slate-900 hover:text-[#0052FF] transition-colors shadow-2xs shrink-0"
                 title={`Call Hotline ${primaryPhone}`}
               >
-                <Phone className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                <Phone className="w-3.5 h-3.5 text-[#0052FF] shrink-0" />
                 <span>{primaryPhone}</span>
               </a>
 
@@ -385,10 +384,10 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden lg:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200/80 text-xs font-semibold text-purple-900 hover:text-purple-950 transition-colors shadow-2xs shrink-0"
+                className="hidden lg:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200/80 text-xs font-semibold text-[#0052FF] hover:text-[#0045D8] transition-colors shadow-2xs shrink-0"
                 title="WhatsApp"
               >
-                <MessageCircle className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                <MessageCircle className="w-3.5 h-3.5 text-[#0052FF] shrink-0" />
                 <span>WhatsApp</span>
               </a>
 
@@ -396,13 +395,13 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
               <button
                 type="button"
                 onClick={openCart}
-                className="relative inline-flex items-center justify-center gap-1.5 p-2 sm:px-3 sm:py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-950 text-xs font-bold transition-all cursor-pointer border border-purple-200/80 shrink-0"
+                className="relative inline-flex items-center justify-center gap-1.5 p-2 sm:px-3 sm:py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#0052FF] text-xs font-bold transition-all cursor-pointer border border-blue-200/80 shrink-0"
                 aria-label="View Shopping Cart"
               >
-                <ShoppingCart className="w-4 h-4 text-purple-600 shrink-0" />
+                <ShoppingCart className="w-4 h-4 text-[#0052FF] shrink-0" />
                 <span className="hidden md:inline">Cart</span>
                 {totalQuantity > 0 && (
-                  <span className="w-4.5 h-4.5 rounded-full bg-purple-600 text-white font-mono text-[9px] sm:text-[10px] font-bold flex items-center justify-center animate-scaleIn">
+                  <span className="w-4.5 h-4.5 rounded-full bg-[#0052FF] text-white font-mono text-[9px] sm:text-[10px] font-bold flex items-center justify-center animate-scaleIn">
                     {totalQuantity}
                   </span>
                 )}
@@ -414,7 +413,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                   <button
                     type="button"
                     onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}
-                    className="flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border border-purple-200 bg-white hover:bg-purple-50 text-purple-950 text-xs font-bold transition-all cursor-pointer shadow-2xs shrink-0"
+                    className="flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border border-blue-200 bg-white hover:bg-blue-50 text-slate-900 text-xs font-bold transition-all cursor-pointer shadow-2xs shrink-0"
                     aria-label="User account"
                   >
                     <img
@@ -423,7 +422,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                         'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'
                       }
                       alt={user.fullName}
-                      className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover border border-purple-200"
+                      className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover border border-blue-200"
                     />
                     <span className="hidden md:inline max-w-[100px] truncate">{user.fullName.split(' ')[0]}</span>
                     <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:inline-block" />
@@ -431,53 +430,53 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
                   {/* Dropdown Menu */}
                   {isAccountMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-64 bg-[#FAF9F6] rounded-2xl shadow-xl border border-purple-200 p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150 space-y-1">
-                      <div className="p-2.5 bg-purple-50/80 rounded-xl border border-purple-100 mb-1">
-                        <span className="text-xs font-bold text-purple-950 block truncate">{user.fullName}</span>
-                        <span className="text-[10px] text-purple-700 font-mono block truncate">{user.email}</span>
+                    <div className="absolute right-0 mt-2 w-64 bg-[#FAF9F6] rounded-2xl shadow-xl border border-blue-200 p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150 space-y-1">
+                      <div className="p-2.5 bg-blue-50/80 rounded-xl border border-blue-100 mb-1">
+                        <span className="text-xs font-bold text-slate-900 block truncate">{user.fullName}</span>
+                        <span className="text-[10px] text-[#0052FF] font-mono block truncate">{user.email}</span>
                       </div>
 
                       <button
                         onClick={() => handleLinkClick('/account')}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-purple-950 hover:bg-purple-100/70 hover:text-purple-700 transition-colors"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-900 hover:bg-blue-100/70 hover:text-[#0052FF] transition-colors"
                       >
-                        <User className="w-4 h-4 text-purple-600" />
+                        <User className="w-4 h-4 text-[#0052FF]" />
                         <span>Account Hub</span>
                       </button>
 
                       <button
                         onClick={() => handleLinkClick('/account/orders')}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-purple-950 hover:bg-purple-100/70 hover:text-purple-700 transition-colors"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-900 hover:bg-blue-100/70 hover:text-[#0052FF] transition-colors"
                       >
-                        <ShoppingBag className="w-4 h-4 text-purple-500" />
+                        <ShoppingBag className="w-4 h-4 text-[#0052FF]" />
                         <span>My Orders</span>
                       </button>
 
                       <button
                         onClick={() => handleLinkClick('/account/bookings')}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-purple-950 hover:bg-purple-100/70 hover:text-purple-700 transition-colors"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-900 hover:bg-blue-100/70 hover:text-[#0052FF] transition-colors"
                       >
-                        <Calendar className="w-4 h-4 text-purple-500" />
+                        <Calendar className="w-4 h-4 text-[#0052FF]" />
                         <span>My Bookings</span>
                       </button>
 
                       <button
                         onClick={() => handleLinkClick('/account/invoices')}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-purple-950 hover:bg-purple-100/70 hover:text-purple-700 transition-colors"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-900 hover:bg-blue-100/70 hover:text-[#0052FF] transition-colors"
                       >
-                        <FileText className="w-4 h-4 text-purple-500" />
+                        <FileText className="w-4 h-4 text-[#0052FF]" />
                         <span>Invoices</span>
                       </button>
 
                       <button
                         onClick={() => handleLinkClick('/account/profile')}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-purple-950 hover:bg-purple-100/70 hover:text-purple-700 transition-colors"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-900 hover:bg-blue-100/70 hover:text-[#0052FF] transition-colors"
                       >
-                        <Sparkles className="w-4 h-4 text-purple-500" />
+                        <Sparkles className="w-4 h-4 text-[#0052FF]" />
                         <span>Profile & Preferences</span>
                       </button>
 
-                      <div className="pt-1 border-t border-purple-100">
+                      <div className="pt-1 border-t border-blue-100">
                         <button
                           onClick={() => {
                             logout();
@@ -527,10 +526,10 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 rounded-xl text-purple-950 hover:text-purple-900 hover:bg-purple-50 lg:hidden focus:outline-none focus:ring-2 focus:ring-purple-600 cursor-pointer shrink-0 border border-purple-200/80 bg-[#FAF9F6]"
+                className="p-2 rounded-xl text-slate-900 hover:text-[#0052FF] hover:bg-blue-50 lg:hidden focus:outline-none focus:ring-2 focus:ring-[#0052FF] cursor-pointer shrink-0 border border-blue-200/80 bg-[#FAF9F6]"
                 aria-label="Toggle navigation menu"
               >
-                {isMobileMenuOpen ? <X className="w-5 h-5 text-purple-950" /> : <Menu className="w-5 h-5 text-purple-950" />}
+                {isMobileMenuOpen ? <X className="w-5 h-5 text-slate-900" /> : <Menu className="w-5 h-5 text-slate-900" />}
               </button>
             </div>
           </div>
@@ -538,9 +537,9 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
         {/* Mobile Navigation Drawer */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden border-t border-purple-200/80 bg-[#FAF9F6] px-3 sm:px-4 pt-3 pb-6 space-y-4 shadow-lg animate-in slide-in-from-top-2 duration-200 max-w-full overflow-hidden">
+          <div className="lg:hidden border-t border-blue-200/80 bg-[#FAF9F6] px-3 sm:px-4 pt-3 pb-6 space-y-4 shadow-lg animate-in slide-in-from-top-2 duration-200 max-w-full overflow-hidden">
             {/* Account Quick Status on Mobile */}
-            <div className="p-3 rounded-2xl bg-purple-50/80 border border-purple-200/80 flex items-center justify-between gap-2">
+            <div className="p-3 rounded-2xl bg-blue-50/80 border border-blue-200/80 flex items-center justify-between gap-2">
               {isAuthenticated && user ? (
                 <div className="flex items-center gap-2.5 min-w-0">
                   <img
@@ -549,14 +548,14 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                     className="w-8 h-8 rounded-full object-cover shrink-0"
                   />
                   <div className="min-w-0">
-                    <span className="text-xs font-bold text-purple-950 block truncate">{user.fullName}</span>
-                    <span className="text-[10px] text-purple-700 block font-mono truncate">{user.email}</span>
+                    <span className="text-xs font-bold text-slate-900 block truncate">{user.fullName}</span>
+                    <span className="text-[10px] text-[#0052FF] block font-mono truncate">{user.email}</span>
                   </div>
                 </div>
               ) : (
                 <div className="min-w-0">
-                  <span className="text-xs font-bold text-purple-950 block truncate">Mahdev Customer Portal</span>
-                  <span className="text-[10px] text-purple-700/80 block truncate">Sign in to track orders & bookings</span>
+                  <span className="text-xs font-bold text-slate-900 block truncate">Mahdev Customer Portal</span>
+                  <span className="text-[10px] text-blue-700/80 block truncate">Sign in to track orders & bookings</span>
                 </div>
               )}
 
@@ -673,10 +672,10 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                   href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 py-2.5 px-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold hover:bg-emerald-100 transition-colors shadow-2xs"
+                  className="flex items-center justify-center gap-2 py-2.5 px-3 bg-blue-50 border border-blue-200 text-blue-900 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors shadow-2xs"
                   title="WhatsApp"
                 >
-                  <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <MessageCircle className="w-4 h-4 text-[#0052FF] shrink-0" />
                   <span>WhatsApp</span>
                 </a>
 

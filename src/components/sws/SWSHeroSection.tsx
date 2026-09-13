@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { getTelLink } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { getRentalAssetCount } from '../../utils/assetMetrics';
+import { HeroVideoBackground } from '../common/HeroVideoBackground';
 
 interface SWSHeroSectionProps {
   onOpenBooking?: () => void;
@@ -47,8 +48,6 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
     (swsDiv?.hero as any)?.videoUrl ||
     '';
 
-  const [videoFailed, setVideoFailed] = React.useState(false);
-
   const rawHeroImage =
     (swsDiv as any)?.imageUrl ||
     (swsDiv as any)?.heroImageUrl ||
@@ -59,22 +58,7 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
       ? rawHeroImage.trim()
       : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
 
-  const isExplicitVideo = (swsDiv as any)?.heroMediaType === 'video';
-  const isExplicitImage = (swsDiv as any)?.heroMediaType === 'image';
-  const isVideoUrl =
-    rawHeroVideo.includes('.mp4') ||
-    rawHeroVideo.includes('.webm') ||
-    rawHeroVideo.includes('.ogg') ||
-    rawHeroVideo.includes('youtube.com') ||
-    rawHeroVideo.includes('youtu.be');
-
-  const isVideo =
-    !videoFailed &&
-    (isExplicitVideo
-      ? rawHeroVideo.trim() !== ''
-      : isExplicitImage
-      ? false
-      : isVideoUrl && rawHeroVideo.trim() !== '');
+  const effectiveVideoUrl = (swsDiv as any)?.heroMediaType === 'image' ? '' : rawHeroVideo;
 
   const badgeText =
     (swsDiv as any)?.hero?.badge ||
@@ -88,46 +72,13 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
     'Turnkey Luxury Event Production & Decor';
 
   return (
-    <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-slate-950 text-white">
-      {/* ================= FULL SCREEN WIDTH BACKGROUND VIDEO / PICTURE COVER ================= */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        {isVideo ? (
-          rawHeroVideo.includes('youtube.com') || rawHeroVideo.includes('youtu.be') ? (
-            <iframe
-              src={
-                rawHeroVideo.includes('embed')
-                  ? rawHeroVideo
-                  : `https://www.youtube.com/embed/${rawHeroVideo.split('v=')[1] || rawHeroVideo.split('/').pop()}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0`
-              }
-              title="SWS Showcase Video"
-              className="w-full h-full object-cover pointer-events-none scale-125 border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            />
-          ) : (
-            <video
-              src={rawHeroVideo}
-              autoPlay
-              loop
-              muted
-              playsInline
-              onError={() => setVideoFailed(true)}
-              className="w-full h-full object-cover"
-              title="SWS Showcase Video"
-            />
-          )
-        ) : (
-          <img
-            src={heroImage}
-            alt={swsDiv?.name || 'SWS Luxury Event Decor & Rentals'}
-            className="w-full h-full object-cover"
-            referrerPolicy="no-referrer"
-          />
-        )}
-
-        {/* Left-Side Gradient Overlay: high contrast on left side for heading & CTAs */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 sm:via-slate-950/70 md:via-slate-950/50 to-transparent pointer-events-none z-10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-black/30 pointer-events-none z-10" />
-      </div>
+    <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-[#061033] text-white">
+      {/* Reliable Full-Width Video Background with guaranteed autoplay */}
+      <HeroVideoBackground
+        videoUrl={effectiveVideoUrl}
+        imageUrl={heroImage}
+        title={swsDiv?.name || 'SWS Luxury Event Decor & Rentals'}
+      />
 
       {/* ================= HERO CONTENT OVER VIDEO ON LEFT SIDE ================= */}
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-28 z-20 w-full">

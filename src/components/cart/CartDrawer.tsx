@@ -122,7 +122,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
               <span className="flex items-center gap-1.5">
                 <Truck className="w-3.5 h-3.5 text-blue-600" />
                 {cartSummary.isFreeShipping ? (
-                  <strong className="text-emerald-700 font-bold">
+                  <strong className="text-blue-700 font-bold">
                     You unlocked FREE Island-Wide Courier Delivery!
                   </strong>
                 ) : (
@@ -138,7 +138,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
             <div className="w-full h-1.5 bg-blue-200 rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all duration-300 ${
-                  cartSummary.isFreeShipping ? 'bg-emerald-500' : 'bg-blue-600'
+                  cartSummary.isFreeShipping ? 'bg-[#0052FF]' : 'bg-blue-600'
                 }`}
                 style={{ width: `${progressPercent}%` }}
               />
@@ -284,14 +284,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
             {/* Promo Code Input */}
             <div className="space-y-1.5">
               {appliedCoupon ? (
-                <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-xs">
-                  <div className="flex items-center gap-1.5 text-emerald-800 font-medium">
-                    <Tag className="w-3.5 h-3.5 text-emerald-600" />
+                <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50 border border-blue-200 text-xs">
+                  <div className="flex items-center gap-1.5 text-blue-900 font-medium">
+                    <Tag className="w-3.5 h-3.5 text-[#0052FF]" />
                     <span>Coupon <strong>{appliedCoupon.code}</strong> Applied</span>
                   </div>
                   <button
                     onClick={removeCoupon}
-                    className="text-emerald-700 hover:text-emerald-900 font-bold text-xs underline cursor-pointer"
+                    className="text-blue-700 hover:text-blue-900 font-bold text-xs underline cursor-pointer"
                   >
                     Remove
                   </button>
@@ -314,7 +314,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
               {couponFeedback && (
                 <p
                   className={`text-[11px] ${
-                    couponFeedback.type === 'success' ? 'text-emerald-600' : 'text-rose-600'
+                    couponFeedback.type === 'success' ? 'text-blue-600 font-semibold' : 'text-rose-600'
                   }`}
                 >
                   {couponFeedback.message}
@@ -351,7 +351,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
               </div>
 
               {cartSummary.productDiscountTotal > 0 && (
-                <div className="flex justify-between text-emerald-600 text-[11px]">
+                <div className="flex justify-between text-blue-600 text-[11px]">
                   <span>Product Savings</span>
                   <span className="font-mono font-bold">
                     -{formatCurrency(cartSummary.productDiscountTotal, 'LKR')}
@@ -360,7 +360,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
               )}
 
               {cartSummary.couponDiscountTotal > 0 && (
-                <div className="flex justify-between text-emerald-600 text-[11px]">
+                <div className="flex justify-between text-blue-600 text-[11px]">
                   <span>Promo Discount ({appliedCoupon?.code})</span>
                   <span className="font-mono font-bold">
                     -{formatCurrency(cartSummary.couponDiscountTotal, 'LKR')}
@@ -373,7 +373,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                   <span>Estimated Delivery</span>
                   <span className="font-mono text-slate-900">
                     {cartSummary.isFreeShipping ? (
-                      <span className="text-emerald-600 font-bold">FREE</span>
+                      <span className="text-blue-600 font-bold">FREE</span>
                     ) : (
                       formatCurrency(cartSummary.shippingFee, 'LKR')
                     )}
@@ -383,7 +383,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
 
               <div className="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-slate-200">
                 <span>Grand Total</span>
-                <span className="font-mono text-base text-blue-600 font-bold">
+                <span className="font-mono text-base text-[#0052FF] font-bold">
                   {formatCurrency(cartSummary.grandTotal, 'LKR')}
                 </span>
               </div>
@@ -418,15 +418,15 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                     notes: 'Direct Order from Cart with SKU codes',
                   });
                 }}
-                className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
+                className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer border border-slate-800"
               >
-                <MessageCircle className="w-4 h-4" />
+                <MessageCircle className="w-4 h-4 text-[#0052FF]" />
                 <span>Order via WhatsApp (SKU Included)</span>
               </button>
 
               <button
                 onClick={handleProceedToCheckout}
-                className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
+                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#0052FF] to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
               >
                 <span>Proceed to Checkout</span>
                 <ArrowRight className="w-4 h-4" />

@@ -90,13 +90,27 @@ const DecorationVideoShowcaseContent: React.FC<
 
   const activeVideo = filteredVideos[activeVideoIndex] || filteredVideos[0] || videoList[0];
 
+  // Guarantee HTML5 video autoplay across browsers
+  React.useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.defaultMuted = true;
+      videoRef.current.muted = isMuted;
+      videoRef.current.playsInline = true;
+      if (isPlaying) {
+        videoRef.current.play().catch((err) => {
+          console.debug('Autoplay deferred:', err);
+        });
+      }
+    }
+  }, [activeVideo.videoUrl, isMuted, isPlaying]);
+
   const handleTogglePlay = () => {
     if (!videoRef.current) return;
     if (isPlaying) {
       videoRef.current.pause();
       setIsPlaying(false);
     } else {
-      videoRef.current.play();
+      videoRef.current.play().catch(() => {});
       setIsPlaying(true);
     }
   };
@@ -144,7 +158,7 @@ const DecorationVideoShowcaseContent: React.FC<
                 }}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                   selectedCategory === cat
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
+                    ? 'bg-gradient-to-r from-[#0052FF] to-[#0066FF] text-white shadow-lg shadow-blue-500/25'
                     : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
                 }`}
               >
@@ -162,7 +176,7 @@ const DecorationVideoShowcaseContent: React.FC<
             className="lg:col-span-8"
           >
             <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/30 to-indigo-600/30 blur-xl opacity-40 group-hover:opacity-60 transition-opacity pointer-events-none" />
+              <div className="absolute -inset-1 bg-gradient-to-r from-[#0052FF]/30 via-[#0066FF]/30 to-[#00D2FF]/30 blur-xl opacity-40 group-hover:opacity-60 transition-opacity pointer-events-none" />
 
               {/* Video Element */}
               <div className="relative aspect-video w-full bg-black overflow-hidden flex items-center justify-center">
@@ -336,9 +350,9 @@ const DecorationVideoShowcaseContent: React.FC<
             </div>
 
             {/* Quick CTA Card */}
-            <div className="p-4 rounded-xl bg-gradient-to-br from-blue-900/40 to-indigo-950/40 border border-blue-500/20 text-white mt-2">
+            <div className="p-4 rounded-xl bg-gradient-to-br from-[#0052FF]/20 via-[#061033] to-[#0052FF]/10 border border-[#0052FF]/30 text-white mt-2">
               <div className="flex items-center gap-2 text-xs font-bold text-blue-300 mb-1">
-                <Sparkles className="w-3.5 h-3.5" />
+                <Sparkles className="w-3.5 h-3.5 text-[#00D2FF]" />
                 <span>Need Custom Stagecraft?</span>
               </div>
               <p className="text-xs text-slate-300 font-light leading-relaxed mb-3">
@@ -347,7 +361,7 @@ const DecorationVideoShowcaseContent: React.FC<
               {onNavigate && (
                 <button
                   onClick={() => onNavigate('/contact')}
-                  className="w-full py-2 px-3 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-semibold text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full py-2 px-3 rounded-lg bg-[#0052FF]/20 hover:bg-[#0052FF]/40 border border-[#0052FF]/40 text-xs font-semibold text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <span>Request Stage Consultation</span>
                   <ChevronRight className="w-3.5 h-3.5" />

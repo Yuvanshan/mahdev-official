@@ -26,7 +26,7 @@ export const Card: React.FC<CardProps> = ({
   };
 
   const hoverStyles = hoverEffect
-    ? 'transition-all duration-300 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/5 hover:-translate-y-0.5'
+    ? 'transition-all duration-300 hover:border-[#0052FF]/60 hover:shadow-lg hover:shadow-blue-500/10 hover:-translate-y-0.5'
     : '';
 
   return (
@@ -115,10 +115,10 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({
   return (
     <div
       onClick={() => onNavigate(division.route)}
-      className={`group relative flex flex-col justify-between rounded-xl bg-white border border-slate-200/80 p-6 sm:p-7 shadow-sm transition-all duration-300 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/10 cursor-pointer overflow-hidden ${className}`}
+      className={`group relative flex flex-col justify-between rounded-xl bg-white border border-slate-200/80 p-6 sm:p-7 shadow-sm transition-all duration-300 hover:border-[#0052FF] hover:shadow-xl hover:shadow-blue-500/15 cursor-pointer overflow-hidden ${className}`}
     >
-      {/* Subtle top indicator bar on hover */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-blue-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+      {/* Subtle top indicator bar with electric blue gradient on hover */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#0052FF] via-[#0066FF] to-[#00D2FF] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
 
       <div>
         <div className="flex items-center justify-between mb-4">
@@ -128,7 +128,7 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({
           <Badge variant="electric">{division.badge}</Badge>
         </div>
 
-        <h3 className="font-display text-xl font-bold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors">
+        <h3 className="font-display text-xl font-bold text-slate-900 mb-1 group-hover:text-[#0052FF] transition-colors">
           {division.name}
         </h3>
         <p className="text-xs font-semibold text-[#0052FF] mb-3">

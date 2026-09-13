@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { getTelLink } from '../../config/company';
 import { getWhatsAppInquiryUrl } from '../../utils/whatsapp';
+import { HeroVideoBackground } from '../common/HeroVideoBackground';
 
 interface HeroSectionProps {
   onNavigate: (route: string) => void;
@@ -27,50 +28,36 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const titleLine2 = heroConfig?.titleLine2 || 'Delivering Innovation';
   const primaryCtaLabel = heroConfig?.primaryCtaLabel || 'Explore Divisions';
 
-  const [videoFailed, setVideoFailed] = React.useState(false);
-
   // Admin Uploaded Media from Firestore
   const rawMediaUrl =
     heroConfig?.mediaUrl?.trim() ||
     (heroConfig as any)?.videoUrl?.trim() ||
     '';
 
-  const rawImageUrl =
+  const rawDefaultImageUrl =
+    (heroConfig as any)?.defaultImageUrl?.trim() ||
     (heroConfig as any)?.imageUrl?.trim() ||
+    '';
+
+  const rawImageUrl =
+    rawDefaultImageUrl ||
     (!rawMediaUrl.includes('.mp4') &&
      !rawMediaUrl.includes('.webm') &&
      !rawMediaUrl.includes('.ogg') &&
      !rawMediaUrl.startsWith('data:video') &&
      !rawMediaUrl.includes('youtube.com') &&
-     !rawMediaUrl.includes('youtu.be')
+     !rawMediaUrl.includes('youtu.be') &&
+     !rawMediaUrl.startsWith('/uploads/videos/')
       ? rawMediaUrl
       : '');
 
-  const isExplicitVideo = heroConfig?.mediaType === 'video';
-  const isExplicitImage = heroConfig?.mediaType === 'image';
-  const isVideoUrl =
-    rawMediaUrl.includes('.mp4') ||
-    rawMediaUrl.includes('.webm') ||
-    rawMediaUrl.includes('.ogg') ||
-    rawMediaUrl.startsWith('data:video') ||
-    rawMediaUrl.includes('youtube.com') ||
-    rawMediaUrl.includes('youtu.be');
-
-  const isVideo =
-    !videoFailed &&
-    (isExplicitVideo
-      ? rawMediaUrl.trim() !== ''
-      : isExplicitImage
-      ? false
-      : isVideoUrl && rawMediaUrl.trim() !== '');
-
-  // Fallback high-impact visuals
+  // Fallback high-impact visuals displayed immediately and while video loads
   const effectiveImageUrl =
     rawImageUrl ||
     (heroConfig?.mediaType !== 'video' ? rawMediaUrl : '') ||
     'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
 
-  const effectiveVideoUrl = rawMediaUrl;
+  const effectiveVideoUrl = heroConfig?.mediaType === 'image' ? '' : rawMediaUrl;
 
   const divisionLinks = useMemo(() => {
     if (divisions && divisions.length > 0) {
@@ -105,47 +92,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   return (
     <section
       id="hero"
-      className="relative w-full min-h-[85vh] lg:min-h-[92vh] flex items-center overflow-hidden bg-slate-950 text-white"
+      className="relative w-full min-h-[85vh] lg:min-h-[92vh] flex items-center overflow-hidden bg-[#061033] text-white"
     >
-      {/* ================= FULL SCREEN WIDTH BACKGROUND VIDEO / PICTURE COVER ================= */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        {isVideo ? (
-          effectiveVideoUrl.includes('youtube.com') || effectiveVideoUrl.includes('youtu.be') ? (
-            <iframe
-              src={
-                effectiveVideoUrl.includes('embed')
-                  ? effectiveVideoUrl
-                  : `https://www.youtube.com/embed/${effectiveVideoUrl.split('v=')[1] || effectiveVideoUrl.split('/').pop()}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0`
-              }
-              title="Mahdev Overview Video"
-              className="w-full h-full object-cover pointer-events-none scale-125 border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            />
-          ) : (
-            <video
-              src={effectiveVideoUrl}
-              autoPlay
-              loop
-              muted
-              playsInline
-              onError={() => setVideoFailed(true)}
-              className="w-full h-full object-cover"
-              title="Mahdev Overview Video"
-            />
-          )
-        ) : (
-          <img
-            src={effectiveImageUrl}
-            alt="Mahdev Official Showcase"
-            className="w-full h-full object-cover"
-            referrerPolicy="no-referrer"
-          />
-        )}
-
-        {/* Left-Side Gradient Overlay: high contrast on the left, reveals media on the right */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 sm:via-slate-950/70 md:via-slate-950/50 to-transparent pointer-events-none z-10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-black/30 pointer-events-none z-10" />
-      </div>
+      {/* Reliable Full-Width Video Background with guaranteed autoplay & fallback poster */}
+      <HeroVideoBackground
+        videoUrl={effectiveVideoUrl}
+        imageUrl={effectiveImageUrl}
+        posterImageUrl={effectiveImageUrl}
+        title="Mahdev Enterprise Showcase"
+      />
 
       {/* ================= CONTENT OVER VIDEO ON LEFT SIDE ================= */}
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-28 z-20 w-full">
@@ -170,7 +125,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             transition={{ duration: 0.5, delay: 0.1 }}
             className="font-display text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-white leading-[1.08] drop-shadow-md"
           >
-            {titleLine1} <span className="text-[#3B82F6]">| {titleHighlight}</span> | {titleLine2}
+            {titleLine1} <span className="bg-gradient-to-r from-[#0052FF] via-[#0080FF] to-[#00D2FF] bg-clip-text text-transparent">| {titleHighlight}</span> | {titleLine2}
           </motion.h1>
 
           {/* Primary Action Buttons in Electric Blue & Off-White */}
@@ -183,7 +138,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <button
               id="hero-explore-mahdev-btn"
               onClick={onExploreMahdev}
-              className="inline-flex items-center justify-center gap-2.5 bg-[#0052FF] hover:bg-blue-600 text-white font-bold text-sm sm:text-base px-7 py-3.5 rounded-xl shadow-lg shadow-blue-600/30 hover:shadow-xl hover:shadow-blue-600/40 transition-all cursor-pointer active:scale-98"
+              className="inline-flex items-center justify-center gap-2.5 bg-gradient-to-r from-[#0052FF] via-[#0066FF] to-[#0052FF] hover:brightness-110 text-white font-bold text-sm sm:text-base px-7 py-3.5 rounded-xl shadow-lg shadow-[#0052FF]/30 hover:shadow-xl hover:shadow-[#0052FF]/50 transition-all cursor-pointer active:scale-98"
             >
               <span>{primaryCtaLabel}</span>
               <ArrowRight className="w-4.5 h-4.5" />
@@ -191,10 +146,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
             <a
               href={getTelLink(hotline)}
-              className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-colors backdrop-blur-md shadow-sm"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl border border-white/25 bg-white/10 hover:bg-[#0052FF]/20 hover:border-[#0052FF]/60 text-white text-sm font-semibold transition-colors backdrop-blur-md shadow-sm"
               title={`Call Hotline ${hotline}`}
             >
-              <Phone className="w-4 h-4 text-blue-400 shrink-0" />
+              <Phone className="w-4 h-4 text-[#00D2FF] shrink-0" />
               <span>Call Us</span>
             </a>
 
@@ -202,10 +157,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               href={whatsappInquiryUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 text-emerald-300 text-sm font-semibold transition-colors backdrop-blur-md shadow-sm"
+              className="inline-flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-white/10 hover:bg-[#0052FF]/20 border border-white/20 hover:border-[#0052FF]/50 text-white text-sm font-semibold transition-colors backdrop-blur-md shadow-sm"
               title="Send inquiry via WhatsApp"
             >
-              <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+              <MessageCircle className="w-4 h-4 text-[#00D2FF] shrink-0" />
               <span>WhatsApp</span>
             </a>
           </motion.div>

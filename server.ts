@@ -1046,15 +1046,19 @@ async function startServer() {
   (async () => {
     await new Promise((resolve) => setTimeout(resolve, 350));
     try {
-      const [cData, sData] = await Promise.all([
+      const [cData, sData, hData] = await Promise.all([
         fetchFirestoreDocSafe('settings', 'company', 3),
         fetchFirestoreDocSafe('settings', 'site', 3),
+        fetchFirestoreDocSafe('settings', 'homepage', 3),
       ]);
       if (cData) {
         serverCompanySettings = { ...serverCompanySettings, ...cData };
       }
       if (sData) {
         serverSiteSettings = { ...serverSiteSettings, ...sData };
+      }
+      if (hData) {
+        serverHomepageSettings = { ...(serverHomepageSettings || {}), ...hData };
       }
     } catch {
       // Retains safe default settings
@@ -1167,14 +1171,20 @@ async function startServer() {
     });
   });
 
-  app.get('/api/settings/homepage', (req: Request, res: Response) => {
+  app.get('/api/settings/homepage', async (req: Request, res: Response) => {
+    if (!serverHomepageSettings || !serverHomepageSettings.updatedAt) {
+      const live = await fetchFirestoreDocSafe('settings', 'homepage', 2);
+      if (live) {
+        serverHomepageSettings = { ...(serverHomepageSettings || {}), ...live };
+      }
+    }
     res.json({
       success: true,
       settings: serverHomepageSettings,
     });
   });
 
-  app.post('/api/settings/homepage', (req: Request, res: Response) => {
+  app.post('/api/settings/homepage', async (req: Request, res: Response) => {
     const data = req.body;
     if (!data || typeof data !== 'object') {
       res.status(400).json({ success: false, error: 'Invalid homepage settings payload' });
@@ -1185,10 +1195,51 @@ async function startServer() {
       ...data,
       updatedAt: new Date().toISOString(),
     };
+
+    // Durable async sync to Firestore directly from server backend
+    (async () => {
+      try {
+        const { db } = await import('./src/lib/firebase');
+        const { doc, setDoc } = await import('firebase/firestore');
+        await setDoc(doc(db, 'settings', 'homepage'), serverHomepageSettings, { merge: true });
+        console.log('[Server Settings] Homepage settings synchronized to Firestore.');
+      } catch (err) {
+        console.warn('[Server Settings] Firestore async homepage sync notice:', err);
+      }
+    })();
+
     res.json({
       success: true,
       settings: serverHomepageSettings,
     });
+  });
+
+  const serverDivisionsMap = new Map<string, any>();
+
+  app.get('/api/divisions', (req: Request, res: Response) => {
+    res.json({
+      success: true,
+      divisions: Array.from(serverDivisionsMap.values()),
+    });
+  });
+
+  app.post('/api/divisions/:id', (req: Request, res: Response) => {
+    const { id } = req.params;
+    const data = req.body;
+    if (id && data) {
+      serverDivisionsMap.set(id, { ...data, id, updatedAt: new Date().toISOString() });
+      // Asynchronously sync to Firestore
+      (async () => {
+        try {
+          const { db } = await import('./src/lib/firebase');
+          const { doc, setDoc } = await import('firebase/firestore');
+          await setDoc(doc(db, 'divisions', id), data, { merge: true });
+        } catch (err) {
+          console.warn('[Server Divisions] Async sync notice:', err);
+        }
+      })();
+    }
+    res.json({ success: true, division: serverDivisionsMap.get(id) });
   });
 
   // ==========================================

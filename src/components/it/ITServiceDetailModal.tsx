@@ -124,22 +124,22 @@ export const ITServiceDetailModal: React.FC<ITServiceDetailModalProps> = ({
                 <span>Typical Delivery: {service.startingTimeline}</span>
               </span>
               <span className="flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-md">
-                <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
+                <Briefcase className="w-3.5 h-3.5 text-[#0052FF]" />
                 <span>Recommended for: {service.recommendedFor}</span>
               </span>
             </div>
           </div>
 
           {/* 2. PROBLEMS SOLVED */}
-          <div className="p-4 rounded-xl bg-rose-50/60 border border-rose-100 space-y-3">
-            <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-rose-700 flex items-center gap-1.5">
-              <AlertTriangle className="w-4 h-4" />
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+            <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+              <AlertTriangle className="w-4 h-4 text-[#0052FF]" />
               <span>Core Business Problems Solved</span>
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
               {service.problemsSolved.map((prob, idx) => (
                 <div key={idx} className="flex items-start gap-2 text-xs text-slate-700 leading-relaxed">
-                  <span className="text-rose-500 font-bold mt-0.5">•</span>
+                  <span className="text-[#0052FF] font-bold mt-0.5">•</span>
                   <span>{prob}</span>
                 </div>
               ))}
@@ -158,7 +158,7 @@ export const ITServiceDetailModal: React.FC<ITServiceDetailModalProps> = ({
                   key={idx}
                   className="flex items-start gap-2 p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-700"
                 >
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-4 h-4 text-[#0052FF] shrink-0 mt-0.5" />
                   <span>{feat}</span>
                 </div>
               ))}
@@ -168,7 +168,7 @@ export const ITServiceDetailModal: React.FC<ITServiceDetailModalProps> = ({
           {/* 4. LIFECYCLE / PROCESS STEPS */}
           <div className="space-y-3">
             <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-indigo-600" />
+              <Layers className="w-4 h-4 text-[#0052FF]" />
               <span>Delivery Process & Milestones</span>
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

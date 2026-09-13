@@ -153,8 +153,32 @@ export const AdminDivisionsView: React.FC = () => {
             fsMatch.comingSoon ||
             fsMatch.status === 'coming_soon'
         );
+        const resolvedVideo = fsMatch.heroVideoUrl || fsMatch.videoUrl || fsMatch.hero?.videoUrl || d.heroVideoUrl || '';
+        const resolvedImg =
+          fsMatch.defaultImageUrl ||
+          fsMatch.heroImageUrl ||
+          fsMatch.imageUrl ||
+          fsMatch.hero?.defaultImageUrl ||
+          fsMatch.hero?.imageUrl ||
+          fsMatch.hero?.bgImage ||
+          d.heroImageUrl ||
+          '';
+
         return {
           ...d,
+          name: fsMatch.name || d.name,
+          shortName: fsMatch.shortName || d.shortName,
+          badge: fsMatch.badge || fsMatch.hero?.badge || d.badge,
+          tagline: fsMatch.tagline || fsMatch.hero?.subtitle || d.tagline,
+          description: fsMatch.description || d.description,
+          heroHeadline: fsMatch.heroHeadline || fsMatch.hero?.title || d.heroHeadline,
+          heroSubheadline: fsMatch.heroSubheadline || fsMatch.hero?.subtitle || d.heroSubheadline,
+          heroVideoUrl: resolvedVideo,
+          videoUrl: resolvedVideo,
+          heroImageUrl: resolvedImg,
+          defaultImageUrl: resolvedImg,
+          heroMediaType: (fsMatch.heroMediaType || fsMatch.hero?.mediaType || d.heroMediaType || (resolvedVideo ? 'video' : 'image')) as any,
+          hero: fsMatch.hero || (d as any).hero,
           isComingSoon,
           comingSoon: isComingSoon,
           status: (isComingSoon
@@ -253,6 +277,17 @@ export const AdminDivisionsView: React.FC = () => {
 
     const resolvedVideoUrl = div.heroVideoUrl || (fsMatch as any)?.heroVideoUrl || (fsMatch as any)?.videoUrl || (fsMatch?.hero as any)?.videoUrl || '';
     const resolvedMediaType = (div.heroMediaType || (fsMatch as any)?.heroMediaType || (fsMatch?.hero as any)?.mediaType || (resolvedVideoUrl ? 'video' : 'image')) as 'image' | 'video';
+    const resolvedImageUrl =
+      (fsMatch as any)?.defaultImageUrl ||
+      (fsMatch as any)?.heroImageUrl ||
+      (fsMatch as any)?.imageUrl ||
+      (fsMatch?.hero as any)?.defaultImageUrl ||
+      (fsMatch?.hero as any)?.imageUrl ||
+      (fsMatch?.hero as any)?.bgImage ||
+      (div as any)?.defaultImageUrl ||
+      div.heroImageUrl ||
+      (div as any)?.imageUrl ||
+      '';
 
     setFormData({
       divisionKey: div.divisionKey,
@@ -267,7 +302,7 @@ export const AdminDivisionsView: React.FC = () => {
       gradient: div.gradient,
       heroHeadline: div.heroHeadline || (fsMatch as any)?.heroHeadline || fsMatch?.hero?.title || '',
       heroSubheadline: div.heroSubheadline || (fsMatch as any)?.heroSubheadline || fsMatch?.hero?.subtitle || '',
-      heroImageUrl: div.heroImageUrl || (fsMatch?.hero as any)?.imageUrl || fsMatch?.hero?.bgImage || '',
+      heroImageUrl: resolvedImageUrl,
       heroVideoUrl: resolvedVideoUrl,
       heroMediaType: resolvedMediaType,
       contactEmail: div.contactEmail || (fsMatch as any)?.contactEmail || companySettings?.email || 'info.mahdev.lk@gmail.com',
@@ -399,6 +434,7 @@ export const AdminDivisionsView: React.FC = () => {
           badge: formData.badge,
           imageUrl: formData.heroImageUrl,
           heroImageUrl: formData.heroImageUrl,
+          defaultImageUrl: formData.heroImageUrl,
           heroVideoUrl: formData.heroVideoUrl,
           videoUrl: formData.heroVideoUrl,
           heroMediaType: formData.heroMediaType,
@@ -426,6 +462,8 @@ export const AdminDivisionsView: React.FC = () => {
             subtitle: formData.heroSubheadline,
             badge: formData.badge,
             bgImage: formData.heroImageUrl,
+            imageUrl: formData.heroImageUrl,
+            defaultImageUrl: formData.heroImageUrl,
             videoUrl: formData.heroVideoUrl,
             mediaType: formData.heroMediaType,
           },
@@ -1231,13 +1269,20 @@ export const AdminDivisionsView: React.FC = () => {
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block font-semibold text-slate-700 text-xs">Hero Backdrop Picture</label>
+                    <div>
+                      <label className="block font-semibold text-slate-800 text-xs">
+                        Default Image Fallback (Shows while video is loading)
+                      </label>
+                      <p className="text-[10px] text-slate-500">
+                        HD image that appears immediately while the video is loading or buffering.
+                      </p>
+                    </div>
                     <div className="flex items-center gap-2">
                       <label className={`text-xs font-semibold hover:underline flex items-center gap-1 ${
                         isUploadingMedia ? 'text-blue-400 cursor-wait' : 'text-blue-600 cursor-pointer'
                       }`}>
                         <Upload className="w-3 h-3" />
-                        {isUploadingMedia ? `Uploading ${uploadProgress}%...` : 'Upload Picture'}
+                        {isUploadingMedia ? `Uploading ${uploadProgress}%...` : 'Upload Image'}
                         <input
                           type="file"
                           disabled={isUploadingMedia}
@@ -1254,20 +1299,46 @@ export const AdminDivisionsView: React.FC = () => {
                         }}
                         className="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
                       >
-                        <ImageIcon className="w-3 h-3" /> Select Picture
+                        <ImageIcon className="w-3 h-3" /> Media Library
                       </button>
                     </div>
                   </div>
                   <input
-                    type="url"
+                    type="text"
                     value={formData.heroImageUrl}
                     onChange={(e) => {
                       setFormData({ ...formData, heroImageUrl: e.target.value });
                       setIsDirty(true);
                     }}
-                    placeholder="https://images.unsplash.com/... or uploaded picture URL"
+                    placeholder="https://images.unsplash.com/... or /uploads/... picture URL"
                     className="w-full px-3 py-2 border rounded-xl border-slate-200 font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                   />
+                  {formData.heroImageUrl && (
+                    <div className="mt-2 flex items-center gap-3 p-2 bg-slate-50 rounded-lg border border-slate-200">
+                      <img
+                        src={formData.heroImageUrl}
+                        alt="Hero Fallback"
+                        className="w-14 h-9 object-cover rounded border border-slate-200"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-bold text-slate-800 truncate">Default Hero Poster Active</p>
+                        <p className="text-[10px] text-slate-500 truncate">{formData.heroImageUrl}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, heroImageUrl: '' });
+                          setIsDirty(true);
+                        }}
+                        className="text-[11px] text-red-600 hover:underline cursor-pointer"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1346,7 +1417,7 @@ export const AdminDivisionsView: React.FC = () => {
                     </div>
                   </div>
                   <input
-                    type="url"
+                    type="text"
                     value={formData.heroVideoUrl}
                     onChange={(e) => {
                       const val = e.target.value;
