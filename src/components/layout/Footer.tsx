@@ -7,13 +7,25 @@ import { Modal } from '../ui/Modal';
 import { FOOTER_SECTIONS } from '../../config/navigation';
 import { getTelLink, getMailtoLink, getMapSearchUrl } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { getDivisionWhatsAppUrl } from '../../utils/whatsapp';
 
 interface FooterProps {
   onNavigate: (path: string) => void;
+  currentPath?: string;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
+export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath }) => {
   const { companySettings, siteSettings } = useFirestoreDataContext();
+
+  const currentPathname = (currentPath || (typeof window !== 'undefined' ? window.location.pathname : '')).toLowerCase();
+  let currentDivId = '';
+  if (currentPathname.includes('sws') || currentPathname.includes('event')) currentDivId = 'sws';
+  else if (currentPathname.includes('u1') || currentPathname.includes('cinema') || currentPathname.includes('studio')) currentDivId = 'u1';
+  else if (currentPathname.includes('it') || currentPathname.includes('software')) currentDivId = 'it';
+  else if (currentPathname.includes('travel')) currentDivId = 'travels';
+  else if (currentPathname.includes('mart') || currentPathname.includes('shop')) currentDivId = 'mart';
+
+  const footerWhatsAppUrl = getDivisionWhatsAppUrl(currentDivId);
 
   const companyName = companySettings?.name || siteSettings?.siteName || 'Mahdev Pvt Ltd';
   const tagline = companySettings?.tagline || 'Pioneering Creative Artistry & Modern Technology';
@@ -166,7 +178,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                     <div className="flex items-center gap-1.5">
                       <span className="text-blue-300/70 text-[11px]">WhatsApp:</span>
                       <a
-                        href="https://wa.me/94750928078?text=Hello%20Mahdev%20Pvt%20Ltd"
+                        href={footerWhatsAppUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="hover:text-emerald-300 transition-colors font-medium font-mono text-emerald-400"

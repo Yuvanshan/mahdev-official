@@ -98,7 +98,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [users, setUsers] = useState<FirestoreUser[]>([]);
 
   // Connection & Loading state
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loadingOrders, setLoadingOrders] = useState<boolean>(true);
+  const [loadingBookings, setLoadingBookings] = useState<boolean>(true);
+  const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
+  const [loadingUsers, setLoadingUsers] = useState<boolean>(true);
+  const isLoading = loadingOrders || loadingBookings || loadingProducts || loadingUsers;
+
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
@@ -145,7 +150,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   // Setup Real-time Firestore Subscriptions
   useEffect(() => {
     let isMounted = true;
-    setIsLoading(true);
+    setLoadingOrders(true);
+    setLoadingBookings(true);
+    setLoadingProducts(true);
+    setLoadingUsers(true);
     setFetchError(null);
 
     let unsubOrders: (() => void) | undefined;
@@ -159,12 +167,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           if (isMounted) {
             setOrders(data);
             setIsLiveConnected(true);
-            setIsLoading(false);
+            setLoadingOrders(false);
           }
         },
         (err) => {
           console.warn('[AdminDashboard] Orders subscription error:', err);
-          if (isMounted) setFetchError('Failed to establish realtime connection to Orders collection.');
+          if (isMounted) {
+            setFetchError('Failed to establish real-time connection to telemetry.');
+            setLoadingOrders(false);
+          }
         }
       );
 
@@ -172,11 +183,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         (data) => {
           if (isMounted) {
             setBookings(data);
-            setIsLoading(false);
+            setLoadingBookings(false);
           }
         },
         (err) => {
           console.warn('[AdminDashboard] Bookings subscription error:', err);
+          if (isMounted) setLoadingBookings(false);
         }
       );
 
@@ -185,7 +197,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         (data) => {
           if (isMounted) {
             setProducts(data);
-            setIsLoading(false);
+            setLoadingProducts(false);
           }
         }
       );
@@ -194,18 +206,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         (data) => {
           if (isMounted) {
             setUsers(data);
-            setIsLoading(false);
+            setLoadingUsers(false);
           }
         },
         (err) => {
           console.warn('[AdminDashboard] Users subscription error:', err);
+          if (isMounted) setLoadingUsers(false);
         }
       );
     } catch (err: any) {
       console.error('[AdminDashboard] Subscriptions setup error:', err);
       if (isMounted) {
-        setFetchError(err?.message || 'Error connecting to Firestore database collections.');
-        setIsLoading(false);
+        setFetchError(err?.message || 'Error connecting to real-time telemetry service.');
+        setLoadingOrders(false);
+        setLoadingBookings(false);
+        setLoadingProducts(false);
+        setLoadingUsers(false);
       }
     }
 
@@ -688,7 +704,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           <AlertCircle className="w-6 h-6" />
         </div>
         <div className="space-y-1">
-          <h3 className="font-display text-base font-bold text-slate-900">Firestore Connection Notice</h3>
+          <h3 className="font-display text-base font-bold text-slate-900">Live Connection Notice</h3>
           <p className="text-xs text-slate-600">{fetchError}</p>
         </div>
         <div className="pt-2">
@@ -698,7 +714,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             onClick={handleManualRefresh}
             leftIcon={<RefreshCw className="w-4 h-4" />}
           >
-            Retry Firestore Connection
+            Retry Connection
           </Button>
         </div>
       </div>
@@ -720,11 +736,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               Operations & Real-Time Business Telemetry
             </h2>
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
-              Firestore Live
+              Live Real-Time
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Real enterprise data sourced directly from Cloud Firestore collections (Orders, Bookings, Products, Users).
+            Live enterprise metrics across verified orders, scheduled appointments, products, and clients.
           </p>
         </div>
 
@@ -746,7 +762,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             leftIcon={<ShoppingBag className="w-3.5 h-3.5" />}
             className="text-xs font-bold"
           >
-            Fulfillment Queue ({metrics.pendingOrders})
+            Fulfillment Queue ({loadingOrders ? '...' : metrics.pendingOrders})
           </Button>
         </div>
       </div>
@@ -817,7 +833,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
           </div>
           <div className="mt-3">
-            {isLoading ? (
+            {loadingOrders || loadingBookings ? (
               <div className="space-y-2">
                 <div className="h-8 w-32 bg-slate-200 rounded animate-pulse" />
                 <div className="h-3.5 w-44 bg-slate-100 rounded animate-pulse" />
@@ -837,7 +853,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             )}
           </div>
           <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-mono">
-            <span>All-Time: {isLoading ? '...' : formatCurrency(metrics.allTimeRevenue)}</span>
+            <span>All-Time: {loadingOrders || loadingBookings ? '...' : formatCurrency(metrics.allTimeRevenue)}</span>
             <span className="text-blue-600 font-bold group-hover:underline">Orders & Bookings →</span>
           </div>
         </div>
@@ -856,7 +872,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
           </div>
           <div className="mt-3">
-            {isLoading ? (
+            {loadingOrders ? (
               <div className="space-y-2">
                 <div className="h-8 w-28 bg-slate-200 rounded animate-pulse" />
                 <div className="h-3.5 w-40 bg-slate-100 rounded animate-pulse" />
@@ -877,7 +893,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             )}
           </div>
           <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-mono">
-            <span>AOV: {isLoading ? '...' : formatCurrency(metrics.averageOrderValue)}</span>
+            <span>AOV: {loadingOrders ? '...' : formatCurrency(metrics.averageOrderValue)}</span>
             <span className="text-blue-600 font-bold group-hover:underline">Manage Orders →</span>
           </div>
         </div>
@@ -896,7 +912,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
           </div>
           <div className="mt-3">
-            {isLoading ? (
+            {loadingBookings ? (
               <div className="space-y-2">
                 <div className="h-8 w-28 bg-slate-200 rounded animate-pulse" />
                 <div className="h-3.5 w-40 bg-slate-100 rounded animate-pulse" />
@@ -915,7 +931,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             )}
           </div>
           <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-mono">
-            <span className="text-amber-600 font-bold">Needs Approval: {isLoading ? '...' : metrics.pendingApprovalBookings}</span>
+            <span className="text-amber-600 font-bold">Needs Approval: {loadingBookings ? '...' : metrics.pendingApprovalBookings}</span>
             <span className="text-purple-600 font-bold group-hover:underline">Schedule →</span>
           </div>
         </div>
@@ -934,7 +950,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
           </div>
           <div className="mt-3">
-            {isLoading ? (
+            {loadingProducts ? (
               <div className="space-y-2">
                 <div className="h-8 w-28 bg-slate-200 rounded animate-pulse" />
                 <div className="h-3.5 w-40 bg-slate-100 rounded animate-pulse" />
@@ -951,7 +967,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             )}
           </div>
           <div className="mt-3 pt-3 border-t border-rose-100 flex items-center justify-between text-[11px] text-rose-800 font-mono font-bold">
-            <span>{isLoading ? '...' : `${metrics.activeProducts} Active in Store`}</span>
+            <span>{loadingProducts ? '...' : `${metrics.activeProducts} Active in Store`}</span>
             <span className="group-hover:underline">Inventory →</span>
           </div>
         </div>
@@ -965,14 +981,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             <span>Pending Receivables</span>
           </div>
           <div className="mt-2 font-mono text-lg font-bold text-slate-900">
-            {isLoading ? (
+            {loadingOrders || loadingBookings ? (
               <div className="h-6 w-24 bg-slate-200 rounded animate-pulse" />
             ) : (
               formatCurrency(metrics.pendingReceivablesTotal)
             )}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5 font-medium">
-            {isLoading ? 'Loading records...' : `${metrics.pendingReceivablesCount} unpaid orders/bookings`}
+            {loadingOrders || loadingBookings ? (
+              <div className="h-3 w-32 bg-slate-100 rounded animate-pulse mt-1" />
+            ) : (
+              `${metrics.pendingReceivablesCount} unpaid orders/bookings`
+            )}
           </div>
         </div>
 
@@ -982,14 +1002,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             <span>Registered Accounts</span>
           </div>
           <div className="mt-2 font-mono text-lg font-bold text-slate-900">
-            {isLoading ? (
+            {loadingUsers ? (
               <div className="h-6 w-16 bg-slate-200 rounded animate-pulse" />
             ) : (
               metrics.totalCustomers
             )}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5 font-medium">
-            {isLoading ? 'Loading...' : `${metrics.corporateCustomers} Corporate • ${metrics.individualCustomers} Individual`}
+            {loadingUsers ? (
+              <div className="h-3 w-28 bg-slate-100 rounded animate-pulse mt-1" />
+            ) : (
+              `${metrics.corporateCustomers} Corporate • ${metrics.individualCustomers} Individual`
+            )}
           </div>
         </div>
 
@@ -999,14 +1023,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             <span>Completed Deliveries</span>
           </div>
           <div className="mt-2 font-mono text-lg font-bold text-slate-900">
-            {isLoading ? (
+            {loadingOrders || loadingBookings ? (
               <div className="h-6 w-16 bg-slate-200 rounded animate-pulse" />
             ) : (
               metrics.completedOrders + metrics.completedBookings
             )}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5 font-medium">
-            {isLoading ? 'Loading...' : `${metrics.completedOrders} Orders • ${metrics.completedBookings} Bookings`}
+            {loadingOrders || loadingBookings ? (
+              <div className="h-3 w-28 bg-slate-100 rounded animate-pulse mt-1" />
+            ) : (
+              `${metrics.completedOrders} Orders • ${metrics.completedBookings} Bookings`
+            )}
           </div>
         </div>
 

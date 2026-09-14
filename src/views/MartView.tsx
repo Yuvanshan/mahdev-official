@@ -39,18 +39,6 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
   const [selectedProductForDetail, setSelectedProductForDetail] = useState<Product | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  if ((rawProducts.length === 0 || divisions.length === 0) && (isInitialLoading || isFetching)) {
-    return (
-      <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-slate-950 text-white">
-        <DataLoadingOverlay
-          dark
-          message="Loading Mahdev Online Mart..."
-          subMessage="Connecting to live inventory & catalog database in Firestore"
-        />
-      </div>
-    );
-  }
-
   // Check URL query parameters or path for sub-routes
   useEffect(() => {
     const path = window.location.pathname;

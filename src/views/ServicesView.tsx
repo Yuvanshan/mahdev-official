@@ -229,8 +229,8 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
     return (
       <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-white">
         <DataLoadingOverlay
-          message="Loading enterprise services..."
-          subMessage="Retrieving verified services from Firestore cloud database"
+          message="Loading services..."
+          subMessage="Curating enterprise solutions..."
         />
       </div>
     );

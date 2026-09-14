@@ -160,8 +160,8 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
       {isInitialLoading || (isFetching && portfolio.length === 0) ? (
         <div className="relative min-h-[360px] rounded-3xl border border-slate-200 bg-slate-50/50 overflow-hidden">
           <DataLoadingOverlay
-            message="Loading Portfolio"
-            subMessage="Retrieving landmark projects from Firestore..."
+            message="Loading Showcase"
+            subMessage="Curating landmark projects..."
           />
         </div>
       ) : (

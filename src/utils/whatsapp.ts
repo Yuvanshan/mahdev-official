@@ -127,8 +127,26 @@ export function buildWhatsAppMessage(options: WhatsAppInquiryOptions): string {
   const effectiveSku = options.sku || deriveLookupSku(options.title, options.divisionName);
   const isBooking = options.type === 'booking' || Boolean(options.bookingId || options.date || options.packageName);
 
+  const targetDivision = (options.divisionName || '').trim();
+  let divisionGreeting = 'Mahdev Group';
+  const lowerDiv = targetDivision.toLowerCase();
+
+  if (lowerDiv === 'sws' || lowerDiv.includes('sws') || lowerDiv.includes('event')) {
+    divisionGreeting = 'SWS Event Management';
+  } else if (lowerDiv === 'u1' || lowerDiv.includes('u1') || lowerDiv.includes('cinema') || lowerDiv.includes('studio')) {
+    divisionGreeting = 'U1 Cinema & Studio';
+  } else if (lowerDiv === 'it' || lowerDiv.includes('software') || lowerDiv.includes('tech') || lowerDiv.includes('cloud')) {
+    divisionGreeting = 'Mahdev IT & Software';
+  } else if (lowerDiv === 'travels' || lowerDiv.includes('travel') || lowerDiv.includes('tour') || lowerDiv.includes('safari')) {
+    divisionGreeting = 'Mahdev Travels';
+  } else if (lowerDiv === 'mart' || lowerDiv.includes('mart') || lowerDiv.includes('store') || lowerDiv.includes('shop')) {
+    divisionGreeting = 'Mahdev Online Mart';
+  } else if (targetDivision) {
+    divisionGreeting = targetDivision;
+  }
+
   if (isBooking) {
-    lines.push('🗓️ *NEW SERVICE BOOKING REQUEST — MAHDEV CONCIERGE*');
+    lines.push(`🗓️ *NEW SERVICE BOOKING REQUEST — ${divisionGreeting.toUpperCase()}*`);
     lines.push('================================');
     if (options.bookingId) {
       lines.push(`🆔 *Booking Ref:* \`${options.bookingId}\``);
@@ -161,7 +179,7 @@ export function buildWhatsAppMessage(options: WhatsAppInquiryOptions): string {
       lines.push(`💰 *Rate:* ${formattedPrice}`);
     }
   } else {
-    lines.push('👋 *Hello Mahdev Group,*');
+    lines.push(`👋 *Hello ${divisionGreeting},*`);
     lines.push('');
     lines.push(`I would like to inquire regarding: *${options.title}*`);
     lines.push(`🔢 *SKU / Item Code:* \`${effectiveSku}\``);
@@ -290,6 +308,41 @@ export function buildWhatsAppOrderMessage(payload: WhatsAppOrderPayload): string
   lines.push('Please confirm stock availability, order receipt, and estimated dispatch time. Thank you!');
 
   return lines.join('\n');
+}
+
+/**
+ * Resolves the appropriate division greeting string for WhatsApp inquiries
+ */
+export function getDivisionGreeting(divisionIdOrName?: string): string {
+  const targetDivision = (divisionIdOrName || '').trim();
+  const lowerDiv = targetDivision.toLowerCase();
+
+  if (lowerDiv === 'sws' || lowerDiv.includes('sws') || lowerDiv.includes('event')) {
+    return 'SWS Event Management';
+  } else if (lowerDiv === 'u1' || lowerDiv.includes('u1') || lowerDiv.includes('cinema') || lowerDiv.includes('studio')) {
+    return 'U1 Cinema & Studio';
+  } else if (lowerDiv === 'it' || lowerDiv.includes('software') || lowerDiv.includes('tech') || lowerDiv.includes('cloud')) {
+    return 'Mahdev IT & Software';
+  } else if (lowerDiv === 'travels' || lowerDiv.includes('travel') || lowerDiv.includes('tour') || lowerDiv.includes('safari')) {
+    return 'Mahdev Travels';
+  } else if (lowerDiv === 'mart' || lowerDiv.includes('mart') || lowerDiv.includes('store') || lowerDiv.includes('shop')) {
+    return 'Mahdev Online Mart';
+  } else if (targetDivision) {
+    return targetDivision;
+  }
+  return 'Mahdev Group';
+}
+
+/**
+ * Returns a direct division WhatsApp inquiry URL with dynamic greeting
+ * e.g., "Hello SWS Event Management"
+ */
+export function getDivisionWhatsAppUrl(divisionIdOrName?: string, customNote?: string): string {
+  const greeting = getDivisionGreeting(divisionIdOrName);
+  const text = customNote
+    ? `Hello ${greeting}, ${customNote}`
+    : `Hello ${greeting}`;
+  return `https://wa.me/${MAHDEV_WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
 }
 
 /**

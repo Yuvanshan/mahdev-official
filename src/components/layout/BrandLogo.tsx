@@ -115,29 +115,29 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
 
   const sizeStyles = {
     sm: {
-      mark: 'w-7 h-7 sm:w-8 sm:h-8 text-xs',
-      imgHeight: 'h-7 sm:h-8',
+      mark: 'w-8 h-8 sm:w-9 sm:h-9 text-xs',
+      imgHeight: 'h-8 sm:h-9',
       title: 'text-sm font-bold',
       subtitle: 'text-[9px]',
       tag: 'text-[8px] sm:text-[9px]',
     },
     md: {
-      mark: 'w-8 h-8 sm:w-10 sm:h-10 text-sm',
-      imgHeight: 'h-8 sm:h-10',
+      mark: 'w-10 h-10 sm:w-12 sm:h-12 text-sm',
+      imgHeight: 'h-10 sm:h-12',
       title: 'text-base sm:text-lg font-bold',
       subtitle: 'text-[10px]',
       tag: 'text-[9px] sm:text-[10px]',
     },
     lg: {
-      mark: 'w-10 h-10 sm:w-12 sm:h-12 text-base',
-      imgHeight: 'h-11 sm:h-13',
+      mark: 'w-12 h-12 sm:w-14 sm:h-14 text-base',
+      imgHeight: 'h-12 sm:h-15',
       title: 'text-lg sm:text-xl font-bold',
       subtitle: 'text-xs',
       tag: 'text-[10px] sm:text-xs',
     },
     xl: {
-      mark: 'w-12 h-12 sm:w-16 sm:h-16 text-lg',
-      imgHeight: 'h-14 sm:h-18',
+      mark: 'w-14 h-14 sm:w-18 sm:h-18 text-lg',
+      imgHeight: 'h-16 sm:h-22',
       title: 'text-xl sm:text-2xl font-bold',
       subtitle: 'text-xs sm:text-sm',
       tag: 'text-xs sm:text-sm',

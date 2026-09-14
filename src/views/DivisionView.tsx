@@ -41,18 +41,7 @@ interface DivisionViewProps {
 }
 
 export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNavigate }) => {
-  const { divisions, services, companySettings, isInitialLoading, isFetching } = useFirestoreDataContext();
-
-  if (divisions.length === 0 && (isInitialLoading || isFetching)) {
-    return (
-      <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-white">
-        <DataLoadingOverlay
-          message="Loading business division..."
-          subMessage="Fetching latest division assets & services from Firestore"
-        />
-      </div>
-    );
-  }
+  const { divisions, services, companySettings } = useFirestoreDataContext();
 
   // Normalize IDs across short keys ('sws', 'u1', 'it', 'travels', 'mart') and slug variants
   const normalizedKey: DivisionId =

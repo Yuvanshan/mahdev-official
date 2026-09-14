@@ -33,8 +33,8 @@ export const TrustedCompaniesMatrix: React.FC<TrustedCompaniesMatrixProps> = ({ 
       return (
         <SectionContainer id="companies" background="white" paddingY="lg">
           <DataLoadingOverlay
-            message="Loading enterprise partners..."
-            subMessage="Connecting to verified partner database in Firestore"
+            message="Loading partners..."
+            subMessage="Connecting with verified industry clients..."
           />
         </SectionContainer>
       );

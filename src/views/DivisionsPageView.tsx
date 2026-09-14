@@ -17,22 +17,11 @@ interface DivisionsPageViewProps {
 }
 
 export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate }) => {
-  const { divisions, companySettings, isInitialLoading, isFetching } = useFirestoreDataContext();
+  const { divisions, companySettings } = useFirestoreDataContext();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
-
-  if (divisions.length === 0 && (isInitialLoading || isFetching)) {
-    return (
-      <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-white">
-        <DataLoadingOverlay
-          message="Loading divisions..."
-          subMessage="Fetching latest division statuses & configurations from Firestore"
-        />
-      </div>
-    );
-  }
 
   const displayDivisions = React.useMemo(() => {
     if (divisions && divisions.length > 0) {

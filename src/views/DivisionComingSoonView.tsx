@@ -118,7 +118,7 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
   };
 
   const whatsappMessage = encodeURIComponent(
-    `Hello Mahdev Pvt Ltd, I am inquiring about the upcoming launch of ${divisionName}. Please share preliminary packages and availability.`
+    `Hello ${divisionName}, I am inquiring about the upcoming launch and services. Please share preliminary packages and availability.`
   );
   const whatsappUrl = `https://wa.me/94750928078?text=${whatsappMessage}`;
 

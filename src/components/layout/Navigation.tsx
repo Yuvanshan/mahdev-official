@@ -29,6 +29,7 @@ import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { getTelLink, getMailtoLink } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { getDivisionWhatsAppUrl } from '../../utils/whatsapp';
 
 interface NavigationProps {
   currentPath: string;
@@ -110,6 +111,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
   });
 
   const currentDivision = currentDivisionKey ? DIVISIONS[currentDivisionKey] : null;
+
+  // Dynamic WhatsApp Inquiry URL matched to the current division (e.g. Hello SWS Event Management)
+  const dynamicWhatsAppUrl = useMemo(() => {
+    return getDivisionWhatsAppUrl(currentDivisionKey || currentDivision?.name);
+  }, [currentDivisionKey, currentDivision]);
 
   // Handle throttled scroll detection for glass navbar effect
   useEffect(() => {
@@ -359,7 +365,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
               {/* Mobile Top Bar WhatsApp */}
               <a
-                href={whatsappUrl}
+                href={dynamicWhatsAppUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex md:hidden items-center justify-center p-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200/80 text-[#0052FF] active:scale-95 transition-all shadow-2xs shrink-0"
@@ -381,7 +387,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
               {/* Desktop WhatsApp Link */}
               <a
-                href={whatsappUrl}
+                href={dynamicWhatsAppUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hidden lg:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200/80 text-xs font-semibold text-[#0052FF] hover:text-[#0045D8] transition-colors shadow-2xs shrink-0"
@@ -669,7 +675,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
               {/* WhatsApp & Email Actions */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <a
-                  href={whatsappUrl}
+                  href={dynamicWhatsAppUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 py-2.5 px-3 bg-blue-50 border border-blue-200 text-blue-900 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors shadow-2xs"

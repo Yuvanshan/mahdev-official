@@ -22,101 +22,122 @@ import { FirestoreOrder, FirestoreBooking, FirestoreProduct, FirestoreUser } fro
 const ADMIN_SESSION_STORAGE_KEY = 'mahdev_admin_session_v1';
 const ADMIN_AUDIT_STORAGE_KEY = 'mahdev_admin_audit_logs_v1';
 
+let activeAdminSyncPromise: Promise<boolean> | null = null;
+let lastAdminSyncTimestamp = 0;
+
 /**
  * Synchronizes the executive administrator session with Firebase Authentication.
  * Ensures the client has an authenticated Firebase user matching the admin email and claims,
  * satisfying Firebase Storage and Firestore security rule constraints (e.g., isStaff()).
  */
 export async function syncAdminFirebaseAuth(adminUser: AdminUser): Promise<boolean> {
-  try {
-    const email = (adminUser.email || 'info.mahdev.lk@gmail.com').toLowerCase().trim();
-    const defaultPassword = 'MahdevExecutive#2026';
-
-    // If current firebase user already matches this admin email, refresh token and return
-    if (auth.currentUser && auth.currentUser.email?.toLowerCase() === email) {
-      try {
-        await auth.currentUser.getIdToken(true);
-        return true;
-      } catch {}
-    }
-
-    // Attempt sign in with standard executive credential
-    try {
-      await signInWithEmailAndPassword(auth, email, defaultPassword);
-    } catch (signInErr: any) {
-      if (
-        signInErr.code === 'auth/user-not-found' ||
-        signInErr.code === 'auth/invalid-credential' ||
-        signInErr.code === 'auth/invalid-login-credentials'
-      ) {
-        try {
-          await createUserWithEmailAndPassword(auth, email, defaultPassword);
-        } catch (createErr: any) {
-          console.warn('[AdminService] Firebase Auth creation notice:', createErr);
-        }
-      }
-    }
-
-    if (auth.currentUser) {
-      if (adminUser.name && auth.currentUser.displayName !== adminUser.name) {
-        try {
-          await updateProfile(auth.currentUser, { displayName: adminUser.name });
-        } catch {}
-      }
-
-      // Provision Firestore user and admin privilege records only if missing or out of sync
-      try {
-        const userRef = doc(db, 'users', auth.currentUser.uid);
-        const adminRef = doc(db, 'admins', auth.currentUser.uid);
-        const [userSnap, adminSnap] = await Promise.all([
-          getDoc(userRef).catch(() => null),
-          getDoc(adminRef).catch(() => null),
-        ]);
-
-        if (!userSnap || !userSnap.exists()) {
-          await setDoc(
-            userRef,
-            {
-              uid: auth.currentUser.uid,
-              email: email,
-              displayName: adminUser.name,
-              role: 'superAdmin',
-              isAdmin: true,
-              status: 'active',
-              updatedAt: new Date().toISOString(),
-            },
-            { merge: true }
-          );
-        }
-
-        if (!adminSnap || !adminSnap.exists()) {
-          await setDoc(
-            adminRef,
-            {
-              uid: auth.currentUser.uid,
-              email: email,
-              name: adminUser.name,
-              role: adminUser.role || 'super_admin',
-              department: adminUser.department || 'Executive Enterprise Operations',
-              updatedAt: new Date().toISOString(),
-            },
-            { merge: true }
-          );
-        }
-      } catch (dbErr) {
-        console.warn('[AdminService] Firestore admin record registration notice:', dbErr);
-      }
-
-      // Force refresh of ID token for instant security rule evaluation
-      await auth.currentUser.getIdToken(true);
-      console.log(`[AdminService] Firebase Auth synchronized for ${email} (UID: ${auth.currentUser.uid})`);
-      return true;
-    }
-    return false;
-  } catch (err) {
-    console.warn('[AdminService] Failed to synchronize Firebase Auth session:', err);
-    return false;
+  if (activeAdminSyncPromise) {
+    return activeAdminSyncPromise;
   }
+
+  const email = (adminUser?.email || 'info.mahdev.lk@gmail.com').toLowerCase().trim();
+  const now = Date.now();
+
+  // If recently synced (within 60s) and user matches, return immediately to prevent write exhaustion
+  if (
+    now - lastAdminSyncTimestamp < 60000 &&
+    auth.currentUser &&
+    auth.currentUser.email?.toLowerCase() === email
+  ) {
+    return true;
+  }
+
+  activeAdminSyncPromise = (async () => {
+    try {
+      const defaultPassword = 'MahdevExecutive#2026';
+
+      // If current firebase user already matches this admin email, return true
+      if (auth.currentUser && auth.currentUser.email?.toLowerCase() === email) {
+        lastAdminSyncTimestamp = Date.now();
+        return true;
+      }
+
+      // Attempt sign in with standard executive credential
+      try {
+        await signInWithEmailAndPassword(auth, email, defaultPassword);
+      } catch (signInErr: any) {
+        if (
+          signInErr.code === 'auth/user-not-found' ||
+          signInErr.code === 'auth/invalid-credential' ||
+          signInErr.code === 'auth/invalid-login-credentials'
+        ) {
+          try {
+            await createUserWithEmailAndPassword(auth, email, defaultPassword);
+          } catch (createErr: any) {
+            console.warn('[AdminService] Firebase Auth creation notice:', createErr);
+          }
+        }
+      }
+
+      if (auth.currentUser) {
+        if (adminUser.name && auth.currentUser.displayName !== adminUser.name) {
+          try {
+            await updateProfile(auth.currentUser, { displayName: adminUser.name });
+          } catch {}
+        }
+
+        // Provision Firestore user and admin privilege records only if missing or out of sync
+        try {
+          const userRef = doc(db, 'users', auth.currentUser.uid);
+          const adminRef = doc(db, 'admins', auth.currentUser.uid);
+          const [userSnap, adminSnap] = await Promise.all([
+            getDoc(userRef).catch(() => null),
+            getDoc(adminRef).catch(() => null),
+          ]);
+
+          if (userSnap && !userSnap.exists()) {
+            await setDoc(
+              userRef,
+              {
+                uid: auth.currentUser.uid,
+                email: email,
+                displayName: adminUser.name,
+                role: 'superAdmin',
+                isAdmin: true,
+                status: 'active',
+                updatedAt: new Date().toISOString(),
+              },
+              { merge: true }
+            ).catch((err) => console.warn('[AdminService] userDoc write notice:', err));
+          }
+
+          if (adminSnap && !adminSnap.exists()) {
+            await setDoc(
+              adminRef,
+              {
+                uid: auth.currentUser.uid,
+                email: email,
+                name: adminUser.name,
+                role: adminUser.role || 'super_admin',
+                department: adminUser.department || 'Executive Enterprise Operations',
+                updatedAt: new Date().toISOString(),
+              },
+              { merge: true }
+            ).catch((err) => console.warn('[AdminService] adminDoc write notice:', err));
+          }
+        } catch (dbErr) {
+          console.warn('[AdminService] Firestore admin record registration notice:', dbErr);
+        }
+
+        lastAdminSyncTimestamp = Date.now();
+        console.log(`[AdminService] Firebase Auth synchronized for ${email} (UID: ${auth.currentUser.uid})`);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.warn('[AdminService] Failed to synchronize Firebase Auth session:', err);
+      return false;
+    } finally {
+      activeAdminSyncPromise = null;
+    }
+  })();
+
+  return activeAdminSyncPromise;
 }
 
 class AdminService {

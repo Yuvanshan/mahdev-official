@@ -6,6 +6,7 @@ import {
   deleteDoc,
   setDoc,
   serverTimestamp,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 
@@ -63,12 +64,21 @@ export async function clearAllFirestoreCollections(preserveSettings: boolean = t
     try {
       const snap = await getDocs(collection(db, colName));
       if (!snap.empty) {
-        for (const docSnap of snap.docs) {
+        const docs = snap.docs;
+        const BATCH_SIZE = 50;
+        for (let i = 0; i < docs.length; i += BATCH_SIZE) {
+          const chunk = docs.slice(i, i + BATCH_SIZE);
+          const batch = writeBatch(db);
+          chunk.forEach((d) => batch.delete(d.ref));
           try {
-            await deleteDoc(docSnap.ref);
-            totalDeleted++;
-          } catch (delErr: any) {
-            errors.push({ collection: colName, error: delErr?.message || String(delErr) });
+            await batch.commit();
+            totalDeleted += chunk.length;
+          } catch (batchErr: any) {
+            errors.push({ collection: colName, error: batchErr?.message || String(batchErr) });
+          }
+          // Small pause between batches to prevent overwhelming the write queue
+          if (i + BATCH_SIZE < docs.length) {
+            await new Promise((r) => setTimeout(r, 50));
           }
         }
       }

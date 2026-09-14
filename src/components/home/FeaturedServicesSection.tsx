@@ -33,8 +33,8 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
       return (
         <SectionContainer background="white" paddingY="lg">
           <DataLoadingOverlay
-            message="Loading featured enterprise services..."
-            subMessage="Connecting to verified services database in Firestore"
+            message="Loading services..."
+            subMessage="Curating featured enterprise solutions..."
           />
         </SectionContainer>
       );

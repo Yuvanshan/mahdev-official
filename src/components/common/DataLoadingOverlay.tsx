@@ -11,8 +11,8 @@ interface DataLoadingOverlayProps {
 }
 
 export const DataLoadingOverlay: React.FC<DataLoadingOverlayProps> = ({
-  message = 'Loading live data from Mahdev...',
-  subMessage = 'Connecting to Firestore cloud database',
+  message = 'Loading...',
+  subMessage = 'Please wait a moment',
   fullScreen = false,
   dark = false,
   className = '',

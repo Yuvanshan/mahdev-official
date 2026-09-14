@@ -117,13 +117,35 @@ export async function uploadMediaToFirestore(
     });
 
     const chunkDocRef = doc(db, 'media_blobs', blobId, 'chunks', String(i).padStart(4, '0'));
-    await setDoc(chunkDocRef, {
-      index: i,
-      data: base64Data,
-    });
+    
+    // Write chunk with backoff retry to prevent stream queue exhaustion
+    let chunkWritten = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await setDoc(chunkDocRef, {
+          index: i,
+          data: base64Data,
+        });
+        chunkWritten = true;
+        break;
+      } catch (err: any) {
+        if (attempt < 2) {
+          const delay = (attempt + 1) * 600;
+          console.warn(`[FirestoreMedia] Chunk ${i} write backoff delay ${delay}ms:`, err?.message);
+          await new Promise((r) => setTimeout(r, delay));
+        } else {
+          throw err;
+        }
+      }
+    }
 
     const currentPct = Math.round(5 + ((i + 1) / totalChunks) * 90);
     onProgress?.(currentPct);
+
+    // Controlled inter-chunk pacing allows the Firestore stream buffer to drain smoothly
+    if (i < totalChunks - 1) {
+      await new Promise((r) => setTimeout(r, 60));
+    }
   }
 
   // Pre-cache into IndexedDB and memory URL cache for instantaneous playback in current session

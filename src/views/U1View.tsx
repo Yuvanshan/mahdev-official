@@ -32,23 +32,11 @@ interface U1ViewProps {
 }
 
 export const U1View: React.FC<U1ViewProps> = ({ onNavigate }) => {
-  const { divisions, companySettings, isInitialLoading, isFetching } = useFirestoreDataContext();
+  const { divisions, companySettings } = useFirestoreDataContext();
   const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [activeServiceForBooking, setActiveServiceForBooking] = useState<U1Service | null>(null);
   const [activePackageForBooking, setActivePackageForBooking] = useState<U1Package | null>(null);
-
-  if (divisions.length === 0 && (isInitialLoading || isFetching)) {
-    return (
-      <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-slate-950 text-white">
-        <DataLoadingOverlay
-          dark
-          message="Loading U1 Cinema & Studio..."
-          subMessage="Fetching division portfolio & packages from Firestore"
-        />
-      </div>
-    );
-  }
 
   const handleBookService = (service: U1Service) => {
     setActiveServiceForBooking(service);

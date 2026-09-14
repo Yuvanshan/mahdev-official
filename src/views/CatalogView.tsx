@@ -115,10 +115,10 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
 
       {/* Main Grid Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1 relative min-h-[400px]">
-        {isInitialLoading || (isFetching && firestoreProducts.length === 0) ? (
+        {isInitialLoading && paginatedResult.total === 0 ? (
           <DataLoadingOverlay
-            message="Loading Products & Inventory"
-            subMessage="Retrieving live catalog items from Firestore..."
+            message="Loading Products"
+            subMessage="Curating our collection..."
           />
         ) : (
           <CatalogProductGrid

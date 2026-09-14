@@ -96,18 +96,6 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
     sectionConfig?.subtitle ||
     `Autonomous specialized units governed under ${companySettings?.name || 'Mahdev Group'} with direct in-house technical crews.`;
 
-  if (divisions.length === 0 && (isInitialLoading || isFetching)) {
-    return (
-      <section className="relative w-full py-24 sm:py-32 bg-slate-950 overflow-hidden">
-        <DataLoadingOverlay
-          dark
-          message="Loading operating divisions..."
-          subMessage="Fetching latest division statuses & configurations from Firestore"
-        />
-      </section>
-    );
-  }
-
   const rentalAssetCountStr = getRentalAssetCount(
     products,
     (companySettings as any)?.rentalAssetCount || (siteSettings as any)?.rentalAssetCount

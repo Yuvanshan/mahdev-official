@@ -65,8 +65,25 @@ export const firestoreOrdersService = {
       const snap = await getDocs(q);
       return snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreOrder[];
     } catch (err) {
-      console.warn('[Firestore Orders] Optimized getOrders error:', err);
-      return [];
+      console.warn('[Firestore Orders] Optimized getOrders error, falling back to full collection fetch:', err);
+      try {
+        const snap = await getDocs(collection(db, 'orders'));
+        let orders = snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreOrder[];
+        if (options?.customerId) {
+          orders = orders.filter((o) => o.customerId === options.customerId);
+        }
+        if (options?.status) {
+          orders = orders.filter((o) => (o.status === options.status || o.orderStatus === options.status));
+        }
+        orders.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        if (options?.limit && options.limit > 0) {
+          orders = orders.slice(0, options.limit);
+        }
+        return orders;
+      } catch (fallbackErr) {
+        console.warn('[Firestore Orders] Fallback orders fetch error:', fallbackErr);
+        return [];
+      }
     }
   },
 
@@ -211,9 +228,10 @@ export const firestoreOrdersService = {
    */
   async getAllOrders(): Promise<FirestoreOrder[]> {
     try {
-      const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
-      const snap = await getDocs(q);
-      return snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreOrder[];
+      const snap = await getDocs(collection(db, 'orders'));
+      const orders = snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreOrder[];
+      orders.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      return orders;
     } catch (err) {
       console.warn('[Firestore Orders] getAllOrders error:', err);
       return [];

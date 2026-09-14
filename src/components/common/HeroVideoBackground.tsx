@@ -207,14 +207,8 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
             setIsVideoReady(true);
           }}
           onError={() => {
-            // If custom video fails, do not fall back to an image; retry with fallback cloud video
-            if (trimmedVideo !== 'firestore://media_blobs/vid_corporate_hero_v1') {
-              resolveMediaUrl('firestore://media_blobs/vid_corporate_hero_v1').then((fallbackUrl) => {
-                if (fallbackUrl) setResolvedSrc(fallbackUrl);
-              });
-            } else {
-              setVideoFailed(true);
-            }
+            // If custom video fails, gracefully transition to background gradient without delay
+            setVideoFailed(true);
           }}
           className="absolute inset-0 w-full h-full object-cover z-1"
           title={title}

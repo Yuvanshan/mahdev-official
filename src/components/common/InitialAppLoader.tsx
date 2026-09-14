@@ -7,13 +7,27 @@ interface InitialAppLoaderProps {
   progress?: number;
 }
 
+const BRAND_TAGLINES = [
+  'Creating Moments...',
+  'Capturing Memories...',
+  'Delivering Innovation...',
+];
+
 export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
   message = 'Mahdev',
-  subMessage = 'Synchronizing database...',
+  subMessage,
   progress,
 }) => {
   const [cachedLogo, setCachedLogo] = useState<string>('/logo.png');
   const [imgError, setImgError] = useState(false);
+  const [taglineIndex, setTaglineIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTaglineIndex((prev) => (prev + 1) % BRAND_TAGLINES.length);
+    }, 1800);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     try {
@@ -41,6 +55,16 @@ export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
   const hasNumericProgress = typeof progress === 'number' && !isNaN(progress);
   const clampedProgress = hasNumericProgress ? Math.min(100, Math.max(0, Math.round(progress))) : null;
 
+  // Filter out any backend/firestore terms from subMessage if passed
+  const sanitizedSubMessage = subMessage &&
+    !subMessage.toLowerCase().includes('firestore') &&
+    !subMessage.toLowerCase().includes('firebase') &&
+    !subMessage.toLowerCase().includes('database') &&
+    !subMessage.toLowerCase().includes('backend') &&
+    !subMessage.toLowerCase().includes('store data')
+      ? subMessage
+      : BRAND_TAGLINES[taglineIndex];
+
   return (
     <motion.div
       id="app-initial-loader"
@@ -56,7 +80,7 @@ export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
           <img
             src={effectiveLogo}
             alt="Mahdev"
-            className="h-12 w-auto max-w-[240px] object-contain drop-shadow-xs"
+            className="h-14 sm:h-16 w-auto max-w-[280px] object-contain drop-shadow-xs"
             referrerPolicy="no-referrer"
             onError={() => {
               if (effectiveLogo !== '/logo.png') {
@@ -68,7 +92,7 @@ export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
         </div>
 
         {/* Minimalist Micro-Progress Line with Real Progress */}
-        <div className="w-48 h-[3px] bg-slate-200/90 rounded-full overflow-hidden relative mb-3">
+        <div className="w-52 h-[3px] bg-slate-200/90 rounded-full overflow-hidden relative mb-3">
           {clampedProgress !== null ? (
             <div
               className="h-full bg-blue-600 rounded-full transition-all duration-200 ease-out"
@@ -79,24 +103,29 @@ export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
           )}
         </div>
 
-        {/* Percentage Counter and Status */}
-        <div className="flex items-center gap-2 mb-1">
+        {/* Percentage Counter and Brand Tagline */}
+        <div className="flex items-center gap-2 mb-1 min-h-[24px]">
           {clampedProgress !== null && (
             <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
               {clampedProgress}%
             </span>
           )}
-          {subMessage && (
-            <p className="text-[11px] font-medium text-slate-500 tracking-wide">
-              {subMessage}
-            </p>
-          )}
+          <motion.p
+            key={sanitizedSubMessage}
+            initial={{ opacity: 0, y: 3 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -3 }}
+            transition={{ duration: 0.3 }}
+            className="text-xs font-medium text-slate-600 tracking-wide"
+          >
+            {sanitizedSubMessage}
+          </motion.p>
         </div>
       </div>
 
-      {/* Subtle Corporate Micro-Footer */}
-      <div className="absolute bottom-8 text-[10px] font-medium tracking-[0.2em] uppercase text-slate-400">
-        Mahdev (Pvt) Ltd • Enterprise Cloud
+      {/* Subtle Corporate Micro-Footer with Brand Taglines */}
+      <div className="absolute bottom-8 text-[11px] font-medium tracking-[0.15em] text-slate-400">
+        Creating Moments • Capturing Memories • Delivering Innovation
       </div>
     </motion.div>
   );

@@ -69,7 +69,7 @@ export const app: FirebaseApp =
 
 // Initialize Centralized Cloud Firestore Database connected to the production named database
 // Configured with memoryLocalCache to eliminate IndexedDB "Database is closing/hidden" errors in iframe & sandbox environments
-// and experimentalForceLongPolling to eliminate the 10-second streaming timeout and ensure immediate backend connectivity
+// and experimentalAutoDetectLongPolling to allow fast WebSockets while safely falling back to long polling if needed
 export const db: Firestore = (() => {
   try {
     return initializeFirestore(
@@ -78,7 +78,10 @@ export const db: Firestore = (() => {
         localCache: memoryLocalCache({
           garbageCollector: memoryEagerGarbageCollector(),
         }),
-        experimentalForceLongPolling: true,
+        experimentalAutoDetectLongPolling: true,
+        experimentalLongPollingOptions: {
+          timeoutSeconds: 20,
+        },
       },
       activeFirestoreDatabaseId || undefined
     );

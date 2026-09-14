@@ -43,8 +43,8 @@ export const TestimonialsView: React.FC<TestimonialsViewProps> = ({ onNavigate }
     return (
       <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-white">
         <DataLoadingOverlay
-          message="Loading customer reviews..."
-          subMessage="Fetching verified Google reviews from Firestore"
+          message="Loading reviews..."
+          subMessage="Curating verified client feedback..."
         />
       </div>
     );

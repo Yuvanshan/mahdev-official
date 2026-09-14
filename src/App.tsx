@@ -50,6 +50,7 @@ import { AccountLayout } from './views/account/AccountLayout';
 import { AdminLayout } from './views/admin/AdminLayout';
 import { MaintenanceView } from './views/MaintenanceView';
 import { InitialAppLoader } from './components/common/InitialAppLoader';
+import { DivisionTransitionLoader } from './components/common/DivisionTransitionLoader';
 import { DocumentScrollProgress } from './components/motion/ParallelScroll';
 
 function AppContent() {
@@ -65,6 +66,8 @@ function AppContent() {
     products,
     services,
     divisions,
+    isDivisionLoaded,
+    loadDivisionData,
   } = useFirestoreDataContext();
   const [currentPath, setCurrentPath] = useState<string>(() => {
     return window.location.pathname || '/';
@@ -301,6 +304,13 @@ function AppContent() {
     }
   }, [normalizedPath, divisionKey]);
 
+  // Priority division data hydration on navigation
+  useEffect(() => {
+    if (divisionKey && !isDivisionLoaded(divisionKey)) {
+      loadDivisionData(divisionKey);
+    }
+  }, [divisionKey, isDivisionLoaded, loadDivisionData]);
+
   // 1. Maintenance Mode Screen: Live Firestore switch
   const isMaintenanceActive = Boolean(
     siteSettings?.maintenance?.enabled ??
@@ -322,7 +332,7 @@ function AppContent() {
     return (
       <InitialAppLoader
         message="Mahdev"
-        subMessage={syncStatus || 'Synchronizing Firestore database...'}
+        subMessage={syncStatus || 'Preparing your experience...'}
         progress={syncProgress}
       />
     );
@@ -452,6 +462,9 @@ function AppContent() {
       if (isDivisionComingSoon('sws')) {
         return <DivisionComingSoonView divisionId="sws" onNavigate={navigate} />;
       }
+      if (!isDivisionLoaded('sws')) {
+        return <DivisionTransitionLoader divisionId="sws" />;
+      }
       return <SWSView onNavigate={navigate} />;
     }
 
@@ -479,6 +492,9 @@ function AppContent() {
         'contact',
       ];
       if (!subSlug || validSubsections.includes(subSlug)) {
+        if (!isDivisionLoaded('sws')) {
+          return <DivisionTransitionLoader divisionId="sws" />;
+        }
         return <SWSView onNavigate={navigate} />;
       }
 
@@ -511,6 +527,9 @@ function AppContent() {
       if (isDivisionComingSoon('u1')) {
         return <DivisionComingSoonView divisionId="u1" onNavigate={navigate} />;
       }
+      if (!isDivisionLoaded('u1')) {
+        return <DivisionTransitionLoader divisionId="u1" />;
+      }
       return <U1View onNavigate={navigate} />;
     }
 
@@ -539,6 +558,9 @@ function AppContent() {
         'booking',
       ];
       if (!subSlug || validSubsections.includes(subSlug)) {
+        if (!isDivisionLoaded('u1')) {
+          return <DivisionTransitionLoader divisionId="u1" />;
+        }
         return <U1View onNavigate={navigate} />;
       }
 
@@ -570,6 +592,9 @@ function AppContent() {
       if (isDivisionComingSoon('it')) {
         return <DivisionComingSoonView divisionId="it" onNavigate={navigate} />;
       }
+      if (!isDivisionLoaded('it')) {
+        return <DivisionTransitionLoader divisionId="it" />;
+      }
       return <ITView onNavigate={navigate} />;
     }
 
@@ -599,6 +624,9 @@ function AppContent() {
         'process',
       ];
       if (!subSlug || validSubsections.includes(subSlug)) {
+        if (!isDivisionLoaded('it')) {
+          return <DivisionTransitionLoader divisionId="it" />;
+        }
         return <ITView onNavigate={navigate} />;
       }
 
@@ -629,6 +657,9 @@ function AppContent() {
       if (isDivisionComingSoon('travels')) {
         return <DivisionComingSoonView divisionId="travels" onNavigate={navigate} />;
       }
+      if (!isDivisionLoaded('travels')) {
+        return <DivisionTransitionLoader divisionId="travels" />;
+      }
       return <TravelsView onNavigate={navigate} />;
     }
 
@@ -657,6 +688,9 @@ function AppContent() {
         'gallery',
       ];
       if (!subSlug || validSubsections.includes(subSlug)) {
+        if (!isDivisionLoaded('travels')) {
+          return <DivisionTransitionLoader divisionId="travels" />;
+        }
         return <TravelsView onNavigate={navigate} />;
       }
 
@@ -686,6 +720,9 @@ function AppContent() {
     ) {
       if (isDivisionComingSoon('mart')) {
         return <DivisionComingSoonView divisionId="mart" onNavigate={navigate} />;
+      }
+      if (!isDivisionLoaded('mart')) {
+        return <DivisionTransitionLoader divisionId="mart" />;
       }
       if (
         (normalizedPath.startsWith('/mart/') && normalizedPath !== '/mart') ||
@@ -843,6 +880,10 @@ function AppContent() {
           return <DivisionComingSoonView divisionId={divId} onNavigate={navigate} />;
         }
 
+        if (!isDivisionLoaded(divId)) {
+          return <DivisionTransitionLoader divisionId={divId} />;
+        }
+
         if (divId === 'sws') return <SWSView onNavigate={navigate} />;
         if (divId === 'u1') return <U1View onNavigate={navigate} />;
         if (divId === 'it') return <ITView onNavigate={navigate} />;
@@ -931,6 +972,9 @@ function AppContent() {
     }
 
     if (divisionKey) {
+      if (!isDivisionLoaded(divisionKey)) {
+        return <DivisionTransitionLoader divisionId={divisionKey} />;
+      }
       return <DivisionView divisionId={divisionKey} onNavigate={navigate} />;
     }
 
@@ -1006,7 +1050,7 @@ function AppContent() {
       <BottomNavigation currentPath={normalizedPath} onNavigate={navigate} />
 
       {/* Reusable Global Footer */}
-      <Footer onNavigate={navigate} />
+      <Footer onNavigate={navigate} currentPath={normalizedPath} />
     </div>
   );
 }

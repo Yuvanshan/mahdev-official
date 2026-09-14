@@ -54,6 +54,7 @@ export const SHIPPING_METHODS: ShippingMethod[] = [
 class OrderService {
   private orders: Order[] = [];
   private listeners: Set<() => void> = new Set();
+  private syncInFlight: Set<string> = new Set();
 
   constructor() {
     this.loadOrders();
@@ -157,26 +158,50 @@ class OrderService {
 
   private saveOrders(): void {
     try {
-      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(this.orders));
-      this.notify();
+      // Strip massive base64 images to prevent localStorage QuotaExceededError
+      const safeOrders = this.orders.map((order) => ({
+        ...order,
+        items: (order.items || []).map((item) => ({
+          ...item,
+          imageUrl: item.imageUrl && item.imageUrl.startsWith('data:') ? '' : item.imageUrl,
+        })),
+      }));
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(safeOrders));
     } catch (e) {
-      console.error('Failed to save orders to localStorage', e);
+      console.warn('[OrderService] Could not cache orders to localStorage (memory retained):', e);
+    } finally {
+      this.notify();
     }
   }
 
   public syncOrderToFirestore(order: Order): void {
+    if (!order || !order.id) return;
+    if (this.syncInFlight.has(order.id)) return;
+    this.syncInFlight.add(order.id);
+
     try {
       const docRef = doc(db, 'orders', order.id);
-      setDoc(docRef, sanitizeForFirestore({
-        ...order,
-        id: order.id,
-        status: order.status,
-        paymentStatus: order.paymentStatus,
-        updatedAt: order.updatedAt || new Date().toISOString(),
-      }), { merge: true }).catch((err) => {
-        console.warn('[OrderService] Firestore order sync error:', err);
-      });
+      setDoc(
+        docRef,
+        sanitizeForFirestore({
+          ...order,
+          id: order.id,
+          status: order.status,
+          paymentStatus: order.paymentStatus,
+          updatedAt: order.updatedAt || new Date().toISOString(),
+        }),
+        { merge: true }
+      )
+        .catch((err) => {
+          console.warn('[OrderService] Firestore order sync error:', err);
+        })
+        .finally(() => {
+          setTimeout(() => {
+            this.syncInFlight.delete(order.id);
+          }, 1500);
+        });
     } catch (e) {
+      this.syncInFlight.delete(order.id);
       console.warn('[OrderService] Firestore order sync catch:', e);
     }
   }

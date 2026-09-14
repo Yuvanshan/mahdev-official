@@ -8,6 +8,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { signInAnonymously } from 'firebase/auth';
 import { auth, storage } from '../lib/firebase';
 import { uploadMediaToFirestore } from './firestoreMediaService';
+import { compressVideoFile } from './videoCompressionService';
 
 export interface UploadMediaProgressCallback {
   (percent: number): void;
@@ -25,7 +26,23 @@ export async function uploadMediaAsset(
     file.name.toLowerCase().endsWith('.mov') ||
     file.name.toLowerCase().endsWith('.m4v');
 
-  const cleanName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+  // Compress video client-side before upload to reduce size while preserving quality
+  let fileToUpload = file;
+  if (isVideo) {
+    try {
+      fileToUpload = await compressVideoFile(file, {
+        onProgress: (pct) => {
+          // Reserve 0-30% for compression stage
+          onProgress?.(Math.round(pct * 0.3));
+        },
+      });
+    } catch (compErr) {
+      console.warn('[MediaUpload] Video compression notice, using original file:', compErr);
+      fileToUpload = file;
+    }
+  }
+
+  const cleanName = `${Date.now()}_${fileToUpload.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 
   // 1. Ensure Firebase Auth session is active (sign in anonymously if not yet signed in)
   if (!auth.currentUser) {
@@ -40,16 +57,17 @@ export async function uploadMediaAsset(
   try {
     const storageFolder = isVideo ? 'videos' : 'images';
     const storageReference = ref(storage, `${storageFolder}/${cleanName}`);
-    const uploadTask = uploadBytesResumable(storageReference, file, {
-      contentType: file.type || (isVideo ? 'video/mp4' : 'image/jpeg'),
+    const uploadTask = uploadBytesResumable(storageReference, fileToUpload, {
+      contentType: fileToUpload.type || (isVideo ? 'video/mp4' : 'image/jpeg'),
     });
 
     return await new Promise<string>((resolve, reject) => {
       uploadTask.on(
         'state_changed',
         (snapshot) => {
-          const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-          onProgress?.(progress);
+          const rawProgress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+          const scaledProgress = isVideo ? Math.min(99, 30 + Math.round(rawProgress * 0.7)) : rawProgress;
+          onProgress?.(scaledProgress);
         },
         (error) => {
           console.warn('[MediaUpload] Firebase Storage upload failed, attempting fallback:', error);
@@ -71,11 +89,12 @@ export async function uploadMediaAsset(
   }
 
   // 3. Direct cloud persistence into Firestore media_blobs collection
-  // Splitting media into indexed chunks in Firestore guarantees 100% synchronization across
-  // all environments (Vercel, Cloud Run, preview, mobile) without local filesystem 404s.
   try {
     console.info('[MediaUpload] Uploading media directly to Firestore media_blobs...');
-    return await uploadMediaToFirestore(file, onProgress);
+    return await uploadMediaToFirestore(fileToUpload, (pct) => {
+      const scaledProgress = isVideo ? Math.min(99, 30 + Math.round(pct * 0.7)) : pct;
+      onProgress?.(scaledProgress);
+    });
   } catch (firestoreErr) {
     console.warn('[MediaUpload] Firestore chunked upload notice:', firestoreErr);
   }
@@ -86,13 +105,14 @@ export async function uploadMediaAsset(
       const xhr = new XMLHttpRequest();
       xhr.open('POST', '/api/upload/media', true);
 
-      xhr.setRequestHeader('Content-Type', file.type || (isVideo ? 'video/mp4' : 'application/octet-stream'));
-      xhr.setRequestHeader('x-filename', file.name);
+      xhr.setRequestHeader('Content-Type', fileToUpload.type || (isVideo ? 'video/mp4' : 'application/octet-stream'));
+      xhr.setRequestHeader('x-filename', fileToUpload.name);
 
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
-          const percent = Math.round((event.loaded / event.total) * 100);
-          onProgress?.(percent);
+          const rawPercent = Math.round((event.loaded / event.total) * 100);
+          const scaledProgress = isVideo ? Math.min(99, 30 + Math.round(rawPercent * 0.7)) : rawPercent;
+          onProgress?.(scaledProgress);
         }
       };
 

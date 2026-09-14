@@ -10,6 +10,9 @@ import {
   DollarSign,
   Printer,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
   X,
   CreditCard,
   User,
@@ -40,9 +43,14 @@ export const AdminOrdersView: React.FC = () => {
   const { admin, logAuditAction } = useAdminAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
+  const [divisionFilter, setDivisionFilter] = useState<string>('all');
+  const [dateFilter, setDateFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Modals
@@ -70,12 +78,89 @@ export const AdminOrdersView: React.FC = () => {
     }, 4000);
   };
 
-  const loadOrders = () => {
-    const all = orderService.getAllOrders();
-    setOrders(all);
-    if (selectedOrder) {
-      const updated = all.find((o) => o.id === selectedOrder.id);
-      if (updated) setSelectedOrder(updated);
+  const mapFirestoreOrder = (fo: any): Order => {
+    const rawCustomer = fo.customer || {};
+    const customerFullName =
+      rawCustomer.fullName ||
+      rawCustomer.name ||
+      fo.customerName ||
+      'Customer';
+    const customerEmail = rawCustomer.email || fo.customerEmail || '';
+    const customerPhone = rawCustomer.phone || fo.customerPhone || '';
+
+    return {
+      id: fo.id,
+      customer: {
+        fullName: customerFullName,
+        email: customerEmail,
+        phone: customerPhone,
+        company: rawCustomer.company || fo.customerCompany,
+        preferredContact: rawCustomer.preferredContact || 'email',
+      },
+      items: Array.isArray(fo.items) ? fo.items : [],
+      totalQuantity:
+        fo.totalQuantity ||
+        (Array.isArray(fo.items)
+          ? fo.items.reduce((s: number, i: any) => s + (i.quantity || 1), 0)
+          : 1),
+      subtotal: Number(fo.subtotal || fo.total || 0),
+      productDiscounts: Number(fo.productDiscounts || 0),
+      couponDiscount: Number(fo.couponDiscount || 0),
+      appliedCouponCode: fo.appliedCouponCode,
+      shippingFee: Number(fo.shippingFee || 0),
+      tax: Number(fo.tax || 0),
+      total: Number(fo.total || 0),
+      currency: fo.currency || 'LKR',
+      status: fo.status || fo.orderStatus || 'pending_payment',
+      paymentStatus: fo.paymentStatus || 'payment_pending',
+      paymentMethod: fo.paymentMethod || 'credit_card',
+      transactionId: fo.transactionId,
+      paymentGatewayReady: fo.paymentGatewayReady ?? true,
+      deliveryInfo: fo.deliveryInfo,
+      bookingInfo: fo.bookingInfo,
+      customerNotes: fo.customerNotes,
+      adminNotesList: fo.adminNotesList || [],
+      refunds: fo.refunds || [],
+      trackingNumber: fo.trackingNumber,
+      carrier: fo.carrier,
+      createdAt: fo.createdAt || new Date().toISOString(),
+      updatedAt: fo.updatedAt || new Date().toISOString(),
+    };
+  };
+
+  const loadOrders = async () => {
+    setIsLoading(true);
+    setFetchError(null);
+    try {
+      const freshOrders = await firestoreOrdersService.getAllOrders();
+      if (Array.isArray(freshOrders)) {
+        const mapped = freshOrders.map(mapFirestoreOrder);
+        const map = new Map<string, Order>();
+        for (const local of orderService.getAllOrders()) {
+          map.set(local.id, local);
+        }
+        for (const remote of mapped) {
+          map.set(remote.id, remote);
+        }
+        const sorted = Array.from(map.values()).sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setOrders(sorted);
+        if (selectedOrder) {
+          const updated = sorted.find((o) => o.id === selectedOrder.id);
+          if (updated) setSelectedOrder(updated);
+        }
+      }
+    } catch (err: any) {
+      console.warn('[AdminOrdersView] Firestore fetch warning:', err);
+      const fallback = orderService.getAllOrders();
+      if (fallback.length > 0) {
+        setOrders(fallback);
+      } else {
+        setFetchError('Unable to load orders from Firestore. Please check connection and retry.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -116,68 +201,60 @@ export const AdminOrdersView: React.FC = () => {
   useEffect(() => {
     let isMounted = true;
 
-    // Load cached orders first
+    // Trigger explicit full collection load from Firestore immediately on mount
+    loadOrders();
+
+    // Load initial cached orders immediately to avoid visual lag
     const initial = orderService.getAllOrders();
     if (initial.length > 0) {
       setOrders(initial);
       setIsLoading(false);
     }
 
-    // Subscribe to Firestore orders directly
-    const unsubFirestore = firestoreOrdersService.subscribeAllOrders((firestoreOrders) => {
-      if (!isMounted) return;
-      if (Array.isArray(firestoreOrders)) {
-        const mapped: Order[] = firestoreOrders.map((fo: any) => ({
-          id: fo.id,
-          customer: fo.customer || {
-            fullName: fo.customerName || 'Customer',
-            email: fo.customerEmail || '',
-            phone: fo.customerPhone || '',
-            preferredContact: 'email',
-          },
-          items: Array.isArray(fo.items) ? fo.items : [],
-          totalQuantity: fo.totalQuantity || (Array.isArray(fo.items) ? fo.items.reduce((s: number, i: any) => s + (i.quantity || 1), 0) : 1),
-          subtotal: fo.subtotal || fo.total || 0,
-          productDiscounts: fo.productDiscounts || 0,
-          couponDiscount: fo.couponDiscount || 0,
-          appliedCouponCode: fo.appliedCouponCode,
-          shippingFee: fo.shippingFee || 0,
-          tax: fo.tax || 0,
-          total: fo.total || 0,
-          currency: fo.currency || 'USD',
-          status: fo.status || fo.orderStatus || 'pending_payment',
-          paymentStatus: fo.paymentStatus || 'payment_pending',
-          paymentMethod: fo.paymentMethod || 'credit_card',
-          transactionId: fo.transactionId,
-          paymentGatewayReady: fo.paymentGatewayReady ?? true,
-          deliveryInfo: fo.deliveryInfo,
-          bookingInfo: fo.bookingInfo,
-          customerNotes: fo.customerNotes,
-          adminNotesList: fo.adminNotesList || [],
-          refunds: fo.refunds || [],
-          trackingNumber: fo.trackingNumber,
-          carrier: fo.carrier,
-          createdAt: fo.createdAt || new Date().toISOString(),
-          updatedAt: fo.updatedAt || new Date().toISOString(),
-        }));
-
-        // Deduplicate
-        const map = new Map<string, Order>();
-        for (const o of mapped) map.set(o.id, o);
-        const sorted = Array.from(map.values()).sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-        setOrders(sorted);
+    // Direct live subscription to Firestore orders collection (Single Source of Truth)
+    const unsubFirestore = firestoreOrdersService.subscribeAllOrders(
+      (firestoreOrders) => {
+        if (!isMounted) return;
+        if (Array.isArray(firestoreOrders)) {
+          const mapped = firestoreOrders.map(mapFirestoreOrder);
+          const map = new Map<string, Order>();
+          for (const local of orderService.getAllOrders()) {
+            map.set(local.id, local);
+          }
+          for (const remote of mapped) {
+            map.set(remote.id, remote);
+          }
+          const sorted = Array.from(map.values()).sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          setOrders(sorted);
+          setIsLoading(false);
+          setFetchError(null);
+        }
+      },
+      (error) => {
+        if (!isMounted) return;
+        console.warn('[AdminOrdersView] Firestore subscription error:', error);
+        if (orders.length === 0) {
+          setFetchError('Failed to establish live connection to orders feed.');
+        }
         setIsLoading(false);
       }
-    });
+    );
 
+    // Merge changes if local state changes (e.g. offline edits), without wiping remote orders
     const unsubService = orderService.subscribe(() => {
       if (!isMounted) return;
       const all = orderService.getAllOrders();
       if (all.length > 0) {
-        setOrders(all);
-        setIsLoading(false);
+        setOrders((prev) => {
+          const map = new Map<string, Order>();
+          for (const o of prev) map.set(o.id, o);
+          for (const o of all) map.set(o.id, o);
+          return Array.from(map.values()).sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        });
       }
     });
 
@@ -290,20 +367,104 @@ export const AdminOrdersView: React.FC = () => {
     loadOrders();
   };
 
-  const filteredOrders = orders.filter((o) => {
-    const matchesStatus = statusFilter === 'all' || o.status === statusFilter;
-    const matchesPayment = paymentFilter === 'all' || o.paymentStatus === paymentFilter;
-    const q = searchQuery.toLowerCase();
-    const matchesSearch =
-      searchQuery === '' ||
-      o.id.toLowerCase().includes(q) ||
-      o.customer.fullName.toLowerCase().includes(q) ||
-      o.customer.email.toLowerCase().includes(q) ||
-      (o.customer.company && o.customer.company.toLowerCase().includes(q)) ||
-      o.items.some((item) => item.name.toLowerCase().includes(q) || item.sku.toLowerCase().includes(q));
+  const filteredOrders = React.useMemo(() => {
+    return orders.filter((o) => {
+      // 1. Status Filter
+      const s = (o.status || (o as any).orderStatus || '').toLowerCase();
+      const matchesStatus =
+        statusFilter === 'all' ||
+        s === statusFilter.toLowerCase() ||
+        (statusFilter === 'pending_payment' && (s === 'pending_payment' || s === 'pending' || s === 'payment_pending')) ||
+        (statusFilter === 'processing' && (s === 'processing' || s === 'in_progress')) ||
+        (statusFilter === 'confirmed' && (s === 'confirmed' || s === 'accepted')) ||
+        (statusFilter === 'dispatched' && (s === 'dispatched' || s === 'shipped')) ||
+        (statusFilter === 'completed' && (s === 'completed' || s === 'delivered'));
+      if (!matchesStatus) return false;
 
-    return matchesStatus && matchesPayment && matchesSearch;
-  });
+      // 2. Payment Filter
+      const p = (o.paymentStatus || '').toLowerCase();
+      const matchesPayment =
+        paymentFilter === 'all' ||
+        p === paymentFilter.toLowerCase() ||
+        (paymentFilter === 'payment_pending' && (p === 'payment_pending' || p === 'pending' || p === 'unpaid')) ||
+        (paymentFilter === 'paid' && (p === 'paid' || p === 'settled'));
+      if (!matchesPayment) return false;
+
+      // 3. Division Filter
+      if (divisionFilter !== 'all') {
+        const itemDivs = (o.items || []).map((it: any) =>
+          ((it.divisionId || it.division || it.category || '') as string).toLowerCase()
+        );
+        const orderDiv = (
+          (o as any).division ||
+          (o as any).divisionId ||
+          (o.bookingInfo as any)?.divisionId ||
+          ''
+        ).toLowerCase();
+
+        const matchesDiv =
+          orderDiv === divisionFilter ||
+          itemDivs.includes(divisionFilter) ||
+          itemDivs.some((d) => d.includes(divisionFilter)) ||
+          (divisionFilter === 'mart' && (!orderDiv || orderDiv === 'mart' || itemDivs.length === 0));
+
+        if (!matchesDiv) return false;
+      }
+
+      // 4. Date Filter
+      if (dateFilter !== 'all') {
+        const orderTime = new Date(o.createdAt || 0).getTime();
+        const now = new Date();
+        if (dateFilter === 'today') {
+          const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+          if (orderTime < todayStart) return false;
+        } else if (dateFilter === 'this_week') {
+          const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).getTime();
+          if (orderTime < weekStart) return false;
+        } else if (dateFilter === 'this_month') {
+          const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+          if (orderTime < monthStart) return false;
+        } else if (dateFilter === 'this_year') {
+          const yearStart = new Date(now.getFullYear(), 0, 1).getTime();
+          if (orderTime < yearStart) return false;
+        }
+      }
+
+      // 5. Search Query Filter
+      const q = searchQuery.toLowerCase().trim();
+      if (q !== '') {
+        const idMatch = (o.id || '').toLowerCase().includes(q);
+        const nameMatch = (o.customer?.fullName || (o as any).customerName || '').toLowerCase().includes(q);
+        const emailMatch = (o.customer?.email || (o as any).customerEmail || '').toLowerCase().includes(q);
+        const phoneMatch = (o.customer?.phone || (o as any).customerPhone || '').toLowerCase().includes(q);
+        const compMatch = (o.customer?.company || '').toLowerCase().includes(q);
+        const itemMatch =
+          Array.isArray(o.items) &&
+          o.items.some(
+            (it) =>
+              (it?.name || '').toLowerCase().includes(q) ||
+              (it?.sku || '').toLowerCase().includes(q)
+          );
+
+        if (!idMatch && !nameMatch && !emailMatch && !phoneMatch && !compMatch && !itemMatch) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [orders, statusFilter, paymentFilter, divisionFilter, dateFilter, searchQuery]);
+
+  // Reset pagination on filter change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, paymentFilter, divisionFilter, dateFilter, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedOrders = React.useMemo(() => {
+    return filteredOrders.slice(startIndex, startIndex + pageSize);
+  }, [filteredOrders, startIndex, pageSize]);
 
   const getStatusBadge = (status: OrderStatus) => {
     switch (status) {
@@ -420,24 +581,71 @@ export const AdminOrdersView: React.FC = () => {
         </div>
       </div>
 
-      {/* Toolbar & Filters */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
-        <div className="relative w-full md:w-96">
+      {/* Error State with Retry */}
+      {fetchError && (
+        <div className="bg-rose-50 border border-rose-200 text-rose-800 p-4 rounded-xl flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{fetchError}</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadOrders}
+            leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
+            className="text-xs font-semibold text-rose-700 hover:bg-rose-100 border-rose-300 shrink-0"
+          >
+            Retry Connection
+          </Button>
+        </div>
+      )}
+
+      {/* Toolbar & Multi-Dimensional Filters */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col xl:flex-row items-center justify-between gap-3 text-xs">
+        <div className="relative w-full xl:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search order ID, customer name, email, SKU..."
+            placeholder="Search order ID, customer, SKU..."
             className="w-full pl-10 pr-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
+          {/* Division Filter */}
+          <select
+            value={divisionFilter}
+            onChange={(e) => setDivisionFilter(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 font-semibold cursor-pointer text-slate-700 text-xs"
+          >
+            <option value="all">All Divisions</option>
+            <option value="mart">Online Mart</option>
+            <option value="sws">SWS Event Management</option>
+            <option value="u1">U1 Studio & Cinema</option>
+            <option value="travels">Mahdev Travels</option>
+            <option value="it">IT Solutions</option>
+          </select>
+
+          {/* Date Filter */}
+          <select
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 font-semibold cursor-pointer text-slate-700 text-xs"
+          >
+            <option value="all">All Time</option>
+            <option value="today">Today</option>
+            <option value="this_week">Past 7 Days</option>
+            <option value="this_month">This Month</option>
+            <option value="this_year">This Year</option>
+          </select>
+
+          {/* Status Filter */}
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 font-semibold cursor-pointer text-slate-700"
+            className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 font-semibold cursor-pointer text-slate-700 text-xs"
           >
             <option value="all">All Order Statuses</option>
             <option value="pending_payment">Pending Payment</option>
@@ -448,10 +656,11 @@ export const AdminOrdersView: React.FC = () => {
             <option value="cancelled">Cancelled</option>
           </select>
 
+          {/* Payment Filter */}
           <select
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 font-semibold cursor-pointer text-slate-700"
+            className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 font-semibold cursor-pointer text-slate-700 text-xs"
           >
             <option value="all">All Payment Statuses</option>
             <option value="paid">Paid</option>
@@ -515,91 +724,169 @@ export const AdminOrdersView: React.FC = () => {
                 ))
               ) : filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-500">
-                    No commercial orders found matching filters.
+                  <td colSpan={7} className="py-12 text-center text-slate-500">
+                    <ShoppingBag className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <span className="font-semibold text-slate-700 block">No commercial orders found</span>
+                    <span className="text-[11px] text-slate-400">Try adjusting your filters or search query</span>
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3.5 px-4">
-                      <div className="font-mono font-bold text-slate-900 text-[13px]">{order.id}</div>
-                      <div className="text-[10px] text-slate-500 font-mono flex items-center gap-1 mt-0.5">
-                        <Clock className="w-3 h-3" />
-                        {new Date(order.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className="font-bold text-slate-900 block">{order.customer.fullName}</span>
-                      <span className="text-[11px] text-slate-500 block">{order.customer.email}</span>
-                      {order.customer.company && (
-                        <span className="text-[10px] text-blue-600 font-semibold flex items-center gap-1 mt-0.5">
-                          <Building className="w-3 h-3" /> {order.customer.company}
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-2">
-                        {order.items.slice(0, 2).map((item, idx) => (
-                          <img
-                            key={idx}
-                            src={item.imageUrl}
-                            alt={item.name}
-                            className="w-8 h-8 rounded-lg object-cover bg-slate-100 border border-slate-200 shrink-0"
-                          />
-                        ))}
-                        <div>
-                          <span className="font-semibold text-slate-800 text-[11px] block truncate max-w-[140px]">
-                            {order.items[0]?.name || 'Items'}
-                          </span>
-                          <span className="text-[10px] text-slate-500">
-                            {order.totalQuantity} {order.totalQuantity === 1 ? 'item' : 'items'}
-                          </span>
+                paginatedOrders.map((order) => {
+                  const customerName = order.customer?.fullName || (order as any).customerName || 'Customer';
+                  const customerEmail = order.customer?.email || (order as any).customerEmail || '';
+                  const customerPhone = order.customer?.phone || (order as any).customerPhone || '';
+                  const currencyLabel = order.currency === 'USD' ? '$' : 'Rs.';
+                  const formattedTotal = (order.total || 0).toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  });
+
+                  return (
+                    <tr key={order.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3.5 px-4">
+                        <div className="font-mono font-bold text-slate-900 text-[13px]">{order.id}</div>
+                        <div className="text-[10px] text-slate-500 font-mono flex items-center gap-1 mt-0.5">
+                          <Clock className="w-3 h-3" />
+                          {new Date(order.createdAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 font-mono font-bold text-slate-900 text-sm">
-                      ${order.total.toFixed(2)}
-                      {order.couponDiscount > 0 && (
-                        <span className="block text-[9px] text-emerald-600 font-normal">
-                          -${order.couponDiscount.toFixed(2)} off ({order.appliedCouponCode})
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4">{getStatusBadge(order.status)}</td>
-                    <td className="py-3.5 px-4">{getPaymentBadge(order.paymentStatus)}</td>
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedOrder(order)}
-                          className="h-8 px-2.5 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 font-semibold"
-                        >
-                          <Eye className="w-3.5 h-3.5 mr-1" />
-                          View Dossier
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setOrderToDelete(order)}
-                          className="h-8 px-2 text-xs text-slate-400 hover:text-rose-600 hover:bg-rose-50 border-slate-200 hover:border-rose-200"
-                          title="Delete Order"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="font-bold text-slate-900 block">{customerName}</span>
+                        {customerEmail && (
+                          <span className="text-[11px] text-slate-500 block">{customerEmail}</span>
+                        )}
+                        {customerPhone && (
+                          <span className="text-[10px] text-slate-400 block font-mono">{customerPhone}</span>
+                        )}
+                        {order.customer?.company && (
+                          <span className="text-[10px] text-blue-600 font-semibold flex items-center gap-1 mt-0.5">
+                            <Building className="w-3 h-3" /> {order.customer.company}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-2">
+                          {(order.items || []).slice(0, 2).map((item, idx) => (
+                            <img
+                              key={idx}
+                              src={item.imageUrl || (item as any).image || '/placeholder.png'}
+                              alt={item.name || 'Product item'}
+                              className="w-8 h-8 rounded-lg object-cover bg-slate-100 border border-slate-200 shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                          ))}
+                          <div>
+                            <span className="font-semibold text-slate-800 text-[11px] block truncate max-w-[140px]">
+                              {order.items?.[0]?.name || 'Commercial items'}
+                            </span>
+                            <span className="text-[10px] text-slate-500">
+                              {order.totalQuantity} {order.totalQuantity === 1 ? 'item' : 'items'}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-900 text-sm">
+                        {currencyLabel} {formattedTotal}
+                        {order.couponDiscount > 0 && (
+                          <span className="block text-[9px] text-emerald-600 font-normal">
+                            -{currencyLabel} {order.couponDiscount.toFixed(2)} off ({order.appliedCouponCode})
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4">{getStatusBadge(order.status)}</td>
+                      <td className="py-3.5 px-4">{getPaymentBadge(order.paymentStatus)}</td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedOrder(order)}
+                            className="h-8 px-2.5 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 font-semibold"
+                          >
+                            <Eye className="w-3.5 h-3.5 mr-1" />
+                            View Dossier
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setOrderToDelete(order)}
+                            className="h-8 px-2 text-xs text-slate-400 hover:text-rose-600 hover:bg-rose-50 border-slate-200 hover:border-rose-200"
+                            title="Delete Order"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Footer */}
+        {filteredOrders.length > 0 && (
+          <div className="bg-slate-50/80 px-4 py-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+            <div className="flex items-center gap-2">
+              <span>Showing</span>
+              <span className="font-bold text-slate-900">
+                {startIndex + 1}–{Math.min(startIndex + pageSize, filteredOrders.length)}
+              </span>
+              <span>of</span>
+              <span className="font-bold text-slate-900">{filteredOrders.length}</span>
+              <span>orders</span>
+
+              <div className="ml-4 flex items-center gap-1.5">
+                <span className="text-slate-400">Rows:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="bg-white border border-slate-200 rounded-md px-1.5 py-0.5 text-xs font-semibold cursor-pointer"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
+                className="h-7 px-2 text-xs"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                Previous
+              </Button>
+              <div className="px-2 font-mono font-semibold text-slate-700">
+                Page {currentPage} of {totalPages}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+                className="h-7 px-2 text-xs"
+              >
+                Next
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Detailed Order Dossier Modal */}

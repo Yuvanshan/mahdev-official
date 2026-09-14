@@ -35,28 +35,17 @@ interface SWSViewProps {
 }
 
 export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
-  const { divisions, companySettings, siteSettings, products, isInitialLoading, isFetching } = useFirestoreDataContext();
+  const { divisions, companySettings, siteSettings, products } = useFirestoreDataContext();
   const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
 
-  if (divisions.length === 0 && (isInitialLoading || isFetching)) {
-    return (
-      <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-slate-950 text-white">
-        <DataLoadingOverlay
-          dark
-          message="Loading SWS Event Management..."
-          subMessage="Fetching division assets & services from Firestore"
-        />
-      </div>
-    );
-  }
-
-  const swsDiv = divisions?.find(
-    (d) =>
-      d.id === 'sws' ||
-      d.id === 'sws-event-management' ||
-      d.slug === 'sws' ||
-      d.slug === 'sws-event-management'
-  );
+  const swsDiv =
+    divisions?.find(
+      (d) =>
+        d.id === 'sws' ||
+        d.id === 'sws-event-management' ||
+        d.slug === 'sws' ||
+        d.slug === 'sws-event-management'
+    ) || DIVISION_LIST.find((d) => d.id === 'sws');
 
   const rentalCount = getRentalAssetCount(
     products,

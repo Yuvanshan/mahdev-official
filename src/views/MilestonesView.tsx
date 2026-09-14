@@ -22,17 +22,6 @@ export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) =>
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  if (milestones.length === 0 && (isInitialLoading || isFetching)) {
-    return (
-      <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-white">
-        <DataLoadingOverlay
-          message="Loading company milestones..."
-          subMessage="Fetching verified historical timeline from Firestore"
-        />
-      </div>
-    );
-  }
-
   const defaultMilestones = [
     {
       year: '2022',

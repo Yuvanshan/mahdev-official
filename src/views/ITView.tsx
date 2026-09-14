@@ -33,24 +33,12 @@ interface ITViewProps {
 }
 
 export const ITView: React.FC<ITViewProps> = ({ onNavigate }) => {
-  const { divisions, companySettings, isInitialLoading, isFetching } = useFirestoreDataContext();
+  const { divisions, companySettings } = useFirestoreDataContext();
   const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
   const [selectedServiceForDetail, setSelectedServiceForDetail] = useState<ITService | null>(null);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [quoteModalService, setQuoteModalService] = useState<ITService | null>(null);
   const [quoteModalType, setQuoteModalType] = useState<ITModalType>('quote');
-
-  if (divisions.length === 0 && (isInitialLoading || isFetching)) {
-    return (
-      <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-slate-950 text-white">
-        <DataLoadingOverlay
-          dark
-          message="Loading IT Solutions & Cloud..."
-          subMessage="Fetching enterprise architecture & services from Firestore"
-        />
-      </div>
-    );
-  }
 
   const handleOpenQuoteModal = (service?: ITService, type: ITModalType = 'quote') => {
     setQuoteModalService(service || null);
