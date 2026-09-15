@@ -49,6 +49,7 @@ import { firestoreGalleryService } from '../services/firestore/gallery';
 import { cmsService } from '../services/cmsService';
 import { catalogService } from '../services/catalogService';
 import { bookingService } from '../services/bookingService';
+import { resolveMediaUrl, preloadVideo } from '../services/firestoreMediaService';
 
 export interface FirestoreDataContextValue {
   isInitialLoading: boolean;
@@ -226,8 +227,10 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Track loaded divisions state for seamless transition & shimmers
   const [loadedDivisions, setLoadedDivisions] = useState<Record<string, boolean>>({});
+  const divisionsRef = React.useRef<FirestoreDivision[]>([]);
+  divisionsRef.current = divisions;
 
-  // Individual Division Data Loader: Fetches services, products, categories, portfolio, and gallery
+  // Individual Division Data Loader: Fetches services, products, categories, portfolio, gallery, and preloads hero video
   const loadDivisionData = useCallback(async (rawDivId: string) => {
     const canonicalId = getCanonicalDivisionId(rawDivId) || rawDivId;
     if (!canonicalId) return;
@@ -285,6 +288,32 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         });
       }
 
+      // Preload division hero video before marking loaded, ensuring division loader stays visible until video is ready
+      try {
+        const divConfig = divisionsRef.current?.find(
+          (d) => d.id === canonicalId || d.slug === canonicalId || d.id === rawDivId
+        );
+        const heroAny = divConfig?.hero as any;
+        const divVideo = (
+          (divConfig as any)?.heroVideoUrl ||
+          (divConfig as any)?.videoUrl ||
+          heroAny?.videoUrl ||
+          (heroAny?.mediaType === 'video' ? heroAny?.mediaUrl : '') ||
+          (heroAny?.mediaUrl?.startsWith?.('firestore://') ? heroAny.mediaUrl : '') ||
+          heroAny?.mediaUrl ||
+          ''
+        ).trim();
+
+        if (divVideo && !divVideo.includes('assets.mixkit.co')) {
+          const resolvedDivVideo = await resolveMediaUrl(divVideo);
+          if (resolvedDivVideo) {
+            await preloadVideo(resolvedDivVideo, 7000);
+          }
+        }
+      } catch (videoErr) {
+        console.debug('[FirestoreDataContext] Division video preload note:', videoErr);
+      }
+
       setLoadedDivisions((prev) => ({
         ...prev,
         [canonicalId]: true,
@@ -310,31 +339,23 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     [loadedDivisions]
   );
 
-  // Initial App Hydration: Loads 100% of Landing Page data first, then sequentially loads division order
+  // Initial App Hydration: Loads 100% of Landing Page data first, then preloads hero video, then sequentially loads division order
   const refreshAll = useCallback(async () => {
     setIsFetching(true);
     try {
       setError(null);
-      setSyncProgress(15);
-      setSyncStatus('Creating Moments');
+      setSyncProgress(20);
+      setSyncStatus('Creating Moments...');
 
-      const TOTAL_LANDING_ITEMS = 8;
-      let completed = 0;
       const brandTaglines = [
-        'Creating Moments',
-        'Capturing Memories',
-        'Delivering Innovation',
-        'Creating Moments',
-        'Capturing Memories',
-        'Delivering Innovation',
-        'Creating Moments',
-        'Capturing Memories',
+        'Creating Moments...',
+        'Capturing Memories...',
+        'Delivering Innovation....',
       ];
+      let taglineIdx = 0;
       const trackProgress = () => {
-        completed++;
-        const pct = Math.min(99, Math.round((completed / TOTAL_LANDING_ITEMS) * 90) + 10);
-        setSyncProgress(pct);
-        setSyncStatus(brandTaglines[completed % brandTaglines.length]);
+        taglineIdx = (taglineIdx + 1) % brandTaglines.length;
+        setSyncStatus(brandTaglines[taglineIdx]);
       };
 
       const [
@@ -394,6 +415,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       });
 
       const sortedDivs = sortDivisions(divs);
+      divisionsRef.current = sortedDivs;
       setHomepageConfig(home);
       setDivisions(sortedDivs);
       setMilestones(ms);
@@ -421,14 +443,35 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         localStorage.setItem('mahdev_cached_google_reviews', JSON.stringify(gReviews));
       } catch {}
 
-      // Landing page is 100% hydrated and ready!
+      // Preload the Homepage Hero section video from Firestore BEFORE dismissing initial loader
+      const rawHeroVid = (
+        home?.hero?.videoUrl ||
+        (home?.hero as any)?.heroVideoUrl ||
+        (home?.hero?.mediaType === 'video' ? home?.hero?.mediaUrl : '') ||
+        (home?.hero?.mediaUrl?.startsWith('firestore://') ? home.hero.mediaUrl : '') ||
+        home?.hero?.mediaUrl ||
+        ''
+      ).trim();
+
+      if (rawHeroVid && !rawHeroVid.includes('assets.mixkit.co')) {
+        setSyncStatus('Delivering Innovation....');
+        try {
+          const resolvedHeroVid = await resolveMediaUrl(rawHeroVid);
+          if (resolvedHeroVid) {
+            await preloadVideo(resolvedHeroVid, 8000);
+          }
+        } catch (vidErr) {
+          console.warn('[FirestoreDataContext] Hero video preload notice:', vidErr);
+        }
+      }
+
+      // Initial loading completed: Landing page & hero video are ready!
       setSyncProgress(100);
-      setSyncStatus('Delivering Innovation');
+      setSyncStatus('Delivering Innovation....');
       setIsInitialLoading(false);
       setIsReady(true);
 
-      // Sequential Division Data Loading in division order:
-      // "it needs to get the whole data from the backend one by one for the division order. First, it needs to get"
+      // Immediately after initial loads, load other things in the background
       (async () => {
         for (const div of sortedDivs) {
           const divId = div.id || div.slug;

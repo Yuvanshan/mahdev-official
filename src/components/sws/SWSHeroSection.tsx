@@ -46,6 +46,8 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
     (swsDiv as any)?.heroVideoUrl ||
     (swsDiv as any)?.videoUrl ||
     (swsDiv?.hero as any)?.videoUrl ||
+    ((swsDiv?.hero as any)?.mediaType === 'video' ? (swsDiv?.hero as any)?.mediaUrl : '') ||
+    ((swsDiv?.hero as any)?.mediaUrl?.startsWith?.('firestore://') ? (swsDiv?.hero as any)?.mediaUrl : '') ||
     '';
 
   const rawHeroImage =

@@ -722,7 +722,7 @@ export const firestoreSettingsService = {
           firestoreMedia = 'firestore://media_blobs/vid_corporate_hero_v1';
         }
 
-        const effectiveVideo = firestoreVideo || (rawHero.mediaType === 'video' ? firestoreMedia : '') || def.hero.videoUrl;
+        const effectiveVideo = firestoreVideo || (rawHero.mediaType === 'video' ? firestoreMedia : '') || firestoreMedia || def.hero.videoUrl;
 
         const data: HomepageCmsConfig = {
           ...def,
@@ -732,7 +732,7 @@ export const firestoreSettingsService = {
             ...rawHero,
             videoUrl: effectiveVideo,
             mediaUrl: firestoreMedia || effectiveVideo || def.hero.mediaUrl,
-            mediaType: 'video',
+            mediaType: rawHero.mediaType || (effectiveVideo ? 'video' : 'image'),
           },
           milestones: {
             ...def.milestones,
@@ -866,7 +866,7 @@ export const firestoreSettingsService = {
             firestoreMedia = 'firestore://media_blobs/vid_corporate_hero_v1';
           }
 
-          const effectiveVideo = firestoreVideo || (rawHero.mediaType === 'video' ? firestoreMedia : '') || def.hero.videoUrl;
+          const effectiveVideo = firestoreVideo || (rawHero.mediaType === 'video' ? firestoreMedia : '') || firestoreMedia || def.hero.videoUrl;
 
           const data: HomepageCmsConfig = {
             ...def,
@@ -876,7 +876,7 @@ export const firestoreSettingsService = {
               ...rawHero,
               videoUrl: effectiveVideo,
               mediaUrl: firestoreMedia || effectiveVideo || def.hero.mediaUrl,
-              mediaType: 'video',
+              mediaType: rawHero.mediaType || (effectiveVideo ? 'video' : 'image'),
             },
             milestones: {
               ...def.milestones,

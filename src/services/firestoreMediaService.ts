@@ -18,6 +18,7 @@ import { db } from '../lib/firebase';
 
 const CHUNK_SIZE_BYTES = 450 * 1024; // 450KB per chunk (~600KB in base64, safe under 1MB limit)
 const memoryBlobUrlCache = new Map<string, string>();
+const inFlightResolutions = new Map<string, Promise<string>>();
 
 export interface FirestoreMediaMetadata {
   id: string;
@@ -51,7 +52,10 @@ function openMediaDB(): Promise<IDBDatabase> {
 
 async function getCachedBlobFromIdb(key: string): Promise<Blob | null> {
   try {
-    const idb = await openMediaDB();
+    const idbPromise = openMediaDB();
+    const timeoutPromise = new Promise<null>((r) => setTimeout(() => r(null), 300));
+    const idb = await Promise.race([idbPromise, timeoutPromise]);
+    if (!idb) return null;
     return new Promise((resolve) => {
       const tx = idb.transaction(IDB_STORE, 'readonly');
       const store = tx.objectStore(IDB_STORE);
@@ -66,7 +70,10 @@ async function getCachedBlobFromIdb(key: string): Promise<Blob | null> {
 
 async function saveCachedBlobToIdb(key: string, blob: Blob): Promise<void> {
   try {
-    const idb = await openMediaDB();
+    const idbPromise = openMediaDB();
+    const timeoutPromise = new Promise<null>((r) => setTimeout(() => r(null), 300));
+    const idb = await Promise.race([idbPromise, timeoutPromise]);
+    if (!idb) return;
     const tx = idb.transaction(IDB_STORE, 'readwrite');
     const store = tx.objectStore(IDB_STORE);
     store.put(blob, key);
@@ -169,11 +176,18 @@ export async function resolveMediaUrl(rawUrl: string | undefined): Promise<strin
   const trimmed = rawUrl.trim();
   if (!trimmed) return '';
 
-  if (!trimmed.startsWith('firestore://media_blobs/')) {
+  if (!trimmed.startsWith('firestore://')) {
     return trimmed;
   }
 
-  const blobId = trimmed.replace('firestore://media_blobs/', '').split('/')[0];
+  const blobId = trimmed
+    .replace('firestore://media_blobs/', '')
+    .replace('firestore://blobs/', '')
+    .replace('firestore://media/', '')
+    .replace('firestore://', '')
+    .split('/')[0]
+    .trim();
+
   if (!blobId) return trimmed;
 
   // 1. Check in-memory cache
@@ -189,47 +203,117 @@ export async function resolveMediaUrl(rawUrl: string | undefined): Promise<strin
     return objUrl;
   }
 
-  // 3. Reconstruct from Firestore chunk documents
-  try {
-    const metaDocRef = doc(db, 'media_blobs', blobId);
-    const metaSnap = await getDoc(metaDocRef);
-    if (!metaSnap.exists()) {
-      console.warn('[FirestoreMedia] Media blob metadata not found:', blobId);
-      return '';
-    }
-    const meta = metaSnap.data() as FirestoreMediaMetadata;
-
-    const chunksCollRef = collection(db, 'media_blobs', blobId, 'chunks');
-    const chunksQuery = query(chunksCollRef, orderBy('index', 'asc'));
-    const chunkSnaps = await getDocs(chunksQuery);
-
-    if (chunkSnaps.empty) {
-      console.warn('[FirestoreMedia] Media blob chunks missing for:', blobId);
-      return '';
-    }
-
-    const chunkDataParts: Uint8Array[] = [];
-    chunkSnaps.forEach((snap) => {
-      const b64 = snap.data()?.data;
-      if (b64) {
-        const binaryString = atob(b64);
-        const len = binaryString.length;
-        const bytes = new Uint8Array(len);
-        for (let j = 0; j < len; j++) {
-          bytes[j] = binaryString.charCodeAt(j);
-        }
-        chunkDataParts.push(bytes);
-      }
-    });
-
-    const reconstructedBlob = new Blob(chunkDataParts, { type: meta.mimeType || 'video/mp4' });
-    await saveCachedBlobToIdb(blobId, reconstructedBlob);
-
-    const objectUrl = URL.createObjectURL(reconstructedBlob);
-    memoryBlobUrlCache.set(blobId, objectUrl);
-    return objectUrl;
-  } catch (err) {
-    console.error('[FirestoreMedia] Error reconstructing media blob:', err);
-    return '';
+  // 3. Deduplicate concurrent in-flight download promises
+  if (inFlightResolutions.has(blobId)) {
+    return inFlightResolutions.get(blobId)!;
   }
+
+  const resolutionPromise = (async () => {
+    try {
+      const metaDocRef = doc(db, 'media_blobs', blobId);
+      const metaSnap = await getDoc(metaDocRef);
+      if (!metaSnap.exists()) {
+        console.warn('[FirestoreMedia] Media blob metadata not found:', blobId);
+        return '';
+      }
+      const meta = metaSnap.data() as FirestoreMediaMetadata;
+
+      const chunksCollRef = collection(db, 'media_blobs', blobId, 'chunks');
+      const chunkSnaps = await getDocs(chunksCollRef);
+
+      if (chunkSnaps.empty) {
+        console.warn('[FirestoreMedia] Media blob chunks missing for:', blobId);
+        return '';
+      }
+
+      // Explicit in-memory numerical sorting by chunk index
+      const sortedSnaps = chunkSnaps.docs.slice().sort((a, b) => {
+        const idxA = typeof a.data()?.index === 'number' ? a.data().index : parseInt(a.id, 10) || 0;
+        const idxB = typeof b.data()?.index === 'number' ? b.data().index : parseInt(b.id, 10) || 0;
+        return idxA - idxB;
+      });
+
+      const chunkDataParts: Uint8Array[] = [];
+      for (const snap of sortedSnaps) {
+        const b64 = snap.data()?.data;
+        if (b64) {
+          const binaryString = atob(b64);
+          const len = binaryString.length;
+          const bytes = new Uint8Array(len);
+          for (let j = 0; j < len; j++) {
+            bytes[j] = binaryString.charCodeAt(j);
+          }
+          chunkDataParts.push(bytes);
+        }
+      }
+
+      const reconstructedBlob = new Blob(chunkDataParts, { type: meta.mimeType || 'video/mp4' });
+      // Non-blocking write to IDB in background
+      saveCachedBlobToIdb(blobId, reconstructedBlob).catch(() => {});
+
+      const objectUrl = URL.createObjectURL(reconstructedBlob);
+      memoryBlobUrlCache.set(blobId, objectUrl);
+      return objectUrl;
+    } catch (err) {
+      console.error('[FirestoreMedia] Error reconstructing media blob:', err);
+      return '';
+    } finally {
+      inFlightResolutions.delete(blobId);
+    }
+  })();
+
+  inFlightResolutions.set(blobId, resolutionPromise);
+  return resolutionPromise;
+}
+
+/**
+ * Pre-buffers video in the browser to ensure zero-stutter playback before UI reveals it.
+ * Has a strict timeout fallback so the application never hangs if offline or on slow network.
+ */
+export function preloadVideo(url: string, timeoutMs = 8000): Promise<boolean> {
+  if (!url || typeof window === 'undefined') return Promise.resolve(true);
+  if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')) {
+    return Promise.resolve(true);
+  }
+
+  return new Promise((resolve) => {
+    let finished = false;
+    let timer: any = null;
+
+    const cleanup = () => {
+      if (finished) return;
+      finished = true;
+      if (timer) clearTimeout(timer);
+      try {
+        video.src = '';
+        video.load();
+        video.remove();
+      } catch {}
+      resolve(true);
+    };
+
+    timer = setTimeout(cleanup, timeoutMs);
+
+    const video = document.createElement('video');
+    video.preload = 'auto';
+    video.muted = true;
+    (video as any).defaultMuted = true;
+    video.playsInline = true;
+    video.style.position = 'fixed';
+    video.style.top = '-9999px';
+    video.style.left = '-9999px';
+    video.style.width = '1px';
+    video.style.height = '1px';
+    video.style.opacity = '0';
+    video.style.pointerEvents = 'none';
+
+    video.oncanplay = cleanup;
+    video.onloadeddata = cleanup;
+    video.oncanplaythrough = cleanup;
+    video.onerror = cleanup;
+
+    video.src = url;
+    document.body.appendChild(video);
+    video.load();
+  });
 }

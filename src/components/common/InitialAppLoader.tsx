@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface InitialAppLoaderProps {
   message?: string;
@@ -10,14 +10,10 @@ interface InitialAppLoaderProps {
 const BRAND_TAGLINES = [
   'Creating Moments...',
   'Capturing Memories...',
-  'Delivering Innovation...',
+  'Delivering Innovation....',
 ];
 
-export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
-  message = 'Mahdev',
-  subMessage,
-  progress,
-}) => {
+export const InitialAppLoader: React.FC<InitialAppLoaderProps> = () => {
   const [cachedLogo, setCachedLogo] = useState<string>('/logo.png');
   const [imgError, setImgError] = useState(false);
   const [taglineIndex, setTaglineIndex] = useState(0);
@@ -52,18 +48,7 @@ export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
   }, []);
 
   const effectiveLogo = !imgError && cachedLogo ? cachedLogo : '/logo.png';
-  const hasNumericProgress = typeof progress === 'number' && !isNaN(progress);
-  const clampedProgress = hasNumericProgress ? Math.min(100, Math.max(0, Math.round(progress))) : null;
-
-  // Filter out any backend/firestore terms from subMessage if passed
-  const sanitizedSubMessage = subMessage &&
-    !subMessage.toLowerCase().includes('firestore') &&
-    !subMessage.toLowerCase().includes('firebase') &&
-    !subMessage.toLowerCase().includes('database') &&
-    !subMessage.toLowerCase().includes('backend') &&
-    !subMessage.toLowerCase().includes('store data')
-      ? subMessage
-      : BRAND_TAGLINES[taglineIndex];
+  const currentTagline = BRAND_TAGLINES[taglineIndex];
 
   return (
     <motion.div
@@ -71,60 +56,69 @@ export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.25, ease: 'easeOut' }}
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#FAF9F6] text-slate-900 select-none antialiased"
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="fixed inset-0 z-[100] bg-slate-950/40 backdrop-blur-xl flex flex-col items-center justify-center p-4 select-none antialiased"
     >
-      <div className="flex flex-col items-center text-center max-w-sm px-6">
-        {/* Brand Presentation with Official Logo */}
-        <div className="mb-6 flex items-center justify-center">
+      {/* Dynamic Background Ambient Shimmer */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full blur-3xl opacity-25 animate-pulse bg-[#0052FF]" />
+        <div className="absolute top-1/3 -right-32 w-96 h-96 rounded-full blur-3xl opacity-20 animate-pulse bg-[#00D2FF]" />
+      </div>
+
+      {/* Floating Centered Brand Card */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+        className="relative z-20 bg-white/95 backdrop-blur-2xl border border-slate-200/80 shadow-2xl shadow-blue-500/10 rounded-3xl p-8 sm:p-10 max-w-md w-full text-center flex flex-col items-center"
+      >
+        {/* Prominent High-Impact Brand Logo */}
+        <div className="mb-6 flex items-center justify-center min-h-[90px] sm:min-h-[110px]">
           <img
             src={effectiveLogo}
             alt="Mahdev"
-            className="h-14 sm:h-16 w-auto max-w-[280px] object-contain drop-shadow-xs"
+            className="h-20 sm:h-24 md:h-28 w-auto max-w-[320px] sm:max-w-[380px] object-contain drop-shadow-sm transition-transform duration-300"
             referrerPolicy="no-referrer"
             onError={() => {
               if (effectiveLogo !== '/logo.png') {
                 setCachedLogo('/logo.png');
                 setImgError(false);
+              } else {
+                setImgError(true);
               }
             }}
           />
         </div>
 
-        {/* Minimalist Micro-Progress Line with Real Progress */}
-        <div className="w-52 h-[3px] bg-slate-200/90 rounded-full overflow-hidden relative mb-3">
-          {clampedProgress !== null ? (
-            <div
-              className="h-full bg-blue-600 rounded-full transition-all duration-200 ease-out"
-              style={{ width: `${clampedProgress}%` }}
-            />
-          ) : (
-            <div className="absolute inset-y-0 bg-blue-600 rounded-full animate-indeterminate" />
-          )}
+        {/* Animated Brand Tagline Switcher */}
+        <div className="min-h-[30px] flex items-center justify-center mb-6">
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={currentTagline}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.28, ease: 'easeInOut' }}
+              className="text-sm sm:text-base font-semibold text-slate-800 tracking-wide"
+            >
+              {currentTagline}
+            </motion.p>
+          </AnimatePresence>
         </div>
 
-        {/* Percentage Counter and Brand Tagline */}
-        <div className="flex items-center gap-2 mb-1 min-h-[24px]">
-          {clampedProgress !== null && (
-            <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-              {clampedProgress}%
-            </span>
-          )}
-          <motion.p
-            key={sanitizedSubMessage}
-            initial={{ opacity: 0, y: 3 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -3 }}
-            transition={{ duration: 0.3 }}
-            className="text-xs font-medium text-slate-600 tracking-wide"
-          >
-            {sanitizedSubMessage}
-          </motion.p>
+        {/* Smooth Continuous Shimmer Line (No Percentage) */}
+        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden relative">
+          <motion.div
+            className="h-full rounded-full bg-linear-to-r from-[#0052FF] via-[#0066FF] to-[#00D2FF]"
+            initial={{ x: '-100%' }}
+            animate={{ x: '100%' }}
+            transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
+          />
         </div>
-      </div>
+      </motion.div>
 
-      {/* Subtle Corporate Micro-Footer with Brand Taglines */}
-      <div className="absolute bottom-8 text-[11px] font-medium tracking-[0.15em] text-slate-400">
+      {/* Subtle Corporate Micro-Footer */}
+      <div className="absolute bottom-8 text-[11px] font-medium tracking-[0.15em] text-slate-200/80 drop-shadow-xs">
         Creating Moments • Capturing Memories • Delivering Innovation
       </div>
     </motion.div>

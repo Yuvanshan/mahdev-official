@@ -32,6 +32,7 @@ import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
+import { getYouTubeEmbedUrl, extractYouTubeId } from '../../utils/youtube';
 import { DivisionId } from '../../types';
 import { getRentalAssetCount } from '../../utils/assetMetrics';
 import { compressDataUrl } from '../../utils/imageOptimizer';
@@ -1444,13 +1445,9 @@ export const AdminDivisionsView: React.FC = () => {
                     </label>
                     <div className="relative rounded-xl overflow-hidden aspect-16/7 bg-slate-950 border border-slate-200 shadow-inner max-h-48 flex items-center justify-center">
                       {formData.heroMediaType === 'video' && formData.heroVideoUrl ? (
-                        formData.heroVideoUrl.includes('youtube.com') || formData.heroVideoUrl.includes('youtu.be') ? (
+                        extractYouTubeId(formData.heroVideoUrl) ? (
                           <iframe
-                            src={
-                              formData.heroVideoUrl.includes('embed')
-                                ? formData.heroVideoUrl
-                                : `https://www.youtube.com/embed/${formData.heroVideoUrl.split('v=')[1] || formData.heroVideoUrl.split('/').pop()}?autoplay=1&mute=1&loop=1&controls=0`
-                            }
+                            src={getYouTubeEmbedUrl(formData.heroVideoUrl, { autoplay: true, mute: true, loop: true, controls: false }) || ''}
                             title="Preview"
                             className="w-full h-full object-cover pointer-events-none"
                           />

@@ -115,32 +115,32 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
 
   const sizeStyles = {
     sm: {
-      mark: 'w-8 h-8 sm:w-9 sm:h-9 text-xs',
-      imgHeight: 'h-8 sm:h-9',
-      title: 'text-sm font-bold',
-      subtitle: 'text-[9px]',
-      tag: 'text-[8px] sm:text-[9px]',
-    },
-    md: {
       mark: 'w-10 h-10 sm:w-12 sm:h-12 text-sm',
       imgHeight: 'h-10 sm:h-12',
-      title: 'text-base sm:text-lg font-bold',
+      title: 'text-base font-bold',
       subtitle: 'text-[10px]',
       tag: 'text-[9px] sm:text-[10px]',
     },
-    lg: {
-      mark: 'w-12 h-12 sm:w-14 sm:h-14 text-base',
-      imgHeight: 'h-12 sm:h-15',
+    md: {
+      mark: 'w-13 h-13 sm:w-16 sm:h-16 text-base',
+      imgHeight: 'h-14 sm:h-16 md:h-18',
       title: 'text-lg sm:text-xl font-bold',
       subtitle: 'text-xs',
       tag: 'text-[10px] sm:text-xs',
     },
-    xl: {
-      mark: 'w-14 h-14 sm:w-18 sm:h-18 text-lg',
-      imgHeight: 'h-16 sm:h-22',
+    lg: {
+      mark: 'w-16 h-16 sm:w-20 sm:h-20 text-lg',
+      imgHeight: 'h-18 sm:h-22 md:h-24',
       title: 'text-xl sm:text-2xl font-bold',
       subtitle: 'text-xs sm:text-sm',
       tag: 'text-xs sm:text-sm',
+    },
+    xl: {
+      mark: 'w-20 h-20 sm:w-26 sm:h-26 text-xl',
+      imgHeight: 'h-24 sm:h-28 md:h-32',
+      title: 'text-2xl sm:text-3xl font-bold',
+      subtitle: 'text-sm',
+      tag: 'text-sm font-semibold',
     },
   };
 
@@ -177,7 +177,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
           <img
             src={uploadedLogo}
             alt={brandName}
-            className={`${currentSize.imgHeight} w-auto max-w-[280px] object-contain transition-transform duration-200 group-hover:scale-[1.02] filter drop-shadow-xs`}
+            className={`${currentSize.imgHeight} w-auto max-w-[340px] sm:max-w-[420px] object-contain transition-transform duration-200 group-hover:scale-[1.02] filter drop-shadow-xs`}
             referrerPolicy="no-referrer"
             onError={() => setImgError(true)}
           />

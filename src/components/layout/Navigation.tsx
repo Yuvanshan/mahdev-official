@@ -209,7 +209,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
         )}
 
         <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-18">
+          <div className="flex items-center justify-between h-18 sm:h-20 md:h-22">
             {/* Left: Brand Logo */}
             <div className="flex items-center shrink-0 min-w-0 mr-1 sm:mr-0">
               <BrandLogo

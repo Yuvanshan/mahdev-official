@@ -36,6 +36,8 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
     (u1Div as any)?.heroVideoUrl ||
     (u1Div as any)?.videoUrl ||
     (u1Div?.hero as any)?.videoUrl ||
+    ((u1Div?.hero as any)?.mediaType === 'video' ? (u1Div?.hero as any)?.mediaUrl : '') ||
+    ((u1Div?.hero as any)?.mediaUrl?.startsWith?.('firestore://') ? (u1Div?.hero as any)?.mediaUrl : '') ||
     '';
 
   const rawHeroImage =

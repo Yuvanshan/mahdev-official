@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { resolveMediaUrl } from '../../services/firestoreMediaService';
+import { getYouTubeEmbedUrl, extractYouTubeId } from '../../utils/youtube';
 
 interface HeroVideoBackgroundProps {
   videoUrl?: string;
@@ -8,16 +9,18 @@ interface HeroVideoBackgroundProps {
   title?: string;
   overlayGradient?: 'default' | 'electric' | 'subtle';
   className?: string;
+  onVideoReady?: () => void;
 }
 
-/**
- * Extracts clean YouTube video ID from various URL structures (watch, shorts, embed, youtu.be)
- */
-function extractYouTubeId(url: string): string | null {
-  if (!url) return null;
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-  const match = url.match(regExp);
-  return match && match[2].length === 11 ? match[2] : null;
+// Global safety guard ensuring onVideoReady identifier is never undefined across browser contexts or iframe messages
+declare global {
+  interface Window {
+    onVideoReady?: () => void;
+  }
+}
+
+if (typeof window !== 'undefined') {
+  (window as any).onVideoReady = (window as any).onVideoReady || (() => {});
 }
 
 /**
@@ -37,11 +40,23 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
   title = 'Hero Background Media',
   overlayGradient = 'default',
   className = '',
+  onVideoReady,
 }) => {
   const [videoFailed, setVideoFailed] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [resolvedSrc, setResolvedSrc] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  const handleVideoReady = () => {
+    setIsVideoReady(true);
+    if (typeof onVideoReady === 'function') {
+      try {
+        onVideoReady();
+      } catch (err) {
+        console.debug('[HeroVideoBackground] onVideoReady error:', err);
+      }
+    }
+  };
 
   const trimmedVideo = videoUrl?.trim() || '';
 
@@ -51,9 +66,13 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
       setResolvedSrc('');
       return;
     }
-    if (trimmedVideo.startsWith('firestore://media_blobs/')) {
+    if (trimmedVideo.startsWith('firestore://')) {
       resolveMediaUrl(trimmedVideo).then((url) => {
-        if (isMounted) setResolvedSrc(url);
+        if (isMounted && url) {
+          setResolvedSrc(url);
+        }
+      }).catch((err) => {
+        console.warn('[HeroVideoBackground] Resolution error:', err);
       });
     } else {
       setResolvedSrc(trimmedVideo);
@@ -110,16 +129,9 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
     const videoEl = videoRef.current;
     if (!videoEl) return;
 
-    // Reset video ready state when videoUrl changes
-    setIsVideoReady(false);
-
-    // Strict browser muted autoplay requirement: both properties must be set on the DOM instance
     videoEl.defaultMuted = true;
     videoEl.muted = true;
     videoEl.playsInline = true;
-    videoEl.setAttribute('muted', '');
-    videoEl.setAttribute('playsinline', '');
-    videoEl.setAttribute('autoplay', '');
 
     const attemptPlay = () => {
       if (!videoEl) return;
@@ -128,7 +140,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
-            setIsVideoReady(true);
+            handleVideoReady();
           })
           .catch((error) => {
             console.debug('Autoplay deferred pending user interaction:', error);
@@ -155,17 +167,23 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
       window.removeEventListener('touchstart', onUserInteraction);
       window.removeEventListener('scroll', onUserInteraction);
     };
-  }, [hasVideo, isYouTube, trimmedVideo]);
+  }, [hasVideo, isEmbedVideo, resolvedSrc]);
 
   // YouTube embed URL with required parameters for autoplay & loop
-  const youTubeEmbedSrc = ytVideoId
-    ? `https://www.youtube-nocookie.com/embed/${ytVideoId}?autoplay=1&mute=1&loop=1&playlist=${ytVideoId}&controls=0&showinfo=0&rel=0&playsinline=1&modestbranding=1&enablejsapi=1`
-    : null;
+  const youTubeEmbedSrc = getYouTubeEmbedUrl(trimmedVideo, {
+    autoplay: true,
+    mute: true,
+    loop: true,
+    controls: false,
+    rel: false,
+  });
 
   // Vimeo embed URL with required parameters for background autoplay & loop
   const vimeoEmbedSrc = vimeoId
     ? `https://player.vimeo.com/video/${vimeoId}?background=1&autoplay=1&loop=1&byline=0&title=0&muted=1`
     : null;
+
+  const effectiveVideoSrc = resolvedSrc || (!trimmedVideo.startsWith('firestore://') ? trimmedVideo : '');
 
   return (
     <div className={`absolute inset-0 z-0 overflow-hidden select-none pointer-events-none bg-[#061033] ${className}`}>
@@ -184,31 +202,37 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
           className="absolute inset-0 w-full h-full object-cover scale-135 border-0 z-1"
           allow="autoplay; fullscreen; picture-in-picture"
         />
-      ) : hasVideo && (resolvedSrc || !trimmedVideo.startsWith('firestore://')) ? (
+      ) : hasVideo && effectiveVideoSrc ? (
         <video
           ref={videoRef}
-          src={resolvedSrc || trimmedVideo}
+          src={effectiveVideoSrc}
           autoPlay
           loop
           muted
           playsInline
           preload="auto"
           onCanPlay={(e) => {
-            e.currentTarget.muted = true;
-            e.currentTarget.play().catch(() => {});
-            setIsVideoReady(true);
+            const v = e.currentTarget;
+            v.muted = true;
+            v.play().catch(() => {});
+            handleVideoReady();
           }}
           onPlaying={() => {
-            setIsVideoReady(true);
+            handleVideoReady();
           }}
           onLoadedData={(e) => {
-            e.currentTarget.muted = true;
-            e.currentTarget.play().catch(() => {});
-            setIsVideoReady(true);
+            const v = e.currentTarget;
+            v.muted = true;
+            v.play().catch(() => {});
+            handleVideoReady();
           }}
-          onError={() => {
-            // If custom video fails, gracefully transition to background gradient without delay
-            setVideoFailed(true);
+          onError={(e) => {
+            // Do not delete video on transient playback aborts
+            const err = e.currentTarget.error;
+            console.warn('[HeroVideoBackground] Video playback note:', err?.message || err);
+            if (!resolvedSrc && !trimmedVideo) {
+              setVideoFailed(true);
+            }
           }}
           className="absolute inset-0 w-full h-full object-cover z-1"
           title={title}

@@ -33,36 +33,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     heroConfig?.videoUrl?.trim() ||
     (heroConfig as any)?.heroVideoUrl?.trim() ||
     (heroConfig?.mediaType === 'video' ? heroConfig?.mediaUrl?.trim() : '') ||
+    (heroConfig?.mediaUrl?.startsWith('firestore://') ? heroConfig.mediaUrl.trim() : '') ||
+    heroConfig?.mediaUrl?.trim() ||
     '';
 
-  // Do not load any default video placeholder (e.g. vid_corporate_hero_v1, mixkit) so hero loads immediately
+  // Do not load external placeholder video so real content displays instantly
   const isDefaultOrPlaceholder =
-    rawCandidateVideo.includes('vid_corporate_hero_v1') ||
     rawCandidateVideo.includes('assets.mixkit.co') ||
     rawCandidateVideo === '';
 
-  const candidateVideoUrl = isDefaultOrPlaceholder ? '' : rawCandidateVideo;
-
-  const rawMedia = heroConfig?.mediaUrl?.trim() || '';
-  const isRawMediaVideo = Boolean(
-    rawMedia &&
-      !rawMedia.includes('vid_corporate_hero_v1') &&
-      (rawMedia.includes('.mp4') ||
-        rawMedia.includes('.webm') ||
-        rawMedia.includes('.ogg') ||
-        rawMedia.includes('.mov') ||
-        rawMedia.includes('.m4v') ||
-        rawMedia.includes('youtube.com') ||
-        rawMedia.includes('youtu.be') ||
-        rawMedia.includes('vimeo.com') ||
-        rawMedia.startsWith('firestore://') ||
-        (rawMedia.includes('firebasestorage.googleapis.com') && rawMedia.includes('videos')) ||
-        rawMedia.startsWith('/uploads/videos/') ||
-        rawMedia.startsWith('data:video'))
-  );
-
-  // Show video only if explicitly configured custom video by administrator
-  const effectiveVideoUrl = candidateVideoUrl || (isRawMediaVideo ? rawMedia : '');
+  const effectiveVideoUrl = isDefaultOrPlaceholder ? '' : rawCandidateVideo;
 
   const divisionLinks = useMemo(() => {
     if (divisions && divisions.length > 0) {

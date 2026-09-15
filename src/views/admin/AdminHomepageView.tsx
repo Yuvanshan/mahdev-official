@@ -38,6 +38,7 @@ import {
 import { Button } from '../../components/ui/Button';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
+import { getYouTubeEmbedUrl, extractYouTubeId } from '../../utils/youtube';
 import { cmsService } from '../../services/cmsService';
 import {
   HomepageCmsConfig,
@@ -794,14 +795,9 @@ export const AdminHomepageView: React.FC = () => {
 
                       {/* Video Player on Top if Video Mode */}
                       {config.hero.mediaType === 'video' && (config.hero.videoUrl || config.hero.mediaUrl) ? (
-                        (config.hero.videoUrl || config.hero.mediaUrl).includes('youtube.com') ||
-                        (config.hero.videoUrl || config.hero.mediaUrl).includes('youtu.be') ? (
+                        extractYouTubeId(config.hero.videoUrl || config.hero.mediaUrl) ? (
                           <iframe
-                            src={
-                              (config.hero.videoUrl || config.hero.mediaUrl).includes('embed')
-                                ? (config.hero.videoUrl || config.hero.mediaUrl)
-                                : `https://www.youtube.com/embed/${(config.hero.videoUrl || config.hero.mediaUrl).split('v=')[1] || (config.hero.videoUrl || config.hero.mediaUrl).split('/').pop()}?autoplay=1&mute=1&loop=1&controls=0`
-                            }
+                            src={getYouTubeEmbedUrl(config.hero.videoUrl || config.hero.mediaUrl, { autoplay: true, mute: true, loop: true, controls: false }) || ''}
                             title="Hero Video Preview"
                             className="w-full h-full object-cover pointer-events-none relative z-1"
                           />

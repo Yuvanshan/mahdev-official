@@ -27,6 +27,7 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { SEOHead } from '../components/layout/SEOHead';
 import { ScrollReveal } from '../components/motion/MotionWrappers';
+import { getYouTubeEmbedUrl, extractYouTubeId } from '../utils/youtube';
 
 interface ProjectDetailViewProps {
   projectSlugOrId: string;
@@ -407,9 +408,9 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                   poster={project.imageUrl}
                   className="w-full h-full object-cover"
                 />
-              ) : project.videoUrl && (project.videoUrl.includes('youtube.com') || project.videoUrl.includes('youtu.be')) ? (
+              ) : extractYouTubeId(project.videoUrl) ? (
                 <iframe
-                  src={String(project.videoUrl).replace('watch?v=', 'embed/')}
+                  src={getYouTubeEmbedUrl(project.videoUrl, { autoplay: false, mute: false, loop: false, controls: true, rel: false }) || ''}
                   title={project.title}
                   className="w-full h-full"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

@@ -196,8 +196,17 @@ function verifyAdminToken(token: string): { isValid: boolean; session?: any } {
 // Authentication & Authorization Guard Middleware
 function requireAdminAuth(allowedRoles?: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
-    const authHeader = req.headers.authorization || '';
-    const token = authHeader.replace('Bearer ', '').trim() || (req.body && req.body.token);
+    const rawHeader = (
+      req.headers['x-admin-token'] ||
+      req.headers['x-app-authorization'] ||
+      req.headers['x-app-token'] ||
+      req.headers.authorization ||
+      ''
+    ) as string;
+    const token =
+      rawHeader.replace(/^Bearer\s+/i, '').trim() ||
+      (req.headers['x-admin-token'] as string)?.trim() ||
+      (req.body && req.body.token);
 
     if (!token) {
       serverAuditLogs.unshift({
@@ -332,16 +341,14 @@ async function startServer() {
   app.use((req, res, next) => {
     // Defense-in-depth Security Headers
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
     // Safe CORS Configuration
     res.header('Access-Control-Allow-Origin', '*');
     res.header(
       'Access-Control-Allow-Headers',
-      'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Firebase-AppCheck'
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Firebase-AppCheck, X-Admin-Token, X-App-Authorization, X-App-Token'
     );
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
 
@@ -917,8 +924,17 @@ async function startServer() {
 
   // Admin Verify Session Token
   app.post('/api/admin/auth/verify', (req: Request, res: Response) => {
-    const authHeader = req.headers.authorization || '';
-    const token = authHeader.replace('Bearer ', '').trim() || req.body.token;
+    const rawHeader = (
+      req.headers['x-admin-token'] ||
+      req.headers['x-app-authorization'] ||
+      req.headers['x-app-token'] ||
+      req.headers.authorization ||
+      ''
+    ) as string;
+    const token =
+      rawHeader.replace(/^Bearer\s+/i, '').trim() ||
+      (req.headers['x-admin-token'] as string)?.trim() ||
+      req.body?.token;
 
     if (!token) {
       res.status(401).json({ success: false, error: 'No authorization token provided.' });

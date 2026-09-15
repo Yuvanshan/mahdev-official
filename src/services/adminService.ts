@@ -281,7 +281,8 @@ class AdminService {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${this.currentSession.token}`,
+            'X-Admin-Token': this.currentSession.token,
+            'X-App-Authorization': `Bearer ${this.currentSession.token}`,
           },
         });
       } catch {}
@@ -461,7 +462,8 @@ class AdminService {
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (this.currentSession?.token) {
-        headers['Authorization'] = `Bearer ${this.currentSession.token}`;
+        headers['X-Admin-Token'] = this.currentSession.token;
+        headers['X-App-Authorization'] = `Bearer ${this.currentSession.token}`;
       }
       const res = await fetch('/api/admin/audit-logs', { headers });
       if (res.ok) {
@@ -507,7 +509,8 @@ class AdminService {
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (this.currentSession?.token) {
-        headers['Authorization'] = `Bearer ${this.currentSession.token}`;
+        headers['X-Admin-Token'] = this.currentSession.token;
+        headers['X-App-Authorization'] = `Bearer ${this.currentSession.token}`;
       }
       await fetch('/api/admin/audit-logs/log', {
         method: 'POST',

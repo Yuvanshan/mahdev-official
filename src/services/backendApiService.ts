@@ -28,7 +28,8 @@ class BackendApiService {
     // Attach Admin Token if available in localStorage
     const adminToken = localStorage.getItem('mahdev_admin_session_token');
     if (adminToken) {
-      headers['Authorization'] = `Bearer ${adminToken}`;
+      headers['X-Admin-Token'] = adminToken;
+      headers['X-App-Authorization'] = `Bearer ${adminToken}`;
     }
 
     return headers;
