@@ -22,6 +22,9 @@ export const TravelsHeroSection: React.FC<TravelsHeroSectionProps> = ({
     (d) =>
       d.id === 'travels' ||
       d.id === 'mahdev-travels' ||
+      d.id === 'div-travels' ||
+      d.id === 'div-mahdev-travels' ||
+      (d as any).divisionKey === 'travels' ||
       d.slug === 'travels' ||
       d.slug === 'mahdev-travels'
   );
@@ -36,14 +39,16 @@ export const TravelsHeroSection: React.FC<TravelsHeroSectionProps> = ({
     (travelsDiv as any)?.heroVideoUrl ||
     (travelsDiv as any)?.videoUrl ||
     (travelsDiv?.hero as any)?.videoUrl ||
+    ((travelsDiv?.hero as any)?.mediaType === 'video' ? (travelsDiv?.hero as any)?.mediaUrl : '') ||
+    ((travelsDiv?.hero as any)?.mediaUrl?.startsWith?.('firestore://') ? (travelsDiv?.hero as any)?.mediaUrl : '') ||
     '';
 
   const rawHeroImage =
     (travelsDiv as any)?.defaultImageUrl ||
     (travelsDiv as any)?.heroImageUrl ||
+    (travelsDiv as any)?.imageUrl ||
     (travelsDiv?.hero as any)?.defaultImageUrl ||
     (travelsDiv?.hero as any)?.imageUrl ||
-    (travelsDiv as any)?.imageUrl ||
     (travelsDiv as any)?.hero?.bgImage;
 
   const heroImage =
@@ -51,7 +56,7 @@ export const TravelsHeroSection: React.FC<TravelsHeroSectionProps> = ({
       ? rawHeroImage.trim()
       : 'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=2000&q=85';
 
-  const effectiveVideoUrl = (travelsDiv as any)?.heroMediaType === 'image' ? '' : rawHeroVideo;
+  const effectiveVideoUrl = (travelsDiv as any)?.heroMediaType === 'image' && !(travelsDiv as any)?.heroVideoUrl && !(travelsDiv as any)?.videoUrl ? '' : rawHeroVideo;
 
   const badgeText =
     (travelsDiv as any)?.hero?.badge ||

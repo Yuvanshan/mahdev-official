@@ -248,20 +248,26 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         setServices((prev) => {
           const map = new Map(prev.map((s) => [s.id, s]));
           srvs.forEach((s) => map.set(s.id, s));
-          const updated = Array.from(map.values());
-          bookingService.syncWithFirestore(updated);
-          return updated;
+          return Array.from(map.values());
         });
+        if (typeof queueMicrotask === 'function') {
+          queueMicrotask(() => bookingService.syncWithFirestore(srvs));
+        } else {
+          setTimeout(() => bookingService.syncWithFirestore(srvs), 0);
+        }
       }
 
       if (prods.length > 0) {
         setProducts((prev) => {
           const map = new Map(prev.map((p) => [p.id, p]));
           prods.forEach((p) => map.set(p.id, p));
-          const updated = Array.from(map.values());
-          catalogService.syncWithFirestore(updated);
-          return updated;
+          return Array.from(map.values());
         });
+        if (typeof queueMicrotask === 'function') {
+          queueMicrotask(() => catalogService.syncWithFirestore(prods));
+        } else {
+          setTimeout(() => catalogService.syncWithFirestore(prods), 0);
+        }
       }
 
       if (cats.length > 0) {
@@ -702,13 +708,18 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     await firestoreSettingsService.updateHomepageSettings(data);
     setHomepageConfig((prev) => {
       const merged = { ...prev, ...data };
-      try {
-        localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(merged));
-      } catch {}
-      cmsService.syncHomepageConfig(merged);
       return merged;
     });
-  }, []);
+    try {
+      const merged = { ...(homepageConfig || {}), ...data } as HomepageCmsConfig;
+      localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(merged));
+      if (typeof queueMicrotask === 'function') {
+        queueMicrotask(() => cmsService.syncHomepageConfig(merged));
+      } else {
+        setTimeout(() => cmsService.syncHomepageConfig(merged), 0);
+      }
+    } catch {}
+  }, [homepageConfig]);
 
   const updateGoogleReviewsConfig = useCallback(async (data: Partial<GoogleReviewsConfig>) => {
     await firestoreGoogleReviewsService.saveConfig(data);
@@ -754,32 +765,43 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         ? 'travels'
         : id;
 
-    setDivisions((prev) => {
-      const updated = prev.map((d) => {
-        const dCanonical =
-          d.id === 'u1' || d.id === 'u1-studio'
-            ? 'u1-studio'
-            : d.id === 'it' || d.id === 'it-solutions'
-            ? 'it-solutions'
-            : d.id === 'mart' || d.id === 'online-mart'
-            ? 'online-mart'
-            : d.id === 'sws' || d.id === 'sws-event-management'
-            ? 'sws'
-            : d.id === 'travels' || d.id === 'mahdev-travels'
-            ? 'travels'
-            : d.id;
+    const current = divisionsRef.current || [];
+    const updated = current.map((d) => {
+      const dCanonical =
+        d.id === 'u1' || d.id === 'u1-studio'
+          ? 'u1-studio'
+          : d.id === 'it' || d.id === 'it-solutions'
+          ? 'it-solutions'
+          : d.id === 'mart' || d.id === 'online-mart'
+          ? 'online-mart'
+          : d.id === 'sws' || d.id === 'sws-event-management'
+          ? 'sws'
+          : d.id === 'travels' || d.id === 'mahdev-travels'
+          ? 'travels'
+          : d.id;
 
-        if (d.id === id || d.id === canonicalId || d.slug === id || d.slug === canonicalId || dCanonical === canonicalId) {
-          return { ...d, ...data, id: d.id };
-        }
-        return d;
-      });
-      try {
-        localStorage.setItem('mahdev_cached_divisions', JSON.stringify(updated));
-      } catch {}
-      cmsService.syncEntityFromFirestore('divisions', updated);
-      return updated;
+      if (d.id === id || d.id === canonicalId || d.slug === id || d.slug === canonicalId || dCanonical === canonicalId) {
+        return { ...d, ...data, id: d.id };
+      }
+      return d;
     });
+
+    divisionsRef.current = updated;
+    setDivisions(updated);
+
+    try {
+      localStorage.setItem('mahdev_cached_divisions', JSON.stringify(updated));
+    } catch {}
+
+    if (typeof queueMicrotask === 'function') {
+      queueMicrotask(() => {
+        cmsService.syncEntityFromFirestore('divisions', updated);
+      });
+    } else {
+      setTimeout(() => {
+        cmsService.syncEntityFromFirestore('divisions', updated);
+      }, 0);
+    }
   }, []);
 
   const value = useMemo<FirestoreDataContextValue>(

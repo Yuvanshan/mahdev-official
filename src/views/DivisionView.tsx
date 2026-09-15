@@ -364,7 +364,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
               (baseDivision as any)?.imageUrl ||
               'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
 
-            const effectiveVideo = (firestoreDiv as any)?.heroMediaType === 'image' ? '' : divVideo;
+            const effectiveVideo = (firestoreDiv as any)?.heroMediaType === 'image' && !(firestoreDiv as any)?.heroVideoUrl && !(firestoreDiv as any)?.videoUrl ? '' : divVideo;
 
             return (
               <HeroVideoBackground

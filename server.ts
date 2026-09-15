@@ -333,9 +333,26 @@ async function startServer() {
     }
   );
 
-  // JSON Body Parser with strict payload size limit (prevents memory exhaustion DOS)
-  app.use(express.json({ limit: '1mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+  // JSON & URL-Encoded Body Parsers supporting high-capacity media, rich base64 assets and division configs (100MB limit)
+  app.use(express.json({ limit: '100mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+
+  // Graceful body-parser error handler (catches PayloadTooLargeError and malformed JSON before route handlers)
+  app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+    if (err?.type === 'entity.too.large' || err?.name === 'PayloadTooLargeError' || err?.status === 413) {
+      console.warn(`[Server] Request entity too large on ${req.method} ${req.path}`);
+      res.status(413).json({
+        success: false,
+        error: 'Payload too large. The request body exceeds the maximum allowed size (100MB).',
+      });
+      return;
+    }
+    if (err instanceof SyntaxError && 'status' in err && (err as any).status === 400 && 'body' in err) {
+      res.status(400).json({ success: false, error: 'Malformed JSON payload received.' });
+      return;
+    }
+    next(err);
+  });
 
   // Production Security Headers & CORS Middleware
   app.use((req, res, next) => {

@@ -117,10 +117,35 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
   }, [trimmedVideo]);
 
   // Fallback default image URL shown immediately and while video buffers/loads
-  const effectiveImageUrl =
+  const rawImageUrl =
     posterImageUrl?.trim() ||
     imageUrl?.trim() ||
     'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
+  const [resolvedImgSrc, setResolvedImgSrc] = useState<string>(rawImageUrl.startsWith('firestore://') ? '' : rawImageUrl);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (!rawImageUrl) {
+      setResolvedImgSrc('https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85');
+      return;
+    }
+    if (rawImageUrl.startsWith('firestore://')) {
+      resolveMediaUrl(rawImageUrl)
+        .then((url) => {
+          if (isMounted && url) {
+            setResolvedImgSrc(url);
+          }
+        })
+        .catch(() => {
+          if (isMounted) setResolvedImgSrc('https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85');
+        });
+    } else {
+      setResolvedImgSrc(rawImageUrl);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [rawImageUrl]);
 
   // Force HTML5 video autoplay reliably across all browser policies
   useEffect(() => {
@@ -187,25 +212,49 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
 
   return (
     <div className={`absolute inset-0 z-0 overflow-hidden select-none pointer-events-none bg-[#061033] ${className}`}>
-      {/* Video Only Layer (HTML5, YouTube or Vimeo) - No default fallback image rendered */}
+      {/* Fallback Image Layer: renders immediately, acts as fallback and poster buffer */}
+      {resolvedImgSrc ? (
+        <img
+          src={resolvedImgSrc}
+          alt={title}
+          className={`absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-700 ${
+            hasVideo && isVideoReady ? 'opacity-0' : 'opacity-100'
+          }`}
+          referrerPolicy="no-referrer"
+          onError={() => {
+            if (resolvedImgSrc !== 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85') {
+              setResolvedImgSrc('https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85');
+            }
+          }}
+        />
+      ) : null}
+
+      {/* Video Layer (HTML5, YouTube or Vimeo) */}
       {hasVideo && youTubeEmbedSrc ? (
         <iframe
           src={youTubeEmbedSrc}
           title={title}
-          className="absolute inset-0 w-full h-full object-cover scale-135 border-0 z-1"
+          onLoad={() => handleVideoReady()}
+          className={`absolute inset-0 w-full h-full object-cover scale-135 border-0 z-1 transition-opacity duration-700 ${
+            isVideoReady ? 'opacity-100' : 'opacity-0'
+          }`}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         />
       ) : hasVideo && vimeoEmbedSrc ? (
         <iframe
           src={vimeoEmbedSrc}
           title={title}
-          className="absolute inset-0 w-full h-full object-cover scale-135 border-0 z-1"
+          onLoad={() => handleVideoReady()}
+          className={`absolute inset-0 w-full h-full object-cover scale-135 border-0 z-1 transition-opacity duration-700 ${
+            isVideoReady ? 'opacity-100' : 'opacity-0'
+          }`}
           allow="autoplay; fullscreen; picture-in-picture"
         />
       ) : hasVideo && effectiveVideoSrc ? (
         <video
           ref={videoRef}
           src={effectiveVideoSrc}
+          poster={resolvedImgSrc}
           autoPlay
           loop
           muted
@@ -227,14 +276,13 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
             handleVideoReady();
           }}
           onError={(e) => {
-            // Do not delete video on transient playback aborts
             const err = e.currentTarget.error;
             console.warn('[HeroVideoBackground] Video playback note:', err?.message || err);
-            if (!resolvedSrc && !trimmedVideo) {
-              setVideoFailed(true);
-            }
+            setVideoFailed(true);
           }}
-          className="absolute inset-0 w-full h-full object-cover z-1"
+          className={`absolute inset-0 w-full h-full object-cover z-1 transition-opacity duration-700 ${
+            isVideoReady ? 'opacity-100' : 'opacity-0'
+          }`}
           title={title}
         />
       ) : null}

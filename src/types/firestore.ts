@@ -25,6 +25,7 @@ export type DivisionId = 'sws' | 'u1-studio' | 'it-solutions' | 'travels' | 'onl
 
 export interface FirestoreDivision {
   id: DivisionId | string;
+  divisionKey?: string;
   name: string;
   slug: string;
   shortDescription?: string;

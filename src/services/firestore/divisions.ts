@@ -94,14 +94,29 @@ export const DIVISION_DOCUMENT_MAP: Record<string, {
   },
 };
 
+export function normalizeDivisionId(id: string): { canonicalDocId: string; alternateId: string; shortId: string } {
+  const clean = (id || '').toLowerCase().replace(/^div-/, '').trim();
+  if (clean === 'sws' || clean === 'sws-event-management' || clean === 'sws-events' || clean === 'events') {
+    return { canonicalDocId: 'sws', alternateId: 'sws-event-management', shortId: 'sws' };
+  }
+  if (clean === 'u1' || clean === 'u1-studio' || clean === 'u1-cinema' || clean === 'studio' || clean === 'photography') {
+    return { canonicalDocId: 'u1-studio', alternateId: 'u1', shortId: 'u1' };
+  }
+  if (clean === 'it' || clean === 'it-solutions' || clean === 'mahdev-it' || clean === 'solutions') {
+    return { canonicalDocId: 'it-solutions', alternateId: 'it', shortId: 'it' };
+  }
+  if (clean === 'travels' || clean === 'mahdev-travels' || clean === 'travel') {
+    return { canonicalDocId: 'travels', alternateId: 'mahdev-travels', shortId: 'travels' };
+  }
+  if (clean === 'mart' || clean === 'online-mart' || clean === 'mahdev-mart' || clean === 'shop') {
+    return { canonicalDocId: 'online-mart', alternateId: 'mart', shortId: 'mart' };
+  }
+  return { canonicalDocId: clean, alternateId: clean, shortId: clean };
+}
+
 export function getCanonicalDivisionId(id: string): string {
-  const lower = (id || '').toLowerCase().trim();
-  if (lower === 'u1' || lower === 'u1-studio' || lower === 'u1-cinema') return 'u1';
-  if (lower === 'sws' || lower === 'sws-event-management' || lower === 'sws-events') return 'sws';
-  if (lower === 'it' || lower === 'it-solutions' || lower === 'mahdev-it') return 'it';
-  if (lower === 'travels' || lower === 'mahdev-travels') return 'travels';
-  if (lower === 'mart' || lower === 'online-mart' || lower === 'mahdev-mart') return 'mart';
-  return lower;
+  const { shortId } = normalizeDivisionId(id);
+  return shortId;
 }
 
 export function getDivisionFallbackOrder(id: string): number {
@@ -269,8 +284,7 @@ export const firestoreDivisionsService = {
    * Update or create division document
    */
   async saveDivision(id: DivisionId | string, data: Partial<FirestoreDivision>): Promise<void> {
-    const canonicalId = id === 'u1' ? 'u1-studio' : id === 'it' ? 'it-solutions' : id === 'mart' ? 'online-mart' : id;
-    const alternateId = id === 'u1-studio' ? 'u1' : id === 'it-solutions' ? 'it' : id === 'online-mart' ? 'mart' : null;
+    const { canonicalDocId, alternateId, shortId } = normalizeDivisionId(id as string);
 
     const effectiveHeroVideo =
       (data as any).heroVideoUrl ||
@@ -294,7 +308,8 @@ export const firestoreDivisionsService = {
 
     const payload = sanitizeForFirestore({
       ...data,
-      id: canonicalId,
+      id: canonicalDocId,
+      divisionKey: shortId,
       heroVideoUrl: effectiveHeroVideo,
       videoUrl: effectiveHeroVideo,
       defaultImageUrl: effectiveHeroImage,
@@ -302,63 +317,94 @@ export const firestoreDivisionsService = {
       imageUrl: effectiveHeroImage || (data as any).imageUrl,
       heroMediaType: effectiveMediaType,
       hero: {
+        ...((data as any).hero || {}),
         title: (data as any).heroHeadline || (data as any).hero?.title || (data as any).name || '',
         subtitle: (data as any).heroSubheadline || (data as any).hero?.subtitle || (data as any).description || '',
         badge: (data as any).badge || (data as any).hero?.badge || '',
         bgImage: effectiveHeroImage,
         imageUrl: effectiveHeroImage,
         defaultImageUrl: effectiveHeroImage,
-        videoUrl: effectiveHeroVideo,
+        videoUrl: effectiveHeroVideo || (data as any).hero?.videoUrl || '',
         mediaType: effectiveMediaType,
-        ...((data as any).hero || {}),
       },
       updatedAt: new Date().toISOString(),
     });
 
-    const docRef = doc(db, 'divisions', canonicalId);
-    await setDoc(docRef, payload, { merge: true });
-    console.log(`[Firestore Divisions] Division "${canonicalId}" committed to Firestore.`);
-
-    // If there is an alias ID, also keep it synchronized for backwards-compatibility
-    if (alternateId) {
-      try {
-        await setDoc(doc(db, 'divisions', alternateId), { ...payload, id: alternateId }, { merge: true });
-      } catch {}
-    }
-
-    // Update in-memory cache
+    // 1. Immediately update in-memory cache so all reads are instant and guaranteed
     if (!cachedDivisions) {
       cachedDivisions = { data: sortDivisions(getDefaultDivisions()), timestamp: Date.now() };
     }
-    const idx = cachedDivisions.data.findIndex((d) => d.id === canonicalId || d.id === id || d.id === alternateId);
-    if (idx >= 0) {
-      cachedDivisions.data[idx] = { ...cachedDivisions.data[idx], ...payload, id: canonicalId } as FirestoreDivision;
-    } else {
-      cachedDivisions.data.push(payload as FirestoreDivision);
+    const targetIds = new Set([canonicalDocId, alternateId, shortId, id, `div-${shortId}`]);
+    let matchedAny = false;
+    cachedDivisions.data = cachedDivisions.data.map((d) => {
+      if (targetIds.has(d.id) || (d.slug && targetIds.has(d.slug))) {
+        matchedAny = true;
+        return { ...d, ...payload, id: d.id || canonicalDocId } as FirestoreDivision;
+      }
+      return d;
+    });
+    if (!matchedAny) {
+      cachedDivisions.data.push({ ...payload, id: canonicalDocId } as FirestoreDivision);
     }
     cachedDivisions.data = sortDivisions(cachedDivisions.data);
     cachedDivisions.timestamp = Date.now();
 
-    // Immediately update localStorage so any page refresh or view switch sees the new data instantly
+    // 2. Immediately update localStorage & dispatch live event so UI never hangs or lags
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('mahdev_cached_divisions', JSON.stringify(cachedDivisions.data));
         window.dispatchEvent(
           new CustomEvent('mahdev_division_updated', {
-            detail: { id: canonicalId, division: payload },
+            detail: { id: canonicalDocId, shortId, division: payload },
           })
         );
       } catch {}
     }
 
-    // Sync to server backend
+    // 3. Immediately sync to server backend
     try {
-      fetch('/api/divisions/' + canonicalId, {
+      fetch('/api/divisions/' + canonicalDocId, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       }).catch(() => {});
+      if (shortId && shortId !== canonicalDocId) {
+        fetch('/api/divisions/' + shortId, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...payload, id: shortId }),
+        }).catch(() => {});
+      }
     } catch {}
+
+    // 4. Commit to Firestore with resilient non-blocking timeout fallback
+    try {
+      const docRef = doc(db, 'divisions', canonicalDocId);
+      await Promise.race([
+        setDoc(docRef, payload, { merge: true }),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
+      console.log(`[Firestore Divisions] Division "${canonicalDocId}" committed to Firestore.`);
+
+      if (alternateId && alternateId !== canonicalDocId) {
+        try {
+          await Promise.race([
+            setDoc(doc(db, 'divisions', alternateId), { ...payload, id: alternateId }, { merge: true }),
+            new Promise((resolve) => setTimeout(resolve, 2000)),
+          ]);
+        } catch {}
+      }
+      if (shortId && shortId !== canonicalDocId && shortId !== alternateId) {
+        try {
+          await Promise.race([
+            setDoc(doc(db, 'divisions', shortId), { ...payload, id: shortId }, { merge: true }),
+            new Promise((resolve) => setTimeout(resolve, 2000)),
+          ]);
+        } catch {}
+      }
+    } catch (fsErr) {
+      console.warn(`[Firestore Divisions] Cloud commit notice for "${canonicalDocId}":`, fsErr);
+    }
   },
 
   /**

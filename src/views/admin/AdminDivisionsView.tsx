@@ -37,6 +37,8 @@ import { DivisionId } from '../../types';
 import { getRentalAssetCount } from '../../utils/assetMetrics';
 import { compressDataUrl } from '../../utils/imageOptimizer';
 import { uploadMediaAsset } from '../../services/mediaUploadService';
+import { resolveMediaUrl } from '../../services/firestoreMediaService';
+import { normalizeDivisionId } from '../../services/firestore/divisions';
 
 export const AdminDivisionsView: React.FC = () => {
   const { saveDivision, refreshAll, divisions: firestoreDivisions, companySettings, products } = useFirestoreDataContext();
@@ -53,6 +55,9 @@ export const AdminDivisionsView: React.FC = () => {
   const [modalTab, setModalTab] = useState<'general' | 'hero' | 'narrative' | 'seo' | 'comingSoon'>('general');
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingVideoOnly, setIsSavingVideoOnly] = useState(false);
+  const [videoSaveSuccessMessage, setVideoSaveSuccessMessage] = useState<string | null>(null);
+  const [resolvedHeroVideo, setResolvedHeroVideo] = useState('');
 
   // Media Picker
   const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
@@ -62,8 +67,45 @@ export const AdminDivisionsView: React.FC = () => {
   const [deletingDivision, setDeletingDivision] = useState<CmsDivision | null>(null);
 
   // Form State
-  const [formData, setFormData] = useState({
-    divisionKey: 'sws' as DivisionId,
+  const [formData, setFormData] = useState<{
+    divisionKey: DivisionId | string;
+    name: string;
+    shortName: string;
+    tagline: string;
+    description: string;
+    badge: string;
+    route: string;
+    logoUrl: string;
+    accentColor: string;
+    gradient: string;
+    heroHeadline: string;
+    heroSubheadline: string;
+    heroImageUrl: string;
+    heroVideoUrl: string;
+    heroMediaType: 'image' | 'video';
+    contactEmail: string;
+    contactPhone: string;
+    aboutHeading: string;
+    aboutText: string;
+    mission: string;
+    vision: string;
+    stats: { label: string; value: string; subtext?: string }[];
+    iconName: string;
+    isActive: boolean;
+    order: number;
+    isComingSoon: boolean;
+    comingSoonTitle: string;
+    comingSoonMessage: string;
+    comingSoonExpectedLaunch: string;
+    rentalAssetCount: string;
+    seo: {
+      metaTitle: string;
+      metaDescription: string;
+      ogImage: string;
+      canonicalUrl: string;
+    };
+  }>({
+    divisionKey: 'sws',
     name: '',
     shortName: '',
     tagline: '',
@@ -104,6 +146,27 @@ export const AdminDivisionsView: React.FC = () => {
       canonicalUrl: '',
     },
   });
+
+  // Resolve preview video URL safely for local, external, YouTube, or firestore storage
+  useEffect(() => {
+    let active = true;
+    if (formData.heroVideoUrl && formData.heroVideoUrl.trim() !== '') {
+      resolveMediaUrl(formData.heroVideoUrl)
+        .then((url) => {
+          if (active) {
+            setResolvedHeroVideo(url || formData.heroVideoUrl);
+          }
+        })
+        .catch(() => {
+          if (active) setResolvedHeroVideo(formData.heroVideoUrl);
+        });
+    } else {
+      setResolvedHeroVideo('');
+    }
+    return () => {
+      active = false;
+    };
+  }, [formData.heroVideoUrl]);
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -212,9 +275,18 @@ export const AdminDivisionsView: React.FC = () => {
   };
 
   useEffect(() => {
-    loadDivisions();
-    const unsub = cmsService.subscribe('divisions', loadDivisions);
-    return () => unsub();
+    let isMounted = true;
+    const update = () => {
+      if (isMounted) {
+        loadDivisions();
+      }
+    };
+    update();
+    const unsub = cmsService.subscribe('divisions', update);
+    return () => {
+      isMounted = false;
+      unsub();
+    };
   }, [searchQuery, statusFilter, firestoreDivisions]);
 
   const handleOpenCreate = () => {
@@ -270,6 +342,7 @@ export const AdminDivisionsView: React.FC = () => {
   const handleOpenEdit = (div: CmsDivision) => {
     setEditingDivision(div);
     setModalTab('general');
+    setVideoSaveSuccessMessage(null);
     const defaultOrder = div.divisionKey === 'sws' ? 1 : div.divisionKey === 'u1' ? 2 : div.divisionKey === 'it' ? 3 : div.divisionKey === 'travels' ? 4 : 5;
     const canonicalKey = div.divisionKey === 'u1' ? 'u1-studio' : div.divisionKey === 'it' ? 'it-solutions' : div.divisionKey === 'mart' ? 'online-mart' : div.divisionKey;
     const fsMatch = firestoreDivisions.find(
@@ -351,7 +424,12 @@ export const AdminDivisionsView: React.FC = () => {
       errors.contactEmail = 'A valid contact email is required';
     }
     setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    if (Object.keys(errors).length > 0) {
+      addToast('warning', 'Missing Required Fields', 'Please complete: ' + Object.values(errors).join(', '));
+      setModalTab('general');
+      return false;
+    }
+    return true;
   };
 
   const handleHeroImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -384,24 +462,150 @@ export const AdminDivisionsView: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 100 * 1024 * 1024) {
+      addToast(
+        'error',
+        'File Too Large',
+        `Video size (${(file.size / (1024 * 1024)).toFixed(1)} MB) exceeds 100 MB limit. Please use a video under 100 MB or paste a YouTube/Vimeo URL.`
+      );
+      e.target.value = '';
+      return;
+    }
+
     setIsUploadingMedia(true);
-    setUploadProgress(10);
+    setUploadProgress(5);
+    setVideoSaveSuccessMessage(null);
     try {
-      addToast('info', 'Uploading Video', `Uploading video loop (${(file.size / (1024 * 1024)).toFixed(1)} MB)...`);
+      addToast('info', 'Uploading Video', `Streaming video (${(file.size / (1024 * 1024)).toFixed(1)} MB)...`);
       const url = await uploadMediaAsset(file, (p) => setUploadProgress(p));
+      
       setFormData((prev) => ({
         ...prev,
         heroVideoUrl: url,
         heroMediaType: 'video',
       }));
-      setIsDirty(true);
-      addToast('success', 'Hero Video Uploaded', 'Video loop saved and linked.');
+      setResolvedHeroVideo(url);
+
+      const targetName = editingDivision?.name || formData.name || 'Division';
+
+      // Auto-save video directly to Firestore and CMS if editing an existing division
+      if (editingDivision) {
+        const rawKey = (editingDivision.divisionKey || (editingDivision as any).slug || editingDivision.id || 'sws').toLowerCase();
+        const { canonicalDocId, shortId } = normalizeDivisionId(rawKey);
+
+        const videoPayload = {
+          heroVideoUrl: url,
+          videoUrl: url,
+          heroMediaType: 'video' as const,
+          hero: {
+            title: formData.heroHeadline || editingDivision.name,
+            subtitle: formData.heroSubheadline || editingDivision.tagline,
+            badge: formData.badge,
+            videoUrl: url,
+            mediaType: 'video' as const,
+            bgImage: formData.heroImageUrl,
+            imageUrl: formData.heroImageUrl,
+            defaultImageUrl: formData.heroImageUrl,
+          },
+        };
+
+        if (saveDivision) {
+          await saveDivision(canonicalDocId, videoPayload);
+        }
+        await cmsService.update<CmsDivision>('divisions', editingDivision.id, {
+          heroVideoUrl: url,
+          videoUrl: url,
+          heroMediaType: 'video',
+          hero: {
+            title: formData.heroHeadline || editingDivision.name,
+            subtitle: formData.heroSubheadline || editingDivision.tagline,
+            badge: formData.badge,
+            videoUrl: url,
+            mediaType: 'video' as const,
+            bgImage: formData.heroImageUrl,
+            imageUrl: formData.heroImageUrl,
+            defaultImageUrl: formData.heroImageUrl,
+          },
+        });
+        if (refreshAll) {
+          await refreshAll();
+        }
+        loadDivisions();
+      }
+
+      setIsDirty(false);
+      setVideoSaveSuccessMessage(`Video uploaded & saved successfully for "${targetName}"! Live on the site.`);
+      addToast('success', 'Hero Video Saved Successfully', `Hero video for "${targetName}" has been uploaded, saved, and is now active.`);
     } catch (err: any) {
       addToast('error', 'Upload Failed', err.message || 'Could not process video.');
     } finally {
       setIsUploadingMedia(false);
       setUploadProgress(0);
       e.target.value = '';
+    }
+  };
+
+  const handleSaveVideoNow = async () => {
+    if (!formData.heroVideoUrl || !formData.heroVideoUrl.trim()) {
+      addToast('warning', 'No Video URL', 'Please enter a video URL or upload a video file first.');
+      return;
+    }
+    setIsSavingVideoOnly(true);
+    setVideoSaveSuccessMessage(null);
+    try {
+      const targetName = editingDivision?.name || formData.name || 'Division';
+      const rawKey = (formData.divisionKey || editingDivision?.divisionKey || (editingDivision as any)?.slug || editingDivision?.id || 'sws').toLowerCase();
+      const { canonicalDocId, shortId } = normalizeDivisionId(rawKey);
+
+      const videoPayload = {
+        heroVideoUrl: formData.heroVideoUrl.trim(),
+        videoUrl: formData.heroVideoUrl.trim(),
+        heroMediaType: 'video' as const,
+        hero: {
+          title: formData.heroHeadline || formData.name,
+          subtitle: formData.heroSubheadline || formData.tagline,
+          badge: formData.badge,
+          videoUrl: formData.heroVideoUrl.trim(),
+          mediaType: 'video' as const,
+          bgImage: formData.heroImageUrl,
+          imageUrl: formData.heroImageUrl,
+          defaultImageUrl: formData.heroImageUrl,
+        },
+      };
+
+      if (saveDivision) {
+        await saveDivision(canonicalDocId, videoPayload);
+      }
+
+      if (editingDivision) {
+        await cmsService.update<CmsDivision>('divisions', editingDivision.id, {
+          heroVideoUrl: formData.heroVideoUrl.trim(),
+          videoUrl: formData.heroVideoUrl.trim(),
+          heroMediaType: 'video',
+          hero: {
+            title: formData.heroHeadline || formData.name,
+            subtitle: formData.heroSubheadline || formData.tagline,
+            badge: formData.badge,
+            videoUrl: formData.heroVideoUrl.trim(),
+            mediaType: 'video' as const,
+            bgImage: formData.heroImageUrl,
+            imageUrl: formData.heroImageUrl,
+            defaultImageUrl: formData.heroImageUrl,
+          },
+        });
+      }
+
+      if (refreshAll) {
+        await refreshAll();
+      }
+      loadDivisions();
+      setIsDirty(false);
+      setVideoSaveSuccessMessage(`Hero video successfully saved for "${targetName}"!`);
+      addToast('success', 'Video Saved Successfully', `Hero video for "${targetName}" is saved and active.`);
+    } catch (err: any) {
+      addToast('error', 'Save Video Failed', err.message || 'Could not save video.');
+    } finally {
+      setIsSavingVideoOnly(false);
     }
   };
 
@@ -412,25 +616,21 @@ export const AdminDivisionsView: React.FC = () => {
     setIsSaving(true);
     try {
       const orderNum = Number(formData.order) || 1;
+      const rawKey = (formData.divisionKey || editingDivision?.divisionKey || (editingDivision as any)?.slug || editingDivision?.id || 'sws').toLowerCase();
+      const { canonicalDocId, shortId } = normalizeDivisionId(rawKey);
+
       const payload = {
         ...formData,
+        divisionKey: shortId,
         order: orderNum,
       };
 
       // 1. Sync to Firestore
-      const canonicalKey =
-        formData.divisionKey === 'u1'
-          ? 'u1-studio'
-          : formData.divisionKey === 'it'
-          ? 'it-solutions'
-          : formData.divisionKey === 'mart'
-          ? 'online-mart'
-          : formData.divisionKey;
-
       if (saveDivision) {
-        await saveDivision(canonicalKey, {
+        await saveDivision(canonicalDocId, {
           name: formData.name,
           shortName: formData.shortName,
+          divisionKey: shortId,
           tagline: formData.tagline,
           description: formData.description,
           badge: formData.badge,
@@ -479,14 +679,15 @@ export const AdminDivisionsView: React.FC = () => {
       // 2. Sync to CMS Local Store
       if (editingDivision) {
         await cmsService.update<CmsDivision>('divisions', editingDivision.id, payload);
-        addToast('success', 'Division Updated', `"${formData.name}" saved & live synced with Firestore.`);
+        addToast('success', 'Division & Video Saved Successfully', `"${formData.name}" division and video settings saved & live on the site.`);
       } else {
         await cmsService.create<CmsDivision>('divisions', payload);
-        addToast('success', 'Division Created', `"${formData.name}" registered & live synced with Firestore.`);
+        addToast('success', 'Division & Video Created Successfully', `"${formData.name}" registered & live synced with Firestore.`);
       }
       if (refreshAll) {
         await refreshAll();
       }
+      setVideoSaveSuccessMessage(null);
       setIsDirty(false);
       setIsEditorOpen(false);
       loadDivisions();
@@ -1346,6 +1547,23 @@ export const AdminDivisionsView: React.FC = () => {
 
               {/* Hero Video URL & Media Type Selection */}
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                {/* Video Save Success Banner */}
+                {videoSaveSuccessMessage && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between gap-3 text-emerald-900 text-xs shadow-xs animate-in fade-in duration-200">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span><strong>Saved!</strong> {videoSaveSuccessMessage}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setVideoSaveSuccessMessage(null)}
+                      className="text-emerald-700 hover:text-emerald-950 font-bold px-2 py-0.5 rounded hover:bg-emerald-100 transition-colors cursor-pointer"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
+
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <label className="block font-bold text-slate-900 text-xs sm:text-sm">
@@ -1416,6 +1634,17 @@ export const AdminDivisionsView: React.FC = () => {
                       >
                         <ImageIcon className="w-3 h-3" /> Select Video
                       </button>
+                      {formData.heroVideoUrl && (
+                        <button
+                          type="button"
+                          disabled={isSavingVideoOnly || isUploadingMedia}
+                          onClick={handleSaveVideoNow}
+                          className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-2.5 py-1 rounded-lg flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          <CheckCircle2 className="w-3 h-3" />
+                          {isSavingVideoOnly ? 'Saving...' : 'Save Video to Division'}
+                        </button>
+                      )}
                     </div>
                   </div>
                   <input
@@ -1440,9 +1669,17 @@ export const AdminDivisionsView: React.FC = () => {
                 {/* Live Media Preview */}
                 {(formData.heroVideoUrl || formData.heroImageUrl) && (
                   <div className="pt-2">
-                    <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
-                      Active Hero Backdrop Preview ({formData.heroMediaType === 'video' && formData.heroVideoUrl ? 'Video Loop' : 'Picture Cover'}):
-                    </label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                        Active Hero Backdrop Preview ({formData.heroMediaType === 'video' && formData.heroVideoUrl ? 'Video Loop' : 'Picture Cover'}):
+                      </label>
+                      {formData.heroMediaType === 'video' && formData.heroVideoUrl && (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          Video Active & Linked
+                        </span>
+                      )}
+                    </div>
                     <div className="relative rounded-xl overflow-hidden aspect-16/7 bg-slate-950 border border-slate-200 shadow-inner max-h-48 flex items-center justify-center">
                       {formData.heroMediaType === 'video' && formData.heroVideoUrl ? (
                         extractYouTubeId(formData.heroVideoUrl) ? (
@@ -1453,12 +1690,13 @@ export const AdminDivisionsView: React.FC = () => {
                           />
                         ) : (
                           <video
-                            src={formData.heroVideoUrl}
+                            src={resolvedHeroVideo || formData.heroVideoUrl}
                             autoPlay
                             loop
                             muted
                             playsInline
                             className="w-full h-full object-cover"
+                            onError={(err) => console.warn('[AdminDivisions] Video preview playback note:', err)}
                           />
                         )
                       ) : (

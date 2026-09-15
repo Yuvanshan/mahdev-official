@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DIVISIONS } from '../../config/divisions';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, MapPin, Phone } from 'lucide-react';
 
 interface DivisionTransitionLoaderProps {
   divisionId?: string;
@@ -11,7 +11,9 @@ interface DivisionTransitionLoaderProps {
 const BRAND_TAGLINES = [
   'Creating Moments...',
   'Capturing Memories...',
-  'Delivering Innovation....',
+  'Delivering Innovation...',
+  'Delivering in Trincomalee & Colombo...',
+  'Contact Now: 075 092 8078',
 ];
 
 export const DivisionTransitionLoader: React.FC<DivisionTransitionLoaderProps> = ({
@@ -122,8 +124,8 @@ export const DivisionTransitionLoader: React.FC<DivisionTransitionLoaderProps> =
           </AnimatePresence>
         </div>
 
-        {/* Smooth Continuous Shimmer Line (No Percentage) */}
-        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden relative">
+        {/* Smooth Continuous Shimmer Line */}
+        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden relative mb-4">
           <motion.div
             className="h-full rounded-full"
             style={{ backgroundColor: accentColor }}
@@ -132,11 +134,29 @@ export const DivisionTransitionLoader: React.FC<DivisionTransitionLoaderProps> =
             transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
           />
         </div>
+
+        {/* Delivery Locations & Contact Number */}
+        <div className="w-full pt-3 border-t border-slate-100/90 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs font-semibold text-slate-600">
+          <span className="inline-flex items-center gap-1 text-blue-600 font-bold">
+            <MapPin className="w-3.5 h-3.5 shrink-0" />
+            Trincomalee & Colombo
+          </span>
+          <span className="text-slate-300 hidden sm:inline">•</span>
+          <a
+            href="tel:0750928078"
+            className="inline-flex items-center gap-1 text-slate-700 hover:text-blue-600 transition-colors font-bold"
+          >
+            <Phone className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+            Contact: 075 092 8078
+          </a>
+        </div>
       </motion.div>
 
-      {/* Subtle Corporate Micro-Footer */}
-      <div className="absolute bottom-8 text-[11px] font-medium tracking-[0.15em] text-slate-200/80 drop-shadow-xs">
-        Creating Moments • Capturing Memories • Delivering Innovation
+      {/* Micro-Footer */}
+      <div className="absolute bottom-8 text-[11px] sm:text-xs font-semibold tracking-wider text-slate-200/90 drop-shadow-md flex items-center gap-2">
+        <span>Delivering in Trincomalee & Colombo</span>
+        <span>•</span>
+        <span>075 092 8078</span>
       </div>
     </motion.div>
   );

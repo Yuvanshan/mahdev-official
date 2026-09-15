@@ -205,8 +205,18 @@ export const AdminHomepageView: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 100 * 1024 * 1024) {
+      addToast(
+        'error',
+        'File Too Large',
+        `File size (${(file.size / (1024 * 1024)).toFixed(1)} MB) exceeds 100 MB limit. Please select a video under 100 MB or use YouTube/Vimeo.`
+      );
+      e.target.value = '';
+      return;
+    }
+
     setIsUploadingMedia(true);
-    setUploadProgress(10);
+    setUploadProgress(5);
     try {
       const isVideo =
         file.type.startsWith('video/') ||

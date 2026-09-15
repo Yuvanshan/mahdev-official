@@ -22,6 +22,9 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
     (d) =>
       d.id === 'u1' ||
       d.id === 'u1-studio' ||
+      d.id === 'div-u1' ||
+      d.id === 'div-u1-studio' ||
+      (d as any).divisionKey === 'u1' ||
       d.slug === 'u1' ||
       d.slug === 'u1-studio'
   );
@@ -41,8 +44,11 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
     '';
 
   const rawHeroImage =
-    (u1Div as any)?.imageUrl ||
+    (u1Div as any)?.defaultImageUrl ||
     (u1Div as any)?.heroImageUrl ||
+    (u1Div as any)?.imageUrl ||
+    (u1Div?.hero as any)?.defaultImageUrl ||
+    (u1Div?.hero as any)?.imageUrl ||
     (u1Div as any)?.hero?.bgImage;
 
   const heroImage =
@@ -50,7 +56,7 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
       ? rawHeroImage.trim()
       : 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&w=2000&q=85';
 
-  const effectiveVideoUrl = (u1Div as any)?.heroMediaType === 'image' ? '' : rawHeroVideo;
+  const effectiveVideoUrl = (u1Div as any)?.heroMediaType === 'image' && !(u1Div as any)?.heroVideoUrl && !(u1Div as any)?.videoUrl ? '' : rawHeroVideo;
 
   const badgeText =
     (u1Div as any)?.hero?.badge ||
@@ -69,6 +75,7 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
       <HeroVideoBackground
         videoUrl={effectiveVideoUrl}
         imageUrl={heroImage}
+        posterImageUrl={heroImage}
         title={u1Div?.name || 'U1 Studio Photography & Cinema'}
       />
 

@@ -229,6 +229,21 @@ class CmsService {
           d.id === 'u1-studio' ? 'u1' : d.id === 'it-solutions' ? 'it' : d.id === 'online-mart' ? 'mart' : (d.id as DivisionId);
         const fallbackConfig = DIVISIONS[divKey] || DIVISIONS.sws;
 
+        const resolvedVideo = d.heroVideoUrl || d.videoUrl || d.hero?.videoUrl || '';
+        const resolvedImg =
+          d.defaultImageUrl ||
+          d.heroImageUrl ||
+          d.imageUrl ||
+          d.hero?.defaultImageUrl ||
+          d.hero?.imageUrl ||
+          d.hero?.bgImage ||
+          (fallbackConfig as any).heroImageUrl ||
+          '';
+        const resolvedMediaType =
+          d.heroMediaType ||
+          d.hero?.mediaType ||
+          (resolvedVideo ? 'video' : 'image');
+
         return {
           id: d.id.startsWith('div-') ? d.id : `div-${d.id}`,
           divisionKey: divKey,
@@ -243,7 +258,28 @@ class CmsService {
           gradient: (fallbackConfig as any).gradient || 'from-blue-600 to-indigo-700',
           heroHeadline: d.hero?.title || d.heroHeadline || fallbackConfig.heroHeadline,
           heroSubheadline: d.hero?.subtitle || d.shortDescription || fallbackConfig.heroSubheadline,
-          heroImageUrl: d.hero?.bgImage || d.imageUrl || (fallbackConfig as any).heroImageUrl || '',
+          heroImageUrl: resolvedImg,
+          defaultImageUrl: resolvedImg,
+          heroVideoUrl: resolvedVideo,
+          videoUrl: resolvedVideo,
+          heroMediaType: resolvedMediaType,
+          hero: {
+            title: d.hero?.title || d.heroHeadline || fallbackConfig.heroHeadline,
+            subtitle: d.hero?.subtitle || d.shortDescription || fallbackConfig.heroSubheadline,
+            badge: d.hero?.badge || fallbackConfig.badge,
+            bgImage: resolvedImg,
+            imageUrl: resolvedImg,
+            defaultImageUrl: resolvedImg,
+            videoUrl: resolvedVideo,
+            mediaType: resolvedMediaType,
+            ctaText: d.hero?.ctaText || 'Explore ' + (d.name || fallbackConfig.name),
+          },
+          isComingSoon: !!(d.isComingSoon || d.comingSoon || d.status === 'coming_soon'),
+          comingSoon: !!(d.isComingSoon || d.comingSoon || d.status === 'coming_soon'),
+          comingSoonTitle: d.comingSoonTitle || '',
+          comingSoonMessage: d.comingSoonMessage || '',
+          comingSoonExpectedLaunch: d.comingSoonExpectedLaunch || '',
+          rentalAssetCount: (d as any).rentalAssetCount || '',
           logoUrl: d.logoUrl || d.logo || (fallbackConfig as any).logoUrl || '',
           contactEmail: d.contactEmail || (fallbackConfig as any).contactEmail || 'contact@mahdev.lk',
           iconName: (d as any).iconName || fallbackConfig.iconName || 'Sparkles',
@@ -252,7 +288,7 @@ class CmsService {
           seo: d.seo || {
             metaTitle: `${d.name} | Mahdev Group`,
             metaDescription: d.description,
-            ogImage: d.hero?.bgImage || d.imageUrl || '',
+            ogImage: resolvedImg,
             canonicalUrl: `https://mahdev.lk${d.route || '/' + d.slug}`,
           },
           isActive: d.status !== 'inactive' && d.isPublished !== false,
@@ -474,8 +510,30 @@ class CmsService {
 
   private notify(entity: CmsEntityType): void {
     const subs = this.listeners.get(entity);
-    if (subs) {
-      subs.forEach((cb) => cb());
+    if (subs && subs.size > 0) {
+      const callbacks = Array.from(subs);
+      // Asynchronously schedule callback execution to avoid updating components during another component's render phase
+      if (typeof queueMicrotask === 'function') {
+        queueMicrotask(() => {
+          callbacks.forEach((cb) => {
+            try {
+              cb();
+            } catch (err) {
+              console.error(`[CmsService] Listener error for ${entity}:`, err);
+            }
+          });
+        });
+      } else {
+        setTimeout(() => {
+          callbacks.forEach((cb) => {
+            try {
+              cb();
+            } catch (err) {
+              console.error(`[CmsService] Listener error for ${entity}:`, err);
+            }
+          });
+        }, 0);
+      }
     }
     try {
       if (this.broadcastChannel) {
@@ -935,26 +993,52 @@ class CmsService {
     try {
       if (entity === 'divisions') {
         const divKey = item.divisionKey || item.id?.replace('div-', '') || item.id;
+        const videoUrl = item.heroVideoUrl || item.videoUrl || item.hero?.videoUrl || '';
+        const imgUrl = item.defaultImageUrl || item.heroImageUrl || item.imageUrl || item.hero?.bgImage || '';
+        const mediaType = item.heroMediaType || item.hero?.mediaType || (videoUrl ? 'video' : 'image');
+
         await firestoreDivisionsService.saveDivision(divKey, {
           id: divKey,
+          divisionKey: item.divisionKey || divKey,
           name: item.name,
           shortName: item.shortName || item.name,
           order: typeof item.order === 'number' ? item.order : undefined,
           description: item.description,
           shortDescription: item.heroSubheadline || item.tagline || item.description,
-          imageUrl: item.heroImageUrl || item.imageUrl || '',
+          imageUrl: imgUrl,
+          heroImageUrl: imgUrl,
+          defaultImageUrl: imgUrl,
+          heroVideoUrl: videoUrl,
+          videoUrl: videoUrl,
+          heroMediaType: mediaType,
           logoUrl: item.logoUrl || item.logo || '',
           logo: item.logoUrl || item.logo || '',
           accentColor: item.accentColor || '#1d4ed8',
           route: item.route || `/${divKey}`,
           slug: item.slug || divKey,
           isPublished: !item.isDeleted && item.isActive !== false,
-          status: item.isDeleted ? 'inactive' : (item.isActive === false ? 'inactive' : 'active'),
+          status: item.isComingSoon
+            ? 'coming_soon'
+            : item.isDeleted
+            ? 'inactive'
+            : item.isActive === false
+            ? 'inactive'
+            : 'active',
+          isComingSoon: !!(item.isComingSoon || item.comingSoon),
+          comingSoon: !!(item.isComingSoon || item.comingSoon),
+          comingSoonTitle: item.comingSoonTitle || '',
+          comingSoonMessage: item.comingSoonMessage || '',
+          comingSoonExpectedLaunch: item.comingSoonExpectedLaunch || '',
+          rentalAssetCount: item.rentalAssetCount || '',
           hero: {
             title: item.heroHeadline || item.name,
             subtitle: item.heroSubheadline || item.tagline || '',
             badge: item.badge || 'Enterprise Division',
-            bgImage: item.heroImageUrl || item.imageUrl || '',
+            bgImage: imgUrl,
+            imageUrl: imgUrl,
+            defaultImageUrl: imgUrl,
+            videoUrl: videoUrl,
+            mediaType: mediaType,
             ctaText: 'Explore ' + item.name,
           },
           seo: item.seo,

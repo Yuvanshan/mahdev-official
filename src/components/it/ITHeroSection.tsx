@@ -23,6 +23,9 @@ export const ITHeroSection: React.FC<ITHeroSectionProps> = ({
     (d) =>
       d.id === 'it' ||
       d.id === 'it-solutions' ||
+      d.id === 'div-it' ||
+      d.id === 'div-it-solutions' ||
+      (d as any).divisionKey === 'it' ||
       d.slug === 'it' ||
       d.slug === 'it-solutions'
   );
@@ -37,14 +40,16 @@ export const ITHeroSection: React.FC<ITHeroSectionProps> = ({
     (itDiv as any)?.heroVideoUrl ||
     (itDiv as any)?.videoUrl ||
     (itDiv?.hero as any)?.videoUrl ||
+    ((itDiv?.hero as any)?.mediaType === 'video' ? (itDiv?.hero as any)?.mediaUrl : '') ||
+    ((itDiv?.hero as any)?.mediaUrl?.startsWith?.('firestore://') ? (itDiv?.hero as any)?.mediaUrl : '') ||
     '';
 
   const rawHeroImage =
     (itDiv as any)?.defaultImageUrl ||
     (itDiv as any)?.heroImageUrl ||
+    (itDiv as any)?.imageUrl ||
     (itDiv?.hero as any)?.defaultImageUrl ||
     (itDiv?.hero as any)?.imageUrl ||
-    (itDiv as any)?.imageUrl ||
     (itDiv as any)?.hero?.bgImage;
 
   const heroImage =
@@ -52,7 +57,7 @@ export const ITHeroSection: React.FC<ITHeroSectionProps> = ({
       ? rawHeroImage.trim()
       : 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=2000&q=85';
 
-  const effectiveVideoUrl = (itDiv as any)?.heroMediaType === 'image' ? '' : rawHeroVideo;
+  const effectiveVideoUrl = (itDiv as any)?.heroMediaType === 'image' && !(itDiv as any)?.heroVideoUrl && !(itDiv as any)?.videoUrl ? '' : rawHeroVideo;
 
   const badgeText =
     (itDiv as any)?.hero?.badge ||

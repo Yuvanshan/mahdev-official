@@ -27,6 +27,9 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
     (d) =>
       d.id === 'sws' ||
       d.id === 'sws-event-management' ||
+      d.id === 'div-sws' ||
+      d.id === 'div-sws-event-management' ||
+      (d as any).divisionKey === 'sws' ||
       d.slug === 'sws' ||
       d.slug === 'sws-event-management'
   );
@@ -51,8 +54,11 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
     '';
 
   const rawHeroImage =
-    (swsDiv as any)?.imageUrl ||
+    (swsDiv as any)?.defaultImageUrl ||
     (swsDiv as any)?.heroImageUrl ||
+    (swsDiv as any)?.imageUrl ||
+    (swsDiv?.hero as any)?.defaultImageUrl ||
+    (swsDiv?.hero as any)?.imageUrl ||
     (swsDiv as any)?.hero?.bgImage;
 
   const heroImage =
@@ -60,7 +66,7 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
       ? rawHeroImage.trim()
       : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
 
-  const effectiveVideoUrl = (swsDiv as any)?.heroMediaType === 'image' ? '' : rawHeroVideo;
+  const effectiveVideoUrl = (swsDiv as any)?.heroMediaType === 'image' && !(swsDiv as any)?.heroVideoUrl && !(swsDiv as any)?.videoUrl ? '' : rawHeroVideo;
 
   const badgeText =
     (swsDiv as any)?.hero?.badge ||
@@ -79,6 +85,7 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
       <HeroVideoBackground
         videoUrl={effectiveVideoUrl}
         imageUrl={heroImage}
+        posterImageUrl={heroImage}
         title={swsDiv?.name || 'SWS Luxury Event Decor & Rentals'}
       />
 

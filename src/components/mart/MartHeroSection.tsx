@@ -27,8 +27,13 @@ export const MartHeroSection: React.FC<MartHeroSectionProps> = ({
   const martDiv = divisions?.find(
     (d) =>
       d.id === 'mart' ||
+      d.id === 'online-mart' ||
       d.id === 'mahdev-mart' ||
+      d.id === 'div-mart' ||
+      d.id === 'div-online-mart' ||
+      (d as any).divisionKey === 'mart' ||
       d.slug === 'mart' ||
+      d.slug === 'online-mart' ||
       d.slug === 'mahdev-mart'
   );
 
@@ -36,14 +41,16 @@ export const MartHeroSection: React.FC<MartHeroSectionProps> = ({
     (martDiv as any)?.heroVideoUrl ||
     (martDiv as any)?.videoUrl ||
     (martDiv?.hero as any)?.videoUrl ||
+    ((martDiv?.hero as any)?.mediaType === 'video' ? (martDiv?.hero as any)?.mediaUrl : '') ||
+    ((martDiv?.hero as any)?.mediaUrl?.startsWith?.('firestore://') ? (martDiv?.hero as any)?.mediaUrl : '') ||
     '';
 
   const rawHeroImage =
     (martDiv as any)?.defaultImageUrl ||
     (martDiv as any)?.heroImageUrl ||
+    (martDiv as any)?.imageUrl ||
     (martDiv?.hero as any)?.defaultImageUrl ||
     (martDiv?.hero as any)?.imageUrl ||
-    (martDiv as any)?.imageUrl ||
     (martDiv as any)?.hero?.bgImage;
 
   const heroImage =
@@ -51,7 +58,7 @@ export const MartHeroSection: React.FC<MartHeroSectionProps> = ({
       ? rawHeroImage.trim()
       : 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=2000&q=80';
 
-  const effectiveVideoUrl = (martDiv as any)?.heroMediaType === 'image' ? '' : rawHeroVideo;
+  const effectiveVideoUrl = (martDiv as any)?.heroMediaType === 'image' && !(martDiv as any)?.heroVideoUrl && !(martDiv as any)?.videoUrl ? '' : rawHeroVideo;
 
   const badgeText =
     (martDiv as any)?.hero?.badge ||

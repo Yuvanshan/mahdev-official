@@ -25,7 +25,7 @@ export interface BaseCmsEntity {
 
 // 1. Division Entity
 export interface CmsDivision extends BaseCmsEntity {
-  divisionKey: DivisionId;
+  divisionKey: DivisionId | string;
   name: string;
   shortName: string;
   order?: number;
@@ -42,6 +42,16 @@ export interface CmsDivision extends BaseCmsEntity {
   heroVideoUrl?: string;
   videoUrl?: string;
   heroMediaType?: 'image' | 'video';
+  hero?: {
+    title?: string;
+    subtitle?: string;
+    badge?: string;
+    videoUrl?: string;
+    mediaType?: 'image' | 'video';
+    bgImage?: string;
+    imageUrl?: string;
+    defaultImageUrl?: string;
+  };
   logoUrl?: string;
   contactEmail: string;
   iconName: string;
