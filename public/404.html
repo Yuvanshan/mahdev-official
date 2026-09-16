@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mahdev (Pvt) Ltd</title>
+    <script>
+      // Single Page Application Fallback for static CDN hosts
+      // Preserves original path, query, and hash parameters and loads the app
+      var currentPath = window.location.pathname;
+      var search = window.location.search;
+      var hash = window.location.hash;
+      
+      // If the request was for a clean SPA route (like /admin or /sws), forward to root hash or pushState
+      if (currentPath && currentPath !== '/') {
+        window.location.replace('/#' + currentPath + (search || '') + (hash || ''));
+      } else {
+        window.location.replace('/');
+      }
+    </script>
+  </head>
+  <body style="background-color: #061033; color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">
+    <div style="text-align: center;">
+      <p style="font-size: 16px; opacity: 0.8;">Loading Mahdev Enterprise...</p>
+    </div>
+  </body>
+</html>

@@ -83,6 +83,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     rawCandidateVideo.includes('assets.mixkit.co') ||
     rawCandidateVideo === '';
 
+  const rawHeroImage =
+    (heroConfig as any)?.bgImage ||
+    heroConfig?.imageUrl ||
+    (heroConfig as any)?.heroImageUrl ||
+    (heroConfig as any)?.defaultImageUrl;
+
+  const heroImage =
+    typeof rawHeroImage === 'string' && rawHeroImage.trim() !== ''
+      ? rawHeroImage.trim()
+      : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
+
   const effectiveVideoUrl = isDefaultOrPlaceholder
     ? '/assets/hero_video.mp4'
     : rawCandidateVideo;
@@ -100,17 +111,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       id="hero"
       className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-[#061033] text-white"
     >
-      {/* Reliable Full-Width Video Background */}
+      {/* Reliable Full-Width Video Background with same fade overlay and poster as division heroes */}
       <HeroVideoBackground
         videoUrl={effectiveVideoUrl}
+        imageUrl={heroImage}
+        posterImageUrl={heroImage}
         title="Mahdev Enterprise Showcase"
       />
 
-      {/* Dark gradient overlay on left to ensure high readability and contrast */}
-      <div className="absolute inset-0 bg-gradient-to-r from-[#061033]/90 via-[#061033]/70 to-transparent z-10 pointer-events-none" />
-
-      {/* Hero Content Overlay — Left-Aligned */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-32 z-20 w-full text-left">
+      {/* Hero Content Overlay — Left-Aligned matching division hero layout */}
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-28 z-20 w-full text-left">
         <div className="max-w-2xl sm:max-w-3xl space-y-6">
           {/* Animated 3-Line Taglines with reduced, elegant font size */}
           <div className="space-y-1 sm:space-y-2">

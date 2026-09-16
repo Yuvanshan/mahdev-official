@@ -4,8 +4,6 @@
   "framework": "vite",
   "buildCommand": "vite build",
   "outputDirectory": "dist",
-  "cleanUrls": true,
-  "trailingSlash": false,
   "headers": [
     {
       "source": "/(.*)",
@@ -13,8 +11,7 @@
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
         { "key": "X-XSS-Protection", "value": "1; mode=block" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
       ]
     },
     {
@@ -24,21 +21,20 @@
       ]
     }
   ],
-  "redirects": [
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.mahdev.lk"
-        }
-      ],
-      "destination": "https://mahdev.lk/:path*",
-      "permanent": true
-    }
-  ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/admin/(.*)", "destination": "/index.html" },
+    { "source": "/sws", "destination": "/index.html" },
+    { "source": "/sws/(.*)", "destination": "/index.html" },
+    { "source": "/u1", "destination": "/index.html" },
+    { "source": "/u1/(.*)", "destination": "/index.html" },
+    { "source": "/it", "destination": "/index.html" },
+    { "source": "/it/(.*)", "destination": "/index.html" },
+    { "source": "/travels", "destination": "/index.html" },
+    { "source": "/travels/(.*)", "destination": "/index.html" },
+    { "source": "/mart", "destination": "/index.html" },
+    { "source": "/mart/(.*)", "destination": "/index.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
