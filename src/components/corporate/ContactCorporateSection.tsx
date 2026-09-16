@@ -458,9 +458,9 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
             </div>
           </ScrollReveal>
 
-          {/* Official Offices: Colombo & Trincomalee */}
+          {/* Official Offices: Colombo & Trincomalee/Regional (Left & Right) */}
           <ScrollReveal direction="up" delay={0.2}>
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Colombo Office Card */}
               <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200 shadow-xs space-y-3">
                 <div className="flex items-center justify-between">
@@ -495,7 +495,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                 </div>
               </div>
 
-              {/* Trincomalee Office Card */}
+              {/* Trincomalee/Regional Office Card */}
               <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200 shadow-xs space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
@@ -526,27 +526,6 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                   <p className="font-medium text-slate-900 leading-relaxed">
                     {company.offices?.trincomalee?.address || COMPANY_INFO.offices.trincomalee.address}
                   </p>
-                </div>
-              </div>
-
-              {/* Social Media Links Matrix */}
-              <div className="p-5 rounded-3xl bg-white border border-slate-200">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2">
-                  Official Channels & Social Registry
-                </span>
-                <div className="grid grid-cols-2 gap-2">
-                  {CORPORATE_CONTACT_DETAILS.socials.map((soc) => (
-                    <a
-                      key={soc.name}
-                      href={soc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-blue-400 hover:text-[#0052FF] transition-all text-xs font-semibold text-slate-700 flex items-center justify-between group"
-                    >
-                      <span>{soc.name}</span>
-                      <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-[#0052FF]" />
-                    </a>
-                  ))}
                 </div>
               </div>
             </div>

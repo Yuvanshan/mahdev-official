@@ -297,43 +297,6 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
     }
   };
 
-  // Other sister divisions for cross-navigation (sourced live from Firestore)
-  const sisterDivisions = useMemo(() => {
-    const list = divisions && divisions.length > 0 ? divisions : DIVISION_LIST;
-    const currentCanonical = normalizedKey;
-
-    const seen = new Set<string>([currentCanonical, divisionId]);
-    const result = [];
-
-    for (const d of list) {
-      const rawId = (d.id || (d as any).slug || '').toLowerCase();
-      const canonicalId =
-        rawId === 'u1' || rawId === 'u1-studio' || rawId === 'u1-cinema'
-          ? 'u1'
-          : rawId === 'sws' || rawId === 'sws-event-management' || rawId === 'sws-events'
-          ? 'sws'
-          : rawId === 'it' || rawId === 'it-solutions' || rawId === 'mahdev-it'
-          ? 'it'
-          : rawId === 'travels' || rawId === 'mahdev-travels'
-          ? 'travels'
-          : rawId === 'mart' || rawId === 'online-mart' || rawId === 'mahdev-mart'
-          ? 'mart'
-          : rawId;
-
-      if (!canonicalId || seen.has(canonicalId)) continue;
-      seen.add(canonicalId);
-      result.push({
-        id: canonicalId,
-        name: d.name,
-        badge: (d as any).badge || (d as any).hero?.badge || 'Specialized Division',
-        tagline: (d as any).tagline || (d as any).hero?.subtitle || (d as any).shortDescription || '',
-        iconName: (d as any).iconName || 'Sparkles',
-        route: d.route || `/${(d as any).slug || canonicalId}`,
-      });
-    }
-    return result;
-  }, [divisions, normalizedKey, divisionId]);
-
   return (
     <div className="w-full flex flex-col bg-[#FAF9F6]">
       <SEOHead
@@ -659,58 +622,6 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
               </form>
             )}
           </div>
-        </div>
-      </SectionContainer>
-
-      {/* 5. SISTER DIVISIONS SWITCHER */}
-      <SectionContainer background="subtle" paddingY="lg">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
-          <div>
-            <Caption className="text-slate-400">Discover More</Caption>
-            <h3 className="font-display text-xl font-bold text-slate-900 mt-1">
-              Explore Sister Divisions in the Mahdev Group
-            </h3>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onNavigate('/')}
-            className="mt-4 md:mt-0"
-          >
-            All Divisions Overview
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {sisterDivisions.map((sister) => (
-            <div
-              key={sister.id}
-              onClick={() => onNavigate(sister.route)}
-              className="p-5 rounded-xl bg-white border border-slate-200/80 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="p-2 rounded-lg bg-blue-50 text-[#0052FF] group-hover:bg-[#0052FF] group-hover:text-white transition-colors">
-                    <IconRenderer name={sister.iconName} className="w-4 h-4" />
-                  </div>
-                  <Badge size="sm" variant="default">
-                    {sister.badge}
-                  </Badge>
-                </div>
-                <h4 className="font-display text-base font-bold text-slate-900 group-hover:text-[#0052FF] transition-colors mb-1">
-                  {sister.name}
-                </h4>
-                <p className="text-xs text-slate-500 line-clamp-2">
-                  {sister.tagline}
-                </p>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-700 group-hover:text-[#0052FF]">
-                <span>View Division</span>
-                <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-              </div>
-            </div>
-          ))}
         </div>
       </SectionContainer>
     </div>

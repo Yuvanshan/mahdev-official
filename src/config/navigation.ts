@@ -72,28 +72,12 @@ export const MAIN_NAV_ITEMS: NavigationLink[] = [
 
 export const FOOTER_SECTIONS: FooterSection[] = [
   {
-    title: 'Customer Portal',
-    links: [
-      { label: 'Customer Sign In', href: '/login' },
-      { label: 'Create Account', href: '/register' },
-      { label: 'Account Hub', href: '/account' },
-      { label: 'My Orders & Deliveries', href: '/account/orders' },
-      { label: 'My Service Bookings', href: '/account/bookings' },
-      { label: 'Payment Transactions', href: '/account/payments' },
-      { label: 'Commercial Tax Invoices', href: '/account/invoices' },
-      { label: 'Profile & Preferences', href: '/account/profile' },
-    ],
-  },
-  {
     title: 'Company',
     links: [
       { label: 'About Mahdev', href: '/about' },
-      { label: 'Executive Leadership', href: '/about#leadership' },
-      { label: 'Our Milestones', href: '/#milestones' },
-      { label: 'Portfolio & Case Studies', href: '/portfolio' },
-      { label: 'Partner Companies', href: '/#companies' },
-      { label: 'Careers & Culture', href: '/contact', badge: 'Hiring' },
-      { label: 'Administrative Console', href: '/admin', badge: 'Secure' },
+      { label: 'Our Divisions', href: '/#divisions' },
+      { label: 'Projects & Portfolio', href: '/portfolio' },
+      { label: 'Contact Us', href: '/contact' },
     ],
   },
   {
@@ -107,17 +91,7 @@ export const FOOTER_SECTIONS: FooterSection[] = [
     ],
   },
   {
-    title: 'Resources',
-    links: [
-      { label: 'Universal Booking & Reservations', href: '/book' },
-      { label: 'Master Enterprise Catalog', href: '/catalog' },
-      { label: 'Cart & Checkout', href: '/checkout' },
-      { label: 'Track Order & Status', href: '/orders' },
-      { label: 'Security & Compliance', href: '/privacy-policy' },
-    ],
-  },
-  {
-    title: 'Legal & Policies',
+    title: 'Legal Provisions',
     links: [
       { label: 'Privacy Policy', href: '/privacy-policy' },
       { label: 'Terms & Conditions', href: '/terms-and-conditions' },

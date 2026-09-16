@@ -244,202 +244,69 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
           </div>
         </div>
 
-        {/* Bento Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* 1. Flagship Card: SWS Event Management */}
-          {sws && (
-            <motion.div
-              style={{ y: yParallaxLeft }}
-              whileHover={{ y: -3 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => onNavigate(sws.route)}
-              className="lg:col-span-7 group relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-200/80 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-end min-h-[400px] lg:min-h-[440px]"
-            >
-              {sws.image && sws.image.trim() !== '' ? (
-                <img
-                  src={sws.image}
-                  alt={sws.name}
-                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-103 transition-transform duration-700 ease-out"
-                />
-              ) : (
-                <div className="absolute inset-0 bg-slate-900" />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/65 to-transparent" />
-
-              <div className="relative p-6 sm:p-8 space-y-3.5 z-10">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-3 py-1 rounded-md text-[10px] font-mono uppercase tracking-wider bg-rose-700 text-white font-semibold">
-                    {sws.badge}
-                  </span>
-                  <span className="px-2.5 py-1 rounded-md text-[10px] font-medium bg-white/10 text-white backdrop-blur-md border border-white/10">
-                    {rentalAssetCountStr} Rental Inventory
-                  </span>
-                  {sws.isComingSoon && (
-                    <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-400 text-slate-950 flex items-center gap-1 shadow-sm">
-                      <Sparkles className="w-3 h-3" /> Coming Soon
-                    </span>
-                  )}
-                </div>
-
-                <div>
-                  <h3 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight group-hover:text-rose-200 transition-colors">
-                    {sws.name}
-                  </h3>
-                </div>
-
-                <div className="pt-4 border-t border-white/15 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex flex-wrap gap-1.5">
-                    {sws.metrics.map((m) => (
-                      <span
-                        key={m}
-                        className="px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-200 bg-black/40 border border-white/10"
-                      >
-                        {m}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={(e) => handleWhatsAppInquiry(e, sws)}
-                      title="Inquire via WhatsApp"
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-[#25D366] hover:bg-[#20bd5a] px-3.5 py-2 rounded-xl transition-colors shadow-xs cursor-pointer"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5" />
-                      <span>WhatsApp</span>
-                    </button>
-
-                    <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl transition-colors border border-white/10">
-                      <span>Explore</span>
-                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* 2. Side Stack: U1 Studio and Mahdev IT */}
-          <motion.div
-            style={{ y: yParallaxRight }}
-            className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6"
-          >
-            {bentoDivisions.slice(1, 3).map((div) => {
-              const badgeBg = div.id === 'u1' ? 'bg-amber-700' : 'bg-blue-700';
-              return (
-                <motion.div
-                  key={div.id}
-                  whileHover={{ y: -3 }}
-                  transition={{ duration: 0.2 }}
-                  onClick={() => onNavigate(div.route)}
-                  className="group relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-200/80 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-end min-h-[210px] p-6"
-                >
-                  {div.image && div.image.trim() !== '' ? (
-                    <img
-                      src={div.image}
-                      alt={div.name}
-                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-103 transition-transform duration-700 ease-out"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 bg-slate-900" />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent" />
-
-                  <div className="relative z-10 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-mono font-semibold uppercase tracking-wider text-white ${badgeBg}`}>
-                        {div.badge}
-                      </span>
-                      {div.isComingSoon && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-400 text-slate-950">
-                          <Sparkles className="w-2.5 h-2.5" /> Coming Soon
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="font-display text-lg font-bold text-white group-hover:text-slate-200 transition-colors">
-                      {div.name}
-                    </h3>
-
-                    <div className="pt-2 border-t border-white/15 flex items-center justify-between text-xs text-slate-300">
-                      <button
-                        type="button"
-                        onClick={(e) => handleWhatsAppInquiry(e, div)}
-                        className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5" />
-                        <span>Inquire</span>
-                      </button>
-                      <span className="font-medium text-slate-300 group-hover:text-white flex items-center gap-1 transition-colors">
-                        Explore <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-                      </span>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-
-          {/* 3. Bottom Row: Mahdev Travels and Mahdev Online Mart */}
-          {bentoDivisions.slice(3, 5).map((div) => {
-            const badgeBg = div.id === 'travels' ? 'bg-teal-700' : 'bg-indigo-700';
+        {/* Uniform 5-Card Grid: All five division cards have the exact same size */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {bentoDivisions.slice(0, 5).map((div, idx) => {
             return (
               <motion.div
                 key={div.id}
-                whileHover={{ y: -3 }}
+                whileHover={{ y: -4 }}
                 transition={{ duration: 0.2 }}
                 onClick={() => onNavigate(div.route)}
-                className="lg:col-span-6 group relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-200/80 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-end min-h-[230px] p-6 sm:p-7"
+                className={`group relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-200/80 shadow-sm hover:shadow-lg transition-all cursor-pointer flex flex-col justify-end min-h-[340px] sm:min-h-[360px] p-6 sm:p-7 ${
+                  idx === 4 ? 'md:col-span-2 lg:col-span-1' : ''
+                }`}
               >
+                {/* Background Image: Uploaded Content */}
                 {div.image && div.image.trim() !== '' ? (
                   <img
                     src={div.image}
                     alt={div.name}
-                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-103 transition-transform duration-700 ease-out"
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                   />
                 ) : (
-                  <div className="absolute inset-0 bg-slate-900" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900" />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent" />
+                {/* Dark Readability Gradient */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-slate-950/20" />
 
-                <div className="relative z-10 space-y-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-mono font-semibold uppercase tracking-wider text-white ${badgeBg}`}>
+                {/* Content */}
+                <div className="relative z-10 space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-block px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider text-white bg-[#0052FF] shadow-xs">
                       {div.badge}
                     </span>
                     {div.isComingSoon && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-400 text-slate-950">
-                        <Sparkles className="w-2.5 h-2.5" /> Coming Soon
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-amber-400 text-slate-950">
+                        <Sparkles className="w-3 h-3" /> Coming Soon
                       </span>
                     )}
                   </div>
-                  <h3 className="font-display text-xl font-bold text-white group-hover:text-slate-200 transition-colors">
-                    {div.name}
-                  </h3>
 
-                  <div className="pt-3 border-t border-white/15 flex items-center justify-between text-xs">
-                    <div className="flex gap-2">
-                      {div.metrics.map((m) => (
-                        <span
-                          key={m}
-                          className="px-2.5 py-0.5 rounded-md text-[10px] font-medium text-slate-200 bg-black/40 border border-white/10"
-                        >
-                          {m}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={(e) => handleWhatsAppInquiry(e, div)}
-                        className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5" />
-                        <span>Inquire</span>
-                      </button>
-                      <span className="font-medium text-slate-300 group-hover:text-white flex items-center gap-1 transition-colors">
-                        View Division <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                      </span>
+                  <div>
+                    <h3 className="font-display text-xl sm:text-2xl font-bold text-white group-hover:text-blue-200 transition-colors">
+                      {div.name}
+                    </h3>
+                    {div.subtitle && (
+                      <p className="text-xs sm:text-sm text-slate-300 line-clamp-2 mt-1">
+                        {div.subtitle}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="pt-3 border-t border-white/15 flex items-center justify-between gap-3 text-xs">
+                    <button
+                      type="button"
+                      onClick={(e) => handleWhatsAppInquiry(e, div)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/30 font-semibold text-xs transition-colors cursor-pointer"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>WhatsApp</span>
+                    </button>
+
+                    <div className="inline-flex items-center gap-1 font-semibold text-white group-hover:text-blue-300 transition-colors">
+                      <span>Explore</span>
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
                 </div>

@@ -1,9 +1,7 @@
-import React, { useMemo } from 'react';
-import { ArrowRight, Phone, MessageCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
-import { getTelLink } from '../../config/company';
-import { getWhatsAppInquiryUrl } from '../../utils/whatsapp';
 import { HeroVideoBackground } from '../common/HeroVideoBackground';
 
 interface HeroSectionProps {
@@ -13,164 +11,104 @@ interface HeroSectionProps {
   onExploreServices?: () => void;
 }
 
+const FULL_TAGLINE = 'Creating Moments. Capturing Memories. Delivering Innovation.';
+
 export const HeroSection: React.FC<HeroSectionProps> = ({
-  onNavigate,
   onExploreMahdev,
+  onExploreServices,
 }) => {
-  const { homepageConfig, companySettings, divisions } = useFirestoreDataContext();
+  const { homepageConfig } = useFirestoreDataContext();
   const heroConfig = homepageConfig?.hero;
 
-  const hotline = companySettings?.primaryPhone || '075 092 8078';
+  // Typing animation state
+  const [typedText, setTypedText] = useState('');
+  const [isTypingComplete, setIsTypingComplete] = useState(false);
 
-  const badgeText = heroConfig?.badgeText || 'Mahdev (Pvt) Ltd • Enterprise Conglomerate';
-  const titleLine1 = heroConfig?.titleLine1 || 'Creating Moments';
-  const titleHighlight = heroConfig?.titleHighlight || 'Capturing Memories';
-  const titleLine2 = heroConfig?.titleLine2 || 'Delivering Innovation';
-  const primaryCtaLabel = heroConfig?.primaryCtaLabel || 'Explore Divisions';
+  useEffect(() => {
+    let index = 0;
+    setTypedText('');
+    setIsTypingComplete(false);
 
-  // Admin Uploaded Media from Firestore & Local Storage
+    const interval = setInterval(() => {
+      index++;
+      if (index <= FULL_TAGLINE.length) {
+        setTypedText(FULL_TAGLINE.slice(0, index));
+      } else {
+        setIsTypingComplete(true);
+        clearInterval(interval);
+      }
+    }, 45);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Admin Uploaded Media or Fallback to /assets/hero_video.mp4
   const rawCandidateVideo =
     heroConfig?.videoUrl?.trim() ||
     (heroConfig as any)?.heroVideoUrl?.trim() ||
     (heroConfig?.mediaType === 'video' ? heroConfig?.mediaUrl?.trim() : '') ||
-    (heroConfig?.mediaUrl?.startsWith('firestore://') ? heroConfig.mediaUrl.trim() : '') ||
-    heroConfig?.mediaUrl?.trim() ||
     '';
 
-  // Do not load external placeholder video so real content displays instantly
   const isDefaultOrPlaceholder =
+    !rawCandidateVideo ||
     rawCandidateVideo.includes('assets.mixkit.co') ||
     rawCandidateVideo === '';
 
-  const effectiveVideoUrl = isDefaultOrPlaceholder ? '' : rawCandidateVideo;
+  const effectiveVideoUrl = isDefaultOrPlaceholder
+    ? '/assets/hero_video.mp4'
+    : rawCandidateVideo;
 
-  const divisionLinks = useMemo(() => {
-    if (divisions && divisions.length > 0) {
-      return divisions
-        .filter((d) => d.status !== 'inactive')
-        .slice(0, 5)
-        .map((d) => ({
-          id: d.id,
-          name: d.shortName || d.name,
-          route: d.route || `/${d.slug || d.id}`,
-        }));
+  const handleExplore = () => {
+    if (onExploreServices) {
+      onExploreServices();
+    } else {
+      onExploreMahdev();
     }
-    return [
-      { id: 'sws', name: 'Events & Decor', route: '/sws' },
-      { id: 'u1', name: 'Cinema & Studio', route: '/u1' },
-      { id: 'it', name: 'Software & Cloud', route: '/it' },
-      { id: 'travels', name: 'Luxury Travels', route: '/travels' },
-      { id: 'mart', name: 'Online Mart', route: '/mart' },
-    ];
-  }, [divisions]);
-
-  const whatsappInquiryUrl = useMemo(() => {
-    return getWhatsAppInquiryUrl({
-      title: 'Consultation & Inquiries',
-      divisionName: 'Mahdev (Pvt) Ltd',
-      category: 'Inquiry Desk',
-      description: 'Inquiry from official website hero section.',
-      type: 'general',
-    });
-  }, []);
+  };
 
   return (
     <section
       id="hero"
-      className="relative w-full min-h-[85vh] lg:min-h-[92vh] flex items-center overflow-hidden bg-[#061033] text-white"
+      className="relative w-full min-h-[80vh] sm:min-h-[85vh] lg:min-h-[90vh] flex items-center justify-center overflow-hidden bg-[#061033] text-white"
     >
-      {/* Reliable Full-Width Video Background - Video Only */}
+      {/* Reliable Full-Width Video Background - Uploaded Video */}
       <HeroVideoBackground
         videoUrl={effectiveVideoUrl}
         title="Mahdev Enterprise Showcase"
       />
 
-      {/* ================= CONTENT OVER VIDEO ON LEFT SIDE ================= */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-28 z-20 w-full">
-        <div className="max-w-3xl space-y-6">
-          
-          {/* Status Badge in Electric Blue */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0052FF]/20 border border-[#0052FF]/40 text-xs font-bold text-blue-300 backdrop-blur-md shadow-lg">
-              <span className="w-2 h-2 rounded-full bg-[#0052FF] animate-pulse" />
-              <span className="tracking-wide">{badgeText}</span>
-            </div>
-          </motion.div>
-
-          {/* Main Headline - Bold, Direct, Over the Video with Left Gradient */}
-          <motion.h1
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="font-display text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-white leading-[1.08] drop-shadow-md"
-          >
-            {titleLine1} <span className="bg-gradient-to-r from-[#0052FF] via-[#0080FF] to-[#00D2FF] bg-clip-text text-transparent">| {titleHighlight}</span> | {titleLine2}
-          </motion.h1>
-
-          {/* Primary Action Buttons in Electric Blue & Off-White */}
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="flex flex-wrap items-center gap-3.5 pt-2"
-          >
-            <button
-              id="hero-explore-mahdev-btn"
-              onClick={onExploreMahdev}
-              className="inline-flex items-center justify-center gap-2.5 bg-gradient-to-r from-[#0052FF] via-[#0066FF] to-[#0052FF] hover:brightness-110 text-white font-bold text-sm sm:text-base px-7 py-3.5 rounded-xl shadow-lg shadow-[#0052FF]/30 hover:shadow-xl hover:shadow-[#0052FF]/50 transition-all cursor-pointer active:scale-98"
-            >
-              <span>{primaryCtaLabel}</span>
-              <ArrowRight className="w-4.5 h-4.5" />
-            </button>
-
-            <a
-              href={getTelLink(hotline)}
-              className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl border border-white/25 bg-white/10 hover:bg-[#0052FF]/20 hover:border-[#0052FF]/60 text-white text-sm font-semibold transition-colors backdrop-blur-md shadow-sm"
-              title={`Call Hotline ${hotline}`}
-            >
-              <Phone className="w-4 h-4 text-[#00D2FF] shrink-0" />
-              <span>Call Us</span>
-            </a>
-
-            <a
-              href={whatsappInquiryUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-white/10 hover:bg-[#0052FF]/20 border border-white/20 hover:border-[#0052FF]/50 text-white text-sm font-semibold transition-colors backdrop-blur-md shadow-sm"
-              title="Send inquiry via WhatsApp"
-            >
-              <MessageCircle className="w-4 h-4 text-[#00D2FF] shrink-0" />
-              <span>WhatsApp</span>
-            </a>
-          </motion.div>
-
-          {/* Division Quick Selector Pills */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="pt-4 border-t border-white/15 flex flex-wrap items-center gap-2"
-          >
-            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-300 font-bold mr-1">
-              Divisions:
-            </span>
-            {divisionLinks.map((div) => (
-              <button
-                key={div.id}
-                onClick={() => onNavigate(div.route)}
-                className="px-3 py-1 rounded-lg text-xs font-semibold text-white/90 bg-white/10 hover:bg-[#0052FF] border border-white/15 hover:border-blue-400/50 transition-colors backdrop-blur-md cursor-pointer"
-              >
-                {div.name}
-              </button>
-            ))}
-          </motion.div>
-
+      {/* Hero Content Overlay */}
+      <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-28 lg:py-32 z-20 w-full text-center flex flex-col items-center">
+        {/* Typing Tagline with Smaller, Elegant Font */}
+        <div className="min-h-[72px] sm:min-h-[96px] md:min-h-[110px] flex items-center justify-center">
+          <h1 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-snug sm:leading-tight drop-shadow-lg max-w-4xl">
+            <span>{typedText}</span>
+            <span
+              className={`inline-block w-0.5 h-6 sm:h-8 md:h-10 ml-1.5 align-middle bg-[#00D2FF] ${
+                isTypingComplete ? 'animate-pulse' : 'animate-ping'
+              }`}
+            />
+          </h1>
         </div>
+
+        {/* Single Primary Action Button: Explore Our Services */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="pt-8 sm:pt-10"
+        >
+          <button
+            id="hero-explore-services-btn"
+            onClick={handleExplore}
+            className="inline-flex items-center justify-center gap-2.5 bg-gradient-to-r from-[#0052FF] via-[#0066FF] to-[#0052FF] hover:brightness-110 text-white font-semibold text-sm sm:text-base px-8 py-3.5 sm:px-9 sm:py-4 rounded-xl shadow-xl shadow-[#0052FF]/35 hover:shadow-2xl hover:shadow-[#0052FF]/55 transition-all cursor-pointer active:scale-98"
+          >
+            <span>Explore Our Services</span>
+            <ArrowRight className="w-4.5 h-4.5" />
+          </button>
+        </motion.div>
       </div>
     </section>
   );
 };
+

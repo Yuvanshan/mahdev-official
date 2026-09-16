@@ -327,17 +327,6 @@ function AppContent() {
     return <AdminLayout currentPath={normalizedPath} onNavigate={navigate} />;
   }
 
-  // 2. Initial Data Hydration Loader for public pages (strict 100% sync from Firestore)
-  if (!isAdminRoute && (isInitialLoading || !isReady)) {
-    return (
-      <InitialAppLoader
-        message="Mahdev"
-        subMessage={syncStatus || 'Preparing your experience...'}
-        progress={syncProgress}
-      />
-    );
-  }
-
   // Determine if it's a legal page
   const legalRoutes: Record<string, LegalPolicyType> = {
     '/privacy-policy': 'privacy',

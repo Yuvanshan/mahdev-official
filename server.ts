@@ -278,6 +278,13 @@ async function startServer() {
   }
   app.use('/uploads', express.static(uploadsDir));
 
+  // Static assets directory serving (/public/assets)
+  const assetsDir = path.join(process.cwd(), 'public', 'assets');
+  if (!fs.existsSync(assetsDir)) {
+    fs.mkdirSync(assetsDir, { recursive: true });
+  }
+  app.use('/assets', express.static(assetsDir));
+
   // High-Capacity Media & Video Upload Endpoint (supports videos up to 100MB)
   app.post(
     '/api/upload/media',

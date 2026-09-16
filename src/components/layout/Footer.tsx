@@ -85,59 +85,20 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath }) => {
   return (
     <>
       <footer className="w-full bg-[#06102B] text-blue-100/80 border-t border-blue-900/50 mt-auto">
-        {/* Top Highlight Strip with Electric Blue Gradient */}
-        <div className="border-b border-blue-900/40 py-8 sm:py-10 px-3 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
-            <div className="lg:col-span-7">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0052FF]/20 border border-[#0052FF]/40 text-blue-300 text-xs font-semibold mb-3">
-                <Shield className="w-3.5 h-3.5 text-[#0052FF]" />
-                <span>The {companyName} Enterprise</span>
-              </div>
-              <h3 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                {tagline}
-              </h3>
-              <p className="text-blue-200/70 text-sm mt-2 max-w-xl">
-                {description}
-              </p>
-            </div>
-
-            {/* Newsletter Subscription Foundation */}
-            <div className="lg:col-span-5 bg-[#0A1E5C]/80 rounded-xl p-4 sm:p-5 border border-blue-800/50 backdrop-blur-md">
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-200 block mb-1">
-                Executive Dispatch
-              </span>
-              <p className="text-xs text-blue-300/70 mb-3">
-                Receive quarterly technology briefings, project releases, and company announcements.
-              </p>
-              {newsletterSubscribed ? (
-                <div className="flex items-center gap-2 text-emerald-400 text-xs font-medium py-2">
-                  <Check className="w-4 h-4" />
-                  <span>Thank you for subscribing to {companyName} Executive Dispatch.</span>
-                </div>
-              ) : (
-                <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-2">
-                  <input
-                    type="email"
-                    required
-                    placeholder="Enter your email"
-                    value={newsletterEmail}
-                    onChange={(e) => setNewsletterEmail(e.target.value)}
-                    className="flex-1 bg-[#06102B] border border-blue-800 rounded-lg px-3.5 py-2 text-xs text-white placeholder:text-blue-300/40 focus:outline-none focus:ring-2 focus:ring-[#0052FF]"
-                  />
-                  <Button variant="electric" size="sm" type="submit" className="shrink-0">
-                    Subscribe
-                  </Button>
-                </form>
-              )}
-            </div>
+        {/* Slogan Banner */}
+        <div className="border-b border-blue-900/40 py-6 sm:py-8 px-3 sm:px-6 lg:px-8 text-center">
+          <div className="max-w-4xl mx-auto">
+            <h3 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">
+              Creating Moments. Capturing Memories. Delivering Innovation.
+            </h3>
           </div>
         </div>
 
         {/* Main Footer Links */}
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-12 sm:py-16">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 lg:gap-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
             {/* Brand Column */}
-            <div className="col-span-1 sm:col-span-2 md:col-span-4 lg:col-span-1 space-y-4">
+            <div className="space-y-4">
               <BrandLogo
                 theme="dark"
                 size="md"
@@ -203,7 +164,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath }) => {
               </div>
             </div>
 
-            {/* Link Columns */}
+            {/* Link Columns: Company, Divisions, Legal Provisions */}
             {FOOTER_SECTIONS.map((section, idx) => (
               <div key={idx} className="space-y-4">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-blue-200">
@@ -238,20 +199,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath }) => {
             ))}
           </div>
 
-          {/* Bottom Bar: Copyright & Verified Registrations */}
-          <div className="border-t border-blue-900/40 mt-12 sm:mt-16 pt-6 sm:pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-blue-300/60">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#0052FF] shadow-[0_0_8px_#0052FF] inline-block" />
-              <span>
-                © {currentYear} {legalName}. All rights reserved.
-              </span>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-              <span>Democratic Socialist Republic of Sri Lanka</span>
-              <span>Reg: {regNumber}</span>
-              <span>VAT / SVAT Compliant</span>
-            </div>
+          {/* Bottom Bar: Clean Copyright */}
+          <div className="border-t border-blue-900/40 mt-12 sm:mt-16 pt-6 sm:pt-8 flex items-center justify-center text-xs text-blue-300/60">
+            <span>
+              © 2026 Mahdev Private Limited. All rights reserved.
+            </span>
           </div>
         </div>
       </footer>

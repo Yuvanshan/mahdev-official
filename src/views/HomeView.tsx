@@ -34,14 +34,17 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
     }
   };
 
-  // Reorderable sections from Firestore CMS
+  // Reorderable sections from Firestore CMS (filtered to exclude Mahdev Advantage / whyMahdev)
   const activeSections: DynamicSectionItem[] = React.useMemo(() => {
     const sections = homepageConfig?.sectionsOrder && homepageConfig.sectionsOrder.length > 0
       ? homepageConfig.sectionsOrder
       : DEFAULT_HOMEPAGE_SECTIONS;
 
+    // Filter out 'whyMahdev' (Mahdev Advantage), 'milestones', and unwanted/random pricing or event sections
+    const BANNED_SECTIONS = new Set(['whyMahdev', 'advantage', 'pricing', 'randomEvents', 'welcomeAnimation', 'milestones']);
+
     return [...sections]
-      .filter((s) => s.enabled !== false)
+      .filter((s) => s.enabled !== false && !BANNED_SECTIONS.has(s.sectionKey))
       .sort((a, b) => (a.order || 0) - (b.order || 0));
   }, [homepageConfig?.sectionsOrder]);
 
@@ -68,8 +71,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
         return <DivisionsSection key={id} onNavigate={onNavigate} />;
       case 'services':
         return <FeaturedServicesSection key={id} onNavigate={onNavigate} />;
-      case 'whyMahdev':
-        return <WhyMahdevSection key={id} />;
       case 'statistics':
         return <HappyClientsAndProjectsSection key={id} />;
       case 'gallery':
