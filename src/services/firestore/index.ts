@@ -27,3 +27,4 @@ export * from './team';
 export * from './faqs';
 export * from './inquiries';
 export * from './databaseManagement';
+export * from './media';

@@ -137,12 +137,10 @@ export const AdminHomepageView: React.FC = () => {
   useEffect(() => {
     if (!isDirty) {
       if (homepageConfig) {
-        // Ensure milestones has default achievements if empty
         const milestonesData = homepageConfig.milestones || ({} as any);
-        const achievements =
-          milestonesData.achievements && milestonesData.achievements.length > 0
-            ? milestonesData.achievements
-            : (cmsService.getHomepageConfig().milestones.achievements || []);
+        const achievements = Array.isArray(milestonesData.achievements)
+          ? milestonesData.achievements
+          : [];
         setConfig({
           ...homepageConfig,
           milestones: {
@@ -1517,27 +1515,73 @@ export const AdminHomepageView: React.FC = () => {
                     Edit the metrics, labels, descriptions, and badge indicators shown below the trajectory timeline.
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  leftIcon={<Plus className="w-3.5 h-3.5 text-blue-600" />}
-                  onClick={() => {
-                    const current = config.milestones.achievements || [];
-                    const newAchievement: AchievementItem = {
-                      id: `achieve-${Date.now()}`,
-                      metric: '100+',
-                      label: 'New Milestone Metric',
-                      description: 'Certified deliverable benchmark achieved by Mahdev Group.',
-                      badge: 'Verified Benchmark',
-                      iconName: 'Sparkles',
-                      highlight: false,
-                    };
-                    updateNested('milestones', 'achievements', [...current, newAchievement]);
-                  }}
-                  className="text-xs font-semibold cursor-pointer"
-                >
-                  Add Metric Card
-                </Button>
+                <div className="flex items-center gap-2">
+                  {(config.milestones.achievements || []).length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      leftIcon={<Trash2 className="w-3.5 h-3.5 text-red-500" />}
+                      onClick={async () => {
+                        if (window.confirm('Delete all achievement cards? The section will be completely hidden from the website.')) {
+                          const updatedConfig: HomepageCmsConfig = {
+                            ...config,
+                            milestones: {
+                              ...config.milestones,
+                              achievements: [],
+                            },
+                          };
+                          setConfig(updatedConfig);
+                          setIsDirty(true);
+                          try {
+                            await updateHomepageConfig(updatedConfig);
+                            addToast('success', 'Achievements Cleared', 'All achievement cards removed and saved to Firestore.');
+                          } catch (err: any) {
+                            addToast('error', 'Sync Failed', err.message || 'Could not update Firestore.');
+                          }
+                        }
+                      }}
+                      className="text-xs font-semibold text-red-600 hover:bg-red-50 cursor-pointer"
+                    >
+                      Delete All Cards
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    leftIcon={<Plus className="w-3.5 h-3.5 text-blue-600" />}
+                    onClick={async () => {
+                      const current = config.milestones.achievements || [];
+                      const newAchievement: AchievementItem = {
+                        id: `achieve-${Date.now()}`,
+                        metric: '100+',
+                        label: 'New Milestone Metric',
+                        description: 'Certified deliverable benchmark achieved by Mahdev Group.',
+                        badge: 'Verified Benchmark',
+                        iconName: 'Sparkles',
+                        highlight: false,
+                      };
+                      const updated = [...current, newAchievement];
+                      const updatedConfig: HomepageCmsConfig = {
+                        ...config,
+                        milestones: {
+                          ...config.milestones,
+                          achievements: updated,
+                        },
+                      };
+                      setConfig(updatedConfig);
+                      setIsDirty(true);
+                      try {
+                        await updateHomepageConfig(updatedConfig);
+                        addToast('success', 'Metric Added', 'New achievement card created and saved to Firestore.');
+                      } catch (err: any) {
+                        addToast('error', 'Notice', err.message || 'Could not update Firestore.');
+                      }
+                    }}
+                    className="text-xs font-semibold cursor-pointer"
+                  >
+                    Add Metric Card
+                  </Button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -1565,31 +1609,54 @@ export const AdminHomepageView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(config.milestones.achievements || []).map((item, idx) => (
-                  <div
-                    key={item.id || idx}
-                    className={`p-4 rounded-xl border space-y-2.5 transition-all ${
-                      item.highlight ? 'bg-blue-50/60 border-blue-200' : 'bg-slate-50 border-slate-200'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
-                        <Award className="w-3.5 h-3.5 text-blue-600" />
-                        Card #{idx + 1}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const updated = (config.milestones.achievements || []).filter((_, i) => i !== idx);
-                          updateNested('milestones', 'achievements', updated);
-                        }}
-                        className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 cursor-pointer"
-                        title="Remove Metric"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+              {(config.milestones.achievements || []).length === 0 ? (
+                <div className="p-6 text-center rounded-xl border border-dashed border-slate-300 bg-slate-50/50">
+                  <Award className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                  <p className="text-sm font-semibold text-slate-700">No Key Verified Achievement cards</p>
+                  <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                    This section is completely hidden from the public website. Add a metric card above when you wish to display verified achievements.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(config.milestones.achievements || []).map((item, idx) => (
+                    <div
+                      key={item.id || idx}
+                      className={`p-4 rounded-xl border space-y-2.5 transition-all ${
+                        item.highlight ? 'bg-blue-50/60 border-blue-200' : 'bg-slate-50 border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                          <Award className="w-3.5 h-3.5 text-blue-600" />
+                          Card #{idx + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const updated = (config.milestones.achievements || []).filter((_, i) => i !== idx);
+                            const updatedConfig: HomepageCmsConfig = {
+                              ...config,
+                              milestones: {
+                                ...config.milestones,
+                                achievements: updated,
+                              },
+                            };
+                            setConfig(updatedConfig);
+                            setIsDirty(true);
+                            try {
+                              await updateHomepageConfig(updatedConfig);
+                              addToast('success', 'Card Removed', `Card #${idx + 1} permanently deleted and removed from Firestore.`);
+                            } catch (err: any) {
+                              addToast('error', 'Error', err.message || 'Failed to sync with Firestore.');
+                            }
+                          }}
+                          className="text-red-500 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 cursor-pointer"
+                          title="Remove Metric"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
 
                     <div className="grid grid-cols-2 gap-2">
                       <div>

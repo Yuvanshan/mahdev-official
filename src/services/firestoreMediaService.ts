@@ -9,6 +9,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  deleteDoc,
   collection,
   getDocs,
   query,
@@ -316,4 +317,57 @@ export function preloadVideo(url: string, timeoutMs = 8000): Promise<boolean> {
     document.body.appendChild(video);
     video.load();
   });
+}
+
+/**
+ * Permanently deletes a chunked media blob from Firestore (both parent metadata and all chunk documents).
+ * Also cleans up IndexedDB and memory URL caches.
+ */
+export async function deleteMediaBlobFromFirestore(rawUrl: string): Promise<boolean> {
+  if (!rawUrl || typeof rawUrl !== 'string') return true;
+
+  const blobId = rawUrl
+    .replace('firestore://media_blobs/', '')
+    .replace('firestore://blobs/', '')
+    .replace('firestore://media/', '')
+    .replace('firestore://', '')
+    .split('/')[0]
+    .split('?')[0]
+    .trim();
+
+  if (!blobId) return true;
+
+  try {
+    // 1. Delete all chunk documents in subcollection
+    const chunksCollRef = collection(db, 'media_blobs', blobId, 'chunks');
+    const chunkSnaps = await getDocs(chunksCollRef);
+    if (!chunkSnaps.empty) {
+      const deletePromises = chunkSnaps.docs.map((chunkDoc) => deleteDoc(chunkDoc.ref));
+      await Promise.all(deletePromises);
+    }
+
+    // 2. Delete parent metadata doc
+    const metaDocRef = doc(db, 'media_blobs', blobId);
+    await deleteDoc(metaDocRef);
+
+    // 3. Clear memory and IDB cache
+    if (memoryBlobUrlCache.has(blobId)) {
+      const oldUrl = memoryBlobUrlCache.get(blobId);
+      if (oldUrl && oldUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(oldUrl);
+      }
+      memoryBlobUrlCache.delete(blobId);
+    }
+
+    try {
+      const dbInstance = await openMediaDB();
+      const tx = dbInstance.transaction('blobs', 'readwrite');
+      tx.objectStore('blobs').delete(blobId);
+    } catch {}
+
+    return true;
+  } catch (err) {
+    console.error('[FirestoreMedia] Error deleting media blob from Firestore:', err);
+    return false;
+  }
 }

@@ -740,9 +740,9 @@ export const firestoreSettingsService = {
             achievementsTitle: rawData?.milestones?.achievementsTitle || def.milestones.achievementsTitle,
             achievementsSubtitle: rawData?.milestones?.achievementsSubtitle || def.milestones.achievementsSubtitle,
             achievements:
-              rawData?.milestones?.achievements && rawData.milestones.achievements.length > 0
+              Array.isArray(rawData?.milestones?.achievements)
                 ? rawData.milestones.achievements
-                : def.milestones.achievements,
+                : (def.milestones?.achievements || []),
           },
         };
         cachedHomepageSettings = { data, timestamp: now };
@@ -884,11 +884,11 @@ export const firestoreSettingsService = {
               achievementsTitle: rawData?.milestones?.achievementsTitle || def.milestones.achievementsTitle,
               achievementsSubtitle: rawData?.milestones?.achievementsSubtitle || def.milestones.achievementsSubtitle,
               achievements:
-                rawData?.milestones?.achievements && rawData.milestones.achievements.length > 0
+                Array.isArray(rawData?.milestones?.achievements)
                   ? rawData.milestones.achievements
-                  : (cachedHomepageSettings?.data?.milestones?.achievements && cachedHomepageSettings.data.milestones.achievements.length > 0
+                  : (Array.isArray(cachedHomepageSettings?.data?.milestones?.achievements)
                       ? cachedHomepageSettings.data.milestones.achievements
-                      : def.milestones.achievements),
+                      : (def.milestones?.achievements || [])),
             },
           };
           cachedHomepageSettings = { data, timestamp: Date.now() };

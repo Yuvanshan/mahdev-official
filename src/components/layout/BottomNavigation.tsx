@@ -1,7 +1,6 @@
 import React from 'react';
-import { Home, Sparkles, Camera, Terminal, Compass, ShoppingBag, ShoppingCart } from 'lucide-react';
+import { Home, Sparkles, Camera, Terminal, Compass, ShoppingBag } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useCart } from '../../context/CartContext';
 
 interface BottomNavigationProps {
   currentPath: string;
@@ -9,8 +8,6 @@ interface BottomNavigationProps {
 }
 
 export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath, onNavigate }) => {
-  const { totalQuantity, openCart } = useCart();
-
   const [basePath] = (currentPath ? String(currentPath) : '/').split('?');
   const normalizedPath = (basePath || '/').toLowerCase().replace(/\/$/, '') || '/';
 
@@ -124,27 +121,6 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
             </button>
           );
         })}
-
-        {/* Quick Cart Trigger Pill */}
-        <button
-          type="button"
-          id="nav-tab-cart"
-          onClick={openCart}
-          className="relative flex flex-col items-center justify-center py-1.5 px-2 rounded-full text-slate-400 hover:text-white transition-all duration-200 cursor-pointer select-none touch-manipulation active:scale-95 border-l border-white/10 ml-0.5 shrink-0"
-          aria-label="Shopping Cart"
-        >
-          <div className="relative flex items-center justify-center">
-            <ShoppingCart className="w-4 h-4 text-slate-300" />
-            {totalQuantity > 0 && (
-              <span className="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] px-1 rounded-full bg-red-500 text-white text-[9px] font-extrabold flex items-center justify-center shadow-xs animate-pulse">
-                {totalQuantity}
-              </span>
-            )}
-          </div>
-          <span className="text-[9.5px] tracking-tight leading-tight mt-0.5 whitespace-nowrap">
-            Cart
-          </span>
-        </button>
       </div>
     </nav>
   );

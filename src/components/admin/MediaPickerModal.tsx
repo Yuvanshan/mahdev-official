@@ -15,6 +15,7 @@ import {
 import { Button } from '../ui/Button';
 import { StorageCategory } from '../../types/storage';
 import { storageService } from '../../services/storageService';
+import { mediaService } from '../../services/firestore/media';
 
 export interface MediaAssetPreset {
   id: string;
@@ -259,6 +260,23 @@ export const MediaPickerModal: React.FC<MediaPickerModalProps> = ({
     if (result.success && result.url) {
       setUploadedUrl(result.url);
       setSelectedUrls([result.url]);
+      // Persist to Firestore media repository
+      mediaService
+        .saveMediaAsset({
+          id: `med-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          title: file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' '),
+          category: uploadCategory,
+          url: result.url,
+          storagePath: result.storagePath,
+          dimensions: result.item?.dimensions
+            ? `${result.item.dimensions.width}x${result.item.dimensions.height}`
+            : '1920x1080',
+          fileSize: `${Math.round(file.size / 1024)} KB`,
+          mimeType: file.type || 'image/webp',
+          tags: [uploadCategory, 'modal_upload'],
+          createdAt: new Date().toISOString(),
+        })
+        .catch(() => {});
     } else {
       setUploadError(result.error || 'Failed to upload image to Firebase Storage.');
     }

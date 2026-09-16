@@ -27,106 +27,13 @@ import { StorageCategory, UploadedMediaItem } from '../../types/storage';
 import { storageService } from '../../services/storageService';
 import { formatBytes } from '../../utils/imageOptimizer';
 import { safeStorage } from '../../utils/safeStorage';
+import {
+  mediaService,
+  StoredMediaItem,
+  DEFAULT_MEDIA_ITEMS,
+} from '../../services/firestore/media';
 
-export interface StoredMediaItem {
-  id: string;
-  title: string;
-  category: StorageCategory;
-  url: string;
-  storagePath?: string;
-  dimensions: string;
-  fileSize: string;
-  mimeType: string;
-  tags: string[];
-  createdAt: string;
-}
-
-const DEFAULT_MEDIA_ITEMS: StoredMediaItem[] = [
-  {
-    id: 'med-co-01',
-    title: 'Mahdev Enterprise Executive Corporate Emblem',
-    category: 'company',
-    url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80',
-    storagePath: 'company/corp_headquarters.webp',
-    dimensions: '1920x1080',
-    fileSize: '380 KB',
-    mimeType: 'image/webp',
-    tags: ['corporate', 'colombo', 'headquarters'],
-    createdAt: '2026-01-05T10:00:00Z',
-  },
-  {
-    id: 'med-div-01',
-    title: 'SWS Sound Wave Studio Production Floor',
-    category: 'divisions',
-    url: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=1200&q=80',
-    storagePath: 'divisions/sws/production_floor.webp',
-    dimensions: '1920x1080',
-    fileSize: '450 KB',
-    mimeType: 'image/webp',
-    tags: ['sws', 'audio', 'studio', 'division'],
-    createdAt: '2026-01-08T10:00:00Z',
-  },
-  {
-    id: 'med-srv-01',
-    title: 'BMICH Grand Gala 4K LED Matrix Stage Service',
-    category: 'services',
-    url: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
-    storagePath: 'services/events/bmich_gala.webp',
-    dimensions: '1920x1080',
-    fileSize: '420 KB',
-    mimeType: 'image/webp',
-    tags: ['bmich', 'stage', 'led', 'concert', 'service'],
-    createdAt: '2026-01-10T10:00:00Z',
-  },
-  {
-    id: 'med-prod-01',
-    title: 'Mahdev Ceylon Single-Estate Earl Grey Collection',
-    category: 'products',
-    url: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=1200&q=80',
-    storagePath: 'products/tea/earl_grey_tin.webp',
-    dimensions: '1200x1200',
-    fileSize: '320 KB',
-    mimeType: 'image/webp',
-    tags: ['tea', 'ceylon', 'earlgrey', 'mart', 'product'],
-    createdAt: '2026-01-12T10:00:00Z',
-  },
-  {
-    id: 'med-port-01',
-    title: 'Fine-Art Editorial Studio Shoot Portfolio',
-    category: 'portfolio',
-    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80',
-    storagePath: 'portfolio/shoots/editorial_cover.webp',
-    dimensions: '1200x1600',
-    fileSize: '390 KB',
-    mimeType: 'image/webp',
-    tags: ['portrait', 'fashion', 'studio', 'portfolio'],
-    createdAt: '2026-01-18T10:00:00Z',
-  },
-  {
-    id: 'med-gal-01',
-    title: 'Bespoke Highland Safari & Expedition Showcase',
-    category: 'gallery',
-    url: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=80',
-    storagePath: 'gallery/travels/highland_expedition.webp',
-    dimensions: '1920x1280',
-    fileSize: '510 KB',
-    mimeType: 'image/webp',
-    tags: ['travels', 'sigiriya', 'gallery', 'safari'],
-    createdAt: '2026-01-20T10:00:00Z',
-  },
-  {
-    id: 'med-test-01',
-    title: 'Client Testimonial Executive Verified Portrait',
-    category: 'testimonials',
-    url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-    storagePath: 'testimonials/client_dr_perera.webp',
-    dimensions: '400x400',
-    fileSize: '95 KB',
-    mimeType: 'image/webp',
-    tags: ['testimonial', 'portrait', 'executive'],
-    createdAt: '2026-01-22T10:00:00Z',
-  },
-];
+export type { StoredMediaItem };
 
 const STORAGE_CATEGORIES: { id: StorageCategory; label: string; count?: number }[] = [
   { id: 'company', label: 'Company Brand Assets' },
@@ -142,14 +49,12 @@ const STORAGE_CATEGORIES: { id: StorageCategory; label: string; count?: number }
 ];
 
 export const AdminMediaView: React.FC = () => {
-  const [mediaItems, setMediaItems] = useState<StoredMediaItem[]>(() => {
-    const saved = localStorage.getItem('mahdev_admin_media_v1');
-    return saved ? JSON.parse(saved) : DEFAULT_MEDIA_ITEMS;
-  });
-
+  const [mediaItems, setMediaItems] = useState<StoredMediaItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Upload modal state
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -175,10 +80,22 @@ export const AdminMediaView: React.FC = () => {
     setToasts((prev) => [...prev, { id, type, message }]);
   };
 
-  const saveMedia = (items: StoredMediaItem[]) => {
-    setMediaItems(items);
-    safeStorage.setItem('mahdev_admin_media_v1', JSON.stringify(items));
-  };
+  // Real-time Firestore synchronization
+  useEffect(() => {
+    setIsLoading(true);
+    const unsub = mediaService.subscribeToMediaAssets(
+      (items) => {
+        setMediaItems(items);
+        setIsLoading(false);
+      },
+      (err) => {
+        console.error('[AdminMediaView] Firestore sync notice:', err);
+        setIsLoading(false);
+      }
+    );
+
+    return () => unsub();
+  }, []);
 
   const handleCopyUrl = (item: StoredMediaItem) => {
     navigator.clipboard.writeText(item.url);
@@ -206,7 +123,7 @@ export const AdminMediaView: React.FC = () => {
     }
   };
 
-  const handleSaveToLibrary = () => {
+  const handleSaveToLibrary = async () => {
     if (!uploadedUrl) {
       addToast('error', 'Please upload or select an image file first.');
       return;
@@ -222,19 +139,23 @@ export const AdminMediaView: React.FC = () => {
       category: selectedCategory,
       url: uploadedUrl,
       storagePath: uploadedPath || `${selectedCategory}/${mediaTitle.toLowerCase().replace(/\s+/g, '_')}.webp`,
-      dimensions: uploadedMeta?.dimensions && uploadedMeta.dimensions.width > 0
-        ? `${uploadedMeta.dimensions.width}x${uploadedMeta.dimensions.height}`
-        : '1920x1080',
+      dimensions:
+        uploadedMeta?.dimensions && uploadedMeta.dimensions.width > 0
+          ? `${uploadedMeta.dimensions.width}x${uploadedMeta.dimensions.height}`
+          : '1920x1080',
       fileSize: uploadedMeta ? formatBytes(uploadedMeta.sizeBytes) : '350 KB',
       mimeType: uploadedMeta?.mimeType || 'image/webp',
       tags: mediaTags.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean),
       createdAt: new Date().toISOString(),
     };
 
-    const updated = [newItem, ...mediaItems];
-    saveMedia(updated);
-    setIsUploadOpen(false);
-    addToast('success', `Media asset "${newItem.title}" saved to ${newItem.category} repository.`);
+    try {
+      await mediaService.saveMediaAsset(newItem);
+      setIsUploadOpen(false);
+      addToast('success', `Media asset "${newItem.title}" saved to Firestore (${newItem.category}).`);
+    } catch (err: any) {
+      addToast('error', `Failed to save media asset: ${err?.message || err}`);
+    }
   };
 
   const handleDeletePrompt = (item: StoredMediaItem) => {
@@ -243,17 +164,35 @@ export const AdminMediaView: React.FC = () => {
   };
 
   const confirmDelete = async () => {
-    if (!itemToDelete) return;
+    if (!itemToDelete || isDeleting) return;
 
-    if (itemToDelete.storagePath) {
-      await storageService.deleteFile(itemToDelete.storagePath);
-    }
+    const targetItem = itemToDelete;
+    setIsDeleting(true);
 
-    const updated = mediaItems.filter((m) => m.id !== itemToDelete.id);
-    saveMedia(updated);
+    // Optimistically remove from local state immediately for instant responsive UX
+    setMediaItems((prev) => prev.filter((m) => m.id !== targetItem.id && (!targetItem.url || m.url !== targetItem.url)));
     setDeleteConfirmOpen(false);
-    addToast('info', `Deleted "${itemToDelete.title}" from storage.`);
-    setItemToDelete(null);
+
+    try {
+      // Execute multi-tier deletion: Firestore doc, deletedIds registry, Storage, and chunked blobs
+      const result = await mediaService.deleteMediaAsset(
+        targetItem.id,
+        targetItem.storagePath,
+        targetItem.url
+      );
+
+      if (result.success) {
+        addToast('success', `Permanently deleted "${targetItem.title}" from Firestore and storage.`);
+      } else {
+        addToast('warning', `Deleted locally: ${result.error}`);
+      }
+    } catch (err: any) {
+      console.error('[AdminMediaView] Delete error:', err);
+      addToast('error', `Failed to delete from Firestore: ${err?.message || err}`);
+    } finally {
+      setIsDeleting(false);
+      setItemToDelete(null);
+    }
   };
 
   const filteredMedia = mediaItems.filter((item) => {
@@ -278,11 +217,15 @@ export const AdminMediaView: React.FC = () => {
           <div className="flex items-center gap-2">
             <ImageIcon className="w-5 h-5 text-blue-600" />
             <h2 className="font-display text-lg font-bold text-slate-900">
-              Firebase Storage Media Repository ({mediaItems.length})
+              Media Asset Repository ({mediaItems.length})
             </h2>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Firestore Synced
+            </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Cloud-backed asset directory supporting client-side downscaling, WebP compression, organized paths, and role-based storage permissions.
+            Real-time Firestore and Cloud Storage repository with multi-tier permanent deletion and format optimization.
           </p>
         </div>
 
@@ -355,7 +298,15 @@ export const AdminMediaView: React.FC = () => {
       </div>
 
       {/* Media Grid */}
-      {filteredMedia.length === 0 ? (
+      {isLoading ? (
+        <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center space-y-3">
+          <RefreshCw className="w-8 h-8 text-blue-600 mx-auto animate-spin" />
+          <h3 className="font-display text-sm font-bold text-slate-700">Connecting to Firestore Media Library...</h3>
+          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            Retrieving synced assets, categories, and binary metadata from the cloud database.
+          </p>
+        </div>
+      ) : filteredMedia.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3">
           <FileImage className="w-12 h-12 text-slate-300 mx-auto" />
           <h3 className="font-display text-sm font-bold text-slate-700">No media assets found</h3>
