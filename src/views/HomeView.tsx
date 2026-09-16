@@ -34,18 +34,32 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
     }
   };
 
-  // Reorderable sections from Firestore CMS (filtered to exclude Mahdev Advantage / whyMahdev)
+  // Reorderable sections from Firestore CMS
   const activeSections: DynamicSectionItem[] = React.useMemo(() => {
     const sections = homepageConfig?.sectionsOrder && homepageConfig.sectionsOrder.length > 0
       ? homepageConfig.sectionsOrder
       : DEFAULT_HOMEPAGE_SECTIONS;
 
-    // Filter out 'whyMahdev' (Mahdev Advantage), 'milestones', and unwanted/random pricing or event sections
-    const BANNED_SECTIONS = new Set(['whyMahdev', 'advantage', 'pricing', 'randomEvents', 'welcomeAnimation', 'milestones']);
+    // Filter out 'whyMahdev' / 'advantage' (The Mahdev Advantage), 'cta' / 'ctaSection' (Dispatch Your Inquiry), 'contact', and unwanted sections
+    const BANNED_SECTIONS = new Set([
+      'whyMahdev',
+      'advantage',
+      'cta',
+      'ctaSection',
+      'contact',
+      'pricing',
+      'randomEvents',
+      'welcomeAnimation',
+    ]);
 
-    return [...sections]
-      .filter((s) => s.enabled !== false && !BANNED_SECTIONS.has(s.sectionKey))
+    // Bottom fixed sections that must appear at the very bottom before the footer
+    const BOTTOM_KEYS = new Set(['milestones', 'trustedCompanies', 'companies', 'testimonials']);
+
+    const middleSections = [...sections]
+      .filter((s) => s.enabled !== false && !BANNED_SECTIONS.has(s.sectionKey) && !BOTTOM_KEYS.has(s.sectionKey))
       .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    return middleSections;
   }, [homepageConfig?.sectionsOrder]);
 
   const renderSectionByKey = (sectionKey: string, id: string) => {
@@ -78,29 +92,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
         return <FeaturedWorkSection key={id} onNavigate={onNavigate} />;
       case 'decorationShowcase':
         return <DecorationVideoShowcase key={id} onNavigate={onNavigate} />;
-      case 'milestones':
-        return <MilestonesSection key={id} onNavigate={onNavigate} />;
-      case 'trustedCompanies':
-      case 'companies':
-        return (
-          <TrustedCompaniesSection
-            key={id}
-            onExplorePartners={() => onNavigate('/clients')}
-          />
-        );
-      case 'testimonials':
-        return <TestimonialsSection key={id} onNavigate={onNavigate} />;
-      case 'cta':
-        return (
-          <CallToActionSection
-            key={id}
-            onExploreServices={() => onNavigate('/divisions')}
-            onPrimaryClick={() => onNavigate('/contact')}
-            onSecondaryClick={() => onNavigate('/divisions')}
-          />
-        );
-      case 'contact':
-        return <ContactCorporateSection key={id} />;
       default:
         return null;
     }
@@ -128,8 +119,19 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
         ogDescription={homepageConfig?.seo?.metaDescription}
       />
 
-      {/* DYNAMIC CMS SECTIONS IN CONFIGURED ORDER */}
+      {/* CORE DYNAMIC CMS SECTIONS */}
       {activeSections.map((sec) => renderSectionByKey(sec.sectionKey, sec.id))}
+
+      {/* MILESTONES (KEPT AS EXPLICITLY REQUESTED) */}
+      <MilestonesSection onNavigate={onNavigate} />
+
+      {/* OUR TRUSTED CLIENTS (COMPANIES FROM ADMIN PORTAL) */}
+      <TrustedCompaniesSection
+        onExplorePartners={() => onNavigate('/clients')}
+      />
+
+      {/* WHAT OUR CUSTOMERS SAY ABOUT US (TESTIMONIALS FROM ADMIN PORTAL) */}
+      <TestimonialsSection onNavigate={onNavigate} />
     </div>
   );
 };

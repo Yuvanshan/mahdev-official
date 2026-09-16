@@ -70,6 +70,26 @@ function AppContent() {
     loadDivisionData,
   } = useFirestoreDataContext();
   const [currentPath, setCurrentPath] = useState<string>(() => {
+    if (typeof window === 'undefined') return '/';
+    const hash = window.location.hash || '';
+    if (hash.startsWith('#/') && hash.length > 2) {
+      return hash.substring(1);
+    }
+    const cleanHash = hash.replace(/^#\/?/, '').toLowerCase();
+    const directHashRoutes = [
+      'admin', 'admin-login', 'adminportal', 'admin-portal',
+      'sws', 'u1', 'it', 'travels', 'mart',
+      'sws-events', 'sws-event-management', 'u1-studio', 'it-solutions', 'mahdev-travels', 'online-mart',
+      'about', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'catalog'
+    ];
+    if (directHashRoutes.includes(cleanHash) || cleanHash.startsWith('admin/')) {
+      return `/${cleanHash}`;
+    }
+    const searchParams = new URLSearchParams(window.location.search);
+    const queryRoute = searchParams.get('route') || searchParams.get('p') || searchParams.get('path');
+    if (queryRoute) {
+      return queryRoute.startsWith('/') ? queryRoute : `/${queryRoute}`;
+    }
     return window.location.pathname || '/';
   });
 
@@ -123,18 +143,48 @@ function AppContent() {
     });
   }, []);
 
-  // Handle browser back/forward navigation
+  // Handle browser back/forward and hash navigation
   useEffect(() => {
-    const handlePopState = () => {
+    const handleLocationChange = () => {
+      const hash = window.location.hash || '';
+      if (hash.startsWith('#/') && hash.length > 2) {
+        setCurrentPath(hash.substring(1));
+        return;
+      }
+      const cleanHash = hash.replace(/^#\/?/, '').toLowerCase();
+      const directHashRoutes = [
+        'admin', 'admin-login', 'adminportal', 'admin-portal',
+        'sws', 'u1', 'it', 'travels', 'mart',
+        'sws-events', 'sws-event-management', 'u1-studio', 'it-solutions', 'mahdev-travels', 'online-mart',
+        'about', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'catalog'
+      ];
+      if (directHashRoutes.includes(cleanHash) || cleanHash.startsWith('admin/')) {
+        setCurrentPath(`/${cleanHash}`);
+        return;
+      }
+      const searchParams = new URLSearchParams(window.location.search);
+      const queryRoute = searchParams.get('route') || searchParams.get('p') || searchParams.get('path');
+      if (queryRoute) {
+        setCurrentPath(queryRoute.startsWith('/') ? queryRoute : `/${queryRoute}`);
+        return;
+      }
       setCurrentPath(window.location.pathname || '/');
     };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
+    };
   }, []);
 
   // Clean navigation helper
   const navigate = (path: string) => {
-    if (path.startsWith('/#')) {
+    // In-page section scrolling if format is #section or /#section (excluding direct division routes)
+    const isDirectDivisionOrAdmin = ['/#admin', '/#sws', '/#u1', '/#it', '/#travels', '/#mart'].includes(path.toLowerCase()) ||
+      ['#admin', '#sws', '#u1', '#it', '#travels', '#mart'].includes(path.toLowerCase());
+
+    if (path.startsWith('/#') && !isDirectDivisionOrAdmin) {
       const hash = path.substring(1);
       if (currentPath !== '/') {
         window.history.pushState({}, '', '/');
@@ -150,16 +200,26 @@ function AppContent() {
       return;
     }
 
-    if (path !== currentPath) {
-      window.history.pushState({}, '', path);
-      setCurrentPath(path);
+    let targetPath = path;
+    if (targetPath.startsWith('#/')) {
+      targetPath = targetPath.substring(1);
+    } else if (targetPath.startsWith('#') && targetPath.length > 1 && !targetPath.includes('=')) {
+      targetPath = `/${targetPath.substring(1)}`;
+    }
+
+    if (targetPath !== currentPath) {
+      window.history.pushState({}, '', targetPath);
+      setCurrentPath(targetPath);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   // Extract path and query params for redirection
   const [basePathWithHash, searchParamsString] = (currentPath ? String(currentPath) : '/').split('?');
-  const basePath = (basePathWithHash || '/').split('#')[0];
+  let rawBase = basePathWithHash || '/';
+  if (rawBase.startsWith('#/')) rawBase = rawBase.substring(1);
+  else if (rawBase.startsWith('#') && rawBase.length > 1) rawBase = `/${rawBase.substring(1)}`;
+  const basePath = rawBase.split('#')[0] || '/';
   const normalizedPath =
     (basePath.startsWith('/') ? basePath : `/${basePath}`).toLowerCase().replace(/\/$/, '') || '/';
   const redirectParam = searchParamsString
@@ -440,20 +500,17 @@ function AppContent() {
       return <OrderConfirmationView orderId={orderId} onNavigate={navigate} />;
     }
 
+    // Division direct routes: /sws, /u1, /it, /travels, /mart (and aliases)
     if (
       normalizedPath === '/sws' ||
       normalizedPath === '/sws-event-management' ||
       normalizedPath === '/sws-events' ||
       normalizedPath === '/event-management' ||
       normalizedPath === '/events' ||
+      normalizedPath === '/divisions/sws' ||
+      normalizedPath === '/division/sws' ||
       divisionKey === 'sws'
     ) {
-      if (isDivisionComingSoon('sws')) {
-        return <DivisionComingSoonView divisionId="sws" onNavigate={navigate} />;
-      }
-      if (!isDivisionLoaded('sws')) {
-        return <DivisionTransitionLoader divisionId="sws" />;
-      }
       return <SWSView onNavigate={navigate} />;
     }
 
@@ -464,44 +521,17 @@ function AppContent() {
       normalizedPath.startsWith('/event-management/') ||
       normalizedPath.startsWith('/events/')
     ) {
-      if (isDivisionComingSoon('sws')) {
-        return <DivisionComingSoonView divisionId="sws" onNavigate={navigate} />;
-      }
       const subSlug = normalizedPath
         .replace(/^\/(sws-event-management|sws-events|event-management|events|sws)\//, '')
         .trim();
-      const validSubsections = [
-        'services',
-        'packages',
-        'gallery',
-        'portfolio',
-        'process',
-        'quote',
-        'booking',
-        'contact',
-      ];
-      if (!subSlug || validSubsections.includes(subSlug)) {
-        if (!isDivisionLoaded('sws')) {
-          return <DivisionTransitionLoader divisionId="sws" />;
-        }
-        return <SWSView onNavigate={navigate} />;
-      }
-
-      // Check if matches a service under SWS
+      
       const swsService = services.find(
         (s) => s.division === 'sws' && (s.slug === subSlug || s.id === subSlug)
       );
       if (swsService) {
         return <BookingView initialDivision="sws" initialServiceId={swsService.id} />;
       }
-
-      return (
-        <NotFoundView
-          onNavigate={navigate}
-          resourceType="service"
-          attemptedSlug={`sws/${subSlug}`}
-        />
-      );
+      return <SWSView onNavigate={navigate} />;
     }
 
     if (
@@ -511,14 +541,10 @@ function AppContent() {
       normalizedPath === '/studio' ||
       normalizedPath === '/photography' ||
       normalizedPath === '/cinema' ||
+      normalizedPath === '/divisions/u1' ||
+      normalizedPath === '/division/u1' ||
       divisionKey === 'u1'
     ) {
-      if (isDivisionComingSoon('u1')) {
-        return <DivisionComingSoonView divisionId="u1" onNavigate={navigate} />;
-      }
-      if (!isDivisionLoaded('u1')) {
-        return <DivisionTransitionLoader divisionId="u1" />;
-      }
       return <U1View onNavigate={navigate} />;
     }
 
@@ -530,43 +556,17 @@ function AppContent() {
       normalizedPath.startsWith('/photography/') ||
       normalizedPath.startsWith('/cinema/')
     ) {
-      if (isDivisionComingSoon('u1')) {
-        return <DivisionComingSoonView divisionId="u1" onNavigate={navigate} />;
-      }
       const subSlug = normalizedPath
         .replace(/^\/(u1-studio|u1-cinema|studio|photography|cinema|u1)\//, '')
         .trim();
-      const validSubsections = [
-        'cinema',
-        'media',
-        'production',
-        'services',
-        'packages',
-        'portfolio',
-        'quote',
-        'booking',
-      ];
-      if (!subSlug || validSubsections.includes(subSlug)) {
-        if (!isDivisionLoaded('u1')) {
-          return <DivisionTransitionLoader divisionId="u1" />;
-        }
-        return <U1View onNavigate={navigate} />;
-      }
-
+      
       const u1Service = services.find(
         (s) => s.division === 'u1' && (s.slug === subSlug || s.id === subSlug)
       );
       if (u1Service) {
         return <BookingView initialDivision="u1" initialServiceId={u1Service.id} />;
       }
-
-      return (
-        <NotFoundView
-          onNavigate={navigate}
-          resourceType="service"
-          attemptedSlug={`u1/${subSlug}`}
-        />
-      );
+      return <U1View onNavigate={navigate} />;
     }
 
     if (
@@ -576,14 +576,10 @@ function AppContent() {
       normalizedPath === '/solutions' ||
       normalizedPath === '/software' ||
       normalizedPath === '/it-services' ||
+      normalizedPath === '/divisions/it' ||
+      normalizedPath === '/division/it' ||
       divisionKey === 'it'
     ) {
-      if (isDivisionComingSoon('it')) {
-        return <DivisionComingSoonView divisionId="it" onNavigate={navigate} />;
-      }
-      if (!isDivisionLoaded('it')) {
-        return <DivisionTransitionLoader divisionId="it" />;
-      }
       return <ITView onNavigate={navigate} />;
     }
 
@@ -595,44 +591,17 @@ function AppContent() {
       normalizedPath.startsWith('/solutions/') ||
       normalizedPath.startsWith('/software/')
     ) {
-      if (isDivisionComingSoon('it')) {
-        return <DivisionComingSoonView divisionId="it" onNavigate={navigate} />;
-      }
       const subSlug = normalizedPath
         .replace(/^\/(it-solutions|mahdev-it|it-services|solutions|software|it)\//, '')
         .trim();
-      const validSubsections = [
-        'services',
-        'packages',
-        'portfolio',
-        'solutions',
-        'contact',
-        'quote',
-        'booking',
-        'technologies',
-        'process',
-      ];
-      if (!subSlug || validSubsections.includes(subSlug)) {
-        if (!isDivisionLoaded('it')) {
-          return <DivisionTransitionLoader divisionId="it" />;
-        }
-        return <ITView onNavigate={navigate} />;
-      }
-
+      
       const itService = services.find(
         (s) => s.division === 'it' && (s.slug === subSlug || s.id === subSlug)
       );
       if (itService) {
         return <BookingView initialDivision="it" initialServiceId={itService.id} />;
       }
-
-      return (
-        <NotFoundView
-          onNavigate={navigate}
-          resourceType="service"
-          attemptedSlug={`it/${subSlug}`}
-        />
-      );
+      return <ITView onNavigate={navigate} />;
     }
 
     if (
@@ -641,14 +610,10 @@ function AppContent() {
       normalizedPath === '/tourism' ||
       normalizedPath === '/tours' ||
       normalizedPath === '/travel' ||
+      normalizedPath === '/divisions/travels' ||
+      normalizedPath === '/division/travels' ||
       divisionKey === 'travels'
     ) {
-      if (isDivisionComingSoon('travels')) {
-        return <DivisionComingSoonView divisionId="travels" onNavigate={navigate} />;
-      }
-      if (!isDivisionLoaded('travels')) {
-        return <DivisionTransitionLoader divisionId="travels" />;
-      }
       return <TravelsView onNavigate={navigate} />;
     }
 
@@ -659,44 +624,17 @@ function AppContent() {
       normalizedPath.startsWith('/tours/') ||
       normalizedPath.startsWith('/travel/')
     ) {
-      if (isDivisionComingSoon('travels')) {
-        return <DivisionComingSoonView divisionId="travels" onNavigate={navigate} />;
-      }
       const subSlug = normalizedPath
         .replace(/^\/(mahdev-travels|tourism|tours|travel|travels)\//, '')
         .trim();
-      const validSubsections = [
-        'services',
-        'packages',
-        'tours',
-        'destinations',
-        'fleet',
-        'quote',
-        'booking',
-        'contact',
-        'gallery',
-      ];
-      if (!subSlug || validSubsections.includes(subSlug)) {
-        if (!isDivisionLoaded('travels')) {
-          return <DivisionTransitionLoader divisionId="travels" />;
-        }
-        return <TravelsView onNavigate={navigate} />;
-      }
-
+      
       const travelsService = services.find(
         (s) => s.division === 'travels' && (s.slug === subSlug || s.id === subSlug)
       );
       if (travelsService) {
         return <BookingView initialDivision="travels" initialServiceId={travelsService.id} />;
       }
-
-      return (
-        <NotFoundView
-          onNavigate={navigate}
-          resourceType="service"
-          attemptedSlug={`travels/${subSlug}`}
-        />
-      );
+      return <TravelsView onNavigate={navigate} />;
     }
 
     if (
@@ -705,14 +643,10 @@ function AppContent() {
       normalizedPath === '/mahdev-mart' ||
       normalizedPath === '/shop' ||
       normalizedPath === '/store' ||
+      normalizedPath === '/divisions/mart' ||
+      normalizedPath === '/division/mart' ||
       divisionKey === 'mart'
     ) {
-      if (isDivisionComingSoon('mart')) {
-        return <DivisionComingSoonView divisionId="mart" onNavigate={navigate} />;
-      }
-      if (!isDivisionLoaded('mart')) {
-        return <DivisionTransitionLoader divisionId="mart" />;
-      }
       if (
         (normalizedPath.startsWith('/mart/') && normalizedPath !== '/mart') ||
         (normalizedPath.startsWith('/online-mart/') && normalizedPath !== '/online-mart') ||
@@ -744,14 +678,6 @@ function AppContent() {
             />
           );
         }
-
-        return (
-          <NotFoundView
-            onNavigate={navigate}
-            resourceType="product"
-            attemptedSlug={`mart/${subSlug}`}
-          />
-        );
       }
       return <MartView onNavigate={navigate} />;
     }
@@ -974,6 +900,41 @@ function AppContent() {
     switch (normalizedPath) {
       case '/':
         return <HomeView onNavigate={navigate} />;
+      case '/admin':
+      case '/admin-login':
+      case '/adminlogin':
+      case '/adminportal':
+      case '/admin-portal':
+        return <AdminLayout currentPath={normalizedPath} onNavigate={navigate} />;
+      case '/sws':
+      case '/sws-events':
+      case '/sws-event-management':
+      case '/divisions/sws':
+      case '/division/sws':
+        return <SWSView onNavigate={navigate} />;
+      case '/u1':
+      case '/u1-studio':
+      case '/u1-cinema':
+      case '/divisions/u1':
+      case '/division/u1':
+        return <U1View onNavigate={navigate} />;
+      case '/it':
+      case '/it-solutions':
+      case '/mahdev-it':
+      case '/divisions/it':
+      case '/division/it':
+        return <ITView onNavigate={navigate} />;
+      case '/travels':
+      case '/mahdev-travels':
+      case '/divisions/travels':
+      case '/division/travels':
+        return <TravelsView onNavigate={navigate} />;
+      case '/mart':
+      case '/online-mart':
+      case '/mahdev-mart':
+      case '/divisions/mart':
+      case '/division/mart':
+        return <MartView onNavigate={navigate} />;
       case '/divisions':
         return <DivisionsPageView onNavigate={navigate} />;
       case '/services':

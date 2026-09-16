@@ -1703,8 +1703,8 @@ async function startServer() {
     });
     app.use(vite.middlewares);
 
-    // Development SPA fallback for deep links like /sws-event-management
-    app.use('*', async (req: Request, res: Response, next: NextFunction) => {
+    // Development SPA fallback for deep links like /sws, /u1, /it, /admin
+    app.get('*', async (req: Request, res: Response, next: NextFunction) => {
       const url = req.originalUrl;
       try {
         const indexPath = path.resolve(process.cwd(), 'index.html');

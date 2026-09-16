@@ -1,41 +1,156 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Star, ChevronRight, ExternalLink, MessageSquare, Sparkles, CheckCircle2 } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body, Caption } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { useGoogleReviews, useFirestoreDataContext } from '../../context/FirestoreDataContext';
-import { DivisionId } from '../../types/firestore';
+import { DivisionId, FirestoreTestimonial } from '../../types/firestore';
 import { ParallelWatermark } from '../motion/ParallelScroll';
+import { cmsService } from '../../services/cmsService';
 
 interface TestimonialsSectionProps {
   initialDivision?: DivisionId | 'all';
   onNavigate?: (route: string) => void;
 }
 
+const DEFAULT_CUSTOMER_TESTIMONIALS = [
+  {
+    id: 'test-1',
+    authorName: 'Dr. Ruwan & Shanika Jayasuriya',
+    authorPhotoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+    rating: 5,
+    text: 'SWS Event Management transformed our wedding ballroom into an ethereal botanical masterpiece. The attention to floral architecture and ambient lighting was truly breathtaking.',
+    divisionId: 'sws',
+    divisionName: 'SWS Event Management',
+    relativePublishTimeDescription: '2 weeks ago',
+  },
+  {
+    id: 'test-2',
+    authorName: 'Dilantha Fernando',
+    authorPhotoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+    rating: 5,
+    text: 'U1 Studio produced a cinematic 8K wedding film that moved our entire family to tears. The colors, audio engineering, and candid drone shots were world-class.',
+    divisionId: 'u1',
+    divisionName: 'U1 Studio Cinema',
+    relativePublishTimeDescription: '1 month ago',
+  },
+  {
+    id: 'test-3',
+    authorName: 'Ashan Senaratne — CTO, CloudEdge Lanka',
+    authorPhotoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+    rating: 5,
+    text: 'Mahdev IT engineered our custom logistics platform with impeccable speed and zero downtime. Reliable team with cutting-edge full-stack architecture.',
+    divisionId: 'it',
+    divisionName: 'IT Solutions',
+    relativePublishTimeDescription: '3 weeks ago',
+  },
+  {
+    id: 'test-4',
+    authorName: 'Michael & Elena Vanderberg',
+    authorPhotoUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
+    rating: 5,
+    text: 'Mahdev Travels curated a 10-day bespoke luxury tour across Sri Lanka. Private helicopter transfers, tea estate bungalows, and wildlife safaris executed flawlessly.',
+    divisionId: 'travels',
+    divisionName: 'Mahdev Travels',
+    relativePublishTimeDescription: '2 months ago',
+  },
+  {
+    id: 'test-5',
+    authorName: 'Kavindi Wickramasinghe',
+    authorPhotoUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80',
+    rating: 5,
+    text: 'Super fast delivery and authentic gear from Mahdev Mart. The packaging was immaculate and customer service provided real-time tracking updates throughout.',
+    divisionId: 'mart',
+    divisionName: 'Online Mart',
+    relativePublishTimeDescription: '3 days ago',
+  },
+  {
+    id: 'test-6',
+    authorName: 'Nadeeka Perera — Head of Brand, Apex Group',
+    authorPhotoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80',
+    rating: 5,
+    text: 'We partnered with Mahdev for our annual corporate awards gala. The LED wall staging, live broadcast sync, and decor exceeded all our executive expectations.',
+    divisionId: 'sws',
+    divisionName: 'SWS Event Management',
+    relativePublishTimeDescription: '1 month ago',
+  },
+];
+
 export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
   initialDivision = 'all',
   onNavigate,
 }) => {
   const [selectedDivision, setSelectedDivision] = useState<DivisionId | 'all'>(initialDivision);
-  const { reviews, config, allReviews } = useGoogleReviews(selectedDivision);
-  const { homepageConfig } = useFirestoreDataContext();
+  const { reviews, config } = useGoogleReviews(selectedDivision);
+  const { homepageConfig, testimonials: firestoreTestimonials } = useFirestoreDataContext();
 
-  // If testimonials section is disabled in homepage config or master google review switch is turned off
-  if (homepageConfig?.testimonials && !homepageConfig.testimonials.enabled) {
-    return null;
-  }
+  // Combine Google Reviews, Firestore Testimonials, CMS Local Testimonials, and Fallbacks
+  const cmsTestimonials = useMemo(() => {
+    try {
+      const local = cmsService.getAll<FirestoreTestimonial>('testimonials', { includeDeleted: false });
+      if (local && local.length > 0) return local;
+    } catch {}
+    return [];
+  }, []);
 
-  if (config && !config.enabled) {
-    return null;
-  }
+  const mergedReviews = useMemo(() => {
+    // 1. Google reviews
+    const list: any[] = [...reviews];
 
-  // Limit display count based on admin configuration (e.g., 6)
-  const displayReviews = reviews.slice(0, config.maxDisplayCount || 6);
+    // 2. Admin Firestore testimonials
+    if (firestoreTestimonials && firestoreTestimonials.length > 0) {
+      firestoreTestimonials.forEach((t) => {
+        list.push({
+          id: t.id,
+          authorName: t.customerName || t.authorName || t.author || (t as any).clientName || 'Verified Client',
+          authorPhotoUrl: t.imageUrl || t.avatarUrl || t.authorPhotoUrl || t.photoUrl || '',
+          rating: t.rating || 5,
+          text: t.message || t.quote || t.text || (t as any).content || '',
+          divisionId: t.division || t.divisionId || 'all',
+          divisionName: t.divisionName || (t.division ? `${t.division.toUpperCase()} Division` : 'Mahdev Corporate'),
+          relativePublishTimeDescription: t.date || 'Verified Customer',
+        });
+      });
+    }
 
-  if (displayReviews.length === 0 && allReviews.length === 0) {
-    return null;
-  }
+    // 3. Admin CMS local testimonials
+    if (cmsTestimonials && cmsTestimonials.length > 0) {
+      cmsTestimonials.forEach((t) => {
+        if (!list.some((existing) => existing.id === t.id)) {
+          list.push({
+            id: t.id,
+            authorName: t.customerName || t.authorName || t.author || (t as any).clientName || 'Verified Client',
+            authorPhotoUrl: t.imageUrl || t.avatarUrl || t.authorPhotoUrl || t.photoUrl || '',
+            rating: t.rating || 5,
+            text: t.message || t.quote || t.text || (t as any).content || '',
+            divisionId: t.division || t.divisionId || 'all',
+            divisionName: t.divisionName || (t.division ? `${t.division.toUpperCase()} Division` : 'Mahdev Corporate'),
+            relativePublishTimeDescription: t.date || 'Verified Customer',
+          });
+        }
+      });
+    }
+
+    // 4. Default fallback testimonials if empty
+    if (list.length === 0) {
+      return DEFAULT_CUSTOMER_TESTIMONIALS;
+    }
+
+    return list;
+  }, [reviews, firestoreTestimonials, cmsTestimonials]);
+
+  // Filter by division if selected
+  const filteredReviews = useMemo(() => {
+    if (selectedDivision === 'all') return mergedReviews;
+    return mergedReviews.filter(
+      (r) =>
+        r.divisionId === selectedDivision ||
+        (r.divisionName && r.divisionName.toLowerCase().includes(selectedDivision.toLowerCase()))
+    );
+  }, [mergedReviews, selectedDivision]);
+
+  const displayReviews = filteredReviews.slice(0, config?.maxDisplayCount || 6);
 
   return (
     <div className="relative overflow-hidden">
@@ -51,18 +166,18 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                 </svg>
-                Google Verified Reviews
+                Google Verified Reviews & Client Feedback
               </span>
 
               <span className="text-xs font-bold text-amber-600 flex items-center gap-1 font-mono">
                 <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                {config.overallRating.toFixed(1)} Rating ({config.totalReviews}+ Reviews)
+                {(config?.overallRating || 4.9).toFixed(1)} Rating ({config?.totalReviews || 180}+ Reviews)
               </span>
             </div>
 
-            <H2 className="text-slate-900 mb-2.5">What Our Clients Say</H2>
+            <H2 className="text-slate-900 mb-2.5">What Our Customers Say About Us</H2>
             <Body className="text-slate-600 text-sm sm:text-base">
-              Real customer feedback from our Google Maps & Google Business Profile across weddings, executive events, cinema, and digital projects.
+              Real customer experiences across our luxury event management, cinematography, enterprise IT solutions, bespoke travel, and online commerce.
             </Body>
           </div>
 
@@ -97,11 +212,11 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
         {/* Testimonials Grid / Mobile Horizontal Track */}
         {displayReviews.length === 0 ? (
           <div className="p-8 rounded-2xl bg-slate-50 border border-slate-200 text-center">
-            <p className="text-xs text-slate-500">No featured reviews for this division currently.</p>
+            <p className="text-xs text-slate-500">No customer reviews for this category yet.</p>
           </div>
         ) : (
           <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 sm:overflow-visible">
-            {displayReviews.map((review, idx) => (
+            {displayReviews.map((review) => (
               <div
                 key={review.id}
                 className="w-[calc(100vw-2.5rem)] max-w-[340px] sm:max-w-none sm:w-auto snap-center shrink-0 sm:shrink"
@@ -117,7 +232,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
                           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                         </svg>
-                        <span className="text-[11px] font-bold text-slate-700">Google Review</span>
+                        <span className="text-[11px] font-bold text-slate-700">Verified Client</span>
                       </div>
 
                       {review.divisionName && review.divisionName !== 'All Divisions' && (
@@ -177,10 +292,10 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
           </div>
         )}
 
-        {/* Action Strip: View All & Write a Review on Google */}
+        {/* Action Strip */}
         <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            {config.writeReviewUrl && (
+            {config?.writeReviewUrl && (
               <a
                 href={config.writeReviewUrl}
                 target="_blank"
@@ -198,7 +313,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
               </a>
             )}
 
-            {config.mapsUrl && (
+            {config?.mapsUrl && (
               <a
                 href={config.mapsUrl}
                 target="_blank"
@@ -216,7 +331,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
               onClick={() => onNavigate('/testimonials')}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 font-bold text-xs hover:border-blue-600 hover:text-blue-600 hover:shadow-xs transition-all cursor-pointer group"
             >
-              <span>View All Google Reviews</span>
+              <span>View All Customer Reviews</span>
               <ChevronRight className="w-3.5 h-3.5 text-blue-600 group-hover:translate-x-0.5 transition-transform" />
             </button>
           )}

@@ -11,7 +11,9 @@ interface HeroSectionProps {
   onExploreServices?: () => void;
 }
 
-const FULL_TAGLINE = 'Creating Moments. Capturing Memories. Delivering Innovation.';
+const LINE_1 = 'Creating Moments.';
+const LINE_2 = 'Capturing Memories.';
+const LINE_3 = 'Delivering Innovation.';
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onExploreMahdev,
@@ -20,24 +22,51 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const { homepageConfig } = useFirestoreDataContext();
   const heroConfig = homepageConfig?.hero;
 
-  // Typing animation state
-  const [typedText, setTypedText] = useState('');
-  const [isTypingComplete, setIsTypingComplete] = useState(false);
+  // Smooth, slightly slow sequential typing animation across the three lines
+  const [typedLine1, setTypedLine1] = useState('');
+  const [typedLine2, setTypedLine2] = useState('');
+  const [typedLine3, setTypedLine3] = useState('');
+  const [activeLine, setActiveLine] = useState<1 | 2 | 3 | 4>(1);
 
   useEffect(() => {
-    let index = 0;
-    setTypedText('');
-    setIsTypingComplete(false);
+    let charIdx = 0;
+    setTypedLine1('');
+    setTypedLine2('');
+    setTypedLine3('');
+    setActiveLine(1);
+
+    // Typing speed: smooth, gentle ~65-70ms per character
+    const TYPING_SPEED = 70;
+    const LINE_PAUSE = 280;
 
     const interval = setInterval(() => {
-      index++;
-      if (index <= FULL_TAGLINE.length) {
-        setTypedText(FULL_TAGLINE.slice(0, index));
+      // Phase 1: Line 1
+      if (charIdx < LINE_1.length) {
+        charIdx++;
+        setTypedLine1(LINE_1.slice(0, charIdx));
+      } else if (charIdx === LINE_1.length) {
+        charIdx++;
+        setActiveLine(2);
+      }
+      // Phase 2: Line 2
+      else if (charIdx < LINE_1.length + 1 + LINE_2.length) {
+        const line2Idx = charIdx - (LINE_1.length + 1);
+        charIdx++;
+        setTypedLine2(LINE_2.slice(0, line2Idx));
+      } else if (charIdx === LINE_1.length + 1 + LINE_2.length) {
+        charIdx++;
+        setActiveLine(3);
+      }
+      // Phase 3: Line 3
+      else if (charIdx < LINE_1.length + 1 + LINE_2.length + 1 + LINE_3.length) {
+        const line3Idx = charIdx - (LINE_1.length + 1 + LINE_2.length + 1);
+        charIdx++;
+        setTypedLine3(LINE_3.slice(0, line3Idx));
       } else {
-        setIsTypingComplete(true);
+        setActiveLine(4);
         clearInterval(interval);
       }
-    }, 45);
+    }, TYPING_SPEED);
 
     return () => clearInterval(interval);
   }, []);
@@ -69,44 +98,68 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   return (
     <section
       id="hero"
-      className="relative w-full min-h-[80vh] sm:min-h-[85vh] lg:min-h-[90vh] flex items-center justify-center overflow-hidden bg-[#061033] text-white"
+      className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-[#061033] text-white"
     >
-      {/* Reliable Full-Width Video Background - Uploaded Video */}
+      {/* Reliable Full-Width Video Background */}
       <HeroVideoBackground
         videoUrl={effectiveVideoUrl}
         title="Mahdev Enterprise Showcase"
       />
 
-      {/* Hero Content Overlay */}
-      <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-28 lg:py-32 z-20 w-full text-center flex flex-col items-center">
-        {/* Typing Tagline with Smaller, Elegant Font */}
-        <div className="min-h-[72px] sm:min-h-[96px] md:min-h-[110px] flex items-center justify-center">
-          <h1 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-snug sm:leading-tight drop-shadow-lg max-w-4xl">
-            <span>{typedText}</span>
-            <span
-              className={`inline-block w-0.5 h-6 sm:h-8 md:h-10 ml-1.5 align-middle bg-[#00D2FF] ${
-                isTypingComplete ? 'animate-pulse' : 'animate-ping'
-              }`}
-            />
-          </h1>
-        </div>
+      {/* Dark gradient overlay on left to ensure high readability and contrast */}
+      <div className="absolute inset-0 bg-gradient-to-r from-[#061033]/90 via-[#061033]/70 to-transparent z-10 pointer-events-none" />
 
-        {/* Single Primary Action Button: Explore Our Services */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="pt-8 sm:pt-10"
-        >
-          <button
-            id="hero-explore-services-btn"
-            onClick={handleExplore}
-            className="inline-flex items-center justify-center gap-2.5 bg-gradient-to-r from-[#0052FF] via-[#0066FF] to-[#0052FF] hover:brightness-110 text-white font-semibold text-sm sm:text-base px-8 py-3.5 sm:px-9 sm:py-4 rounded-xl shadow-xl shadow-[#0052FF]/35 hover:shadow-2xl hover:shadow-[#0052FF]/55 transition-all cursor-pointer active:scale-98"
+      {/* Hero Content Overlay — Left-Aligned */}
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-32 z-20 w-full text-left">
+        <div className="max-w-2xl sm:max-w-3xl space-y-6">
+          {/* Animated 3-Line Taglines with reduced, elegant font size */}
+          <div className="space-y-1 sm:space-y-2">
+            {/* Line 1 */}
+            <h1 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight drop-shadow-md min-h-[38px] sm:min-h-[46px] md:min-h-[54px] flex items-center">
+              <span>{typedLine1}</span>
+              {activeLine === 1 && (
+                <span className="inline-block w-0.5 h-6 sm:h-8 md:h-9 ml-2 align-middle bg-[#00D2FF] animate-pulse" />
+              )}
+            </h1>
+
+            {/* Line 2 */}
+            <div className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-[#00D2FF] leading-tight drop-shadow-md min-h-[38px] sm:min-h-[46px] md:min-h-[54px] flex items-center">
+              <span>{typedLine2}</span>
+              {activeLine === 2 && (
+                <span className="inline-block w-0.5 h-6 sm:h-8 md:h-9 ml-2 align-middle bg-white animate-pulse" />
+              )}
+            </div>
+
+            {/* Line 3 */}
+            <div className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-[#93C5FD] leading-tight drop-shadow-md min-h-[38px] sm:min-h-[46px] md:min-h-[54px] flex items-center">
+              <span>{typedLine3}</span>
+              {(activeLine === 3 || activeLine === 4) && (
+                <span
+                  className={`inline-block w-0.5 h-6 sm:h-8 md:h-9 ml-2 align-middle bg-[#00D2FF] ${
+                    activeLine === 4 ? 'animate-pulse' : 'animate-ping'
+                  }`}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Single Primary Action Button: Explore Our Services */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="pt-4 sm:pt-6"
           >
-            <span>Explore Our Services</span>
-            <ArrowRight className="w-4.5 h-4.5" />
-          </button>
-        </motion.div>
+            <button
+              id="hero-explore-services-btn"
+              onClick={handleExplore}
+              className="inline-flex items-center justify-center gap-2.5 bg-gradient-to-r from-[#0052FF] via-[#0066FF] to-[#0052FF] hover:brightness-110 text-white font-semibold text-sm sm:text-base px-8 py-3.5 sm:px-9 sm:py-4 rounded-xl shadow-xl shadow-[#0052FF]/35 hover:shadow-2xl hover:shadow-[#0052FF]/55 transition-all cursor-pointer active:scale-98"
+            >
+              <span>Explore Our Services</span>
+              <ArrowRight className="w-4.5 h-4.5" />
+            </button>
+          </motion.div>
+        </div>
       </div>
     </section>
   );
