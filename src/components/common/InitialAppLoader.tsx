@@ -20,7 +20,11 @@ const BRAND_TAGLINES = [
   'Contact Now: 075 092 8078',
 ];
 
-export const InitialAppLoader: React.FC<InitialAppLoaderProps> = () => {
+export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
+  message,
+  subMessage,
+  progress,
+}) => {
   const [cachedLogo, setCachedLogo] = useState<string>('/logo.png');
   const [imgError, setImgError] = useState(false);
   const [taglineIndex, setTaglineIndex] = useState(0);
@@ -98,7 +102,7 @@ export const InitialAppLoader: React.FC<InitialAppLoaderProps> = () => {
         </div>
 
         {/* Animated Brand Tagline Switcher */}
-        <div className="min-h-[30px] flex items-center justify-center mb-5">
+        <div className="min-h-[30px] flex flex-col items-center justify-center mb-5">
           <AnimatePresence mode="wait">
             <motion.p
               key={currentTagline}
@@ -108,19 +112,33 @@ export const InitialAppLoader: React.FC<InitialAppLoaderProps> = () => {
               transition={{ duration: 0.28, ease: 'easeInOut' }}
               className="text-sm sm:text-base font-bold text-slate-800 tracking-wide"
             >
-              {currentTagline}
+              {message || currentTagline}
             </motion.p>
           </AnimatePresence>
+          {subMessage && (
+            <p className="text-xs text-slate-500 font-medium mt-1">
+              {subMessage}
+            </p>
+          )}
         </div>
 
-        {/* Smooth Continuous Shimmer Line */}
+        {/* Smooth Shimmer / Progress Line */}
         <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden relative mb-4">
-          <motion.div
-            className="h-full rounded-full bg-linear-to-r from-[#0052FF] via-[#0066FF] to-[#00D2FF]"
-            initial={{ x: '-100%' }}
-            animate={{ x: '100%' }}
-            transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
-          />
+          {progress !== undefined && progress > 0 ? (
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-[#0052FF] via-[#0066FF] to-[#00D2FF]"
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min(100, Math.max(8, progress))}%` }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+            />
+          ) : (
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-[#0052FF] via-[#0066FF] to-[#00D2FF]"
+              initial={{ x: '-100%' }}
+              animate={{ x: '100%' }}
+              transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
+            />
+          )}
         </div>
 
         {/* Delivery Locations & Contact Number Badge */}

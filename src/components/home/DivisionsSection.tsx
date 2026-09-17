@@ -197,6 +197,17 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
 
   const sws = bentoDivisions[0];
 
+  // Active divisions currently operating
+  const activeDivisions = useMemo(() => {
+    const list = bentoDivisions.filter((d) => !d.isComingSoon);
+    return list.length > 0 ? list : bentoDivisions;
+  }, [bentoDivisions]);
+
+  // Upcoming divisions explicitly marked as Coming Soon in Admin Portal
+  const comingSoonDivisions = useMemo(() => {
+    return bentoDivisions.filter((d) => d.isComingSoon);
+  }, [bentoDivisions]);
+
   const sectionRef = useRef<HTMLDivElement>(null);
   const { reducedMotion, isTouch } = useDeviceMotion();
   const { scrollYProgress } = useScroll({
@@ -244,9 +255,17 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
           </div>
         </div>
 
-        {/* Uniform 5-Card Grid: All five division cards have the exact same size */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {bentoDivisions.slice(0, 5).map((div, idx) => {
+        {/* Operating Divisions Grid: Exclusively displays active divisions */}
+        <div
+          className={
+            activeDivisions.length === 1
+              ? 'max-w-2xl mx-auto w-full'
+              : activeDivisions.length === 2
+              ? 'grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-6'
+              : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+          }
+        >
+          {activeDivisions.map((div, idx) => {
             return (
               <motion.div
                 key={div.id}
@@ -254,7 +273,9 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
                 transition={{ duration: 0.2 }}
                 onClick={() => onNavigate(div.route)}
                 className={`group relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-200/80 shadow-sm hover:shadow-lg transition-all cursor-pointer flex flex-col justify-end min-h-[340px] sm:min-h-[360px] p-6 sm:p-7 ${
-                  idx === 4 ? 'md:col-span-2 lg:col-span-1' : ''
+                  activeDivisions.length > 3 && idx === activeDivisions.length - 1 && activeDivisions.length % 2 === 1
+                    ? 'md:col-span-2 lg:col-span-1'
+                    : ''
                 }`}
               >
                 {/* Background Image: Uploaded Content */}
@@ -276,11 +297,6 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
                     <span className="inline-block px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider text-white bg-[#0052FF] shadow-xs">
                       {div.badge}
                     </span>
-                    {div.isComingSoon && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-amber-400 text-slate-950">
-                        <Sparkles className="w-3 h-3" /> Coming Soon
-                      </span>
-                    )}
                   </div>
 
                   <div>
@@ -314,6 +330,57 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
             );
           })}
         </div>
+
+        {/* Upcoming Enterprise Divisions: Shown if any division is configured as Coming Soon */}
+        {comingSoonDivisions.length > 0 && (
+          <div className="mt-12 pt-8 border-t border-slate-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <h3 className="font-display text-base font-bold text-slate-900">
+                  Upcoming Enterprise Divisions
+                </h3>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold">
+                  {comingSoonDivisions.length} Coming Soon
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">
+                Configured in Admin Portal • In active preparation
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {comingSoonDivisions.map((div) => (
+                <div
+                  key={div.id}
+                  onClick={() => onNavigate(div.route)}
+                  className="group relative p-4 rounded-xl border border-slate-200/90 bg-white hover:border-amber-400 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500">
+                        {div.badge}
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                        <Sparkles className="w-2.5 h-2.5" /> Coming Soon
+                      </span>
+                    </div>
+                    <h4 className="font-display text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                      {div.name}
+                    </h4>
+                    <p className="text-xs text-slate-500 line-clamp-2 mt-1">
+                      {div.subtitle || div.summary}
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600 font-medium">
+                    <span className="text-[11px] text-amber-700 font-semibold">VIP Status & Updates</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-amber-500 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </SectionContainer>
     </div>
   );

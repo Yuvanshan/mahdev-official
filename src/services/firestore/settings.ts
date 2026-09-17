@@ -738,6 +738,18 @@ export const firestoreSettingsService = {
       ...(heroUpdates ? { hero: { ...existing.hero, ...heroUpdates } } : {}),
       updatedAt: new Date().toISOString(),
     };
+
+    // Deeply preserve explicit milestones achievements array deletions/updates
+    if (data.milestones) {
+      merged.milestones = {
+        ...(existing.milestones || {}),
+        ...data.milestones,
+        achievements: Array.isArray(data.milestones.achievements)
+          ? data.milestones.achievements
+          : (existing.milestones?.achievements || []),
+      };
+    }
+
     const payload = sanitizeForFirestore(merged);
 
     cachedHomepageSettings = { data: payload, timestamp: Date.now() };
@@ -750,7 +762,8 @@ export const firestoreSettingsService = {
     syncToServerApi('homepage', payload);
 
     try {
-      await setDoc(docRef, payload, { merge: true });
+      // Overwrite the entire document so deleted items/arrays are permanently removed from Firestore
+      await setDoc(docRef, payload);
       console.log('[Firestore Settings] Homepage settings committed to Firestore.');
     } catch (err) {
       console.warn('[Firestore Settings] updateHomepageSettings write notice:', err);

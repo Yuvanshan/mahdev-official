@@ -288,44 +288,7 @@ export const COMPANY_MILESTONES: (MilestoneItem & { id: string; badge: string; k
   }
 ];
 
-export const TRUSTED_COMPANIES: TrustedCompany[] = [
-  {
-    id: 'co-1',
-    name: 'Ceylon Enterprises Group',
-    industry: 'Conglomerate & Trade',
-    partnershipType: 'Enterprise IT & Events'
-  },
-  {
-    id: 'co-2',
-    name: 'Horizon Ventures',
-    industry: 'Private Equity & Capital',
-    partnershipType: 'Media Production & Brand Films'
-  },
-  {
-    id: 'co-3',
-    name: 'Vanguard Media House',
-    industry: 'Broadcasting & Telecommunications',
-    partnershipType: 'Studio Gear & Audio Engineering'
-  },
-  {
-    id: 'co-4',
-    name: 'Lanka Tech Labs',
-    industry: 'Software & Fintech',
-    partnershipType: 'Cloud Infrastructure & DevOps'
-  },
-  {
-    id: 'co-5',
-    name: 'Apex Global Logistics',
-    industry: 'Maritime & Freight',
-    partnershipType: 'Custom ERP & Fleet Portals'
-  },
-  {
-    id: 'co-6',
-    name: 'Serendib Heritage Resorts',
-    industry: 'Hospitality & Tourism',
-    partnershipType: 'VIP Travel Curation & Photojournalism'
-  }
-];
+export const TRUSTED_COMPANIES: TrustedCompany[] = [];
 
 export const WHY_MAHDEV_DIFFERENTIATORS: DifferentiatorItem[] = [
   {

@@ -511,6 +511,9 @@ function AppContent() {
       normalizedPath === '/division/sws' ||
       divisionKey === 'sws'
     ) {
+      if (isDivisionComingSoon('sws')) {
+        return <DivisionComingSoonView divisionId="sws" onNavigate={navigate} />;
+      }
       return <SWSView onNavigate={navigate} />;
     }
 
@@ -521,6 +524,9 @@ function AppContent() {
       normalizedPath.startsWith('/event-management/') ||
       normalizedPath.startsWith('/events/')
     ) {
+      if (isDivisionComingSoon('sws')) {
+        return <DivisionComingSoonView divisionId="sws" onNavigate={navigate} />;
+      }
       const subSlug = normalizedPath
         .replace(/^\/(sws-event-management|sws-events|event-management|events|sws)\//, '')
         .trim();
@@ -545,6 +551,9 @@ function AppContent() {
       normalizedPath === '/division/u1' ||
       divisionKey === 'u1'
     ) {
+      if (isDivisionComingSoon('u1')) {
+        return <DivisionComingSoonView divisionId="u1" onNavigate={navigate} />;
+      }
       return <U1View onNavigate={navigate} />;
     }
 
@@ -556,6 +565,9 @@ function AppContent() {
       normalizedPath.startsWith('/photography/') ||
       normalizedPath.startsWith('/cinema/')
     ) {
+      if (isDivisionComingSoon('u1')) {
+        return <DivisionComingSoonView divisionId="u1" onNavigate={navigate} />;
+      }
       const subSlug = normalizedPath
         .replace(/^\/(u1-studio|u1-cinema|studio|photography|cinema|u1)\//, '')
         .trim();
@@ -580,6 +592,9 @@ function AppContent() {
       normalizedPath === '/division/it' ||
       divisionKey === 'it'
     ) {
+      if (isDivisionComingSoon('it')) {
+        return <DivisionComingSoonView divisionId="it" onNavigate={navigate} />;
+      }
       return <ITView onNavigate={navigate} />;
     }
 
@@ -591,6 +606,9 @@ function AppContent() {
       normalizedPath.startsWith('/solutions/') ||
       normalizedPath.startsWith('/software/')
     ) {
+      if (isDivisionComingSoon('it')) {
+        return <DivisionComingSoonView divisionId="it" onNavigate={navigate} />;
+      }
       const subSlug = normalizedPath
         .replace(/^\/(it-solutions|mahdev-it|it-services|solutions|software|it)\//, '')
         .trim();
@@ -614,6 +632,9 @@ function AppContent() {
       normalizedPath === '/division/travels' ||
       divisionKey === 'travels'
     ) {
+      if (isDivisionComingSoon('travels')) {
+        return <DivisionComingSoonView divisionId="travels" onNavigate={navigate} />;
+      }
       return <TravelsView onNavigate={navigate} />;
     }
 
@@ -624,6 +645,9 @@ function AppContent() {
       normalizedPath.startsWith('/tours/') ||
       normalizedPath.startsWith('/travel/')
     ) {
+      if (isDivisionComingSoon('travels')) {
+        return <DivisionComingSoonView divisionId="travels" onNavigate={navigate} />;
+      }
       const subSlug = normalizedPath
         .replace(/^\/(mahdev-travels|tourism|tours|travel|travels)\//, '')
         .trim();
@@ -647,6 +671,9 @@ function AppContent() {
       normalizedPath === '/division/mart' ||
       divisionKey === 'mart'
     ) {
+      if (isDivisionComingSoon('mart')) {
+        return <DivisionComingSoonView divisionId="mart" onNavigate={navigate} />;
+      }
       if (
         (normalizedPath.startsWith('/mart/') && normalizedPath !== '/mart') ||
         (normalizedPath.startsWith('/online-mart/') && normalizedPath !== '/online-mart') ||
@@ -887,6 +914,9 @@ function AppContent() {
     }
 
     if (divisionKey) {
+      if (isDivisionComingSoon(divisionKey)) {
+        return <DivisionComingSoonView divisionId={divisionKey} onNavigate={navigate} />;
+      }
       if (!isDivisionLoaded(divisionKey)) {
         return <DivisionTransitionLoader divisionId={divisionKey} />;
       }
@@ -911,30 +941,30 @@ function AppContent() {
       case '/sws-event-management':
       case '/divisions/sws':
       case '/division/sws':
-        return <SWSView onNavigate={navigate} />;
+        return isDivisionComingSoon('sws') ? <DivisionComingSoonView divisionId="sws" onNavigate={navigate} /> : <SWSView onNavigate={navigate} />;
       case '/u1':
       case '/u1-studio':
       case '/u1-cinema':
       case '/divisions/u1':
       case '/division/u1':
-        return <U1View onNavigate={navigate} />;
+        return isDivisionComingSoon('u1') ? <DivisionComingSoonView divisionId="u1" onNavigate={navigate} /> : <U1View onNavigate={navigate} />;
       case '/it':
       case '/it-solutions':
       case '/mahdev-it':
       case '/divisions/it':
       case '/division/it':
-        return <ITView onNavigate={navigate} />;
+        return isDivisionComingSoon('it') ? <DivisionComingSoonView divisionId="it" onNavigate={navigate} /> : <ITView onNavigate={navigate} />;
       case '/travels':
       case '/mahdev-travels':
       case '/divisions/travels':
       case '/division/travels':
-        return <TravelsView onNavigate={navigate} />;
+        return isDivisionComingSoon('travels') ? <DivisionComingSoonView divisionId="travels" onNavigate={navigate} /> : <TravelsView onNavigate={navigate} />;
       case '/mart':
       case '/online-mart':
       case '/mahdev-mart':
       case '/divisions/mart':
       case '/division/mart':
-        return <MartView onNavigate={navigate} />;
+        return isDivisionComingSoon('mart') ? <DivisionComingSoonView divisionId="mart" onNavigate={navigate} /> : <MartView onNavigate={navigate} />;
       case '/divisions':
         return <DivisionsPageView onNavigate={navigate} />;
       case '/services':
@@ -968,6 +998,16 @@ function AppContent() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-blue-600 selection:text-white w-full max-w-full overflow-x-hidden">
+      {/* Dynamic Data Loading Animation for Landing Page / App while data synchronizes from Firestore */}
+      <AnimatePresence>
+        {isInitialLoading && (
+          <InitialAppLoader
+            progress={syncProgress}
+            subMessage={syncStatus || 'Loading verified corporate data...'}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Top Document Scroll Progress Bar */}
       <DocumentScrollProgress />
 
