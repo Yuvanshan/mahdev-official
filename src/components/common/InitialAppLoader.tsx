@@ -1,24 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Phone, MapPin } from 'lucide-react';
+import { motion } from 'motion/react';
+import { MapPin, ShieldCheck } from 'lucide-react';
 
 interface InitialAppLoaderProps {
   message?: string;
   subMessage?: string;
   progress?: number;
 }
-
-const BRAND_TAGLINES = [
-  'Creating Moments...',
-  'Capturing Memories...',
-  'Delivering Innovation...',
-  'Delivering in Trincomalee & Colombo...',
-  'SWS Luxury Events & Decor...',
-  'U1 Fine Art Photography & Cinema...',
-  'Enterprise IT & Software Solutions...',
-  'Curated Ceylon Travels & Mart...',
-  'Contact Now: 075 092 8078',
-];
 
 export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
   message,
@@ -27,14 +15,6 @@ export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
 }) => {
   const [cachedLogo, setCachedLogo] = useState<string>('/logo.png');
   const [imgError, setImgError] = useState(false);
-  const [taglineIndex, setTaglineIndex] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTaglineIndex((prev) => (prev + 1) % BRAND_TAGLINES.length);
-    }, 1600);
-    return () => clearInterval(timer);
-  }, []);
 
   useEffect(() => {
     try {
@@ -59,111 +39,163 @@ export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
   }, []);
 
   const effectiveLogo = !imgError && cachedLogo ? cachedLogo : '/logo.png';
-  const currentTagline = BRAND_TAGLINES[taglineIndex];
+  const displayPercent =
+    progress !== undefined && progress >= 0 ? Math.min(100, Math.round(progress)) : null;
 
   return (
     <motion.div
       id="app-initial-loader"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="fixed inset-0 z-[100] bg-slate-950/40 backdrop-blur-xl flex flex-col items-center justify-center p-4 select-none antialiased"
+      exit={{ opacity: 0, scale: 1.015 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="fixed inset-0 z-[100] bg-[#FAF9F6] flex flex-col items-center justify-between p-6 sm:p-10 select-none antialiased overflow-hidden"
     >
-      {/* Dynamic Background Ambient Shimmer */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full blur-3xl opacity-25 animate-pulse bg-[#0052FF]" />
-        <div className="absolute top-1/3 -right-32 w-96 h-96 rounded-full blur-3xl opacity-20 animate-pulse bg-[#00D2FF]" />
+      {/* Subtle, soft ambient background illumination */}
+      <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+        <div
+          className="w-[480px] h-[480px] rounded-full opacity-40 blur-[120px] pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(0,82,255,0.12) 0%, rgba(0,210,255,0.04) 60%, transparent 80%)',
+          }}
+        />
       </div>
 
-      {/* Floating Centered Brand Card */}
+      {/* Top Quiet Corporate Watermark */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.96, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: 'easeOut' }}
-        className="relative z-20 bg-white/95 backdrop-blur-2xl border border-slate-200/80 shadow-2xl shadow-blue-500/10 rounded-3xl p-8 sm:p-10 max-w-md w-full text-center flex flex-col items-center"
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.4 }}
+        className="w-full flex items-center justify-center pt-2 text-[11px] font-semibold tracking-wider uppercase text-slate-400"
       >
-        {/* Prominent High-Impact Brand Logo */}
-        <div className="mb-5 flex items-center justify-center min-h-[90px] sm:min-h-[110px]">
-          <img
-            src={effectiveLogo}
-            alt="Mahdev"
-            className="h-20 sm:h-24 md:h-28 w-auto max-w-[320px] sm:max-w-[380px] object-contain drop-shadow-sm transition-transform duration-300"
-            referrerPolicy="no-referrer"
-            onError={() => {
-              if (effectiveLogo !== '/logo.png') {
-                setCachedLogo('/logo.png');
-                setImgError(false);
-              } else {
-                setImgError(true);
-              }
-            }}
-          />
-        </div>
-
-        {/* Animated Brand Tagline Switcher */}
-        <div className="min-h-[30px] flex flex-col items-center justify-center mb-5">
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={currentTagline}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.28, ease: 'easeInOut' }}
-              className="text-sm sm:text-base font-bold text-slate-800 tracking-wide"
-            >
-              {message || currentTagline}
-            </motion.p>
-          </AnimatePresence>
-          {subMessage && (
-            <p className="text-xs text-slate-500 font-medium mt-1">
-              {subMessage}
-            </p>
-          )}
-        </div>
-
-        {/* Smooth Shimmer / Progress Line */}
-        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden relative mb-4">
-          {progress !== undefined && progress > 0 ? (
-            <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-[#0052FF] via-[#0066FF] to-[#00D2FF]"
-              initial={{ width: 0 }}
-              animate={{ width: `${Math.min(100, Math.max(8, progress))}%` }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-            />
-          ) : (
-            <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-[#0052FF] via-[#0066FF] to-[#00D2FF]"
-              initial={{ x: '-100%' }}
-              animate={{ x: '100%' }}
-              transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
-            />
-          )}
-        </div>
-
-        {/* Delivery Locations & Contact Number Badge */}
-        <div className="w-full pt-3 border-t border-slate-100/90 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs font-semibold text-slate-600">
-          <span className="inline-flex items-center gap-1 text-blue-600 font-bold">
-            <MapPin className="w-3.5 h-3.5 shrink-0" />
-            Trincomalee & Colombo
-          </span>
-          <span className="text-slate-300 hidden sm:inline">•</span>
-          <a
-            href="tel:0750928078"
-            className="inline-flex items-center gap-1 text-slate-700 hover:text-blue-600 transition-colors font-bold"
-          >
-            <Phone className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-            Contact: 075 092 8078
-          </a>
-        </div>
+        <span className="inline-flex items-center gap-1.5">
+          <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+          Verified Enterprise Infrastructure
+        </span>
       </motion.div>
 
-      {/* Micro-Footer */}
-      <div className="absolute bottom-8 text-[11px] sm:text-xs font-semibold tracking-wider text-slate-200/90 drop-shadow-md flex items-center gap-2">
-        <span>Delivering in Trincomalee & Colombo</span>
-        <span>•</span>
-        <span>075 092 8078</span>
+      {/* Center Core Brand Card & Progress Engine */}
+      <div className="relative z-10 flex flex-col items-center justify-center max-w-sm sm:max-w-md w-full my-auto text-center">
+        {/* Brand Emblem with Smooth Breathing Effect */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.94 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          className="relative mb-6 flex items-center justify-center min-h-[96px] sm:min-h-[112px]"
+        >
+          {/* Subtle soft ambient halo behind emblem */}
+          <div className="absolute inset-0 -m-3 rounded-2xl bg-blue-500/5 blur-xl pointer-events-none" />
+
+          {!imgError ? (
+            <motion.img
+              src={effectiveLogo}
+              alt="Mahdev (Pvt) Ltd"
+              className="h-20 sm:h-24 md:h-28 w-auto max-w-[280px] sm:max-w-[340px] object-contain drop-shadow-xs relative z-10"
+              referrerPolicy="no-referrer"
+              animate={{
+                scale: [1, 1.015, 1],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+              onError={() => {
+                if (effectiveLogo !== '/logo.png') {
+                  setCachedLogo('/logo.png');
+                  setImgError(false);
+                } else {
+                  setImgError(true);
+                }
+              }}
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white font-extrabold text-3xl tracking-tight">
+              M
+            </div>
+          )}
+        </motion.div>
+
+        {/* Brand Name & Tagline */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.4 }}
+          className="space-y-1 mb-7"
+        >
+          <h1 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+            {message || 'Mahdev (Pvt) Ltd'}
+          </h1>
+          <p className="text-xs sm:text-[13px] font-medium text-slate-500 tracking-wide">
+            Creating Moments • Capturing Memories • Delivering Innovation
+          </p>
+        </motion.div>
+
+        {/* Minimalist Hairline Progress Bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.22, duration: 0.4 }}
+          className="w-full max-w-[280px] sm:max-w-[320px] flex flex-col items-center gap-2.5"
+        >
+          <div className="w-full bg-slate-200/80 rounded-full h-1 sm:h-1.5 overflow-hidden relative">
+            {displayPercent !== null ? (
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 relative"
+                initial={{ width: '4%' }}
+                animate={{ width: `${Math.max(6, displayPercent)}%` }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+              />
+            ) : (
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 absolute inset-y-0 w-1/3"
+                animate={{
+                  x: ['-100%', '350%'],
+                }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 1.4,
+                  ease: 'easeInOut',
+                }}
+              />
+            )}
+          </div>
+
+          {/* Status Feedback & Tabular Progress */}
+          <div className="w-full flex items-center justify-between text-[11px] font-medium text-slate-500 px-0.5">
+            <span className="inline-flex items-center gap-1.5 truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse shrink-0" />
+              <span className="truncate">{subMessage || 'Initializing digital experience...'}</span>
+            </span>
+            {displayPercent !== null && (
+              <span className="tabular-nums font-semibold text-slate-700 ml-2 shrink-0">
+                {displayPercent}%
+              </span>
+            )}
+          </div>
+        </motion.div>
       </div>
+
+      {/* Bottom Quiet Location & Division Pill */}
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25, duration: 0.4 }}
+        className="pb-2 flex flex-col items-center gap-1.5"
+      >
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200/80 shadow-2xs text-[11px] font-medium text-slate-600">
+          <span className="inline-flex items-center gap-1 text-blue-600 font-semibold">
+            <MapPin className="w-3 h-3 shrink-0" />
+            Trincomalee & Colombo
+          </span>
+          <span className="text-slate-300">•</span>
+          <span>Sri Lanka</span>
+        </div>
+        <p className="text-[10px] tracking-wider text-slate-400 uppercase font-medium">
+          Events • Cinema • IT • Travels • Mart
+        </p>
+      </motion.div>
     </motion.div>
   );
 };
+
