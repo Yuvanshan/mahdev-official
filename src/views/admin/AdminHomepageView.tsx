@@ -1531,10 +1531,10 @@ export const AdminHomepageView: React.FC = () => {
                             },
                           };
                           setConfig(updatedConfig);
-                          setIsDirty(true);
+                          setIsDirty(false);
                           try {
                             await updateHomepageConfig(updatedConfig);
-                            addToast('success', 'Achievements Cleared', 'All achievement cards removed and saved to Firestore.');
+                            addToast('success', 'Achievements Cleared', 'All achievement cards permanently deleted and removed from Firestore.');
                           } catch (err: any) {
                             addToast('error', 'Sync Failed', err.message || 'Could not update Firestore.');
                           }
@@ -1643,7 +1643,7 @@ export const AdminHomepageView: React.FC = () => {
                               },
                             };
                             setConfig(updatedConfig);
-                            setIsDirty(true);
+                            setIsDirty(false);
                             try {
                               await updateHomepageConfig(updatedConfig);
                               addToast('success', 'Card Removed', `Card #${idx + 1} permanently deleted and removed from Firestore.`);
@@ -1763,6 +1763,7 @@ export const AdminHomepageView: React.FC = () => {
                   </div>
                 ))}
               </div>
+              )}
             </div>
           </div>
         )}

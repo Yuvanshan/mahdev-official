@@ -83,60 +83,6 @@ const OFFICIAL_MILESTONES = [
   },
 ];
 
-// Official verified company achievements
-const OFFICIAL_ACHIEVEMENTS = [
-  {
-    id: 'projects',
-    metric: '1,800+',
-    label: 'Projects Completed',
-    description: 'Completed projects across events, media, and digital systems.',
-    icon: Briefcase,
-    badge: 'Deliverables',
-    highlight: true,
-  },
-  {
-    id: 'success-rate',
-    metric: '98%',
-    label: 'Success Rate',
-    description: 'Committed to verified quality and reliable client delivery.',
-    icon: CheckCircle2,
-    badge: 'Quality Standard',
-  },
-  {
-    id: 'growth',
-    metric: '5+',
-    label: 'Years of Growth',
-    description: 'Consistent expansion across diverse industry sectors.',
-    icon: TrendingUp,
-    badge: 'Track Record',
-  },
-  {
-    id: 'divisions',
-    metric: '5',
-    label: 'Business Divisions',
-    description: 'Events, Studio Media, IT Solutions, Travels, and Mart.',
-    icon: Layers,
-    badge: 'Divisions',
-  },
-  {
-    id: 'coverage',
-    metric: '9 / 9',
-    label: 'Provinces Covered',
-    description: 'Nationwide execution and logistics delivery across Sri Lanka.',
-    icon: MapPin,
-    badge: 'Nationwide',
-  },
-  {
-    id: 'vision',
-    metric: 'One Vision',
-    label: 'Unified Standard',
-    description: 'Creating Moments. Capturing Memories. Delivering Innovation.',
-    icon: Sparkles,
-    badge: 'Core Creed',
-    highlight: true,
-  },
-];
-
 interface MilestonesSectionProps {
   onNavigate?: (route: string) => void;
 }
@@ -180,12 +126,12 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
     }
   };
 
-  // Display achievements from homepageConfig or default
+  // Display achievements from homepageConfig only if configured; do not fallback to hardcoded achievements if empty or deleted
   const displayAchievements = React.useMemo(() => {
-    if (milestonesCms?.achievements && milestonesCms.achievements.length > 0) {
+    if (Array.isArray(milestonesCms?.achievements)) {
       return milestonesCms.achievements;
     }
-    return OFFICIAL_ACHIEVEMENTS;
+    return [];
   }, [milestonesCms]);
 
   // Display milestones from Firestore (editable via Admin Portal) or fallback to official milestones
@@ -327,70 +273,72 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
         </div>
 
         {/* Integrated Key Achievements / By The Numbers Grid */}
-        <div className="max-w-5xl mx-auto pt-8 border-t border-slate-200">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-blue-600" />
-              <span className="text-xs font-mono font-semibold uppercase tracking-wider text-slate-900">
-                {milestonesCms?.achievementsTitle || 'Key Verified Achievements'}
+        {displayAchievements && displayAchievements.length > 0 && (
+          <div className="max-w-5xl mx-auto pt-8 border-t border-slate-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-blue-600" />
+                <span className="text-xs font-mono font-semibold uppercase tracking-wider text-slate-900">
+                  {milestonesCms?.achievementsTitle || 'Key Verified Achievements'}
+                </span>
+              </div>
+              <span className="text-xs text-slate-500 font-medium">
+                {milestonesCms?.achievementsSubtitle || 'Official Company Metrics'}
               </span>
             </div>
-            <span className="text-xs text-slate-500 font-medium">
-              {milestonesCms?.achievementsSubtitle || 'Official Company Metrics'}
-            </span>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
-            {displayAchievements.map((item, idx) => {
-              const Icon = (item as any).icon || getAchievementIcon(item.iconName);
-              return (
-                <div
-                  key={item.id || idx}
-                  className={`p-4 rounded-xl border transition-all duration-200 flex flex-col justify-between h-full ${
-                    item.highlight
-                      ? 'bg-blue-50/70 border-blue-200/90 shadow-2xs'
-                      : 'bg-slate-50/80 border-slate-200/90 hover:bg-white hover:border-blue-200'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="w-7 h-7 rounded-lg bg-blue-100/90 text-blue-600 flex items-center justify-center">
-                        <Icon className="w-3.5 h-3.5" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
+              {displayAchievements.map((item, idx) => {
+                const Icon = (item as any).icon || getAchievementIcon(item.iconName);
+                return (
+                  <div
+                    key={item.id || idx}
+                    className={`p-4 rounded-xl border transition-all duration-200 flex flex-col justify-between h-full ${
+                      item.highlight
+                        ? 'bg-blue-50/70 border-blue-200/90 shadow-2xs'
+                        : 'bg-slate-50/80 border-slate-200/90 hover:bg-white hover:border-blue-200'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="w-7 h-7 rounded-lg bg-blue-100/90 text-blue-600 flex items-center justify-center">
+                          <Icon className="w-3.5 h-3.5" />
+                        </div>
+                        {item.badge && (
+                          <span className="text-[9px] font-mono font-semibold text-slate-500 uppercase tracking-wider">
+                            {item.badge}
+                          </span>
+                        )}
                       </div>
-                      {item.badge && (
-                        <span className="text-[9px] font-mono font-semibold text-slate-500 uppercase tracking-wider">
-                          {item.badge}
-                        </span>
-                      )}
+                      <div className="font-display text-2xl font-bold tracking-tight text-slate-900 mb-0.5">
+                        {item.metric}
+                      </div>
+                      <div className="text-xs font-bold text-blue-600 mb-1 leading-tight">
+                        {item.label}
+                      </div>
                     </div>
-                    <div className="font-display text-2xl font-bold tracking-tight text-slate-900 mb-0.5">
-                      {item.metric}
-                    </div>
-                    <div className="text-xs font-bold text-blue-600 mb-1 leading-tight">
-                      {item.label}
-                    </div>
+                    <p className="text-[11px] text-slate-600 leading-snug mt-2 pt-2 border-t border-slate-200/60">
+                      {item.description}
+                    </p>
                   </div>
-                  <p className="text-[11px] text-slate-600 leading-snug mt-2 pt-2 border-t border-slate-200/60">
-                    {item.description}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* View Company Journey Button */}
-          {onNavigate && (
-            <div className="mt-10 text-center">
-              <button
-                onClick={() => onNavigate('/milestones')}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 font-semibold text-sm hover:border-blue-600 hover:text-blue-600 hover:shadow-md transition-all cursor-pointer group"
-              >
-                <span>View Full Company Journey & Timeline</span>
-                <ChevronRight className="w-4 h-4 text-blue-600 group-hover:translate-x-1 transition-transform" />
-              </button>
+                );
+              })}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* View Company Journey Button */}
+        {onNavigate && (
+          <div className="mt-10 text-center">
+            <button
+              onClick={() => onNavigate('/milestones')}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 font-semibold text-sm hover:border-blue-600 hover:text-blue-600 hover:shadow-md transition-all cursor-pointer group"
+            >
+              <span>View Full Company Journey & Timeline</span>
+              <ChevronRight className="w-4 h-4 text-blue-600 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
+        )}
       </SectionContainer>
     </div>
   );

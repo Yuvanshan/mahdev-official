@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Sparkles, Camera, Terminal, Compass, ShoppingBag } from 'lucide-react';
+import { Home, Sparkles, Camera, Terminal, Compass } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface BottomNavigationProps {
@@ -59,15 +59,6 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
       isActive: normalizedPath === '/travels' || normalizedPath.startsWith('/travels/'),
       onClick: () => {
         onNavigate('/travels');
-      },
-    },
-    {
-      id: 'mart',
-      label: 'Mart',
-      icon: ShoppingBag,
-      isActive: normalizedPath === '/mart' || normalizedPath.startsWith('/mart/'),
-      onClick: () => {
-        onNavigate('/mart');
       },
     },
   ];

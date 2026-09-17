@@ -2,119 +2,36 @@ import React from 'react';
 import { Handshake } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
-import { cmsService } from '../../services/cmsService';
 import { FirestoreTrustedCompany } from '../../types/firestore';
 
 interface TrustedCompaniesSectionProps {
   onExplorePartners?: () => void;
 }
 
-// Fallback curated enterprise client companies
-const DEFAULT_TRUSTED_CLIENTS: FirestoreTrustedCompany[] = [
-  {
-    id: 'tc-dialog',
-    name: 'Dialog Axiata PLC',
-    industry: 'Telecommunications & ICT',
-    partnershipType: 'Enterprise Technology Client',
-    logoUrl: 'https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?auto=format&fit=crop&w=200&q=80',
-    website: 'https://www.dialog.lk',
-    description: 'Islandwide event production & stage engineering.',
-    isPublished: true,
-    order: 1,
-    status: 'active',
-  },
-  {
-    id: 'tc-slt',
-    name: 'SLT-MOBITEL',
-    industry: 'National Telecommunications',
-    partnershipType: 'Strategic Corporate Client',
-    logoUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=200&q=80',
-    website: 'https://www.slt.lk',
-    description: 'Annual corporate gala & technical staging partner.',
-    isPublished: true,
-    order: 2,
-    status: 'active',
-  },
-  {
-    id: 'tc-hilton',
-    name: 'Hilton Colombo',
-    industry: 'Luxury Hospitality',
-    partnershipType: 'Hospitality & Venue Partner',
-    logoUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=200&q=80',
-    website: 'https://www.hilton.com',
-    description: 'Exclusive wedding decor & cinema partner.',
-    isPublished: true,
-    order: 3,
-    status: 'active',
-  },
-  {
-    id: 'tc-cinnamon',
-    name: 'Cinnamon Grand Colombo',
-    industry: 'Luxury Hospitality & Resorts',
-    partnershipType: 'Premier Gala & Banquet Client',
-    logoUrl: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=200&q=80',
-    website: 'https://www.cinnamonhotels.com',
-    description: 'Ballroom staging and grand lighting installations.',
-    isPublished: true,
-    order: 4,
-    status: 'active',
-  },
-  {
-    id: 'tc-jetwing',
-    name: 'Jetwing Hotels & Travels',
-    industry: 'Eco-Luxury Tourism',
-    partnershipType: 'Tourism & Event Collaborator',
-    logoUrl: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=200&q=80',
-    website: 'https://www.jetwinghotels.com',
-    description: 'Travel curation and coastal festival productions.',
-    isPublished: true,
-    order: 5,
-    status: 'active',
-  },
-  {
-    id: 'tc-mas',
-    name: 'MAS Holdings',
-    industry: 'Global Apparel & Technology',
-    partnershipType: 'Corporate Excellence Client',
-    logoUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=200&q=80',
-    website: 'https://www.masholdings.com',
-    description: 'Corporate summit AV production and executive awards staging.',
-    isPublished: true,
-    order: 6,
-    status: 'active',
-  },
-];
-
 export const TrustedCompaniesSection: React.FC<TrustedCompaniesSectionProps> = ({ onExplorePartners }) => {
-  const { trustedCompanies } = useFirestoreDataContext();
+  const { trustedCompanies, homepageConfig } = useFirestoreDataContext();
 
-  // Combine Admin CMS companies, Firestore companies, and fallback clients
-  const cmsCompanies = React.useMemo(() => {
-    try {
-      const local = cmsService.getAll<FirestoreTrustedCompany>('companies', { includeDeleted: false });
-      if (local && local.length > 0) return local;
-    } catch {}
-    return [];
-  }, []);
+  if (homepageConfig?.companies && homepageConfig.companies.enabled === false) {
+    return null;
+  }
 
+  // Strictly display trusted enterprise companies saved in Firestore by the admin
   const activeCompanies = React.useMemo(() => {
-    const combined = [
-      ...trustedCompanies.filter((c) => c.status !== 'inactive' && c.isPublished !== false),
-      ...cmsCompanies.filter((c: any) => c.isActive !== false && !c.isDeleted),
-    ];
+    return (trustedCompanies || [])
+      .filter((c) => c.status !== 'inactive' && c.isPublished !== false && !(c as any).isDeleted)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+  }, [trustedCompanies]);
 
-    if (combined.length > 0) {
-      // Deduplicate by ID or name
-      const map = new Map<string, FirestoreTrustedCompany>();
-      combined.forEach((c) => {
-        const key = c.name?.toLowerCase().trim() || c.id;
-        if (!map.has(key)) map.set(key, c);
-      });
-      return Array.from(map.values()).sort((a, b) => (a.order || 0) - (b.order || 0));
-    }
+  // If no companies exist in Firestore, do not show the section
+  if (activeCompanies.length === 0) {
+    return null;
+  }
 
-    return DEFAULT_TRUSTED_CLIENTS;
-  }, [trustedCompanies, cmsCompanies]);
+  const meta = homepageConfig?.companies || {
+    badge: 'OUR TRUSTED CLIENTS',
+    title: 'Trusted by Industry Leaders',
+    subtitle: 'Collaborating with national institutions, luxury hotel chains, and enterprise leaders across Sri Lanka.',
+  };
 
   return (
     <SectionContainer
@@ -126,13 +43,13 @@ export const TrustedCompaniesSection: React.FC<TrustedCompaniesSectionProps> = (
       <div className="text-center max-w-2xl mx-auto mb-8">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-mono font-semibold text-slate-700 mb-2.5 shadow-2xs">
           <Handshake className="w-3.5 h-3.5 text-blue-600" />
-          <span>OUR TRUSTED CLIENTS</span>
+          <span>{meta.badge || 'OUR TRUSTED CLIENTS'}</span>
         </div>
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold font-display text-slate-900 mb-2">
-          Trusted by Industry Leaders
+          {meta.title || 'Trusted by Industry Leaders'}
         </h2>
         <p className="text-xs sm:text-sm text-slate-600">
-          Collaborating with national institutions, luxury hotel chains, and enterprise leaders across Sri Lanka.
+          {meta.subtitle || 'Collaborating with national institutions, luxury hotel chains, and enterprise leaders across Sri Lanka.'}
         </p>
       </div>
 
