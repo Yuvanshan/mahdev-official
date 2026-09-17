@@ -7,10 +7,80 @@ import {
   PaymentStatus,
   BookingType,
 } from '../types/booking';
-import { FirestoreService } from '../types/firestore';
+import { FirestoreService, FirestoreBooking } from '../types/firestore';
 import { notificationService } from './notificationService';
-import { db, sanitizeForFirestore } from '../lib/firebase';
-import { doc, setDoc, getDocs, collection, deleteDoc } from 'firebase/firestore';
+import { firestoreBookingsService } from './firestore/bookings';
+import { db } from '../lib/firebase';
+import { doc, deleteDoc } from 'firebase/firestore';
+
+export function mapFirestoreBookingToUniversal(fb: any): Booking {
+  const rawCustomer = fb.customer || {};
+  const customerFullName =
+    rawCustomer.fullName ||
+    rawCustomer.name ||
+    fb.customerName ||
+    'Valued Client';
+  const customerEmail = (rawCustomer.email || fb.customerEmail || '').toLowerCase();
+  const customerPhone = rawCustomer.phone || fb.customerPhone || '';
+  const customerCompany = rawCustomer.company || fb.company;
+  const preferredContact = rawCustomer.preferredContactMethod || rawCustomer.preferredContact || 'whatsapp';
+
+  const rawLocation = fb.location || {};
+  const locationAddress =
+    typeof rawLocation === 'string'
+      ? rawLocation
+      : rawLocation.address || rawLocation.venueName || rawLocation.city || 'Colombo, Sri Lanka';
+  const locationVenue = typeof rawLocation === 'object' ? rawLocation.venueName : undefined;
+  const locationCity = typeof rawLocation === 'object' ? rawLocation.city : undefined;
+  const locationType = typeof rawLocation === 'object' && rawLocation.type ? rawLocation.type : 'venue';
+
+  const date = fb.date || fb.bookingDate || fb.eventDate || (fb.createdAt ? fb.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]);
+  const time = fb.time || fb.bookingTime || fb.slot || '09:00 AM - 12:00 PM';
+  const price = Number(fb.price ?? fb.amount ?? 0);
+  const currency = fb.currency || 'USD';
+  const status: BookingStatus = fb.status || 'pending';
+  const paymentStatus: PaymentStatus = fb.paymentStatus || 'unpaid';
+
+  return {
+    id: fb.id,
+    customerId: fb.customerId || `CUST-${fb.id}`,
+    divisionId: fb.divisionId || 'sws',
+    divisionName: fb.divisionName || 'SWS Event Management',
+    bookingType: fb.bookingType || 'event',
+    serviceId: fb.serviceId || 'srv-general',
+    serviceName: fb.serviceName || fb.serviceTitle || 'General Service Booking',
+    serviceSku: fb.serviceSku,
+    serviceImageUrl: fb.serviceImageUrl,
+    packageId: fb.packageId || 'pkg-standard',
+    packageName: fb.packageName || 'Standard Package',
+    packageSku: fb.packageSku,
+    date,
+    time,
+    location: {
+      type: locationType,
+      address: locationAddress,
+      city: locationCity,
+      venueName: locationVenue,
+    },
+    customer: {
+      fullName: customerFullName,
+      email: customerEmail,
+      phone: customerPhone,
+      company: customerCompany,
+      preferredContactMethod: preferredContact,
+    },
+    notes: fb.notes || fb.customerNotes || '',
+    adminNotes: fb.adminNotes,
+    price,
+    currency,
+    paymentStatus,
+    status,
+    createdAt: fb.createdAt || new Date().toISOString(),
+    updatedAt: fb.updatedAt || new Date().toISOString(),
+    cancellationReason: fb.cancellationReason,
+    rejectionReason: fb.rejectionReason,
+  };
+}
 
 export function mapFirestoreServiceToBookable(fs: FirestoreService): BookableServiceItem {
   const meta = (fs.metadata || {}) as any;
@@ -62,9 +132,82 @@ const STORAGE_KEY = 'mahdev_bookings_store_v1';
 class UniversalBookingService {
   private services: BookableServiceItem[] = [];
   private bookings: Booking[] = [];
+  private subscribers: Set<(bookings: Booking[]) => void> = new Set();
+  private unsubscribeFirestore: (() => void) | null = null;
 
   constructor() {
     this.loadFromStorage();
+    this.initFirestoreSubscription();
+  }
+
+  public subscribe(callback: (bookings: Booking[]) => void): () => void {
+    this.subscribers.add(callback);
+    return () => {
+      this.subscribers.delete(callback);
+    };
+  }
+
+  private notifySubscribers(): void {
+    const list = this.getAllBookings();
+    this.subscribers.forEach((cb) => {
+      try {
+        cb(list);
+      } catch (err) {
+        console.warn('[BookingService] Subscriber callback error:', err);
+      }
+    });
+  }
+
+  private initFirestoreSubscription(): void {
+    if (typeof window === 'undefined') return;
+    try {
+      this.unsubscribeFirestore = firestoreBookingsService.subscribeAllBookings(
+        (remoteDocs) => {
+          this.syncRemoteBookings(remoteDocs);
+        },
+        (err) => {
+          console.warn('[BookingService] Live Firestore subscription warning:', err);
+        }
+      );
+    } catch (err) {
+      console.warn('[BookingService] Failed to establish live Firestore listener:', err);
+    }
+  }
+
+  public syncRemoteBookings(remoteDocs: any[]): void {
+    if (!Array.isArray(remoteDocs)) return;
+    const mapped = remoteDocs.map(mapFirestoreBookingToUniversal);
+    const map = new Map<string, Booking>();
+    // Start with existing
+    for (const b of this.bookings) {
+      map.set(b.id, b);
+    }
+    // Remote documents update or add
+    for (const b of mapped) {
+      map.set(b.id, b);
+    }
+    this.bookings = Array.from(map.values()).sort(
+      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
+    this.saveToStorage();
+    this.notifySubscribers();
+  }
+
+  public async refreshFromFirestore(): Promise<Booking[]> {
+    try {
+      const remote = await firestoreBookingsService.getAllBookings();
+      this.syncRemoteBookings(remote);
+      return this.getAllBookings();
+    } catch (e) {
+      console.warn('[BookingService] refreshFromFirestore error:', e);
+      return this.getAllBookings();
+    }
+  }
+
+  public setBookings(bookings: Booking[]): void {
+    this.bookings = bookings;
+    this.saveToStorage();
+    this.notifySubscribers();
   }
 
   public syncWithFirestore(firestoreServices: FirestoreService[]): void {
@@ -79,19 +222,12 @@ class UniversalBookingService {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
-          const testEmails = ['test', 'example.com', 'fake', 'dummy'];
           const genuine = parsed.filter((b: any) => {
             if (!b || !b.id) return false;
-            if (typeof b.id === 'string' && (b.id.startsWith('TEST-') || b.id.startsWith('FAKE-') || b.id.startsWith('DEMO-'))) return false;
-            const email = (b.customer?.email || '').toLowerCase();
-            const name = (b.customer?.fullName || '').toLowerCase();
-            if (testEmails.some((t) => email.includes(t) || name.includes(t))) return false;
+            if (typeof b.id === 'string' && (b.id.startsWith('DEMO-') || b.id.startsWith('FAKE-'))) return false;
             return true;
           });
           this.bookings = genuine;
-          if (genuine.length !== parsed.length) {
-            this.saveToStorage();
-          }
         } else {
           this.bookings = [];
         }
@@ -338,34 +474,12 @@ class UniversalBookingService {
     // Prepend to bookings array
     this.bookings = [newBooking, ...this.bookings];
     this.saveToStorage();
+    this.notifySubscribers();
 
-    // Persist to Cloud Firestore bookings collection
-    try {
-      const docRef = doc(db, 'bookings', newBooking.id);
-      setDoc(docRef, sanitizeForFirestore({
-        ...newBooking,
-        id: newBooking.id,
-        customerId: newBooking.customerId,
-        serviceId: newBooking.serviceId,
-        divisionId: newBooking.divisionId,
-        bookingDate: newBooking.date,
-        bookingTime: newBooking.time,
-        status: newBooking.status,
-        amount: newBooking.price,
-        currency: newBooking.currency,
-        paymentStatus: newBooking.paymentStatus,
-        customer: newBooking.customer,
-        divisionName: newBooking.divisionName,
-        serviceName: newBooking.serviceName,
-        packageId: newBooking.packageId,
-        packageName: newBooking.packageName,
-        location: newBooking.location,
-        createdAt: newBooking.createdAt,
-        updatedAt: newBooking.updatedAt,
-      }), { merge: true }).catch((err) => console.warn('[Firestore] Booking write error:', err));
-    } catch (e) {
-      console.warn('[Firestore] Booking sync error:', e);
-    }
+    // Persist to Cloud Firestore bookings collection in realtime
+    firestoreBookingsService
+      .createBooking(newBooking as any)
+      .catch((err) => console.warn('[BookingService] Firestore booking create error:', err));
 
     // Trigger non-blocking customer confirmation email and admin alert
     notificationService.notifyBookingConfirmation(newBooking).catch(() => {});
@@ -444,6 +558,16 @@ class UniversalBookingService {
     booking.rejectionReason = reason;
     booking.updatedAt = new Date().toISOString();
     this.saveToStorage();
+    this.notifySubscribers();
+
+    firestoreBookingsService
+      .updateBooking(id, {
+        status: 'rejected',
+        rejectionReason: reason,
+        updatedAt: booking.updatedAt,
+      } as any)
+      .catch((err) => console.warn('[BookingService] Firestore reject error:', err));
+
     return { success: true, booking };
   }
 
@@ -470,6 +594,19 @@ class UniversalBookingService {
     }
     booking.updatedAt = new Date().toISOString();
     this.saveToStorage();
+    this.notifySubscribers();
+
+    firestoreBookingsService
+      .updateBooking(id, {
+        date: newDate,
+        bookingDate: newDate,
+        time: newTime,
+        bookingTime: newTime,
+        status: 'scheduled',
+        ...(booking.adminNotes ? { adminNotes: booking.adminNotes } : {}),
+        updatedAt: booking.updatedAt,
+      } as any)
+      .catch((err) => console.warn('[BookingService] Firestore reschedule error:', err));
 
     // Dispatch update notification
     notificationService.notifyBookingUpdate(booking, `Rescheduled to ${newDate} (${newTime})`).catch(() => {});
@@ -485,6 +622,15 @@ class UniversalBookingService {
     booking.cancellationReason = reason;
     booking.updatedAt = new Date().toISOString();
     this.saveToStorage();
+    this.notifySubscribers();
+
+    firestoreBookingsService
+      .updateBooking(id, {
+        status: 'cancelled',
+        cancellationReason: reason,
+        updatedAt: booking.updatedAt,
+      } as any)
+      .catch((err) => console.warn('[BookingService] Firestore cancel error:', err));
 
     // Dispatch cancellation notification
     notificationService.notifyBookingCancellation(booking, reason).catch(() => {});
@@ -502,6 +648,16 @@ class UniversalBookingService {
     }
     booking.updatedAt = new Date().toISOString();
     this.saveToStorage();
+    this.notifySubscribers();
+
+    firestoreBookingsService
+      .updateBooking(id, {
+        status: 'completed',
+        ...(booking.adminNotes ? { adminNotes: booking.adminNotes } : {}),
+        updatedAt: booking.updatedAt,
+      } as any)
+      .catch((err) => console.warn('[BookingService] Firestore complete error:', err));
+
     return { success: true, booking };
   }
 
@@ -512,6 +668,15 @@ class UniversalBookingService {
     booking.paymentStatus = paymentStatus;
     booking.updatedAt = new Date().toISOString();
     this.saveToStorage();
+    this.notifySubscribers();
+
+    firestoreBookingsService
+      .updateBooking(id, {
+        paymentStatus,
+        updatedAt: booking.updatedAt,
+      } as any)
+      .catch((err) => console.warn('[BookingService] Firestore payment update error:', err));
+
     return { success: true, booking };
   }
 
@@ -529,6 +694,16 @@ class UniversalBookingService {
     }
     booking.updatedAt = new Date().toISOString();
     this.saveToStorage();
+    this.notifySubscribers();
+
+    firestoreBookingsService
+      .updateBooking(id, {
+        status,
+        ...(adminNotes ? { adminNotes } : {}),
+        updatedAt: booking.updatedAt,
+      } as any)
+      .catch((err) => console.warn('[BookingService] Firestore status update error:', err));
+
     return { success: true, booking };
   }
 
@@ -538,9 +713,10 @@ class UniversalBookingService {
     if (index !== -1) {
       this.bookings.splice(index, 1);
       this.saveToStorage();
+      this.notifySubscribers();
     }
     try {
-      await deleteDoc(doc(db, 'bookings', cleanId));
+      await firestoreBookingsService.deleteBooking(cleanId);
     } catch (e) {
       console.warn(`[BookingService] Firestore booking delete error for ${cleanId}:`, e);
     }
@@ -561,12 +737,13 @@ class UniversalBookingService {
     const removed = this.bookings.filter((b) => !genuine.includes(b));
     for (const b of removed) {
       try {
-        await deleteDoc(doc(db, 'bookings', b.id));
+        await firestoreBookingsService.deleteBooking(b.id);
       } catch {}
     }
 
     this.bookings = genuine;
     this.saveToStorage();
+    this.notifySubscribers();
     return { removedCount: initialCount - genuine.length };
   }
 }

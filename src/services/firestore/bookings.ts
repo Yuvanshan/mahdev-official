@@ -218,9 +218,9 @@ export const firestoreBookingsService = {
    */
   async getAllBookings(): Promise<FirestoreBooking[]> {
     try {
-      const q = query(collection(db, 'bookings'), orderBy('createdAt', 'desc'));
-      const snap = await getDocs(q);
-      return snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreBooking[];
+      const snap = await getDocs(collection(db, 'bookings'));
+      const items = snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreBooking[];
+      return items.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     } catch (err) {
       console.warn('[Firestore Bookings] getAllBookings error:', err);
       return [];

@@ -27,7 +27,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import { Booking, BookingStatus, PaymentStatus } from '../../types/booking';
-import { bookingService } from '../../services/bookingService';
+import { bookingService, mapFirestoreBookingToUniversal } from '../../services/bookingService';
+import { firestoreBookingsService } from '../../services/firestore/bookings';
 import { useAdminAuth } from '../../context/AdminAuthContext';
 import { Button } from '../../components/ui/Button';
 import { AdminModal } from '../../components/admin/AdminModal';
@@ -36,7 +37,10 @@ import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 
 export const AdminBookingsView: React.FC = () => {
   const { admin, logAuditAction } = useAdminAuth();
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>(() => bookingService.getAllBookings());
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [divisionFilter, setDivisionFilter] = useState<string>('all');
@@ -73,12 +77,37 @@ export const AdminBookingsView: React.FC = () => {
     }, 4000);
   };
 
-  const loadBookings = () => {
-    const list = bookingService.getAllBookings();
-    setBookings(list);
-    if (selectedBooking) {
-      const updated = list.find((b) => b.id === selectedBooking.id);
-      if (updated) setSelectedBooking(updated);
+  const loadBookings = async (showSpinner = true) => {
+    if (showSpinner) setIsRefreshing(true);
+    try {
+      const remote = await firestoreBookingsService.getAllBookings();
+      if (Array.isArray(remote)) {
+        const mapped = remote.map(mapFirestoreBookingToUniversal);
+        const map = new Map<string, Booking>();
+        // First local cache
+        for (const local of bookingService.getAllBookings()) {
+          map.set(local.id, local);
+        }
+        // Then remote updates
+        for (const r of mapped) {
+          map.set(r.id, r);
+        }
+        const sorted = Array.from(map.values()).sort(
+          (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+        );
+        setBookings(sorted);
+        bookingService.setBookings(sorted);
+        if (selectedBooking) {
+          const updated = sorted.find((b) => b.id === selectedBooking.id);
+          if (updated) setSelectedBooking(updated);
+        }
+      }
+    } catch (e) {
+      console.warn('[AdminBookingsView] loadBookings warning:', e);
+      setBookings(bookingService.getAllBookings());
+    } finally {
+      if (showSpinner) setIsRefreshing(false);
+      setIsLoading(false);
     }
   };
 
@@ -92,7 +121,7 @@ export const AdminBookingsView: React.FC = () => {
       if (selectedBooking?.id === bookingToDelete.id) {
         setSelectedBooking(null);
       }
-      loadBookings();
+      loadBookings(false);
     } catch {
       addToast('error', 'Delete Failed', 'Failed to delete booking.');
     } finally {
@@ -107,7 +136,7 @@ export const AdminBookingsView: React.FC = () => {
       const res = await bookingService.clearAllTestBookings();
       logAuditAction('BOOKINGS_PURGED', 'Booking', 'ALL_TEST', `Purged ${res.removedCount} sample/test bookings.`);
       addToast('success', 'Test Bookings Removed', `Cleaned up ${res.removedCount} test/sample bookings.`);
-      loadBookings();
+      loadBookings(false);
     } catch {
       addToast('error', 'Cleanup Failed', 'Failed to purge test bookings.');
     } finally {
@@ -117,7 +146,57 @@ export const AdminBookingsView: React.FC = () => {
   };
 
   useEffect(() => {
-    loadBookings();
+    let isMounted = true;
+    setIsLoading(true);
+
+    // 1. Subscribe to bookingService local bus
+    const unsubLocal = bookingService.subscribe((updatedBookings) => {
+      if (!isMounted) return;
+      setBookings(updatedBookings);
+      if (selectedBooking) {
+        const updated = updatedBookings.find((b) => b.id === selectedBooking.id);
+        if (updated) setSelectedBooking(updated);
+      }
+    });
+
+    // 2. Direct Firestore realtime listener (instant cloud sync across tabs/devices)
+    const unsubFirestore = firestoreBookingsService.subscribeAllBookings(
+      (remoteDocs) => {
+        if (!isMounted) return;
+        if (Array.isArray(remoteDocs)) {
+          const mapped = remoteDocs.map(mapFirestoreBookingToUniversal);
+          const map = new Map<string, Booking>();
+          for (const local of bookingService.getAllBookings()) {
+            map.set(local.id, local);
+          }
+          for (const r of mapped) {
+            map.set(r.id, r);
+          }
+          const sorted = Array.from(map.values()).sort(
+            (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+          );
+          setBookings(sorted);
+          bookingService.setBookings(sorted);
+          setIsLiveConnected(true);
+          setIsLoading(false);
+        }
+      },
+      (err) => {
+        if (!isMounted) return;
+        console.warn('[AdminBookingsView] Firestore subscription error:', err);
+        setIsLiveConnected(false);
+        setIsLoading(false);
+      }
+    );
+
+    // Initial manual load from Firestore
+    loadBookings(false);
+
+    return () => {
+      isMounted = false;
+      unsubLocal();
+      unsubFirestore();
+    };
   }, []);
 
   // Action Handlers
@@ -325,11 +404,22 @@ export const AdminBookingsView: React.FC = () => {
       {/* Header */}
       <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <Calendar className="w-5 h-5 text-blue-600" />
             <h2 className="font-display text-lg font-bold text-slate-900">
               Bookings & Service Scheduling ({bookings.length})
             </h2>
+            {isLiveConnected ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live Sync
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                Connecting
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
             Coordinate enterprise productions, cinema shoots, private tours, IT consulting engagements, and client itineraries.
@@ -349,11 +439,12 @@ export const AdminBookingsView: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={loadBookings}
-            leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
+            onClick={() => loadBookings(true)}
+            leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />}
+            disabled={isRefreshing}
             className="text-xs font-bold"
           >
-            Refresh Schedule
+            {isRefreshing ? 'Syncing...' : 'Refresh Schedule'}
           </Button>
         </div>
       </div>
@@ -416,7 +507,16 @@ export const AdminBookingsView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
-              {filteredBookings.length === 0 ? (
+              {isLoading && bookings.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-slate-500">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <RefreshCw className="w-6 h-6 text-blue-500 animate-spin" />
+                      <p className="text-xs font-medium text-slate-600">Connecting to live reservation telemetry...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredBookings.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-slate-500">
                     No reservations found matching filters.
