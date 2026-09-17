@@ -8,8 +8,8 @@ import { WhyMahdevSection } from '../components/home/WhyMahdevSection';
 import { HappyClientsAndProjectsSection } from '../components/home/HappyClientsAndProjectsSection';
 import { DecorationVideoShowcase } from '../components/home/DecorationVideoShowcase';
 import { FeaturedWorkSection } from '../components/home/FeaturedWorkSection';
+import { HomeGallerySection } from '../components/home/HomeGallerySection';
 import { MilestonesSection } from '../components/home/MilestonesSection';
-import { TrustedCompaniesSection } from '../components/home/TrustedCompaniesSection';
 import { TestimonialsSection } from '../components/corporate/TestimonialsSection';
 import { CallToActionSection } from '../components/home/CallToActionSection';
 import { ContactCorporateSection } from '../components/corporate/ContactCorporateSection';
@@ -87,15 +87,37 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
         return <FeaturedServicesSection key={id} onNavigate={onNavigate} />;
       case 'statistics':
         return <HappyClientsAndProjectsSection key={id} />;
-      case 'gallery':
       case 'portfolio':
         return <FeaturedWorkSection key={id} onNavigate={onNavigate} />;
+      case 'gallery':
+        return <HomeGallerySection key={id} />;
       case 'decorationShowcase':
         return <DecorationVideoShowcase key={id} onNavigate={onNavigate} />;
       default:
         return null;
     }
   };
+
+  const renderedSections = React.useMemo(() => {
+    const sections = activeSections.map((sec) => renderSectionByKey(sec.sectionKey, sec.id));
+    const servicesIndex = sections.findIndex((node) => node && (node as any)?.key === activeSections.find((sec) => sec.sectionKey === 'services')?.id);
+    const galleryIndex = sections.findIndex((node) => node && (node as any)?.key === activeSections.find((sec) => sec.sectionKey === 'gallery' || sec.sectionKey === 'portfolio')?.id);
+
+    if (servicesIndex >= 0 && galleryIndex >= 0 && galleryIndex < servicesIndex) {
+      const galleryNode = sections.splice(galleryIndex, 1)[0];
+      sections.splice(servicesIndex + 1, 0, galleryNode);
+    }
+
+    // A gallery is a required home section. CMS ordering may omit it on older
+    // installations, so inject it directly after Services without duplicating it.
+    const hasGallery = activeSections.some((section) => section.sectionKey === 'gallery');
+    if (!hasGallery) {
+      const serviceIndex = sections.findIndex((node) => node && (node as any)?.key === activeSections.find((section) => section.sectionKey === 'services')?.id);
+      sections.splice(serviceIndex >= 0 ? serviceIndex + 1 : sections.length, 0, <HomeGallerySection key="firestore-gallery" />);
+    }
+
+    return sections.filter(Boolean);
+  }, [activeSections]);
 
   const effectiveBrandName = companySettings?.name
     ? (companySettings.name.includes('(Pvt) Ltd') || companySettings.name.includes('Pvt Ltd') ? companySettings.name : `${companySettings.name} (Pvt) Ltd`)
@@ -120,15 +142,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
       />
 
       {/* CORE DYNAMIC CMS SECTIONS */}
-      {activeSections.map((sec) => renderSectionByKey(sec.sectionKey, sec.id))}
+      {renderedSections}
 
       {/* MILESTONES (KEPT AS EXPLICITLY REQUESTED) */}
       <MilestonesSection onNavigate={onNavigate} />
-
-      {/* OUR TRUSTED CLIENTS (COMPANIES FROM ADMIN PORTAL) */}
-      <TrustedCompaniesSection
-        onExplorePartners={() => onNavigate('/clients')}
-      />
 
       {/* WHAT OUR CUSTOMERS SAY ABOUT US (TESTIMONIALS FROM ADMIN PORTAL) */}
       <TestimonialsSection onNavigate={onNavigate} />

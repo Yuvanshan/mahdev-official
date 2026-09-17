@@ -71,17 +71,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Admin Uploaded Media or Fallback to /assets/hero_video.mp4
-  const rawCandidateVideo =
-    heroConfig?.videoUrl?.trim() ||
-    (heroConfig as any)?.heroVideoUrl?.trim() ||
-    (heroConfig?.mediaType === 'video' ? heroConfig?.mediaUrl?.trim() : '') ||
-    '';
-
-  const isDefaultOrPlaceholder =
-    !rawCandidateVideo ||
-    rawCandidateVideo.includes('assets.mixkit.co') ||
-    rawCandidateVideo === '';
 
   const rawHeroImage =
     (heroConfig as any)?.bgImage ||
@@ -94,9 +83,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       ? rawHeroImage.trim()
       : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
 
-  const effectiveVideoUrl = isDefaultOrPlaceholder
-    ? '/assets/hero_video.mp4'
-    : rawCandidateVideo;
+  // The landing page always owns the supplied public hero movie. Division
+  // videos are deliberately resolved only by their own division hero.
+  const effectiveVideoUrl = '/assets/hero_main.mp4';
 
   const handleExplore = () => {
     if (onExploreServices) {

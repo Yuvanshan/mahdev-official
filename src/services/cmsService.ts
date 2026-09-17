@@ -1656,6 +1656,12 @@ class CmsService {
           },
         ],
       },
+      leadership: {
+        enabled: true,
+        title: 'Executive Leadership',
+        subtitle: 'Guided by experienced sector directors, creative visionaries, and cloud architects committed to institutional governance and client success.',
+        members: [],
+      },
       featuredServices: {
         badge: 'FLAGSHIP SOLUTIONS',
         title: 'Featured Services & Solutions',

@@ -310,12 +310,16 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
         {/* Full-bleed Video or Image Background */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           {(() => {
+            // Admin uploads are written to both the top-level division fields
+            // and the nested hero payload. Prefer those Firestore values, then
+            // use the corporate landing movie only if this division has none.
             const divVideo =
               (firestoreDiv as any)?.heroVideoUrl ||
               (firestoreDiv as any)?.videoUrl ||
               (firestoreDiv?.hero as any)?.videoUrl ||
+              ((firestoreDiv?.hero as any)?.mediaType === 'video' ? (firestoreDiv?.hero as any)?.mediaUrl : '') ||
               (baseDivision as any)?.heroVideoUrl ||
-              '';
+              '/assets/hero_main.mp4';
             const divImg =
               (firestoreDiv as any)?.defaultImageUrl ||
               (firestoreDiv as any)?.heroImageUrl ||
@@ -327,7 +331,13 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
               (baseDivision as any)?.imageUrl ||
               'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
 
-            const effectiveVideo = (firestoreDiv as any)?.heroMediaType === 'image' && !(firestoreDiv as any)?.heroVideoUrl && !(firestoreDiv as any)?.videoUrl ? '' : divVideo;
+            const hasFirestoreVideo = Boolean(
+              (firestoreDiv as any)?.heroVideoUrl ||
+              (firestoreDiv as any)?.videoUrl ||
+              (firestoreDiv?.hero as any)?.videoUrl ||
+              ((firestoreDiv?.hero as any)?.mediaType === 'video' && (firestoreDiv?.hero as any)?.mediaUrl)
+            );
+            const effectiveVideo = hasFirestoreVideo ? divVideo : '/assets/hero_main.mp4';
 
             return (
               <HeroVideoBackground

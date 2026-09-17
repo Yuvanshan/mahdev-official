@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Sparkles, Camera, Terminal, Compass } from 'lucide-react';
+import { Home, Sparkles, Camera, Terminal, Compass, ShoppingBag } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface BottomNavigationProps {
@@ -36,7 +36,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
     },
     {
       id: 'u1',
-      label: 'U1 Studio',
+      label: 'U1',
       icon: Camera,
       isActive: normalizedPath === '/u1' || normalizedPath.startsWith('/u1/'),
       onClick: () => {
@@ -45,7 +45,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
     },
     {
       id: 'it',
-      label: 'IT Tech',
+      label: 'IT',
       icon: Terminal,
       isActive: normalizedPath === '/it' || normalizedPath.startsWith('/it/'),
       onClick: () => {
@@ -54,11 +54,20 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
     },
     {
       id: 'travels',
-      label: 'Travels',
+      label: 'Travel',
       icon: Compass,
       isActive: normalizedPath === '/travels' || normalizedPath.startsWith('/travels/'),
       onClick: () => {
         onNavigate('/travels');
+      },
+    },
+    {
+      id: 'mart',
+      label: 'Mart',
+      icon: ShoppingBag,
+      isActive: normalizedPath === '/mart' || normalizedPath.startsWith('/mart/') || normalizedPath === '/online-mart' || normalizedPath.startsWith('/online-mart/') || normalizedPath === '/shop' || normalizedPath.startsWith('/shop/'),
+      onClick: () => {
+        onNavigate('/mart');
       },
     },
   ];
@@ -70,8 +79,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
       className="lg:hidden fixed bottom-3 left-0 right-0 z-50 flex justify-center items-center pointer-events-none px-2"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0.5rem)' }}
     >
-      {/* Floating Pill Container */}
-      <div className="pointer-events-auto flex items-center justify-between gap-0.5 w-full max-w-lg px-1.5 py-1.5 rounded-full bg-slate-950/95 backdrop-blur-xl border border-white/10 shadow-2xl shadow-slate-950/50">
+      <div className="pointer-events-auto flex items-center justify-between gap-0.5 w-full max-w-[28rem] px-1.5 py-1.5 rounded-full bg-slate-950/95 backdrop-blur-xl border border-white/10 shadow-2xl shadow-slate-950/50">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = item.isActive;
@@ -81,13 +89,12 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
               type="button"
               id={`nav-tab-${item.id}`}
               onClick={item.onClick}
-              className={`relative flex-1 min-w-0 flex flex-col items-center justify-center py-1.5 px-1 rounded-full transition-all duration-200 cursor-pointer select-none touch-manipulation active:scale-95 ${
+              className={`relative flex-1 min-w-0 flex flex-col items-center justify-center py-1.5 px-0.5 rounded-full transition-all duration-200 cursor-pointer select-none touch-manipulation active:scale-95 ${
                 active ? 'text-white font-semibold' : 'text-slate-400 hover:text-slate-200'
               }`}
               aria-label={item.label}
               aria-current={active ? 'page' : undefined}
             >
-              {/* Active Background Pill Indicator */}
               {active && (
                 <motion.div
                   layoutId="bottomNavActivePill"
@@ -96,7 +103,6 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
                 />
               )}
 
-              {/* Icon */}
               <div className="relative z-10 flex items-center justify-center">
                 <Icon
                   className={`w-4 h-4 transition-transform duration-200 ${
@@ -105,8 +111,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
                 />
               </div>
 
-              {/* Short Label */}
-              <span className="relative z-10 text-[9.5px] tracking-tight leading-tight mt-0.5 whitespace-nowrap truncate max-w-full">
+              <span className="relative z-10 text-[9px] tracking-tight leading-tight mt-0.5 whitespace-nowrap truncate max-w-full">
                 {item.label}
               </span>
             </button>

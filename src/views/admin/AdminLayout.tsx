@@ -35,11 +35,9 @@ import {
 import { activeFirestoreDatabaseId } from '../../lib/firebase';
 import { AdminSectionId } from '../../types/admin';
 import { useAdminAuth } from '../../context/AdminAuthContext';
-import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { AdminLoginView } from './AdminLoginView';
 import { AdminNotificationCenter } from '../../components/admin/AdminNotificationCenter';
 import { SEOHead } from '../../components/layout/SEOHead';
-import { InitialAppLoader } from '../../components/common/InitialAppLoader';
 import { BrandLogo } from '../../components/layout/BrandLogo';
 
 import { AdminDashboardView } from './AdminDashboardView';
@@ -130,8 +128,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
 ];
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigate }) => {
-  const { admin, session, isAuthenticated, isLoading, logout } = useAdminAuth();
-  const { isInitialLoading, isReady } = useFirestoreDataContext();
+  const { admin, session, isAuthenticated, logout } = useAdminAuth();
   const [activeSection, setActiveSection] = useState<AdminSectionId>(() => {
     if (typeof window !== 'undefined' && currentPath) {
       const match = currentPath.match(/^\/admin\/([a-z0-9-]+)/i);
@@ -173,16 +170,6 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
   // 1. Authentication Guard: If not authenticated, show Admin Login View immediately
   if (!isAuthenticated || !admin) {
     return <AdminLoginView onNavigate={onNavigate} onSuccess={() => setActiveSection('dashboard')} />;
-  }
-
-  // 2. Loading State for authenticated admin (Data Hydration)
-  if (isLoading || (isInitialLoading && !isReady)) {
-    return (
-      <InitialAppLoader
-        message="Executive Console"
-        subMessage="Securing administrative session..."
-      />
-    );
   }
 
   // Render appropriate view based on active section

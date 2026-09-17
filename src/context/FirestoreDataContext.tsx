@@ -707,7 +707,22 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   const updateHomepageConfig = useCallback(async (data: Partial<HomepageCmsConfig>) => {
     await firestoreSettingsService.updateHomepageSettings(data);
     setHomepageConfig((prev) => {
-      const merged = { ...prev, ...data };
+      const merged = {
+        ...prev,
+        ...data,
+        hero: { ...prev.hero, ...data.hero },
+        intro: { ...prev.intro, ...data.intro },
+        featuredServices: { ...prev.featuredServices, ...data.featuredServices },
+        featuredProducts: { ...prev.featuredProducts, ...data.featuredProducts },
+        portfolio: { ...prev.portfolio, ...data.portfolio },
+        milestones: { ...prev.milestones, ...data.milestones },
+        companies: { ...prev.companies, ...data.companies },
+        testimonials: { ...prev.testimonials, ...data.testimonials },
+        ctaSection: { ...prev.ctaSection, ...data.ctaSection },
+        seo: { ...prev.seo, ...data.seo },
+        whyMahdev: { ...prev.whyMahdev, ...data.whyMahdev },
+        leadership: { ...prev.leadership, ...data.leadership },
+      } as HomepageCmsConfig;
       return merged;
     });
     try {

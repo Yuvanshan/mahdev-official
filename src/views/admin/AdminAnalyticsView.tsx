@@ -88,6 +88,35 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
 
   if (!report) return null;
 
+  const hasRealAnalytics =
+    report.dailyTrends.some((point) => point.revenue > 0 || point.orders > 0 || point.bookings > 0 || point.visitors > 0) ||
+    report.divisionPerformance.some((division) => division.pageViews > 0 || division.bookingsCount > 0 || division.ordersCount > 0 || division.grossRevenue > 0) ||
+    report.topProducts.some((product) => product.unitsSold > 0 || product.views > 0 || product.cartAdds > 0) ||
+    report.topServices.some((service) => service.bookingsCount > 0 || service.views > 0) ||
+    report.ecommerceFunnel.some((stage) => stage.count > 0) ||
+    report.bookingFunnel.some((stage) => stage.count > 0) ||
+    report.paymentGatewayDistribution.some((gateway) => gateway.transactionsCount > 0 || gateway.volume > 0);
+
+  if (!hasRealAnalytics) {
+    return (
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-10 shadow-sm">
+        <div className="mx-auto max-w-xl text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
+            <BarChart2 className="h-6 w-6" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-900">No analytics data yet</h3>
+          <p className="mt-2 text-sm text-slate-600">
+            Orders, bookings, and customer activity will appear here once the business starts generating real engagement.
+          </p>
+          <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-600">
+            <Activity className="h-3.5 w-3.5 text-[#0052FF]" />
+            Waiting for live operational data
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Find max revenue for SVG chart scaling
   const maxRevenue = Math.max(...report.dailyTrends.map((d) => d.revenue), 100);
   const chartHeight = 160;

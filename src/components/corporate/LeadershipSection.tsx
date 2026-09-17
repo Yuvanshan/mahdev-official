@@ -1,18 +1,13 @@
 import React, { useState } from 'react';
-import { Mail, Linkedin, Award, Users, ChevronRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { Mail, Linkedin, ChevronRight, ShieldCheck, Sparkles } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body, Caption } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
-import {
-  ScrollReveal,
-  TiltCard,
-  Magnetic,
-  BlurReveal,
-} from '../motion/MotionWrappers';
-import { LEADERSHIP_TEAM } from '../../data/corporateData';
+import { ScrollReveal, TiltCard } from '../motion/MotionWrappers';
 import { LeadershipMember } from '../../types';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 interface LeadershipSectionProps {
   onContactLeadership?: (member: LeadershipMember) => void;
@@ -20,22 +15,48 @@ interface LeadershipSectionProps {
 
 export const LeadershipSection: React.FC<LeadershipSectionProps> = ({ onContactLeadership }) => {
   const [selectedMember, setSelectedMember] = useState<LeadershipMember | null>(null);
+  const { homepageConfig } = useFirestoreDataContext();
+  const leadershipConfig = homepageConfig?.leadership || {
+    enabled: true,
+    title: 'Executive Leadership',
+    subtitle: 'Guided by experienced sector directors, creative visionaries, and cloud architects committed to institutional governance and client success.',
+    members: [],
+  };
+  const members = (leadershipConfig.members && leadershipConfig.members.length > 0
+    ? leadershipConfig.members
+    : []).map((member) => ({
+      id: member.id || `${member.name}-leadership`,
+      name: member.name,
+      title: member.title,
+      role: member.role,
+      bio: member.bio,
+      photoUrl: member.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+      divisionFocus: member.divisionFocus || member.badge || 'Executive Board',
+      linkedin: member.linkedin,
+      email: member.email,
+      badge: member.badge || member.divisionFocus || 'Executive Board',
+      credentials: member.credentials || [],
+    })) as LeadershipMember[];
+
+  if (leadershipConfig.enabled === false) {
+    return null;
+  }
 
   return (
     <SectionContainer id="leadership" background="white" paddingY="xl" hasBorderBottom>
       <ScrollReveal direction="up">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <Caption className="text-[#0052FF] mb-2 block">Executive Stewardship</Caption>
-          <H2 className="text-slate-900 mb-3">Executive Leadership</H2>
+          <H2 className="text-slate-900 mb-3">{leadershipConfig.title || 'Executive Leadership'}</H2>
           <Body className="text-slate-600 text-base">
-            Guided by experienced sector directors, creative visionaries, and cloud architects committed to institutional governance and client success.
+            {leadershipConfig.subtitle || 'Guided by experienced sector directors, creative visionaries, and cloud architects committed to institutional governance and client success.'}
           </Body>
         </div>
       </ScrollReveal>
 
       {/* Leadership Grid / Mobile Horizontal Swipe Track */}
       <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 lg:gap-8 sm:overflow-visible">
-        {LEADERSHIP_TEAM.map((member, idx) => (
+        {members.length > 0 ? members.map((member, idx) => (
           <div
             key={member.id}
             className="min-w-[85vw] sm:min-w-0 snap-center shrink-0 sm:shrink"
@@ -118,7 +139,9 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({ onContactL
               </TiltCard>
             </ScrollReveal>
           </div>
-        ))}
+        )) : (
+          <div className="w-full text-center text-sm text-slate-500 py-12">No executive leadership data has been saved yet in the admin portal.</div>
+        )}
 
         {/* Executive Governance & Culture Card */}
         <div className="min-w-[85vw] sm:min-w-0 snap-center shrink-0 sm:shrink">

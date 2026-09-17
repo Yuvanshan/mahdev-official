@@ -5,19 +5,22 @@ import { TimelineCinematic } from '../components/corporate/TimelineCinematic';
 import { TrustedCompaniesMatrix } from '../components/corporate/TrustedCompaniesMatrix';
 import { WhyMahdevSection } from '../components/home/WhyMahdevSection';
 import { CallToActionSection } from '../components/home/CallToActionSection';
-import { H1, Body, Caption } from '../components/ui/Heading';
+import { H1, Body } from '../components/ui/Heading';
 import { SectionContainer } from '../components/ui/SectionContainer';
 import { ScrollReveal } from '../components/motion/MotionWrappers';
 import { Badge } from '../components/ui/Badge';
 import { BRAND_CONFIG } from '../config/brand';
 import { LeadershipMember } from '../types';
 import { SEOHead } from '../components/layout/SEOHead';
+import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 
 interface AboutViewProps {
   onNavigate: (route: string) => void;
 }
 
 export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
+  const { companySettings, homepageConfig } = useFirestoreDataContext();
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
@@ -25,6 +28,10 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
   const handleContactLeadership = (member: LeadershipMember) => {
     onNavigate('/contact');
   };
+
+  const aboutPage = homepageConfig?.aboutPage || {};
+  const aboutTitle = aboutPage.title || (companySettings?.tagline ? `${companySettings.name} — ${companySettings.tagline}` : 'Pioneering Creative Artistry & Modern Technology');
+  const aboutDescription = aboutPage.description || companySettings?.description || 'Mahdev Pvt Ltd is an integrated parent enterprise governing five autonomous business divisions—harmonizing event production, cinema media, cloud computing, luxury travel expeditions, and professional hardware procurement under a unified standard of excellence.';
 
   return (
     <div className="pt-20 sm:pt-24 pb-12 bg-white">
@@ -47,10 +54,10 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
               </span>
             </div>
             <H1 className="text-slate-900 text-3xl sm:text-4xl lg:text-5xl font-display font-bold tracking-tight mb-4">
-              Pioneering Creative Artistry & Modern Technology
+              {aboutTitle}
             </H1>
             <Body className="text-slate-600 text-base sm:text-lg">
-              Mahdev Pvt Ltd is an integrated parent enterprise governing five autonomous business divisions—harmonizing event production, cinema media, cloud computing, bespoke travel, and certified hardware procurement under a unified standard of excellence.
+              {aboutDescription}
             </Body>
           </div>
         </ScrollReveal>

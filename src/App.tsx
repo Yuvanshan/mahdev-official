@@ -49,8 +49,6 @@ import { ForgotPasswordView } from './views/auth/ForgotPasswordView';
 import { AccountLayout } from './views/account/AccountLayout';
 import { AdminLayout } from './views/admin/AdminLayout';
 import { MaintenanceView } from './views/MaintenanceView';
-import { InitialAppLoader } from './components/common/InitialAppLoader';
-import { DivisionTransitionLoader } from './components/common/DivisionTransitionLoader';
 import { DocumentScrollProgress } from './components/motion/ParallelScroll';
 
 function AppContent() {
@@ -822,10 +820,6 @@ function AppContent() {
           return <DivisionComingSoonView divisionId={divId} onNavigate={navigate} />;
         }
 
-        if (!isDivisionLoaded(divId)) {
-          return <DivisionTransitionLoader divisionId={divId} />;
-        }
-
         if (divId === 'sws') return <SWSView onNavigate={navigate} />;
         if (divId === 'u1') return <U1View onNavigate={navigate} />;
         if (divId === 'it') return <ITView onNavigate={navigate} />;
@@ -917,9 +911,6 @@ function AppContent() {
       if (isDivisionComingSoon(divisionKey)) {
         return <DivisionComingSoonView divisionId={divisionKey} onNavigate={navigate} />;
       }
-      if (!isDivisionLoaded(divisionKey)) {
-        return <DivisionTransitionLoader divisionId={divisionKey} />;
-      }
       return <DivisionView divisionId={divisionKey} onNavigate={navigate} />;
     }
 
@@ -996,39 +987,34 @@ function AppContent() {
     }
   };
 
+  // Keep the primary navigation visible across the site, including coming-soon
+  // division routes, while the division-specific notice still remains in place.
+  const isStandaloneComingSoon = Boolean(divisionKey && isDivisionComingSoon(divisionKey));
+
   return (
     <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-blue-600 selection:text-white w-full max-w-full overflow-x-hidden">
-      {/* Dynamic Data Loading Animation for Landing Page / App while data synchronizes from Firestore */}
-      <AnimatePresence>
-        {isInitialLoading && (
-          <InitialAppLoader
-            progress={syncProgress}
-            subMessage={syncStatus || 'Loading verified corporate data...'}
-          />
-        )}
-      </AnimatePresence>
-
       {/* Top Document Scroll Progress Bar */}
-      <DocumentScrollProgress />
+      {!isStandaloneComingSoon && <DocumentScrollProgress />}
 
       {/* Interactive Magnetic Custom Cursor for Desktop */}
-      <CustomCursor />
+      {!isStandaloneComingSoon && <CustomCursor />}
 
       {/* Global Cart Slide-Over Drawer */}
-      <CartDrawer onNavigate={navigate} />
+      {!isStandaloneComingSoon && <CartDrawer onNavigate={navigate} />}
 
       {/* Sticky Top Navigation */}
       <Navigation currentPath={normalizedPath} onNavigate={navigate} />
 
       {/* Main Content Area with Smooth View Transitions */}
-      <main className="flex-1 w-full max-w-full min-w-0">
+      <main className="flex-1 w-full max-w-full min-w-0" aria-live="polite">
         <AnimatePresence mode="wait">
+          {/* Fade only on first paint; avoid a layout-shifting entrance while Firestore hydrates. */}
           <motion.div
             key={normalizedPath}
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             className="w-full max-w-full min-w-0"
           >
             {renderCurrentView()}

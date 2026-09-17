@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 interface DataLoadingOverlayProps {
   message?: string;
@@ -17,6 +17,8 @@ export const DataLoadingOverlay: React.FC<DataLoadingOverlayProps> = ({
   dark = false,
   className = '',
 }) => {
+  const ringClass = dark ? 'border-blue-400/30 border-t-blue-400 border-r-cyan-300 border-b-blue-200/20' : 'border-blue-600/25 border-t-blue-600 border-r-cyan-500 border-b-blue-300/20';
+
   if (fullScreen) {
     return (
       <div className={`fixed inset-0 z-[99] flex flex-col items-center justify-center ${dark ? 'bg-slate-950/80' : 'bg-slate-900/60'} backdrop-blur-sm select-none antialiased ${className}`}>
@@ -28,10 +30,11 @@ export const DataLoadingOverlay: React.FC<DataLoadingOverlayProps> = ({
             dark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'
           }`}
         >
-          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner ${
-            dark ? 'bg-blue-950/80 text-blue-400' : 'bg-blue-50 text-blue-600'
-          }`}>
-            <Loader2 className="w-6 h-6 animate-spin" />
+          <div className={`relative w-14 h-14 rounded-full ${dark ? 'bg-blue-950/80' : 'bg-blue-50'} flex items-center justify-center`}>
+            <div className={`absolute inset-0 rounded-full border-[3px] ${ringClass} animate-spin [animation-duration:1.5s]`} />
+            <div className={`absolute inset-2 rounded-full border border-dashed ${dark ? 'border-blue-300/60' : 'border-blue-200'} animate-pulse`} />
+            <div className={`absolute top-1.5 right-2 h-2.5 w-2.5 rounded-full ${dark ? 'bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.9)]' : 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.75)]'}`} />
+            <Sparkles className={`relative z-10 w-5 h-5 ${dark ? 'text-blue-300' : 'text-blue-600'}`} />
           </div>
           <div>
             <h3 className={`text-sm font-bold ${dark ? 'text-white' : 'text-slate-900'}`}>{message}</h3>
@@ -52,10 +55,11 @@ export const DataLoadingOverlay: React.FC<DataLoadingOverlayProps> = ({
 
   return (
     <div className={`w-full min-h-[280px] py-16 flex flex-col items-center justify-center gap-3 text-center px-4 ${className}`}>
-      <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-xs ${
-        dark ? 'bg-blue-950/80 text-blue-400 border border-blue-800/40' : 'bg-blue-50 text-blue-600'
-      }`}>
-        <Loader2 className="w-5 h-5 animate-spin" />
+      <div className={`relative w-12 h-12 rounded-full flex items-center justify-center ${dark ? 'bg-blue-950/80' : 'bg-blue-50'}`}>
+        <div className={`absolute inset-0 rounded-full border-[3px] ${ringClass} animate-spin [animation-duration:1.5s]`} />
+        <div className={`absolute inset-2 rounded-full border border-dashed ${dark ? 'border-blue-300/60' : 'border-blue-200'} animate-pulse`} />
+        <div className={`absolute top-1.5 right-1.5 h-2 w-2 rounded-full ${dark ? 'bg-cyan-300' : 'bg-blue-500'}`} />
+        <Sparkles className={`relative z-10 w-4 h-4 ${dark ? 'text-blue-300' : 'text-blue-600'}`} />
       </div>
       <div>
         <p className={`text-sm font-bold ${dark ? 'text-white' : 'text-slate-900'}`}>{message}</p>

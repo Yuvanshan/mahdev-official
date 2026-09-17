@@ -69,7 +69,13 @@ const DEFAULT_GUARANTEES: EnterpriseStandardGuarantee[] = [
 
 export const WhyMahdevSection: React.FC = () => {
   const { homepageConfig, companySettings, siteSettings, products } = useFirestoreDataContext();
-  const whyConfig = homepageConfig?.whyMahdev;
+  const whyConfig = homepageConfig?.whyMahdev || {
+    badge: 'Operational Standards',
+    title: 'Why Leading Brands Trust Mahdev',
+    subtitle: 'Rigorous quality control, in-house technical mastery, and clear accountability across every project.',
+    enabled: true,
+    guarantees: DEFAULT_GUARANTEES,
+  };
 
   if (whyConfig?.enabled === false) {
     return null;

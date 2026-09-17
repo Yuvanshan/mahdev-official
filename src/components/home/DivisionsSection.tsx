@@ -90,11 +90,11 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
   const sectionConfig = homepageConfig?.divisionsSection;
   if (sectionConfig?.enabled === false) return null;
 
-  const sectionBadge = sectionConfig?.badge || 'Enterprise Portfolio';
+  const sectionBadge = sectionConfig?.badge || 'Our divisions';
   const sectionTitle = sectionConfig?.title || 'Operating Divisions';
   const sectionSubtitle =
     sectionConfig?.subtitle ||
-    `Autonomous specialized units governed under ${companySettings?.name || 'Mahdev Group'} with direct in-house technical crews.`;
+    `Specialized teams delivering integrated solutions across events, media, technology, travel and retail.`;
 
   const rentalAssetCountStr = getRentalAssetCount(
     products,
@@ -149,8 +149,8 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
           d.stats && d.stats.length > 0
             ? d.stats.map((s) => `${s.value} ${s.label}`)
             : id === 'sws'
-            ? [`${rentalAssetCountStr} Rentals`, 'Floral Mandaps', 'Stage Lighting', 'Audio/Visual']
-            : ['Island-wide SLA', 'In-House Crew', 'Verified Quality'];
+            ? ['Event production', 'Rental inventory', 'Stage design']
+            : ['In-house teams', 'Verified delivery', 'Tailored service'];
 
         list.push({
           id,
@@ -261,8 +261,8 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
             activeDivisions.length === 1
               ? 'max-w-2xl mx-auto w-full'
               : activeDivisions.length === 2
-              ? 'grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-6'
-              : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+              ? 'grid grid-cols-2 md:grid-cols-2 max-w-4xl mx-auto gap-3 sm:gap-6'
+              : 'grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6'
           }
         >
           {activeDivisions.map((div, idx) => {

@@ -82,15 +82,6 @@ const FeaturedServiceCard: React.FC<{
       transition={{ duration: 0.2 }}
       className="group relative flex flex-col justify-between rounded-2xl bg-white border border-purple-100/90 p-5 sm:p-6 shadow-xs hover:border-purple-400 hover:shadow-md transition-all duration-200 h-full"
     >
-      {service.popular && (
-        <div className="absolute top-4 right-4 z-10">
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-semibold">
-            <Sparkles className="w-3 h-3 text-amber-500" />
-            Popular
-          </span>
-        </div>
-      )}
-
       <div>
         {serviceImages.length > 0 && (
           <div className="mb-4 aspect-16/9 rounded-xl overflow-hidden bg-purple-50/50 border border-purple-100 relative">
@@ -100,27 +91,22 @@ const FeaturedServiceCard: React.FC<{
               className="w-full h-full object-cover transition-all duration-300"
             />
             {serviceImages.length > 1 && (
-              <>
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/60 backdrop-blur-xs px-2 py-1 rounded-full z-10">
-                  {serviceImages.map((_, dIdx) => (
-                    <button
-                      key={dIdx}
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveImgIdx(dIdx);
-                      }}
-                      className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                        activeImgIdx === dIdx ? 'w-3.5 bg-purple-400' : 'w-1.5 bg-white/60 hover:bg-white'
-                      }`}
-                      title={`Photo ${dIdx + 1}`}
-                    />
-                  ))}
-                </div>
-                <span className="absolute top-2 left-2 bg-black/60 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full backdrop-blur-xs">
-                  {activeImgIdx + 1} / {serviceImages.length}
-                </span>
-              </>
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/60 backdrop-blur-xs px-2 py-1 rounded-full z-10">
+                {serviceImages.map((_, dIdx) => (
+                  <button
+                    key={dIdx}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveImgIdx(dIdx);
+                    }}
+                    className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                      activeImgIdx === dIdx ? 'w-3.5 bg-purple-400' : 'w-1.5 bg-white/60 hover:bg-white'
+                    }`}
+                    title={`Photo ${dIdx + 1}`}
+                  />
+                ))}
+              </div>
             )}
           </div>
         )}
@@ -133,7 +119,6 @@ const FeaturedServiceCard: React.FC<{
             <span className="text-[11px] font-bold uppercase tracking-wider text-purple-700 block">
               {divisionBadgeText}
             </span>
-            <span className="text-[11px] text-slate-500">{service.badge || 'Enterprise'}</span>
           </div>
         </div>
 
@@ -164,7 +149,7 @@ const FeaturedServiceCard: React.FC<{
           rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
           className="text-xs hover:border-purple-600 hover:text-purple-600 cursor-pointer"
         >
-          Details
+          View
         </Button>
       </div>
     </motion.div>
@@ -312,7 +297,7 @@ const FeaturedServicesSectionContent: React.FC<
           </div>
         ) : (
           <div className="relative z-10">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filteredServices.map((service, idx) => {
                 const colIdx = idx % 3;
                 const colTransform = colIdx === 0 ? yCol1 : colIdx === 1 ? yCol2 : yCol3;

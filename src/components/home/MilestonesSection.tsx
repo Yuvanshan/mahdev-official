@@ -172,20 +172,16 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
       >
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-600 text-xs font-mono font-semibold uppercase tracking-wider mb-3">
-            <Award className="w-3.5 h-3.5 text-blue-600" />
-            <span>Our Trajectory & Key Achievements</span>
-          </div>
           <H2 className="text-slate-900 mb-3">Our Milestones</H2>
           <Body className="text-slate-600 text-base">
-            The official journey of Mahdev Pvt Ltd from our beginnings to a registered multi-service enterprise.
+            Our growth from the early foundations to the registered enterprise behind today’s multi-division operations.
           </Body>
         </div>
 
         {/* Interactive Timeline Rail */}
         <div className="relative max-w-5xl mx-auto mb-14">
           {/* Milestone Steps Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 relative z-10 mb-8">
+          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 relative z-10 mb-8">
             {displayMilestones.map((ms, index) => {
               const milestoneKey = ms.id ? `step-${ms.id}` : `step-${ms.year}-${index}`;
               const isSelected = currentMilestone?.id === ms.id || (ms.id && currentMilestone?.id ? currentMilestone.id === ms.id : currentMilestone?.year === ms.year);
@@ -249,23 +245,10 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                  <div className="lg:col-span-8">
-                    <p className="text-base sm:text-lg text-slate-200 leading-relaxed font-normal">
-                      {currentMilestone.description}
-                    </p>
-                  </div>
-                  {currentMilestone.keyOutcome && (
-                    <div className="lg:col-span-4 p-4 rounded-xl bg-white/5 border border-white/10">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-blue-300 block mb-1">
-                        Key Milestone Outcome:
-                      </span>
-                      <div className="flex items-start gap-2 text-xs text-slate-200 font-medium">
-                        <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                        <span>{currentMilestone.keyOutcome}</span>
-                      </div>
-                    </div>
-                  )}
+                <div>
+                  <p className="text-base sm:text-lg text-slate-200 leading-relaxed font-normal">
+                    {currentMilestone.description}
+                  </p>
                 </div>
               </div>
             </div>
@@ -275,19 +258,16 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
         {/* Integrated Key Achievements / By The Numbers Grid */}
         {displayAchievements && displayAchievements.length > 0 && (
           <div className="max-w-5xl mx-auto pt-8 border-t border-slate-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
-              <div className="flex items-center gap-2">
+            <div className="mb-6">
+              <div className="flex items-center gap-2 text-slate-900">
                 <ShieldCheck className="w-4 h-4 text-blue-600" />
-                <span className="text-xs font-mono font-semibold uppercase tracking-wider text-slate-900">
-                  {milestonesCms?.achievementsTitle || 'Key Verified Achievements'}
+                <span className="text-xs font-mono font-semibold uppercase tracking-wider">
+                  {milestonesCms?.achievementsTitle || 'Key Achievements'}
                 </span>
               </div>
-              <span className="text-xs text-slate-500 font-medium">
-                {milestonesCms?.achievementsSubtitle || 'Official Company Metrics'}
-              </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3.5">
               {displayAchievements.map((item, idx) => {
                 const Icon = (item as any).icon || getAchievementIcon(item.iconName);
                 return (

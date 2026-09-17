@@ -99,6 +99,16 @@ export function getDefaultHomepageSettings(): HomepageCmsConfig {
         { title: 'Bespoke Craftsmanship', desc: 'Tailored solutions whether styling an opulent wedding decor, capturing 8K cinema, or engineering cloud IT infrastructure.', icon: 'Sparkles' },
       ],
     },
+    aboutPage: {
+      enabled: true,
+      badge: 'About Mahdev Pvt Ltd',
+      title: 'Pioneering Creative Artistry & Modern Technology',
+      description: 'Mahdev Pvt Ltd is an integrated parent enterprise governing five autonomous business divisions—harmonizing event production, cinema media, cloud computing, luxury travel expeditions, and professional hardware procurement under a unified standard of excellence.',
+      story: [
+        'Founded in 2022 in Colombo, Sri Lanka, Mahdev Pvt Ltd was conceived on a singular premise: that exceptional event decoration artistry, photographic mastery, and rigorous IT solutions should unite seamlessly under one trusted parent company.',
+        'Across four years of disciplined high-velocity growth, Mahdev purposefully expanded into five autonomous yet deeply synchronized business divisions. Today, Mahdev Pvt Ltd stands as a premier holding ecosystem where creative mastery and technological innovation converge under one trusted roof.'
+      ],
+    },
     divisionsSection: {
       badge: 'OUR DIVISIONS',
       title: 'Five Pillars of Industry Mastery',
@@ -110,6 +120,49 @@ export function getDefaultHomepageSettings(): HomepageCmsConfig {
       title: 'Why Leading Brands Trust Mahdev',
       subtitle: 'Uncompromising standard of perfection, calibrated equipment, and enterprise SLA guarantees.',
       enabled: true,
+    },
+    legalPages: {
+      privacy: {
+        title: 'Privacy Policy',
+        subtitle: 'How Mahdev Pvt Ltd collects, safeguards, and handles your data across all divisions.',
+        effectiveDate: 'January 1, 2024',
+        lastUpdated: 'February 15, 2026',
+        sections: [{ heading: 'Institutional Commitment to Privacy', content: ['Your privacy matters to us.'] }],
+      },
+      terms: {
+        title: 'Terms & Conditions',
+        subtitle: 'Standard engagement terms and service provisions.',
+        effectiveDate: 'January 1, 2024',
+        lastUpdated: 'February 15, 2026',
+        sections: [{ heading: 'Agreement to Terms', content: ['These terms govern all engagements.'] }],
+      },
+      refund: {
+        title: 'Refund & Cancellation',
+        subtitle: 'Guidelines on deposits, cancellations, and reimbursements.',
+        effectiveDate: 'January 1, 2024',
+        lastUpdated: 'February 15, 2026',
+        sections: [{ heading: 'Refund Eligibility', content: ['Cancellation terms vary by service type.'] }],
+      },
+      shipping: {
+        title: 'Shipping & Delivery',
+        subtitle: 'Island-wide logistics and delivery standards.',
+        effectiveDate: 'January 1, 2024',
+        lastUpdated: 'February 15, 2026',
+        sections: [{ heading: 'Delivery Windows', content: ['We deliver nationwide via tracked courier networks.'] }],
+      },
+      cookie: {
+        title: 'Cookie Policy',
+        subtitle: 'Information regarding cookies and local storage on our digital platforms.',
+        effectiveDate: 'January 1, 2024',
+        lastUpdated: 'February 15, 2026',
+        sections: [{ heading: 'What Are Cookies?', content: ['Cookies help optimize navigation and security.'] }],
+      },
+    },
+    leadership: {
+      enabled: true,
+      title: 'Executive Leadership',
+      subtitle: 'Guided by experienced sector directors, creative visionaries, and cloud architects committed to institutional governance and client success.',
+      members: [],
     },
     statistics: {
       badge: 'PROVEN IMPACT',

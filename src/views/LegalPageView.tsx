@@ -6,16 +6,13 @@ import {
   Printer,
   Share2,
   ChevronRight,
-  HelpCircle,
-  ArrowLeft,
   CheckCircle2,
 } from 'lucide-react';
 import { SectionContainer } from '../components/ui/SectionContainer';
-import { H1, H2, Body, Caption } from '../components/ui/Heading';
+import { H1 } from '../components/ui/Heading';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
-import { ScrollReveal, Magnetic } from '../components/motion/MotionWrappers';
-import { LEGAL_POLICIES_CONTENT } from '../data/corporateData';
+import { ScrollReveal } from '../components/motion/MotionWrappers';
 import { COMPANY_INFO } from '../config/company';
 import { LegalPolicyType } from '../types';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
@@ -57,9 +54,16 @@ const POLICY_METADATA: Record<
 };
 
 export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavigate }) => {
-  const { companySettings } = useFirestoreDataContext();
+  const { companySettings, homepageConfig } = useFirestoreDataContext();
   const [copied, setCopied] = useState(false);
-  const currentDoc = LEGAL_POLICIES_CONTENT[policyType];
+  const cmsLegalPages = (homepageConfig as any)?.legalPages || {};
+  const currentDoc = cmsLegalPages[policyType] || {
+    title: POLICY_METADATA[policyType].name,
+    subtitle: 'Official legal policy and compliance document for Mahdev Pvt Ltd.',
+    effectiveDate: 'Effective immediately',
+    lastUpdated: 'Updated recently',
+    sections: [{ heading: 'Overview', content: ['This policy is managed in the admin portal and synced live from Firestore.'] }],
+  };
   const meta = POLICY_METADATA[policyType];
   const legalName = companySettings?.legalName || COMPANY_INFO.legalName;
   const colomboAddress = companySettings?.offices?.colombo?.address || COMPANY_INFO.offices.colombo.address;

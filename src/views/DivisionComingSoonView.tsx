@@ -126,14 +126,14 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
   const otherDivisions = DIVISION_LIST.filter((d) => d.id !== normalizedKey);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-rose-500 selection:text-white">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-rose-500 selection:text-white relative z-10">
       <SEOHead
         title={`${divisionName} | Coming Soon | Mahdev Pvt Ltd`}
         description={comingSoonMessage}
       />
 
       {/* Top Header Navigation Strip */}
-      <div className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
+      <div className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
         <SectionContainer className="py-3.5 flex items-center justify-between">
           <button
             onClick={() => onNavigate('/')}
@@ -163,7 +163,7 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
       </div>
 
       {/* Hero Visual Section */}
-      <div className="relative flex-1 flex flex-col justify-center overflow-hidden py-16 sm:py-24">
+      <div className="relative flex-1 flex flex-col justify-center overflow-hidden py-16 sm:py-24 z-10">
         {/* Background Image with Deep Overlay */}
         <div className="absolute inset-0 z-0">
           <img
@@ -180,7 +180,7 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
           />
         </div>
 
-        <SectionContainer className="relative z-10 max-w-4xl mx-auto text-center px-4">
+        <SectionContainer className="relative z-20 max-w-4xl mx-auto text-center px-4">
           {/* Status Badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-700/80 shadow-xl mb-6 backdrop-blur-sm">
             <span

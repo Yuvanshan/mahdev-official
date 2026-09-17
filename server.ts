@@ -267,9 +267,36 @@ function requireAdminAuth(allowedRoles?: string[]) {
   };
 }
 
+async function listenOnAvailablePort(app: express.Express, preferredPort: number): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const tryPort = (port: number) => {
+      const server = app.listen(port, '0.0.0.0', () => {
+        resolve(port);
+      });
+
+      server.on('error', (error: NodeJS.ErrnoException) => {
+        if (error.code === 'EADDRINUSE') {
+          const nextPort = port + 1;
+          if (nextPort > preferredPort + 20) {
+            reject(new Error(`No available port found starting from ${preferredPort}.`));
+            return;
+          }
+
+          console.warn(`[Mahdev Core Server] Port ${port} is busy; retrying on ${nextPort}.`);
+          tryPort(nextPort);
+          return;
+        }
+
+        reject(error);
+      });
+    };
+
+    tryPort(preferredPort);
+  });
+}
+
 async function startServer() {
   const app = express();
-  const PORT = 3000;
 
   // Static uploads directory serving
   const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
@@ -1724,13 +1751,18 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[Mahdev Core Server] running on http://0.0.0.0:${PORT} (NodeEnv: ${serverConfig.nodeEnv})`);
-    const { diagnostics } = validateServerSecrets();
-    for (const d of diagnostics) {
-      console.log(`  └─ [${d.category}]: ${d.description} (${d.status})`);
-    }
-  });
+  const requestedPortValue = Number(
+    process.env.PORT || process.argv.find((arg) => /^\d+$/.test(arg)) || '3000'
+  );
+  const preferredPort = Number.isFinite(requestedPortValue) && requestedPortValue > 0 ? requestedPortValue : 3000;
+  const PORT = await listenOnAvailablePort(app, preferredPort);
+  process.env.PORT = String(PORT);
+
+  console.log(`[Mahdev Core Server] running on http://0.0.0.0:${PORT} (NodeEnv: ${serverConfig.nodeEnv})`);
+  const { diagnostics } = validateServerSecrets();
+  for (const d of diagnostics) {
+    console.log(`  └─ [${d.category}]: ${d.description} (${d.status})`);
+  }
 }
 
 startServer();

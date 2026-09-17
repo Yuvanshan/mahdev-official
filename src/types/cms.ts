@@ -431,6 +431,13 @@ export interface HomepageCmsConfig {
     description: string;
     pillars: { title: string; desc: string; icon: string }[];
   };
+  aboutPage?: {
+    enabled?: boolean;
+    badge?: string;
+    title?: string;
+    description?: string;
+    story?: string[];
+  };
   divisionsSection?: {
     badge?: string;
     title?: string;
@@ -443,6 +450,34 @@ export interface HomepageCmsConfig {
     subtitle?: string;
     enabled?: boolean;
     guarantees?: EnterpriseStandardGuarantee[];
+  };
+  legalPages?: Record<
+    'privacy' | 'terms' | 'refund' | 'shipping' | 'cookie',
+    {
+      title: string;
+      subtitle: string;
+      effectiveDate: string;
+      lastUpdated: string;
+      sections: { heading: string; content: string[] }[];
+    }
+  >;
+  leadership?: {
+    enabled?: boolean;
+    title?: string;
+    subtitle?: string;
+    members?: Array<{
+      id: string;
+      name: string;
+      title: string;
+      role: string;
+      bio: string;
+      photoUrl?: string;
+      divisionFocus?: string;
+      linkedin?: string;
+      email?: string;
+      badge?: string;
+      credentials?: string[];
+    }>;
   };
   statistics?: {
     badge?: string;

@@ -17,7 +17,6 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
   const establishedYear = companySettings?.establishedYear || '2022';
   const hotline = companySettings?.primaryPhone || '075 092 8078';
   const intro = homepageConfig?.intro;
-  const badge = intro?.badge || 'Enterprise Architecture';
   const headline = intro?.headline || 'A Unified Enterprise of Specialized Industry Leaders';
   const description =
     intro?.description ||
@@ -79,10 +78,6 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
             style={!reducedMotion && !isTouch ? { y: yLeft } : undefined}
             className="lg:col-span-6 space-y-5"
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[11px] font-mono uppercase tracking-wider text-blue-700">
-              <span>{badge}</span>
-            </div>
-
             <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
               {headline}
             </h2>
@@ -96,16 +91,8 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
                 rightIcon={<ChevronRight className="w-4 h-4" />}
                 className="font-bold cursor-pointer"
               >
-                Explore All Divisions
+                Explore Divisions
               </Button>
-
-              <a
-                href={getTelLink(hotline)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:text-blue-600 hover:border-blue-300 transition-colors"
-              >
-                <Phone className="w-3.5 h-3.5 text-blue-600" />
-                <span>Direct: {hotline}</span>
-              </a>
             </div>
           </motion.div>
 
