@@ -29,14 +29,19 @@ import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { getRentalAssetCount } from '../utils/assetMetrics';
 import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
+import { DivisionBelowHeroShimmer } from '../components/common/DivisionBelowHeroShimmer';
 
 interface SWSViewProps {
   onNavigate: (route: string) => void;
 }
 
 export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
-  const { divisions, companySettings, siteSettings, products } = useFirestoreDataContext();
+  const { divisions, companySettings, siteSettings, products, isInitialLoading, isDivisionLoaded, loadDivisionData } = useFirestoreDataContext();
   const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
+
+  React.useEffect(() => {
+    loadDivisionData('sws');
+  }, [loadDivisionData]);
 
   const swsDiv =
     divisions?.find(
@@ -46,6 +51,8 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
         d.slug === 'sws' ||
         d.slug === 'sws-event-management'
     ) || DIVISION_LIST.find((d) => d.id === 'sws');
+
+  const isDataLoading = isInitialLoading || !isDivisionLoaded('sws');
 
   const rentalCount = getRentalAssetCount(
     products,
@@ -121,26 +128,33 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
         onExploreRentals={() => scrollToAnchor('rentals')}
       />
 
-      {/* 2. ALL SERVICES SHOWCASE WITH VIEW DETAILS / BOOK NOW / REQUEST QUOTE */}
-      <SWSServicesSection
-        onBookNow={handleBookNow}
-        onRequestQuote={handleRequestQuote}
-      />
+      {/* 2. BELOW HERO SECTION: SHOW SHIMMER UNTIL DATA LOADS FROM FIRESTORE */}
+      {isDataLoading ? (
+        <DivisionBelowHeroShimmer divisionName="SWS Event Management" />
+      ) : (
+        <>
+          {/* 2. ALL SERVICES SHOWCASE WITH VIEW DETAILS / BOOK NOW / REQUEST QUOTE */}
+          <SWSServicesSection
+            onBookNow={handleBookNow}
+            onRequestQuote={handleRequestQuote}
+          />
 
-      {/* 3. EVENT FURNITURE, STAGING & AV RENTALS INVENTORY SECTION */}
-      <SWSRentalsSection
-        onBookRental={handleBookRental}
-        onRequestQuote={handleRequestRentalQuote}
-      />
+          {/* 3. EVENT FURNITURE, STAGING & AV RENTALS INVENTORY SECTION */}
+          <SWSRentalsSection
+            onBookRental={handleBookRental}
+            onRequestQuote={handleRequestRentalQuote}
+          />
 
-      {/* 4. TURNKEY PACKAGES SECTION */}
-      <SWSPackagesSection onBookPackage={handleBookPackage} />
+          {/* 4. TURNKEY PACKAGES SECTION */}
+          <SWSPackagesSection onBookPackage={handleBookPackage} />
 
-      {/* 5. CINEMATIC GALLERY WITH CATEGORY TABS & LIGHTBOX */}
-      <SWSGallerySection />
+          {/* 5. CINEMATIC GALLERY WITH CATEGORY TABS & LIGHTBOX */}
+          <SWSGallerySection />
 
-      {/* 6. EVENT PORTFOLIO & REAL CASE STUDIES */}
-      <SWSPortfolioSection onConsultationClick={() => handleBookNow()} />
+          {/* 6. EVENT PORTFOLIO & REAL CASE STUDIES */}
+          <SWSPortfolioSection onConsultationClick={() => handleBookNow()} />
+        </>
+      )}
 
       {/* 7. INTERACTIVE BOOKING FOUNDATION MODAL */}
       <SWSBookingModal

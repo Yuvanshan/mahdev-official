@@ -83,9 +83,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       ? rawHeroImage.trim()
       : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
 
-  // The landing page always owns the primary public hero video (/assets/hero_video.mp4).
+  // The landing page always owns the primary public hero video (/assets/hero_main.mp4).
   // Division videos are resolved independently from their own division Firestore configurations.
-  const effectiveVideoUrl = '/assets/hero_video.mp4';
+  const effectiveVideoUrl = '/assets/hero_main.mp4';
 
   const handleExplore = () => {
     if (onExploreServices) {

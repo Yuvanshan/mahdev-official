@@ -27,14 +27,22 @@ import { DIVISION_LIST } from '../config/divisions';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
+import { DivisionBelowHeroShimmer } from '../components/common/DivisionBelowHeroShimmer';
 
 interface ITViewProps {
   onNavigate: (route: string) => void;
 }
 
 export const ITView: React.FC<ITViewProps> = ({ onNavigate }) => {
-  const { divisions, companySettings } = useFirestoreDataContext();
+  const { divisions, companySettings, isInitialLoading, isDivisionLoaded, loadDivisionData } = useFirestoreDataContext();
   const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
+
+  React.useEffect(() => {
+    loadDivisionData('it');
+  }, [loadDivisionData]);
+
+  const isDataLoading = isInitialLoading || !isDivisionLoaded('it');
+
   const [selectedServiceForDetail, setSelectedServiceForDetail] = useState<ITService | null>(null);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [quoteModalService, setQuoteModalService] = useState<ITService | null>(null);
@@ -73,21 +81,28 @@ export const ITView: React.FC<ITViewProps> = ({ onNavigate }) => {
         onExploreServices={() => scrollToAnchor('services')}
       />
 
-      {/* 2. ALL 10 IT & SOLUTIONS SERVICES WITH FILTERING */}
-      <ITServicesSection
-        onSelectService={handleOpenServiceDetail}
-        onRequestQuote={(svc) => handleOpenQuoteModal(svc, 'quote')}
-        onStartProject={(svc) => handleOpenQuoteModal(svc, 'project')}
-      />
+      {/* 2. BELOW HERO SECTION: SHOW SHIMMER UNTIL DATA LOADS FROM FIRESTORE */}
+      {isDataLoading ? (
+        <DivisionBelowHeroShimmer divisionName="Mahdev IT & Solutions" />
+      ) : (
+        <>
+          {/* 2. ALL 10 IT & SOLUTIONS SERVICES WITH FILTERING */}
+          <ITServicesSection
+            onSelectService={handleOpenServiceDetail}
+            onRequestQuote={(svc) => handleOpenQuoteModal(svc, 'quote')}
+            onStartProject={(svc) => handleOpenQuoteModal(svc, 'project')}
+          />
 
-      {/* 3. ARCHITECTURAL PHILOSOPHY & PRODUCTION TECH MATRIX */}
-      <ITArchitectureSection />
+          {/* 3. ARCHITECTURAL PHILOSOPHY & PRODUCTION TECH MATRIX */}
+          <ITArchitectureSection />
 
-      {/* 4. PROVEN ENTERPRISE CASE STUDIES */}
-      <ITCaseStudiesSection
-        onStartProject={() => handleOpenQuoteModal(undefined, 'project')}
-        onRequestQuote={() => handleOpenQuoteModal(undefined, 'quote')}
-      />
+          {/* 4. PROVEN ENTERPRISE CASE STUDIES */}
+          <ITCaseStudiesSection
+            onStartProject={() => handleOpenQuoteModal(undefined, 'project')}
+            onRequestQuote={() => handleOpenQuoteModal(undefined, 'quote')}
+          />
+        </>
+      )}
 
       {/* 5. INDIVIDUAL SERVICE BLUEPRINT MODAL */}
       <ITServiceDetailModal

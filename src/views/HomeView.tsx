@@ -135,7 +135,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
         ogDescription={homepageConfig?.seo?.metaDescription}
       />
 
-      {/* 1. PRIMARY LANDING HERO SECTION — ALWAYS USES /assets/hero_video.mp4 */}
+      {/* 1. PRIMARY LANDING HERO SECTION — ALWAYS USES /assets/hero_main.mp4 */}
       <HeroSection
         onNavigate={onNavigate}
         onExploreMahdev={() => scrollToSection('divisions')}

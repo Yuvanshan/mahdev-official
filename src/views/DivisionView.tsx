@@ -34,7 +34,7 @@ import { firestoreContactsService } from '../services/firestore/contacts';
 import { notificationService } from '../services/notificationService';
 import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
 import { HeroVideoBackground } from '../components/common/HeroVideoBackground';
-import { DivisionShimmer } from '../components/common/DivisionShimmer';
+import { DivisionBelowHeroShimmer } from '../components/common/DivisionBelowHeroShimmer';
 
 interface DivisionViewProps {
   divisionId: string;
@@ -42,7 +42,7 @@ interface DivisionViewProps {
 }
 
 export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNavigate }) => {
-  const { divisions, services, companySettings, isInitialLoading, loadDivisionData } = useFirestoreDataContext();
+  const { divisions, services, companySettings, isInitialLoading, loadDivisionData, isDivisionLoaded } = useFirestoreDataContext();
 
   // Normalize IDs across short keys ('sws', 'u1', 'it', 'travels', 'mart') and slug variants
   const normalizedKey: DivisionId =
@@ -137,10 +137,8 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
     }
   }, [divisionId, canonicalDocId, loadDivisionData]);
 
-  // Show shimmer while Firestore data is actively loading or when division data is pending
-  if (isInitialLoading || (!firestoreDiv && divisions.length === 0)) {
-    return <DivisionShimmer onNavigate={onNavigate} divisionName={baseDivision?.name} />;
-  }
+  // Check if live division data is actively loading from Firestore
+  const isDivisionDataLoading = isInitialLoading || (!firestoreDiv && divisions.length === 0) || !isDivisionLoaded(divisionId);
 
   // Immediate guard: If division is marked as Coming Soon, display DivisionComingSoonView
   if (
@@ -332,7 +330,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
               (firestoreDiv?.hero as any)?.videoUrl ||
               ((firestoreDiv?.hero as any)?.mediaType === 'video' ? (firestoreDiv?.hero as any)?.mediaUrl : '') ||
               (baseDivision as any)?.heroVideoUrl ||
-              '/assets/hero_video.mp4';
+              '/assets/hero_main.mp4';
             const divImg =
               (firestoreDiv as any)?.defaultImageUrl ||
               (firestoreDiv as any)?.heroImageUrl ||
@@ -350,7 +348,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
               (firestoreDiv?.hero as any)?.videoUrl ||
               ((firestoreDiv?.hero as any)?.mediaType === 'video' && (firestoreDiv?.hero as any)?.mediaUrl)
             );
-            const effectiveVideo = hasFirestoreVideo ? divVideo : '/assets/hero_video.mp4';
+            const effectiveVideo = hasFirestoreVideo ? divVideo : '/assets/hero_main.mp4';
 
             return (
               <HeroVideoBackground
@@ -433,8 +431,13 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
         </div>
       </section>
 
-      {/* 2. EXECUTIVE NARRATIVE & ABOUT SECTION */}
-      <SectionContainer background="white" paddingY="lg" hasBorderBottom>
+      {/* 2. BELOW HERO SECTION: SHOW SHIMMER UNTIL DATA LOADS FROM FIRESTORE */}
+      {isDivisionDataLoading ? (
+        <DivisionBelowHeroShimmer divisionName={division.name} />
+      ) : (
+        <>
+          {/* 2. EXECUTIVE NARRATIVE & ABOUT SECTION */}
+          <SectionContainer background="white" paddingY="lg" hasBorderBottom>
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="text-center space-y-2">
             <Caption className="text-[#0052FF] font-semibold">Division Overview</Caption>
@@ -647,6 +650,8 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
           </div>
         </div>
       </SectionContainer>
+        </>
+      )}
     </div>
   );
 };
