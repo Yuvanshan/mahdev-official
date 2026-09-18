@@ -294,32 +294,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         });
       }
 
-      // Preload division hero video before marking loaded, ensuring division loader stays visible until video is ready
-      try {
-        const divConfig = divisionsRef.current?.find(
-          (d) => d.id === canonicalId || d.slug === canonicalId || d.id === rawDivId
-        );
-        const heroAny = divConfig?.hero as any;
-        const divVideo = (
-          (divConfig as any)?.heroVideoUrl ||
-          (divConfig as any)?.videoUrl ||
-          heroAny?.videoUrl ||
-          (heroAny?.mediaType === 'video' ? heroAny?.mediaUrl : '') ||
-          (heroAny?.mediaUrl?.startsWith?.('firestore://') ? heroAny.mediaUrl : '') ||
-          heroAny?.mediaUrl ||
-          ''
-        ).trim();
-
-        if (divVideo && !divVideo.includes('assets.mixkit.co')) {
-          const resolvedDivVideo = await resolveMediaUrl(divVideo);
-          if (resolvedDivVideo) {
-            await preloadVideo(resolvedDivVideo, 7000);
-          }
-        }
-      } catch (videoErr) {
-        console.debug('[FirestoreDataContext] Division video preload note:', videoErr);
-      }
-
       setLoadedDivisions((prev) => ({
         ...prev,
         [canonicalId]: true,
@@ -345,144 +319,93 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     [loadedDivisions]
   );
 
-  // Initial App Hydration: Loads 100% of Landing Page data first, then preloads hero video, then sequentially loads division order
+  // Fast Progressive Hydration: Fetches data one by one, updating state as each arrives
   const refreshAll = useCallback(async () => {
     setIsFetching(true);
     try {
       setError(null);
-      setSyncProgress(20);
+      setSyncProgress(25);
       setSyncStatus('Creating Moments...');
 
-      const brandTaglines = [
-        'Creating Moments...',
-        'Capturing Memories...',
-        'Delivering Innovation....',
-      ];
-      let taglineIdx = 0;
-      const trackProgress = () => {
-        taglineIdx = (taglineIdx + 1) % brandTaglines.length;
-        setSyncStatus(brandTaglines[taglineIdx]);
-      };
+      // 1. Fetch Company Settings and Site Settings progressively
+      firestoreSettingsService.getCompanySettings(true).then((company) => {
+        const resolvedLogo = company.logoUrl || '';
+        const resolvedDark = company.darkLogoUrl || '';
+        setCompanySettings((prev) => {
+          const merged = { ...prev, ...company, logoUrl: resolvedLogo || prev.logoUrl || '', darkLogoUrl: resolvedDark || prev.darkLogoUrl || '' };
+          try { localStorage.setItem('mahdev_cached_company_settings', JSON.stringify(merged)); } catch {}
+          return merged;
+        });
+      }).catch((e) => console.warn('[FirestoreDataContext] Company settings notice:', e));
 
-      const [
-        company,
-        site,
-        home,
-        divs,
-        ms,
-        partners,
-        reviews,
-        gConfig,
-        gReviews,
-      ] = await Promise.all([
-        firestoreSettingsService.getCompanySettings(true).then((r) => { trackProgress(); return r; }),
-        firestoreSettingsService.getSiteSettings(true).then((r) => { trackProgress(); return r; }),
-        firestoreSettingsService.getHomepageSettings(true).then((r) => { trackProgress(); return r; }),
-        firestoreDivisionsService.getDivisions(true).then((r) => { trackProgress(); return r; }),
-        firestoreMilestonesService.getMilestones(true).then((r) => { trackProgress(); return r; }),
-        firestoreTrustedCompaniesService.getTrustedCompanies(true).then((r) => { trackProgress(); return r; }),
-        firestoreTestimonialsService.getTestimonials(undefined, true).then((r) => { trackProgress(); return r; }),
-        firestoreGoogleReviewsService.getConfig(true).then((r) => { trackProgress(); return r; }),
-        firestoreGoogleReviewsService.getReviews().then((r) => { trackProgress(); return r; }),
-      ]);
+      firestoreSettingsService.getSiteSettings(true).then((site) => {
+        const resolvedLogo = site.logoUrl || '';
+        const resolvedDark = site.darkLogoUrl || '';
+        setSiteSettings((prev) => {
+          const merged = { ...prev, ...site, logoUrl: resolvedLogo || prev.logoUrl || '', darkLogoUrl: resolvedDark || prev.darkLogoUrl || '' };
+          try { localStorage.setItem('mahdev_cached_site_settings', JSON.stringify(merged)); } catch {}
+          return merged;
+        });
+      }).catch((e) => console.warn('[FirestoreDataContext] Site settings notice:', e));
 
-      let resolvedCompanyLogo = company.logoUrl || site.logoUrl || '';
-      let resolvedSiteLogo = site.logoUrl || company.logoUrl || '';
-      let resolvedDarkLogo = site.darkLogoUrl || company.darkLogoUrl || '';
-
-      setCompanySettings((prev) => {
-        const logo = resolvedCompanyLogo || prev.logoUrl || '';
-        const darkLogo = resolvedDarkLogo || prev.darkLogoUrl || '';
-        const merged = {
-          ...prev,
-          ...company,
-          logoUrl: logo,
-          darkLogoUrl: darkLogo,
-        };
-        try {
-          localStorage.setItem('mahdev_cached_company_settings', JSON.stringify(merged));
-        } catch {}
-        return merged;
-      });
-
-      setSiteSettings((prev) => {
-        const logo = resolvedSiteLogo || prev.logoUrl || '';
-        const darkLogo = resolvedDarkLogo || prev.darkLogoUrl || '';
-        const merged = {
-          ...prev,
-          ...site,
-          logoUrl: logo,
-          darkLogoUrl: darkLogo,
-        };
-        try {
-          localStorage.setItem('mahdev_cached_site_settings', JSON.stringify(merged));
-        } catch {}
-        return merged;
-      });
-
+      // 2. Fetch Divisions (core routing foundation)
+      setSyncProgress(50);
+      setSyncStatus('Capturing Memories...');
+      const divs = await firestoreDivisionsService.getDivisions(true);
       const sortedDivs = sortDivisions(divs);
       divisionsRef.current = sortedDivs;
-      setHomepageConfig(home);
       setDivisions(sortedDivs);
-      setMilestones(ms);
-      setTrustedCompanies(partners);
-      setTestimonials(reviews);
-      setGoogleReviewsConfig(gConfig);
-      setGoogleReviews(gReviews);
-
-      cmsService.syncHomepageConfig(home);
       cmsService.syncEntityFromFirestore('divisions', sortedDivs);
-      cmsService.syncEntityFromFirestore('milestones', ms);
-      cmsService.syncEntityFromFirestore('companies', partners);
-      cmsService.syncEntityFromFirestore('testimonials', reviews);
+      try { localStorage.setItem('mahdev_cached_divisions', JSON.stringify(sortedDivs)); } catch {}
 
-      // Persist hydrated snapshots to localStorage cache
-      try {
-        localStorage.setItem('mahdev_cached_company_settings', JSON.stringify({ ...company, logoUrl: resolvedCompanyLogo, darkLogoUrl: resolvedDarkLogo }));
-        localStorage.setItem('mahdev_cached_site_settings', JSON.stringify({ ...site, logoUrl: resolvedSiteLogo, darkLogoUrl: resolvedDarkLogo }));
-        localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(home));
-        localStorage.setItem('mahdev_cached_divisions', JSON.stringify(sortedDivs));
-        localStorage.setItem('mahdev_cached_milestones', JSON.stringify(ms));
-        localStorage.setItem('mahdev_cached_companies', JSON.stringify(partners));
-        localStorage.setItem('mahdev_cached_testimonials', JSON.stringify(reviews));
-        localStorage.setItem('mahdev_cached_google_reviews_config', JSON.stringify(gConfig));
-        localStorage.setItem('mahdev_cached_google_reviews', JSON.stringify(gReviews));
-      } catch {}
+      // 3. Fetch Homepage CMS Config
+      setSyncProgress(75);
+      const home = await firestoreSettingsService.getHomepageSettings(true);
+      setHomepageConfig(home);
+      cmsService.syncHomepageConfig(home);
+      try { localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(home)); } catch {}
 
-      // Preload the Homepage Hero section video from Firestore BEFORE dismissing initial loader
-      const rawHeroVid = (
-        home?.hero?.videoUrl ||
-        (home?.hero as any)?.heroVideoUrl ||
-        (home?.hero?.mediaType === 'video' ? home?.hero?.mediaUrl : '') ||
-        (home?.hero?.mediaUrl?.startsWith('firestore://') ? home.hero.mediaUrl : '') ||
-        home?.hero?.mediaUrl ||
-        ''
-      ).trim();
-
-      if (rawHeroVid && !rawHeroVid.includes('assets.mixkit.co')) {
-        setSyncStatus('Delivering Innovation....');
-        try {
-          const resolvedHeroVid = await resolveMediaUrl(rawHeroVid);
-          if (resolvedHeroVid) {
-            await preloadVideo(resolvedHeroVid, 8000);
-          }
-        } catch (vidErr) {
-          console.warn('[FirestoreDataContext] Hero video preload notice:', vidErr);
-        }
-      }
-
-      // Initial loading completed: Landing page & hero video are ready!
+      // 4. Initial core hydration ready: Unblock landing page and division screens instantly!
       setSyncProgress(100);
       setSyncStatus('Delivering Innovation....');
       setIsInitialLoading(false);
       setIsReady(true);
 
-      // Immediately after initial loads, load other things in the background
+      // 5. Fetch remaining sections one by one in the background without blocking the UI
+      firestoreMilestonesService.getMilestones(true).then((ms) => {
+        setMilestones(ms);
+        cmsService.syncEntityFromFirestore('milestones', ms);
+        try { localStorage.setItem('mahdev_cached_milestones', JSON.stringify(ms)); } catch {}
+      }).catch((e) => console.warn('[FirestoreDataContext] Milestones notice:', e));
+
+      firestoreTrustedCompaniesService.getTrustedCompanies(true).then((partners) => {
+        setTrustedCompanies(partners);
+        cmsService.syncEntityFromFirestore('companies', partners);
+        try { localStorage.setItem('mahdev_cached_companies', JSON.stringify(partners)); } catch {}
+      }).catch((e) => console.warn('[FirestoreDataContext] Partners notice:', e));
+
+      firestoreTestimonialsService.getTestimonials(undefined, true).then((reviews) => {
+        setTestimonials(reviews);
+        cmsService.syncEntityFromFirestore('testimonials', reviews);
+        try { localStorage.setItem('mahdev_cached_testimonials', JSON.stringify(reviews)); } catch {}
+      }).catch((e) => console.warn('[FirestoreDataContext] Testimonials notice:', e));
+
+      firestoreGoogleReviewsService.getConfig(true).then((gConfig) => {
+        setGoogleReviewsConfig(gConfig);
+        try { localStorage.setItem('mahdev_cached_google_reviews_config', JSON.stringify(gConfig)); } catch {}
+      }).catch((e) => console.warn('[FirestoreDataContext] Google reviews config notice:', e));
+
+      firestoreGoogleReviewsService.getReviews().then((gReviews) => {
+        setGoogleReviews(gReviews);
+        try { localStorage.setItem('mahdev_cached_google_reviews', JSON.stringify(gReviews)); } catch {}
+      }).catch((e) => console.warn('[FirestoreDataContext] Google reviews notice:', e));
+
+      // 6. Preload division data one-by-one asynchronously in the background
       (async () => {
         for (const div of sortedDivs) {
           const divId = div.id || div.slug;
           if (divId) {
-            await loadDivisionData(divId);
+            await loadDivisionData(divId).catch(() => {});
           }
         }
       })();

@@ -183,7 +183,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
   return (
     <>
       <header
-        className={`sticky top-0 z-40 w-full transition-all duration-200 ${
+        className={`sticky top-0 z-[60] w-full transition-all duration-200 ${
           isScrolled
             ? 'bg-[#FAF9F6]/90 backdrop-blur-md border-b border-blue-200/60 shadow-xs'
             : 'bg-[#FAF9F6] border-b border-blue-100/70'
@@ -248,7 +248,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
                       {/* Dropdown Menu - perfectly constrained, responsive width, never overflows viewport */}
                       {isServicesOpen && (
-                        <div className="absolute left-0 mt-2 w-[360px] sm:w-[410px] max-w-[calc(100vw-2rem)] bg-[#FAF9F6] rounded-2xl shadow-2xl border border-blue-200/80 z-50 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col max-h-[calc(100vh-5rem)] overflow-hidden">
+                        <div className="absolute left-0 mt-2 w-[360px] sm:w-[410px] max-w-[calc(100vw-2rem)] bg-[#FAF9F6] rounded-2xl shadow-2xl border border-blue-200/80 z-[70] animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col max-h-[calc(100vh-5rem)] overflow-hidden">
                           <div className="px-4 py-3 bg-blue-50/80 border-b border-blue-100 flex items-center justify-between shrink-0">
                             <div>
                               <span className="text-[11px] font-bold uppercase tracking-wider text-blue-900 block">

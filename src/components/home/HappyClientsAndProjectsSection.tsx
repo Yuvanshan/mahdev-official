@@ -45,9 +45,9 @@ const HappyClientsAndProjectsSectionContent: React.FC<
   const yEven = useTransform(smoothProgress, [0, 1], ['-15px', '15px']);
   const yOdd = useTransform(smoothProgress, [0, 1], ['15px', '-15px']);
 
-  const completedProjectsCount = portfolio.length || 1800;
-  const happyClientsCount = trustedCompanies.length > 0 ? `${trustedCompanies.length * 15}+` : '450+';
-  const partnerCompaniesCount = trustedCompanies.length || 24;
+  const completedProjectsCount = portfolio.length > 0 ? `${portfolio.length}+` : `${portfolio.length}`;
+  const happyClientsCount = trustedCompanies.length > 0 ? `${trustedCompanies.length}+` : `${trustedCompanies.length}`;
+  const partnerCompaniesCount = `${trustedCompanies.length}`;
 
   const stats = [
     {

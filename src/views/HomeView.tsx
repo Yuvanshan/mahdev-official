@@ -16,13 +16,14 @@ import { ContactCorporateSection } from '../components/corporate/ContactCorporat
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { DEFAULT_HOMEPAGE_SECTIONS } from '../services/firestore/settings';
 import { DynamicSectionItem } from '../types/cms';
+import { HomeBelowHeroShimmer } from '../components/home/HomeBelowHeroShimmer';
 
 interface HomeViewProps {
   onNavigate: (route: string) => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
-  const { companySettings, siteSettings, homepageConfig } = useFirestoreDataContext();
+  const { companySettings, siteSettings, homepageConfig, isInitialLoading, divisions } = useFirestoreDataContext();
 
   const brandName = companySettings?.name || siteSettings?.siteName || 'Mahdev Pvt Ltd';
   const tagline = companySettings?.tagline || 'Creating Moments. Capturing Memories. Delivering Innovation.';
@@ -34,14 +35,15 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
     }
   };
 
-  // Reorderable sections from Firestore CMS
+  // Reorderable sections from Firestore CMS (excluding hero which is rendered primarily at top)
   const activeSections: DynamicSectionItem[] = React.useMemo(() => {
     const sections = homepageConfig?.sectionsOrder && homepageConfig.sectionsOrder.length > 0
       ? homepageConfig.sectionsOrder
       : DEFAULT_HOMEPAGE_SECTIONS;
 
-    // Filter out 'whyMahdev' / 'advantage' (The Mahdev Advantage), 'cta' / 'ctaSection' (Dispatch Your Inquiry), 'contact', and unwanted sections
+    // Filter out 'hero' (rendered explicitly at the very top), and banned or bottom sections
     const BANNED_SECTIONS = new Set([
+      'hero',
       'whyMahdev',
       'advantage',
       'cta',
@@ -64,16 +66,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
 
   const renderSectionByKey = (sectionKey: string, id: string) => {
     switch (sectionKey) {
-      case 'hero':
-        return (
-          <HeroSection
-            key={id}
-            onNavigate={onNavigate}
-            onExploreMahdev={() => scrollToSection('divisions')}
-            onContactUs={() => onNavigate('/contact')}
-            onExploreServices={() => onNavigate('/divisions')}
-          />
-        );
       case 'about':
         return (
           <AboutMahdevSection
@@ -131,6 +123,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
       rawPageTitle.toLowerCase().includes('corporate eco'));
   const effectivePageTitle = rawPageTitle && !isCorporateTitle ? rawPageTitle : defaultPageTitle;
 
+  const isDataLoading = isInitialLoading || !divisions || divisions.length === 0;
+
   return (
     <div className="w-full flex flex-col pb-24 lg:pb-0">
       <SEOHead
@@ -141,16 +135,32 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
         ogDescription={homepageConfig?.seo?.metaDescription}
       />
 
-      {/* CORE DYNAMIC CMS SECTIONS */}
-      {renderedSections}
+      {/* 1. PRIMARY LANDING HERO SECTION — ALWAYS USES /assets/hero_video.mp4 */}
+      <HeroSection
+        onNavigate={onNavigate}
+        onExploreMahdev={() => scrollToSection('divisions')}
+        onContactUs={() => onNavigate('/contact')}
+        onExploreServices={() => onNavigate('/divisions')}
+      />
 
-      {/* MILESTONES (KEPT AS EXPLICITLY REQUESTED) */}
-      <MilestonesSection onNavigate={onNavigate} />
+      {/* 2. BELOW HERO SECTION: SHOW SHIMMER UNTIL DATA LOADS FROM FIRESTORE (NO DEFAULT DATA) */}
+      {isDataLoading ? (
+        <HomeBelowHeroShimmer />
+      ) : (
+        <>
+          {/* CORE DYNAMIC CMS SECTIONS */}
+          {renderedSections}
 
-      {/* WHAT OUR CUSTOMERS SAY ABOUT US (TESTIMONIALS FROM ADMIN PORTAL) */}
-      <TestimonialsSection onNavigate={onNavigate} />
+          {/* MILESTONES (FROM FIRESTORE) */}
+          <MilestonesSection onNavigate={onNavigate} />
+
+          {/* TESTIMONIALS (FROM FIRESTORE) */}
+          <TestimonialsSection onNavigate={onNavigate} />
+        </>
+      )}
     </div>
   );
 };
+
 
 

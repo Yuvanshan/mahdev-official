@@ -45,7 +45,9 @@ export async function uploadMediaAsset(
   try {
     const serverUrl = await new Promise<string>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      xhr.open('POST', '/api/upload/media', true);
+      // Pass filename in both query string and header for cross-proxy reliability
+      const uploadEndpoint = `/api/upload/media?filename=${encodeURIComponent(cleanName)}`;
+      xhr.open('POST', uploadEndpoint, true);
 
       xhr.setRequestHeader(
         'Content-Type',
@@ -141,10 +143,12 @@ export async function uploadMediaAsset(
     console.warn('[MediaUpload] Cloud Storage fallback notice:', fbErr);
   }
 
-  // PRIORITY 3: Only for small images (< 800KB), fallback to Firestore chunked storage.
-  // NEVER chunk large video files into Firestore to prevent quota exhaustion and memory leaks.
-  if (!isVideo && file.size < 800 * 1024) {
+  // PRIORITY 3: Firestore Native Chunked Storage (Supports videos & media up to 35MB)
+  // Saves directly to Firestore collection 'media_blobs' with chunked binary storage
+  // and returns 'firestore://media_blobs/{id}' seamlessly resolvable by HeroVideoBackground.
+  if (file.size <= 35 * 1024 * 1024) {
     try {
+      console.info('[MediaUpload] Falling back to Firestore Native Chunked Media Storage for', file.name);
       return await uploadMediaToFirestore(file, onProgress);
     } catch (firestoreErr) {
       console.warn('[MediaUpload] Firestore fallback notice:', firestoreErr);

@@ -71,11 +71,18 @@ export const HomeGallerySection: React.FC = () => {
           const isFeatured = index === 0;
 
           return (
-            <button
+            <div
               key={item.id}
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={() => setActiveImage(item)}
-              className={`group relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setActiveImage(item);
+                }
+              }}
+              className={`group relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer ${
                 isFeatured ? 'col-span-2 sm:col-span-2 xl:col-span-2 aspect-[16/10]' : 'aspect-[4/5]'
               }`}
             >
@@ -123,7 +130,7 @@ export const HomeGallerySection: React.FC = () => {
                   <span className="text-sm font-semibold sm:text-base">{item.title}</span>
                 </div>
               </div>
-            </button>
+            </div>
           );
         })}
       </div>

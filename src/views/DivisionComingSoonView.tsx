@@ -133,7 +133,7 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
       />
 
       {/* Top Header Navigation Strip */}
-      <div className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+      <div className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md relative z-20">
         <SectionContainer className="py-3.5 flex items-center justify-between">
           <button
             onClick={() => onNavigate('/')}

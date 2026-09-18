@@ -267,36 +267,30 @@ function requireAdminAuth(allowedRoles?: string[]) {
   };
 }
 
-async function listenOnAvailablePort(app: express.Express, preferredPort: number): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const tryPort = (port: number) => {
-      const server = app.listen(port, '0.0.0.0', () => {
-        resolve(port);
-      });
-
-      server.on('error', (error: NodeJS.ErrnoException) => {
-        if (error.code === 'EADDRINUSE') {
-          const nextPort = port + 1;
-          if (nextPort > preferredPort + 20) {
-            reject(new Error(`No available port found starting from ${preferredPort}.`));
-            return;
-          }
-
-          console.warn(`[Mahdev Core Server] Port ${port} is busy; retrying on ${nextPort}.`);
-          tryPort(nextPort);
-          return;
-        }
-
-        reject(error);
-      });
-    };
-
-    tryPort(preferredPort);
-  });
-}
-
 async function startServer() {
   const app = express();
+
+  // Production Security Headers & CORS Middleware (MUST BE FIRST)
+  app.use((req, res, next) => {
+    // Defense-in-depth Security Headers
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+    // Safe CORS Configuration supporting media streaming & all custom headers
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header(
+      'Access-Control-Allow-Headers',
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Firebase-AppCheck, X-Admin-Token, X-App-Authorization, X-App-Token, x-filename, X-Filename, x-file-name, *'
+    );
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200);
+      return;
+    }
+    next();
+  });
 
   // Static uploads directory serving
   const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
@@ -315,10 +309,14 @@ async function startServer() {
   // High-Capacity Media & Video Upload Endpoint (supports videos up to 100MB)
   app.post(
     '/api/upload/media',
-    express.raw({ type: ['*/*'], limit: '100mb' }),
+    express.raw({ type: () => true, limit: '100mb' }),
     async (req: Request, res: Response) => {
       try {
-        const rawFilename = (req.headers['x-filename'] as string) || `media_${Date.now()}`;
+        const rawFilename =
+          (req.query.filename as string) ||
+          (req.headers['x-filename'] as string) ||
+          (req.headers['x-file-name'] as string) ||
+          `media_${Date.now()}`;
         const rawContentType = (req.headers['content-type'] as string) || '';
 
         const fileBuffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body || '');
@@ -386,28 +384,6 @@ async function startServer() {
       return;
     }
     next(err);
-  });
-
-  // Production Security Headers & CORS Middleware
-  app.use((req, res, next) => {
-    // Defense-in-depth Security Headers
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-
-    // Safe CORS Configuration
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header(
-      'Access-Control-Allow-Headers',
-      'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Firebase-AppCheck, X-Admin-Token, X-App-Authorization, X-App-Token'
-    );
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-
-    if (req.method === 'OPTIONS') {
-      res.sendStatus(200);
-      return;
-    }
-    next();
   });
 
   // ==========================================
@@ -1751,18 +1727,14 @@ async function startServer() {
     });
   }
 
-  const requestedPortValue = Number(
-    process.env.PORT || process.argv.find((arg) => /^\d+$/.test(arg)) || '3000'
-  );
-  const preferredPort = Number.isFinite(requestedPortValue) && requestedPortValue > 0 ? requestedPortValue : 3000;
-  const PORT = await listenOnAvailablePort(app, preferredPort);
-  process.env.PORT = String(PORT);
-
-  console.log(`[Mahdev Core Server] running on http://0.0.0.0:${PORT} (NodeEnv: ${serverConfig.nodeEnv})`);
-  const { diagnostics } = validateServerSecrets();
-  for (const d of diagnostics) {
-    console.log(`  └─ [${d.category}]: ${d.description} (${d.status})`);
-  }
+  const PORT = 3000;
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`[Mahdev Core Server] running on http://0.0.0.0:${PORT} (NodeEnv: ${serverConfig.nodeEnv})`);
+    const { diagnostics } = validateServerSecrets();
+    for (const d of diagnostics) {
+      console.log(`  └─ [${d.category}]: ${d.description} (${d.status})`);
+    }
+  });
 }
 
 startServer();
