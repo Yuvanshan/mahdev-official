@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { CatalogHero } from '../components/catalog/CatalogHero';
 import { CatalogFilterBar } from '../components/catalog/CatalogFilterBar';
 import { CatalogProductGrid } from '../components/catalog/CatalogProductGrid';
@@ -55,6 +55,29 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     }
     return null;
   });
+
+  // Sync selected product when query params (e.g. ?sku=...) or initialProductId change
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const targetSkuOrId = initialProductId || params.get('sku') || params.get('id') || params.get('product');
+    if (!targetSkuOrId) return;
+
+    const clean = targetSkuOrId.trim().toLowerCase();
+    const all = catalogService.queryProducts();
+    const found =
+      all.find(
+        (p) =>
+          p.id.toLowerCase() === clean ||
+          p.slug.toLowerCase() === clean ||
+          (p as any).sku?.toLowerCase() === clean
+      ) ||
+      catalogService.getProductById(targetSkuOrId) ||
+      catalogService.getProductBySlug(targetSkuOrId);
+
+    if (found) {
+      setSelectedProduct(found);
+    }
+  }, [initialProductId, firestoreProducts]);
 
   // Query categories for active filters
   const categories = useMemo(() => {

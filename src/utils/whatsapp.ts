@@ -91,10 +91,17 @@ export function formatToJpegUrl(rawUrl?: string): string {
  * Resolves a direct canonical link for the item so the recipient can click and view it directly
  */
 export function resolveItemDirectUrl(options: WhatsAppInquiryOptions, effectiveSku: string): string {
-  if (options.itemUrl) return options.itemUrl;
-  if (options.productUrl) return options.productUrl;
+  const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://mahdev.lk';
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://mahdev.lk';
+  if (options.itemUrl) {
+    if (options.itemUrl.startsWith('http')) return options.itemUrl;
+    return `${origin}${options.itemUrl.startsWith('/') ? '' : '/'}${options.itemUrl}`;
+  }
+  if (options.productUrl) {
+    if (options.productUrl.startsWith('http')) return options.productUrl;
+    return `${origin}${options.productUrl.startsWith('/') ? '' : '/'}${options.productUrl}`;
+  }
+
   if (options.type === 'product') {
     return `${origin}/catalog?sku=${encodeURIComponent(effectiveSku)}`;
   }
@@ -113,6 +120,25 @@ export function resolveItemDirectUrl(options: WhatsAppInquiryOptions, effectiveS
   if (options.type === 'booking') {
     return `${origin}/book`;
   }
+
+  // If general division inquiry
+  const targetDivision = (options.divisionName || '').trim().toLowerCase();
+  if (targetDivision.includes('sws') || targetDivision.includes('event')) {
+    return `${origin}/sws`;
+  }
+  if (targetDivision.includes('u1') || targetDivision.includes('cinema') || targetDivision.includes('studio')) {
+    return `${origin}/u1`;
+  }
+  if (targetDivision.includes('it') || targetDivision.includes('tech') || targetDivision.includes('software')) {
+    return `${origin}/it`;
+  }
+  if (targetDivision.includes('travel') || targetDivision.includes('safari')) {
+    return `${origin}/travels`;
+  }
+  if (targetDivision.includes('mart')) {
+    return `${origin}/mart`;
+  }
+
   if (typeof window !== 'undefined' && window.location.href.startsWith('http')) {
     return window.location.href;
   }
@@ -243,11 +269,13 @@ export function buildWhatsAppMessage(options: WhatsAppInquiryOptions): string {
  */
 export function buildWhatsAppOrderMessage(payload: WhatsAppOrderPayload): string {
   const lines: string[] = [];
+  const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://mahdev.lk';
 
   lines.push('🛒 *NEW ORDER REQUEST — MAHDEV ECOSYSTEM*');
   lines.push('================================');
   if (payload.orderId) {
     lines.push(`🆔 *Order Reference:* \`${payload.orderId}\``);
+    lines.push(`🔗 *View / Track Order:* ${origin}/order/${payload.orderId}`);
   }
   lines.push(`👤 *Customer:* ${payload.customerName || 'Valued Customer'}`);
   lines.push(`📞 *Contact Phone:* ${payload.customerPhone || 'Not provided'}`);
@@ -261,13 +289,15 @@ export function buildWhatsAppOrderMessage(payload: WhatsAppOrderPayload): string
     const itemTotal = (item.price * item.quantity).toLocaleString('en-US', {
       minimumFractionDigits: 2,
     });
-    const skuTag = item.sku ? `[SKU: \`${item.sku}\`]` : `[SKU: \`${deriveLookupSku(item.name)}\`]`;
+    const itemSku = item.sku || deriveLookupSku(item.name);
+    const skuTag = `[SKU: \`${itemSku}\`]`;
+    const itemDirectUrl = item.itemUrl || `${origin}/catalog?sku=${encodeURIComponent(itemSku)}`;
+
     let line = `${index + 1}. ${skuTag} *${item.name}*` +
       (item.selectedVariant ? ` (${item.selectedVariant})` : '') +
-      `\n   • Qty: ${item.quantity} × Rs. ${item.price.toLocaleString()} = *Rs. ${itemTotal}*`;
-    if (item.itemUrl) {
-      line += `\n   • Link: ${item.itemUrl}`;
-    }
+      `\n   • Qty: ${item.quantity} × Rs. ${item.price.toLocaleString()} = *Rs. ${itemTotal}*` +
+      `\n   • Link: ${itemDirectUrl}`;
+
     const itemImg = formatToJpegUrl(item.imageUrl);
     if (itemImg) {
       line += `\n   • Photo: ${itemImg}`;

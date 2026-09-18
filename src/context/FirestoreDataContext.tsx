@@ -90,12 +90,24 @@ export interface FirestoreDataContextValue {
 const FirestoreDataContext = createContext<FirestoreDataContextValue | null>(null);
 
 export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Show loader until 100% of Firestore database is hydrated
-  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
-  const [isReady, setIsReady] = useState<boolean>(false);
+  // Check if browser already has fully hydrated data from previous visit
+  const hasCachedData = (() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const hydrated = localStorage.getItem('mahdev_cache_hydrated');
+        const hasDivs = localStorage.getItem('mahdev_cached_divisions');
+        return hydrated === 'true' && !!hasDivs;
+      }
+    } catch {}
+    return false;
+  })();
+
+  // Show boot loader only on first-ever load; on subsequent visits / refreshes, load instantly from cache
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(!hasCachedData);
+  const [isReady, setIsReady] = useState<boolean>(hasCachedData);
   const [isFetching, setIsFetching] = useState<boolean>(false);
-  const [syncProgress, setSyncProgress] = useState<number>(0);
-  const [syncStatus, setSyncStatus] = useState<string>('Preparing live experience...');
+  const [syncProgress, setSyncProgress] = useState<number>(hasCachedData ? 100 : 0);
+  const [syncStatus, setSyncStatus] = useState<string>(hasCachedData ? 'Ready' : 'Loading details...');
   const [error, setError] = useState<Error | null>(null);
 
   const [companySettings, setCompanySettings] = useState<FirestoreCompanySettings>(() => {
@@ -226,7 +238,15 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   });
 
   // Track loaded divisions state for seamless transition & shimmers
-  const [loadedDivisions, setLoadedDivisions] = useState<Record<string, boolean>>({});
+  const [loadedDivisions, setLoadedDivisions] = useState<Record<string, boolean>>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('mahdev_cached_loaded_divisions');
+        if (cached) return JSON.parse(cached);
+      }
+    } catch {}
+    return {};
+  });
   const divisionsRef = React.useRef<FirestoreDivision[]>([]);
   divisionsRef.current = divisions;
 
@@ -248,7 +268,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         setServices((prev) => {
           const map = new Map(prev.map((s) => [s.id, s]));
           srvs.forEach((s) => map.set(s.id, s));
-          return Array.from(map.values());
+          const merged = Array.from(map.values());
+          try { localStorage.setItem('mahdev_cached_services', JSON.stringify(merged)); } catch {}
+          return merged;
         });
         if (typeof queueMicrotask === 'function') {
           queueMicrotask(() => bookingService.syncWithFirestore(srvs));
@@ -261,7 +283,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         setProducts((prev) => {
           const map = new Map(prev.map((p) => [p.id, p]));
           prods.forEach((p) => map.set(p.id, p));
-          return Array.from(map.values());
+          const merged = Array.from(map.values());
+          try { localStorage.setItem('mahdev_cached_products', JSON.stringify(merged)); } catch {}
+          return merged;
         });
         if (typeof queueMicrotask === 'function') {
           queueMicrotask(() => catalogService.syncWithFirestore(prods));
@@ -274,7 +298,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         setCategories((prev) => {
           const map = new Map(prev.map((c) => [c.id, c]));
           cats.forEach((c) => map.set(c.id, c));
-          return Array.from(map.values());
+          const merged = Array.from(map.values());
+          try { localStorage.setItem('mahdev_cached_categories', JSON.stringify(merged)); } catch {}
+          return merged;
         });
       }
 
@@ -282,7 +308,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         setPortfolio((prev) => {
           const map = new Map(prev.map((p) => [p.id, p]));
           port.forEach((p) => map.set(p.id, p));
-          return Array.from(map.values());
+          const merged = Array.from(map.values());
+          try { localStorage.setItem('mahdev_cached_portfolio', JSON.stringify(merged)); } catch {}
+          return merged;
         });
       }
 
@@ -290,23 +318,25 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         setGallery((prev) => {
           const map = new Map(prev.map((g) => [g.id, g]));
           gal.forEach((g) => map.set(g.id, g));
-          return Array.from(map.values());
+          const merged = Array.from(map.values());
+          try { localStorage.setItem('mahdev_cached_gallery', JSON.stringify(merged)); } catch {}
+          return merged;
         });
       }
 
-      setLoadedDivisions((prev) => ({
-        ...prev,
-        [canonicalId]: true,
-        [rawDivId]: true,
-      }));
+      setLoadedDivisions((prev) => {
+        const next = { ...prev, [canonicalId]: true, [rawDivId]: true };
+        try { localStorage.setItem('mahdev_cached_loaded_divisions', JSON.stringify(next)); } catch {}
+        return next;
+      });
     } catch (err) {
       console.warn(`[FirestoreDataContext] Error loading division ${rawDivId}:`, err);
       // Failsafe: mark as loaded to prevent permanent hang
-      setLoadedDivisions((prev) => ({
-        ...prev,
-        [canonicalId]: true,
-        [rawDivId]: true,
-      }));
+      setLoadedDivisions((prev) => {
+        const next = { ...prev, [canonicalId]: true, [rawDivId]: true };
+        try { localStorage.setItem('mahdev_cached_loaded_divisions', JSON.stringify(next)); } catch {}
+        return next;
+      });
     }
   }, []);
 
@@ -367,9 +397,13 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // 4. Initial core hydration ready: Unblock landing page and division screens instantly!
       setSyncProgress(100);
-      setSyncStatus('Delivering Innovation....');
+      setSyncStatus('Delivering Innovation...');
       setIsInitialLoading(false);
       setIsReady(true);
+      try {
+        localStorage.setItem('mahdev_cache_hydrated', 'true');
+        localStorage.setItem('mahdev_cache_timestamp', String(Date.now()));
+      } catch {}
 
       // 5. Fetch remaining sections one by one in the background without blocking the UI
       firestoreMilestonesService.getMilestones(true).then((ms) => {
@@ -422,16 +456,28 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     let isMounted = true;
 
+    // If cached data is available, instantly synchronize catalog & booking services from cache
+    if (hasCachedData) {
+      if (products.length > 0) catalogService.syncWithFirestore(products);
+      if (services.length > 0) bookingService.syncWithFirestore(services);
+      if (divisions.length > 0) cmsService.syncEntityFromFirestore('divisions', divisions);
+      if (homepageConfig) cmsService.syncHomepageConfig(homepageConfig);
+    }
+
     const markReady = () => {
       if (isMounted) {
         setSyncProgress(100);
         setSyncStatus('Welcome');
         setIsInitialLoading(false);
         setIsReady(true);
+        try {
+          localStorage.setItem('mahdev_cache_hydrated', 'true');
+        } catch {}
       }
     };
 
-    // Initial fetch: wait until 100% of Firestore data is synchronized before dismissing loader
+    // Initial fetch: if not cached, wait until 100% of Firestore data is synchronized before dismissing loader.
+    // If already cached, run silently in background without blocking the user!
     refreshAll()
       .then(() => {
         if (isMounted) {

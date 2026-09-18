@@ -216,6 +216,14 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const { services, companySettings, siteSettings, divisions, products, isInitialLoading, isFetching } = useFirestoreDataContext();
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const skuParam = params.get('sku') || params.get('packageSku') || params.get('q');
+    if (skuParam) {
+      setSearchQuery(skuParam);
+    }
+  }, []);
+
   const rentalCount = getRentalAssetCount(
     products,
     (companySettings as any)?.rentalAssetCount || (siteSettings as any)?.rentalAssetCount
@@ -267,9 +275,16 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
       const query = searchQuery.toLowerCase().trim();
       const matchesQuery =
         !query ||
+        (srv as any).sku?.toLowerCase().includes(query) ||
         srv.name?.toLowerCase().includes(query) ||
         srv.title?.toLowerCase().includes(query) ||
         srv.description?.toLowerCase().includes(query) ||
+        ((srv as any).packages as any[])?.some(
+          (p: any) =>
+            p?.name?.toLowerCase().includes(query) ||
+            p?.sku?.toLowerCase().includes(query) ||
+            p?.title?.toLowerCase().includes(query)
+        ) ||
         srv.features?.some((f) => f.toLowerCase().includes(query));
 
       return matchesDivision && matchesQuery;

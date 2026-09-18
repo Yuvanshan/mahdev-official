@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="travel-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#064E3B"/>
+    </linearGradient>
+    <linearGradient id="gold-sun" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="100%" stop-color="#EAB308"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="40" fill="url(#travel-grad)"/>
+  
+  <!-- Sun and Mountain peaks -->
+  <circle cx="100" cy="72" r="22" fill="url(#gold-sun)"/>
+  <polygon points="55,125 90,80 120,125" fill="#047857" opacity="0.85"/>
+  <polygon points="90,125 125,70 155,125" fill="#065F46"/>
+  <!-- Snowcaps -->
+  <polygon points="90,80 97,90 85,90" fill="#FFFFFF"/>
+  <polygon points="125,70 133,82 118,82" fill="#FFFFFF"/>
+  
+  <!-- Compass Star element -->
+  <circle cx="100" cy="125" r="3" fill="#FDE047"/>
+
+  <!-- Text MAHDEV TRAVELS -->
+  <text x="100" y="156" font-family="system-ui, -apple-system, 'Inter', sans-serif" font-weight="900" font-size="18" fill="#FFFFFF" text-anchor="middle" letter-spacing="2">TRAVELS</text>
+  <text x="100" y="174" font-family="system-ui, -apple-system, 'Inter', sans-serif" font-weight="700" font-size="8.5" fill="#A7F3D0" text-anchor="middle" letter-spacing="2.5">LUXURY EXPEDITIONS</text>
+</svg>

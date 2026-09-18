@@ -20,6 +20,7 @@ interface BentoDivisionItem {
   subtitle: string;
   summary: string;
   image: string;
+  logo?: string;
   route: string;
   metrics: string[];
   isFeatured?: boolean;
@@ -34,6 +35,7 @@ const DEFAULT_DIVISION_BENTO_DATA: BentoDivisionItem[] = [
     subtitle: 'Luxury Weddings, Stage Decor & 5,000+ Rental Units',
     summary: 'Sri Lanka’s premier event production unit for grand floral mandaps, banquet staging, concert AV, and comprehensive equipment rentals.',
     image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=85',
+    logo: '/assets/images/sws_logo.svg',
     route: '/sws',
     metrics: ['5,000+ Rentals', 'Floral Mandaps', 'Stage Lighting', 'Audio/Visual'],
     isFeatured: true,
@@ -45,6 +47,7 @@ const DEFAULT_DIVISION_BENTO_DATA: BentoDivisionItem[] = [
     subtitle: 'Fine Art Visual Production',
     summary: 'Ultra-HD commercial filmmaking, cinema wedding cinematography, and professional studio portraiture.',
     image: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=800&q=80',
+    logo: '/assets/images/u1_logo.svg',
     route: '/u1',
     metrics: ['8K Cinema', 'Aerial Drones', 'Commercials'],
     isFeatured: false,
@@ -56,6 +59,7 @@ const DEFAULT_DIVISION_BENTO_DATA: BentoDivisionItem[] = [
     subtitle: 'Enterprise Engineering',
     summary: 'Full-stack web applications, scalable mobile software, and secure cloud API architectures.',
     image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
+    logo: '/assets/images/it_logo.svg',
     route: '/it',
     metrics: ['Web Apps', 'Mobile', 'Cloud 99.9%'],
     isFeatured: false,
@@ -67,6 +71,7 @@ const DEFAULT_DIVISION_BENTO_DATA: BentoDivisionItem[] = [
     subtitle: 'Curated Islandwide Expeditions',
     summary: 'Dedicated luxury chauffeur fleets, boutique villa reservations, and personalized Ceylon journeys.',
     image: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=800&q=80',
+    logo: '/assets/images/travels_logo.svg',
     route: '/travels',
     metrics: ['Chauffeur Fleet', 'Custom Itineraries', '24/7 Support'],
     isFeatured: false,
@@ -78,6 +83,7 @@ const DEFAULT_DIVISION_BENTO_DATA: BentoDivisionItem[] = [
     subtitle: 'Premium Living Essentials',
     summary: 'Curated home aesthetics, ambient interior decor, and verified smart technology delivered nationwide.',
     image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=800&q=80',
+    logo: '/assets/images/mart_logo.svg',
     route: '/mart',
     metrics: ['Decor Items', 'Tech Hardware', 'Islandwide Courier'],
     isFeatured: false,
@@ -139,11 +145,17 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
 
         const defaultFallbackItem =
           DEFAULT_DIVISION_BENTO_DATA.find((item) => item.id === id) || DEFAULT_DIVISION_BENTO_DATA[0];
-        const rawImg = d.heroImageUrl || d.imageUrl || (d.hero as any)?.bgImage || d.logoUrl;
+        const rawImg = d.heroImageUrl || d.imageUrl || (d.hero as any)?.bgImage;
         const img =
           rawImg && typeof rawImg === 'string' && rawImg.trim() !== ''
             ? rawImg.trim()
             : defaultFallbackItem.image;
+
+        const resolvedLogo =
+          (d.logoUrl && typeof d.logoUrl === 'string' && d.logoUrl.trim() !== '' ? d.logoUrl.trim() : '') ||
+          ((d as any)?.logo && typeof (d as any).logo === 'string' && (d as any).logo.trim() !== '' ? (d as any).logo.trim() : '') ||
+          defaultFallbackItem.logo ||
+          `/assets/images/${id}_logo.svg`;
 
         const metrics =
           d.stats && d.stats.length > 0
@@ -162,6 +174,7 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
               : d.tagline || d.shortDescription || (d.hero as any)?.subtitle || '',
           summary: d.description || d.aboutText || d.shortDescription || '',
           image: img,
+          logo: resolvedLogo,
           route: getCanonicalRoute(id, d.route),
           metrics,
           isFeatured: id === 'sws',
@@ -293,7 +306,20 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
 
                 {/* Content */}
                 <div className="relative z-10 space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center justify-between gap-3">
+                    {/* Division Logo */}
+                    {div.logo && (
+                      <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white/95 backdrop-blur-md p-1.5 shadow-lg flex items-center justify-center border border-white/50 shrink-0 group-hover:scale-105 group-hover:shadow-blue-500/20 transition-all duration-300">
+                        <img
+                          src={div.logo}
+                          alt={`${div.name} logo`}
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = `/assets/images/${div.id}_logo.svg`;
+                          }}
+                        />
+                      </div>
+                    )}
                     <span className="inline-block px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider text-white bg-[#0052FF] shadow-xs">
                       {div.badge}
                     </span>
@@ -358,9 +384,23 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
                 >
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500">
-                        {div.badge}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {div.logo && (
+                          <div className="w-7 h-7 rounded-lg bg-slate-50 p-1 flex items-center justify-center border border-slate-200 shrink-0 shadow-xs">
+                            <img
+                              src={div.logo}
+                              alt={div.name}
+                              className="w-full h-full object-contain"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = `/assets/images/${div.id}_logo.svg`;
+                              }}
+                            />
+                          </div>
+                        )}
+                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500">
+                          {div.badge}
+                        </span>
+                      </div>
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
                         <Sparkles className="w-2.5 h-2.5" /> Coming Soon
                       </span>

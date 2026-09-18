@@ -61,47 +61,53 @@ class OrderService {
     this.initFirestoreSync();
   }
 
+  public mapFirestoreOrder(fo: any): Order {
+    return {
+      id: fo.id,
+      customer: fo.customer || {
+        fullName: fo.customerName || 'Customer',
+        email: fo.customerEmail || '',
+        phone: fo.customerPhone || '',
+        preferredContact: 'email',
+      },
+      items: Array.isArray(fo.items) ? fo.items : [],
+      totalQuantity:
+        fo.totalQuantity ||
+        (Array.isArray(fo.items)
+          ? fo.items.reduce((s: number, i: any) => s + (i.quantity || 1), 0)
+          : 1),
+      subtotal: fo.subtotal || fo.total || 0,
+      productDiscounts: fo.productDiscounts || 0,
+      couponDiscount: fo.couponDiscount || 0,
+      appliedCouponCode: fo.appliedCouponCode,
+      shippingFee: fo.shippingFee || 0,
+      tax: fo.tax || 0,
+      total: fo.total || 0,
+      currency: fo.currency || 'USD',
+      status: fo.status || fo.orderStatus || 'pending_payment',
+      paymentStatus: fo.paymentStatus || 'payment_pending',
+      paymentMethod: fo.paymentMethod || 'credit_card',
+      transactionId: fo.transactionId,
+      paymentGatewayReady: fo.paymentGatewayReady ?? true,
+      deliveryInfo: fo.deliveryInfo,
+      bookingInfo: fo.bookingInfo,
+      customerNotes: fo.customerNotes,
+      adminNotesList: fo.adminNotesList || [],
+      refunds: fo.refunds || [],
+      trackingNumber: fo.trackingNumber,
+      carrier: fo.carrier,
+      createdAt: fo.createdAt || new Date().toISOString(),
+      updatedAt: fo.updatedAt || new Date().toISOString(),
+    };
+  }
+
   private initFirestoreSync(): void {
     try {
       firestoreOrdersService.subscribeAllOrders((firestoreOrders) => {
         if (!Array.isArray(firestoreOrders)) return;
-        
+
         // Map Firestore orders to local Order model
-        const mappedOrders: Order[] = firestoreOrders.map((fo: any) => {
-          return {
-            id: fo.id,
-            customer: fo.customer || {
-              fullName: fo.customerName || 'Customer',
-              email: fo.customerEmail || '',
-              phone: fo.customerPhone || '',
-              preferredContact: 'email',
-            },
-            items: Array.isArray(fo.items) ? fo.items : [],
-            totalQuantity: fo.totalQuantity || (Array.isArray(fo.items) ? fo.items.reduce((s: number, i: any) => s + (i.quantity || 1), 0) : 1),
-            subtotal: fo.subtotal || fo.total || 0,
-            productDiscounts: fo.productDiscounts || 0,
-            couponDiscount: fo.couponDiscount || 0,
-            appliedCouponCode: fo.appliedCouponCode,
-            shippingFee: fo.shippingFee || 0,
-            tax: fo.tax || 0,
-            total: fo.total || 0,
-            currency: fo.currency || 'USD',
-            status: fo.status || fo.orderStatus || 'pending_payment',
-            paymentStatus: fo.paymentStatus || 'payment_pending',
-            paymentMethod: fo.paymentMethod || 'credit_card',
-            transactionId: fo.transactionId,
-            paymentGatewayReady: fo.paymentGatewayReady ?? true,
-            deliveryInfo: fo.deliveryInfo,
-            bookingInfo: fo.bookingInfo,
-            customerNotes: fo.customerNotes,
-            adminNotesList: fo.adminNotesList || [],
-            refunds: fo.refunds || [],
-            trackingNumber: fo.trackingNumber,
-            carrier: fo.carrier,
-            createdAt: fo.createdAt || new Date().toISOString(),
-            updatedAt: fo.updatedAt || new Date().toISOString(),
-          };
-        });
+        const mappedOrders: Order[] = firestoreOrders.map((fo: any) => this.mapFirestoreOrder(fo));
 
         // Merge Firestore orders with existing orders, giving precedence to Firestore
         const orderMap = new Map<string, Order>();
@@ -316,6 +322,38 @@ class OrderService {
   public getOrderById(id: string): Order | null {
     const cleanId = id.trim().toUpperCase();
     return this.orders.find((o) => o.id.toUpperCase() === cleanId) || null;
+  }
+
+  public async fetchOrderById(id: string): Promise<Order | null> {
+    const local = this.getOrderById(id);
+    if (local) return local;
+
+    const cleanId = id.trim();
+    try {
+      let snap = await firestoreOrdersService.getOrderById(cleanId);
+      if (!snap) {
+        snap = await firestoreOrdersService.getOrderById(cleanId.toUpperCase());
+      }
+      if (!snap) {
+        // Search in all fetched orders
+        const all = await firestoreOrdersService.getOrders({ limit: 100 });
+        snap = all.find((o) => o.id.toUpperCase() === cleanId.toUpperCase()) || null;
+      }
+      if (snap) {
+        const mapped = this.mapFirestoreOrder(snap);
+        const idx = this.orders.findIndex((o) => o.id.toUpperCase() === mapped.id.toUpperCase());
+        if (idx >= 0) {
+          this.orders[idx] = mapped;
+        } else {
+          this.orders.unshift(mapped);
+        }
+        this.saveOrders();
+        return mapped;
+      }
+    } catch (err) {
+      console.warn('[OrderService] Error fetching order from Firestore:', err);
+    }
+    return null;
   }
 
   public getOrdersByEmail(email: string): Order[] {

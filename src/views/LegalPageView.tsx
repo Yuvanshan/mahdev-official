@@ -62,7 +62,7 @@ export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavi
     subtitle: 'Official legal policy and compliance document for Mahdev Pvt Ltd.',
     effectiveDate: 'Effective immediately',
     lastUpdated: 'Updated recently',
-    sections: [{ heading: 'Overview', content: ['This policy is managed in the admin portal and synced live from Firestore.'] }],
+    sections: [{ heading: 'Overview', content: ['This policy is managed in the administrative portal.'] }],
   };
   const meta = POLICY_METADATA[policyType];
   const legalName = companySettings?.legalName || COMPANY_INFO.legalName;

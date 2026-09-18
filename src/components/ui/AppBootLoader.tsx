@@ -24,7 +24,7 @@ interface AppBootLoaderProps {
 
 export const AppBootLoader: React.FC<AppBootLoaderProps> = ({
   message = 'Loading Mahdev Enterprise',
-  subtext = 'Synchronizing real-time Firestore collections & division data...',
+  subtext = 'Loading details & preparing experience...',
   error = null,
   onRetry,
   progress,
@@ -68,7 +68,7 @@ export const AppBootLoader: React.FC<AppBootLoaderProps> = ({
       icon: Plane,
       color: '#059669',
       badge: 'VIP Expeditions',
-      statusText: 'Synchronizing expedition itineraries & luxury fleet...',
+      statusText: 'Loading expedition itineraries & luxury fleet...',
     },
     {
       id: 'mart',
@@ -97,7 +97,7 @@ export const AppBootLoader: React.FC<AppBootLoaderProps> = ({
 
   const currentStage = divisionStages[activeDivisionIndex];
   const resolvedProgress = typeof progress === 'number' ? Math.max(8, Math.min(100, progress)) : animatedProgress;
-  const resolvedSubtext = statusText || subtext || 'Loading live data from Cloud Firestore...';
+  const resolvedSubtext = statusText || subtext || 'Loading details...';
 
   return (
     <div
@@ -134,11 +134,11 @@ export const AppBootLoader: React.FC<AppBootLoaderProps> = ({
             </div>
 
             <h2 className="text-xl font-bold font-display text-slate-900 tracking-tight mb-2">
-              Connection Synchronizing
+              Connecting...
             </h2>
 
             <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-              We encountered a delay synchronizing Cloud Firestore. Please retry to refresh the live connection.
+              We encountered a brief delay loading details. Please retry to refresh the live connection.
             </p>
 
             {onRetry && (

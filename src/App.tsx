@@ -43,6 +43,7 @@ import { TestimonialsView } from './views/TestimonialsView';
 import { CareersView } from './views/CareersView';
 import { LegalPageView } from './views/LegalPageView';
 import { NotFoundView } from './views/NotFoundView';
+import { GalleryPageView } from './views/GalleryPageView';
 import { LoginView } from './views/auth/LoginView';
 import { RegisterView } from './views/auth/RegisterView';
 import { ForgotPasswordView } from './views/auth/ForgotPasswordView';
@@ -70,6 +71,7 @@ function AppContent() {
   const [currentPath, setCurrentPath] = useState<string>(() => {
     if (typeof window === 'undefined') return '/';
     const hash = window.location.hash || '';
+    const search = window.location.search || '';
     if (hash.startsWith('#/') && hash.length > 2) {
       return hash.substring(1);
     }
@@ -78,17 +80,17 @@ function AppContent() {
       'admin', 'admin-login', 'adminportal', 'admin-portal',
       'sws', 'u1', 'it', 'travels', 'mart',
       'sws-events', 'sws-event-management', 'u1-studio', 'it-solutions', 'mahdev-travels', 'online-mart',
-      'about', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'catalog'
+      'about', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'catalog', 'track-order', 'order', 'orders'
     ];
     if (directHashRoutes.includes(cleanHash) || cleanHash.startsWith('admin/')) {
-      return `/${cleanHash}`;
+      return `/${cleanHash}${search}`;
     }
     const searchParams = new URLSearchParams(window.location.search);
     const queryRoute = searchParams.get('route') || searchParams.get('p') || searchParams.get('path');
     if (queryRoute) {
-      return queryRoute.startsWith('/') ? queryRoute : `/${queryRoute}`;
+      return (queryRoute.startsWith('/') ? queryRoute : `/${queryRoute}`) + search;
     }
-    return window.location.pathname || '/';
+    return (window.location.pathname || '/') + search;
   });
 
   // Dynamic favicon and document title synchronization from Firestore
@@ -145,6 +147,7 @@ function AppContent() {
   useEffect(() => {
     const handleLocationChange = () => {
       const hash = window.location.hash || '';
+      const search = window.location.search || '';
       if (hash.startsWith('#/') && hash.length > 2) {
         setCurrentPath(hash.substring(1));
         return;
@@ -154,19 +157,19 @@ function AppContent() {
         'admin', 'admin-login', 'adminportal', 'admin-portal',
         'sws', 'u1', 'it', 'travels', 'mart',
         'sws-events', 'sws-event-management', 'u1-studio', 'it-solutions', 'mahdev-travels', 'online-mart',
-        'about', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'catalog'
+        'about', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'catalog', 'track-order', 'order', 'orders'
       ];
       if (directHashRoutes.includes(cleanHash) || cleanHash.startsWith('admin/')) {
-        setCurrentPath(`/${cleanHash}`);
+        setCurrentPath(`/${cleanHash}${search}`);
         return;
       }
       const searchParams = new URLSearchParams(window.location.search);
       const queryRoute = searchParams.get('route') || searchParams.get('p') || searchParams.get('path');
       if (queryRoute) {
-        setCurrentPath(queryRoute.startsWith('/') ? queryRoute : `/${queryRoute}`);
+        setCurrentPath((queryRoute.startsWith('/') ? queryRoute : `/${queryRoute}`) + search);
         return;
       }
-      setCurrentPath(window.location.pathname || '/');
+      setCurrentPath((window.location.pathname || '/') + search);
     };
     window.addEventListener('popstate', handleLocationChange);
     window.addEventListener('hashchange', handleLocationChange);
@@ -220,9 +223,10 @@ function AppContent() {
   const basePath = rawBase.split('#')[0] || '/';
   const normalizedPath =
     (basePath.startsWith('/') ? basePath : `/${basePath}`).toLowerCase().replace(/\/$/, '') || '/';
-  const redirectParam = searchParamsString
-    ? new URLSearchParams(searchParamsString).get('redirect') || undefined
-    : undefined;
+  const searchParams = new URLSearchParams(
+    searchParamsString || (typeof window !== 'undefined' ? window.location.search : '')
+  );
+  const redirectParam = searchParams.get('redirect') || undefined;
 
   const isAdminRoute = normalizedPath === '/admin' || normalizedPath.startsWith('/admin/');
 
@@ -468,6 +472,39 @@ function AppContent() {
       );
     }
 
+    // Direct Order Confirmation & Lookup (/order/:id, /orders/:id, /track-order/:id, /order?id=..., /orders?id=..., /track-order?id=...)
+    const orderQueryId = searchParams.get('id') || searchParams.get('orderId') || searchParams.get('order_id');
+
+    if (
+      normalizedPath.startsWith('/order/') ||
+      normalizedPath.startsWith('/orders/') ||
+      normalizedPath.startsWith('/track-order/')
+    ) {
+      const orderId = normalizedPath
+        .replace(/^\/(order|orders|track-order)\//, '')
+        .split('/')[0]
+        .split('?')[0]
+        .trim();
+      return <OrderConfirmationView orderId={orderId} onNavigate={navigate} />;
+    }
+
+    if (normalizedPath === '/order' || normalizedPath === '/track-order') {
+      if (orderQueryId) {
+        return <OrderConfirmationView orderId={orderQueryId} onNavigate={navigate} />;
+      }
+      return <OrderLookupView onNavigate={navigate} />;
+    }
+
+    if (normalizedPath === '/orders' && orderQueryId) {
+      return <OrderConfirmationView orderId={orderQueryId} onNavigate={navigate} />;
+    }
+
+    // Gallery Route (/gallery, /gallery/*)
+    if (normalizedPath === '/gallery' || normalizedPath.startsWith('/gallery/')) {
+      const gallerySku = searchParams.get('sku') || searchParams.get('id') || undefined;
+      return <GalleryPageView onNavigate={navigate} initialSku={gallerySku} />;
+    }
+
     // Protected Direct /orders and /bookings shortcuts
     if (normalizedPath === '/orders') {
       return (
@@ -485,17 +522,8 @@ function AppContent() {
       );
     }
 
-    if (normalizedPath === '/track-order') {
-      return <OrderLookupView onNavigate={navigate} />;
-    }
-
     if (normalizedPath === '/checkout') {
       return <CheckoutView onNavigate={navigate} />;
-    }
-
-    if (normalizedPath.startsWith('/order/')) {
-      const orderId = normalizedPath.replace('/order/', '').trim();
-      return <OrderConfirmationView orderId={orderId} onNavigate={navigate} />;
     }
 
     // Division direct routes: /sws, /u1, /it, /travels, /mart (and aliases)
@@ -710,12 +738,25 @@ function AppContent() {
     // Dynamic Direct Product Routes (/products/{slug} or /product/{slug})
     if (normalizedPath.startsWith('/products/') || normalizedPath.startsWith('/product/')) {
       const slug = normalizedPath.replace(/^\/(products|product)\//, '').trim();
+      const cleanSlug = slug.toLowerCase();
       const foundProduct =
-        products.find((p) => p.slug === slug || p.id === slug) ||
+        products.find(
+          (p) =>
+            p.slug?.toLowerCase() === cleanSlug ||
+            p.id?.toLowerCase() === cleanSlug ||
+            (p as any).sku?.toLowerCase() === cleanSlug
+        ) ||
         catalogService.getProductBySlug(slug) ||
         catalogService.getProductById(slug);
 
       if (!foundProduct) {
+        if (isInitialLoading) {
+          return (
+            <div className="min-h-screen bg-slate-50 py-24 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
+            </div>
+          );
+        }
         return (
           <NotFoundView
             onNavigate={navigate}
@@ -742,9 +783,22 @@ function AppContent() {
     // Dynamic Direct Service Routes (/services/{slug} or /service/{slug})
     if (normalizedPath.startsWith('/services/') || normalizedPath.startsWith('/service/')) {
       const slug = normalizedPath.replace(/^\/(services|service)\//, '').trim();
-      const foundService = services.find((s) => s.slug === slug || s.id === slug);
+      const cleanSlug = slug.toLowerCase();
+      const foundService = services.find(
+        (s) =>
+          s.slug?.toLowerCase() === cleanSlug ||
+          s.id?.toLowerCase() === cleanSlug ||
+          (s as any).sku?.toLowerCase() === cleanSlug
+      );
 
       if (!foundService) {
+        if (isInitialLoading) {
+          return (
+            <div className="min-h-screen bg-slate-50 py-24 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
+            </div>
+          );
+        }
         return (
           <NotFoundView
             onNavigate={navigate}
@@ -764,13 +818,14 @@ function AppContent() {
       );
     }
 
-    // Dynamic Project Detail Routes (/project/{slug}, /projects/{slug}, /work/{slug})
+    // Dynamic Project Detail Routes (/project/{slug}, /projects/{slug}, /work/{slug}, /portfolio/{slug})
     if (
       normalizedPath.startsWith('/project/') ||
       (normalizedPath.startsWith('/projects/') && normalizedPath !== '/projects') ||
-      (normalizedPath.startsWith('/work/') && normalizedPath !== '/work')
+      (normalizedPath.startsWith('/work/') && normalizedPath !== '/work') ||
+      (normalizedPath.startsWith('/portfolio/') && normalizedPath !== '/portfolio')
     ) {
-      const slug = normalizedPath.replace(/^\/(project|projects|work)\//, '').trim();
+      const slug = normalizedPath.replace(/^\/(project|projects|work|portfolio)\//, '').trim();
       return <ProjectDetailView projectSlugOrId={slug} onNavigate={navigate} />;
     }
 
@@ -963,6 +1018,8 @@ function AppContent() {
         return <ServicesView onNavigate={navigate} />;
       case '/about':
         return <AboutView onNavigate={navigate} />;
+      case '/gallery':
+        return <GalleryPageView onNavigate={navigate} initialSku={searchParams.get('sku') || searchParams.get('id') || undefined} />;
       case '/projects':
       case '/portfolio':
       case '/work':

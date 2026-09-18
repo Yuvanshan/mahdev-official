@@ -25,7 +25,7 @@ export interface LoadingStateProps {
 }
 
 export const LoadingState: React.FC<LoadingStateProps> = ({
-  message = 'Synchronizing with Firestore...',
+  message = 'Loading details...',
   variant = 'spinner',
   count = 3,
   className = '',

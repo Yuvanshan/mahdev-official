@@ -11,9 +11,9 @@ interface HeroSectionProps {
   onExploreServices?: () => void;
 }
 
-const LINE_1 = 'Creating Moments.';
-const LINE_2 = 'Capturing Memories.';
-const LINE_3 = 'Delivering Innovation.';
+const LINE_1 = 'Creating Moments...';
+const LINE_2 = 'Capturing Memories...';
+const LINE_3 = 'Delivering Innovation...';
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onExploreMahdev,

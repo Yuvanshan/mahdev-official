@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="u1-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="50%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="u1-neon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="40" fill="url(#u1-grad)"/>
+  
+  <!-- Cinematic Lens / Aperture rings -->
+  <circle cx="100" cy="85" r="42" fill="none" stroke="url(#u1-neon)" stroke-width="5"/>
+  <circle cx="100" cy="85" r="28" fill="#0369A1" opacity="0.3"/>
+  
+  <!-- Camera lens shutter lines -->
+  <line x1="80" y1="65" x2="105" y2="65" stroke="#38BDF8" stroke-width="3" stroke-linecap="round"/>
+  <line x1="120" y1="75" x2="110" y2="95" stroke="#38BDF8" stroke-width="3" stroke-linecap="round"/>
+  <line x1="115" y1="105" x2="95" y2="105" stroke="#38BDF8" stroke-width="3" stroke-linecap="round"/>
+  <line x1="80" y1="95" x2="90" y2="75" stroke="#38BDF8" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="100" cy="85" r="10" fill="#E0F2FE"/>
+
+  <!-- Text U1 STUDIO -->
+  <text x="100" y="152" font-family="system-ui, -apple-system, 'Inter', sans-serif" font-weight="900" font-size="28" fill="#FFFFFF" text-anchor="middle" letter-spacing="4">U1</text>
+  <text x="100" y="172" font-family="system-ui, -apple-system, 'Inter', sans-serif" font-weight="700" font-size="9" fill="#38BDF8" text-anchor="middle" letter-spacing="3">STUDIO &amp; CINEMA</text>
+</svg>

@@ -55,6 +55,7 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
   const domain = COMPANY_INFO.domain;
   const regNumber = companySettings?.registrationNumber || COMPANY_INFO.registrationNumber;
   const [order, setOrder] = useState<Order | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(() => Boolean(orderId));
   const [copied, setCopied] = useState(false);
   const [lookupId, setLookupId] = useState('');
   const [lookupError, setLookupError] = useState<string | null>(null);
@@ -63,8 +64,13 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
   const [latestVerification, setLatestVerification] = useState<VerificationResult | null>(null);
 
   const loadOrderAndTransactions = async (id: string) => {
-    const found = orderService.getOrderById(id);
+    setIsLoading(true);
+    let found = orderService.getOrderById(id);
+    if (!found) {
+      found = await orderService.fetchOrderById(id);
+    }
     setOrder(found);
+    setIsLoading(false);
     if (found) {
       const txns = await paymentService.getOrderTransactions(found.id);
       setTransactions(txns);
@@ -82,6 +88,8 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
       const all = orderService.getAllOrders();
       if (all.length > 0) {
         loadOrderAndTransactions(all[0].id);
+      } else {
+        setIsLoading(false);
       }
     }
   }, [orderId]);
@@ -97,16 +105,21 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
     window.print();
   };
 
-  const handleLookup = (e: React.FormEvent) => {
+  const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!lookupId.trim()) return;
-    const found = orderService.getOrderById(lookupId);
+    setIsLoading(true);
+    let found = orderService.getOrderById(lookupId);
+    if (!found) {
+      found = await orderService.fetchOrderById(lookupId);
+    }
+    setIsLoading(false);
     if (found) {
       loadOrderAndTransactions(found.id);
       setLookupError(null);
       onNavigate(`/order/${found.id}`);
     } else {
-      setLookupError(`No order found matching "${lookupId}". Please check the ID format (e.g. ORD-2026-8941).`);
+      setLookupError(`No order found matching "${lookupId}". Please check the Order ID (e.g. ORD-2026-XXXX).`);
     }
   };
 
@@ -126,6 +139,18 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
     );
     return `https://wa.me/94750928078?text=${text}`;
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 py-20 px-4 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center space-y-4 animate-fadeIn">
+          <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
+          <h2 className="font-display text-base font-bold text-slate-900">Loading Order Details...</h2>
+          <p className="text-xs text-slate-500">Retrieving your order invoice and live fulfillment status...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!order) {
     return (
