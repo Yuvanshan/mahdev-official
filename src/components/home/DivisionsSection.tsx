@@ -63,6 +63,7 @@ const DEFAULT_DIVISION_BENTO_DATA: BentoDivisionItem[] = [
     route: '/it',
     metrics: ['Web Apps', 'Mobile', 'Cloud 99.9%'],
     isFeatured: false,
+    isComingSoon: true,
   },
   {
     id: 'travels',
@@ -75,6 +76,7 @@ const DEFAULT_DIVISION_BENTO_DATA: BentoDivisionItem[] = [
     route: '/travels',
     metrics: ['Chauffeur Fleet', 'Custom Itineraries', '24/7 Support'],
     isFeatured: false,
+    isComingSoon: true,
   },
   {
     id: 'mart',
@@ -87,6 +89,7 @@ const DEFAULT_DIVISION_BENTO_DATA: BentoDivisionItem[] = [
     route: '/mart',
     metrics: ['Decor Items', 'Tech Hardware', 'Islandwide Courier'],
     isFeatured: false,
+    isComingSoon: true,
   },
 ];
 
@@ -137,11 +140,14 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
         if (seen.has(id)) continue;
         seen.add(id);
 
-        const isComingSoon = !!(
-          (d as any).isComingSoon ||
-          (d as any).comingSoon ||
-          (d as any).status === 'coming_soon'
-        );
+        const defaultComingSoon = id === 'it' || id === 'travels' || id === 'mart';
+        const isComingSoon = (d as any).isComingSoon !== undefined
+          ? !!(d as any).isComingSoon
+          : (d as any).comingSoon !== undefined
+          ? !!(d as any).comingSoon
+          : (d as any).status !== undefined
+          ? (d as any).status === 'coming_soon'
+          : defaultComingSoon;
 
         const defaultFallbackItem =
           DEFAULT_DIVISION_BENTO_DATA.find((item) => item.id === id) || DEFAULT_DIVISION_BENTO_DATA[0];
@@ -315,7 +321,9 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
                           alt={`${div.name} logo`}
                           className="w-full h-full object-contain"
                           onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = `/assets/images/${div.id}_logo.svg`;
+                            const target = e.currentTarget as HTMLImageElement;
+                            target.onerror = null;
+                            target.src = `/assets/images/${div.id}_logo.svg`;
                           }}
                         />
                       </div>
@@ -392,7 +400,9 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
                               alt={div.name}
                               className="w-full h-full object-contain"
                               onError={(e) => {
-                                (e.currentTarget as HTMLImageElement).src = `/assets/images/${div.id}_logo.svg`;
+                                const target = e.currentTarget as HTMLImageElement;
+                                target.onerror = null;
+                                target.src = `/assets/images/${div.id}_logo.svg`;
                               }}
                             />
                           </div>

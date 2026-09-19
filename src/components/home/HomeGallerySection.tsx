@@ -4,10 +4,11 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { Caption, H2, Body } from '../ui/Heading';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
+import { GallerySectionShimmer } from '../common/GallerySectionShimmer';
 
 /** A premium gallery that mirrors the polished presentation used in the division pages. */
 export const HomeGallerySection: React.FC = () => {
-  const { gallery } = useFirestoreDataContext();
+  const { gallery, isInitialLoading, isFetching } = useFirestoreDataContext();
   const [activeImage, setActiveImage] = useState<{ url: string; title: string; category: string; location?: string } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
@@ -35,7 +36,12 @@ export const HomeGallerySection: React.FC = () => {
     ? items
     : items.filter((item) => item.category === selectedCategory);
 
-  if (!items.length) return null;
+  if (!items.length) {
+    if (isInitialLoading || isFetching) {
+      return <GallerySectionShimmer divisionName="Corporate" />;
+    }
+    return null;
+  }
 
   return (
     <SectionContainer id="gallery" background="white" paddingY="xl" hasBorderBottom>

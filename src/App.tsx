@@ -323,6 +323,8 @@ function AppContent() {
         (normalized === 'sws' && (d.id === 'sws-event-management' || d.slug === 'sws-event-management'))
     );
 
+    const isDefaultComingSoon = normalized === 'travels' || normalized === 'it' || normalized === 'mart';
+
     if (!matched) {
       try {
         const cachedStr = typeof window !== 'undefined' ? localStorage.getItem('mahdev_cached_divisions') : null;
@@ -341,21 +343,25 @@ function AppContent() {
               (normalized === 'sws' && (d.id === 'sws-event-management' || d.slug === 'sws-event-management'))
           );
           if (cachedMatched) {
-            return !!(
-              cachedMatched.isComingSoon ||
-              cachedMatched.comingSoon ||
-              cachedMatched.status === 'coming_soon'
-            );
+            return (cachedMatched as any).isComingSoon !== undefined
+              ? !!(cachedMatched as any).isComingSoon
+              : (cachedMatched as any).comingSoon !== undefined
+              ? !!(cachedMatched as any).comingSoon
+              : cachedMatched.status !== undefined
+              ? cachedMatched.status === 'coming_soon'
+              : isDefaultComingSoon;
           }
         }
       } catch {}
-      return false;
+      return isDefaultComingSoon;
     }
-    return !!(
-      (matched as any).isComingSoon ||
-      (matched as any).comingSoon ||
-      (matched as any).status === 'coming_soon'
-    );
+    return (matched as any).isComingSoon !== undefined
+      ? !!(matched as any).isComingSoon
+      : (matched as any).comingSoon !== undefined
+      ? !!(matched as any).comingSoon
+      : (matched as any).status !== undefined
+      ? (matched as any).status === 'coming_soon'
+      : isDefaultComingSoon;
   };
 
   // Track page views and division views automatically

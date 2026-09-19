@@ -11,17 +11,26 @@ import { DIVISIONS, DIVISION_LIST } from '../config/divisions';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { CallToActionSection } from '../components/home/CallToActionSection';
 import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
+import { ServicesSectionShimmer } from '../components/common/ServicesSectionShimmer';
 
 interface DivisionsPageViewProps {
   onNavigate: (route: string) => void;
 }
 
 export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate }) => {
-  const { divisions, companySettings } = useFirestoreDataContext();
+  const { divisions, companySettings, isInitialLoading, isFetching } = useFirestoreDataContext();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
+
+  if ((!divisions || divisions.length === 0) && (isInitialLoading || isFetching)) {
+    return (
+      <div className="pt-24 pb-20 bg-white">
+        <ServicesSectionShimmer divisionName="Divisions" />
+      </div>
+    );
+  }
 
   const displayDivisions = React.useMemo(() => {
     if (divisions && divisions.length > 0) {
@@ -49,11 +58,14 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
 
         const config = (DIVISIONS as any)[canonicalId] || DIVISION_LIST.find((item) => item.id === canonicalId) || {};
 
-        const isComingSoon = !!(
-          (d as any).isComingSoon ||
-          (d as any).comingSoon ||
-          (d as any).status === 'coming_soon'
-        );
+        const defaultComingSoon = canonicalId === 'it' || canonicalId === 'travels' || canonicalId === 'mart';
+        const isComingSoon = (d as any).isComingSoon !== undefined
+          ? !!(d as any).isComingSoon
+          : (d as any).comingSoon !== undefined
+          ? !!(d as any).comingSoon
+          : (d as any).status !== undefined
+          ? (d as any).status === 'coming_soon'
+          : defaultComingSoon;
 
         result.push({
           ...config,
@@ -80,7 +92,10 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
       }
       return result;
     }
-    return DIVISION_LIST;
+    return DIVISION_LIST.map((item) => ({
+      ...item,
+      isComingSoon: item.id === 'it' || item.id === 'travels' || item.id === 'mart' ? true : !!(item as any).isComingSoon,
+    }));
   }, [divisions]);
 
   return (

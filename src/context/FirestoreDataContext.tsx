@@ -83,8 +83,13 @@ export interface FirestoreDataContextValue {
   updateDivisionOrder: (id: string, order: number) => Promise<void>;
   saveDivision: (id: string, data: Partial<FirestoreDivision>) => Promise<void>;
   loadedDivisions: Record<string, boolean>;
+  loadedServices: Record<string, boolean>;
+  loadedGallery: Record<string, boolean>;
   isDivisionLoaded: (divisionId: string) => boolean;
+  isDivisionServicesLoaded: (divisionId: string) => boolean;
+  isDivisionGalleryLoaded: (divisionId: string) => boolean;
   loadDivisionData: (divisionId: string) => Promise<void>;
+  isLiveHydrated: boolean;
 }
 
 const FirestoreDataContext = createContext<FirestoreDataContextValue | null>(null);
@@ -237,6 +242,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     return [];
   });
 
+  const [isLiveHydrated, setIsLiveHydrated] = useState<boolean>(false);
+
   // Track loaded divisions state for seamless transition & shimmers
   const [loadedDivisions, setLoadedDivisions] = useState<Record<string, boolean>>(() => {
     try {
@@ -247,97 +254,151 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch {}
     return {};
   });
+
+  const [loadedServices, setLoadedServices] = useState<Record<string, boolean>>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('mahdev_cached_loaded_services');
+        if (cached) return JSON.parse(cached);
+      }
+    } catch {}
+    return {};
+  });
+
+  const [loadedGallery, setLoadedGallery] = useState<Record<string, boolean>>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('mahdev_cached_loaded_gallery');
+        if (cached) return JSON.parse(cached);
+      }
+    } catch {}
+    return {};
+  });
+
   const divisionsRef = React.useRef<FirestoreDivision[]>([]);
   divisionsRef.current = divisions;
 
-  // Individual Division Data Loader: Fetches services, products, categories, portfolio, gallery, and preloads hero video
+  // Individual Division Data Loader: Fetches services first and fast, gallery concurrently, then remaining assets
   const loadDivisionData = useCallback(async (rawDivId: string) => {
     const canonicalId = getCanonicalDivisionId(rawDivId) || rawDivId;
     if (!canonicalId) return;
 
-    try {
-      const [srvs, prods, cats, port, gal] = await Promise.all([
-        firestoreServicesService.getServices(canonicalId as DivisionId, true),
-        firestoreProductsService.getProducts({ division: canonicalId as DivisionId }, true),
-        firestoreCategoriesService.getCategories(canonicalId as DivisionId, true),
-        firestorePortfolioService.getPortfolio(canonicalId as DivisionId, true),
-        firestoreGalleryService.getGallery(canonicalId as DivisionId, true),
-      ]);
-
-      if (srvs.length > 0) {
-        setServices((prev) => {
-          const map = new Map(prev.map((s) => [s.id, s]));
-          srvs.forEach((s) => map.set(s.id, s));
-          const merged = Array.from(map.values());
-          try { localStorage.setItem('mahdev_cached_services', JSON.stringify(merged)); } catch {}
-          return merged;
-        });
-        if (typeof queueMicrotask === 'function') {
-          queueMicrotask(() => bookingService.syncWithFirestore(srvs));
-        } else {
-          setTimeout(() => bookingService.syncWithFirestore(srvs), 0);
+    // 1. Fetch Services FIRST and fast!
+    const fetchServicesPromise = firestoreServicesService
+      .getServices(canonicalId as DivisionId, true)
+      .then((srvs) => {
+        if (srvs.length > 0) {
+          setServices((prev) => {
+            const map = new Map(prev.map((s) => [s.id, s]));
+            srvs.forEach((s) => map.set(s.id, s));
+            const merged = Array.from(map.values());
+            try { localStorage.setItem('mahdev_cached_services', JSON.stringify(merged)); } catch {}
+            return merged;
+          });
+          if (typeof queueMicrotask === 'function') {
+            queueMicrotask(() => bookingService.syncWithFirestore(srvs));
+          } else {
+            setTimeout(() => bookingService.syncWithFirestore(srvs), 0);
+          }
         }
-      }
-
-      if (prods.length > 0) {
-        setProducts((prev) => {
-          const map = new Map(prev.map((p) => [p.id, p]));
-          prods.forEach((p) => map.set(p.id, p));
-          const merged = Array.from(map.values());
-          try { localStorage.setItem('mahdev_cached_products', JSON.stringify(merged)); } catch {}
-          return merged;
+        setLoadedServices((prev) => {
+          const next = { ...prev, [canonicalId]: true, [rawDivId]: true };
+          try { localStorage.setItem('mahdev_cached_loaded_services', JSON.stringify(next)); } catch {}
+          return next;
         });
-        if (typeof queueMicrotask === 'function') {
-          queueMicrotask(() => catalogService.syncWithFirestore(prods));
-        } else {
-          setTimeout(() => catalogService.syncWithFirestore(prods), 0);
+      })
+      .catch((err) => {
+        console.warn(`[FirestoreDataContext] Services notice for ${rawDivId}:`, err);
+        setLoadedServices((prev) => {
+          const next = { ...prev, [canonicalId]: true, [rawDivId]: true };
+          try { localStorage.setItem('mahdev_cached_loaded_services', JSON.stringify(next)); } catch {}
+          return next;
+        });
+      });
+
+    // 2. Fetch Gallery in parallel
+    const fetchGalleryPromise = firestoreGalleryService
+      .getGallery(canonicalId as DivisionId, true)
+      .then((gal) => {
+        if (gal.length > 0) {
+          setGallery((prev) => {
+            const map = new Map(prev.map((g) => [g.id, g]));
+            gal.forEach((g) => map.set(g.id, g));
+            const merged = Array.from(map.values());
+            try { localStorage.setItem('mahdev_cached_gallery', JSON.stringify(merged)); } catch {}
+            return merged;
+          });
         }
-      }
-
-      if (cats.length > 0) {
-        setCategories((prev) => {
-          const map = new Map(prev.map((c) => [c.id, c]));
-          cats.forEach((c) => map.set(c.id, c));
-          const merged = Array.from(map.values());
-          try { localStorage.setItem('mahdev_cached_categories', JSON.stringify(merged)); } catch {}
-          return merged;
+        setLoadedGallery((prev) => {
+          const next = { ...prev, [canonicalId]: true, [rawDivId]: true };
+          try { localStorage.setItem('mahdev_cached_loaded_gallery', JSON.stringify(next)); } catch {}
+          return next;
         });
-      }
-
-      if (port.length > 0) {
-        setPortfolio((prev) => {
-          const map = new Map(prev.map((p) => [p.id, p]));
-          port.forEach((p) => map.set(p.id, p));
-          const merged = Array.from(map.values());
-          try { localStorage.setItem('mahdev_cached_portfolio', JSON.stringify(merged)); } catch {}
-          return merged;
+      })
+      .catch((err) => {
+        console.warn(`[FirestoreDataContext] Gallery notice for ${rawDivId}:`, err);
+        setLoadedGallery((prev) => {
+          const next = { ...prev, [canonicalId]: true, [rawDivId]: true };
+          try { localStorage.setItem('mahdev_cached_loaded_gallery', JSON.stringify(next)); } catch {}
+          return next;
         });
-      }
-
-      if (gal.length > 0) {
-        setGallery((prev) => {
-          const map = new Map(prev.map((g) => [g.id, g]));
-          gal.forEach((g) => map.set(g.id, g));
-          const merged = Array.from(map.values());
-          try { localStorage.setItem('mahdev_cached_gallery', JSON.stringify(merged)); } catch {}
-          return merged;
-        });
-      }
-
-      setLoadedDivisions((prev) => {
-        const next = { ...prev, [canonicalId]: true, [rawDivId]: true };
-        try { localStorage.setItem('mahdev_cached_loaded_divisions', JSON.stringify(next)); } catch {}
-        return next;
       });
-    } catch (err) {
-      console.warn(`[FirestoreDataContext] Error loading division ${rawDivId}:`, err);
-      // Failsafe: mark as loaded to prevent permanent hang
-      setLoadedDivisions((prev) => {
-        const next = { ...prev, [canonicalId]: true, [rawDivId]: true };
-        try { localStorage.setItem('mahdev_cached_loaded_divisions', JSON.stringify(next)); } catch {}
-        return next;
+
+    // 3. Fetch products, categories, portfolio
+    const fetchOthersPromise = Promise.all([
+      firestoreProductsService.getProducts({ division: canonicalId as DivisionId }, true),
+      firestoreCategoriesService.getCategories(canonicalId as DivisionId, true),
+      firestorePortfolioService.getPortfolio(canonicalId as DivisionId, true),
+    ])
+      .then(([prods, cats, port]) => {
+        if (prods.length > 0) {
+          setProducts((prev) => {
+            const map = new Map(prev.map((p) => [p.id, p]));
+            prods.forEach((p) => map.set(p.id, p));
+            const merged = Array.from(map.values());
+            try { localStorage.setItem('mahdev_cached_products', JSON.stringify(merged)); } catch {}
+            return merged;
+          });
+          if (typeof queueMicrotask === 'function') {
+            queueMicrotask(() => catalogService.syncWithFirestore(prods));
+          } else {
+            setTimeout(() => catalogService.syncWithFirestore(prods), 0);
+          }
+        }
+        if (cats.length > 0) {
+          setCategories((prev) => {
+            const map = new Map(prev.map((c) => [c.id, c]));
+            cats.forEach((c) => map.set(c.id, c));
+            const merged = Array.from(map.values());
+            try { localStorage.setItem('mahdev_cached_categories', JSON.stringify(merged)); } catch {}
+            return merged;
+          });
+        }
+        if (port.length > 0) {
+          setPortfolio((prev) => {
+            const map = new Map(prev.map((p) => [p.id, p]));
+            port.forEach((p) => map.set(p.id, p));
+            const merged = Array.from(map.values());
+            try { localStorage.setItem('mahdev_cached_portfolio', JSON.stringify(merged)); } catch {}
+            return merged;
+          });
+        }
+        setLoadedDivisions((prev) => {
+          const next = { ...prev, [canonicalId]: true, [rawDivId]: true };
+          try { localStorage.setItem('mahdev_cached_loaded_divisions', JSON.stringify(next)); } catch {}
+          return next;
+        });
+      })
+      .catch((err) => {
+        console.warn(`[FirestoreDataContext] Other items notice for ${rawDivId}:`, err);
+        setLoadedDivisions((prev) => {
+          const next = { ...prev, [canonicalId]: true, [rawDivId]: true };
+          try { localStorage.setItem('mahdev_cached_loaded_divisions', JSON.stringify(next)); } catch {}
+          return next;
+        });
       });
-    }
+
+    await Promise.allSettled([fetchServicesPromise, fetchGalleryPromise, fetchOthersPromise]);
   }, []);
 
   const isDivisionLoaded = useCallback(
@@ -347,6 +408,24 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       return Boolean(loadedDivisions[canonicalId] || loadedDivisions[divisionId]);
     },
     [loadedDivisions]
+  );
+
+  const isDivisionServicesLoaded = useCallback(
+    (divisionId: string) => {
+      if (!divisionId) return true;
+      const canonicalId = getCanonicalDivisionId(divisionId) || divisionId;
+      return Boolean(loadedServices[canonicalId] || loadedServices[divisionId]);
+    },
+    [loadedServices]
+  );
+
+  const isDivisionGalleryLoaded = useCallback(
+    (divisionId: string) => {
+      if (!divisionId) return true;
+      const canonicalId = getCanonicalDivisionId(divisionId) || divisionId;
+      return Boolean(loadedGallery[canonicalId] || loadedGallery[divisionId]);
+    },
+    [loadedGallery]
   );
 
   // Fast Progressive Hydration: Fetches data one by one, updating state as each arrives
@@ -398,6 +477,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       // 4. Initial core hydration ready: Unblock landing page and division screens instantly!
       setSyncProgress(100);
       setSyncStatus('Delivering Innovation...');
+      setIsLiveHydrated(true);
       setIsInitialLoading(false);
       setIsReady(true);
       try {
@@ -446,6 +526,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (err) {
       console.error('[FirestoreDataContext] Refresh error:', err);
       setError(err instanceof Error ? err : new Error(String(err)));
+      setIsLiveHydrated(true);
       setIsInitialLoading(false);
       setIsReady(true);
     } finally {
@@ -468,6 +549,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       if (isMounted) {
         setSyncProgress(100);
         setSyncStatus('Welcome');
+        setIsLiveHydrated(true);
         setIsInitialLoading(false);
         setIsReady(true);
         try {
@@ -821,8 +903,13 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       updateDivisionOrder,
       saveDivision,
       loadedDivisions,
+      loadedServices,
+      loadedGallery,
       isDivisionLoaded,
+      isDivisionServicesLoaded,
+      isDivisionGalleryLoaded,
       loadDivisionData,
+      isLiveHydrated,
     }),
     [
       isInitialLoading,
@@ -856,8 +943,13 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       updateDivisionOrder,
       saveDivision,
       loadedDivisions,
+      loadedServices,
+      loadedGallery,
       isDivisionLoaded,
+      isDivisionServicesLoaded,
+      isDivisionGalleryLoaded,
       loadDivisionData,
+      isLiveHydrated,
     ]
   );
 

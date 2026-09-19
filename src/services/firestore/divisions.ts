@@ -130,37 +130,86 @@ export function getDivisionFallbackOrder(id: string): number {
 }
 
 export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
-  const seen = new Set<string>();
-  const deduplicated: FirestoreDivision[] = [];
+  const canonicalOrder = ['sws', 'u1', 'it', 'travels', 'mart'];
+  const mapByCanonical = new Map<string, FirestoreDivision>();
 
   for (const item of list) {
     if (!item) continue;
-    const canonicalKey = getCanonicalDivisionId(item.id || item.slug || '');
-    if (seen.has(canonicalKey)) {
-      continue;
-    }
-    seen.add(canonicalKey);
-    deduplicated.push({
+    const { canonicalDocId, shortId } = normalizeDivisionId(item.id || item.slug || '');
+    if (!shortId) continue;
+
+    const isDefaultComingSoon = shortId === 'it' || shortId === 'travels' || shortId === 'mart';
+    const isComingSoon = (item as any).isComingSoon !== undefined
+      ? !!(item as any).isComingSoon
+      : (item as any).comingSoon !== undefined
+      ? !!(item as any).comingSoon
+      : item.status !== undefined
+      ? item.status === 'coming_soon'
+      : isDefaultComingSoon;
+
+    const existing = mapByCanonical.get(shortId);
+    const normalizedItem: FirestoreDivision = {
       ...item,
-      id: item.id || canonicalKey,
-    });
+      id: shortId,
+      slug: shortId,
+      canonicalDocId,
+      isComingSoon,
+      comingSoon: isComingSoon,
+      status: isComingSoon ? 'coming_soon' : (item.status || 'active'),
+    } as any;
+
+    if (!existing) {
+      mapByCanonical.set(shortId, normalizedItem);
+    } else {
+      mapByCanonical.set(shortId, {
+        ...existing,
+        ...normalizedItem,
+        name: normalizedItem.name || existing.name,
+        imageUrl: normalizedItem.imageUrl || existing.imageUrl,
+        logoUrl: normalizedItem.logoUrl || existing.logoUrl,
+        logo: normalizedItem.logo || existing.logo,
+      });
+    }
   }
 
-  return deduplicated.sort((a, b) => {
-    const orderA = typeof a.order === 'number' && a.order > 0 ? a.order : getDivisionFallbackOrder(a.id);
-    const orderB = typeof b.order === 'number' && b.order > 0 ? b.order : getDivisionFallbackOrder(b.id);
-    return orderA - orderB;
-  });
+  // Ensure all 5 canonical divisions exist so none are ever missing
+  const defaultList = getDefaultDivisions();
+  for (const def of defaultList) {
+    const { shortId } = normalizeDivisionId(def.id);
+    if (!mapByCanonical.has(shortId)) {
+      const isDefaultComingSoon = shortId === 'it' || shortId === 'travels' || shortId === 'mart';
+      mapByCanonical.set(shortId, {
+        ...def,
+        id: shortId,
+        slug: shortId,
+        isComingSoon: isDefaultComingSoon,
+        comingSoon: isDefaultComingSoon,
+        status: isDefaultComingSoon ? 'coming_soon' : 'active',
+      });
+    }
+  }
+
+  return canonicalOrder
+    .map((key) => mapByCanonical.get(key)!)
+    .filter(Boolean)
+    .sort((a, b) => {
+      const orderA = typeof a.order === 'number' && a.order > 0 ? a.order : getDivisionFallbackOrder(a.id);
+      const orderB = typeof b.order === 'number' && b.order > 0 ? b.order : getDivisionFallbackOrder(b.id);
+      return orderA - orderB;
+    });
 }
 
 export function getDefaultDivisions(): FirestoreDivision[] {
   const now = new Date().toISOString();
   return Object.values(DIVISION_DOCUMENT_MAP).map((d) => {
     const rawDivision = DIVISIONS[d.docId === 'u1-studio' ? 'u1' : d.docId === 'it-solutions' ? 'it' : d.docId === 'online-mart' ? 'mart' : (d.docId as keyof typeof DIVISIONS)];
+    const shortKey = d.docId === 'u1-studio' ? 'u1' : d.docId === 'it-solutions' ? 'it' : d.docId === 'online-mart' ? 'mart' : d.docId;
+    const isComingSoonDefault = shortKey === 'it' || shortKey === 'travels' || shortKey === 'mart';
+
     const item: FirestoreDivision = {
-      id: d.docId,
+      id: shortKey,
       name: d.name,
-      slug: d.slug,
+      slug: shortKey,
       shortName: rawDivision?.shortName || d.name,
       shortDescription: d.shortDescription,
       description: d.description,
@@ -199,11 +248,13 @@ export function getDefaultDivisions(): FirestoreDivision[] {
         ctaText: `Explore ${d.name}`,
         secondaryCtaText: 'Contact Division',
       },
-      status: 'active',
+      status: isComingSoonDefault ? 'coming_soon' : 'active',
+      isComingSoon: isComingSoonDefault,
+      comingSoon: isComingSoonDefault,
       seo: {
         metaTitle: `${d.name} | Mahdev Pvt Ltd`,
         metaDescription: d.shortDescription,
-        keywords: [d.docId, d.slug, 'mahdev', 'sri lanka'],
+        keywords: [shortKey, d.docId, d.slug, 'mahdev', 'sri lanka'],
         ogImage: d.imageUrl,
         canonicalUrl: `https://mahdev.lk${d.route}`,
       },

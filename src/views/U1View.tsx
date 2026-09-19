@@ -27,13 +27,23 @@ import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
 import { DivisionBelowHeroShimmer } from '../components/common/DivisionBelowHeroShimmer';
+import { ServicesSectionShimmer } from '../components/common/ServicesSectionShimmer';
+import { GallerySectionShimmer } from '../components/common/GallerySectionShimmer';
 
 interface U1ViewProps {
   onNavigate: (route: string) => void;
 }
 
 export const U1View: React.FC<U1ViewProps> = ({ onNavigate }) => {
-  const { divisions, companySettings, isInitialLoading, isDivisionLoaded, loadDivisionData } = useFirestoreDataContext();
+  const {
+    divisions,
+    companySettings,
+    isInitialLoading,
+    isDivisionLoaded,
+    isDivisionServicesLoaded,
+    isDivisionGalleryLoaded,
+    loadDivisionData,
+  } = useFirestoreDataContext();
   const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
 
   React.useEffect(() => {
@@ -86,24 +96,26 @@ export const U1View: React.FC<U1ViewProps> = ({ onNavigate }) => {
         onExploreServices={() => scrollToAnchor('services')}
       />
 
-      {/* 2. BELOW HERO SECTION: SHOW SHIMMER UNTIL DATA LOADS FROM FIRESTORE */}
-      {isDataLoading ? (
-        <DivisionBelowHeroShimmer divisionName="U1 Studio" />
+      {/* 2. BELOW HERO SECTION: SEQUENTIAL SECTION LOADING (HERO -> SERVICES -> GALLERY) */}
+      {/* 2. ALL STUDIO SERVICES: LOAD SERVICES FIRST AND FAST WITH SHIMMER */}
+      {!isDivisionServicesLoaded('u1') ? (
+        <ServicesSectionShimmer divisionName="U1 Studio" />
       ) : (
-        <>
-          {/* 2. ALL 11 STUDIO SERVICES GRID WITH DETAIL MODAL */}
-          <U1ServicesSection onBookService={handleBookService} />
-
-          {/* 3. VISUAL PORTFOLIO WITH FULL-SCREEN LIGHTBOX & OPTICS EXIF */}
-          <U1PortfolioSection />
-
-          {/* 4. PHOTOGRAPHY & CINEMA PACKAGES */}
-          <U1PackagesSection onBookPackage={handleBookPackage} />
-
-          {/* 5. STUDIO FACILITY, CYCLORAMA WALL & ALBUM CRAFT */}
-          <U1StudioExperienceSection />
-        </>
+        <U1ServicesSection onBookService={handleBookService} />
       )}
+
+      {/* 3. VISUAL PORTFOLIO / GALLERY: SHIMMER UNTIL LOADED */}
+      {!isDivisionGalleryLoaded('u1') ? (
+        <GallerySectionShimmer divisionName="U1 Studio" />
+      ) : (
+        <U1PortfolioSection />
+      )}
+
+      {/* 4. PHOTOGRAPHY & CINEMA PACKAGES */}
+      <U1PackagesSection onBookPackage={handleBookPackage} />
+
+      {/* 5. STUDIO FACILITY, CYCLORAMA WALL & ALBUM CRAFT */}
+      <U1StudioExperienceSection />
 
       {/* 6. DEDICATED U1 BOOKING MODAL */}
       <U1BookingModal

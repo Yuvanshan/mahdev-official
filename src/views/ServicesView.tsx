@@ -29,6 +29,7 @@ import {
 import { CallToActionSection } from '../components/home/CallToActionSection';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
+import { ServicesSectionShimmer } from '../components/common/ServicesSectionShimmer';
 import { DIVISIONS, DIVISION_LIST } from '../config/divisions';
 import { DivisionId } from '../types';
 import { openWhatsAppInquiry } from '../utils/whatsapp';
@@ -235,11 +236,8 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
 
   if (services.length === 0 && (isInitialLoading || isFetching)) {
     return (
-      <div className="pt-28 pb-24 min-h-[60vh] flex items-center justify-center bg-white">
-        <DataLoadingOverlay
-          message="Loading services..."
-          subMessage="Curating enterprise solutions..."
-        />
+      <div className="pt-24 pb-20 min-h-[60vh] bg-white">
+        <ServicesSectionShimmer divisionName="Enterprise" />
       </div>
     );
   }

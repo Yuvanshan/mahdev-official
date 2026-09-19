@@ -160,7 +160,9 @@ export const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({
                   className="h-16 sm:h-20 w-auto object-contain max-w-[240px]"
                   referrerPolicy="no-referrer"
                   onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = '/logo.png';
+                    const target = e.currentTarget as HTMLImageElement;
+                    target.onerror = null;
+                    target.src = '/logo.png';
                   }}
                 />
               </div>

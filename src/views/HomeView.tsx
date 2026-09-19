@@ -23,7 +23,7 @@ interface HomeViewProps {
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
-  const { companySettings, siteSettings, homepageConfig, isInitialLoading, divisions } = useFirestoreDataContext();
+  const { companySettings, siteSettings, homepageConfig, isInitialLoading, isLiveHydrated, divisions } = useFirestoreDataContext();
 
   const brandName = companySettings?.name || siteSettings?.siteName || 'Mahdev Pvt Ltd';
   const tagline = companySettings?.tagline || 'Creating Moments. Capturing Memories. Delivering Innovation.';
@@ -123,7 +123,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
       rawPageTitle.toLowerCase().includes('corporate eco'));
   const effectivePageTitle = rawPageTitle && !isCorporateTitle ? rawPageTitle : defaultPageTitle;
 
-  const isDataLoading = isInitialLoading || !divisions || divisions.length === 0;
+  const isDataLoading = isInitialLoading || !isLiveHydrated || !divisions || divisions.length === 0;
 
   return (
     <div className="w-full flex flex-col pb-24 lg:pb-0">

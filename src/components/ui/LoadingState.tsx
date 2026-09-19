@@ -115,7 +115,7 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
         <span className="absolute text-[10px] font-black text-[#0052FF] font-display">M</span>
       </div>
       <p className="text-xs sm:text-sm font-semibold text-slate-700">{message}</p>
-      <p className="text-[11px] text-slate-400 mt-1">Live Firestore Subscription</p>
+      <p className="text-[11px] text-slate-400 mt-1">Live Real-Time Updates</p>
     </div>
   );
 };

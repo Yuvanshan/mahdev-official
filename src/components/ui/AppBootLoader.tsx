@@ -276,7 +276,7 @@ export const AppBootLoader: React.FC<AppBootLoaderProps> = ({
 
             <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500 font-medium">
               <ShieldCheck className="w-3.5 h-3.5 text-[#0052FF]" />
-              <span>Real-time Cloud Firestore Data Stream</span>
+              <span>Secure Enterprise Network Stream</span>
             </div>
           </motion.div>
         )}

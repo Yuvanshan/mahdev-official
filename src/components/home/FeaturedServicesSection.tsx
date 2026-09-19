@@ -11,6 +11,7 @@ import { DIVISIONS } from '../../config/divisions';
 import { ParallelWatermark } from '../motion/ParallelScroll';
 import { useDeviceMotion } from '../motion/MotionWrappers';
 import { DataLoadingOverlay } from '../common/DataLoadingOverlay';
+import { ServicesSectionShimmer } from '../common/ServicesSectionShimmer';
 
 interface FeaturedServicesSectionProps {
   onNavigate: (route: string) => void;
@@ -30,14 +31,7 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
 
   if (activeServices.length === 0) {
     if (isInitialLoading || isFetching) {
-      return (
-        <SectionContainer background="white" paddingY="lg">
-          <DataLoadingOverlay
-            message="Loading services..."
-            subMessage="Curating featured enterprise solutions..."
-          />
-        </SectionContainer>
-      );
+      return <ServicesSectionShimmer divisionName="Featured" />;
     }
     return null;
   }
