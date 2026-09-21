@@ -71,6 +71,14 @@ export const MartHeroSection: React.FC<MartHeroSectionProps> = ({
     martDiv?.name ||
     'Curated Event & Home Decor, Ambient Lighting & Smart Tech';
 
+  const subheadline =
+    (martDiv as any)?.heroSubheadline ||
+    (martDiv as any)?.hero?.subtitle ||
+    (martDiv as any)?.heroSubtitle ||
+    martDiv?.tagline ||
+    martDiv?.description ||
+    'Premium event decoration materials, professional illumination systems, bespoke floral structures, and smart tech accessories delivered across Sri Lanka.';
+
   return (
     <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-[#061033] text-white">
       {/* Reliable Full-Width Video Background with guaranteed autoplay and poster fallback */}
@@ -112,6 +120,13 @@ export const MartHeroSection: React.FC<MartHeroSectionProps> = ({
           <h1 className="font-display text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-white leading-[1.08] drop-shadow-md">
             {headline}
           </h1>
+
+          {/* Subheadline / Store Description */}
+          {subheadline && (
+            <p className="text-base sm:text-lg lg:text-xl text-slate-200 font-normal leading-relaxed max-w-2xl drop-shadow">
+              {subheadline}
+            </p>
+          )}
 
           {/* Integrated Search Box */}
           <div className="pt-2 max-w-2xl">

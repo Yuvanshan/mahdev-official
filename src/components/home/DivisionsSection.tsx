@@ -166,18 +166,13 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
         const metrics =
           d.stats && d.stats.length > 0
             ? d.stats.map((s) => `${s.value} ${s.label}`)
-            : id === 'sws'
-            ? ['Event production', 'Rental inventory', 'Stage design']
-            : ['In-house teams', 'Verified delivery', 'Tailored service'];
+            : [];
 
         list.push({
           id,
           name: d.name,
-          badge: d.badge || (d.hero as any)?.badge || 'Specialized Division',
-          subtitle:
-            id === 'sws'
-              ? `Luxury Weddings, Stage Decor & ${rentalAssetCountStr} Rental Units`
-              : d.tagline || d.shortDescription || (d.hero as any)?.subtitle || '',
+          badge: d.badge || (d.hero as any)?.badge || '',
+          subtitle: d.tagline || d.shortDescription || (d.hero as any)?.subtitle || '',
           summary: d.description || d.aboutText || d.shortDescription || '',
           image: img,
           logo: resolvedLogo,
@@ -197,22 +192,15 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
         return orderA - orderB;
       });
 
-      if (list.length > 0) {
-        return list;
-      }
+      return list;
     }
 
-    return DEFAULT_DIVISION_BENTO_DATA.map((item) => {
-      if (item.id === 'sws') {
-        return {
-          ...item,
-          subtitle: `Luxury Weddings, Stage Decor & ${rentalAssetCountStr} Rental Units`,
-          metrics: [`${rentalAssetCountStr} Rentals`, 'Floral Mandaps', 'Stage Lighting', 'Audio/Visual'],
-        };
-      }
-      return item;
-    });
+    return [];
   }, [divisions, rentalAssetCountStr]);
+
+  if (bentoDivisions.length === 0) {
+    return null;
+  }
 
   const sws = bentoDivisions[0];
 

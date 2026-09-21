@@ -11,8 +11,9 @@ import {
   Star,
   Info,
 } from 'lucide-react';
-import { SWSPackage } from '../../data/swsData';
+import { SWSPackage, SWS_PACKAGES } from '../../data/swsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
@@ -31,7 +32,7 @@ export const SWSPackagesSection: React.FC<SWSPackagesSectionProps> = ({ onBookPa
     if (rawServices && rawServices.length > 0) {
       const swsPackages = rawServices.filter(
         (s) =>
-          (s.division === 'sws' || (s as any).divisionId === 'sws') &&
+          (isSameDivision(s.division, 'sws') || isSameDivision((s as any).divisionId, 'sws')) &&
           ((s as any).category === 'packages' || (s as any).type === 'package')
       );
       if (swsPackages.length > 0) {

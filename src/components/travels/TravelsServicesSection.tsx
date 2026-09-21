@@ -14,6 +14,7 @@ import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { isSameDivision } from '../../services/firestore/divisions';
 
 export const TravelsServicesSection: React.FC = () => {
   const { services: rawServices } = useFirestoreDataContext();
@@ -55,7 +56,7 @@ export const TravelsServicesSection: React.FC = () => {
     if (rawServices && rawServices.length > 0) {
       const filtered = rawServices.filter(
         (s) =>
-          (s.division === 'travels' || (s as any).divisionId === 'travels') &&
+          (isSameDivision(s.division, 'travels') || isSameDivision((s as any).divisionId, 'travels')) &&
           (s as any).category !== 'packages' &&
           (s as any).type !== 'package'
       );

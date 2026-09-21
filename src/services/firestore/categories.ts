@@ -17,6 +17,7 @@ import {
 } from 'firebase/firestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreCategory, DivisionId } from '../../types/firestore';
+import { isSameDivision } from './divisions';
 
 const CACHE_TTL_MS = 1000 * 60 * 20; // 20 min cache
 let cachedCategories: { data: FirestoreCategory[]; timestamp: number } | null = null;
@@ -57,7 +58,9 @@ export const firestoreCategoriesService = {
     }
 
     if (division) {
-      return allCategories.filter((c) => c.division === division);
+      return allCategories.filter(
+        (c) => isSameDivision(c.division, division) || isSameDivision((c as any).divisionId, division)
+      );
     }
     return allCategories;
   },

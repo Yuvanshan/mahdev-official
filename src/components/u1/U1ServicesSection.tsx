@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { U1_SERVICES, U1Service } from '../../data/u1Data';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { isSameDivision } from '../../services/firestore/divisions';
 import { formatCurrency } from '../../utils/currency';
 import { U1ServiceDetailModal } from './U1ServiceDetailModal';
 import { SectionContainer } from '../ui/SectionContainer';
@@ -40,7 +41,7 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
   const allServices = useMemo<U1Service[]>(() => {
     if (rawServices && rawServices.length > 0) {
       const u1Services = rawServices
-        .filter((s) => s.division === 'u1' || (s as any).divisionId === 'u1')
+        .filter((s) => isSameDivision(s.division, 'u1') || isSameDivision((s as any).divisionId, 'u1'))
         .sort((a, b) => (a.order ?? (a as any).sortOrder ?? 0) - (b.order ?? (b as any).sortOrder ?? 0));
       if (u1Services.length > 0) {
         return u1Services.map((s) => ({

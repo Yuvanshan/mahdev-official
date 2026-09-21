@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { IT_SERVICES, ITService } from '../../data/itData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
@@ -69,7 +70,7 @@ export const ITServicesSection: React.FC<ITServicesSectionProps> = ({
   const allServices = useMemo<ITService[]>(() => {
     if (rawServices && rawServices.length > 0) {
       const itServices = rawServices.filter(
-        (s) => s.division === 'it' || (s as any).divisionId === 'it'
+        (s) => isSameDivision(s.division, 'it') || isSameDivision((s as any).divisionId, 'it')
       );
       if (itServices.length > 0) {
         return itServices.map((s) => ({

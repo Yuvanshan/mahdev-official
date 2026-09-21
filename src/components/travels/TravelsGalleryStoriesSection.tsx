@@ -11,8 +11,9 @@ import {
   Calendar,
   MessageCircle,
 } from 'lucide-react';
-import { TravelStory } from '../../data/travelsData';
+import { TravelStory, TRAVEL_STORIES } from '../../data/travelsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { ScrollReveal } from '../motion/MotionWrappers';
@@ -22,10 +23,17 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
   const { gallery: rawGallery, testimonials: rawTestimonials } = useFirestoreDataContext();
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
+  const defaultGallery = [
+    { src: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=80', title: 'Sigiriya Rock Fortress at Dawn', location: 'Cultural Triangle' },
+    { src: 'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=1200&q=80', title: 'Nine Arch Bridge & Mist-Covered Tea Valleys', location: 'Ella Highlands' },
+    { src: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=1200&q=80', title: 'Sri Lankan Wild Leopard in Yala', location: 'Yala National Park' },
+    { src: 'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?auto=format&fit=crop&w=1200&q=80', title: 'Mirissa Golden Beach & Palm Tree Grove', location: 'Southern Coast' },
+  ];
+
   const galleryImages = useMemo(() => {
     if (rawGallery && rawGallery.length > 0) {
       const travelGal = rawGallery.filter(
-        (g) => g.division === 'travels' || (g as any).divisionId === 'travels'
+        (g) => isSameDivision(g.division, 'travels') || isSameDivision((g as any).divisionId, 'travels')
       );
       if (travelGal.length > 0) {
         return travelGal.map((g) => ({
@@ -41,7 +49,7 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
   const stories = useMemo<TravelStory[]>(() => {
     if (rawTestimonials && rawTestimonials.length > 0) {
       const travelStories = rawTestimonials.filter(
-        (t) => t.division === 'travels' || (t as any).divisionId === 'travels'
+        (t) => isSameDivision(t.division, 'travels') || isSameDivision((t as any).divisionId, 'travels')
       );
       if (travelStories.length > 0) {
         return travelStories.map((t) => ({

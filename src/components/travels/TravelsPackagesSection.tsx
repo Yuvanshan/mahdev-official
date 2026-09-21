@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { TRAVEL_PACKAGES, TravelPackage } from '../../data/travelsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
@@ -33,7 +34,7 @@ export const TravelsPackagesSection: React.FC<TravelsPackagesSectionProps> = ({
   const packages = useMemo<TravelPackage[]>(() => {
     if (rawServices && rawServices.length > 0) {
       const travelServices = rawServices.filter(
-        (s) => s.division === 'travels' || (s as any).divisionId === 'travels'
+        (s) => isSameDivision(s.division, 'travels') || isSameDivision((s as any).divisionId, 'travels')
       );
       if (travelServices.length > 0) {
         return travelServices.map((s) => ({

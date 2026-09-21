@@ -119,6 +119,17 @@ export function getCanonicalDivisionId(id: string): string {
   return shortId;
 }
 
+/**
+ * Check if two division IDs represent the exact same division
+ * e.g., matches 'sws' and 'sws-event-management' and 'div-sws'
+ */
+export function isSameDivision(divA?: string, divB?: string): boolean {
+  if (!divA || !divB) return false;
+  const a = normalizeDivisionId(divA).shortId;
+  const b = normalizeDivisionId(divB).shortId;
+  return Boolean(a && b && a === b);
+}
+
 export function getDivisionFallbackOrder(id: string): number {
   const canonical = getCanonicalDivisionId(id);
   if (canonical === 'sws') return 1;
@@ -161,32 +172,49 @@ export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
     if (!existing) {
       mapByCanonical.set(shortId, normalizedItem);
     } else {
+      // Pick the document with newer updatedAt as primary, but merge all defined fields
+      const existingTime = new Date(existing.updatedAt || 0).getTime();
+      const itemTime = new Date(normalizedItem.updatedAt || 0).getTime();
+      const primary = itemTime >= existingTime ? normalizedItem : existing;
+      const secondary = itemTime >= existingTime ? existing : normalizedItem;
+
+      const resolvedImg = primary.hero?.imageUrl || secondary.hero?.imageUrl || primary.heroImageUrl || secondary.heroImageUrl || primary.imageUrl || secondary.imageUrl || primary.hero?.bgImage || secondary.hero?.bgImage || '';
+      const mergedHero = {
+        ...(secondary.hero || {}),
+        ...(primary.hero || {}),
+        title: primary.hero?.title || secondary.hero?.title || primary.heroHeadline || secondary.heroHeadline || primary.name,
+        subtitle: primary.hero?.subtitle || secondary.hero?.subtitle || primary.heroSubheadline || secondary.heroSubheadline || primary.shortDescription || secondary.shortDescription,
+        badge: primary.hero?.badge || secondary.hero?.badge || primary.badge || secondary.badge,
+        videoUrl: primary.hero?.videoUrl || secondary.hero?.videoUrl || (primary as any).heroVideoUrl || (secondary as any).heroVideoUrl || (primary as any).videoUrl || (secondary as any).videoUrl,
+        imageUrl: resolvedImg,
+        bgImage: primary.hero?.bgImage || secondary.hero?.bgImage || resolvedImg,
+      };
+
       mapByCanonical.set(shortId, {
-        ...existing,
-        ...normalizedItem,
-        name: normalizedItem.name || existing.name,
-        imageUrl: normalizedItem.imageUrl || existing.imageUrl,
-        logoUrl: normalizedItem.logoUrl || existing.logoUrl,
-        logo: normalizedItem.logo || existing.logo,
+        ...secondary,
+        ...primary,
+        name: primary.name || secondary.name,
+        heroHeadline: primary.heroHeadline || secondary.heroHeadline || mergedHero.title,
+        heroSubheadline: primary.heroSubheadline || secondary.heroSubheadline || mergedHero.subtitle,
+        shortDescription: primary.shortDescription || secondary.shortDescription,
+        description: primary.description || secondary.description,
+        badge: primary.badge || secondary.badge,
+        imageUrl: primary.imageUrl || secondary.imageUrl,
+        heroImageUrl: primary.heroImageUrl || secondary.heroImageUrl || primary.imageUrl || secondary.imageUrl,
+        videoUrl: primary.videoUrl || secondary.videoUrl || mergedHero.videoUrl,
+        heroVideoUrl: primary.heroVideoUrl || secondary.heroVideoUrl || mergedHero.videoUrl,
+        logoUrl: primary.logoUrl || secondary.logoUrl,
+        logo: primary.logo || secondary.logo,
+        hero: mergedHero,
+        status: primary.status || secondary.status,
+        isComingSoon: primary.isComingSoon !== undefined ? primary.isComingSoon : secondary.isComingSoon,
+        comingSoon: primary.comingSoon !== undefined ? primary.comingSoon : secondary.comingSoon,
       });
     }
   }
 
-  // Ensure all 5 canonical divisions exist so none are ever missing
-  const defaultList = getDefaultDivisions();
-  for (const def of defaultList) {
-    const { shortId } = normalizeDivisionId(def.id);
-    if (!mapByCanonical.has(shortId)) {
-      const isDefaultComingSoon = shortId === 'it' || shortId === 'travels' || shortId === 'mart';
-      mapByCanonical.set(shortId, {
-        ...def,
-        id: shortId,
-        slug: shortId,
-        isComingSoon: isDefaultComingSoon,
-        comingSoon: isDefaultComingSoon,
-        status: isDefaultComingSoon ? 'coming_soon' : 'active',
-      });
-    }
+  if (mapByCanonical.size === 0) {
+    return [];
   }
 
   return canonicalOrder
@@ -200,9 +228,7 @@ export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
 }
 
 export function getDefaultDivisions(): FirestoreDivision[] {
-  const now = new Date().toISOString();
   return Object.values(DIVISION_DOCUMENT_MAP).map((d) => {
-    const rawDivision = DIVISIONS[d.docId === 'u1-studio' ? 'u1' : d.docId === 'it-solutions' ? 'it' : d.docId === 'online-mart' ? 'mart' : (d.docId as keyof typeof DIVISIONS)];
     const shortKey = d.docId === 'u1-studio' ? 'u1' : d.docId === 'it-solutions' ? 'it' : d.docId === 'online-mart' ? 'mart' : d.docId;
     const isComingSoonDefault = shortKey === 'it' || shortKey === 'travels' || shortKey === 'mart';
 
@@ -210,40 +236,36 @@ export function getDefaultDivisions(): FirestoreDivision[] {
       id: shortKey,
       name: d.name,
       slug: shortKey,
-      shortName: rawDivision?.shortName || d.name,
-      shortDescription: d.shortDescription,
-      description: d.description,
+      shortName: d.name,
+      shortDescription: '',
+      description: '',
       imageUrl: d.imageUrl,
       logoUrl: d.logoUrl,
       logo: d.logoUrl,
       route: d.route,
       isPublished: true,
       order: d.order,
-      badge: rawDivision?.badge || d.name,
-      accentColor: rawDivision?.accentColor || '#1d4ed8',
-      gradient: rawDivision?.gradient || 'from-blue-600 to-indigo-700',
-      iconName: rawDivision?.iconName || 'Sparkles',
-      heroHeadline: rawDivision?.heroHeadline || d.name,
-      heroSubheadline: rawDivision?.heroSubheadline || d.shortDescription,
-      tagline: rawDivision?.tagline || d.shortDescription,
+      badge: d.name,
+      accentColor: '#1d4ed8',
+      gradient: 'from-blue-600 to-indigo-700',
+      iconName: 'Sparkles',
+      heroHeadline: d.name,
+      heroSubheadline: '',
+      tagline: '',
       contactPhone: '075 092 8078',
       contactNumber: '075 092 8078',
-      contactEmail: rawDivision?.contactEmail || 'info.mahdev.lk@gmail.com',
-      aboutHeading: `About ${d.name}`,
-      aboutText: d.description,
-      mission: `To provide unmatched quality, speed, and reliability in ${d.name.toLowerCase()} across Sri Lanka.`,
-      vision: `To stand as Sri Lanka's benchmark for excellence in our specialized field.`,
-      stats: rawDivision?.stats && rawDivision.stats.length > 0 ? rawDivision.stats : [
-        { label: 'Completed Projects', value: '150+' },
-        { label: 'Client Satisfaction', value: '99%' },
-        { label: 'Island Coverage', value: 'Island-wide' },
-      ],
-      coreServices: rawDivision?.coreServices || [],
-      cardHighlight: (rawDivision as any)?.cardHighlight || '',
+      contactEmail: 'info.mahdev.lk@gmail.com',
+      aboutHeading: '',
+      aboutText: '',
+      mission: '',
+      vision: '',
+      stats: [],
+      coreServices: [],
+      cardHighlight: '',
       hero: {
-        title: rawDivision?.heroHeadline || d.name,
-        subtitle: rawDivision?.heroSubheadline || d.shortDescription,
-        badge: rawDivision?.badge || d.name,
+        title: d.name,
+        subtitle: '',
+        badge: d.name,
         bgImage: d.imageUrl,
         ctaText: `Explore ${d.name}`,
         secondaryCtaText: 'Contact Division',
@@ -253,15 +275,15 @@ export function getDefaultDivisions(): FirestoreDivision[] {
       comingSoon: isComingSoonDefault,
       seo: {
         metaTitle: `${d.name} | Mahdev Pvt Ltd`,
-        metaDescription: d.shortDescription,
+        metaDescription: '',
         keywords: [shortKey, d.docId, d.slug, 'mahdev', 'sri lanka'],
         ogImage: d.imageUrl,
         canonicalUrl: `https://mahdev.lk${d.route}`,
       },
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: now,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
-    return sanitizeForFirestore(item);
+    return item;
   });
 }
 
@@ -313,12 +335,11 @@ export const firestoreDivisionsService = {
         return data;
       }
 
-      const defaultDivs = sortDivisions(getDefaultDivisions());
-      cachedDivisions = { data: defaultDivs, timestamp: now };
-      return defaultDivs;
+      cachedDivisions = { data: [], timestamp: now };
+      return [];
     } catch (err) {
       console.warn('[Firestore Divisions] getDivisions error:', err);
-      return cachedDivisions?.data || sortDivisions(getDefaultDivisions());
+      return cachedDivisions?.data || [];
     }
   },
 
@@ -505,19 +526,12 @@ export const firestoreDivisionsService = {
           cachedDivisions = { data, timestamp: Date.now() };
           callback(data);
         } else {
-          const defaultDivs = cachedDivisions?.data?.length
-            ? sortDivisions(cachedDivisions.data)
-            : sortDivisions(getDefaultDivisions());
-          callback(defaultDivs);
+          callback(cachedDivisions?.data || []);
         }
       },
       (err) => {
         console.warn('[Firestore Divisions] subscribe error:', err);
-        callback(
-          cachedDivisions?.data?.length
-            ? sortDivisions(cachedDivisions.data)
-            : sortDivisions(getDefaultDivisions())
-        );
+        callback(cachedDivisions?.data || []);
       }
     );
   },

@@ -69,6 +69,14 @@ export const TravelsHeroSection: React.FC<TravelsHeroSectionProps> = ({
     travelsDiv?.name ||
     'Bespoke Expeditions Across Sri Lanka';
 
+  const subheadline =
+    (travelsDiv as any)?.heroSubheadline ||
+    (travelsDiv as any)?.hero?.subtitle ||
+    (travelsDiv as any)?.heroSubtitle ||
+    travelsDiv?.tagline ||
+    travelsDiv?.description ||
+    'Curated luxury private tours, tea country rail journeys, leopard wildlife safaris, VIP airport transfers, and bespoke holiday itineraries across Sri Lanka.';
+
   return (
     <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-[#061033] text-white">
       {/* Reliable Full-Width Video Background with guaranteed autoplay and poster fallback */}
@@ -115,6 +123,18 @@ export const TravelsHeroSection: React.FC<TravelsHeroSectionProps> = ({
           >
             {headline}
           </motion.h1>
+
+          {/* Subheadline / Travel Description */}
+          {subheadline && (
+            <motion.p
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="text-base sm:text-lg lg:text-xl text-slate-200 font-normal leading-relaxed max-w-2xl drop-shadow"
+            >
+              {subheadline}
+            </motion.p>
+          )}
 
           {/* Clean Action CTAs in Electric Blue */}
           <motion.div

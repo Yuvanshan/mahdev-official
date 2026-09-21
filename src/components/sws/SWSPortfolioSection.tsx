@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { SWS_PORTFOLIO_ITEMS, SWSPortfolioItem } from '../../data/swsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
@@ -30,7 +31,7 @@ export const SWSPortfolioSection: React.FC<SWSPortfolioSectionProps> = ({
   const portfolioItems = useMemo<SWSPortfolioItem[]>(() => {
     if (rawPortfolio && rawPortfolio.length > 0) {
       const swsItems = rawPortfolio.filter(
-        (p) => p.division === 'sws' || (p as any).divisionId === 'sws'
+        (p) => isSameDivision(p.division, 'sws') || isSameDivision((p as any).divisionId, 'sws')
       );
       if (swsItems.length > 0) {
         return swsItems.map((p) => ({
@@ -58,7 +59,7 @@ export const SWSPortfolioSection: React.FC<SWSPortfolioSectionProps> = ({
     return [];
   }, [rawPortfolio]);
 
-  const [selectedCase, setSelectedCase] = useState<SWSPortfolioItem | null>(() => portfolioItems[0] || null);
+  const [selectedCase, setSelectedCase] = useState<SWSPortfolioItem | null>(null);
 
   if (portfolioItems.length === 0) {
     return null;

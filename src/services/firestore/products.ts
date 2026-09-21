@@ -22,6 +22,7 @@ import {
 } from 'firebase/firestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreProduct, DivisionId } from '../../types/firestore';
+import { isSameDivision } from './divisions';
 
 const CACHE_TTL_MS = 1000 * 60 * 15; // 15-minute memoized cache
 let cachedProducts: { data: FirestoreProduct[]; timestamp: number } | null = null;
@@ -102,7 +103,9 @@ export const firestoreProductsService = {
     let filtered = [...allProducts];
 
     if (options?.division) {
-      filtered = filtered.filter((p) => p.division === options.division);
+      filtered = filtered.filter(
+        (p) => isSameDivision(p.division, options.division) || isSameDivision((p as any).divisionId, options.division)
+      );
     }
     if (options?.categoryId) {
       filtered = filtered.filter((p) => p.categoryId === options.categoryId);

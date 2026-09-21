@@ -144,7 +144,7 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
         return [...valid].sort((a, b) => (Number(a.year) || 0) - (Number(b.year) || 0) || (a.order || 0) - (b.order || 0));
       }
     }
-    return OFFICIAL_MILESTONES;
+    return [];
   }, [milestones]);
 
   if (homepageConfig.milestones && homepageConfig.milestones.enabled === false) {

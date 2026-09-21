@@ -46,11 +46,11 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
       fullDescription: p.fullDescription || p.summary || '',
       highlights: p.highlights || [],
       deliverables: p.deliverables || [],
-      imageUrl: p.imageUrl || 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
-      galleryImages: p.galleryImages || [p.imageUrl || 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'],
+      imageUrl: p.imageUrl || '',
+      galleryImages: p.galleryImages || (p.imageUrl ? [p.imageUrl] : []),
       liveUrl: p.liveUrl,
       impactMetrics: p.impactMetrics || [],
-      tags: p.tags || ['Enterprise', 'Production'],
+      tags: p.tags || [],
       sku: (p as any).sku,
     }));
   }, [portfolio]);

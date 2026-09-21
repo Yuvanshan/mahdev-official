@@ -69,6 +69,14 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
     u1Div?.name ||
     'Fine Art Photography & Cinema';
 
+  const subheadline =
+    (u1Div as any)?.heroSubheadline ||
+    (u1Div as any)?.hero?.subtitle ||
+    (u1Div as any)?.heroSubtitle ||
+    u1Div?.tagline ||
+    u1Div?.description ||
+    'Documenting legacy weddings, commercial cinematic productions, and high-fashion editorials with master optics, medium-format sensors, and cinematic colour grading.';
+
   return (
     <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-[#061033] text-white">
       {/* Reliable Full-Width Video Background with guaranteed autoplay */}
@@ -115,6 +123,18 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
           >
             {headline}
           </motion.h1>
+
+          {/* Subheadline / Cinema Narrative */}
+          {subheadline && (
+            <motion.p
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="text-base sm:text-lg lg:text-xl text-slate-200 font-normal leading-relaxed max-w-2xl drop-shadow"
+            >
+              {subheadline}
+            </motion.p>
+          )}
 
           {/* Action CTAs in Electric Blue */}
           <motion.div

@@ -26,8 +26,10 @@ import {
   SWSRentalItem,
   RentalCategory,
   SWSService,
+  SWS_RENTAL_INVENTORY,
 } from '../../data/swsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { isSameDivision } from '../../services/firestore/divisions';
 import { getRentalAssetCount } from '../../utils/assetMetrics';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
@@ -68,7 +70,10 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
     const items: SWSRentalItem[] = [];
     if (rawProducts && rawProducts.length > 0) {
       const swsProds = rawProducts.filter(
-        (p) => p.division === 'sws' || (p as any).divisionId === 'sws' || (p as any).category === 'rentals'
+        (p) =>
+          isSameDivision(p.division, 'sws') ||
+          isSameDivision((p as any).divisionId, 'sws') ||
+          (p as any).category === 'rentals'
       );
       swsProds.forEach((p) => {
         items.push({

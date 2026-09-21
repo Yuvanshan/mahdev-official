@@ -18,6 +18,7 @@ import {
 } from 'firebase/firestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestorePortfolio, DivisionId } from '../../types/firestore';
+import { isSameDivision } from './divisions';
 
 const CACHE_TTL_MS = 1000 * 60 * 30; // 30-minute memoized cache for static portfolio
 let cachedPortfolio: { data: FirestorePortfolio[]; timestamp: number } | null = null;
@@ -52,12 +53,20 @@ export const firestorePortfolioService = {
     const now = Date.now();
 
     if (!forceRefresh && cachedPortfolio && now - cachedPortfolio.timestamp < CACHE_TTL_MS) {
-      return division ? cachedPortfolio.data.filter((p) => p.division === division) : cachedPortfolio.data;
+      return division
+        ? cachedPortfolio.data.filter(
+            (p) => isSameDivision(p.division, division) || isSameDivision((p as any).divisionId, division)
+          )
+        : cachedPortfolio.data;
     }
 
     if (inFlightPortfolioPromise && !forceRefresh) {
       const all = await inFlightPortfolioPromise;
-      return division ? all.filter((p) => p.division === division) : all;
+      return division
+        ? all.filter(
+            (p) => isSameDivision(p.division, division) || isSameDivision((p as any).divisionId, division)
+          )
+        : all;
     }
 
     inFlightPortfolioPromise = (async () => {

@@ -6,8 +6,9 @@ import {
   Layers,
   Tag,
 } from 'lucide-react';
-import { SWSService } from '../../data/swsData';
+import { SWSService, SWS_SERVICES } from '../../data/swsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { isSameDivision } from '../../services/firestore/divisions';
 import { formatCurrency } from '../../utils/currency';
 import { SWSServiceCard } from './SWSServiceCard';
 import { SWSServiceDetailModal } from './SWSServiceDetailModal';
@@ -33,7 +34,7 @@ export const SWSServicesSection: React.FC<SWSServicesSectionProps> = ({
   const allServices = useMemo<SWSService[]>(() => {
     if (rawServices && rawServices.length > 0) {
       const swsServices = rawServices
-        .filter((s) => s.division === 'sws' || (s as any).divisionId === 'sws')
+        .filter((s) => isSameDivision(s.division, 'sws') || isSameDivision((s as any).divisionId, 'sws'))
         .sort((a, b) => (a.order ?? (a as any).sortOrder ?? 0) - (b.order ?? (b as any).sortOrder ?? 0));
       if (swsServices.length > 0) {
         return swsServices.map((s) => ({

@@ -16,6 +16,7 @@ import {
 } from 'firebase/firestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreGallery, DivisionId } from '../../types/firestore';
+import { isSameDivision } from './divisions';
 
 const CACHE_TTL_MS = 1000 * 60 * 20;
 let cachedGallery: { data: FirestoreGallery[]; timestamp: number } | null = null;
@@ -50,7 +51,9 @@ export const firestoreGalleryService = {
     }
 
     if (division) {
-      return allItems.filter((g) => g.division === division);
+      return allItems.filter(
+        (g) => isSameDivision(g.division, division) || isSameDivision((g as any).divisionId, division)
+      );
     }
     return allItems;
   },
@@ -77,17 +80,33 @@ export const firestoreGalleryService = {
 
   subscribeGallery(division: DivisionId | undefined, onData: (data: FirestoreGallery[]) => void): Unsubscribe {
     const colRef = collection(db, 'gallery');
-    const q = division ? query(colRef, where('division', '==', division)) : colRef;
+
     return onSnapshot(
-      q,
+      colRef,
       (snap) => {
         const data = snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreGallery[];
         cachedGallery = { data, timestamp: Date.now() };
-        onData(data);
+        if (division) {
+          const filtered = data.filter(
+            (g) => isSameDivision(g.division, division) || isSameDivision((g as any).divisionId, division)
+          );
+          onData(filtered);
+        } else {
+          onData(data);
+        }
       },
       (err) => {
         console.warn('[Firestore Gallery] Listener error:', err);
-        onData(cachedGallery?.data || []);
+        const fallback = cachedGallery?.data || [];
+        if (division) {
+          onData(
+            fallback.filter(
+              (g) => isSameDivision(g.division, division) || isSameDivision((g as any).divisionId, division)
+            )
+          );
+        } else {
+          onData(fallback);
+        }
       }
     );
   },

@@ -79,6 +79,14 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
     swsDiv?.name ||
     'Turnkey Luxury Event Production & Decor';
 
+  const subheadline =
+    (swsDiv as any)?.heroSubheadline ||
+    (swsDiv as any)?.hero?.subtitle ||
+    (swsDiv as any)?.heroSubtitle ||
+    swsDiv?.tagline ||
+    swsDiv?.description ||
+    'From intimate bespoke weddings to national stadium summits, SWS engineers sensory-rich environments through architectural lighting, imported floral couture, and master stagecraft.';
+
   return (
     <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-[#061033] text-white">
       {/* Reliable Full-Width Video Background with guaranteed autoplay */}
@@ -125,6 +133,18 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
           >
             {headline}
           </motion.h1>
+
+          {/* Hero Subheadline / Narrative from Admin Configuration */}
+          {subheadline && (
+            <motion.p
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="text-base sm:text-lg lg:text-xl text-slate-200 font-normal leading-relaxed max-w-2xl drop-shadow"
+            >
+              {subheadline}
+            </motion.p>
+          )}
 
           {/* Clean, Non-Cluttered Action CTAs in Electric Blue */}
           <motion.div

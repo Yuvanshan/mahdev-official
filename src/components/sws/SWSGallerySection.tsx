@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { SWS_GALLERY_ITEMS, SWSGalleryItem } from '../../data/swsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
@@ -27,7 +28,7 @@ export const SWSGallerySection: React.FC = () => {
   const galleryItems = useMemo<SWSGalleryItem[]>(() => {
     if (rawGallery && rawGallery.length > 0) {
       const swsGal = rawGallery.filter(
-        (g) => g.division === 'sws' || (g as any).divisionId === 'sws'
+        (g) => isSameDivision(g.division, 'sws') || isSameDivision((g as any).divisionId, 'sws')
       );
       if (swsGal.length > 0) {
         return swsGal.map((g) => {
@@ -55,14 +56,10 @@ export const SWSGallerySection: React.FC = () => {
   const categories = useMemo<string[]>(() => {
     const set = new Set<string>();
     galleryItems.forEach((item) => {
-      let cat = item.category as string;
-      if (cat === 'Corporate') cat = 'Conferences';
+      const cat = item.category as string;
       if (cat && cat !== 'All') set.add(cat);
     });
     const customCats = Array.from(set);
-    if (customCats.length === 0) {
-      return ['All', 'Weddings', 'Conferences', 'Birthdays & Socials', 'Stage & Lighting', 'Dining & Decor'];
-    }
     return ['All', ...customCats];
   }, [galleryItems]);
 

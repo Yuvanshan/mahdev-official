@@ -18,6 +18,7 @@ import {
 } from 'firebase/firestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreService, DivisionId } from '../../types/firestore';
+import { isSameDivision } from './divisions';
 
 const CACHE_TTL_MS = 1000 * 60 * 15; // 15 min cache
 let cachedServices: { data: FirestoreService[]; timestamp: number } | null = null;
@@ -59,7 +60,9 @@ export const firestoreServicesService = {
     }
 
     if (division) {
-      return allServices.filter((s) => s.division === division);
+      return allServices.filter(
+        (s) => isSameDivision(s.division, division) || isSameDivision((s as any).divisionId, division)
+      );
     }
     return allServices;
   },
@@ -141,23 +144,39 @@ export const firestoreServicesService = {
     const onData = typeof onDataOrDivision === 'function' ? onDataOrDivision : onDataCallback || (() => {});
 
     const colRef = collection(db, 'services');
-    const q = division ? query(colRef, where('division', '==', division)) : colRef;
 
     return onSnapshot(
-      q,
+      colRef,
       (snap) => {
-        const data = snap.docs.map((d) => ({
+        let data = snap.docs.map((d) => ({
           ...d.data(),
           id: d.id,
         })) as FirestoreService[];
         data.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         cachedServices = { data, timestamp: Date.now() };
-        onData(data);
+
+        if (division) {
+          const filtered = data.filter(
+            (s) => isSameDivision(s.division, division) || isSameDivision((s as any).divisionId, division)
+          );
+          onData(filtered);
+        } else {
+          onData(data);
+        }
       },
       (err) => {
         console.warn('[Firestore Services] Listener error:', err);
         if (onError) onError(err);
-        onData(cachedServices?.data || []);
+        const fallback = cachedServices?.data || [];
+        if (division) {
+          onData(
+            fallback.filter(
+              (s) => isSameDivision(s.division, division) || isSameDivision((s as any).divisionId, division)
+            )
+          );
+        } else {
+          onData(fallback);
+        }
       }
     );
   },

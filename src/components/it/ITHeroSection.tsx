@@ -70,6 +70,14 @@ export const ITHeroSection: React.FC<ITHeroSectionProps> = ({
     itDiv?.name ||
     'Enterprise Software, Cloud & AI Engineered for Uncompromising Scale';
 
+  const subheadline =
+    (itDiv as any)?.heroSubheadline ||
+    (itDiv as any)?.hero?.subtitle ||
+    (itDiv as any)?.heroSubtitle ||
+    itDiv?.tagline ||
+    itDiv?.description ||
+    'Architecting high-concurrency cloud systems, distributed ERPs, and bespoke mission-critical applications across Sri Lanka and international markets.';
+
   return (
     <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-[#061033] text-white">
       {/* Reliable Full-Width Video Background with guaranteed autoplay and poster fallback */}
@@ -116,6 +124,18 @@ export const ITHeroSection: React.FC<ITHeroSectionProps> = ({
           >
             {headline}
           </motion.h1>
+
+          {/* Subheadline / Description */}
+          {subheadline && (
+            <motion.p
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="text-base sm:text-lg lg:text-xl text-slate-200 font-normal leading-relaxed max-w-2xl drop-shadow"
+            >
+              {subheadline}
+            </motion.p>
+          )}
 
           {/* Primary Action Buttons in Electric Blue */}
           <motion.div
