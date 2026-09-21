@@ -51,6 +51,8 @@ export const U1View: React.FC<U1ViewProps> = ({ onNavigate }) => {
   }, [loadDivisionData]);
 
   const isDataLoading = isInitialLoading || !isDivisionLoaded('u1');
+  const isServicesLoading = isInitialLoading || !isDivisionServicesLoaded('u1');
+  const isGalleryLoading = isInitialLoading || !isDivisionGalleryLoaded('u1');
 
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [activeServiceForBooking, setActiveServiceForBooking] = useState<U1Service | null>(null);
@@ -98,14 +100,14 @@ export const U1View: React.FC<U1ViewProps> = ({ onNavigate }) => {
 
       {/* 2. BELOW HERO SECTION: SEQUENTIAL SECTION LOADING (HERO -> SERVICES -> GALLERY) */}
       {/* 2. ALL STUDIO SERVICES: LOAD SERVICES FIRST AND FAST WITH SHIMMER */}
-      {!isDivisionServicesLoaded('u1') ? (
+      {isServicesLoading ? (
         <ServicesSectionShimmer divisionName="U1 Studio" />
       ) : (
         <U1ServicesSection onBookService={handleBookService} />
       )}
 
       {/* 3. VISUAL PORTFOLIO / GALLERY: SHIMMER UNTIL LOADED */}
-      {!isDivisionGalleryLoaded('u1') ? (
+      {isGalleryLoading ? (
         <GallerySectionShimmer divisionName="U1 Studio" />
       ) : (
         <U1PortfolioSection />

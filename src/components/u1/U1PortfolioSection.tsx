@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { U1_PORTFOLIO_ITEMS, U1PortfolioItem } from '../../data/u1Data';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { GallerySectionShimmer } from '../common/GallerySectionShimmer';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
@@ -22,7 +23,7 @@ import { ScrollReveal } from '../motion/MotionWrappers';
 type PortfolioCategory = string;
 
 export const U1PortfolioSection: React.FC = () => {
-  const { portfolio: rawPortfolio, gallery: rawGallery, mediaAssets } = useFirestoreDataContext();
+  const { portfolio: rawPortfolio, gallery: rawGallery, mediaAssets, isInitialLoading, isDivisionGalleryLoaded } = useFirestoreDataContext();
   const [activeCategory, setActiveCategory] = useState<PortfolioCategory>('All');
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
 
@@ -158,6 +159,9 @@ export const U1PortfolioSection: React.FC = () => {
   }, [portfolioItems]);
 
   if (portfolioItems.length === 0) {
+    if (isInitialLoading || !isDivisionGalleryLoaded('u1')) {
+      return <GallerySectionShimmer divisionName="U1 Studio" />;
+    }
     return null;
   }
 

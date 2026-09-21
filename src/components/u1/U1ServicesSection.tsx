@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { U1_SERVICES, U1Service } from '../../data/u1Data';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { ServicesSectionShimmer } from '../common/ServicesSectionShimmer';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { formatCurrency } from '../../utils/currency';
 import { U1ServiceDetailModal } from './U1ServiceDetailModal';
@@ -33,7 +34,7 @@ type U1FilterCategory = 'all' | 'media' | 'portrait' | 'commercial' | 'print';
 export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
   onBookService,
 }) => {
-  const { services: rawServices } = useFirestoreDataContext();
+  const { services: rawServices, isInitialLoading, isDivisionServicesLoaded } = useFirestoreDataContext();
   const [selectedCategory, setSelectedCategory] = useState<U1FilterCategory>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeModalService, setActiveModalService] = useState<U1Service | null>(null);
@@ -67,6 +68,9 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
   }, [rawServices]);
 
   if (allServices.length === 0) {
+    if (isInitialLoading || !isDivisionServicesLoaded('u1')) {
+      return <ServicesSectionShimmer divisionName="U1 Studio" />;
+    }
     return null;
   }
 

@@ -342,20 +342,30 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           try { localStorage.setItem('mahdev_cached_gallery', JSON.stringify(merged)); } catch {}
           return merged;
         });
-        setLoadedGallery((prev) => {
-          const next = { ...prev, [canonicalId]: true, [rawDivId]: true };
-          try { localStorage.setItem('mahdev_cached_loaded_gallery', JSON.stringify(next)); } catch {}
-          return next;
-        });
       })
       .catch((err) => {
         console.warn(`[FirestoreDataContext] Gallery notice for ${rawDivId}:`, err);
-        setLoadedGallery((prev) => {
-          const next = { ...prev, [canonicalId]: true, [rawDivId]: true };
-          try { localStorage.setItem('mahdev_cached_loaded_gallery', JSON.stringify(next)); } catch {}
-          return next;
-        });
       });
+
+    // 2b. Fetch Media Assets in parallel (critical for U1 Studio visual portfolio & media)
+    const fetchMediaPromise = mediaService
+      .getMediaAssets()
+      .then((assets) => {
+        setMediaAssets(assets);
+        try { localStorage.setItem('mahdev_cached_media_assets', JSON.stringify(assets)); } catch {}
+      })
+      .catch((err) => {
+        console.warn(`[FirestoreDataContext] MediaAssets notice for ${rawDivId}:`, err);
+      });
+
+    // Mark gallery & visual assets loaded once both gallery and media assets have resolved
+    Promise.all([fetchGalleryPromise, fetchMediaPromise]).finally(() => {
+      setLoadedGallery((prev) => {
+        const next = { ...prev, [canonicalId]: true, [rawDivId]: true };
+        try { localStorage.setItem('mahdev_cached_loaded_gallery', JSON.stringify(next)); } catch {}
+        return next;
+      });
+    });
 
     // 3. Fetch products, categories, portfolio
     const fetchOthersPromise = Promise.all([
@@ -410,34 +420,37 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         });
       });
 
-    await Promise.allSettled([fetchServicesPromise, fetchGalleryPromise, fetchOthersPromise]);
+    await Promise.allSettled([fetchServicesPromise, fetchGalleryPromise, fetchMediaPromise, fetchOthersPromise]);
   }, []);
 
   const isDivisionLoaded = useCallback(
     (divisionId: string) => {
       if (!divisionId) return true;
+      if (isInitialLoading) return false;
       const canonicalId = getCanonicalDivisionId(divisionId) || divisionId;
       return Boolean(loadedDivisions[canonicalId] || loadedDivisions[divisionId]);
     },
-    [loadedDivisions]
+    [isInitialLoading, loadedDivisions]
   );
 
   const isDivisionServicesLoaded = useCallback(
     (divisionId: string) => {
       if (!divisionId) return true;
+      if (isInitialLoading) return false;
       const canonicalId = getCanonicalDivisionId(divisionId) || divisionId;
       return Boolean(loadedServices[canonicalId] || loadedServices[divisionId]);
     },
-    [loadedServices]
+    [isInitialLoading, loadedServices]
   );
 
   const isDivisionGalleryLoaded = useCallback(
     (divisionId: string) => {
       if (!divisionId) return true;
+      if (isInitialLoading) return false;
       const canonicalId = getCanonicalDivisionId(divisionId) || divisionId;
       return Boolean(loadedGallery[canonicalId] || loadedGallery[divisionId]);
     },
-    [loadedGallery]
+    [isInitialLoading, loadedGallery]
   );
 
   // Ultra-Fast Parallel Hydration: Loads 100% of real Firestore collections simultaneously in ~1s

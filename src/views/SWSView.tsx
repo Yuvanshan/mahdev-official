@@ -65,6 +65,8 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
     ) || DIVISION_LIST.find((d) => d.id === 'sws');
 
   const isDataLoading = isInitialLoading || !isDivisionLoaded('sws');
+  const isServicesLoading = isInitialLoading || !isDivisionServicesLoaded('sws');
+  const isGalleryLoading = isInitialLoading || !isDivisionGalleryLoaded('sws');
 
   const rentalCount = getRentalAssetCount(
     products,
@@ -142,7 +144,7 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
 
       {/* 2. BELOW HERO SECTION: SEQUENTIAL SECTION LOADING (HERO -> SERVICES -> GALLERY) */}
       {/* 2. ALL SERVICES SHOWCASE: LOAD SERVICES FIRST AND FAST WITH SHIMMER */}
-      {!isDivisionServicesLoaded('sws') ? (
+      {isServicesLoading ? (
         <ServicesSectionShimmer divisionName="SWS Event Management" />
       ) : (
         <SWSServicesSection
@@ -161,7 +163,7 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
       <SWSPackagesSection onBookPackage={handleBookPackage} />
 
       {/* 5. CINEMATIC GALLERY: SHIMMER UNTIL GALLERY LOADS */}
-      {!isDivisionGalleryLoaded('sws') ? (
+      {isGalleryLoading ? (
         <GallerySectionShimmer divisionName="SWS Event Management" />
       ) : (
         <SWSGallerySection />
