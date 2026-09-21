@@ -11,6 +11,9 @@ import {
   Sliders,
   Film,
   Info,
+  Share2,
+  MessageCircle,
+  Check,
 } from 'lucide-react';
 import { U1_PORTFOLIO_ITEMS, U1PortfolioItem } from '../../data/u1Data';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
@@ -19,6 +22,7 @@ import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
+import { shareMediaAsset, inquireMediaAssetOnWhatsApp } from '../../utils/mediaShare';
 
 type PortfolioCategory = string;
 
@@ -26,6 +30,8 @@ export const U1PortfolioSection: React.FC = () => {
   const { portfolio: rawPortfolio, gallery: rawGallery, mediaAssets, isInitialLoading, isDivisionGalleryLoaded } = useFirestoreDataContext();
   const [activeCategory, setActiveCategory] = useState<PortfolioCategory>('All');
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
+  const [shareToast, setShareToast] = useState<string | null>(null);
+  const [cardCopiedId, setCardCopiedId] = useState<string | null>(null);
 
   const portfolioItems = useMemo<U1PortfolioItem[]>(() => {
     const items: U1PortfolioItem[] = [];
@@ -249,9 +255,60 @@ export const U1PortfolioSection: React.FC = () => {
               </Badge>
             </div>
 
-            {/* Full-Screen Zoom Icon */}
-            <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <Maximize2 className="w-3.5 h-3.5" />
+            {/* Top Action Icons: Inquire on WhatsApp, Share, Zoom */}
+            <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity z-10">
+              {/* WhatsApp Quick Incur / Inquire */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  inquireMediaAssetOnWhatsApp({
+                    id: item.id,
+                    title: item.title,
+                    url: item.imageUrl,
+                    category: item.category,
+                    division: 'u1',
+                    description: item.description,
+                  });
+                }}
+                className="w-8 h-8 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105 cursor-pointer"
+                title="Inquire about this frame on WhatsApp"
+                aria-label="Inquire on WhatsApp"
+              >
+                <MessageCircle className="w-4 h-4 fill-white/20" />
+              </button>
+
+              {/* Share Asset Button */}
+              <button
+                type="button"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  const res = await shareMediaAsset({
+                    id: item.id,
+                    title: item.title,
+                    url: item.imageUrl,
+                    category: item.category,
+                    division: 'u1',
+                    description: item.description,
+                  });
+                  setCardCopiedId(item.id);
+                  setTimeout(() => setCardCopiedId(null), 2000);
+                }}
+                className="w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105 cursor-pointer"
+                title="Share this frame"
+                aria-label="Share frame"
+              >
+                {cardCopiedId === item.id ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                ) : (
+                  <Share2 className="w-3.5 h-3.5" />
+                )}
+              </button>
+
+              {/* Full-Screen Zoom Icon */}
+              <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md text-white flex items-center justify-center">
+                <Maximize2 className="w-3.5 h-3.5" />
+              </div>
             </div>
 
             {/* Bottom Meta */}
@@ -271,7 +328,7 @@ export const U1PortfolioSection: React.FC = () => {
         ))}
       </div>
 
-      {/* Full-Screen Lightbox Preview with Camera Metadata */}
+      {/* Full-Screen Lightbox Preview with Camera Metadata, WhatsApp Inquiry & Share */}
       {activeItem && (
         <div
           className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4 sm:p-8 animate-fadeIn"
@@ -308,17 +365,17 @@ export const U1PortfolioSection: React.FC = () => {
             className="relative max-w-5xl w-full max-h-[90vh] flex flex-col items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="relative rounded-2xl overflow-hidden max-h-[72vh] w-auto border border-white/10 shadow-2xl bg-black">
+            <div className="relative rounded-2xl overflow-hidden max-h-[70vh] w-auto border border-white/10 shadow-2xl bg-black">
               <img
                 src={activeItem.imageUrl}
                 alt={activeItem.title}
-                className="max-h-[68vh] w-auto max-w-full object-contain"
+                className="max-h-[66vh] w-auto max-w-full object-contain"
               />
             </div>
 
-            {/* Meta bar */}
-            <div className="w-full max-w-3xl mt-4 bg-slate-900/90 backdrop-blur-md rounded-xl p-4 border border-white/10 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
+            {/* Meta & Interactive Action Bar */}
+            <div className="w-full max-w-4xl mt-3 bg-slate-900/95 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-white/10 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="space-y-1 max-w-md">
                 <div className="flex items-center gap-2">
                   <Badge variant="electric" size="sm">
                     {activeItem.category}
@@ -327,23 +384,76 @@ export const U1PortfolioSection: React.FC = () => {
                     {activeItem.location} ({activeItem.year})
                   </span>
                 </div>
-                <h4 className="font-display text-base font-bold text-white mt-1">
+                <h4 className="font-display text-base sm:text-lg font-bold text-white mt-1">
                   {activeItem.title} — <span className="text-slate-400 text-xs font-normal">{activeItem.client}</span>
                 </h4>
-                <p className="text-xs text-slate-300 mt-0.5">{activeItem.description}</p>
+                <p className="text-xs text-slate-300 mt-0.5 line-clamp-2">{activeItem.description}</p>
               </div>
 
-              {/* Camera EXIF optics info */}
-              {activeItem.cameraMetadata && (
-                <div className="p-2.5 rounded-lg bg-white/5 border border-white/10 text-left text-[11px] text-slate-300 shrink-0 space-y-0.5 font-mono">
-                  <div className="flex items-center gap-1.5 text-blue-400 font-bold">
-                    <Camera className="w-3.5 h-3.5" />
-                    <span>{activeItem.cameraMetadata.camera}</span>
+              {/* Action Buttons: WhatsApp Incur / Inquiry + Share Asset */}
+              <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto shrink-0">
+                {/* Camera EXIF optics info if present */}
+                {activeItem.cameraMetadata && (
+                  <div className="hidden sm:block p-2 rounded-lg bg-white/5 border border-white/10 text-left text-[11px] text-slate-300 font-mono">
+                    <div className="flex items-center gap-1.5 text-blue-400 font-bold">
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>{activeItem.cameraMetadata.camera}</span>
+                    </div>
+                    <div>{activeItem.cameraMetadata.lens} • {activeItem.cameraMetadata.aperture}</div>
                   </div>
-                  <div>Lens: {activeItem.cameraMetadata.lens}</div>
-                  <div>Aperture: {activeItem.cameraMetadata.aperture}</div>
-                </div>
-              )}
+                )}
+
+                {/* WhatsApp Direct Inquiry Button */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    inquireMediaAssetOnWhatsApp({
+                      id: activeItem.id,
+                      title: activeItem.title,
+                      url: activeItem.imageUrl,
+                      category: activeItem.category,
+                      division: 'u1',
+                      description: activeItem.description,
+                    })
+                  }
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs sm:text-sm font-bold shadow-lg shadow-emerald-500/25 transition-all cursor-pointer active:scale-95"
+                  title="Send inquiry with this photo/video to WhatsApp"
+                >
+                  <MessageCircle className="w-4 h-4 fill-white/20" />
+                  <span>Inquire on WhatsApp</span>
+                </button>
+
+                {/* Share Frame Button */}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const res = await shareMediaAsset({
+                      id: activeItem.id,
+                      title: activeItem.title,
+                      url: activeItem.imageUrl,
+                      category: activeItem.category,
+                      division: 'u1',
+                      description: activeItem.description,
+                    });
+                    setShareToast(res.message);
+                    setTimeout(() => setShareToast(null), 2500);
+                  }}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs sm:text-sm font-semibold transition-all cursor-pointer active:scale-95"
+                  title="Share frame link or via social"
+                >
+                  {shareToast ? (
+                    <>
+                      <Check className="w-4 h-4 text-emerald-400" />
+                      <span className="text-emerald-300">{shareToast}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="w-4 h-4" />
+                      <span>Share Frame</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

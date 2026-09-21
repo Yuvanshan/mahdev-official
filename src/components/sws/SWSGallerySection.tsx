@@ -9,6 +9,8 @@ import {
   Maximize2,
   Filter,
   MessageCircle,
+  Share2,
+  Check,
 } from 'lucide-react';
 import { SWS_GALLERY_ITEMS, SWSGalleryItem } from '../../data/swsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
@@ -18,12 +20,14 @@ import { H2, Caption, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
+import { shareMediaAsset } from '../../utils/mediaShare';
 
 export const SWSGallerySection: React.FC = () => {
   const { gallery: rawGallery } = useFirestoreDataContext();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
   const [activeSubImageIdx, setActiveSubImageIdx] = useState<number>(0);
+  const [shareToast, setShareToast] = useState<string | null>(null);
 
   const galleryItems = useMemo<SWSGalleryItem[]>(() => {
     if (rawGallery && rawGallery.length > 0) {
@@ -161,7 +165,7 @@ export const SWSGallerySection: React.FC = () => {
               )}
             </div>
 
-            {/* Direct WhatsApp button with image + Expand Icon */}
+            {/* Direct WhatsApp button with image + Share button + Expand Icon */}
             <div className="absolute top-3 right-3 flex items-center gap-1.5">
               <button
                 type="button"
@@ -182,6 +186,25 @@ export const SWSGallerySection: React.FC = () => {
               >
                 <MessageCircle className="w-3 h-3 fill-white/20" />
                 <span>WhatsApp</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  await shareMediaAsset({
+                    id: item.id,
+                    title: item.title,
+                    url: item.imageUrl,
+                    category: item.category,
+                    division: 'sws',
+                    description: item.description,
+                  });
+                }}
+                title="Share Frame"
+                className="w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md text-white flex items-center justify-center shadow-md opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer active:scale-95"
+              >
+                <Share2 className="w-3.5 h-3.5" />
               </button>
 
               <div className="w-7 h-7 rounded-full bg-white/20 backdrop-blur-md text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -303,26 +326,58 @@ export const SWSGallerySection: React.FC = () => {
                 </div>
               </div>
 
-              {/* Direct WhatsApp Action Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  openWhatsAppInquiry({
-                    title: activeItem.title,
-                    category: activeItem.category,
-                    divisionName: 'SWS Event Management',
-                    imageUrl: activeItem.imageUrl,
-                    location: activeItem.location,
-                    description: activeItem.description,
-                    type: 'gallery',
-                  });
-                }}
-                title="Send inquiry with this photo to WhatsApp"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs sm:text-sm font-bold shadow-md shadow-emerald-500/20 transition-all cursor-pointer active:scale-95 shrink-0"
-              >
-                <MessageCircle className="w-4 h-4 fill-white/20" />
-                <span>Inquire on WhatsApp</span>
-              </button>
+              {/* Actions: WhatsApp + Share */}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    openWhatsAppInquiry({
+                      title: activeItem.title,
+                      category: activeItem.category,
+                      divisionName: 'SWS Event Management',
+                      imageUrl: (activeItem.images && activeItem.images[activeSubImageIdx]) || activeItem.imageUrl,
+                      location: activeItem.location,
+                      description: activeItem.description,
+                      type: 'gallery',
+                    });
+                  }}
+                  title="Send inquiry with this photo to WhatsApp"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs sm:text-sm font-bold shadow-md shadow-emerald-500/20 transition-all cursor-pointer active:scale-95 shrink-0"
+                >
+                  <MessageCircle className="w-4 h-4 fill-white/20" />
+                  <span>Inquire on WhatsApp</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const res = await shareMediaAsset({
+                      id: activeItem.id,
+                      title: activeItem.title,
+                      url: (activeItem.images && activeItem.images[activeSubImageIdx]) || activeItem.imageUrl,
+                      category: activeItem.category,
+                      division: 'sws',
+                      description: activeItem.description,
+                    });
+                    setShareToast(res.message);
+                    setTimeout(() => setShareToast(null), 2500);
+                  }}
+                  title="Share Photo"
+                  className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs sm:text-sm font-semibold transition-all cursor-pointer active:scale-95 shrink-0"
+                >
+                  {shareToast ? (
+                    <>
+                      <Check className="w-4 h-4 text-emerald-400" />
+                      <span className="text-emerald-300">{shareToast}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="w-4 h-4" />
+                      <span>Share</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

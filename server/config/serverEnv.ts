@@ -71,10 +71,10 @@ export function getServerConfig(): ServerEnvironmentConfig {
     },
 
     notifications: {
-      smtpHost: process.env.SMTP_HOST || '',
+      smtpHost: process.env.SMTP_HOST || (process.env.GMAIL_USER ? 'smtp.gmail.com' : ''),
       smtpPort: parseInt(process.env.SMTP_PORT || '587', 10),
-      smtpUser: process.env.SMTP_USER || '',
-      smtpPass: process.env.SMTP_PASS || '',
+      smtpUser: (process.env.GMAIL_USER || process.env.SMTP_USER || '').trim(),
+      smtpPass: (process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASSWORD || process.env.SMTP_PASS || '').trim().replace(/\s+/g, ''),
       whatsappApiToken: process.env.WHATSAPP_API_TOKEN || '',
     },
 

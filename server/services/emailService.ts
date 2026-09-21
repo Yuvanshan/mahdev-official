@@ -42,15 +42,19 @@ let hasCheckedCredentials = false;
 
 function getMailTransporter(): Transporter | null {
   const config = getServerConfig();
-  const smtpUser = process.env.SMTP_USER || process.env.GMAIL_USER || config.notifications.smtpUser;
-  const smtpPass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || config.notifications.smtpPass;
-  const smtpHost = process.env.SMTP_HOST || config.notifications.smtpHost || 'smtp.gmail.com';
+  const rawUser = process.env.GMAIL_USER || process.env.SMTP_USER || config.notifications.smtpUser || '';
+  const rawPass = process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASSWORD || process.env.SMTP_PASS || config.notifications.smtpPass || '';
+
+  const smtpUser = rawUser.trim();
+  // Strip spaces if user pasted 16-character Google App Password format "xxxx xxxx xxxx xxxx"
+  const smtpPass = rawPass.trim().replace(/\s+/g, '');
+  const smtpHost = process.env.SMTP_HOST || config.notifications.smtpHost || (smtpUser.includes('@gmail.com') ? 'smtp.gmail.com' : 'smtp.gmail.com');
   const smtpPort = parseInt(process.env.SMTP_PORT || String(config.notifications.smtpPort || '587'), 10);
 
   if (!smtpUser || !smtpPass) {
     if (!hasCheckedCredentials) {
       console.info(
-        `[EmailService] Notice: SMTP_USER or SMTP_PASS not set in environment. Enquiries to ${DEFAULT_TARGET_EMAIL} will be logged to server console and stored in audit trail.`
+        `[EmailService] Notice: GMAIL_USER/SMTP_USER or GMAIL_APP_PASSWORD/SMTP_PASS not set in environment. Enquiries to ${DEFAULT_TARGET_EMAIL} will be logged to server console and stored in audit trail.`
       );
       hasCheckedCredentials = true;
     }

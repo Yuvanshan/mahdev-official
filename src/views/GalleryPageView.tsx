@@ -1,11 +1,12 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Expand, X, MapPin, Sparkles, MessageCircle, ArrowLeft, Filter, Camera } from 'lucide-react';
+import { Expand, X, MapPin, Sparkles, MessageCircle, ArrowLeft, Filter, Camera, Share2, Check } from 'lucide-react';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { SectionContainer } from '../components/ui/SectionContainer';
 import { H1, H2, Body, Caption } from '../components/ui/Heading';
 import { Badge } from '../components/ui/Badge';
 import { openWhatsAppInquiry } from '../utils/whatsapp';
 import { CallToActionSection } from '../components/home/CallToActionSection';
+import { shareMediaAsset, inquireMediaAssetOnWhatsApp } from '../utils/mediaShare';
 
 interface GalleryPageViewProps {
   onNavigate: (route: string) => void;
@@ -20,20 +21,23 @@ interface DisplayGalleryItem {
   category: string;
   divisionId?: string;
   location?: string;
+  description?: string;
 }
 
 export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, initialSku }) => {
-  const { gallery } = useFirestoreDataContext();
+  const { gallery, mediaAssets } = useFirestoreDataContext();
   const [activeItem, setActiveItem] = useState<DisplayGalleryItem | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [shareFeedback, setShareFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   const allItems: DisplayGalleryItem[] = useMemo(() => {
-    return gallery
+    // 1. From standard gallery collection
+    const galleryItems: DisplayGalleryItem[] = gallery
       .filter((item) => item.status !== 'hidden')
       .flatMap((item, itemIdx) => {
         const media = item.images?.length ? item.images : [item.mediaUrl || item.url || item.thumbnailUrl || ''];
@@ -49,10 +53,39 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
             category: item.category || item.tag || 'Mahdev Group',
             divisionId: itemDivision,
             location: (item as any).location || item.caption || 'Sri Lanka',
+            description: (item as any).description,
           };
         });
       });
-  }, [gallery]);
+
+    // 2. From mediaAssets collection (so studio media assets are also shared & accessible)
+    const mediaItems: DisplayGalleryItem[] = (mediaAssets || [])
+      .filter((m) => m.url && m.title)
+      .map((m, idx) => {
+        const div = m.divisionId || m.division || 'U1';
+        return {
+          id: m.id || `med-${idx}`,
+          sku: `MED-${String(div).toUpperCase()}-${(m.id || String(idx)).slice(-5).toUpperCase()}`,
+          url: m.url,
+          title: m.title,
+          category: m.category || 'Studio Media Asset',
+          divisionId: div,
+          location: m.dimensions ? `Master Format: ${m.dimensions}` : 'Production Asset',
+          description: (m as any).description,
+        };
+      });
+
+    // Deduplicate by image URL
+    const seenUrls = new Set<string>();
+    const combined: DisplayGalleryItem[] = [];
+    for (const item of [...galleryItems, ...mediaItems]) {
+      if (!seenUrls.has(item.url)) {
+        seenUrls.add(item.url);
+        combined.push(item);
+      }
+    }
+    return combined;
+  }, [gallery, mediaAssets]);
 
   // Check URL or prop for initialSku to auto-open lightbox
   useEffect(() => {
@@ -90,13 +123,17 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
   }, [allItems, selectedCategory, searchQuery]);
 
   const handleInquire = (item: DisplayGalleryItem) => {
-    openWhatsAppInquiry({
+    inquireMediaAssetOnWhatsApp({
       sku: item.sku,
       title: item.title,
       category: item.category,
       imageUrl: item.url,
       type: 'gallery',
       divisionName: item.divisionId || 'Mahdev Group',
+      description: item.description,
+      id: item.id,
+      url: item.url,
+      division: item.divisionId,
     });
   };
 
@@ -185,10 +222,48 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
                     loading="lazy"
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-white bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-full">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2.5 sm:p-3">
+                    {/* Top right quick actions */}
+                    <div className="flex items-center justify-end gap-1.5 z-10">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleInquire(item);
+                        }}
+                        className="w-7 h-7 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white flex items-center justify-center shadow-md transition-transform hover:scale-105 cursor-pointer"
+                        title="Inquire on WhatsApp"
+                        aria-label="Inquire on WhatsApp"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 fill-white/20" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          const res = await shareMediaAsset({
+                            id: item.id,
+                            title: item.title,
+                            url: item.url,
+                            category: item.category,
+                            division: item.divisionId,
+                            sku: item.sku,
+                            description: item.description,
+                          });
+                          setShareFeedback(res.message);
+                          setTimeout(() => setShareFeedback(null), 2500);
+                        }}
+                        className="w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md text-white flex items-center justify-center shadow-md transition-transform hover:scale-105 cursor-pointer"
+                        title="Share Asset"
+                        aria-label="Share Asset"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-white bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-full self-start">
                       <Expand className="w-3.5 h-3.5" />
-                      View Details
+                      View Frame
                     </span>
                   </div>
                 </div>
@@ -258,7 +333,8 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
                   </div>
                 )}
                 <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  Captured directly during live production by Mahdev’s certified specialists. Inquire to schedule a similar project or request full production logistics.
+                  {activeItem.description ||
+                    'Captured directly during live production by Mahdev’s certified specialists. Inquire on WhatsApp to book a shoot or request licensing logistics.'}
                 </p>
               </div>
 
@@ -266,15 +342,46 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
                 <button
                   type="button"
                   onClick={() => handleInquire(activeItem)}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors shadow-sm"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white hover:bg-[#20bd5a] transition-colors shadow-sm cursor-pointer"
                 >
-                  <MessageCircle className="w-4 h-4" />
+                  <MessageCircle className="w-4 h-4 fill-white/20" />
                   Inquire via WhatsApp
                 </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const res = await shareMediaAsset({
+                      id: activeItem.id,
+                      title: activeItem.title,
+                      url: activeItem.url,
+                      category: activeItem.category,
+                      division: activeItem.divisionId,
+                      sku: activeItem.sku,
+                      description: activeItem.description,
+                    });
+                    setShareFeedback(res.message);
+                    setTimeout(() => setShareFeedback(null), 2500);
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  {shareFeedback ? (
+                    <>
+                      <Check className="w-4 h-4 text-emerald-600" />
+                      <span className="text-emerald-700 font-medium">{shareFeedback}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="w-4 h-4 text-slate-500" />
+                      <span>Share Media Asset</span>
+                    </>
+                  )}
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setActiveItem(null)}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                  className="w-full rounded-xl border border-transparent px-4 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
                 >
                   Close Preview
                 </button>

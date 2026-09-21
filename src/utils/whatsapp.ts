@@ -17,7 +17,7 @@ export interface WhatsAppInquiryOptions {
   price?: string | number;
   description?: string;
   location?: string;
-  type?: 'gallery' | 'service' | 'portfolio' | 'product' | 'package' | 'booking' | 'general';
+  type?: 'gallery' | 'service' | 'portfolio' | 'product' | 'package' | 'booking' | 'general' | 'media';
   bookingId?: string;
   packageName?: string;
   date?: string;
@@ -115,6 +115,16 @@ export function resolveItemDirectUrl(options: WhatsAppInquiryOptions, effectiveS
     return `${origin}/portfolio?sku=${encodeURIComponent(effectiveSku)}`;
   }
   if (options.type === 'gallery') {
+    return `${origin}/gallery?sku=${encodeURIComponent(effectiveSku)}`;
+  }
+  if (options.type === 'media') {
+    const targetDivision = (options.divisionName || '').trim().toLowerCase();
+    if (targetDivision.includes('u1') || targetDivision.includes('studio') || targetDivision.includes('cinema')) {
+      return `${origin}/u1#portfolio`;
+    }
+    if (targetDivision.includes('sws') || targetDivision.includes('event')) {
+      return `${origin}/sws#gallery`;
+    }
     return `${origin}/gallery?sku=${encodeURIComponent(effectiveSku)}`;
   }
   if (options.type === 'booking') {

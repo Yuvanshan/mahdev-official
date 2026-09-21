@@ -21,6 +21,8 @@ import {
   Tag,
   Sliders,
   Building,
+  Share2,
+  MessageCircle,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { AdminModal } from '../../components/admin/AdminModal';
@@ -35,6 +37,7 @@ import {
   mediaService,
   StoredMediaItem,
 } from '../../services/firestore/media';
+import { shareMediaAsset, inquireMediaAssetOnWhatsApp } from '../../utils/mediaShare';
 
 export type { StoredMediaItem };
 
@@ -489,6 +492,47 @@ export const AdminMediaView: React.FC = () => {
                     </div>
 
                     <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {/* Inquire on WhatsApp */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          inquireMediaAssetOnWhatsApp({
+                            id: item.id,
+                            title: item.title,
+                            url: item.url,
+                            category: item.category,
+                            division: item.divisionId || item.division,
+                            description: (item as any).description,
+                            dimensions: item.dimensions,
+                            fileSize: item.fileSize,
+                          })
+                        }
+                        className="p-1.5 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs cursor-pointer shadow-sm transition-all"
+                        title="Inquire on WhatsApp"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 fill-white/20" />
+                      </button>
+
+                      {/* Share Asset */}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const res = await shareMediaAsset({
+                            id: item.id,
+                            title: item.title,
+                            url: item.url,
+                            category: item.category,
+                            division: item.divisionId || item.division,
+                            description: (item as any).description,
+                          });
+                          addToast(res.success ? 'success' : 'info', res.message);
+                        }}
+                        className="p-1.5 rounded-lg bg-slate-900/80 backdrop-blur-xs text-white hover:bg-slate-900 text-xs cursor-pointer"
+                        title="Share Asset"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => handleOpenEdit(item)}
@@ -554,21 +598,64 @@ export const AdminMediaView: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="p-3 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between gap-2">
+                <div className="p-3 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between gap-1.5">
                   <button
                     type="button"
                     onClick={() => handleOpenEdit(item)}
-                    className="py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-white border border-slate-200 text-slate-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 cursor-pointer"
+                    className="py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-all bg-white border border-slate-200 text-slate-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 cursor-pointer shrink-0"
                     title="Edit Asset Details"
                   >
                     <Pencil className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Edit</span>
+                    <span className="hidden sm:inline">Edit</span>
+                  </button>
+
+                  {/* WhatsApp Quick Incur / Inquire */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      inquireMediaAssetOnWhatsApp({
+                        id: item.id,
+                        title: item.title,
+                        url: item.url,
+                        category: item.category,
+                        division: item.divisionId || item.division,
+                        description: (item as any).description,
+                        dimensions: item.dimensions,
+                        fileSize: item.fileSize,
+                      })
+                    }
+                    className="p-1.5 rounded-lg bg-[#25D366]/15 hover:bg-[#25D366] text-emerald-700 hover:text-white border border-emerald-300/40 transition-all cursor-pointer shrink-0"
+                    title="Inquire via WhatsApp"
+                    aria-label="Inquire via WhatsApp"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                  </button>
+
+                  {/* Share Asset */}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const res = await shareMediaAsset({
+                        id: item.id,
+                        title: item.title,
+                        url: item.url,
+                        category: item.category,
+                        division: item.divisionId || item.division,
+                        description: (item as any).description,
+                      });
+                      addToast(res.success ? 'success' : 'info', res.message);
+                    }}
+                    className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer shrink-0"
+                    title="Share Asset Link"
+                    aria-label="Share Asset Link"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleCopyUrl(item)}
-                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer truncate ${
                       copiedId === item.id
                         ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
                         : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900'
@@ -576,13 +663,13 @@ export const AdminMediaView: React.FC = () => {
                   >
                     {copiedId === item.id ? (
                       <>
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Copied</span>
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span className="truncate">Copied</span>
                       </>
                     ) : (
                       <>
-                        <Copy className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Copy URL</span>
+                        <Copy className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="truncate">Copy URL</span>
                       </>
                     )}
                   </button>
@@ -590,7 +677,7 @@ export const AdminMediaView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleDeletePrompt(item)}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-colors cursor-pointer"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-colors cursor-pointer shrink-0"
                     title="Delete Asset"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -953,9 +1040,50 @@ export const AdminMediaView: React.FC = () => {
                 referrerPolicy="no-referrer"
               />
             </div>
-            <div className="p-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-              <span className="font-mono truncate max-w-md">{previewItem.url}</span>
-              <div className="flex items-center gap-2">
+            <div className="p-3 bg-slate-900 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+              <span className="font-mono truncate max-w-xs sm:max-w-md">{previewItem.url}</span>
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Inquire on WhatsApp */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    inquireMediaAssetOnWhatsApp({
+                      id: previewItem.id,
+                      title: previewItem.title,
+                      url: previewItem.url,
+                      category: previewItem.category,
+                      division: previewItem.divisionId || previewItem.division,
+                      description: (previewItem as any).description,
+                      dimensions: previewItem.dimensions,
+                      fileSize: previewItem.fileSize,
+                    })
+                  }
+                  className="px-3 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm transition-colors"
+                >
+                  <MessageCircle className="w-3.5 h-3.5 fill-white/20" />
+                  <span>Inquire on WhatsApp</span>
+                </button>
+
+                {/* Share Asset */}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const res = await shareMediaAsset({
+                      id: previewItem.id,
+                      title: previewItem.title,
+                      url: previewItem.url,
+                      category: previewItem.category,
+                      division: previewItem.divisionId || previewItem.division,
+                      description: (previewItem as any).description,
+                    });
+                    addToast(res.success ? 'success' : 'info', res.message);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium flex items-center gap-1.5 cursor-pointer border border-slate-700 transition-colors"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>Share Asset</span>
+                </button>
+
                 <Button
                   variant="outline"
                   size="sm"
