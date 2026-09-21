@@ -14,6 +14,7 @@ import {
   Building,
   MessageSquare,
   FileCode,
+  FileText,
   Tag,
   Globe,
   Settings,
@@ -66,6 +67,7 @@ import { AdminSettingsView } from './AdminSettingsView';
 import { AdminUsersView } from './AdminUsersView';
 import { AdminAuditLogsView } from './AdminAuditLogsView';
 import { AdminHomepageView } from './AdminHomepageView';
+import { AdminWebsiteContentView } from './AdminWebsiteContentView';
 import { AdminGenericView } from './AdminGenericView';
 
 const AdminSectionSkeleton: React.FC = () => (
@@ -102,6 +104,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'analytics', label: 'Analytics & Reports', icon: BarChart2, badge: 'Live' },
   { id: 'homepage', label: 'Homepage CMS', icon: Globe, badge: 'Live' },
+  { id: 'website-content', label: 'Website Content', icon: FileText, badge: 'CMS' },
   { id: 'divisions', label: 'Divisions', icon: Building2 },
   { id: 'services', label: 'Services', icon: Briefcase },
   { id: 'products', label: 'Products', icon: Package },
@@ -133,8 +136,12 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
     if (typeof window !== 'undefined' && currentPath) {
       const match = currentPath.match(/^\/admin\/([a-z0-9-]+)/i);
       if (match && match[1]) {
-        const found = SIDEBAR_ITEMS.some((item) => item.id === match[1].toLowerCase());
-        if (found) return match[1].toLowerCase() as AdminSectionId;
+        const slug = match[1].toLowerCase();
+        if (slug === 'about-us' || slug === 'legal-pages' || slug === 'website-content') {
+          return slug as AdminSectionId;
+        }
+        const found = SIDEBAR_ITEMS.some((item) => item.id === slug);
+        if (found) return slug as AdminSectionId;
       }
     }
     return 'dashboard';
@@ -195,6 +202,21 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
         );
       case 'homepage':
         return <AdminHomepageView />;
+      case 'website-content':
+      case 'about-us':
+      case 'legal-pages':
+        return (
+          <AdminWebsiteContentView
+            initialTab={
+              activeSection === 'about-us'
+                ? 'about'
+                : activeSection === 'legal-pages'
+                ? 'terms'
+                : 'about'
+            }
+            onNavigate={onNavigate}
+          />
+        );
       case 'divisions':
         return <AdminDivisionsView />;
       case 'services':

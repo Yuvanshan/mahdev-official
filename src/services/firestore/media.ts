@@ -46,6 +46,14 @@ const SYSTEM_METADATA_DOC = 'deleted_media';
 const STORAGE_DELETED_KEY = 'mahdev_deleted_media_ids_v1';
 const STORAGE_DELETED_URLS_KEY = 'mahdev_deleted_media_urls_v1';
 
+const MEDIA_CACHE_TTL_MS = 1000 * 60 * 15; // 15 min cache
+let cachedMediaAssets: { data: StoredMediaItem[]; timestamp: number } | null = null;
+let inFlightMediaPromise: Promise<StoredMediaItem[]> | null = null;
+
+export function invalidateMediaCache(): void {
+  cachedMediaAssets = null;
+}
+
 export const DEFAULT_MEDIA_ITEMS: StoredMediaItem[] = [
   {
     id: 'med-co-01',
@@ -244,36 +252,51 @@ export const recordPermanentlyDeletedId = (id: string) => recordPermanentlyDelet
 
 export const mediaService = {
   /**
-   * Retrieves all verified media assets directly from Firestore
+   * Retrieves all verified media assets directly from Firestore with caching and deduplication
    */
-  async getMediaAssets(): Promise<StoredMediaItem[]> {
-    try {
-      const collRef = collection(db, COLLECTION_NAME);
-      const [deletedIds, deletedUrls] = await Promise.all([
-        getPermanentlyDeletedIds(),
-        getPermanentlyDeletedUrls(),
-      ]);
-      const snapshot = await getDocs(collRef);
-      const items: StoredMediaItem[] = [];
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data() as StoredMediaItem;
-        const isMarkedDeleted = Boolean(data.isDeleted || (data as any).deleted);
-        const isIdDeleted = deletedIds.has(docSnap.id) || (data.id && deletedIds.has(data.id));
-        const isUrlDeleted = Boolean(data.url && deletedUrls.has(data.url));
-
-        if (!isMarkedDeleted && !isIdDeleted && !isUrlDeleted) {
-          items.push({
-            ...data,
-            id: docSnap.id || data.id,
-          });
-        }
-      });
-      items.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-      return items;
-    } catch (err) {
-      console.warn('[MediaService] getMediaAssets failed:', err);
-      return [];
+  async getMediaAssets(forceRefresh = false): Promise<StoredMediaItem[]> {
+    const now = Date.now();
+    if (!forceRefresh && cachedMediaAssets && now - cachedMediaAssets.timestamp < MEDIA_CACHE_TTL_MS) {
+      return cachedMediaAssets.data;
     }
+    if (inFlightMediaPromise) {
+      return inFlightMediaPromise;
+    }
+
+    inFlightMediaPromise = (async () => {
+      try {
+        const collRef = collection(db, COLLECTION_NAME);
+        const [deletedIds, deletedUrls] = await Promise.all([
+          getPermanentlyDeletedIds(),
+          getPermanentlyDeletedUrls(),
+        ]);
+        const snapshot = await getDocs(collRef);
+        const items: StoredMediaItem[] = [];
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data() as StoredMediaItem;
+          const isMarkedDeleted = Boolean(data.isDeleted || (data as any).deleted);
+          const isIdDeleted = deletedIds.has(docSnap.id) || (data.id && deletedIds.has(data.id));
+          const isUrlDeleted = Boolean(data.url && deletedUrls.has(data.url));
+
+          if (!isMarkedDeleted && !isIdDeleted && !isUrlDeleted) {
+            items.push({
+              ...data,
+              id: docSnap.id || data.id,
+            });
+          }
+        });
+        items.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        cachedMediaAssets = { data: items, timestamp: Date.now() };
+        return items;
+      } catch (err) {
+        console.warn('[MediaService] getMediaAssets failed:', err);
+        return cachedMediaAssets?.data || [];
+      } finally {
+        inFlightMediaPromise = null;
+      }
+    })();
+
+    return inFlightMediaPromise;
   },
 
   /**

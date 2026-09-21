@@ -60,8 +60,8 @@ export const firestoreInquiriesService = {
     }
   },
 
-  async createInquiry(data: Omit<FirestoreInquiry, 'id' | 'createdAt' | 'updatedAt' | 'status'> & { status?: FirestoreInquiry['status'] }): Promise<string> {
-    const id = `inq-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+  async createInquiry(data: Omit<FirestoreInquiry, 'id' | 'createdAt' | 'updatedAt' | 'status'> & { id?: string; status?: FirestoreInquiry['status'] }): Promise<string> {
+    const id = data.id || `inq-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const docRef = doc(db, COLLECTION_NAME, id);
     const sanitized = sanitizeForFirestore({
       ...data,
@@ -71,6 +71,31 @@ export const firestoreInquiriesService = {
       updatedAt: serverTimestamp(),
     });
     await setDoc(docRef, sanitized);
+
+    // Dispatch email to info.mahdev.lk@gmail.com via backend mail gateway
+    try {
+      await fetch('/api/inquiries/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          referenceId: id,
+          fullName: data.fullName || data.name,
+          name: data.name || data.fullName,
+          email: data.email,
+          phone: data.phone,
+          division: data.division || data.divisionId,
+          service: data.service || data.serviceName,
+          subject: data.subject || (data.service ? `Enquiry for ${data.service}` : 'Website Customer Enquiry'),
+          message: data.message,
+          preferredDate: data.preferredDate,
+          location: data.location,
+        }),
+      });
+    } catch (apiErr) {
+      console.warn('[FirestoreInquiries] Backend email dispatch notice:', apiErr);
+    }
+
     return id;
   },
 

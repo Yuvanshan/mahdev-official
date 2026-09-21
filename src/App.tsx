@@ -157,7 +157,7 @@ function AppContent() {
         'admin', 'admin-login', 'adminportal', 'admin-portal',
         'sws', 'u1', 'it', 'travels', 'mart',
         'sws-events', 'sws-event-management', 'u1-studio', 'it-solutions', 'mahdev-travels', 'online-mart',
-        'about', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'catalog', 'track-order', 'order', 'orders'
+        'about', 'about-us', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'catalog', 'track-order', 'order', 'orders', 'terms-and-conditions', 'privacy-policy'
       ];
       if (directHashRoutes.includes(cleanHash) || cleanHash.startsWith('admin/')) {
         setCurrentPath(`/${cleanHash}${search}`);
@@ -1023,6 +1023,8 @@ function AppContent() {
       case '/featured-services':
         return <ServicesView onNavigate={navigate} />;
       case '/about':
+      case '/about-us':
+      case '/company':
         return <AboutView onNavigate={navigate} />;
       case '/gallery':
         return <GalleryPageView onNavigate={navigate} initialSku={searchParams.get('sku') || searchParams.get('id') || undefined} />;

@@ -213,7 +213,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                       </p>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 max-w-md mx-auto text-xs text-slate-600 space-y-1 text-left">
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 max-w-md mx-auto text-xs text-slate-600 space-y-1.5 text-left">
                       <div className="flex justify-between">
                         <span className="text-slate-400">Target Division:</span>
                         <span className="font-bold text-slate-900 capitalize">
@@ -221,8 +221,12 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Contact Email:</span>
+                        <span className="text-slate-400">Your Email:</span>
                         <span className="font-bold text-slate-900">{formData.email}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Dispatched To:</span>
+                        <span className="font-bold text-[#0052FF]">info.mahdev.lk@gmail.com</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-400">Response SLA:</span>
@@ -230,9 +234,19 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                       </div>
                     </div>
 
-                    <Button size="sm" variant="outline" onClick={handleReset}>
-                      Submit Another Inquiry
-                    </Button>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2 max-w-md mx-auto">
+                      <a
+                        href={`mailto:info.mahdev.lk@gmail.com?subject=${encodeURIComponent(`[${inquiryRef}] Website Inquiry: ${formData.serviceType || formData.division}`)}&body=${encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone || 'N/A'}\nDivision: ${formData.division}\n\nMessage:\n${formData.message}`)}`}
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#0052FF] text-xs font-semibold border border-blue-200 transition-colors"
+                      >
+                        <Mail className="w-3.5 h-3.5" />
+                        <span>Send Direct Mail Copy</span>
+                      </a>
+
+                      <Button size="sm" variant="outline" onClick={handleReset} className="w-full sm:w-auto">
+                        Submit Another Inquiry
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-4">

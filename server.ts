@@ -20,6 +20,9 @@ import {
   dispatchServerNotification,
 } from './server/services/secureNotificationService';
 import {
+  sendEnquiryEmail,
+} from './server/services/emailService';
+import {
   getServerConfig,
   validateServerSecrets,
 } from './server/config/serverEnv';
@@ -1508,74 +1511,137 @@ async function startServer() {
     }
   );
 
-  // 4b. Dedicated Public Contact Form Ingestion & Email Dispatch
+  // 4b. Dedicated Public Contact & Enquiry Form Ingestion & Email Dispatch
+  const handleEnquirySubmission = async (req: Request, res: Response) => {
+    const {
+      fullName,
+      name,
+      email,
+      phone,
+      division,
+      service,
+      serviceName,
+      subject,
+      message,
+      requirements,
+      notes,
+      preferredDate,
+      date,
+      budget,
+      referenceId,
+      id,
+    } = req.body;
+
+    const senderName = sanitizeString(fullName || name, 100) || 'Corporate Client';
+    const senderEmail = sanitizeString(email, 100);
+    const senderPhone = sanitizeString(phone, 30);
+    const targetDivision = sanitizeString(division, 50) || 'general';
+    const inquiryService = sanitizeString(service || serviceName, 100);
+    const inquirySubject =
+      sanitizeString(subject, 150) ||
+      (inquiryService ? `Enquiry for ${inquiryService}` : 'Corporate Contact Inquiry');
+    const inquiryMessage = sanitizeString(message || requirements || notes, 3000);
+    const refId = sanitizeString(referenceId || id, 50) || `ENQ-${Date.now().toString(36).toUpperCase()}`;
+    const prefDate = sanitizeString(preferredDate || date, 50);
+    const budgetRange = sanitizeString(budget, 50);
+
+    if (!senderEmail || !inquiryMessage) {
+      res.status(400).json({
+        success: false,
+        error: 'Email and message are required.',
+      });
+      return;
+    }
+
+    // Log server audit trail for new incoming corporate lead
+    serverAuditLogs.unshift({
+      id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+      timestamp: new Date().toISOString(),
+      adminEmail: 'info.mahdev.lk@gmail.com',
+      adminName: 'Corporate Dispatch Gateway',
+      action: 'CONTACT_FORM_SUBMITTED',
+      entityType: 'Inquiry',
+      entityId: refId,
+      details: `Inquiry from ${senderName} (${senderEmail}) regarding "${inquirySubject}". Target Division: ${targetDivision}. Phone: ${senderPhone || 'N/A'}.`,
+      status: 'success',
+    });
+
+    // Authoritative email dispatch to info.mahdev.lk@gmail.com
+    let emailResult = {
+      delivered: false,
+      targetEmail: 'info.mahdev.lk@gmail.com',
+      deliveryMethod: 'sandbox_logged',
+    };
+
+    try {
+      emailResult = await sendEnquiryEmail({
+        senderName,
+        senderEmail,
+        senderPhone,
+        division: targetDivision,
+        service: inquiryService,
+        subject: inquirySubject,
+        message: inquiryMessage,
+        referenceId: refId,
+        preferredDate: prefDate,
+        budget: budgetRange,
+        receivedAt: new Date().toISOString(),
+      });
+    } catch (mailErr) {
+      console.warn('[Contact Gateway] sendEnquiryEmail exception:', mailErr);
+    }
+
+    // Also dispatch multi-channel alert
+    try {
+      await dispatchServerNotification({
+        type: 'admin_contact_inquiry',
+        recipient: {
+          name: 'Yuvanshan Prabakaran',
+          email: 'info.mahdev.lk@gmail.com',
+          phone: '+94750928078',
+          role: 'admin',
+        },
+        title: `📩 New Corporate Inquiry: ${inquirySubject}`,
+        message: `Inquiry from ${senderName} (${senderEmail}): "${inquiryMessage.slice(0, 140)}..."`,
+        data: {
+          referenceId: refId,
+          senderName,
+          senderEmail,
+          senderPhone,
+          division: targetDivision,
+          service: inquiryService,
+          subject: inquirySubject,
+          message: inquiryMessage,
+          preferredDate: prefDate,
+          budget: budgetRange,
+          receivedAt: new Date().toISOString(),
+        },
+        channels: ['email', 'in_app'],
+      });
+    } catch (e) {
+      console.warn('[Contact Gateway] Notification dispatch note:', e);
+    }
+
+    res.json({
+      success: true,
+      referenceId: refId,
+      message: 'Inquiry received and dispatched to corporate dispatch at info.mahdev.lk@gmail.com.',
+      targetEmail: 'info.mahdev.lk@gmail.com',
+      emailResult,
+      timestamp: new Date().toISOString(),
+    });
+  };
+
   app.post(
     '/api/contact/submit',
-    rateLimit({ windowMs: 60000, max: 15, endpointName: 'contact_submit' }),
-    async (req: Request, res: Response) => {
-      const { fullName, name, email, phone, division, subject, message } = req.body;
-      const senderName = sanitizeString(fullName || name, 100) || 'Corporate Client';
-      const senderEmail = sanitizeString(email, 100);
-      const senderPhone = sanitizeString(phone, 30);
-      const targetDivision = sanitizeString(division, 50) || 'general';
-      const inquirySubject = sanitizeString(subject, 150) || 'Corporate Contact Inquiry';
-      const inquiryMessage = sanitizeString(message, 3000);
+    rateLimit({ windowMs: 60000, max: 20, endpointName: 'contact_submit' }),
+    handleEnquirySubmission
+  );
 
-      if (!senderEmail || !inquiryMessage) {
-        res.status(400).json({
-          success: false,
-          error: 'Email and message are required.',
-        });
-        return;
-      }
-
-      // Log server audit trail for new incoming corporate lead
-      serverAuditLogs.unshift({
-        id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-        timestamp: new Date().toISOString(),
-        adminEmail: 'info.mahdev.lk@gmail.com',
-        adminName: 'Corporate Dispatch Gateway',
-        action: 'CONTACT_FORM_SUBMITTED',
-        entityType: 'Inquiry',
-        entityId: `INQ-${Date.now().toString(36).toUpperCase()}`,
-        details: `Inquiry from ${senderName} (${senderEmail}) regarding "${inquirySubject}". Target Division: ${targetDivision}. Phone: ${senderPhone || 'N/A'}.`,
-        status: 'success',
-      });
-
-      // Dispatch authoritative notification to primary executive email: info.mahdev.lk@gmail.com
-      try {
-        await dispatchServerNotification({
-          type: 'admin_contact_inquiry',
-          recipient: {
-            name: 'Yuvanshan Prabakaran',
-            email: 'info.mahdev.lk@gmail.com',
-            phone: '+94750928078',
-            role: 'admin',
-          },
-          title: `📩 New Corporate Inquiry: ${inquirySubject}`,
-          message: `Inquiry from ${senderName} (${senderEmail}): "${inquiryMessage.slice(0, 140)}..."`,
-          data: {
-            senderName,
-            senderEmail,
-            senderPhone,
-            division: targetDivision,
-            subject: inquirySubject,
-            message: inquiryMessage,
-            receivedAt: new Date().toISOString(),
-          },
-          channels: ['email'],
-        });
-      } catch (e) {
-        console.warn('[Contact Gateway] Notification dispatch note:', e);
-      }
-
-      res.json({
-        success: true,
-        message: 'Inquiry received and dispatched to corporate dispatch at info.mahdev.lk@gmail.com.',
-        targetEmail: 'info.mahdev.lk@gmail.com',
-        timestamp: new Date().toISOString(),
-      });
-    }
+  app.post(
+    '/api/inquiries/submit',
+    rateLimit({ windowMs: 60000, max: 20, endpointName: 'inquiries_submit' }),
+    handleEnquirySubmission
   );
 
   // 5. Lightweight Privacy-Safe Analytics Ingestion Endpoint (Phase 36)

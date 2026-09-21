@@ -169,6 +169,16 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // 31. WEBSITE CONTENT (/websiteContent/{contentId})
+    match /websiteContent/{contentId} {
+      allow read, write: if true;
+    }
+
+    // 32. LEGAL PAGES (/legalPages/{pageId})
+    match /legalPages/{pageId} {
+      allow read, write: if true;
+    }
+
     // GLOBAL FALLBACK for any other collections
     match /{document=**} {
       allow read, write: if true;

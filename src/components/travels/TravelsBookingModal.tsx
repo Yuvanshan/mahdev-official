@@ -22,6 +22,7 @@ import { Badge } from '../ui/Badge';
 import { COMPANY_INFO, getTelLink, getMailtoLink } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { buildWhatsAppMessage, MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
+import { firestoreInquiriesService } from '../../services/firestore/inquiries';
 
 interface TravelsBookingModalProps {
   isOpen: boolean;
@@ -102,6 +103,29 @@ export const TravelsBookingModal: React.FC<TravelsBookingModalProps> = ({
     const ref = `MAH-TRV-${randomCode}`;
     setTicketRef(ref);
     setIsSubmitted(true);
+
+    const matchedPkg = TRAVEL_PACKAGES.find((p) => `pkg-${p.id}` === packageType) || initialPackage;
+    const matchedTour = DAY_TOURS.find((t) => `tour-${t.id}` === packageType) || initialTour;
+    const tripTitle = matchedPkg?.title || matchedTour?.title || initialVehicle?.name || `${packageType.toUpperCase()} Private Tour`;
+
+    firestoreInquiriesService
+      .createInquiry({
+        id: ref,
+        name: fullName,
+        fullName,
+        email,
+        phone,
+        service: tripTitle,
+        serviceName: tripTitle,
+        divisionId: 'travels',
+        division: 'Mahdev Travels & Tours',
+        subject: `Travel Inquiry: ${tripTitle}`,
+        message: `Package / Option: ${packageType}\nParty: ${adults} Adults, ${children} Children\nEstimated Start Date: ${startDate || 'Flexible'}\nDuration: ${durationDays} Days\nVehicle Preference: ${transportPreference}\nHotel Preference: ${hotelTier}\nCountry: ${country || 'International'}\nSpecial Requests: ${specialRequirements || 'None'}`,
+        preferredDate: startDate,
+        status: 'New',
+        source: 'travels_booking_modal',
+      })
+      .catch((err) => console.warn('[TravelsBookingModal] Inquiry dispatch notice:', err));
 
     try {
       window.open(getWhatsAppBookingLink(ref), '_blank');
@@ -387,9 +411,13 @@ export const TravelsBookingModal: React.FC<TravelsBookingModalProps> = ({
                   <span className="text-slate-400">Party Size:</span>
                   <span className="text-slate-800">{adults} Adults, {children} Children</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between pb-1.5 border-b border-slate-200">
                   <span className="text-slate-400">Status:</span>
                   <span className="text-emerald-600 font-bold">● Specialist Assigned</span>
+                </div>
+                <div className="flex justify-between pt-0.5">
+                  <span className="text-slate-400">Dispatched To:</span>
+                  <span className="text-[#0052FF] font-bold">info.mahdev.lk@gmail.com</span>
                 </div>
               </div>
 

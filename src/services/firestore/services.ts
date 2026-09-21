@@ -22,6 +22,7 @@ import { isSameDivision } from './divisions';
 
 const CACHE_TTL_MS = 1000 * 60 * 15; // 15 min cache
 let cachedServices: { data: FirestoreService[]; timestamp: number } | null = null;
+let inFlightServicesPromise: Promise<FirestoreService[]> | null = null;
 
 export function getDefaultServices(): FirestoreService[] {
   // Phase 60: Real Data Architecture - Zero fake services by default.
@@ -31,32 +32,43 @@ export function getDefaultServices(): FirestoreService[] {
 
 export const firestoreServicesService = {
   /**
-   * Fetch all services with optional division filtering and caching
+   * Fetch all services with optional division filtering, memory caching, and in-flight deduplication
    */
   async getServices(division?: DivisionId, forceRefresh = false): Promise<FirestoreService[]> {
     const now = Date.now();
     let allServices: FirestoreService[] = [];
 
+    // 1. Return fresh in-memory cache immediately if not forced to refresh
     if (!forceRefresh && cachedServices && now - cachedServices.timestamp < CACHE_TTL_MS) {
       allServices = cachedServices.data;
+    } else if (inFlightServicesPromise) {
+      // 2. Reuse concurrent in-flight request to avoid duplicate network roundtrips
+      allServices = await inFlightServicesPromise;
     } else {
-      try {
-        const snap = await getDocs(collection(db, 'services'));
-        if (!snap.empty) {
-          allServices = snap.docs.map((d) => ({
-            ...d.data(),
-            id: d.id,
-          })) as FirestoreService[];
-          allServices.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-          cachedServices = { data: allServices, timestamp: now };
-        } else {
-          allServices = [];
-          cachedServices = { data: [], timestamp: now };
+      // 3. Initiate single deduplicated Firestore query
+      inFlightServicesPromise = (async () => {
+        try {
+          const snap = await getDocs(collection(db, 'services'));
+          if (!snap.empty) {
+            const items = snap.docs.map((d) => ({
+              ...d.data(),
+              id: d.id,
+            })) as FirestoreService[];
+            items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+            cachedServices = { data: items, timestamp: Date.now() };
+            return items;
+          } else {
+            cachedServices = { data: [], timestamp: Date.now() };
+            return [];
+          }
+        } catch (err) {
+          console.warn('[Firestore Services] getServices error:', err);
+          return cachedServices?.data || [];
+        } finally {
+          inFlightServicesPromise = null;
         }
-      } catch (err) {
-        console.warn('[Firestore Services] getServices error:', err);
-        allServices = cachedServices?.data || [];
-      }
+      })();
+      allServices = await inFlightServicesPromise;
     }
 
     if (division) {

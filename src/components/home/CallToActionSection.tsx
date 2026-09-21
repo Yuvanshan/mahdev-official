@@ -226,10 +226,10 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
                         <CheckCircle2 className="w-8 h-8" />
                       </div>
                       <h4 className="font-display text-xl font-bold text-slate-900">
-                        Inquiry Received
+                        Inquiry Received & Dispatched
                       </h4>
                       <p className="text-xs sm:text-sm text-slate-600 max-w-xs mx-auto">
-                        Thank you for reaching out to Mahdev Pvt Ltd. A representative from the selected division will contact you within 24 hours.
+                        Thank you for reaching out to Mahdev Pvt Ltd. Your enquiry has been routed directly to <span className="font-semibold text-[#0052FF]">info.mahdev.lk@gmail.com</span>. An executive representative will contact you within 24 hours.
                       </p>
                       <Button
                         size="sm"

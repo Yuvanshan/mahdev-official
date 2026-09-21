@@ -23,6 +23,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
+import { firestoreInquiriesService } from '../../services/firestore/inquiries';
 
 export type ITModalType = 'quote' | 'project' | 'contact';
 
@@ -90,6 +91,24 @@ export const ITQuoteModal: React.FC<ITQuoteModalProps> = ({
     const ref = `MAH-IT-${Math.floor(100000 + Math.random() * 900000)}`;
     setTicketRef(ref);
     setIsSubmitted(true);
+
+    firestoreInquiriesService
+      .createInquiry({
+        id: ref,
+        name,
+        fullName: name,
+        email,
+        phone,
+        service: serviceName,
+        serviceName,
+        divisionId: 'it',
+        division: 'Mahdev IT Solutions',
+        subject: `IT Architecture & Quote Request: ${serviceName}`,
+        message: `Requirements / Scope:\n${requirements || 'Custom IT Solution Request'}\n\nCompany / Organization: ${company || 'Individual'}\nBudget: ${budget}\nTimeline: ${timeline}`,
+        status: 'New',
+        source: 'it_quote_modal',
+      })
+      .catch((err) => console.warn('[ITQuoteModal] Inquiry dispatch notice:', err));
   };
 
   const resetForm = () => {
@@ -242,6 +261,10 @@ export const ITQuoteModal: React.FC<ITQuoteModalProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Contact:</span>
                   <span className="font-semibold text-slate-800">{email} • {phone}</span>
+                </div>
+                <div className="flex items-center justify-between pt-1 border-t border-slate-200/80">
+                  <span className="text-slate-500">Dispatched To:</span>
+                  <span className="font-semibold text-[#0052FF]">info.mahdev.lk@gmail.com</span>
                 </div>
               </div>
 

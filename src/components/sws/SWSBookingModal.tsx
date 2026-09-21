@@ -28,6 +28,7 @@ import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
 import { buildWhatsAppMessage, MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
+import { firestoreInquiriesService } from '../../services/firestore/inquiries';
 
 interface SWSBookingModalProps {
   isOpen: boolean;
@@ -126,6 +127,28 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
     setInquiryRef(ref);
     setIsSubmitted(true);
 
+    const srvTitle = selectedPkg?.name || selectedSrv?.name || selectedRent?.name || `${eventType} Event Production`;
+
+    firestoreInquiriesService
+      .createInquiry({
+        id: ref,
+        name: clientName,
+        fullName: clientName,
+        email: clientEmail,
+        phone: clientPhone,
+        service: srvTitle,
+        serviceName: srvTitle,
+        divisionId: 'sws',
+        division: 'SWS Event Management',
+        subject: `SWS Event Booking / Quote: ${srvTitle}`,
+        message: `Event Type: ${eventType}\nTarget Date: ${eventDate || 'TBD'}\nGuest Count: ${guestCount}\nVenue/Location: ${venueLocation}\nBudget Range: ${budgetTier}\nSpecial Requirements: ${specialRequirements || 'None specified'}`,
+        preferredDate: eventDate,
+        location: venueLocation,
+        status: 'New',
+        source: 'sws_booking_modal',
+      })
+      .catch((err) => console.warn('[SWSBookingModal] Inquiry dispatch notice:', err));
+
     try {
       window.open(getFullWhatsAppUrl(ref), '_blank');
     } catch (err) {
@@ -222,6 +245,10 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Direct Contact:</span>
                   <span className="font-semibold text-slate-800">{clientPhone}</span>
+                </div>
+                <div className="flex items-center justify-between pt-1 border-t border-slate-200/80">
+                  <span className="text-slate-500">Dispatched To:</span>
+                  <span className="font-semibold text-[#0052FF]">info.mahdev.lk@gmail.com</span>
                 </div>
               </div>
 

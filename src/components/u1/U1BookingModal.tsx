@@ -19,6 +19,7 @@ import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
 import { buildWhatsAppMessage, MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
+import { firestoreInquiriesService } from '../../services/firestore/inquiries';
 
 interface U1BookingModalProps {
   isOpen: boolean;
@@ -101,6 +102,26 @@ export const U1BookingModal: React.FC<U1BookingModalProps> = ({
     const ref = `U1-STU-${Math.floor(100000 + Math.random() * 900000)}`;
     setBookingRef(ref);
     setIsSubmitted(true);
+
+    firestoreInquiriesService
+      .createInquiry({
+        id: ref,
+        name: customerName,
+        fullName: customerName,
+        email: customerEmail,
+        phone: customerPhone,
+        service: selectedName,
+        serviceName: selectedName,
+        divisionId: 'u1',
+        division: 'U1 Studio (Photography & Cinema)',
+        subject: `U1 Studio Session Booking: ${selectedName}`,
+        message: `Discipline: ${selectedName}\nTarget Session Date: ${sessionDate || 'To be decided'}\nTime Slot: ${sessionTimeSlot}\nLocation Type: ${locationType === 'studio' ? 'Colombo Studio' : locationAddress}\nSpecial Requirements: ${notes || 'Standard shoot'}`,
+        preferredDate: sessionDate,
+        location: locationType === 'studio' ? 'Colombo Studio' : locationAddress,
+        status: 'New',
+        source: 'u1_booking_modal',
+      })
+      .catch((err) => console.warn('[U1BookingModal] Inquiry dispatch notice:', err));
 
     try {
       window.open(getFullWhatsAppUrl(ref), '_blank');
@@ -202,6 +223,10 @@ export const U1BookingModal: React.FC<U1BookingModalProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Contact:</span>
                   <span className="font-semibold text-slate-800">{customerPhone}</span>
+                </div>
+                <div className="flex items-center justify-between pt-1 border-t border-slate-200/80">
+                  <span className="text-slate-500">Dispatched To:</span>
+                  <span className="font-semibold text-[#0052FF]">info.mahdev.lk@gmail.com</span>
                 </div>
               </div>
 

@@ -64,6 +64,8 @@ export const firestoreContactsService = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          id,
+          referenceId: id,
           fullName: data.fullName,
           email: data.email,
           phone: data.phone,

@@ -20,6 +20,7 @@ import { isSameDivision } from './divisions';
 
 const CACHE_TTL_MS = 1000 * 60 * 20;
 let cachedGallery: { data: FirestoreGallery[]; timestamp: number } | null = null;
+let inFlightGalleryPromise: Promise<FirestoreGallery[]> | null = null;
 
 export function getDefaultGallery(): FirestoreGallery[] {
   // Phase 60: Real Data Architecture - Zero fake media by default.
@@ -32,22 +33,33 @@ export const firestoreGalleryService = {
     const now = Date.now();
     let allItems: FirestoreGallery[] = [];
 
+    // 1. Return fresh in-memory cache immediately if not forced to refresh
     if (!forceRefresh && cachedGallery && now - cachedGallery.timestamp < CACHE_TTL_MS) {
       allItems = cachedGallery.data;
+    } else if (inFlightGalleryPromise) {
+      // 2. Reuse concurrent in-flight request to avoid duplicate network roundtrips
+      allItems = await inFlightGalleryPromise;
     } else {
-      try {
-        const snap = await getDocs(collection(db, 'gallery'));
-        if (!snap.empty) {
-          allItems = snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreGallery[];
-          cachedGallery = { data: allItems, timestamp: now };
-        } else {
-          allItems = [];
-          cachedGallery = { data: [], timestamp: now };
+      // 3. Initiate single deduplicated Firestore query
+      inFlightGalleryPromise = (async () => {
+        try {
+          const snap = await getDocs(collection(db, 'gallery'));
+          if (!snap.empty) {
+            const items = snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreGallery[];
+            cachedGallery = { data: items, timestamp: Date.now() };
+            return items;
+          } else {
+            cachedGallery = { data: [], timestamp: Date.now() };
+            return [];
+          }
+        } catch (err) {
+          console.warn('[Firestore Gallery] getGallery error:', err);
+          return cachedGallery?.data || [];
+        } finally {
+          inFlightGalleryPromise = null;
         }
-      } catch (err) {
-        console.warn('[Firestore Gallery] getGallery error:', err);
-        allItems = cachedGallery?.data || [];
-      }
+      })();
+      allItems = await inFlightGalleryPromise;
     }
 
     if (division) {

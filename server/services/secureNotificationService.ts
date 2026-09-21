@@ -6,6 +6,8 @@
  * with strict privacy filtering and non-blocking fault tolerance.
  */
 
+import { sendEnquiryEmail } from './emailService';
+
 export interface NotificationPayload {
   type:
     | 'registration'
@@ -84,6 +86,32 @@ export async function dispatchServerNotification(payload: NotificationPayload): 
         console.info(
           `[NotificationServer] Email Sent -> To: ${payload.recipient.email} | Type: ${payload.type} | Subject: "${payload.title || payload.type}"`
         );
+
+        // If this is an enquiry or quote request destined for corporate dispatch / info.mahdev.lk@gmail.com, dispatch via emailService
+        if (
+          payload.type === 'admin_contact_inquiry' ||
+          payload.type === 'admin_quote_request' ||
+          payload.recipient.email.includes('info.mahdev.lk@gmail.com')
+        ) {
+          try {
+            await sendEnquiryEmail({
+              senderName: sanitizedData.senderName || sanitizedData.name || payload.recipient.name || 'Website Visitor',
+              senderEmail: sanitizedData.senderEmail || sanitizedData.email || 'no-reply@mahdev.lk',
+              senderPhone: sanitizedData.senderPhone || sanitizedData.phone,
+              division: sanitizedData.division,
+              service: sanitizedData.service,
+              subject: sanitizedData.subject || payload.title || 'Website Customer Enquiry',
+              message: sanitizedData.message || sanitizedData.details || payload.message || 'No message provided.',
+              referenceId: sanitizedData.referenceId || notificationId,
+              preferredDate: sanitizedData.preferredDate || sanitizedData.date,
+              budget: sanitizedData.budget,
+              metadata: sanitizedData,
+            });
+          } catch (mailErr) {
+            console.warn('[NotificationServer] sendEnquiryEmail notice:', mailErr);
+          }
+        }
+
         dispatched.push('email');
       }
 
