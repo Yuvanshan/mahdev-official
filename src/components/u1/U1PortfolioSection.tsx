@@ -19,55 +19,147 @@ import { H2, Caption, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
 
-type PortfolioCategory =
-  | 'All'
-  | 'Weddings'
-  | 'Portraits'
-  | 'Commercial & Product'
-  | 'Pre-Shoots'
-  | 'Events & Cinema';
+type PortfolioCategory = string;
 
 export const U1PortfolioSection: React.FC = () => {
-  const { portfolio: rawPortfolio } = useFirestoreDataContext();
+  const { portfolio: rawPortfolio, gallery: rawGallery, mediaAssets } = useFirestoreDataContext();
   const [activeCategory, setActiveCategory] = useState<PortfolioCategory>('All');
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
 
   const portfolioItems = useMemo<U1PortfolioItem[]>(() => {
+    const items: U1PortfolioItem[] = [];
+
+    // Helper to test if a division matches u1
+    const isU1 = (d?: string) => {
+      if (!d) return false;
+      const lower = d.toLowerCase().trim();
+      return lower === 'u1' || lower === 'u1-studio' || lower === 'div-u1' || lower === 'studio';
+    };
+
+    // 1. From portfolio collection
     if (rawPortfolio && rawPortfolio.length > 0) {
       const u1Items = rawPortfolio.filter(
-        (p) => p.division === 'u1' || (p as any).divisionId === 'u1'
+        (p) => isU1(p.division) || isU1((p as any).divisionId)
       );
-      if (u1Items.length > 0) {
-        return u1Items.map((p) => ({
+      u1Items.forEach((p) => {
+        items.push({
           id: p.id,
           title: p.title,
-          category: (((p as any).category && (p as any).category !== 'All' ? (p as any).category : 'Portraits') as 'Weddings' | 'Commercial & Product' | 'Portraits' | 'Pre-Shoots' | 'Events & Cinema'),
-          imageUrl: p.images && p.images.length > 0 ? p.images[0] : (p as any).imageUrl || '',
-          location: (p as any).location || 'Colombo, Sri Lanka',
-          date: (p as any).date || '2024',
-          year: (p as any).year || (p as any).date?.slice(-4) || '2024',
-          description: p.description || '',
+          category: (((p as any).category && (p as any).category !== 'All' ? (p as any).category : 'Portraits') as any),
+          imageUrl: p.imageUrl || (p.images && p.images.length > 0 ? p.images[0] : ''),
+          location: p.location || 'Colombo, Sri Lanka',
+          year: p.year || (p.date ? p.date.slice(-4) : '2024'),
+          description: p.description || p.summary || '',
           client: p.client || 'Creative Client',
-          gearUsed: (p as any).gearUsed || 'Sony FX3 Cinema & Prime G-Master',
-          tags: (p as any).tags || ['Cinema', 'Studio'],
-        }));
-      }
+          tags: p.tags || ['Studio', 'Cinema'],
+        });
+      });
     }
-    return [];
-  }, [rawPortfolio]);
+
+    // 2. From gallery collection
+    if (rawGallery && rawGallery.length > 0) {
+      const u1Gal = rawGallery.filter(
+        (g) => isU1(g.division) || isU1((g as any).divisionId)
+      );
+      u1Gal.forEach((g) => {
+        const galUrl = g.url || (g as any).imageUrl || (g.images && g.images[0]) || '';
+        if (!items.some((i) => i.id === g.id || (galUrl && i.imageUrl === galUrl))) {
+          items.push({
+            id: g.id,
+            title: g.title,
+            category: ((g.category || 'Portraits') as any),
+            imageUrl: galUrl,
+            location: 'Colombo Studio',
+            year: g.createdAt ? new Date(g.createdAt).getFullYear().toString() : '2024',
+            description: g.caption || (g as any).description || '',
+            client: 'U1 Gallery Collection',
+            tags: g.tags || [],
+          });
+        }
+      });
+    }
+
+    // 3. From media_assets collection (Directly binds user-uploaded media assets)
+    if (mediaAssets && mediaAssets.length > 0) {
+      const u1RelevantMedia = mediaAssets.filter((m) => {
+        if (isU1(m.division) || isU1(m.divisionId)) return true;
+        const tags = (m.tags || []).map((t) => t.toLowerCase());
+        if (tags.some((t) => ['u1', 'u1-studio', 'studio', 'photo', 'photography', 'cinema', 'frame', 'frames', '12x18', 'print', 'album', 'portrait', 'wedding'].includes(t))) {
+          return true;
+        }
+        if (m.category === 'portfolio' || m.category === 'gallery' || m.category === 'services') {
+          return true;
+        }
+        return false;
+      });
+
+      u1RelevantMedia.forEach((m) => {
+        if (!items.some((i) => i.id === m.id || (m.url && i.imageUrl === m.url))) {
+          const tags = (m.tags || []).map((t) => t.toLowerCase());
+          let detectedCategory = 'Portraits';
+          if (tags.some((t) => t.includes('frame') || t.includes('album') || t.includes('print') || t.includes('12x18') || t.includes('18'))) {
+            detectedCategory = 'Prints & Framing';
+          } else if (tags.some((t) => t.includes('wedding'))) {
+            detectedCategory = 'Weddings';
+          } else if (tags.some((t) => t.includes('commercial') || t.includes('product'))) {
+            detectedCategory = 'Commercial & Product';
+          } else if (tags.some((t) => t.includes('event') || t.includes('cinema') || t.includes('video'))) {
+            detectedCategory = 'Events & Cinema';
+          } else if (tags.some((t) => t.includes('pre-shoot') || t.includes('preshoot'))) {
+            detectedCategory = 'Pre-Shoots';
+          } else if (m.category === 'services') {
+            detectedCategory = 'Studio Showcase';
+          }
+
+          items.push({
+            id: m.id,
+            title: m.title,
+            category: detectedCategory as any,
+            imageUrl: m.url,
+            location: m.dimensions ? `Master Format • ${m.dimensions}` : 'U1 Media Asset',
+            year: m.createdAt ? new Date(m.createdAt).getFullYear().toString() : '2024',
+            description: (m as any).description || (m.tags?.length ? `Tags: ${m.tags.join(', ')}` : 'Fine Art Studio Production'),
+            client: 'U1 Studio Master Asset',
+            tags: m.tags || [],
+          });
+        }
+      });
+    }
+
+    return items;
+  }, [rawPortfolio, rawGallery, mediaAssets]);
+
+  const categories = useMemo<PortfolioCategory[]>(() => {
+    const list: PortfolioCategory[] = ['All'];
+    const standardOrder = [
+      'Prints & Framing',
+      'Weddings',
+      'Portraits',
+      'Commercial & Product',
+      'Pre-Shoots',
+      'Events & Cinema',
+      'Studio Showcase',
+    ];
+
+    standardOrder.forEach((cat) => {
+      if (portfolioItems.some((item) => item.category === cat)) {
+        list.push(cat);
+      }
+    });
+
+    // Any other custom categories
+    portfolioItems.forEach((item) => {
+      if (item.category && !list.includes(item.category)) {
+        list.push(item.category);
+      }
+    });
+
+    return list;
+  }, [portfolioItems]);
 
   if (portfolioItems.length === 0) {
     return null;
   }
-
-  const categories: PortfolioCategory[] = [
-    'All',
-    'Weddings',
-    'Portraits',
-    'Commercial & Product',
-    'Pre-Shoots',
-    'Events & Cinema',
-  ];
 
   const filteredItems = portfolioItems.filter((item) => {
     return activeCategory === 'All' || item.category === activeCategory;

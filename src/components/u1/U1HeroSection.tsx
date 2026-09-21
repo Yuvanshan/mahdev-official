@@ -16,7 +16,7 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
   onBookSession,
   onExplorePortfolio,
 }) => {
-  const { divisions, companySettings } = useFirestoreDataContext();
+  const { divisions, companySettings, mediaAssets } = useFirestoreDataContext();
 
   const u1Div = divisions?.find(
     (d) =>
@@ -51,10 +51,22 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
     (u1Div?.hero as any)?.imageUrl ||
     (u1Div as any)?.hero?.bgImage;
 
+  const fallbackMediaImage = React.useMemo(() => {
+    const divMedia = (mediaAssets || []).find(
+      (m) =>
+        m.division === 'u1' ||
+        (m as any).divisionId === 'u1' ||
+        m.category === 'divisions' ||
+        (m.tags || []).includes('hero') ||
+        (m.tags || []).includes('u1')
+    );
+    return divMedia?.url || '';
+  }, [mediaAssets]);
+
   const heroImage =
     typeof rawHeroImage === 'string' && rawHeroImage.trim() !== ''
       ? rawHeroImage.trim()
-      : 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&w=2000&q=85';
+      : fallbackMediaImage;
 
   const effectiveVideoUrl = (u1Div as any)?.heroMediaType === 'image' && !(u1Div as any)?.heroVideoUrl && !(u1Div as any)?.videoUrl ? '' : rawHeroVideo;
 

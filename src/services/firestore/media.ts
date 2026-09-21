@@ -35,6 +35,10 @@ export interface StoredMediaItem {
   createdAt: string;
   updatedAt?: string;
   isDeleted?: boolean;
+  division?: string;
+  divisionId?: string;
+  description?: string;
+  altText?: string;
 }
 
 const COLLECTION_NAME = 'media_assets';
@@ -240,8 +244,41 @@ export const recordPermanentlyDeletedId = (id: string) => recordPermanentlyDelet
 
 export const mediaService = {
   /**
+   * Retrieves all verified media assets directly from Firestore
+   */
+  async getMediaAssets(): Promise<StoredMediaItem[]> {
+    try {
+      const collRef = collection(db, COLLECTION_NAME);
+      const [deletedIds, deletedUrls] = await Promise.all([
+        getPermanentlyDeletedIds(),
+        getPermanentlyDeletedUrls(),
+      ]);
+      const snapshot = await getDocs(collRef);
+      const items: StoredMediaItem[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data() as StoredMediaItem;
+        const isMarkedDeleted = Boolean(data.isDeleted || (data as any).deleted);
+        const isIdDeleted = deletedIds.has(docSnap.id) || (data.id && deletedIds.has(data.id));
+        const isUrlDeleted = Boolean(data.url && deletedUrls.has(data.url));
+
+        if (!isMarkedDeleted && !isIdDeleted && !isUrlDeleted) {
+          items.push({
+            ...data,
+            id: docSnap.id || data.id,
+          });
+        }
+      });
+      items.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      return items;
+    } catch (err) {
+      console.warn('[MediaService] getMediaAssets failed:', err);
+      return [];
+    }
+  },
+
+  /**
    * Subscribes to real-time updates from Firestore 'media_assets' collection.
-   * Filters out any permanently deleted assets so they never reappear in the portal.
+   * Strictly delivers verified Firestore records; never injects fake default mock items.
    */
   subscribeToMediaAssets(
     callback: (items: StoredMediaItem[]) => void,
@@ -258,18 +295,7 @@ export const mediaService = {
         ]);
 
         if (snapshot.empty) {
-          // If Firestore is completely fresh, seed default items that haven't been deleted
-          const initial = DEFAULT_MEDIA_ITEMS.filter(
-            (item) => !deletedIds.has(item.id) && (!item.url || !deletedUrls.has(item.url))
-          );
-          callback(initial);
-
-          // Background auto-seed to Firestore
-          initial.forEach(async (item) => {
-            try {
-              await setDoc(doc(db, COLLECTION_NAME, item.id), sanitizeForFirestore(item));
-            } catch {}
-          });
+          callback([]);
           return;
         }
 
@@ -288,25 +314,16 @@ export const mediaService = {
           }
         });
 
-        // Also merge any default presets that have NOT been saved yet and NOT deleted
-        DEFAULT_MEDIA_ITEMS.forEach((def) => {
-          const isDeleted = deletedIds.has(def.id) || (def.url && deletedUrls.has(def.url));
-          const alreadyExists = items.some((i) => i.id === def.id || (def.url && i.url === def.url));
-          if (!isDeleted && !alreadyExists) {
-            items.push(def);
-          }
-        });
-
         // Sort latest first
         items.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
         callback(items);
       },
       (err) => {
-        console.error('[MediaService] Snapshot error, falling back to local defaults:', err);
+        console.error('[MediaService] Snapshot error:', err);
         if (onError) onError(err);
         const raw = safeStorage.getItem('mahdev_admin_media_v1');
-        const items = raw ? JSON.parse(raw) : DEFAULT_MEDIA_ITEMS;
+        const items = raw ? JSON.parse(raw) : [];
         callback(items);
       }
     );
@@ -317,20 +334,41 @@ export const mediaService = {
   /**
    * Saves or updates a media asset in Firestore
    */
-  async saveMediaAsset(item: StoredMediaItem): Promise<void> {
-    const docRef = doc(db, COLLECTION_NAME, item.id);
-    const payload = sanitizeForFirestore({
-      ...item,
-      updatedAt: new Date().toISOString(),
-      isDeleted: false,
-    });
+  async saveMediaAsset(
+    itemOrId: StoredMediaItem | string,
+    partialUpdate?: Partial<StoredMediaItem>
+  ): Promise<void> {
+    let id: string;
+    let payload: Record<string, any>;
+
+    if (typeof itemOrId === 'string') {
+      id = itemOrId;
+      payload = sanitizeForFirestore({
+        ...partialUpdate,
+        id,
+        updatedAt: new Date().toISOString(),
+        isDeleted: false,
+      });
+    } else {
+      id = itemOrId.id;
+      payload = sanitizeForFirestore({
+        ...itemOrId,
+        updatedAt: new Date().toISOString(),
+        isDeleted: false,
+      });
+    }
+
+    const docRef = doc(db, COLLECTION_NAME, id);
     await setDoc(docRef, payload, { merge: true });
 
     // Update local safe storage cache as secondary mirror
     try {
       const raw = safeStorage.getItem('mahdev_admin_media_v1');
       const existing: StoredMediaItem[] = raw ? JSON.parse(raw) : [];
-      const updated = [payload, ...existing.filter((i) => i.id !== item.id && (!item.url || i.url !== item.url))];
+      const updated = [
+        { ...payload, id } as StoredMediaItem,
+        ...existing.filter((i) => i.id !== id && (!payload.url || i.url !== payload.url)),
+      ];
       safeStorage.setItem('mahdev_admin_media_v1', JSON.stringify(updated));
     } catch {}
   },

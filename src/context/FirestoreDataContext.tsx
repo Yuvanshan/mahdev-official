@@ -51,6 +51,7 @@ import { cmsService } from '../services/cmsService';
 import { catalogService } from '../services/catalogService';
 import { bookingService } from '../services/bookingService';
 import { resolveMediaUrl, preloadVideo } from '../services/firestoreMediaService';
+import { mediaService, StoredMediaItem } from '../services/firestore/media';
 
 export interface FirestoreDataContextValue {
   isInitialLoading: boolean;
@@ -74,6 +75,7 @@ export interface FirestoreDataContextValue {
   googleReviewsConfig: GoogleReviewsConfig;
   portfolio: FirestorePortfolio[];
   gallery: FirestoreGallery[];
+  mediaAssets: StoredMediaItem[];
   refreshAll: () => Promise<void>;
   updateSiteSettings: (data: Partial<FirestoreSiteSettings>) => Promise<void>;
   updateCompanySettings: (data: Partial<FirestoreCompanySettings>) => Promise<void>;
@@ -240,6 +242,15 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       if (typeof window !== 'undefined') {
         const cached = localStorage.getItem('mahdev_cached_gallery');
+        if (cached) return JSON.parse(cached);
+      }
+    } catch {}
+    return [];
+  });
+  const [mediaAssets, setMediaAssets] = useState<StoredMediaItem[]>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('mahdev_cached_media_assets');
         if (cached) return JSON.parse(cached);
       }
     } catch {}
@@ -452,6 +463,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         allReviews,
         gConfig,
         gReviews,
+        allMediaAssets,
       ] = await Promise.all([
         firestoreSettingsService.getCompanySettings(true).catch(() => getDefaultCompanySettings()),
         firestoreSettingsService.getSiteSettings(true).catch(() => getDefaultSiteSettings()),
@@ -467,6 +479,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         firestoreTestimonialsService.getTestimonials(undefined, true).catch(() => []),
         firestoreGoogleReviewsService.getConfig(true).catch(() => null),
         firestoreGoogleReviewsService.getReviews().catch(() => []),
+        mediaService.getMediaAssets().catch(() => []),
       ]);
 
       setSyncProgress(75);
@@ -516,10 +529,13 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       cmsService.syncEntityFromFirestore('products', allProducts);
       try { localStorage.setItem('mahdev_cached_products', JSON.stringify(allProducts)); } catch {}
 
-      // 6. Real Portfolio
+      // 6. Real Portfolio & Media Assets
       setPortfolio(allPortfolio);
       cmsService.syncEntityFromFirestore('portfolio', allPortfolio);
       try { localStorage.setItem('mahdev_cached_portfolio', JSON.stringify(allPortfolio)); } catch {}
+
+      setMediaAssets(allMediaAssets);
+      try { localStorage.setItem('mahdev_cached_media_assets', JSON.stringify(allMediaAssets)); } catch {}
 
       // 7. Milestones, Partners, Reviews
       setMilestones(allMilestones);
@@ -758,6 +774,15 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     });
 
+    const unsubMedia = mediaService.subscribeToMediaAssets((data) => {
+      if (isMounted) {
+        setMediaAssets(data);
+        try {
+          localStorage.setItem('mahdev_cached_media_assets', JSON.stringify(data));
+        } catch {}
+      }
+    });
+
     return () => {
       isMounted = false;
       clearTimeout(failsafeTimer);
@@ -775,6 +800,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       unsubGoogleReviews();
       unsubPort();
       unsubGal();
+      unsubMedia();
     };
   }, []);
 
@@ -942,6 +968,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       googleReviewsConfig,
       portfolio,
       gallery,
+      mediaAssets,
       refreshAll,
       updateSiteSettings,
       updateCompanySettings,
@@ -982,6 +1009,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       googleReviewsConfig,
       portfolio,
       gallery,
+      mediaAssets,
       refreshAll,
       updateSiteSettings,
       updateCompanySettings,

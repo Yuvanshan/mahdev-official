@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Sparkles,
   Camera,
@@ -14,38 +14,69 @@ import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 export const U1StudioExperienceSection: React.FC = () => {
-  const features = [
-    {
-      title: '25ft Infinity White Cyclorama',
-      desc: 'Seamless curved floor-to-wall white cyclorama capable of automotive, multi-model fashion, and large product staging with zero harsh horizon lines.',
-      icon: <Layers className="w-5 h-5 text-blue-600" />,
-      image:
-        'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=800&q=80',
-    },
-    {
-      title: 'Profoto High-Speed Studio Lighting',
-      desc: 'Industry-standard Profoto D2 & B10X continuous and strobe systems with softboxes, beauty dishes, and optical snoots for flawless skin sculpting.',
-      icon: <Zap className="w-5 h-5 text-sky-600" />,
-      image:
-        'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80',
-    },
-    {
-      title: 'Italian Leather Hand-Bound Albums',
-      desc: 'Flush-mount lay-flat photo books hand-bound with genuine Italian leather, archival silver-halide paper, and gold-foil custom lettering.',
-      icon: <Award className="w-5 h-5 text-indigo-600" />,
-      image:
-        'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80',
-    },
-    {
-      title: 'Museum-Grade Framing & Acrylics',
-      desc: 'Custom solid teak wood framing and diamond-polished acrylic glass mounts designed to protect fine prints from UV degradation for over 100 years.',
-      icon: <Frame className="w-5 h-5 text-amber-600" />,
-      image:
-        'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=800&q=80',
-    },
-  ];
+  const { divisions, mediaAssets } = useFirestoreDataContext();
+
+  const u1Div = useMemo(() => {
+    return divisions.find(
+      (d) =>
+        d.id === 'u1' ||
+        d.id === 'u1-studio' ||
+        d.id === 'div-u1' ||
+        d.slug === 'u1' ||
+        d.slug === 'u1-studio'
+    );
+  }, [divisions]);
+
+  const features = useMemo(() => {
+    // 1. Check if configured explicitly on division in Firestore
+    const configuredCards =
+      (u1Div as any)?.facilityHighlights ||
+      (u1Div as any)?.experienceCards ||
+      (u1Div as any)?.featuresList;
+
+    if (Array.isArray(configuredCards) && configuredCards.length > 0) {
+      return configuredCards.map((c: any) => ({
+        title: c.title || c.name || 'Studio Standard',
+        desc: c.desc || c.description || '',
+        icon: <Sparkles className="w-5 h-5 text-blue-600" />,
+        image: c.image || c.imageUrl || '',
+      }));
+    }
+
+    // 2. Check if user added studio / facility / frame / album media assets
+    const facilityMedia = mediaAssets.filter((m) => {
+      const tags = (m.tags || []).map((t) => t.toLowerCase());
+      return tags.some((t) =>
+        ['facility', 'cyclorama', 'lighting', 'album', 'frame', 'equipment', 'bindery'].includes(t)
+      );
+    });
+
+    if (facilityMedia.length > 0) {
+      return facilityMedia.map((m) => {
+        const isFrame = (m.tags || []).some((t) => t.toLowerCase().includes('frame'));
+        const isAlbum = (m.tags || []).some((t) => t.toLowerCase().includes('album'));
+        const isLight = (m.tags || []).some((t) => t.toLowerCase().includes('light'));
+
+        const IconComponent = isFrame ? Frame : isAlbum ? Award : isLight ? Zap : Layers;
+        return {
+          title: m.title,
+          desc: (m as any).description || `Master Craft: ${m.tags?.join(' • ') || 'Fine Art Studio Standard'}`,
+          icon: <IconComponent className="w-5 h-5 text-blue-600" />,
+          image: m.url,
+        };
+      });
+    }
+
+    // If no real studio features or media assets exist, do not render fake test data
+    return [];
+  }, [u1Div, mediaAssets]);
+
+  if (features.length === 0) {
+    return null;
+  }
 
   return (
     <SectionContainer background="subtle" paddingY="xl" hasBorderBottom>
