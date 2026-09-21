@@ -4,29 +4,29 @@ import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { SectionContainer } from '../components/ui/SectionContainer';
 import { H1, H2, Body, Caption } from '../components/ui/Heading';
 import { Badge } from '../components/ui/Badge';
-import { openWhatsAppInquiry } from '../utils/whatsapp';
+import { openWhatsAppInquiry, deriveLookupSku } from '../utils/whatsapp';
 import { CallToActionSection } from '../components/home/CallToActionSection';
 import { shareMediaAsset, inquireMediaAssetOnWhatsApp } from '../utils/mediaShare';
+import { SWS_GALLERY_ITEMS } from '../data/swsData';
+import { U1_PORTFOLIO_ITEMS } from '../data/u1Data';
+import {
+  DisplayGalleryItem,
+  matchGalleryItem,
+  resolveMediaAssetSku,
+  synthesizeInquiryItemFromParams,
+} from '../utils/itemLookup';
+import { InquiredItemSpotlight } from '../components/common/InquiredItemSpotlight';
 
 interface GalleryPageViewProps {
   onNavigate: (route: string) => void;
   initialSku?: string;
 }
 
-interface DisplayGalleryItem {
-  id: string;
-  sku: string;
-  url: string;
-  title: string;
-  category: string;
-  divisionId?: string;
-  location?: string;
-  description?: string;
-}
-
 export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, initialSku }) => {
   const { gallery, mediaAssets } = useFirestoreDataContext();
   const [activeItem, setActiveItem] = useState<DisplayGalleryItem | null>(null);
+  const [inquiredItem, setInquiredItem] = useState<DisplayGalleryItem | null>(null);
+  const [showFullGallery, setShowFullGallery] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
@@ -36,68 +36,155 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
   }, []);
 
   const allItems: DisplayGalleryItem[] = useMemo(() => {
-    // 1. From standard gallery collection
-    const galleryItems: DisplayGalleryItem[] = gallery
-      .filter((item) => item.status !== 'hidden')
-      .flatMap((item, itemIdx) => {
-        const media = item.images?.length ? item.images : [item.mediaUrl || item.url || item.thumbnailUrl || ''];
-        const itemDivision = (item as any).divisionId || (item as any).division || '';
-        const skuPrefix = itemDivision ? String(itemDivision).toUpperCase() : 'MDV';
-        return media.filter(Boolean).map((url, index) => {
-          const itemSku = (item as any).sku || `GAL-${skuPrefix}-${String(itemIdx + 1).padStart(3, '0')}${index > 0 ? `-${index + 1}` : ''}`;
-          return {
-            id: `${item.id}-${index}`,
-            sku: itemSku,
-            url,
-            title: item.title || 'Mahdev Production Showcase',
-            category: item.category || item.tag || 'Mahdev Group',
-            divisionId: itemDivision,
-            location: (item as any).location || item.caption || 'Sri Lanka',
-            description: (item as any).description,
-          };
-        });
-      });
-
-    // 2. From mediaAssets collection (so studio media assets are also shared & accessible)
-    const mediaItems: DisplayGalleryItem[] = (mediaAssets || [])
-      .filter((m) => m.url && m.title)
-      .map((m, idx) => {
-        const div = m.divisionId || m.division || 'U1';
-        return {
-          id: m.id || `med-${idx}`,
-          sku: `MED-${String(div).toUpperCase()}-${(m.id || String(idx)).slice(-5).toUpperCase()}`,
-          url: m.url,
-          title: m.title,
-          category: m.category || 'Studio Media Asset',
-          divisionId: div,
-          location: m.dimensions ? `Master Format: ${m.dimensions}` : 'Production Asset',
-          description: (m as any).description,
-        };
-      });
-
-    // Deduplicate by image URL
+    const items: DisplayGalleryItem[] = [];
     const seenUrls = new Set<string>();
-    const combined: DisplayGalleryItem[] = [];
-    for (const item of [...galleryItems, ...mediaItems]) {
-      if (!seenUrls.has(item.url)) {
-        seenUrls.add(item.url);
-        combined.push(item);
-      }
+
+    // 1. From standard Firestore gallery collection
+    if (gallery && gallery.length > 0) {
+      gallery
+        .filter((item) => item.status !== 'hidden')
+        .forEach((item, itemIdx) => {
+          const media = item.images?.length ? item.images : [item.mediaUrl || item.url || item.thumbnailUrl || ''];
+          const itemDivision = (item as any).divisionId || (item as any).division || '';
+          const skuPrefix = itemDivision ? String(itemDivision).toUpperCase() : 'MDV';
+          media.filter(Boolean).forEach((url, index) => {
+            if (!seenUrls.has(url)) {
+              seenUrls.add(url);
+              const itemSku = (item as any).sku || `GAL-${skuPrefix}-${String(itemIdx + 1).padStart(3, '0')}${index > 0 ? `-${index + 1}` : ''}`;
+              items.push({
+                id: `${item.id}-${index}`,
+                sku: itemSku,
+                url,
+                title: item.title || 'Mahdev Production Showcase',
+                category: item.category || item.tag || 'Mahdev Group',
+                divisionId: itemDivision,
+                divisionName: itemDivision,
+                location: (item as any).location || item.caption || 'Sri Lanka',
+                description: (item as any).description,
+              });
+            }
+          });
+        });
     }
-    return combined;
+
+    // 2. From Firestore mediaAssets collection
+    if (mediaAssets && mediaAssets.length > 0) {
+      mediaAssets
+        .filter((m) => m.url && m.title)
+        .forEach((m, idx) => {
+          if (!seenUrls.has(m.url)) {
+            seenUrls.add(m.url);
+            const div = m.divisionId || m.division || 'U1';
+            const sku = resolveMediaAssetSku(m);
+            items.push({
+              id: m.id || `med-${idx}`,
+              sku,
+              url: m.url,
+              title: m.title,
+              category: m.category || 'Studio Media Asset',
+              divisionId: div,
+              divisionName: div,
+              location: m.dimensions ? `Master Format: ${m.dimensions}` : 'Production Asset',
+              description: (m as any).description,
+              dimensions: m.dimensions,
+            });
+          }
+        });
+    }
+
+    // 3. From SWS Event Management Gallery dataset
+    if (SWS_GALLERY_ITEMS && SWS_GALLERY_ITEMS.length > 0) {
+      SWS_GALLERY_ITEMS.forEach((sws) => {
+        if (!seenUrls.has(sws.imageUrl)) {
+          seenUrls.add(sws.imageUrl);
+          items.push({
+            id: sws.id,
+            sku: `SWS-${sws.id.toUpperCase()}`,
+            url: sws.imageUrl,
+            title: sws.title,
+            category: sws.category,
+            divisionId: 'sws',
+            divisionName: 'SWS Event Management',
+            location: sws.location,
+            description: sws.description,
+            year: sws.year,
+            tags: sws.tags,
+          });
+        }
+      });
+    }
+
+    // 4. From U1 Cinema & Studio Portfolio dataset
+    if (U1_PORTFOLIO_ITEMS && U1_PORTFOLIO_ITEMS.length > 0) {
+      U1_PORTFOLIO_ITEMS.forEach((u1) => {
+        if (!seenUrls.has(u1.imageUrl)) {
+          seenUrls.add(u1.imageUrl);
+          items.push({
+            id: u1.id,
+            sku: `U1-${u1.id.toUpperCase()}`,
+            url: u1.imageUrl,
+            title: u1.title,
+            category: u1.category,
+            divisionId: 'u1',
+            divisionName: 'U1 Cinema & Studio',
+            location: u1.location,
+            description: u1.description,
+            year: u1.year,
+            tags: u1.tags,
+          });
+        }
+      });
+    }
+
+    // 5. Travels Scenic Stories
+    const travelPhotos = [
+      { id: 'trv-sigiriya', title: 'Sigiriya Rock Fortress at Dawn', url: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=80', location: 'Cultural Triangle, Sri Lanka' },
+      { id: 'trv-ella', title: 'Nine Arch Bridge & Mist-Covered Tea Valleys', url: 'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=1200&q=80', location: 'Ella Highlands, Sri Lanka' },
+      { id: 'trv-yala', title: 'Sri Lankan Wild Leopard in Yala', url: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=1200&q=80', location: 'Yala National Park, Sri Lanka' },
+      { id: 'trv-mirissa', title: 'Mirissa Golden Beach & Palm Tree Grove', url: 'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?auto=format&fit=crop&w=1200&q=80', location: 'Southern Coast, Sri Lanka' },
+    ];
+    travelPhotos.forEach((tp) => {
+      if (!seenUrls.has(tp.url)) {
+        seenUrls.add(tp.url);
+        items.push({
+          id: tp.id,
+          sku: `TRV-${tp.id.toUpperCase()}`,
+          url: tp.url,
+          title: tp.title,
+          category: 'Travels & Safari',
+          divisionId: 'travels',
+          divisionName: 'Mahdev Travels',
+          location: tp.location,
+          description: `Exclusive wildlife & heritage expedition moment by Mahdev Travels in ${tp.location}.`,
+        });
+      }
+    });
+
+    return items;
   }, [gallery, mediaAssets]);
 
-  // Check URL or prop for initialSku to auto-open lightbox
+  // Check URL or prop for initialSku to resolve customer-inquired item
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const targetSku = initialSku || params.get('sku') || params.get('id');
-    if (targetSku && allItems.length > 0) {
-      const clean = targetSku.trim().toLowerCase();
-      const match = allItems.find(
-        (i) => i.sku.toLowerCase() === clean || i.id.toLowerCase() === clean || i.title.toLowerCase().includes(clean)
-      );
+    const targetQuery = initialSku || params.get('sku') || params.get('id') || params.get('item');
+
+    if (targetQuery && allItems.length > 0) {
+      const match = matchGalleryItem(allItems, targetQuery);
       if (match) {
+        setInquiredItem(match);
         setActiveItem(match);
+        setShowFullGallery(false);
+        return;
+      }
+    }
+
+    // Fallback: Check if params contain direct inquiry data
+    if (params.get('title') || params.get('sku') || params.get('image')) {
+      const synth = synthesizeInquiryItemFromParams(params);
+      if (synth) {
+        setInquiredItem(synth);
+        setActiveItem(synth);
+        setShowFullGallery(false);
       }
     }
   }, [initialSku, allItems]);
@@ -129,13 +216,29 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
       category: item.category,
       imageUrl: item.url,
       type: 'gallery',
-      divisionName: item.divisionId || 'Mahdev Group',
+      divisionName: item.divisionName || item.divisionId || 'Mahdev Group',
       description: item.description,
       id: item.id,
       url: item.url,
       division: item.divisionId,
     });
   };
+
+  // If customer is viewing a specific inquired item from WhatsApp or direct link,
+  // isolate and show ONLY that specific inquired item!
+  if (inquiredItem && !showFullGallery) {
+    return (
+      <div className="min-h-screen bg-slate-50 pt-20">
+        <InquiredItemSpotlight
+          item={inquiredItem}
+          totalGalleryCount={allItems.length}
+          onClearSingleItemMode={() => setShowFullGallery(true)}
+          onNavigate={onNavigate}
+        />
+        <CallToActionSection />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 pt-20">

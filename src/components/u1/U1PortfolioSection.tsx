@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Camera,
   Maximize2,
@@ -135,6 +135,27 @@ export const U1PortfolioSection: React.FC = () => {
 
     return items;
   }, [rawPortfolio, rawGallery, mediaAssets]);
+
+  // Deep-link SKU or mediaSku support: auto-open item in lightbox if directed here
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const targetSku = params.get('mediaSku') || params.get('sku') || params.get('id');
+    if (targetSku && portfolioItems.length > 0) {
+      const clean = targetSku.trim().toLowerCase();
+      const idx = portfolioItems.findIndex(
+        (item) =>
+          item.id.toLowerCase() === clean ||
+          item.id.toLowerCase().includes(clean) ||
+          clean.includes(item.id.toLowerCase()) ||
+          item.title.toLowerCase().includes(clean)
+      );
+      if (idx !== -1) {
+        setActiveCategory('All');
+        setActiveLightboxIndex(idx);
+      }
+    }
+  }, [portfolioItems]);
 
   const categories = useMemo<PortfolioCategory[]>(() => {
     const list: PortfolioCategory[] = ['All'];

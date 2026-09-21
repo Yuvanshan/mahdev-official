@@ -28,14 +28,7 @@ export function getMediaAssetShareUrl(asset: MediaAssetSharePayload): string {
   const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://mahdev.lk';
   const effectiveSku = asset.sku || (asset.id ? `MED-${(asset.division || 'U1').toUpperCase()}-${asset.id.slice(-6).toUpperCase()}` : deriveLookupSku(asset.title, asset.division));
   
-  const divLower = (asset.division || '').toLowerCase();
-  if (divLower.includes('u1') || divLower.includes('studio') || divLower.includes('cinema')) {
-    return `${origin}/u1?mediaSku=${encodeURIComponent(effectiveSku)}#portfolio`;
-  }
-  if (divLower.includes('sws') || divLower.includes('event')) {
-    return `${origin}/sws?mediaSku=${encodeURIComponent(effectiveSku)}#gallery`;
-  }
-  return `${origin}/gallery?sku=${encodeURIComponent(effectiveSku)}`;
+  return `${origin}/gallery?sku=${encodeURIComponent(effectiveSku)}&title=${encodeURIComponent(asset.title)}`;
 }
 
 /**

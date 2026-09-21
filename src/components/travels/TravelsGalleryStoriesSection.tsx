@@ -17,7 +17,7 @@ import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { ScrollReveal } from '../motion/MotionWrappers';
-import { openWhatsAppInquiry } from '../../utils/whatsapp';
+import { openWhatsAppInquiry, deriveLookupSku } from '../../utils/whatsapp';
 
 export const TravelsGalleryStoriesSection: React.FC = () => {
   const { gallery: rawGallery, testimonials: rawTestimonials } = useFirestoreDataContext();
@@ -111,6 +111,7 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
                   e.stopPropagation();
                   openWhatsAppInquiry({
                     title: img.title,
+                    sku: `TRV-${deriveLookupSku(img.title, 'TRV')}`,
                     location: img.location,
                     divisionName: 'Mahdev Travels',
                     imageUrl: img.src,
@@ -215,11 +216,15 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
+                  const activeImg = galleryImages.find((g) => g.src === lightboxImage) || defaultGallery.find((g) => g.src === lightboxImage);
+                  const imgTitle = activeImg?.title || 'Travel Expedition Moment';
                   openWhatsAppInquiry({
-                    title: 'Travel Expedition Inquiry',
+                    title: imgTitle,
+                    sku: `TRV-${deriveLookupSku(imgTitle, 'TRV')}`,
+                    location: activeImg?.location || 'Sri Lanka',
                     divisionName: 'Mahdev Travels',
                     imageUrl: lightboxImage,
-                    description: 'Inquiring about this private tour destination.',
+                    description: `Inquiring about ${imgTitle} by Mahdev Travels.`,
                     type: 'gallery',
                   });
                 }}

@@ -505,9 +505,19 @@ function AppContent() {
       return <OrderConfirmationView orderId={orderQueryId} onNavigate={navigate} />;
     }
 
-    // Gallery Route (/gallery, /gallery/*)
-    if (normalizedPath === '/gallery' || normalizedPath.startsWith('/gallery/')) {
-      const gallerySku = searchParams.get('sku') || searchParams.get('id') || undefined;
+    // Gallery Route (/gallery, /gallery/*, /media, /media/*)
+    if (
+      normalizedPath === '/gallery' ||
+      normalizedPath.startsWith('/gallery/') ||
+      normalizedPath === '/media' ||
+      normalizedPath.startsWith('/media/')
+    ) {
+      const gallerySku =
+        searchParams.get('sku') ||
+        searchParams.get('mediaSku') ||
+        searchParams.get('id') ||
+        searchParams.get('item') ||
+        undefined;
       return <GalleryPageView onNavigate={navigate} initialSku={gallerySku} />;
     }
 
@@ -1027,10 +1037,30 @@ function AppContent() {
       case '/company':
         return <AboutView onNavigate={navigate} />;
       case '/gallery':
-        return <GalleryPageView onNavigate={navigate} initialSku={searchParams.get('sku') || searchParams.get('id') || undefined} />;
+      case '/media':
+        return (
+          <GalleryPageView
+            onNavigate={navigate}
+            initialSku={
+              searchParams.get('sku') ||
+              searchParams.get('mediaSku') ||
+              searchParams.get('id') ||
+              searchParams.get('item') ||
+              undefined
+            }
+          />
+        );
       case '/projects':
       case '/portfolio':
       case '/work':
+        if (searchParams.get('sku') || searchParams.get('mediaSku')) {
+          return (
+            <GalleryPageView
+              onNavigate={navigate}
+              initialSku={searchParams.get('sku') || searchParams.get('mediaSku') || undefined}
+            />
+          );
+        }
         return <PortfolioView onNavigate={navigate} />;
       case '/milestones':
       case '/journey':

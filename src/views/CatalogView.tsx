@@ -11,6 +11,8 @@ import {
 import { catalogService } from '../services/catalogService';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
+import { normalizeCode } from '../utils/itemLookup';
+import { deriveLookupSku } from '../utils/whatsapp';
 
 interface CatalogViewProps {
   initialDivision?: string;
@@ -42,6 +44,8 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
 
   const [sortBy, setSortBy] = useState<CatalogSortOption>('featured');
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [inquiredProduct, setInquiredProduct] = useState<CatalogProduct | null>(null);
+  const [showFullCatalog, setShowFullCatalog] = useState<boolean>(false);
   const pageSize = 8;
 
   // Selected product for modal inspection
@@ -63,19 +67,27 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     if (!targetSkuOrId) return;
 
     const clean = targetSkuOrId.trim().toLowerCase();
+    const cleanNorm = normalizeCode(clean);
     const all = catalogService.queryProducts();
     const found =
       all.find(
         (p) =>
           p.id.toLowerCase() === clean ||
           p.slug.toLowerCase() === clean ||
-          (p as any).sku?.toLowerCase() === clean
+          (p as any).sku?.toLowerCase() === clean ||
+          normalizeCode(p.id) === cleanNorm ||
+          normalizeCode(p.slug) === cleanNorm ||
+          normalizeCode((p as any).sku) === cleanNorm ||
+          normalizeCode(deriveLookupSku(p.name, p.divisionId)) === cleanNorm ||
+          p.name.toLowerCase().includes(clean)
       ) ||
       catalogService.getProductById(targetSkuOrId) ||
       catalogService.getProductBySlug(targetSkuOrId);
 
     if (found) {
       setSelectedProduct(found);
+      setInquiredProduct(found);
+      setShowFullCatalog(false);
     }
   }, [initialProductId, firestoreProducts]);
 
@@ -115,26 +127,59 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     setCurrentPage(1);
   };
 
+  const isSingleItemMode = Boolean(inquiredProduct && !showFullCatalog);
+  const displayedProducts = isSingleItemMode && inquiredProduct ? [inquiredProduct] : paginatedResult.items;
+  const displayedTotal = isSingleItemMode ? 1 : paginatedResult.total;
+
   return (
     <div className="min-h-screen bg-neutral-50 flex flex-col">
+      {/* Customer Inquired Item Context Banner */}
+      {isSingleItemMode && inquiredProduct && (
+        <div className="bg-emerald-50 border-b border-emerald-200 py-3.5 px-4 sm:px-6">
+          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs sm:text-sm font-bold text-emerald-900">
+                Viewing Selected Customer Inquired Item: <span className="underline">{inquiredProduct.name}</span>
+              </span>
+              <span className="font-mono text-xs bg-white text-emerald-800 px-2 py-0.5 rounded border border-emerald-300">
+                SKU: {(inquiredProduct as any).sku || inquiredProduct.id}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowFullCatalog(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 hover:text-emerald-900 bg-white hover:bg-emerald-100 border border-emerald-300 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+            >
+              <span>Browse Full Catalog ({allMasterProducts.length} items)</span>
+              <span>→</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Catalog Hero Section */}
-      <CatalogHero
-        totalProducts={allMasterProducts.length}
-        totalCategories={categories.length}
-        searchQuery={filters.searchQuery || ''}
-        onSearchChange={(q) => handleFilterChange({ ...filters, searchQuery: q })}
-      />
+      {!isSingleItemMode && (
+        <CatalogHero
+          totalProducts={allMasterProducts.length}
+          totalCategories={categories.length}
+          searchQuery={filters.searchQuery || ''}
+          onSearchChange={(q) => handleFilterChange({ ...filters, searchQuery: q })}
+        />
+      )}
 
       {/* Sticky Interactive Filter Bar */}
-      <CatalogFilterBar
-        filters={filters}
-        sortBy={sortBy}
-        categories={categories}
-        totalResults={paginatedResult.total}
-        onFilterChange={handleFilterChange}
-        onSortChange={setSortBy}
-        onResetFilters={handleResetFilters}
-      />
+      {!isSingleItemMode && (
+        <CatalogFilterBar
+          filters={filters}
+          sortBy={sortBy}
+          categories={categories}
+          totalResults={paginatedResult.total}
+          onFilterChange={handleFilterChange}
+          onSortChange={setSortBy}
+          onResetFilters={handleResetFilters}
+        />
+      )}
 
       {/* Main Grid Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1 relative min-h-[400px]">
@@ -145,13 +190,16 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
           />
         ) : (
           <CatalogProductGrid
-            products={paginatedResult.items}
-            totalProducts={paginatedResult.total}
-            currentPage={paginatedResult.page}
-            totalPages={paginatedResult.totalPages}
+            products={displayedProducts}
+            totalProducts={displayedTotal}
+            currentPage={isSingleItemMode ? 1 : paginatedResult.page}
+            totalPages={isSingleItemMode ? 1 : paginatedResult.totalPages}
             onPageChange={setCurrentPage}
             onSelectProduct={setSelectedProduct}
-            onResetFilters={handleResetFilters}
+            onResetFilters={() => {
+              setShowFullCatalog(true);
+              handleResetFilters();
+            }}
           />
         )}
       </main>

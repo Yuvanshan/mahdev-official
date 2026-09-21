@@ -112,20 +112,10 @@ export function resolveItemDirectUrl(options: WhatsAppInquiryOptions, effectiveS
     return `${origin}/services?packageSku=${encodeURIComponent(effectiveSku)}`;
   }
   if (options.type === 'portfolio') {
-    return `${origin}/portfolio?sku=${encodeURIComponent(effectiveSku)}`;
+    return `${origin}/gallery?sku=${encodeURIComponent(effectiveSku)}&title=${encodeURIComponent(options.title || '')}`;
   }
-  if (options.type === 'gallery') {
-    return `${origin}/gallery?sku=${encodeURIComponent(effectiveSku)}`;
-  }
-  if (options.type === 'media') {
-    const targetDivision = (options.divisionName || '').trim().toLowerCase();
-    if (targetDivision.includes('u1') || targetDivision.includes('studio') || targetDivision.includes('cinema')) {
-      return `${origin}/u1#portfolio`;
-    }
-    if (targetDivision.includes('sws') || targetDivision.includes('event')) {
-      return `${origin}/sws#gallery`;
-    }
-    return `${origin}/gallery?sku=${encodeURIComponent(effectiveSku)}`;
+  if (options.type === 'gallery' || options.type === 'media') {
+    return `${origin}/gallery?sku=${encodeURIComponent(effectiveSku)}&title=${encodeURIComponent(options.title || '')}`;
   }
   if (options.type === 'booking') {
     return `${origin}/book`;

@@ -173,6 +173,7 @@ export const SWSGallerySection: React.FC = () => {
                   e.stopPropagation();
                   openWhatsAppInquiry({
                     title: item.title,
+                    sku: `SWS-${item.id.toUpperCase()}`,
                     category: item.category,
                     divisionName: 'SWS Event Management',
                     imageUrl: item.imageUrl,
@@ -333,6 +334,7 @@ export const SWSGallerySection: React.FC = () => {
                   onClick={() => {
                     openWhatsAppInquiry({
                       title: activeItem.title,
+                      sku: `SWS-${activeItem.id.toUpperCase()}`,
                       category: activeItem.category,
                       divisionName: 'SWS Event Management',
                       imageUrl: (activeItem.images && activeItem.images[activeSubImageIdx]) || activeItem.imageUrl,

@@ -42,12 +42,26 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
   // Check URL query parameters or path for sub-routes
   useEffect(() => {
     const path = window.location.pathname;
-    if (path.startsWith('/mart/product/')) {
+    const params = new URLSearchParams(window.location.search);
+    const searchTarget = params.get('sku') || params.get('id') || params.get('product');
+
+    const liveList =
+      rawProducts && rawProducts.length > 0
+        ? rawProducts.map((p) => mapFirestoreProductToMart(p, rawCategories))
+        : [];
+
+    if (searchTarget && liveList.length > 0) {
+      const clean = searchTarget.trim().toLowerCase();
+      const matched = liveList.find(
+        (p) =>
+          p.id.toLowerCase() === clean ||
+          p.slug?.toLowerCase() === clean ||
+          (p as any).sku?.toLowerCase() === clean ||
+          p.name.toLowerCase().includes(clean)
+      );
+      if (matched) setSelectedProductForDetail(matched);
+    } else if (path.startsWith('/mart/product/')) {
       const prodId = path.replace('/mart/product/', '');
-      const liveList =
-        rawProducts && rawProducts.length > 0
-          ? rawProducts.map((p) => mapFirestoreProductToMart(p, rawCategories))
-          : [];
       const matched = liveList.find((p) => p.id === prodId || p.slug === prodId);
       if (matched) setSelectedProductForDetail(matched);
     } else if (path.startsWith('/mart/category/')) {
