@@ -96,15 +96,6 @@ const DEFAULT_DIVISION_BENTO_DATA: BentoDivisionItem[] = [
 export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }) => {
   const { companySettings, siteSettings, homepageConfig, divisions, products, isInitialLoading, isFetching } = useFirestoreDataContext();
 
-  const sectionConfig = homepageConfig?.divisionsSection;
-  if (sectionConfig?.enabled === false) return null;
-
-  const sectionBadge = sectionConfig?.badge || 'Our divisions';
-  const sectionTitle = sectionConfig?.title || 'Operating Divisions';
-  const sectionSubtitle =
-    sectionConfig?.subtitle ||
-    `Specialized teams delivering integrated solutions across events, media, technology, travel and retail.`;
-
   const rentalAssetCountStr = getRentalAssetCount(
     products,
     (companySettings as any)?.rentalAssetCount || (siteSettings as any)?.rentalAssetCount
@@ -122,87 +113,92 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
       return r.startsWith('/') ? r : `/${r}`;
     };
 
-    if (divisions && divisions.length > 0) {
-      const canonicalOrder = ['sws', 'u1', 'it', 'travels', 'mart'];
-      const canonicalMap: Record<string, string> = {
-        'sws-event-management': 'sws',
-        'u1-studio': 'u1',
-        'it-solutions': 'it',
-        'mahdev-travels': 'travels',
-        'online-mart': 'mart',
-      };
+    const canonicalMap: Record<string, string> = {
+      'sws-event-management': 'sws',
+      'sws-events': 'sws',
+      'u1-studio': 'u1',
+      'u1-cinema': 'u1',
+      'it-solutions': 'it',
+      'mahdev-it': 'it',
+      'mahdev-travels': 'travels',
+      'online-mart': 'mart',
+      'mahdev-mart': 'mart',
+    };
 
-      const seen = new Set<string>();
-      const list: BentoDivisionItem[] = [];
+    const seen = new Set<string>();
+    const list: BentoDivisionItem[] = [];
+    const sourceDivisions = divisions && divisions.length > 0 ? divisions : [];
 
-      for (const d of divisions) {
-        const id = canonicalMap[d.id] || d.slug || d.id;
-        if (seen.has(id)) continue;
-        seen.add(id);
+    for (const d of sourceDivisions) {
+      const id = canonicalMap[d.id] || d.slug || d.id;
+      if (seen.has(id)) continue;
+      seen.add(id);
 
-        const defaultComingSoon = id === 'it' || id === 'travels' || id === 'mart';
-        const isComingSoon = (d as any).isComingSoon !== undefined
-          ? !!(d as any).isComingSoon
-          : (d as any).comingSoon !== undefined
-          ? !!(d as any).comingSoon
-          : (d as any).status !== undefined
-          ? (d as any).status === 'coming_soon'
-          : defaultComingSoon;
+      const defaultComingSoon = id === 'it' || id === 'travels' || id === 'mart';
+      const isComingSoon = (d as any).isComingSoon !== undefined
+        ? !!(d as any).isComingSoon
+        : (d as any).comingSoon !== undefined
+        ? !!(d as any).comingSoon
+        : (d as any).status !== undefined
+        ? (d as any).status === 'coming_soon'
+        : defaultComingSoon;
 
-        const defaultFallbackItem =
-          DEFAULT_DIVISION_BENTO_DATA.find((item) => item.id === id) || DEFAULT_DIVISION_BENTO_DATA[0];
-        const rawImg = d.heroImageUrl || d.imageUrl || (d.hero as any)?.bgImage;
-        const img =
-          rawImg && typeof rawImg === 'string' && rawImg.trim() !== ''
-            ? rawImg.trim()
-            : defaultFallbackItem.image;
+      const defaultFallbackItem =
+        DEFAULT_DIVISION_BENTO_DATA.find((item) => item.id === id) || DEFAULT_DIVISION_BENTO_DATA[0];
+      const rawImg = d.heroImageUrl || d.imageUrl || (d.hero as any)?.bgImage;
+      const img =
+        rawImg && typeof rawImg === 'string' && rawImg.trim() !== ''
+          ? rawImg.trim()
+          : defaultFallbackItem.image;
 
-        const resolvedLogo =
-          (d.logoUrl && typeof d.logoUrl === 'string' && d.logoUrl.trim() !== '' ? d.logoUrl.trim() : '') ||
-          ((d as any)?.logo && typeof (d as any).logo === 'string' && (d as any).logo.trim() !== '' ? (d as any).logo.trim() : '') ||
-          defaultFallbackItem.logo ||
-          `/assets/images/${id}_logo.svg`;
+      const resolvedLogo =
+        (d.logoUrl && typeof d.logoUrl === 'string' && d.logoUrl.trim() !== '' ? d.logoUrl.trim() : '') ||
+        ((d as any)?.logo && typeof (d as any).logo === 'string' && (d as any).logo.trim() !== '' ? (d as any).logo.trim() : '') ||
+        defaultFallbackItem.logo ||
+        `/assets/images/${id}_logo.svg`;
 
-        const metrics =
-          d.stats && d.stats.length > 0
-            ? d.stats.map((s) => `${s.value} ${s.label}`)
-            : [];
+      const metrics =
+        d.stats && d.stats.length > 0
+          ? d.stats.map((s) => `${s.value} ${s.label}`)
+          : [];
 
-        list.push({
-          id,
-          name: d.name,
-          badge: d.badge || (d.hero as any)?.badge || '',
-          subtitle: d.tagline || d.shortDescription || (d.hero as any)?.subtitle || '',
-          summary: d.description || d.aboutText || d.shortDescription || '',
-          image: img,
-          logo: resolvedLogo,
-          route: getCanonicalRoute(id, d.route),
-          metrics,
-          isFeatured: id === 'sws',
-          isComingSoon,
-        });
-      }
-
-      // Sort so sws is first (featured) if available, followed by canonical order
-      list.sort((a, b) => {
-        const idxA = canonicalOrder.indexOf(a.id);
-        const idxB = canonicalOrder.indexOf(b.id);
-        const orderA = idxA !== -1 ? idxA : 99;
-        const orderB = idxB !== -1 ? idxB : 99;
-        return orderA - orderB;
+      list.push({
+        id,
+        name: d.name,
+        badge: d.badge || (d.hero as any)?.badge || '',
+        subtitle: d.tagline || d.shortDescription || (d.hero as any)?.subtitle || '',
+        summary: d.description || d.aboutText || d.shortDescription || '',
+        image: img,
+        logo: resolvedLogo,
+        route: getCanonicalRoute(id, d.route),
+        metrics,
+        isFeatured: id === 'sws',
+        isComingSoon,
       });
-
-      return list;
     }
 
-    return [];
+    // Guarantee all 5 baseline divisions are present
+    if (list.length < 5) {
+      for (const defaultItem of DEFAULT_DIVISION_BENTO_DATA) {
+        if (!seen.has(defaultItem.id)) {
+          seen.add(defaultItem.id);
+          list.push(defaultItem);
+        }
+      }
+    }
+
+    const canonicalOrder = ['sws', 'u1', 'it', 'travels', 'mart'];
+    // Sort so sws is first (featured) if available, followed by canonical order
+    list.sort((a, b) => {
+      const idxA = canonicalOrder.indexOf(a.id);
+      const idxB = canonicalOrder.indexOf(b.id);
+      const orderA = idxA !== -1 ? idxA : 99;
+      const orderB = idxB !== -1 ? idxB : 99;
+      return orderA - orderB;
+    });
+
+    return list;
   }, [divisions, rentalAssetCountStr]);
-
-  if (bentoDivisions.length === 0) {
-    return null;
-  }
-
-  const sws = bentoDivisions[0];
 
   // Active divisions currently operating
   const activeDivisions = useMemo(() => {
@@ -225,6 +221,19 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 22, mass: 0.1 });
   const yParallaxLeft = useTransform(smoothProgress, [0, 1], ['25px', '-25px']);
   const yParallaxRight = useTransform(smoothProgress, [0, 1], ['-20px', '20px']);
+
+  const sectionConfig = homepageConfig?.divisionsSection;
+  if (sectionConfig?.enabled === false || bentoDivisions.length === 0) {
+    return null;
+  }
+
+  const sectionBadge = sectionConfig?.badge || 'Our divisions';
+  const sectionTitle = sectionConfig?.title || 'Operating Divisions';
+  const sectionSubtitle =
+    sectionConfig?.subtitle ||
+    `Specialized teams delivering integrated solutions across events, media, technology, travel and retail.`;
+
+  const sws = bentoDivisions[0];
 
   const handleWhatsAppInquiry = (
     e: React.MouseEvent,

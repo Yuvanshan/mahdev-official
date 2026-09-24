@@ -34,13 +34,14 @@ import {
   firestoreDivisionsService,
   getDefaultDivisions,
   sortDivisions,
+  normalizeDivisionId,
   getCanonicalDivisionId,
   isSameDivision,
 } from '../services/firestore/divisions';
 import { firestoreCategoriesService } from '../services/firestore/categories';
 import { firestoreServicesService } from '../services/firestore/services';
 import { firestoreProductsService } from '../services/firestore/products';
-import { firestoreMilestonesService } from '../services/firestore/milestones';
+import { firestoreMilestonesService, DEFAULT_OFFICIAL_MILESTONES } from '../services/firestore/milestones';
 import { firestoreTrustedCompaniesService } from '../services/firestore/trustedCompanies';
 import { firestoreTestimonialsService } from '../services/firestore/testimonials';
 import { firestoreGoogleReviewsService, DEFAULT_GOOGLE_REVIEWS_CONFIG } from '../services/firestore/googleReviews';
@@ -112,12 +113,12 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     return false;
   })();
 
-  // Show boot loader only on first-ever load; on subsequent visits / refreshes, load instantly from cache
-  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(!hasCachedData);
-  const [isReady, setIsReady] = useState<boolean>(hasCachedData);
+  // Instant Zero-Delay Hydration: Initial state is populated immediately from local cache / defaults
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(false);
+  const [isReady, setIsReady] = useState<boolean>(true);
   const [isFetching, setIsFetching] = useState<boolean>(false);
-  const [syncProgress, setSyncProgress] = useState<number>(hasCachedData ? 100 : 0);
-  const [syncStatus, setSyncStatus] = useState<string>(hasCachedData ? 'Ready' : 'Loading details...');
+  const [syncProgress, setSyncProgress] = useState<number>(100);
+  const [syncStatus, setSyncStatus] = useState<string>('Ready');
   const [error, setError] = useState<Error | null>(null);
 
   const [companySettings, setCompanySettings] = useState<FirestoreCompanySettings>(() => {
@@ -153,11 +154,14 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         const cached = localStorage.getItem('mahdev_cached_divisions');
         if (cached) {
           const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) return sortDivisions(parsed);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const sorted = sortDivisions(parsed);
+            if (sorted.length >= 5) return sorted;
+          }
         }
       }
     } catch {}
-    return [];
+    return sortDivisions(getDefaultDivisions());
   });
   const [categories, setCategories] = useState<FirestoreCategory[]>(() => {
     try {
@@ -190,10 +194,13 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       if (typeof window !== 'undefined') {
         const cached = localStorage.getItem('mahdev_cached_milestones');
-        if (cached) return JSON.parse(cached);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
       }
     } catch {}
-    return [];
+    return DEFAULT_OFFICIAL_MILESTONES;
   });
   const [trustedCompanies, setTrustedCompanies] = useState<FirestoreTrustedCompany[]>(() => {
     try {
@@ -259,7 +266,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     return [];
   });
 
-  const [isLiveHydrated, setIsLiveHydrated] = useState<boolean>(false);
+  const [isLiveHydrated, setIsLiveHydrated] = useState<boolean>(true);
 
   // Track loaded divisions state for seamless transition & shimmers
   const [loadedDivisions, setLoadedDivisions] = useState<Record<string, boolean>>(() => {
@@ -508,8 +515,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     [isInitialLoading, loadedGallery, fetchingDivisions]
   );
 
-  // Ultra-Fast Parallel Hydration: Loads 100% of real Firestore collections simultaneously in ~1s
-  const refreshAll = useCallback(async () => {
+  // Ultra-Fast Parallel Hydration: Loads 100% of real Firestore collections simultaneously
+  const refreshAll = useCallback(async (forceRefresh = false) => {
     setIsFetching(true);
     try {
       setError(null);
@@ -533,19 +540,19 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         gReviews,
         allMediaAssets,
       ] = await Promise.all([
-        firestoreSettingsService.getCompanySettings(true).catch(() => getDefaultCompanySettings()),
-        firestoreSettingsService.getSiteSettings(true).catch(() => getDefaultSiteSettings()),
-        firestoreSettingsService.getHomepageSettings(true).catch(() => getDefaultHomepageSettings()),
-        firestoreDivisionsService.getDivisions(true).catch(() => []),
-        firestoreServicesService.getServices(undefined, true).catch(() => []),
-        firestoreGalleryService.getGallery(undefined, true).catch(() => []),
-        firestoreCategoriesService.getCategories(undefined, true).catch(() => []),
-        firestoreProductsService.getProducts({}, true).catch(() => []),
-        firestorePortfolioService.getPortfolio(undefined, true).catch(() => []),
-        firestoreMilestonesService.getMilestones(true).catch(() => []),
-        firestoreTrustedCompaniesService.getTrustedCompanies(true).catch(() => []),
-        firestoreTestimonialsService.getTestimonials(undefined, true).catch(() => []),
-        firestoreGoogleReviewsService.getConfig(true).catch(() => null),
+        firestoreSettingsService.getCompanySettings(forceRefresh).catch(() => getDefaultCompanySettings()),
+        firestoreSettingsService.getSiteSettings(forceRefresh).catch(() => getDefaultSiteSettings()),
+        firestoreSettingsService.getHomepageSettings(forceRefresh).catch(() => getDefaultHomepageSettings()),
+        firestoreDivisionsService.getDivisions(forceRefresh).catch(() => []),
+        firestoreServicesService.getServices(undefined, forceRefresh).catch(() => []),
+        firestoreGalleryService.getGallery(undefined, forceRefresh).catch(() => []),
+        firestoreCategoriesService.getCategories(undefined, forceRefresh).catch(() => []),
+        firestoreProductsService.getProducts({}, forceRefresh).catch(() => []),
+        firestorePortfolioService.getPortfolio(undefined, forceRefresh).catch(() => []),
+        firestoreMilestonesService.getMilestones(forceRefresh).catch(() => []),
+        firestoreTrustedCompaniesService.getTrustedCompanies(forceRefresh).catch(() => []),
+        firestoreTestimonialsService.getTestimonials(undefined, forceRefresh).catch(() => []),
+        firestoreGoogleReviewsService.getConfig(forceRefresh).catch(() => null),
         firestoreGoogleReviewsService.getReviews().catch(() => []),
         mediaService.getMediaAssets().catch(() => []),
       ]);
@@ -767,6 +774,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubDivs = firestoreDivisionsService.subscribeDivisions((data) => {
       if (isMounted) {
         const sorted = sortDivisions(data);
+        divisionsRef.current = sorted;
         setDivisions(sorted);
         try {
           localStorage.setItem('mahdev_cached_divisions', JSON.stringify(sorted));
@@ -961,54 +969,36 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const saveDivision = useCallback(async (id: string, data: Partial<FirestoreDivision>) => {
     await firestoreDivisionsService.saveDivision(id, data);
-    const canonicalId =
-      id === 'u1' || id === 'u1-studio'
-        ? 'u1-studio'
-        : id === 'it' || id === 'it-solutions'
-        ? 'it-solutions'
-        : id === 'mart' || id === 'online-mart'
-        ? 'online-mart'
-        : id === 'sws' || id === 'sws-event-management'
-        ? 'sws'
-        : id === 'travels' || id === 'mahdev-travels'
-        ? 'travels'
-        : id;
+    const { canonicalDocId, shortId } = normalizeDivisionId(id);
 
-    const current = divisionsRef.current || [];
+    // Make sure we operate on a complete list of all 5 divisions
+    const current = (divisionsRef.current && divisionsRef.current.length >= 5)
+      ? divisionsRef.current
+      : sortDivisions(getDefaultDivisions());
+
     const updated = current.map((d) => {
-      const dCanonical =
-        d.id === 'u1' || d.id === 'u1-studio'
-          ? 'u1-studio'
-          : d.id === 'it' || d.id === 'it-solutions'
-          ? 'it-solutions'
-          : d.id === 'mart' || d.id === 'online-mart'
-          ? 'online-mart'
-          : d.id === 'sws' || d.id === 'sws-event-management'
-          ? 'sws'
-          : d.id === 'travels' || d.id === 'mahdev-travels'
-          ? 'travels'
-          : d.id;
-
-      if (d.id === id || d.id === canonicalId || d.slug === id || d.slug === canonicalId || dCanonical === canonicalId) {
+      const dCanonical = normalizeDivisionId(d.id || d.slug || '').shortId;
+      if (d.id === id || d.id === canonicalDocId || d.slug === id || d.slug === canonicalDocId || dCanonical === shortId) {
         return { ...d, ...data, id: d.id };
       }
       return d;
     });
 
-    divisionsRef.current = updated;
-    setDivisions(updated);
+    const finalSorted = sortDivisions(updated);
+    divisionsRef.current = finalSorted;
+    setDivisions(finalSorted);
 
     try {
-      localStorage.setItem('mahdev_cached_divisions', JSON.stringify(updated));
+      localStorage.setItem('mahdev_cached_divisions', JSON.stringify(finalSorted));
     } catch {}
 
     if (typeof queueMicrotask === 'function') {
       queueMicrotask(() => {
-        cmsService.syncEntityFromFirestore('divisions', updated);
+        cmsService.syncEntityFromFirestore('divisions', finalSorted);
       });
     } else {
       setTimeout(() => {
-        cmsService.syncEntityFromFirestore('divisions', updated);
+        cmsService.syncEntityFromFirestore('divisions', finalSorted);
       }, 0);
     }
   }, []);

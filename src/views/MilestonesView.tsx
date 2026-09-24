@@ -10,6 +10,7 @@ import { BRAND_CONFIG } from '../config/brand';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { CallToActionSection } from '../components/home/CallToActionSection';
 import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
+import { DEFAULT_OFFICIAL_MILESTONES } from '../services/firestore/milestones';
 
 interface MilestonesViewProps {
   onNavigate: (route: string) => void;
@@ -91,7 +92,7 @@ export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) =>
     },
   ];
 
-  const displayMilestones = milestones && milestones.length >= 3 ? milestones : defaultMilestones;
+  const displayMilestones = milestones && milestones.length >= 5 ? milestones : DEFAULT_OFFICIAL_MILESTONES;
 
   return (
     <div className="pt-24 pb-12 bg-white">

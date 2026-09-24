@@ -144,7 +144,23 @@ export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
   const canonicalOrder = ['sws', 'u1', 'it', 'travels', 'mart'];
   const mapByCanonical = new Map<string, FirestoreDivision>();
 
-  for (const item of list) {
+  // 1. ALWAYS seed with all 5 foundational canonical divisions as the baseline!
+  // This guarantees that all 5 divisions are ALWAYS present across the website and admin portal.
+  const defaults = getDefaultDivisions();
+  for (const def of defaults) {
+    const { shortId, canonicalDocId } = normalizeDivisionId(def.id || def.slug || '');
+    if (shortId) {
+      mapByCanonical.set(shortId, {
+        ...def,
+        id: shortId,
+        slug: shortId,
+        canonicalDocId,
+      });
+    }
+  }
+
+  // 2. Overlay incoming items from Firestore / admin updates
+  for (const item of (Array.isArray(list) ? list : [])) {
     if (!item) continue;
     const { canonicalDocId, shortId } = normalizeDivisionId(item.id || item.slug || '');
     if (!shortId) continue;
@@ -160,6 +176,7 @@ export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
 
     const existing = mapByCanonical.get(shortId);
     const normalizedItem: FirestoreDivision = {
+      ...(existing || {}),
       ...item,
       id: shortId,
       slug: shortId,
@@ -178,7 +195,7 @@ export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
       const primary = itemTime >= existingTime ? normalizedItem : existing;
       const secondary = itemTime >= existingTime ? existing : normalizedItem;
 
-      const resolvedImg = primary.hero?.imageUrl || secondary.hero?.imageUrl || primary.heroImageUrl || secondary.heroImageUrl || primary.imageUrl || secondary.imageUrl || primary.hero?.bgImage || secondary.hero?.bgImage || '';
+      const resolvedImg = primary.hero?.imageUrl || secondary.hero?.imageUrl || primary.heroImageUrl || secondary.heroImageUrl || primary.imageUrl || secondary.imageUrl || primary.hero?.bgImage || secondary.hero?.bgImage || existing.imageUrl || '';
       const mergedHero = {
         ...(secondary.hero || {}),
         ...(primary.hero || {}),
@@ -193,28 +210,27 @@ export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
       mapByCanonical.set(shortId, {
         ...secondary,
         ...primary,
-        name: primary.name || secondary.name,
+        id: shortId,
+        slug: shortId,
+        canonicalDocId,
+        name: primary.name || secondary.name || existing.name,
         heroHeadline: primary.heroHeadline || secondary.heroHeadline || mergedHero.title,
         heroSubheadline: primary.heroSubheadline || secondary.heroSubheadline || mergedHero.subtitle,
-        shortDescription: primary.shortDescription || secondary.shortDescription,
-        description: primary.description || secondary.description,
-        badge: primary.badge || secondary.badge,
-        imageUrl: primary.imageUrl || secondary.imageUrl,
-        heroImageUrl: primary.heroImageUrl || secondary.heroImageUrl || primary.imageUrl || secondary.imageUrl,
+        shortDescription: primary.shortDescription || secondary.shortDescription || existing.shortDescription,
+        description: primary.description || secondary.description || existing.description,
+        badge: primary.badge || secondary.badge || existing.badge,
+        imageUrl: resolvedImg,
+        heroImageUrl: resolvedImg,
         videoUrl: primary.videoUrl || secondary.videoUrl || mergedHero.videoUrl,
         heroVideoUrl: primary.heroVideoUrl || secondary.heroVideoUrl || mergedHero.videoUrl,
-        logoUrl: primary.logoUrl || secondary.logoUrl,
-        logo: primary.logo || secondary.logo,
+        logoUrl: primary.logoUrl || secondary.logoUrl || existing.logoUrl,
+        logo: primary.logo || secondary.logo || existing.logo,
         hero: mergedHero,
         status: primary.status || secondary.status,
         isComingSoon: primary.isComingSoon !== undefined ? primary.isComingSoon : secondary.isComingSoon,
         comingSoon: primary.comingSoon !== undefined ? primary.comingSoon : secondary.comingSoon,
       });
     }
-  }
-
-  if (mapByCanonical.size === 0) {
-    return [];
   }
 
   return canonicalOrder
@@ -229,44 +245,49 @@ export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
 
 export function getDefaultDivisions(): FirestoreDivision[] {
   return Object.values(DIVISION_DOCUMENT_MAP).map((d) => {
-    const shortKey = d.docId === 'u1-studio' ? 'u1' : d.docId === 'it-solutions' ? 'it' : d.docId === 'online-mart' ? 'mart' : d.docId;
+    const shortKey = (d.docId === 'u1-studio' ? 'u1' : d.docId === 'it-solutions' ? 'it' : d.docId === 'online-mart' ? 'mart' : d.docId) as DivisionId;
     const isComingSoonDefault = shortKey === 'it' || shortKey === 'travels' || shortKey === 'mart';
+    const config = DIVISIONS[shortKey] || {};
 
     const item: FirestoreDivision = {
       id: shortKey,
       name: d.name,
       slug: shortKey,
-      shortName: d.name,
-      shortDescription: '',
-      description: '',
+      shortName: (config as any).shortName || d.name,
+      shortDescription: d.shortDescription || config.description || '',
+      description: d.description || config.description || '',
       imageUrl: d.imageUrl,
+      heroImageUrl: d.imageUrl,
+      defaultImageUrl: d.imageUrl,
       logoUrl: d.logoUrl,
       logo: d.logoUrl,
       route: d.route,
       isPublished: true,
       order: d.order,
-      badge: d.name,
-      accentColor: '#1d4ed8',
-      gradient: 'from-blue-600 to-indigo-700',
-      iconName: 'Sparkles',
-      heroHeadline: d.name,
-      heroSubheadline: '',
-      tagline: '',
+      badge: (config as any).badge || d.name,
+      accentColor: (config as any).accentColor || '#1d4ed8',
+      gradient: (config as any).gradient || 'from-blue-600 to-indigo-700',
+      iconName: (config as any).iconName || 'Sparkles',
+      heroHeadline: (config as any).heroHeadline || d.name,
+      heroSubheadline: (config as any).heroSubheadline || d.shortDescription,
+      tagline: (config as any).tagline || d.shortDescription,
       contactPhone: '075 092 8078',
       contactNumber: '075 092 8078',
       contactEmail: 'info.mahdev.lk@gmail.com',
-      aboutHeading: '',
-      aboutText: '',
-      mission: '',
-      vision: '',
-      stats: [],
-      coreServices: [],
+      aboutHeading: (config as any).aboutHeading || '',
+      aboutText: (config as any).aboutText || d.description,
+      mission: (config as any).mission || '',
+      vision: (config as any).vision || '',
+      stats: (config as any).stats || [],
+      coreServices: (config as any).coreServices || [],
       cardHighlight: '',
       hero: {
-        title: d.name,
-        subtitle: '',
-        badge: d.name,
+        title: (config as any).heroHeadline || d.name,
+        subtitle: (config as any).heroSubheadline || d.shortDescription,
+        badge: (config as any).badge || d.name,
         bgImage: d.imageUrl,
+        imageUrl: d.imageUrl,
+        defaultImageUrl: d.imageUrl,
         ctaText: `Explore ${d.name}`,
         secondaryCtaText: 'Contact Division',
       },
@@ -275,7 +296,7 @@ export function getDefaultDivisions(): FirestoreDivision[] {
       comingSoon: isComingSoonDefault,
       seo: {
         metaTitle: `${d.name} | Mahdev Pvt Ltd`,
-        metaDescription: '',
+        metaDescription: d.shortDescription || d.description,
         keywords: [shortKey, d.docId, d.slug, 'mahdev', 'sri lanka'],
         ogImage: d.imageUrl,
         canonicalUrl: `https://mahdev.lk${d.route}`,
@@ -287,6 +308,32 @@ export function getDefaultDivisions(): FirestoreDivision[] {
   });
 }
 
+/**
+ * Ensures all 5 canonical divisions exist in Firestore
+ */
+export async function ensureAllCanonicalDivisionsInFirestore(): Promise<void> {
+  try {
+    const snap = await getDocs(collection(db, 'divisions'));
+    const existingShortIds = new Set<string>();
+    snap.docs.forEach((docSnap) => {
+      const { shortId } = normalizeDivisionId(docSnap.id);
+      if (shortId) existingShortIds.add(shortId);
+    });
+
+    const defaults = getDefaultDivisions();
+    for (const def of defaults) {
+      const { canonicalDocId, shortId } = normalizeDivisionId(def.id);
+      if (!existingShortIds.has(shortId)) {
+        console.log(`[Firestore Divisions] Auto-seeding missing canonical division: ${canonicalDocId}`);
+        const docRef = doc(db, 'divisions', canonicalDocId);
+        await setDoc(docRef, sanitizeForFirestore({ ...def, id: canonicalDocId }), { merge: true });
+      }
+    }
+  } catch (err) {
+    console.warn('[Firestore Divisions] Auto-seeding check notice:', err);
+  }
+}
+
 export const firestoreDivisionsService = {
   /**
    * Fetch all 5 active business divisions with cache and fallback
@@ -294,7 +341,9 @@ export const firestoreDivisionsService = {
   async getDivisions(forceRefresh = false): Promise<FirestoreDivision[]> {
     const now = Date.now();
     if (!forceRefresh && cachedDivisions && now - cachedDivisions.timestamp < CACHE_TTL_MS) {
-      return cachedDivisions.data;
+      if (cachedDivisions.data && cachedDivisions.data.length >= 5) {
+        return cachedDivisions.data;
+      }
     }
 
     // Check localStorage cache for instant zero-latency return
@@ -308,13 +357,16 @@ export const firestoreDivisionsService = {
             cachedDivisions = { data, timestamp: now };
             // Kick off background refresh without blocking caller
             getDocs(collection(db, 'divisions')).then((snap) => {
-              if (!snap.empty) {
-                const fresh = snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreDivision[];
-                const sorted = sortDivisions(fresh);
-                cachedDivisions = { data: sorted, timestamp: Date.now() };
-                try {
-                  localStorage.setItem('mahdev_cached_divisions', JSON.stringify(sorted));
-                } catch {}
+              const fresh = !snap.empty
+                ? (snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreDivision[])
+                : [];
+              const sorted = sortDivisions(fresh);
+              cachedDivisions = { data: sorted, timestamp: Date.now() };
+              try {
+                localStorage.setItem('mahdev_cached_divisions', JSON.stringify(sorted));
+              } catch {}
+              if (fresh.length < 5) {
+                ensureAllCanonicalDivisionsInFirestore().catch(() => {});
               }
             }).catch(() => {});
             return data;
@@ -325,21 +377,29 @@ export const firestoreDivisionsService = {
 
     try {
       const snap = await getDocs(collection(db, 'divisions'));
-      if (!snap.empty) {
-        const raw = snap.docs.map((docSnap) => ({
-          ...docSnap.data(),
-          id: docSnap.id,
-        })) as FirestoreDivision[];
-        const data = sortDivisions(raw);
-        cachedDivisions = { data, timestamp: now };
-        return data;
+      const raw = !snap.empty
+        ? (snap.docs.map((docSnap) => ({
+            ...docSnap.data(),
+            id: docSnap.id,
+          })) as FirestoreDivision[])
+        : [];
+      const data = sortDivisions(raw);
+      cachedDivisions = { data, timestamp: now };
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('mahdev_cached_divisions', JSON.stringify(data));
+        } catch {}
       }
-
-      cachedDivisions = { data: [], timestamp: now };
-      return [];
+      if (raw.length < 5) {
+        ensureAllCanonicalDivisionsInFirestore().catch(() => {});
+      }
+      return data;
     } catch (err) {
       console.warn('[Firestore Divisions] getDivisions error:', err);
-      return cachedDivisions?.data || [];
+      const fallback = cachedDivisions?.data && cachedDivisions.data.length >= 5
+        ? cachedDivisions.data
+        : sortDivisions(getDefaultDivisions());
+      return fallback;
     }
   },
 
@@ -517,21 +577,30 @@ export const firestoreDivisionsService = {
     return onSnapshot(
       colRef,
       (snap) => {
-        if (!snap.empty) {
-          const raw = snap.docs.map((docSnap) => ({
-            ...docSnap.data(),
-            id: docSnap.id,
-          })) as FirestoreDivision[];
-          const data = sortDivisions(raw);
-          cachedDivisions = { data, timestamp: Date.now() };
-          callback(data);
-        } else {
-          callback(cachedDivisions?.data || []);
+        const raw = !snap.empty
+          ? (snap.docs.map((docSnap) => ({
+              ...docSnap.data(),
+              id: docSnap.id,
+            })) as FirestoreDivision[])
+          : [];
+        const data = sortDivisions(raw);
+        cachedDivisions = { data, timestamp: Date.now() };
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('mahdev_cached_divisions', JSON.stringify(data));
+          } catch {}
         }
+        if (raw.length < 5) {
+          ensureAllCanonicalDivisionsInFirestore().catch(() => {});
+        }
+        callback(data);
       },
       (err) => {
         console.warn('[Firestore Divisions] subscribe error:', err);
-        callback(cachedDivisions?.data || []);
+        const fallback = cachedDivisions?.data && cachedDivisions.data.length >= 5
+          ? cachedDivisions.data
+          : sortDivisions(getDefaultDivisions());
+        callback(fallback);
       }
     );
   },

@@ -110,10 +110,6 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
     ];
   }, [inventory]);
 
-  if (inventory.length === 0) {
-    return null;
-  }
-
   const filteredItems = useMemo(() => {
     return inventory.filter((item) => {
       const matchesCategory =
@@ -126,6 +122,10 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
       return matchesCategory && matchesSearch;
     });
   }, [inventory, selectedCategory, searchQuery]);
+
+  if (inventory.length === 0) {
+    return null;
+  }
 
   const handleOpenDetail = (item: SWSRentalItem) => {
     setActiveDetailItem(item);

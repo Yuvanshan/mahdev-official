@@ -46,8 +46,6 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
   onClose,
   onPaymentSuccess,
 }) => {
-  if (!isOpen) return null;
-
   const [selectedGateway, setSelectedGateway] = useState<PaymentGatewayType>('stripe_card');
   const [gateways, setGateways] = useState<PaymentGatewayOption[]>([]);
   const [envMode, setEnvMode] = useState<'sandbox' | 'live'>('sandbox');
@@ -66,7 +64,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
   const [cardNumber, setCardNumber] = useState('4242 •••• •••• 4242');
   const [cardExpiry, setCardExpiry] = useState('12/28');
   const [cardCvc, setCardCvc] = useState('890');
-  const [cardName, setCardName] = useState(order.customer.fullName || 'Authorized Cardholder');
+  const [cardName, setCardName] = useState(order?.customer?.fullName || 'Authorized Cardholder');
   const [testScenario, setTestScenario] = useState<
     'success' | 'declined' | 'timeout' | '3ds_failed' | 'user_cancelled'
   >('success');
@@ -94,6 +92,8 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
     }
     load();
   }, []);
+
+  if (!isOpen) return null;
 
   // Initialize Payment Intent on the Server
   const handleStartPayment = async () => {

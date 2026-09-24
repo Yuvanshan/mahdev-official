@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   TrendingUp,
   DollarSign,
@@ -33,6 +33,8 @@ import { TimeRangeFilter, ExecutiveReportData } from '../../types/analytics';
 import { Button } from '../../components/ui/Button';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { formatCurrency, getCurrencySymbol } from '../../utils/currency';
+import { firestoreOrdersService } from '../../services/firestore/orders';
+import { firestoreBookingsService } from '../../services/firestore/bookings';
 
 interface AdminAnalyticsViewProps {
   onNavigateSection: (sectionId: string) => void;
@@ -45,10 +47,13 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
   onNavigateSection,
   onNavigateSite,
 }) => {
-  const { siteSettings } = useFirestoreDataContext();
+  const { siteSettings, products, services, isInitialLoading } = useFirestoreDataContext();
   const currentCurrency = siteSettings?.currency || 'LKR';
   const currencySymbol = getCurrencySymbol(currentCurrency);
 
+  const [orders, setOrders] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [loadingRecords, setLoadingRecords] = useState<boolean>(true);
   const [timeRange, setTimeRange] = useState<TimeRangeFilter>('30d');
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [report, setReport] = useState<ExecutiveReportData | null>(null);
@@ -57,18 +62,50 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [hoveredDataPoint, setHoveredDataPoint] = useState<number | null>(null);
 
-  const fetchReport = () => {
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingRecords(true);
+    Promise.all([
+      firestoreOrdersService.getOrders({ limit: 500 }),
+      firestoreBookingsService.getBookings({ limit: 500 }),
+    ])
+      .then(([ordersRes, bookingsRes]) => {
+        if (!isMounted) return;
+        setOrders(Array.isArray(ordersRes) ? ordersRes : (ordersRes as any).orders || []);
+        setBookings(Array.isArray(bookingsRes) ? bookingsRes : (bookingsRes as any).bookings || []);
+      })
+      .catch((err) => {
+        console.error('Failed to load live analytics records:', err);
+      })
+      .finally(() => {
+        if (isMounted) setLoadingRecords(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const fetchReport = useCallback(() => {
     setIsLoading(true);
-    setTimeout(() => {
-      const data = analyticsService.getExecutiveReport(timeRange, currentCurrency);
+    try {
+      const data = analyticsService.getExecutiveReport(
+        timeRange,
+        currentCurrency,
+        orders,
+        bookings,
+        products,
+        services
+      );
       setReport(data);
+    } finally {
       setIsLoading(false);
-    }, 120);
-  };
+    }
+  }, [timeRange, currentCurrency, orders, bookings, products, services]);
 
   useEffect(() => {
     fetchReport();
-  }, [timeRange, currentCurrency]);
+  }, [fetchReport]);
 
   const handleExport = (type: 'revenue' | 'orders' | 'bookings' | 'products' | 'services' | 'divisions') => {
     setIsExporting(true);
@@ -77,11 +114,30 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
     setTimeout(() => setIsExporting(false), 500);
   };
 
-  if (isLoading && !report) {
+  if ((isInitialLoading || isLoading || loadingRecords) && !report) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <RefreshCw className="w-8 h-8 text-[#0052FF] animate-spin mb-3" />
-        <p className="text-slate-600 text-sm font-medium">Aggregating telemetry & financial metrics...</p>
+      <div className="space-y-6 animate-pulse">
+        {/* Header Shimmer */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="h-4 w-28 bg-slate-200 rounded-full" />
+            <div className="h-7 w-64 bg-slate-200 rounded-lg" />
+            <div className="h-4 w-80 bg-slate-200 rounded-md" />
+          </div>
+          <div className="h-10 w-48 bg-slate-200 rounded-xl" />
+        </div>
+        {/* KPI Cards Shimmer */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 space-y-3">
+              <div className="h-3 w-16 bg-slate-200 rounded-sm" />
+              <div className="h-6 w-24 bg-slate-200 rounded-md" />
+              <div className="h-3 w-20 bg-slate-200 rounded-sm" />
+            </div>
+          ))}
+        </div>
+        {/* Main Chart Shimmer */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 h-80" />
       </div>
     );
   }
@@ -89,6 +145,8 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
   if (!report) return null;
 
   const hasRealAnalytics =
+    (orders && orders.length > 0) ||
+    (bookings && bookings.length > 0) ||
     report.dailyTrends.some((point) => point.revenue > 0 || point.orders > 0 || point.bookings > 0 || point.visitors > 0) ||
     report.divisionPerformance.some((division) => division.pageViews > 0 || division.bookingsCount > 0 || division.ordersCount > 0 || division.grossRevenue > 0) ||
     report.topProducts.some((product) => product.unitsSold > 0 || product.views > 0 || product.cartAdds > 0) ||

@@ -90,6 +90,19 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
           cardHighlight: (d as any).cardHighlight || config.cardHighlight || '',
         });
       }
+
+      if (result.length < 5) {
+        for (const defaultDiv of DIVISION_LIST) {
+          if (!seen.has(defaultDiv.id)) {
+            seen.add(defaultDiv.id);
+            result.push({
+              ...defaultDiv,
+              isComingSoon: defaultDiv.id === 'it' || defaultDiv.id === 'travels' || defaultDiv.id === 'mart',
+            });
+          }
+        }
+      }
+
       return result;
     }
     return DIVISION_LIST.map((item) => ({

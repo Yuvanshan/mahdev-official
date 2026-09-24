@@ -186,6 +186,35 @@ export const AdminDivisionsView: React.FC = () => {
       includeDeleted: statusFilter === 'deleted' || statusFilter === 'all',
     });
 
+    const seenDivKeys = new Set(data.map((d) => d.divisionKey || normalizeDivisionId(d.id || '').shortId));
+    // If any from firestoreDivisions is missing from data, convert and add it
+    for (const fd of (firestoreDivisions || [])) {
+      const { shortId } = normalizeDivisionId(fd.id || fd.slug || '');
+      if (shortId && !seenDivKeys.has(shortId)) {
+        seenDivKeys.add(shortId);
+        data.push({
+          id: `div-${shortId}`,
+          divisionKey: shortId as any,
+          name: fd.name,
+          shortName: fd.shortName || fd.name,
+          order: typeof fd.order === 'number' ? fd.order : 99,
+          tagline: fd.tagline || fd.shortDescription || '',
+          description: fd.description || '',
+          badge: fd.badge || fd.name,
+          route: fd.route || `/${shortId}`,
+          heroImageUrl: fd.heroImageUrl || fd.imageUrl || '',
+          heroVideoUrl: fd.heroVideoUrl || fd.videoUrl || '',
+          isComingSoon: !!(fd.isComingSoon || fd.comingSoon),
+          comingSoon: !!(fd.isComingSoon || fd.comingSoon),
+          status: fd.status as any,
+          isActive: fd.status !== 'inactive',
+          isDeleted: fd.status === 'inactive',
+          createdAt: fd.createdAt || new Date().toISOString(),
+          updatedAt: fd.updatedAt || new Date().toISOString(),
+        } as any);
+      }
+    }
+
     // Merge with latest Firestore state
     const merged = data.map((d) => {
       const canonicalKey =

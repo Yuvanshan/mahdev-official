@@ -13,9 +13,10 @@ import {
   DisplayGalleryItem,
   matchGalleryItem,
   resolveMediaAssetSku,
-  synthesizeInquiryItemFromParams,
 } from '../utils/itemLookup';
 import { InquiredItemSpotlight } from '../components/common/InquiredItemSpotlight';
+import { InquiredItemShimmer } from '../components/common/InquiredItemShimmer';
+import { InquiryItemNotFound } from '../components/common/InquiryItemNotFound';
 
 interface GalleryPageViewProps {
   onNavigate: (route: string) => void;
@@ -23,13 +24,24 @@ interface GalleryPageViewProps {
 }
 
 export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, initialSku }) => {
-  const { gallery, mediaAssets } = useFirestoreDataContext();
+  const { gallery, mediaAssets, isInitialLoading, isFetching, isReady } = useFirestoreDataContext();
   const [activeItem, setActiveItem] = useState<DisplayGalleryItem | null>(null);
   const [inquiredItem, setInquiredItem] = useState<DisplayGalleryItem | null>(null);
   const [showFullGallery, setShowFullGallery] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
+
+  // Read target query from prop or URL
+  const targetQuery = useMemo(() => {
+    if (initialSku) return initialSku.trim();
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get('sku') || params.get('id') || params.get('item');
+      if (q && q.trim()) return q.trim();
+    }
+    return null;
+  }, [initialSku]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -163,31 +175,18 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
     return items;
   }, [gallery, mediaAssets]);
 
-  // Check URL or prop for initialSku to resolve customer-inquired item
+  // Check URL or prop for targetQuery to resolve customer-inquired item
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const targetQuery = initialSku || params.get('sku') || params.get('id') || params.get('item');
-
-    if (targetQuery && allItems.length > 0) {
+    if (!targetQuery) return;
+    if (allItems.length > 0) {
       const match = matchGalleryItem(allItems, targetQuery);
       if (match) {
         setInquiredItem(match);
         setActiveItem(match);
         setShowFullGallery(false);
-        return;
       }
     }
-
-    // Fallback: Check if params contain direct inquiry data
-    if (params.get('title') || params.get('sku') || params.get('image')) {
-      const synth = synthesizeInquiryItemFromParams(params);
-      if (synth) {
-        setInquiredItem(synth);
-        setActiveItem(synth);
-        setShowFullGallery(false);
-      }
-    }
-  }, [initialSku, allItems]);
+  }, [targetQuery, allItems]);
 
   const categories = useMemo<string[]>(() => {
     const set = new Set<string>();
@@ -224,15 +223,38 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
     });
   };
 
-  // If customer is viewing a specific inquired item from WhatsApp or direct link,
-  // isolate and show ONLY that specific inquired item!
-  if (inquiredItem && !showFullGallery) {
+  // If customer is navigating to a specific inquired item from a link:
+  if (targetQuery && !showFullGallery) {
+    // 1. Display shimmer while Firestore data is actively loading
+    if (isInitialLoading || (allItems.length === 0 && isFetching)) {
+      return (
+        <div className="min-h-screen bg-slate-50 pt-20">
+          <InquiredItemShimmer />
+        </div>
+      );
+    }
+
+    // 2. Display exact item retrieved from Firestore
+    if (inquiredItem) {
+      return (
+        <div className="min-h-screen bg-slate-50 pt-20">
+          <InquiredItemSpotlight
+            item={inquiredItem}
+            totalGalleryCount={allItems.length}
+            onClearSingleItemMode={() => setShowFullGallery(true)}
+            onNavigate={onNavigate}
+          />
+          <CallToActionSection />
+        </div>
+      );
+    }
+
+    // 3. Document not found in Firestore: Show clean not found state, NEVER fake data
     return (
       <div className="min-h-screen bg-slate-50 pt-20">
-        <InquiredItemSpotlight
-          item={inquiredItem}
-          totalGalleryCount={allItems.length}
-          onClearSingleItemMode={() => setShowFullGallery(true)}
+        <InquiryItemNotFound
+          query={targetQuery}
+          onBrowseAll={() => setShowFullGallery(true)}
           onNavigate={onNavigate}
         />
         <CallToActionSection />

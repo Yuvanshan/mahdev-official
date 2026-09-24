@@ -11,6 +11,8 @@ import {
 import { catalogService } from '../services/catalogService';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
+import { InquiredItemShimmer } from '../components/common/InquiredItemShimmer';
+import { InquiryItemNotFound } from '../components/common/InquiryItemNotFound';
 import { normalizeCode } from '../utils/itemLookup';
 import { deriveLookupSku } from '../utils/whatsapp';
 
@@ -48,6 +50,16 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   const [showFullCatalog, setShowFullCatalog] = useState<boolean>(false);
   const pageSize = 8;
 
+  const targetSkuOrId = useMemo(() => {
+    if (initialProductId) return initialProductId;
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get('sku') || params.get('id') || params.get('product');
+      if (q && q.trim()) return q.trim();
+    }
+    return null;
+  }, [initialProductId]);
+
   // Selected product for modal inspection
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(() => {
     if (initialProductId) {
@@ -62,8 +74,6 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
 
   // Sync selected product when query params (e.g. ?sku=...) or initialProductId change
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const targetSkuOrId = initialProductId || params.get('sku') || params.get('id') || params.get('product');
     if (!targetSkuOrId) return;
 
     const clean = targetSkuOrId.trim().toLowerCase();
@@ -89,7 +99,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
       setInquiredProduct(found);
       setShowFullCatalog(false);
     }
-  }, [initialProductId, firestoreProducts]);
+  }, [targetSkuOrId, firestoreProducts]);
 
   // Query categories for active filters
   const categories = useMemo(() => {
@@ -130,6 +140,31 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   const isSingleItemMode = Boolean(inquiredProduct && !showFullCatalog);
   const displayedProducts = isSingleItemMode && inquiredProduct ? [inquiredProduct] : paginatedResult.items;
   const displayedTotal = isSingleItemMode ? 1 : paginatedResult.total;
+
+  // If customer is navigating to a specific product query from a link:
+  if (targetSkuOrId && !showFullCatalog) {
+    // 1. Shimmer state while Firestore data is actively loading
+    if (isInitialLoading || (firestoreProducts.length === 0 && isFetching)) {
+      return (
+        <div className="min-h-screen bg-neutral-50 flex flex-col pt-16">
+          <InquiredItemShimmer />
+        </div>
+      );
+    }
+
+    // 2. Product not located in Firestore after query completed
+    if (!inquiredProduct) {
+      return (
+        <div className="min-h-screen bg-neutral-50 flex flex-col pt-16">
+          <InquiryItemNotFound
+            query={targetSkuOrId}
+            onBrowseAll={() => setShowFullCatalog(true)}
+            onNavigate={onNavigate}
+          />
+        </div>
+      );
+    }
+  }
 
   return (
     <div className="min-h-screen bg-neutral-50 flex flex-col">

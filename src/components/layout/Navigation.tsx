@@ -92,6 +92,18 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
           isPrimary: (config as any).isPrimary || canonicalId === 'sws',
         });
       }
+      // Guarantee all 5 divisions are present in navigation
+      if (result.length < 5) {
+        for (const defaultDiv of Object.values(DIVISIONS)) {
+          if (!seen.has(defaultDiv.id)) {
+            seen.add(defaultDiv.id);
+            result.push({
+              ...defaultDiv,
+              isPrimary: defaultDiv.id === 'sws',
+            });
+          }
+        }
+      }
       return result;
     }
     return Object.values(DIVISIONS);

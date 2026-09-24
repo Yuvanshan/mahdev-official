@@ -150,10 +150,6 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
     ? (firestoreDiv as any)?.status === 'coming_soon'
     : isDefaultComingSoon;
 
-  if (isComingSoon) {
-    return <DivisionComingSoonView divisionId={divisionId} onNavigate={onNavigate} />;
-  }
-
   // Live Firestore services matching this division
   const liveDivisionServices = useMemo(() => {
     return services.filter(
@@ -263,6 +259,10 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
     serviceInterest: division.coreServices[0]?.title || 'General Consultation',
     requirements: '',
   });
+
+  if (isComingSoon) {
+    return <DivisionComingSoonView divisionId={divisionId} onNavigate={onNavigate} />;
+  }
 
   const handleInquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();

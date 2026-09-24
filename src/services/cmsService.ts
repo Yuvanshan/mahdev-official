@@ -32,6 +32,7 @@ import {
   firestoreTrustedCompaniesService,
   firestoreTestimonialsService,
 } from './firestore';
+import { sortDivisions, normalizeDivisionId } from './firestore/divisions';
 import { safeStorage } from '../utils/safeStorage';
 
 const CMS_STORAGE_PREFIX = 'mahdev_cms_v1_';
@@ -224,9 +225,10 @@ class CmsService {
     const now = new Date().toISOString();
 
     if (entity === 'divisions') {
-      mapped = rawItems.map((d) => {
-        const divKey: DivisionId =
-          d.id === 'u1-studio' ? 'u1' : d.id === 'it-solutions' ? 'it' : d.id === 'online-mart' ? 'mart' : (d.id as DivisionId);
+      const ensuredList = sortDivisions(rawItems);
+      mapped = ensuredList.map((d) => {
+        const { shortId } = normalizeDivisionId(d.id || d.slug || '');
+        const divKey: DivisionId = (shortId || 'sws') as DivisionId;
         const fallbackConfig = DIVISIONS[divKey] || DIVISIONS.sws;
 
         const resolvedVideo = d.heroVideoUrl || d.videoUrl || d.hero?.videoUrl || '';
@@ -871,7 +873,21 @@ class CmsService {
 
   // Generic Get All with filtering, search, sorting, and soft deletion toggle
   public getAll<T = any>(entity: CmsEntityType, options?: CmsFilterOptions): T[] {
-    const list: any[] = this.cache[entity] || [];
+    let list: any[] = this.cache[entity] || [];
+
+    // Safety net for divisions: If divisions cache has fewer than 5 divisions, ensure all 5 canonical divisions exist
+    if (entity === 'divisions' && list.length < 5) {
+      const canonicalDefaults = this.getSeedDataForEntity('divisions');
+      const seen = new Set(list.map((d) => d.divisionKey || normalizeDivisionId(d.id || '').shortId));
+      for (const def of canonicalDefaults) {
+        if (!seen.has(def.divisionKey)) {
+          list.push(def);
+        }
+      }
+      list.sort((a, b) => (a.order || 99) - (b.order || 99));
+      this.cache['divisions'] = list;
+    }
+
     let results = [...list];
 
     // Filter soft deleted by default unless requested

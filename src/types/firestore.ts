@@ -26,6 +26,7 @@ export type DivisionId = 'sws' | 'u1-studio' | 'it-solutions' | 'travels' | 'onl
 export interface FirestoreDivision {
   id: DivisionId | string;
   divisionKey?: string;
+  canonicalDocId?: string;
   name: string;
   slug: string;
   shortDescription?: string;
@@ -570,6 +571,7 @@ export interface FirestoreMilestone {
   id: string;
   year: string;
   title: string;
+  subtitle?: string;
   description: string;
   imageUrl?: string;
   icon?: string;

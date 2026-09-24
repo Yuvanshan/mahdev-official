@@ -32,6 +32,7 @@ import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
 import { ServicesSectionShimmer } from '../components/common/ServicesSectionShimmer';
 import { DIVISIONS, DIVISION_LIST } from '../config/divisions';
 import { DivisionId } from '../types';
+import { normalizeDivisionId } from '../services/firestore/divisions';
 import { openWhatsAppInquiry } from '../utils/whatsapp';
 import { getRentalAssetCount } from '../utils/assetMetrics';
 
@@ -45,14 +46,11 @@ const ServiceCardItem: React.FC<{
   idx: number;
   onNavigate: (route: string) => void;
 }> = ({ service, idx, onNavigate }) => {
-  const [activeImgIdx, setActiveImgIdx] = useState(0);
-
-  const serviceImages: string[] = useMemo(() => {
+  const serviceImage: string = useMemo(() => {
     if (Array.isArray(service.images) && service.images.length > 0) {
-      return service.images.filter(Boolean).slice(0, 5);
+      return service.images[0];
     }
-    const single = service.imageUrl || service.image;
-    return single ? [single] : [];
+    return service.imageUrl || service.image || '';
   }, [service]);
 
   const divId = (service.divisionId || service.division || 'sws') as DivisionId;
@@ -64,147 +62,106 @@ const ServiceCardItem: React.FC<{
     (divId ? String(divId).toUpperCase() : 'ENTERPRISE');
 
   return (
-    <div className="min-w-[85vw] sm:min-w-0 snap-center shrink-0 sm:shrink">
-      <ScrollReveal direction="up" delay={idx * 0.04}>
-        <TiltCard maxTilt={5} className="h-full">
-          <div className="group relative flex flex-col justify-between rounded-2xl bg-white border border-purple-100/90 p-5 sm:p-6 shadow-xs hover:border-purple-400 hover:shadow-xl hover:shadow-purple-500/5 transition-all duration-300 h-full">
-            {service.popular && (
-              <div className="absolute top-4 right-4 z-10">
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-semibold shadow-xs">
-                  <Sparkles className="w-3 h-3 text-amber-500" />
-                  Popular
-                </span>
+    <div className="w-full">
+      <div className="group relative flex flex-col md:flex-row gap-6 justify-between rounded-2xl bg-white border border-slate-200/90 p-5 sm:p-6 shadow-2xs hover:border-blue-400 hover:shadow-md transition-all duration-200">
+        {/* Service Photo - Clean, without overlay badges or clutter */}
+        {serviceImage && (
+          <div className="w-full md:w-64 lg:w-72 h-48 rounded-xl overflow-hidden bg-slate-100 border border-slate-200/80 shrink-0">
+            <img
+              src={serviceImage}
+              alt={service.title || service.name}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-102"
+              loading="lazy"
+            />
+          </div>
+        )}
+
+        {/* Service Information */}
+        <div className="flex-1 flex flex-col justify-between min-w-0">
+          <div>
+            {/* Division / Category Indicator */}
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
+                {service.category || divisionBadgeText}
+              </span>
+            </div>
+
+            {/* Service Title */}
+            <h3 className="font-display text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
+              {service.title || service.name}
+            </h3>
+
+            {/* Clean Description */}
+            <p className="text-sm text-slate-600 leading-relaxed mb-4">
+              {service.description}
+            </p>
+
+            {/* Key Features List */}
+            {service.features && service.features.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4 pt-3 border-t border-slate-100">
+                {service.features.map((feature: string, fIdx: number) => (
+                  <div key={fIdx} className="flex items-start gap-2 text-xs text-slate-700">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                    <span className="leading-snug">{feature}</span>
+                  </div>
+                ))}
               </div>
             )}
+          </div>
 
+          {/* Card Footer Actions */}
+          <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
             <div>
-              {/* Multi-Image Display (Max 5 images) */}
-              {serviceImages.length > 0 && (
-                <div className="relative mb-4 rounded-xl overflow-hidden aspect-[16/10] bg-purple-50/50 border border-purple-100">
-                  <img
-                    src={serviceImages[activeImgIdx] || serviceImages[0]}
-                    alt={service.title || service.name}
-                    className="w-full h-full object-cover transition-all duration-300"
-                  />
-                  {serviceImages.length > 1 && (
-                    <>
-                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/60 backdrop-blur-xs px-2 py-1 rounded-full z-10">
-                        {serviceImages.map((_, dIdx) => (
-                          <button
-                            key={dIdx}
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveImgIdx(dIdx);
-                            }}
-                            className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                              activeImgIdx === dIdx ? 'w-4 bg-purple-400' : 'w-1.5 bg-white/60 hover:bg-white'
-                            }`}
-                            title={`Photo ${dIdx + 1}`}
-                          />
-                        ))}
-                      </div>
-                      <span className="absolute top-2 left-2 bg-black/60 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full backdrop-blur-xs">
-                        {activeImgIdx + 1} / {serviceImages.length}
-                      </span>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {/* Division & Category Badges */}
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                  <IconRenderer name={service.iconName || 'Sparkles'} className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-purple-700 block">
-                    {divisionBadgeText}
-                  </span>
-                  <span className="text-xs text-slate-500">
-                    {service.badge || 'Enterprise Grade'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Service Title */}
-              <h3 className="font-display text-lg font-bold text-slate-900 mb-2 group-hover:text-purple-700 transition-colors">
-                {service.title || service.name}
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed mb-4">
-                {service.description}
-              </p>
-
-              {/* Key Features */}
-              {service.features && service.features.length > 0 && (
-                <div className="space-y-1.5 mb-5 pt-3 border-t border-purple-50">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                    What's Included:
-                  </span>
-                  {service.features.slice(0, 4).map((feature: string, fIdx: number) => (
-                    <div key={fIdx} className="flex items-start gap-2 text-xs text-slate-700">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-purple-600 shrink-0 mt-0.5" />
-                      <span className="leading-snug">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <span className="text-xs text-slate-500 block">Pricing / SLA</span>
+              <span className="text-sm font-bold text-slate-900">
+                {service.turnaroundTime ||
+                  (service.startingPrice || service.price
+                    ? `LKR ${(service.startingPrice || service.price).toLocaleString()}`
+                    : 'Custom Scope')}
+              </span>
             </div>
 
-            {/* Card Footer Actions */}
-            <div className="pt-4 border-t border-purple-50 space-y-3">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500 font-medium">Pricing / SLA:</span>
-                <span className="font-bold text-slate-900">
-                  {service.turnaroundTime ||
-                    (service.startingPrice || service.price
-                      ? `LKR ${(service.startingPrice || service.price).toLocaleString()}`
-                      : 'Custom Scope')}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-3 gap-1.5">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onNavigate(divRoute)}
-                  className="text-[11px] px-2 cursor-pointer justify-center"
-                >
-                  Division
-                </Button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    openWhatsAppInquiry({
-                      title: service.title || service.name,
-                      category: service.category,
-                      divisionName: divisionBadgeText,
-                      imageUrl: serviceImages[activeImgIdx] || serviceImages[0],
-                      price: service.startingPrice || service.price,
-                      description: service.description,
-                      type: 'service',
-                    });
-                  }}
-                  title="Send WhatsApp inquiry with image to 0750928078"
-                  className="inline-flex items-center justify-center gap-1 text-[11px] font-bold text-white bg-[#25D366] hover:bg-[#20bd5a] px-2 py-1.5 rounded-xl transition-all cursor-pointer active:scale-95"
-                >
-                  <MessageCircle className="w-3.5 h-3.5 fill-white/20 shrink-0" />
-                  <span>WhatsApp</span>
-                </button>
-                <Button
-                  size="sm"
-                  variant="electric"
-                  onClick={() => onNavigate(`/book/service/${service.id}`)}
-                  rightIcon={<Calendar className="w-3 h-3" />}
-                  className="text-[11px] px-2 cursor-pointer justify-center"
-                >
-                  Book
-                </Button>
-              </div>
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onNavigate(divRoute)}
+                className="text-xs px-3 cursor-pointer"
+              >
+                Division Details
+              </Button>
+              <button
+                type="button"
+                onClick={() => {
+                  openWhatsAppInquiry({
+                    title: service.title || service.name,
+                    category: service.category,
+                    divisionName: divisionBadgeText,
+                    imageUrl: serviceImage,
+                    price: service.startingPrice || service.price,
+                    description: service.description,
+                    type: 'service',
+                  });
+                }}
+                title="Send WhatsApp inquiry"
+                className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-[#25D366] hover:bg-[#20bd5a] px-3.5 py-2 rounded-xl transition-all cursor-pointer active:scale-95 shadow-2xs"
+              >
+                <MessageCircle className="w-4 h-4 fill-white/20 shrink-0" />
+                <span>WhatsApp</span>
+              </button>
+              <Button
+                size="sm"
+                variant="electric"
+                onClick={() => onNavigate(`/book/service/${service.id}`)}
+                rightIcon={<Calendar className="w-3.5 h-3.5" />}
+                className="text-xs px-3.5 cursor-pointer font-bold"
+              >
+                Book
+              </Button>
             </div>
           </div>
-        </TiltCard>
-      </ScrollReveal>
+        </div>
+      </div>
     </div>
   );
 };
@@ -213,7 +170,8 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
   onNavigate,
   initialDivision = 'all',
 }) => {
-  const [selectedDivision, setSelectedDivision] = useState<DivisionId | 'all'>(initialDivision);
+  const [selectedDivision, setSelectedDivision] = useState<DivisionId | 'all Western' | 'all'>(initialDivision);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const { services, companySettings, siteSettings, divisions, products, isInitialLoading, isFetching } = useFirestoreDataContext();
 
@@ -242,34 +200,75 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
     );
   }
 
+  const activeServices = useMemo(() => {
+    return services.filter((s) => (s as any).status !== 'archived');
+  }, [services]);
+
   const orderedDivisions = React.useMemo(() => {
     if (divisions && divisions.length > 0) {
-      return divisions
-        .filter((d) => d.status !== 'inactive')
-        .map((d) => {
-          const config = (DIVISIONS as any)[d.id] || DIVISION_LIST.find((item) => item.id === d.id) || {};
-          return {
-            ...config,
-            id: d.id,
-            name: d.name || config.name,
-            shortName: config.shortName || d.name,
-            tagline: d.hero?.subtitle || config.tagline || '',
-            route: config.route || `/${d.slug || d.id}`,
-            iconName: config.iconName || 'Building',
-          };
+      const seen = new Set<string>();
+      const list = [];
+      for (const d of divisions) {
+        if (d.status === 'inactive') continue;
+        const shortId = normalizeDivisionId(d.id || d.slug || '').shortId;
+        if (!shortId || seen.has(shortId)) continue;
+        seen.add(shortId);
+
+        const config = (DIVISIONS as any)[shortId] || DIVISION_LIST.find((item) => item.id === shortId) || {};
+        list.push({
+          ...config,
+          id: shortId,
+          name: d.name || config.name,
+          shortName: config.shortName || d.name,
+          tagline: d.hero?.subtitle || config.tagline || '',
+          route: config.route || `/${d.slug || shortId}`,
+          iconName: config.iconName || 'Building',
         });
+      }
+
+      if (list.length < 5) {
+        for (const defaultItem of DIVISION_LIST) {
+          if (!seen.has(defaultItem.id)) {
+            seen.add(defaultItem.id);
+            list.push(defaultItem);
+          }
+        }
+      }
+      return list;
     }
     return DIVISION_LIST;
   }, [divisions]);
 
-  const activeServices = useMemo(() => {
-    return services.filter((s) => (s as any).status !== 'archived');
-  }, [services]);
+  // Extract real available categories for current division filter
+  const availableCategories = useMemo(() => {
+    const set = new Set<string>();
+    activeServices.forEach((s) => {
+      const divMatch = selectedDivision === 'all' || (s.divisionId || s.division) === selectedDivision;
+      if (divMatch) {
+        const cat = s.category || (s as any).categoryId;
+        if (cat && typeof cat === 'string' && cat.trim()) {
+          set.add(cat.trim());
+        }
+      }
+    });
+    return Array.from(set);
+  }, [activeServices, selectedDivision]);
+
+  // When division changes, reset category selection to 'all'
+  const handleSelectDivision = (divId: DivisionId | 'all') => {
+    setSelectedDivision(divId);
+    setSelectedCategory('all');
+  };
 
   const filteredServices = useMemo(() => {
     return activeServices.filter((srv) => {
       const div = (srv.divisionId || srv.division || '') as DivisionId;
       const matchesDivision = selectedDivision === 'all' || div === selectedDivision;
+      const matchesCategory =
+        selectedCategory === 'all' ||
+        srv.category === selectedCategory ||
+        (srv as any).categoryId === selectedCategory;
+
       const query = searchQuery.toLowerCase().trim();
       const matchesQuery =
         !query ||
@@ -285,9 +284,9 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
         ) ||
         srv.features?.some((f) => f.toLowerCase().includes(query));
 
-      return matchesDivision && matchesQuery;
+      return matchesDivision && matchesCategory && matchesQuery;
     });
-  }, [activeServices, selectedDivision, searchQuery]);
+  }, [activeServices, selectedDivision, selectedCategory, searchQuery]);
 
   const divisionTabs: { id: DivisionId | 'all'; label: string; count: number }[] = [
     { id: 'all', label: 'All Services', count: activeServices.length },
@@ -348,57 +347,93 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
         </ScrollReveal>
       </SectionContainer>
 
-      {/* 2. Filter & Search Bar with Mobile Horizontal Scroll */}
+      {/* 2. Filter & Category Bar */}
       <SectionContainer background="white" paddingY="md" hasBorderBottom>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          {/* Division Filter Pills - Horizontal Scroll on Mobile */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-2 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 flex-nowrap md:flex-wrap">
-            {divisionTabs.map((tab) => (
-              <button
-                key={tab.id}
-                id={`services-filter-tab-${tab.id}`}
-                onClick={() => setSelectedDivision(tab.id)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
-                  selectedDivision === tab.id
-                    ? 'bg-[#0052FF] text-white shadow-md shadow-blue-500/20'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 hover:text-slate-900'
-                }`}
-              >
-                <span>{tab.label}</span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                    selectedDivision === tab.id ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {/* Division Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-2 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 flex-nowrap md:flex-wrap">
+              {divisionTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  id={`services-filter-tab-${tab.id}`}
+                  onClick={() => handleSelectDivision(tab.id as any)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
+                    selectedDivision === tab.id
+                      ? 'bg-[#0052FF] text-white shadow-md shadow-blue-500/20'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 hover:text-slate-900'
                   }`}
                 >
-                  {tab.count}
-                </span>
-              </button>
-            ))}
+                  <span>{tab.label}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                      selectedDivision === tab.id ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Search Field */}
+            <div className="relative min-w-[240px] max-w-sm w-full">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search services or features..."
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-[#0052FF] focus:bg-white transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Search Field */}
-          <div className="relative min-w-[240px] max-w-sm w-full">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search services or features..."
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-[#0052FF] focus:bg-white transition-all"
-            />
-            {searchQuery && (
+          {/* Sub-Category Filter Pills: Clean web view selection */}
+          {availableCategories.length > 0 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-2 border-t border-slate-100 flex-nowrap sm:flex-wrap">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mr-1 shrink-0">
+                Categories:
+              </span>
               <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600"
+                type="button"
+                onClick={() => setSelectedCategory('all')}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
+                  selectedCategory === 'all'
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
+                }`}
               >
-                Clear
+                All ({filteredServices.length})
               </button>
-            )}
-          </div>
+              {availableCategories.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
+                    selectedCategory === cat
+                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </SectionContainer>
 
-      {/* 3. Services Grid / Mobile Horizontal Swipe Track */}
+      {/* 3. Services Clean Web View: Displayed One by One */}
       <SectionContainer background="white" paddingY="xl" hasBorderBottom>
         {filteredServices.length === 0 ? (
           <div className="text-center py-16 px-4 max-w-md mx-auto space-y-4">
@@ -406,10 +441,12 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
               <Sparkles className="w-7 h-7" />
             </div>
             <h3 className="font-display text-xl font-bold text-slate-900">
-              No matching services found
+              No services found
             </h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              We couldn't find any services matching "{searchQuery}". Try clearing your search query or selecting a different division tab.
+              {searchQuery
+                ? `We couldn't find any services matching "${searchQuery}".`
+                : 'No services are currently listed in this category.'}
             </p>
             <Button
               size="sm"
@@ -417,6 +454,7 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
               onClick={() => {
                 setSearchQuery('');
                 setSelectedDivision('all');
+                setSelectedCategory('all');
               }}
             >
               Reset Filters
@@ -428,13 +466,13 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
               <p className="text-xs font-semibold text-slate-500">
                 Showing {filteredServices.length} {filteredServices.length === 1 ? 'service' : 'services'}
               </p>
-              <span className="text-[11px] text-slate-400 sm:hidden">
-                Swipe left / right on mobile →
-              </span>
             </div>
 
-            {/* Responsive Grid on Desktop / Smooth Horizontal Carousel on Mobile */}
-            <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 sm:overflow-visible">
+            {/* Clean one-by-one sequential layout for Web and Mobile with smooth transition */}
+            <div
+              key={`${selectedDivision}-${selectedCategory}`}
+              className="space-y-4 sm:space-y-6 transition-all duration-300"
+            >
               {filteredServices.map((service, idx) => (
                 <ServiceCardItem
                   key={service.id}

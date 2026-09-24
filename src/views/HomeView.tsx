@@ -123,7 +123,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
       rawPageTitle.toLowerCase().includes('corporate eco'));
   const effectivePageTitle = rawPageTitle && !isCorporateTitle ? rawPageTitle : defaultPageTitle;
 
-  const isDataLoading = isInitialLoading || !isLiveHydrated || !divisions || divisions.length === 0;
+  const isDataLoading = (!divisions || divisions.length === 0) && isInitialLoading;
 
   return (
     <div className="w-full flex flex-col pb-24 lg:pb-0">

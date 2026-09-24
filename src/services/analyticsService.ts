@@ -316,12 +316,19 @@ class AnalyticsService {
     } catch {}
   }
 
-  public getExecutiveReport(timeRange: TimeRangeFilter = '30d', targetCurrency: string = 'LKR'): ExecutiveReportData {
+  public getExecutiveReport(
+    timeRange: TimeRangeFilter = '30d',
+    targetCurrency: string = 'LKR',
+    ordersOverride?: any[],
+    bookingsOverride?: any[],
+    productsOverride?: any[],
+    servicesOverride?: any[]
+  ): ExecutiveReportData {
     const rawEvents = this.getRawEvents();
-    const allOrders = orderService.getAllOrders();
-    const allBookings = bookingService.getAllBookings();
-    const allProducts = cmsService.getAll<CmsProduct>('products');
-    const allServices = cmsService.getAll<CmsServiceEntity>('services');
+    const allOrders = ordersOverride !== undefined ? ordersOverride : (orderService.getAllOrders() || []);
+    const allBookings = bookingsOverride !== undefined ? bookingsOverride : (bookingService.getAllBookings() || []);
+    const allProducts = productsOverride !== undefined ? productsOverride : cmsService.getAll<CmsProduct>('products');
+    const allServices = servicesOverride !== undefined ? servicesOverride : cmsService.getAll<CmsServiceEntity>('services');
 
     const curr = (targetCurrency || 'LKR').toUpperCase();
     const currSymbol = getCurrencySymbol(curr);

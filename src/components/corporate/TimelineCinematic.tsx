@@ -69,10 +69,6 @@ export const TimelineCinematic: React.FC<TimelineCinematicProps> = ({ initialDiv
   const { milestones, homepageConfig } = useFirestoreDataContext();
   const [activeMilestoneId, setActiveMilestoneId] = useState<string>('ms-2026');
 
-  if (homepageConfig.milestones && !homepageConfig.milestones.enabled) {
-    return null;
-  }
-
   // Filter ONLY published, non-archived milestones directly from Firestore, or fallback to official
   const sortedMilestones = React.useMemo(() => {
     const published = milestones.filter(
@@ -83,6 +79,10 @@ export const TimelineCinematic: React.FC<TimelineCinematicProps> = ({ initialDiv
     }
     return DEFAULT_MILESTONES;
   }, [milestones]);
+
+  if (homepageConfig.milestones && !homepageConfig.milestones.enabled) {
+    return null;
+  }
 
   // Filter by division if selected
   const filteredMilestones = sortedMilestones.filter((m) => {

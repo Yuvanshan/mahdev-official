@@ -148,6 +148,7 @@ class AdminService {
   }
 
   private restoreSession(): void {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
     try {
       const stored = localStorage.getItem(ADMIN_SESSION_STORAGE_KEY);
       if (stored) {
@@ -161,7 +162,9 @@ class AdminService {
         }
       }
     } catch {
-      localStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+      try {
+        localStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+      } catch {}
     }
   }
 
