@@ -49,20 +49,36 @@ export const firestoreTrustedCompaniesService = {
   async saveTrustedCompany(id: string, data: Partial<FirestoreTrustedCompany>): Promise<void> {
     const docRef = doc(db, 'trustedCompanies', id);
     const payload = sanitizeForFirestore({ ...data, id });
-    await setDoc(docRef, payload, { merge: true });
     if (cachedCompanies) {
       const idx = cachedCompanies.data.findIndex((c) => c.id === id);
       if (idx >= 0) {
         cachedCompanies.data[idx] = { ...cachedCompanies.data[idx], ...payload } as FirestoreTrustedCompany;
+      } else {
+        cachedCompanies.data.unshift(payload as FirestoreTrustedCompany);
       }
+    }
+    try {
+      await Promise.race([
+        setDoc(docRef, payload, { merge: true }),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
+    } catch (err) {
+      console.warn('[Firestore TrustedCompanies] save warning:', err);
     }
   },
 
   async deleteTrustedCompany(id: string): Promise<void> {
     const docRef = doc(db, 'trustedCompanies', id);
-    await deleteDoc(docRef);
     if (cachedCompanies) {
       cachedCompanies.data = cachedCompanies.data.filter((c) => c.id !== id);
+    }
+    try {
+      await Promise.race([
+        deleteDoc(docRef),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
+    } catch (err) {
+      console.warn('[Firestore TrustedCompanies] delete warning:', err);
     }
   },
 

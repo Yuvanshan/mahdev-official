@@ -47,6 +47,8 @@ export const AdminDivisionsView: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'coming_soon' | 'deleted'>('all');
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [logoUploadProgress, setLogoUploadProgress] = useState(0);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Modal States
@@ -192,6 +194,8 @@ export const AdminDivisionsView: React.FC = () => {
       const { shortId } = normalizeDivisionId(fd.id || fd.slug || '');
       if (shortId && !seenDivKeys.has(shortId)) {
         seenDivKeys.add(shortId);
+        const resolvedLogo = fd.logoUrl || (fd as any).logo || '';
+        const resolvedImg = (fd as any).defaultImageUrl || (fd as any).fallbackImageUrl || fd.heroImageUrl || fd.imageUrl || '';
         data.push({
           id: `div-${shortId}`,
           divisionKey: shortId as any,
@@ -202,7 +206,9 @@ export const AdminDivisionsView: React.FC = () => {
           description: fd.description || '',
           badge: fd.badge || fd.name,
           route: fd.route || `/${shortId}`,
-          heroImageUrl: fd.heroImageUrl || fd.imageUrl || '',
+          logoUrl: resolvedLogo,
+          heroImageUrl: resolvedImg,
+          defaultImageUrl: resolvedImg,
           heroVideoUrl: fd.heroVideoUrl || fd.videoUrl || '',
           isComingSoon: !!(fd.isComingSoon || fd.comingSoon),
           comingSoon: !!(fd.isComingSoon || fd.comingSoon),
@@ -246,16 +252,22 @@ export const AdminDivisionsView: React.FC = () => {
             fsMatch.comingSoon ||
             fsMatch.status === 'coming_soon'
         );
-        const resolvedVideo = fsMatch.heroVideoUrl || fsMatch.videoUrl || fsMatch.hero?.videoUrl || d.heroVideoUrl || '';
-        const resolvedImg =
-          fsMatch.defaultImageUrl ||
+        const resolvedVideo = d.heroVideoUrl || fsMatch.heroVideoUrl || fsMatch.videoUrl || fsMatch.hero?.videoUrl || '';
+        const dImg = (d as any).defaultImageUrl || (d as any).fallbackImageUrl || d.heroImageUrl || '';
+        const fsImg =
+          (fsMatch as any).defaultImageUrl ||
+          (fsMatch as any).fallbackImageUrl ||
           fsMatch.heroImageUrl ||
           fsMatch.imageUrl ||
           fsMatch.hero?.defaultImageUrl ||
+          (fsMatch.hero as any)?.fallbackImageUrl ||
           fsMatch.hero?.imageUrl ||
           fsMatch.hero?.bgImage ||
-          d.heroImageUrl ||
           '';
+        const resolvedImg = dImg || fsImg || '';
+        const dLogo = d.logoUrl || (d as any).logo || '';
+        const fsLogo = fsMatch.logoUrl || (fsMatch as any).logo || '';
+        const resolvedLogo = dLogo || fsLogo || '';
 
         return {
           ...d,
@@ -270,6 +282,7 @@ export const AdminDivisionsView: React.FC = () => {
           videoUrl: resolvedVideo,
           heroImageUrl: resolvedImg,
           defaultImageUrl: resolvedImg,
+          logoUrl: resolvedLogo,
           heroMediaType: (fsMatch.heroMediaType || fsMatch.hero?.mediaType || d.heroMediaType || (resolvedVideo ? 'video' : 'image')) as any,
           hero: fsMatch.hero || (d as any).hero,
           isComingSoon,
@@ -322,12 +335,12 @@ export const AdminDivisionsView: React.FC = () => {
     setEditingDivision(null);
     setModalTab('general');
     setFormData({
-      divisionKey: 'sws',
+      divisionKey: '',
       name: '',
       shortName: '',
       tagline: '',
       description: '',
-      badge: '',
+      badge: 'Operating Division',
       route: '',
       logoUrl: '',
       accentColor: '#0052FF',
@@ -382,14 +395,23 @@ export const AdminDivisionsView: React.FC = () => {
     const resolvedMediaType = (div.heroMediaType || (fsMatch as any)?.heroMediaType || (fsMatch?.hero as any)?.mediaType || (resolvedVideoUrl ? 'video' : 'image')) as 'image' | 'video';
     const resolvedImageUrl =
       (fsMatch as any)?.defaultImageUrl ||
+      (fsMatch as any)?.fallbackImageUrl ||
       (fsMatch as any)?.heroImageUrl ||
       (fsMatch as any)?.imageUrl ||
       (fsMatch?.hero as any)?.defaultImageUrl ||
+      (fsMatch?.hero as any)?.fallbackImageUrl ||
       (fsMatch?.hero as any)?.imageUrl ||
       (fsMatch?.hero as any)?.bgImage ||
       (div as any)?.defaultImageUrl ||
+      (div as any)?.fallbackImageUrl ||
       div.heroImageUrl ||
       (div as any)?.imageUrl ||
+      '';
+
+    const resolvedLogoUrl =
+      (fsMatch as any)?.logoUrl ||
+      (fsMatch as any)?.logo ||
+      div.logoUrl ||
       '';
 
     setFormData({
@@ -400,7 +422,7 @@ export const AdminDivisionsView: React.FC = () => {
       description: div.description,
       badge: div.badge,
       route: div.route,
-      logoUrl: div.logoUrl || '',
+      logoUrl: resolvedLogoUrl,
       accentColor: div.accentColor,
       gradient: div.gradient,
       heroHeadline: div.heroHeadline || (fsMatch as any)?.heroHeadline || fsMatch?.hero?.title || '',
@@ -447,6 +469,7 @@ export const AdminDivisionsView: React.FC = () => {
     const errors: Record<string, string> = {};
     if (!formData.name.trim()) errors.name = 'Division Name is required';
     if (!formData.shortName.trim()) errors.shortName = 'Short Name is required';
+    if (!formData.divisionKey.trim()) errors.divisionKey = 'Division Key / ID is required';
     if (!formData.tagline.trim()) errors.tagline = 'Tagline is required';
     if (!formData.route.trim()) errors.route = 'Public URL Route is required';
     if (!formData.contactEmail.trim() || !formData.contactEmail.includes('@')) {
@@ -483,6 +506,30 @@ export const AdminDivisionsView: React.FC = () => {
     } finally {
       setIsUploadingMedia(false);
       setUploadProgress(0);
+      e.target.value = '';
+    }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingLogo(true);
+    setLogoUploadProgress(10);
+    try {
+      addToast('info', 'Uploading Logo', `Uploading brand logo (${(file.size / 1024).toFixed(0)} KB)...`);
+      const url = await uploadMediaAsset(file, (p) => setLogoUploadProgress(p));
+      setFormData((prev) => ({
+        ...prev,
+        logoUrl: url,
+      }));
+      setIsDirty(true);
+      addToast('success', 'Logo Uploaded', 'Division brand logo uploaded and linked.');
+    } catch (err: any) {
+      addToast('error', 'Logo Upload Failed', err.message || 'Could not process logo file.');
+    } finally {
+      setIsUploadingLogo(false);
+      setLogoUploadProgress(0);
       e.target.value = '';
     }
   };
@@ -644,14 +691,35 @@ export const AdminDivisionsView: React.FC = () => {
 
     setIsSaving(true);
     try {
-      const orderNum = Number(formData.order) || 1;
-      const rawKey = (formData.divisionKey || editingDivision?.divisionKey || (editingDivision as any)?.slug || editingDivision?.id || 'sws').toLowerCase();
+      const orderNum = Number(formData.order) || (divisions.length + 1);
+      const autoSlug = (formData.name || 'division')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'division';
+      const rawKey = (
+        formData.divisionKey?.trim() ||
+        editingDivision?.divisionKey ||
+        (editingDivision as any)?.slug ||
+        editingDivision?.id ||
+        autoSlug
+      ).toLowerCase();
       const { canonicalDocId, shortId } = normalizeDivisionId(rawKey);
+
+      const effectiveImage = (formData.heroImageUrl?.trim() || (formData as any).defaultImageUrl?.trim() || '').trim();
+      const effectiveLogo = (formData.logoUrl?.trim() || '').trim();
 
       const payload = {
         ...formData,
+        id: editingDivision?.id || `div-${shortId}`,
         divisionKey: shortId,
         order: orderNum,
+        logoUrl: effectiveLogo,
+        logo: effectiveLogo,
+        heroImageUrl: effectiveImage,
+        defaultImageUrl: effectiveImage,
+        fallbackImageUrl: effectiveImage,
+        imageUrl: effectiveImage,
+        updatedAt: new Date().toISOString(),
       };
 
       // 1. Sync to Firestore
@@ -663,13 +731,16 @@ export const AdminDivisionsView: React.FC = () => {
           tagline: formData.tagline,
           description: formData.description,
           badge: formData.badge,
-          imageUrl: formData.heroImageUrl,
-          heroImageUrl: formData.heroImageUrl,
-          defaultImageUrl: formData.heroImageUrl,
+          imageUrl: effectiveImage,
+          heroImageUrl: effectiveImage,
+          defaultImageUrl: effectiveImage,
+          fallbackImageUrl: effectiveImage,
+          logoUrl: effectiveLogo,
+          logo: effectiveLogo,
           heroVideoUrl: formData.heroVideoUrl,
           videoUrl: formData.heroVideoUrl,
           heroMediaType: formData.heroMediaType,
-          route: formData.route,
+          route: formData.route || `/${shortId}`,
           accentColor: formData.accentColor,
           gradient: formData.gradient,
           heroHeadline: formData.heroHeadline,
@@ -692,29 +763,43 @@ export const AdminDivisionsView: React.FC = () => {
             title: formData.heroHeadline,
             subtitle: formData.heroSubheadline,
             badge: formData.badge,
-            bgImage: formData.heroImageUrl,
-            imageUrl: formData.heroImageUrl,
-            defaultImageUrl: formData.heroImageUrl,
+            bgImage: effectiveImage,
+            imageUrl: effectiveImage,
+            defaultImageUrl: effectiveImage,
+            fallbackImageUrl: effectiveImage,
             videoUrl: formData.heroVideoUrl,
             mediaType: formData.heroMediaType,
+          },
+          seo: {
+            ...formData.seo,
+            keywords: [shortId, formData.name, 'mahdev', 'sri lanka'],
           },
           order: orderNum,
           status: formData.isComingSoon ? 'coming_soon' : (formData.isActive ? 'active' : 'inactive'),
           isPublished: formData.isActive,
           iconName: formData.iconName,
+          updatedAt: new Date().toISOString(),
         });
       }
 
       // 2. Sync to CMS Local Store
+      let savedCmsItem: CmsDivision;
       if (editingDivision) {
-        await cmsService.update<CmsDivision>('divisions', editingDivision.id, payload);
-        addToast('success', 'Division & Video Saved Successfully', `"${formData.name}" division and video settings saved & live on the site.`);
+        savedCmsItem = await cmsService.update<CmsDivision>('divisions', editingDivision.id, payload);
+        addToast('success', 'Division Saved Successfully', `"${formData.name}" division settings saved & live on the site.`);
       } else {
-        await cmsService.create<CmsDivision>('divisions', payload);
-        addToast('success', 'Division & Video Created Successfully', `"${formData.name}" registered & live synced with Firestore.`);
+        savedCmsItem = await cmsService.create<CmsDivision>('divisions', payload);
+        addToast('success', 'Division Created Successfully', `"${formData.name}" registered & live synced with Firestore.`);
       }
+
+      // Immediately update local divisions state with the new item so UI reflects logo and image instantly
+      setDivisions((prev) => {
+        const others = prev.filter((d) => d.id !== payload.id && d.divisionKey !== shortId && d.id !== editingDivision?.id);
+        return [...others, (savedCmsItem || payload) as any].sort((a, b) => (a.order || 99) - (b.order || 99));
+      });
+
       if (refreshAll) {
-        await refreshAll();
+        refreshAll().catch(() => {});
       }
       setVideoSaveSuccessMessage(null);
       setIsDirty(false);
@@ -1120,7 +1205,18 @@ export const AdminDivisionsView: React.FC = () => {
                             style={{ backgroundColor: div.accentColor || '#0052FF' }}
                           >
                             {div.logoUrl ? (
-                              <img src={div.logoUrl} alt={div.name} className="w-full h-full object-cover" />
+                              <img
+                                src={div.logoUrl}
+                                alt={div.name}
+                                className="w-full h-full object-contain p-0.5 bg-white"
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = 'none';
+                                  if ((e.target as HTMLElement).parentElement) {
+                                    (e.target as HTMLElement).parentElement!.textContent =
+                                      div.shortName?.slice(0, 2) || div.name.slice(0, 2);
+                                  }
+                                }}
+                              />
                             ) : (
                               div.shortName?.slice(0, 2) || div.name.slice(0, 2)
                             )}
@@ -1273,7 +1369,26 @@ export const AdminDivisionsView: React.FC = () => {
                     type="text"
                     value={formData.name}
                     onChange={(e) => {
-                      setFormData({ ...formData, name: e.target.value });
+                      const newName = e.target.value;
+                      setFormData((prev) => {
+                        const next = { ...prev, name: newName };
+                        if (!editingDivision) {
+                          if (!prev.shortName || prev.shortName === prev.name) {
+                            next.shortName = newName;
+                          }
+                          const autoSlug = newName
+                            .toLowerCase()
+                            .replace(/[^a-z0-9]+/g, '-')
+                            .replace(/^-+|-+$/g, '');
+                          if (!prev.divisionKey || prev.divisionKey === 'sws') {
+                            next.divisionKey = autoSlug;
+                          }
+                          if (!prev.route || prev.route === `/${prev.divisionKey}`) {
+                            next.route = autoSlug ? `/${autoSlug}` : '';
+                          }
+                        }
+                        return next;
+                      });
                       setIsDirty(true);
                     }}
                     placeholder="e.g. SWS Event Management"
@@ -1300,21 +1415,48 @@ export const AdminDivisionsView: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Division Key / ID</label>
-                  <select
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-semibold text-slate-700">Division Key / ID *</label>
+                    <span className="text-[10px] text-slate-400 font-mono">e.g. sws, agro</span>
+                  </div>
+                  <input
+                    type="text"
                     value={formData.divisionKey}
                     onChange={(e) => {
-                      setFormData({ ...formData, divisionKey: e.target.value as any });
+                      const cleanKey = e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+                      setFormData({
+                        ...formData,
+                        divisionKey: cleanKey,
+                        route: formData.route === `/${formData.divisionKey}` || !formData.route ? `/${cleanKey}` : formData.route,
+                      });
                       setIsDirty(true);
                     }}
-                    className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  >
-                    <option value="sws">sws (Event Management)</option>
-                    <option value="u1">u1 (Studio & Film)</option>
-                    <option value="it">it (IT & Solutions)</option>
-                    <option value="travels">travels (Luxury Travel)</option>
-                    <option value="mart">mart (Online Mart)</option>
-                  </select>
+                    placeholder="e.g. sws, u1, or custom"
+                    className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono text-xs"
+                  />
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {['sws', 'u1', 'it', 'travels', 'mart'].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            divisionKey: preset,
+                            route: `/${preset}`,
+                          });
+                          setIsDirty(true);
+                        }}
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-mono cursor-pointer transition-colors ${
+                          formData.divisionKey === preset
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div>
@@ -1475,28 +1617,74 @@ export const AdminDivisionsView: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block font-semibold text-slate-700">Logo Image URL</label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMediaPickerTarget('logo');
-                        setIsMediaPickerOpen(true);
-                      }}
-                      className="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
-                    >
-                      <ImageIcon className="w-3 h-3" /> Select Media
-                    </button>
+                    <div>
+                      <label className="block font-semibold text-slate-800 text-xs">Division Logo</label>
+                      <p className="text-[10px] text-slate-500">Brand emblem / vector badge (PNG, SVG, JPG)</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className={`text-xs font-semibold hover:underline flex items-center gap-1 ${
+                        isUploadingLogo ? 'text-blue-400 cursor-wait' : 'text-blue-600 cursor-pointer'
+                      }`}>
+                        <Upload className="w-3 h-3" />
+                        {isUploadingLogo ? `Uploading ${logoUploadProgress}%...` : 'Upload Logo'}
+                        <input
+                          type="file"
+                          disabled={isUploadingLogo}
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          className="hidden"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMediaPickerTarget('logo');
+                          setIsMediaPickerOpen(true);
+                        }}
+                        className="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <ImageIcon className="w-3 h-3" /> Media Library
+                      </button>
+                    </div>
                   </div>
                   <input
-                    type="url"
+                    type="text"
                     value={formData.logoUrl}
                     onChange={(e) => {
                       setFormData({ ...formData, logoUrl: e.target.value });
                       setIsDirty(true);
                     }}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full px-3 py-2 border rounded-xl border-slate-200 font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="https://images.unsplash.com/... or /assets/... logo URL"
+                    className="w-full px-3 py-2 border rounded-xl border-slate-200 font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                   />
+                  {formData.logoUrl && (
+                    <div className="mt-2 flex items-center gap-3 p-2 bg-slate-50 rounded-lg border border-slate-200">
+                      <div className="w-12 h-10 bg-white rounded border border-slate-200 p-1 flex items-center justify-center overflow-hidden">
+                        <img
+                          src={formData.logoUrl}
+                          alt="Division Logo"
+                          className="max-h-full max-w-full object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                          }}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-bold text-slate-800 truncate">Brand Logo Attached</p>
+                        <p className="text-[10px] text-slate-500 truncate">{formData.logoUrl}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, logoUrl: '' });
+                          setIsDirty(true);
+                        }}
+                        className="text-[11px] text-red-600 hover:underline cursor-pointer"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div>

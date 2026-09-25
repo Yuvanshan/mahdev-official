@@ -169,6 +169,7 @@ export const AdminPagesView: React.FC = () => {
 
       setIsEditorOpen(false);
       setIsDirty(false);
+      loadPages();
     } catch (err: any) {
       addToast('error', 'Operation Failed', err.message || 'Unable to save page.');
     } finally {

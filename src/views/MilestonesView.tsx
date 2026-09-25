@@ -12,87 +12,25 @@ import { CallToActionSection } from '../components/home/CallToActionSection';
 import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
 import { DEFAULT_OFFICIAL_MILESTONES } from '../services/firestore/milestones';
 
+import { MilestonesTimelineShimmer } from '../components/common/MilestonesTimelineShimmer';
+
 interface MilestonesViewProps {
   onNavigate: (route: string) => void;
 }
 
 export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) => {
-  const { milestones, companySettings, isInitialLoading, isFetching } = useFirestoreDataContext();
+  const { milestones, companySettings, isMilestonesLoading } = useFirestoreDataContext();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  const defaultMilestones = [
-    {
-      year: '2022',
-      title: 'The Beginning',
-      subtitle: 'SWS Event Management',
-      description: 'Started SWS Event Management, marking the beginning of our journey in event management and creative experiences.',
-      badge: 'Foundation',
-      details: [
-        'Established full-service event staging and decor operations',
-        'Built initial core team of event designers and production technicians',
-        'Delivered memorable wedding galas, celebrations, and business gatherings',
-      ],
-      icon: Sparkles,
-    },
-    {
-      year: '2023',
-      title: 'Studio U2 / U1 Studio',
-      subtitle: 'Photography & Creative Media',
-      description: 'Launched Studio U2 (U1 Studio), expanding our services into professional photography, cinematography, and creative media.',
-      badge: 'Creative Media',
-      details: [
-        'State-of-the-art cinema media equipment and professional editing studio',
-        'Specialized wedding cinematography, commercial photography, and aerial filming',
-        'Collaborated with renowned brands and artists across the region',
-      ],
-      icon: Layers,
-    },
-    {
-      year: '2024',
-      title: 'Islandwide Expansion & 500+ Milestone',
-      subtitle: 'Nationwide Service Capabilities',
-      description: 'Expanded our services across Sri Lanka, bringing our expertise and services to clients nationwide. Completed 500+ successful event decorations.',
-      badge: 'National Reach',
-      details: [
-        'Delivered high-profile events across all 9 provinces in Sri Lanka',
-        'Crossed 500+ completed wedding and event staging projects',
-        'Formed strategic vendor partnerships for rapid islandwide deployment',
-      ],
-      icon: MapPin,
-    },
-    {
-      year: '2025',
-      title: 'IT & Solutions Division',
-      subtitle: 'Technology & Digital Transformation',
-      description: 'Introduced IT & Solutions, expanding our capabilities into technology, software, cloud infrastructure, and digital business solutions.',
-      badge: 'Digital Innovation',
-      details: [
-        'Custom enterprise software engineering and responsive web platforms',
-        'Cloud hosting, modern mobile apps, and secure digital workflows',
-        'Expanded client base to fintech, retail, hospitality, and enterprise sectors',
-      ],
-      icon: Code2,
-    },
-    {
-      year: '2026',
-      title: 'Mahdev Pvt Ltd Incorporation & Expansion',
-      subtitle: 'Parent Holding Company & Multi-Division Growth',
-      description: 'Officially registered Mahdev Pvt Ltd as a private company, bringing our growing services and ventures under one unified organization. Opened new Colombo branch, introduced Mahdev Travels, and achieved 1000+ completed projects and 1800+ happy customers.',
-      badge: 'Company Incorporation',
-      details: [
-        'Incorporated Mahdev Pvt Ltd as a formal parent company',
-        'Established secondary headquarters in Colombo alongside Trincomalee office',
-        'Introduced Mahdev Travels for bespoke business and leisure tour curation',
-        'Milestone achievement of 1,000+ projects and 1,800+ satisfied clients',
-      ],
-      icon: Building2,
-    },
-  ];
-
-  const displayMilestones = milestones && milestones.length >= 5 ? milestones : DEFAULT_OFFICIAL_MILESTONES;
+  const displayMilestones = React.useMemo(() => {
+    if (!milestones || milestones.length === 0) return [];
+    return milestones
+      .filter((m) => m.isPublished !== false && m.status !== 'draft' && m.status !== 'archived')
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (Number(a.year) || 0) - (Number(b.year) || 0));
+  }, [milestones]);
 
   return (
     <div className="pt-24 pb-12 bg-white">

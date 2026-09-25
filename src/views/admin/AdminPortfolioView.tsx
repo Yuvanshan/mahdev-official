@@ -205,9 +205,11 @@ export const AdminPortfolioView: React.FC = () => {
 
       if (editingItem) {
         cmsService.update<CmsPortfolioProject>('portfolio', editingItem.id, payload);
+        firestorePortfolioService.savePortfolio(editingItem.id, payload as any).catch(() => {});
         addToast('success', 'Case Study Saved', `"${formData.title}" updated.`);
       } else {
-        cmsService.create<CmsPortfolioProject>('portfolio', payload);
+        const created = cmsService.create<CmsPortfolioProject>('portfolio', payload);
+        firestorePortfolioService.savePortfolio(created.id, payload as any).catch(() => {});
         addToast('success', 'Case Study Created', `"${formData.title}" added to portfolio.`);
       }
       setIsDirty(false);

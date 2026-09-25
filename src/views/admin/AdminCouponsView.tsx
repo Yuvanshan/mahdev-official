@@ -185,6 +185,7 @@ export const AdminCouponsView: React.FC = () => {
 
       setIsEditorOpen(false);
       setIsDirty(false);
+      loadCoupons();
     } catch (err: any) {
       addToast('error', 'Operation Failed', err.message || 'Unable to save coupon.');
     } finally {

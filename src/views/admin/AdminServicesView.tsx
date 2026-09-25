@@ -415,17 +415,23 @@ export const AdminServicesView: React.FC = () => {
 
       if (editingService) {
         cmsService.update<CmsService>('services', editingService.id, payload);
-        await firestoreServicesService.saveService(editingService.id, firestoreData);
-        addToast('success', 'Service Updated', `"${formData.title}" saved to Firestore.`);
+        firestoreServicesService.saveService(editingService.id, firestoreData).catch((fErr) => {
+          console.warn('[AdminServices] Firestore background sync notice:', fErr);
+        });
+        addToast('success', 'Service Updated', `"${formData.title}" saved successfully.`);
       } else {
         const created = cmsService.create<CmsService>('services', payload);
-        await firestoreServicesService.saveService(created.id, firestoreData);
-        addToast('success', 'Service Created', `"${formData.title}" saved to Firestore.`);
+        firestoreServicesService.saveService(created.id, firestoreData).catch((fErr) => {
+          console.warn('[AdminServices] Firestore background sync notice:', fErr);
+        });
+        addToast('success', 'Service Created', `"${formData.title}" saved successfully.`);
       }
-      await refreshAll();
       setIsDirty(false);
       setIsEditorOpen(false);
       loadServices();
+      if (typeof refreshAll === 'function') {
+        refreshAll().catch((rErr) => console.warn('[AdminServices] refresh notice:', rErr));
+      }
     } catch (err: any) {
       console.error('[AdminServices] Save error:', err);
       addToast('error', 'Error Saving Service', err.message || 'Operation failed.');

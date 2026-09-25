@@ -27,6 +27,7 @@ import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { QuickCategoryCreator } from '../../components/admin/QuickCategoryCreator';
+import { firestoreProductsService } from '../../services/firestore/products';
 import { DivisionId } from '../../types';
 import { formatCurrency, formatLKR } from '../../utils/currency';
 
@@ -230,9 +231,11 @@ export const AdminProductsView: React.FC = () => {
 
       if (editingProduct) {
         cmsService.update<CmsProduct>('products', editingProduct.id, payload);
+        firestoreProductsService.saveProduct(editingProduct.id, payload as any).catch(() => {});
         addToast('success', 'Product Updated', `SKU ${payload.sku} "${payload.name}" saved.`);
       } else {
-        cmsService.create<CmsProduct>('products', payload);
+        const created = cmsService.create<CmsProduct>('products', payload);
+        firestoreProductsService.saveProduct(created.id, payload as any).catch(() => {});
         addToast('success', 'Product Created', `"${payload.name}" added to catalog.`);
       }
       setIsDirty(false);

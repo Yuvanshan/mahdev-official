@@ -34,6 +34,7 @@ export interface FirestoreDivision {
   imageUrl?: string;
   heroImageUrl?: string;
   defaultImageUrl?: string;
+  fallbackImageUrl?: string;
   heroVideoUrl?: string;
   videoUrl?: string;
   heroMediaType?: 'image' | 'video';
@@ -57,6 +58,7 @@ export interface FirestoreDivision {
     bgImage: string;
     imageUrl?: string;
     defaultImageUrl?: string;
+    fallbackImageUrl?: string;
     videoUrl?: string;
     mediaType?: 'image' | 'video';
     ctaText?: string;
@@ -597,6 +599,7 @@ export interface FirestoreTrustedCompany {
   description?: string;
   order?: number;
   isPublished?: boolean;
+  featured?: boolean;
   division?: string;
   tier?: string;
   industry?: string;

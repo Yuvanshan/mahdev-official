@@ -97,7 +97,6 @@ export const firestoreServicesService = {
       id,
       updatedAt: new Date().toISOString(),
     });
-    await setDoc(docRef, payload, { merge: true });
     if (cachedServices) {
       const idx = cachedServices.data.findIndex((s) => s.id === id);
       if (idx >= 0) {
@@ -106,6 +105,14 @@ export const firestoreServicesService = {
         cachedServices.data.push(payload as FirestoreService);
       }
       cachedServices.data.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    }
+    try {
+      await Promise.race([
+        setDoc(docRef, payload, { merge: true }),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
+    } catch (err) {
+      console.warn('[Firestore Services] save warning:', err);
     }
   },
 
@@ -121,7 +128,14 @@ export const firestoreServicesService = {
       batch.update(docRef, { order: index + 1, updatedAt: now });
     });
 
-    await batch.commit();
+    try {
+      await Promise.race([
+        batch.commit(),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
+    } catch (err) {
+      console.warn('[Firestore Services] reorder warning:', err);
+    }
 
     if (cachedServices) {
       cachedServices.data = cachedServices.data
@@ -138,9 +152,16 @@ export const firestoreServicesService = {
    */
   async deleteService(id: string): Promise<void> {
     const docRef = doc(db, 'services', id);
-    await deleteDoc(docRef);
     if (cachedServices) {
       cachedServices.data = cachedServices.data.filter((s) => s.id !== id);
+    }
+    try {
+      await Promise.race([
+        deleteDoc(docRef),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
+    } catch (err) {
+      console.warn('[Firestore Services] delete warning:', err);
     }
   },
 

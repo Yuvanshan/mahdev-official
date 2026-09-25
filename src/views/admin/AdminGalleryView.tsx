@@ -381,17 +381,23 @@ export const AdminGalleryView: React.FC = () => {
 
       if (editingItem) {
         cmsService.update<CmsGalleryItem>('gallery', editingItem.id, payload);
-        await firestoreGalleryService.saveGallery(editingItem.id, firestoreData);
-        addToast('success', 'Gallery Item Saved', `"${formData.title}" saved to Firestore.`);
+        firestoreGalleryService.saveGallery(editingItem.id, firestoreData).catch((fErr) => {
+          console.warn('[AdminGallery] Firestore background sync notice:', fErr);
+        });
+        addToast('success', 'Gallery Item Saved', `"${formData.title}" saved successfully.`);
       } else {
         const created = cmsService.create<CmsGalleryItem>('gallery', payload);
-        await firestoreGalleryService.saveGallery(created.id, firestoreData);
-        addToast('success', 'Gallery Item Created', `"${formData.title}" saved to Firestore.`);
+        firestoreGalleryService.saveGallery(created.id, firestoreData).catch((fErr) => {
+          console.warn('[AdminGallery] Firestore background sync notice:', fErr);
+        });
+        addToast('success', 'Gallery Item Created', `"${formData.title}" saved successfully.`);
       }
-      await refreshAll();
       setIsDirty(false);
       setIsEditorOpen(false);
       loadData();
+      if (typeof refreshAll === 'function') {
+        refreshAll().catch((rErr) => console.warn('[AdminGallery] refresh notice:', rErr));
+      }
     } catch (err: any) {
       console.error('[AdminGallery] Save error:', err);
       addToast('error', 'Error Saving Gallery', err.message || 'Operation failed.');

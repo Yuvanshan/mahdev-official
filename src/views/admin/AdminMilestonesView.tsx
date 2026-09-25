@@ -167,15 +167,17 @@ export const AdminMilestonesView: React.FC = () => {
 
       if (editingMilestone) {
         await firestoreMilestonesService.saveMilestone(editingMilestone.id, payload);
-        addToast('success', 'Milestone Updated', `"${payload.title}" saved to Firestore.`);
+        addToast('success', 'Milestone Updated', `"${payload.title}" saved successfully.`);
       } else {
         await firestoreMilestonesService.createMilestone(payload as any);
-        addToast('success', 'Milestone Created', `"${payload.title}" published to Firestore timeline.`);
+        addToast('success', 'Milestone Created', `"${payload.title}" published to timeline.`);
       }
 
-      await refreshAll();
       setIsDirty(false);
       setIsEditorOpen(false);
+      if (typeof refreshAll === 'function') {
+        refreshAll().catch((rErr) => console.warn('[AdminMilestonesView] refresh notice:', rErr));
+      }
     } catch (err: any) {
       console.error('[AdminMilestonesView] Save error:', err);
       addToast('error', 'Error Saving Milestone', err.message || 'Operation failed.');

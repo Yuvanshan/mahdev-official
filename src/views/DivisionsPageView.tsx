@@ -67,6 +67,25 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
           ? (d as any).status === 'coming_soon'
           : defaultComingSoon;
 
+        const resolvedLogo =
+          d.logoUrl ||
+          (d as any).logo ||
+          (config as any).logoUrl ||
+          (config as any).logo ||
+          '';
+
+        const resolvedImg =
+          (d as any).defaultImageUrl ||
+          (d as any).fallbackImageUrl ||
+          d.heroImageUrl ||
+          d.imageUrl ||
+          (d.hero as any)?.defaultImageUrl ||
+          (d.hero as any)?.fallbackImageUrl ||
+          (d.hero as any)?.imageUrl ||
+          (d.hero as any)?.bgImage ||
+          config.imageUrl ||
+          '';
+
         result.push({
           ...config,
           id: canonicalId,
@@ -78,6 +97,8 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
           badge: d.hero?.badge || config.badge || 'Enterprise Division',
           iconName: config.iconName || 'Building',
           color: config.color || '#0052FF',
+          logoUrl: resolvedLogo,
+          imageUrl: resolvedImg,
           isComingSoon,
           coreServices:
             (d as any).coreServices && (d as any).coreServices.length > 0
@@ -151,12 +172,18 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
                     {/* Division Narrative */}
                     <div className="lg:col-span-7 space-y-4">
                       <div className="flex flex-wrap items-center gap-2">
-                        <div
-                          className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 shadow-sm"
-                          style={{ backgroundColor: division.accentColor || '#0052FF' }}
-                        >
-                          <IconRenderer name={division.iconName || 'Building'} className="w-5 h-5" />
-                        </div>
+                        {division.logoUrl ? (
+                          <div className="w-10 h-10 rounded-xl bg-white p-1.5 border border-slate-200 shadow-sm flex items-center justify-center shrink-0 overflow-hidden">
+                            <img src={division.logoUrl} alt={division.name} className="max-w-full max-h-full object-contain" />
+                          </div>
+                        ) : (
+                          <div
+                            className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 shadow-sm"
+                            style={{ backgroundColor: division.accentColor || '#0052FF' }}
+                          >
+                            <IconRenderer name={division.iconName || 'Building'} className="w-5 h-5" />
+                          </div>
+                        )}
                         <Badge variant="electric" size="sm">
                           {division.badge}
                         </Badge>
@@ -231,7 +258,17 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
 
                     {/* Division Visual & Stats Panel */}
                     <div className="lg:col-span-5">
-                      <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 text-white border border-slate-800 shadow-xl space-y-5">
+                      <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 text-white border border-slate-800 shadow-xl space-y-5 overflow-hidden">
+                        {division.imageUrl && (
+                          <div className="h-32 -mx-6 -mt-6 mb-3 relative overflow-hidden">
+                            <img
+                              src={division.imageUrl}
+                              alt={division.name}
+                              className="w-full h-full object-cover opacity-85 hover:scale-105 transition-transform duration-500"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                          </div>
+                        )}
                         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                           <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
                             Division Overview

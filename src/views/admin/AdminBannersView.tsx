@@ -187,6 +187,7 @@ export const AdminBannersView: React.FC = () => {
 
       setIsEditorOpen(false);
       setIsDirty(false);
+      loadBanners();
     } catch (err: any) {
       addToast('error', 'Operation Failed', err.message || 'Unable to save banner.');
     } finally {

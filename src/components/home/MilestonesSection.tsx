@@ -27,18 +27,18 @@ import {
   getTransportModeLabel,
   TransportMode,
 } from './MilestoneJourneyAnimation';
-import { DEFAULT_OFFICIAL_MILESTONES } from '../../services/firestore/milestones';
 import { FirestoreMilestone } from '../../types/firestore';
+import { MilestonesSectionShimmer } from '../common/MilestonesSectionShimmer';
 
 interface MilestonesSectionProps {
   onNavigate?: (route: string) => void;
 }
 
 export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate }) => {
-  const { milestones, homepageConfig, isInitialLoading, isReady } = useFirestoreDataContext();
-  const [activeMilestoneId, setActiveMilestoneId] = useState<string>('ms-2026');
+  const { milestones, homepageConfig, isMilestonesLoading, isInitialLoading, isReady } = useFirestoreDataContext();
+  const [activeMilestoneId, setActiveMilestoneId] = useState<string>('');
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
-  const [progress, setProgress] = useState<number>(0.65); // Start on 2026 milestone
+  const [progress, setProgress] = useState<number>(0);
   const [mouseTilt, setMouseTilt] = useState<{ rotateX: number; rotateY: number }>({
     rotateX: 0,
     rotateY: 0,
@@ -107,43 +107,33 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
     return [];
   }, [milestonesCms]);
 
-  // Display milestones: Always guarantees 6 to 8 rich milestone cards (official trajectory + custom Firestore)
+  // Display milestones: Strictly real documents from Cloud Firestore configured by the admin (ZERO FAKE DATA)
   const displayMilestones: FirestoreMilestone[] = useMemo(() => {
-    if (milestones && milestones.length > 0) {
-      const valid = milestones.filter(
+    if (!milestones || milestones.length === 0) return [];
+    return [...milestones]
+      .filter(
         (m) => m.isPublished !== false && m.status !== 'draft' && m.status !== 'archived' && m.year
+      )
+      .sort(
+        (a, b) =>
+          (a.order ?? 0) - (b.order ?? 0) ||
+          (Number(a.year) || 0) - (Number(b.year) || 0)
       );
-      if (valid.length >= 6) {
-        return [...valid]
-          .sort(
-            (a, b) =>
-              (Number(a.year) || 0) - (Number(b.year) || 0) ||
-              (a.order || 0) - (b.order || 0)
-          )
-          .slice(0, 8);
-      }
-      if (valid.length > 0) {
-        const existingYears = new Set(valid.map((v) => v.year));
-        const combined = [...valid];
-        for (const def of DEFAULT_OFFICIAL_MILESTONES) {
-          if (!existingYears.has(def.year) && combined.length < 8) {
-            combined.push(def);
-            existingYears.add(def.year);
-          }
-        }
-        return combined.sort(
-          (a, b) =>
-            (Number(a.year) || 0) - (Number(b.year) || 0) ||
-            (a.order || 0) - (b.order || 0)
-        );
-      }
-    }
-    return DEFAULT_OFFICIAL_MILESTONES;
   }, [milestones]);
 
   const totalPoints = displayMilestones.length;
 
+  // Initialize active milestone when real milestones load from Firestore
+  useEffect(() => {
+    if (displayMilestones.length > 0 && !activeMilestoneId) {
+      const latest = displayMilestones[displayMilestones.length - 1];
+      setActiveMilestoneId(latest.id || latest.year);
+      setProgress(1);
+    }
+  }, [displayMilestones, activeMilestoneId]);
+
   const currentMilestone = useMemo(() => {
+    if (displayMilestones.length === 0) return null;
     const found = displayMilestones.find(
       (m) => m.id === activeMilestoneId || m.year === activeMilestoneId
     );
@@ -151,6 +141,7 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
   }, [displayMilestones, activeMilestoneId]);
 
   const activeMilestoneIndex = useMemo(() => {
+    if (displayMilestones.length === 0) return 0;
     const idx = displayMilestones.findIndex(
       (m) => m.id === activeMilestoneId || m.year === activeMilestoneId
     );
@@ -234,78 +225,113 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
     setMouseTilt({ rotateX: 0, rotateY: 0 });
   };
 
-  const currentSegment = Math.min(
-    Math.floor(progress * (totalPoints - 1)),
-    TRANSPORT_MODES.length - 1
-  );
+  const currentSegment = totalPoints > 1
+    ? Math.min(Math.floor(progress * (totalPoints - 1)), TRANSPORT_MODES.length - 1)
+    : 0;
   const activeTransportMode: TransportMode = TRANSPORT_MODES[currentSegment] || 'walk';
   const CurrentIcon = getMilestoneIcon(currentMilestone?.year, currentMilestone?.title);
 
-  if (homepageConfig.milestones && homepageConfig.milestones.enabled === false) {
+  const gridClass = useMemo(() => {
+    const count = displayMilestones.length;
+    if (count === 1) return 'grid grid-cols-1 max-w-md mx-auto gap-4 relative z-10';
+    if (count === 2) return 'grid grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto gap-4 relative z-10';
+    if (count === 3) return 'grid grid-cols-1 sm:grid-cols-3 max-w-4xl mx-auto gap-4 relative z-10';
+    return 'grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 relative z-10';
+  }, [displayMilestones.length]);
+
+  if (homepageConfig?.milestones && homepageConfig.milestones.enabled === false) {
     return null;
+  }
+
+  // 1. SHOW CRISP SHIMMER UNTIL DATA LOADS FROM CLOUD FIRESTORE
+  if (isMilestonesLoading && displayMilestones.length === 0) {
+    return <MilestonesSectionShimmer />;
+  }
+
+  // 2. ZERO FAKE DATA: If loaded and 0 milestones in Firestore, show clean state
+  if (displayMilestones.length === 0) {
+    return (
+      <div className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50/50 to-white py-16">
+        <SectionContainer id="milestones" background="none" paddingY="lg" hasBorderBottom>
+          <div className="max-w-4xl mx-auto text-center p-8 sm:p-12 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
+            <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <h3 className="font-display text-2xl font-bold text-slate-900 mb-2">
+              {milestonesCms?.title || 'Our Milestones & Trajectory'}
+            </h3>
+            <p className="text-slate-600 text-sm max-w-lg mx-auto">
+              {milestonesCms?.subtitle || 'Live synchronization with Cloud Firestore milestones. You can create, edit, and publish verified corporate milestones from the Admin Portal.'}
+            </p>
+          </div>
+        </SectionContainer>
+      </div>
+    );
   }
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50/50 to-white">
       <ParallelWatermark text="07 // TRAJECTORY" />
       <SectionContainer id="milestones" background="none" paddingY="xl" hasBorderBottom>
-        {/* Section Header */}
+        {/* Section Header with Admin Configuration */}
         <div className="flex flex-col md:flex-row md:items-end justify-between max-w-6xl mx-auto mb-10 gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="flex h-2.5 w-2.5 rounded-full bg-blue-600 animate-ping" />
               <Badge variant="electric" size="sm" className="font-mono text-[11px] uppercase tracking-wider">
-                Corporate Trajectory (2021–2027+)
+                {milestonesCms?.badge || 'Corporate Trajectory'}
               </Badge>
               <span className="text-xs font-semibold text-slate-500">
-                • {totalPoints} Key Milestones
+                • {totalPoints} Key Milestone{totalPoints === 1 ? '' : 's'}
               </span>
             </div>
             <H2 className="text-slate-900 mb-2 font-display text-3xl sm:text-4xl font-bold tracking-tight">
-              Our Milestones & Trajectory
+              {milestonesCms?.title || 'Our Milestones & Trajectory'}
             </H2>
             <Body className="text-slate-600 text-sm sm:text-base max-w-2xl">
-              Follow our evolution through parallel milestone cards as Mahdev progresses from creative event staging to islandwide scale, enterprise technology, and private corporate governance.
+              {milestonesCms?.subtitle || 'Follow our evolution through parallel milestone cards as Mahdev progresses from creative event staging to islandwide scale, enterprise technology, and private corporate governance.'}
             </Body>
           </div>
 
           {/* Interactive Trajectory Controls */}
-          <div className="flex items-center gap-2.5 shrink-0 bg-white/90 border border-slate-200/90 rounded-xl p-1.5 shadow-2xs backdrop-blur-sm self-start md:self-end">
-            <div className="px-2.5 py-1 text-xs font-mono font-bold text-slate-700 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-blue-600" />
-              <span className="hidden sm:inline text-[11px] text-slate-500 uppercase">Phase:</span>
-              <span className="text-blue-600 text-[11px] font-semibold truncate max-w-[140px] sm:max-w-[180px]">
-                {getTransportModeLabel(activeTransportMode)}
-              </span>
+          {totalPoints > 1 && (
+            <div className="flex items-center gap-2.5 shrink-0 bg-white/90 border border-slate-200/90 rounded-xl p-1.5 shadow-2xs backdrop-blur-sm self-start md:self-end">
+              <div className="px-2.5 py-1 text-xs font-mono font-bold text-slate-700 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-blue-600" />
+                <span className="hidden sm:inline text-[11px] text-slate-500 uppercase">Phase:</span>
+                <span className="text-blue-600 text-[11px] font-semibold truncate max-w-[140px] sm:max-w-[180px]">
+                  {getTransportModeLabel(activeTransportMode)}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsPlaying((p) => !p)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 text-slate-700 transition-colors cursor-pointer"
+                title={isPlaying ? 'Pause Animation' : 'Play Animation'}
+              >
+                {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                <span>{isPlaying ? 'Pause' : 'Play'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setProgress(0);
+                  setActiveMilestoneId(displayMilestones[0]?.id || displayMilestones[0]?.year);
+                }}
+                className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                title="Restart Journey"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => setIsPlaying((p) => !p)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 text-slate-700 transition-colors cursor-pointer"
-              title={isPlaying ? 'Pause Animation' : 'Play Animation'}
-            >
-              {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-              <span>{isPlaying ? 'Pause' : 'Play'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setProgress(0);
-                setActiveMilestoneId(displayMilestones[0]?.id || displayMilestones[0]?.year);
-              }}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors cursor-pointer"
-              title="Restart Journey"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          )}
         </div>
 
         {/* 
           3D PARALLEL PARALLAX STAGE:
-          The milestone cards are rendered here in a cohesive 6/8-card 3D perspective grid.
+          The milestone cards are rendered here in a cohesive perspective grid.
           The Handsome Boy character & neon trajectory line float as an OVERLAY directly over these cards!
         */}
         <div
@@ -326,8 +352,8 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
             {/* 1. BACKGROUND 3D GRID AMBIENCE */}
             <div className="absolute -inset-3 bg-gradient-to-r from-blue-500/5 via-cyan-500/5 to-indigo-500/5 rounded-3xl blur-xl pointer-events-none -z-10" />
 
-            {/* 2. THE 6 OR 8 MILESTONE CARDS GRID (Sitting in 3D Space) */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 relative z-10">
+            {/* 2. THE DYNAMIC MILESTONE CARDS GRID (Sitting in 3D Space) */}
+            <div className={gridClass}>
               {displayMilestones.map((ms, index) => {
                 const milestoneKey = ms.id ? `ms-card-${ms.id}` : `ms-card-${ms.year}-${index}`;
                 const isSelected = activeMilestoneIndex === index;

@@ -167,14 +167,21 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
 
   // Extract live division image and logo from Firestore
   const divisionImage =
-    (firestoreDiv as any)?.imageUrl ||
+    (firestoreDiv as any)?.defaultImageUrl ||
+    (firestoreDiv as any)?.fallbackImageUrl ||
     (firestoreDiv as any)?.heroImageUrl ||
-    (firestoreDiv as any)?.hero?.bgImage ||
+    (firestoreDiv as any)?.imageUrl ||
+    (firestoreDiv?.hero as any)?.defaultImageUrl ||
+    (firestoreDiv?.hero as any)?.fallbackImageUrl ||
+    (firestoreDiv?.hero as any)?.imageUrl ||
+    (firestoreDiv?.hero as any)?.bgImage ||
     (baseDivision as any)?.imageUrl;
 
   const divisionLogo =
     (firestoreDiv as any)?.logoUrl ||
-    (firestoreDiv as any)?.logo;
+    (firestoreDiv as any)?.logo ||
+    (baseDivision as any)?.logoUrl ||
+    (baseDivision as any)?.logo;
 
   // Merge Firestore live overrides with base structure
   const division = {
@@ -338,8 +345,10 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
               '/assets/hero_main.mp4';
             const divImg =
               (firestoreDiv as any)?.defaultImageUrl ||
+              (firestoreDiv as any)?.fallbackImageUrl ||
               (firestoreDiv as any)?.heroImageUrl ||
               (firestoreDiv?.hero as any)?.defaultImageUrl ||
+              (firestoreDiv?.hero as any)?.fallbackImageUrl ||
               (firestoreDiv?.hero as any)?.imageUrl ||
               (firestoreDiv?.hero as any)?.bgImage ||
               (firestoreDiv as any)?.imageUrl ||
@@ -381,8 +390,20 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
               </button>
             </div>
 
-            {/* Division Badge */}
-            <div>
+            {/* Division Badge & Optional Brand Logo */}
+            <div className="flex items-center gap-3">
+              {divisionLogo && (
+                <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-white/10 p-2 backdrop-blur-md border border-white/20 flex items-center justify-center shrink-0 shadow-lg">
+                  <img
+                    src={divisionLogo}
+                    alt={division.name}
+                    className="max-h-full max-w-full object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0052FF]/20 border border-[#0052FF]/40 text-xs font-bold text-blue-300 backdrop-blur-md shadow-lg">
                 <span className="w-2 h-2 rounded-full bg-[#0052FF] animate-pulse" />
                 <span className="tracking-wide">{division.badge}</span>

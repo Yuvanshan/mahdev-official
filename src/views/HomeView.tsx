@@ -1,10 +1,8 @@
 import React from 'react';
 import { SEOHead } from '../components/layout/SEOHead';
 import { HeroSection } from '../components/home/HeroSection';
-import { AboutMahdevSection } from '../components/home/AboutMahdevSection';
 import { DivisionsSection } from '../components/home/DivisionsSection';
 import { FeaturedServicesSection } from '../components/home/FeaturedServicesSection';
-import { WhyMahdevSection } from '../components/home/WhyMahdevSection';
 import { HappyClientsAndProjectsSection } from '../components/home/HappyClientsAndProjectsSection';
 import { DecorationVideoShowcase } from '../components/home/DecorationVideoShowcase';
 import { FeaturedWorkSection } from '../components/home/FeaturedWorkSection';
@@ -44,8 +42,12 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
     // Filter out 'hero' (rendered explicitly at the very top), and banned or bottom sections
     const BANNED_SECTIONS = new Set([
       'hero',
+      'about',
+      'aboutMahdev',
       'whyMahdev',
+      'intro',
       'advantage',
+      'leadership',
       'cta',
       'ctaSection',
       'contact',
@@ -66,13 +68,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
 
   const renderSectionByKey = (sectionKey: string, id: string) => {
     switch (sectionKey) {
-      case 'about':
-        return (
-          <AboutMahdevSection
-            key={id}
-            onExploreDivisions={() => onNavigate('/divisions')}
-          />
-        );
       case 'divisions':
         return <DivisionsSection key={id} onNavigate={onNavigate} />;
       case 'services':

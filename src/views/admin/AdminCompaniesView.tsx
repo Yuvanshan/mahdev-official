@@ -21,6 +21,7 @@ import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
+import { firestoreTrustedCompaniesService } from '../../services/firestore/trustedCompanies';
 
 export const AdminCompaniesView: React.FC = () => {
   const [companies, setCompanies] = useState<CmsTrustedCompany[]>([]);
@@ -135,9 +136,18 @@ export const AdminCompaniesView: React.FC = () => {
           featured: formData.featured,
           order: Number(formData.order),
         });
+        firestoreTrustedCompaniesService.saveTrustedCompany(editingCompany.id, {
+          name: formData.name,
+          industry: formData.industry,
+          logoUrl: formData.logoUrl,
+          website: formData.website,
+          description: formData.description,
+          featured: formData.featured,
+          order: Number(formData.order),
+        }).catch(() => {});
         addToast('success', 'Partner Updated', `"${formData.name}" has been successfully updated.`);
       } else {
-        await cmsService.create<CmsTrustedCompany>('companies', {
+        const created = await cmsService.create<CmsTrustedCompany>('companies', {
           name: formData.name,
           industry: formData.industry,
           partnershipType: formData.partnershipType,
@@ -147,11 +157,21 @@ export const AdminCompaniesView: React.FC = () => {
           featured: formData.featured,
           order: Number(formData.order),
         });
+        firestoreTrustedCompaniesService.saveTrustedCompany(created.id, {
+          name: formData.name,
+          industry: formData.industry,
+          logoUrl: formData.logoUrl,
+          website: formData.website,
+          description: formData.description,
+          featured: formData.featured,
+          order: Number(formData.order),
+        }).catch(() => {});
         addToast('success', 'Partner Created', `"${formData.name}" has been added to trusted enterprise partners.`);
       }
 
       setIsEditorOpen(false);
       setIsDirty(false);
+      loadCompanies();
     } catch (err: any) {
       addToast('error', 'Operation Failed', err.message || 'Unable to save partner.');
     } finally {
@@ -164,6 +184,7 @@ export const AdminCompaniesView: React.FC = () => {
     try {
       if (permanent) {
         await cmsService.permanentDelete('companies', deletingCompany.id);
+        firestoreTrustedCompaniesService.deleteTrustedCompany(deletingCompany.id).catch(() => {});
         addToast('success', 'Partner Removed', `"${deletingCompany.name}" was permanently deleted.`);
       } else {
         await cmsService.softDelete('companies', deletingCompany.id);

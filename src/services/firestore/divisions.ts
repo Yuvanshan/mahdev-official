@@ -195,7 +195,25 @@ export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
       const primary = itemTime >= existingTime ? normalizedItem : existing;
       const secondary = itemTime >= existingTime ? existing : normalizedItem;
 
-      const resolvedImg = primary.hero?.imageUrl || secondary.hero?.imageUrl || primary.heroImageUrl || secondary.heroImageUrl || primary.imageUrl || secondary.imageUrl || primary.hero?.bgImage || secondary.hero?.bgImage || existing.imageUrl || '';
+      const resolvedLogo = primary.logoUrl || secondary.logoUrl || (primary as any).logo || (secondary as any).logo || existing.logoUrl || (existing as any).logo || '';
+      const resolvedImg =
+        (primary as any).defaultImageUrl ||
+        (secondary as any).defaultImageUrl ||
+        (primary as any).fallbackImageUrl ||
+        (secondary as any).fallbackImageUrl ||
+        primary.hero?.imageUrl ||
+        secondary.hero?.imageUrl ||
+        primary.hero?.defaultImageUrl ||
+        secondary.hero?.defaultImageUrl ||
+        primary.heroImageUrl ||
+        secondary.heroImageUrl ||
+        primary.imageUrl ||
+        secondary.imageUrl ||
+        primary.hero?.bgImage ||
+        secondary.hero?.bgImage ||
+        existing.imageUrl ||
+        '';
+
       const mergedHero = {
         ...(secondary.hero || {}),
         ...(primary.hero || {}),
@@ -214,6 +232,7 @@ export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
         slug: shortId,
         canonicalDocId,
         name: primary.name || secondary.name || existing.name,
+        shortName: primary.shortName || secondary.shortName || existing.shortName,
         heroHeadline: primary.heroHeadline || secondary.heroHeadline || mergedHero.title,
         heroSubheadline: primary.heroSubheadline || secondary.heroSubheadline || mergedHero.subtitle,
         shortDescription: primary.shortDescription || secondary.shortDescription || existing.shortDescription,
@@ -221,11 +240,18 @@ export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
         badge: primary.badge || secondary.badge || existing.badge,
         imageUrl: resolvedImg,
         heroImageUrl: resolvedImg,
+        defaultImageUrl: resolvedImg,
+        fallbackImageUrl: resolvedImg,
         videoUrl: primary.videoUrl || secondary.videoUrl || mergedHero.videoUrl,
         heroVideoUrl: primary.heroVideoUrl || secondary.heroVideoUrl || mergedHero.videoUrl,
-        logoUrl: primary.logoUrl || secondary.logoUrl || existing.logoUrl,
-        logo: primary.logo || secondary.logo || existing.logo,
-        hero: mergedHero,
+        logoUrl: resolvedLogo,
+        logo: resolvedLogo,
+        hero: {
+          ...mergedHero,
+          imageUrl: resolvedImg,
+          defaultImageUrl: resolvedImg,
+          bgImage: resolvedImg,
+        },
         status: primary.status || secondary.status,
         isComingSoon: primary.isComingSoon !== undefined ? primary.isComingSoon : secondary.isComingSoon,
         comingSoon: primary.comingSoon !== undefined ? primary.comingSoon : secondary.comingSoon,
@@ -233,14 +259,29 @@ export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
     }
   }
 
-  return canonicalOrder
-    .map((key) => mapByCanonical.get(key)!)
-    .filter(Boolean)
-    .sort((a, b) => {
-      const orderA = typeof a.order === 'number' && a.order > 0 ? a.order : getDivisionFallbackOrder(a.id);
-      const orderB = typeof b.order === 'number' && b.order > 0 ? b.order : getDivisionFallbackOrder(b.id);
-      return orderA - orderB;
-    });
+  // Preserve canonical baseline divisions AND any newly created custom divisions!
+  const allDivisions: FirestoreDivision[] = [];
+  const handled = new Set<string>();
+
+  for (const key of canonicalOrder) {
+    const div = mapByCanonical.get(key);
+    if (div) {
+      allDivisions.push(div);
+      handled.add(key);
+    }
+  }
+
+  for (const [key, div] of mapByCanonical.entries()) {
+    if (!handled.has(key)) {
+      allDivisions.push(div);
+    }
+  }
+
+  return allDivisions.sort((a, b) => {
+    const orderA = typeof a.order === 'number' && a.order > 0 ? a.order : getDivisionFallbackOrder(a.id);
+    const orderB = typeof b.order === 'number' && b.order > 0 ? b.order : getDivisionFallbackOrder(b.id);
+    return orderA - orderB;
+  });
 }
 
 export function getDefaultDivisions(): FirestoreDivision[] {
@@ -438,6 +479,11 @@ export const firestoreDivisionsService = {
       data.hero?.mediaType ||
       (effectiveHeroVideo ? 'video' : 'image');
 
+    const effectiveLogo =
+      (data as any).logoUrl ||
+      (data as any).logo ||
+      '';
+
     const payload = sanitizeForFirestore({
       ...data,
       id: canonicalDocId,
@@ -446,8 +492,11 @@ export const firestoreDivisionsService = {
       videoUrl: effectiveHeroVideo,
       defaultImageUrl: effectiveHeroImage,
       heroImageUrl: effectiveHeroImage,
+      fallbackImageUrl: effectiveHeroImage,
       imageUrl: effectiveHeroImage || (data as any).imageUrl,
       heroMediaType: effectiveMediaType,
+      logoUrl: effectiveLogo,
+      logo: effectiveLogo,
       hero: {
         ...((data as any).hero || {}),
         title: (data as any).heroHeadline || (data as any).hero?.title || (data as any).name || '',
@@ -456,6 +505,7 @@ export const firestoreDivisionsService = {
         bgImage: effectiveHeroImage,
         imageUrl: effectiveHeroImage,
         defaultImageUrl: effectiveHeroImage,
+        fallbackImageUrl: effectiveHeroImage,
         videoUrl: effectiveHeroVideo || (data as any).hero?.videoUrl || '',
         mediaType: effectiveMediaType,
       },

@@ -128,9 +128,9 @@ export const AdminUsersView: React.FC = () => {
         addToast('success', 'Admin Created', `New administrator ${formData.name} has been provisioned.`);
       }
 
-      await loadUsers();
       setIsEditorOpen(false);
       setIsDirty(false);
+      loadUsers();
     } catch (err: any) {
       addToast('error', 'Operation Failed', err.message || 'Could not save administrator user.');
     } finally {

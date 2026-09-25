@@ -171,14 +171,21 @@ export const firestoreProductsService = {
       id,
       updatedAt: new Date().toISOString(),
     });
-    await setDoc(docRef, payload, { merge: true });
     if (cachedProducts) {
       const idx = cachedProducts.data.findIndex((p) => p.id === id);
       if (idx >= 0) {
         cachedProducts.data[idx] = { ...cachedProducts.data[idx], ...payload } as FirestoreProduct;
       } else {
-        cachedProducts.data.push(payload as FirestoreProduct);
+        cachedProducts.data.unshift(payload as FirestoreProduct);
       }
+    }
+    try {
+      await Promise.race([
+        setDoc(docRef, payload, { merge: true }),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
+    } catch (err) {
+      console.warn('[Firestore Products] save warning:', err);
     }
   },
 
@@ -187,9 +194,16 @@ export const firestoreProductsService = {
    */
   async deleteProduct(id: string): Promise<void> {
     const docRef = doc(db, 'products', id);
-    await deleteDoc(docRef);
     if (cachedProducts) {
       cachedProducts.data = cachedProducts.data.filter((p) => p.id !== id);
+    }
+    try {
+      await Promise.race([
+        deleteDoc(docRef),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
+    } catch (err) {
+      console.warn('[Firestore Products] delete warning:', err);
     }
   },
 

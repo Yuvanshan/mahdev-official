@@ -17,6 +17,7 @@ import { Button } from '../../components/ui/Button';
 import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
+import { firestoreCategoriesService } from '../../services/firestore/categories';
 import { DivisionId } from '../../types';
 
 export const AdminCategoriesView: React.FC = () => {
@@ -122,9 +123,11 @@ export const AdminCategoriesView: React.FC = () => {
 
       if (editingCategory) {
         cmsService.update<CmsCategory>('categories', editingCategory.id, payload);
+        firestoreCategoriesService.saveCategory(editingCategory.id, payload).catch(() => {});
         addToast('success', 'Category Updated', `Category "${formData.name}" saved.`);
       } else {
-        cmsService.create<CmsCategory>('categories', payload);
+        const created = cmsService.create<CmsCategory>('categories', payload);
+        firestoreCategoriesService.saveCategory(created.id, payload).catch(() => {});
         addToast('success', 'Category Created', `Category "${formData.name}" created.`);
       }
       setIsDirty(false);
@@ -141,6 +144,7 @@ export const AdminCategoriesView: React.FC = () => {
     if (!deletingCategory) return;
     if (permanent) {
       cmsService.hardDelete('categories', deletingCategory.id);
+      firestoreCategoriesService.deleteCategory(deletingCategory.id).catch(() => {});
       addToast('warning', 'Permanent Deletion', `Category "${deletingCategory.name}" removed permanently.`);
     } else {
       cmsService.softDelete('categories', deletingCategory.id);

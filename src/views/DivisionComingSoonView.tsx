@@ -68,10 +68,21 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
   const tagline = firestoreDiv?.tagline || fallbackConfig.tagline;
   const accentColor = firestoreDiv?.accentColor || fallbackConfig.accentColor || '#0052FF';
   const heroImage =
+    (firestoreDiv as any)?.defaultImageUrl ||
+    (firestoreDiv as any)?.fallbackImageUrl ||
     firestoreDiv?.heroImageUrl ||
     firestoreDiv?.imageUrl ||
+    (firestoreDiv?.hero as any)?.defaultImageUrl ||
+    (firestoreDiv?.hero as any)?.fallbackImageUrl ||
+    (firestoreDiv?.hero as any)?.imageUrl ||
     fallbackConfig.imageUrl ||
     'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1600&q=80';
+
+  const logoImage =
+    firestoreDiv?.logoUrl ||
+    (firestoreDiv as any)?.logo ||
+    (fallbackConfig as any)?.logoUrl ||
+    (fallbackConfig as any)?.logo;
 
   const comingSoonTitle =
     (firestoreDiv as any)?.comingSoonTitle ||
@@ -181,6 +192,20 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
         </div>
 
         <SectionContainer className="relative z-20 max-w-4xl mx-auto text-center px-4">
+          {/* Optional Brand Logo */}
+          {logoImage && (
+            <div className="mx-auto mb-5 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/10 p-3 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-2xl">
+              <img
+                src={logoImage}
+                alt={divisionName}
+                className="max-h-full max-w-full object-contain"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              />
+            </div>
+          )}
+
           {/* Status Badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-700/80 shadow-xl mb-6 backdrop-blur-sm">
             <span

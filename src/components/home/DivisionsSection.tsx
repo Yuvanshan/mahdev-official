@@ -144,18 +144,26 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
         : defaultComingSoon;
 
       const defaultFallbackItem =
-        DEFAULT_DIVISION_BENTO_DATA.find((item) => item.id === id) || DEFAULT_DIVISION_BENTO_DATA[0];
-      const rawImg = d.heroImageUrl || d.imageUrl || (d.hero as any)?.bgImage;
+        DEFAULT_DIVISION_BENTO_DATA.find((item) => item.id === id);
+      const rawImg =
+        (d as any).defaultImageUrl ||
+        (d as any).fallbackImageUrl ||
+        d.heroImageUrl ||
+        d.imageUrl ||
+        (d.hero as any)?.defaultImageUrl ||
+        (d.hero as any)?.fallbackImageUrl ||
+        (d.hero as any)?.imageUrl ||
+        (d.hero as any)?.bgImage;
       const img =
         rawImg && typeof rawImg === 'string' && rawImg.trim() !== ''
           ? rawImg.trim()
-          : defaultFallbackItem.image;
+          : defaultFallbackItem?.image || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=85';
 
       const resolvedLogo =
         (d.logoUrl && typeof d.logoUrl === 'string' && d.logoUrl.trim() !== '' ? d.logoUrl.trim() : '') ||
         ((d as any)?.logo && typeof (d as any).logo === 'string' && (d as any).logo.trim() !== '' ? (d as any).logo.trim() : '') ||
-        defaultFallbackItem.logo ||
-        `/assets/images/${id}_logo.svg`;
+        defaultFallbackItem?.logo ||
+        '';
 
       const metrics =
         d.stats && d.stats.length > 0
@@ -188,12 +196,20 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
     }
 
     const canonicalOrder = ['sws', 'u1', 'it', 'travels', 'mart'];
-    // Sort so sws is first (featured) if available, followed by canonical order
+    // Sort so sws is first (featured) if available, followed by ordered position
     list.sort((a, b) => {
-      const idxA = canonicalOrder.indexOf(a.id);
-      const idxB = canonicalOrder.indexOf(b.id);
-      const orderA = idxA !== -1 ? idxA : 99;
-      const orderB = idxB !== -1 ? idxB : 99;
+      const origA = sourceDivisions.find((d) => (d.id || d.slug) === a.id);
+      const origB = sourceDivisions.find((d) => (d.id || d.slug) === b.id);
+      const orderA = typeof origA?.order === 'number' && origA.order > 0
+        ? origA.order
+        : canonicalOrder.indexOf(a.id) !== -1
+        ? canonicalOrder.indexOf(a.id) + 1
+        : 99;
+      const orderB = typeof origB?.order === 'number' && origB.order > 0
+        ? origB.order
+        : canonicalOrder.indexOf(b.id) !== -1
+        ? canonicalOrder.indexOf(b.id) + 1
+        : 99;
       return orderA - orderB;
     });
 

@@ -131,7 +131,7 @@ let cachedMilestones: { data: FirestoreMilestone[]; timestamp: number } | null =
       }
     }
   } catch {}
-  return { data: DEFAULT_OFFICIAL_MILESTONES, timestamp: Date.now() };
+  return null;
 })();
 let inFlightMilestonesPromise: Promise<FirestoreMilestone[]> | null = null;
 
@@ -142,7 +142,7 @@ export const firestoreMilestonesService = {
   async getMilestones(forceRefresh = false): Promise<FirestoreMilestone[]> {
     const now = Date.now();
     // Return cached immediately if fresh
-    if (!forceRefresh && cachedMilestones && cachedMilestones.data.length > 0 && now - cachedMilestones.timestamp < CACHE_TTL_MS) {
+    if (!forceRefresh && cachedMilestones && now - cachedMilestones.timestamp < CACHE_TTL_MS) {
       return cachedMilestones.data;
     }
 
@@ -173,38 +173,26 @@ export const firestoreMilestonesService = {
           });
 
           data.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-          // If Firestore contains custom milestones, use them; if < 5, supplement with official milestones
-          let finalData = data;
-          if (finalData.length < 6) {
-            const existingYears = new Set(finalData.map((m) => m.year));
-            for (const def of DEFAULT_OFFICIAL_MILESTONES) {
-              if (!existingYears.has(def.year) && finalData.length < 8) {
-                finalData.push(def);
-                existingYears.add(def.year);
-              }
-            }
-            finalData.sort((a, b) => (Number(a.year) || 0) - (Number(b.year) || 0) || (a.order ?? 0) - (b.order ?? 0));
-          }
-          cachedMilestones = { data: finalData, timestamp: Date.now() };
+          cachedMilestones = { data, timestamp: Date.now() };
           try {
             if (typeof window !== 'undefined') {
-              localStorage.setItem('mahdev_cached_milestones', JSON.stringify(finalData));
+              localStorage.setItem('mahdev_cached_milestones', JSON.stringify(data));
             }
           } catch {}
-          return finalData;
+          return data;
         }
 
-        // Return default official milestones when no documents exist yet in Firestore
-        cachedMilestones = { data: DEFAULT_OFFICIAL_MILESTONES, timestamp: Date.now() };
+        // Return empty array when no documents exist in Firestore (zero fake data)
+        cachedMilestones = { data: [], timestamp: Date.now() };
         try {
           if (typeof window !== 'undefined') {
-            localStorage.setItem('mahdev_cached_milestones', JSON.stringify(DEFAULT_OFFICIAL_MILESTONES));
+            localStorage.setItem('mahdev_cached_milestones', JSON.stringify([]));
           }
         } catch {}
-        return DEFAULT_OFFICIAL_MILESTONES;
+        return [];
       } catch (err) {
         console.warn('[Firestore Milestones] getMilestones notice:', err);
-        return cachedMilestones?.data || DEFAULT_OFFICIAL_MILESTONES;
+        return cachedMilestones?.data || [];
       } finally {
         inFlightMilestonesPromise = null;
       }
@@ -235,13 +223,20 @@ export const firestoreMilestonesService = {
       updatedAt: now,
     });
 
-    const docRef = doc(db, 'milestones', id);
-    await setDoc(docRef, payload, { merge: true });
-
     if (cachedMilestones) {
       cachedMilestones.data = [...cachedMilestones.data, payload].sort(
         (a, b) => (a.order ?? 0) - (b.order ?? 0)
       );
+    }
+
+    const docRef = doc(db, 'milestones', id);
+    try {
+      await Promise.race([
+        setDoc(docRef, payload, { merge: true }),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
+    } catch (err) {
+      console.warn('[Firestore Milestones] create warning:', err);
     }
 
     return id;
@@ -259,8 +254,6 @@ export const firestoreMilestonesService = {
       updatedAt: now,
     });
 
-    await setDoc(docRef, payload, { merge: true });
-
     if (cachedMilestones) {
       const idx = cachedMilestones.data.findIndex((m) => m.id === id);
       if (idx >= 0) {
@@ -271,6 +264,15 @@ export const firestoreMilestonesService = {
         cachedMilestones.data.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
       }
     }
+
+    try {
+      await Promise.race([
+        setDoc(docRef, payload, { merge: true }),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
+    } catch (err) {
+      console.warn('[Firestore Milestones] save warning:', err);
+    }
   },
 
   /**
@@ -278,10 +280,16 @@ export const firestoreMilestonesService = {
    */
   async deleteMilestone(id: string): Promise<void> {
     const docRef = doc(db, 'milestones', id);
-    await deleteDoc(docRef);
-
     if (cachedMilestones) {
       cachedMilestones.data = cachedMilestones.data.filter((m) => m.id !== id);
+    }
+    try {
+      await Promise.race([
+        deleteDoc(docRef),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
+    } catch (err) {
+      console.warn('[Firestore Milestones] delete warning:', err);
     }
   },
 
@@ -297,13 +305,20 @@ export const firestoreMilestonesService = {
       updatedAt: now,
     });
 
-    await setDoc(docRef, payload, { merge: true });
-
     if (cachedMilestones) {
       const idx = cachedMilestones.data.findIndex((m) => m.id === id);
       if (idx >= 0) {
         cachedMilestones.data[idx] = { ...cachedMilestones.data[idx], ...payload };
       }
+    }
+
+    try {
+      await Promise.race([
+        setDoc(docRef, payload, { merge: true }),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
+    } catch (err) {
+      console.warn('[Firestore Milestones] togglePublish warning:', err);
     }
   },
 

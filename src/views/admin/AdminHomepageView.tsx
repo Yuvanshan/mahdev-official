@@ -59,7 +59,7 @@ export const AdminHomepageView: React.FC = () => {
   const { homepageConfig, updateHomepageConfig } = useFirestoreDataContext();
   const [config, setConfig] = useState<HomepageCmsConfig>(() => homepageConfig || cmsService.getHomepageConfig());
   const [activeTab, setActiveTab] = useState<
-    'sections' | 'hero' | 'intro' | 'why' | 'leadership' | 'services' | 'products' | 'portfolio' | 'showcase' | 'milestones' | 'companies' | 'cta' | 'seo'
+    'sections' | 'hero' | 'services' | 'products' | 'portfolio' | 'showcase' | 'milestones' | 'companies' | 'cta' | 'seo'
   >('sections');
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -96,10 +96,18 @@ export const AdminHomepageView: React.FC = () => {
   const [allProducts, setAllProducts] = useState<CmsProduct[]>([]);
   const [allProjects, setAllProjects] = useState<CmsPortfolioProject[]>([]);
 
-  // Local helper for dynamic sections
-  const sectionsList: DynamicSectionItem[] = config.sectionsOrder && config.sectionsOrder.length > 0
+  const rawSections: DynamicSectionItem[] = config.sectionsOrder && config.sectionsOrder.length > 0
     ? config.sectionsOrder
     : DEFAULT_HOMEPAGE_SECTIONS;
+  const sectionsList: DynamicSectionItem[] = rawSections.filter(
+    (s) =>
+      s.sectionKey !== 'about' &&
+      s.id !== 'sec-about' &&
+      s.sectionKey !== 'whyMahdev' &&
+      s.id !== 'sec-why' &&
+      s.sectionKey !== 'intro' &&
+      s.sectionKey !== 'aboutMahdev'
+  );
 
   const handleToggleSection = (index: number) => {
     const nextSections = [...sectionsList];
@@ -350,15 +358,14 @@ export const AdminHomepageView: React.FC = () => {
         {[
           { id: 'sections', label: '0. Sections & Widgets', icon: SlidersHorizontal },
           { id: 'hero', label: '1. Hero & Media', icon: Sparkles },
-          { id: 'intro', label: '2. Advantage Pillars', icon: ShieldCheck },
-          { id: 'services', label: '3. Featured Services', icon: Layers },
-          { id: 'products', label: '4. Featured Hardware', icon: Tag },
-          { id: 'portfolio', label: '5. Portfolio & Cases', icon: Star },
-          { id: 'showcase', label: '6. Event Showcase', icon: Video },
-          { id: 'milestones', label: '7. Milestones & Achievements', icon: TrendingUp },
-          { id: 'companies', label: '8. Corporate Partners', icon: Globe },
-          { id: 'cta', label: '9. Global CTA Bar', icon: Phone },
-          { id: 'seo', label: '10. Homepage SEO', icon: Globe },
+          { id: 'services', label: '2. Featured Services', icon: Layers },
+          { id: 'products', label: '3. Featured Hardware', icon: Tag },
+          { id: 'portfolio', label: '4. Portfolio & Cases', icon: Star },
+          { id: 'showcase', label: '5. Event Showcase', icon: Video },
+          { id: 'milestones', label: '6. Milestones & Achievements', icon: TrendingUp },
+          { id: 'companies', label: '7. Corporate Partners', icon: Globe },
+          { id: 'cta', label: '8. Global CTA Bar', icon: Phone },
+          { id: 'seo', label: '9. Homepage SEO', icon: Globe },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -409,7 +416,6 @@ export const AdminHomepageView: React.FC = () => {
                 const getTabTarget = (key: string) => {
                   if (key === 'welcomeAnimation') return null;
                   if (key === 'hero') return 'hero';
-                  if (key === 'about') return 'intro';
                   if (key === 'services') return 'services';
                   if (key === 'gallery' || key === 'portfolio') return 'portfolio';
                   if (key === 'decorationShowcase') return 'showcase';
@@ -874,149 +880,7 @@ export const AdminHomepageView: React.FC = () => {
           </div>
         )}
 
-        {/* ===================== TAB 2: ADVANTAGE PILLARS ===================== */}
-        {activeTab === 'intro' && (
-          <div className="space-y-6 text-xs">
-            <div className="border-b border-slate-100 pb-3">
-              <h3 className="font-display text-base font-bold text-slate-900">The Mahdev Advantage & Strategic Pillars</h3>
-              <p className="text-xs text-slate-500">Corporate introduction section conveying our integrated multi-division synergies.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Section Badge</label>
-                <input
-                  type="text"
-                  value={config.intro.badge}
-                  onChange={(e) => updateNested('intro', 'badge', e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Headline</label>
-                <input
-                  type="text"
-                  value={config.intro.headline}
-                  onChange={(e) => updateNested('intro', 'headline', e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Subheadline</label>
-                <input
-                  type="text"
-                  value={config.intro.subheadline}
-                  onChange={(e) => updateNested('intro', 'subheadline', e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Full Introduction Body</label>
-                <textarea
-                  rows={3}
-                  value={config.intro.description}
-                  onChange={(e) => updateNested('intro', 'description', e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ===================== TAB 3: FEATURED SERVICES ===================== */}
-        {activeTab === 'why' && (
-          <div className="space-y-6 text-xs">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="font-display text-base font-bold text-slate-900">Why Leading Brands Trust Mahdev</h3>
-                <p className="text-xs text-slate-500">Edit the headline, subtitle, and guarantee cards shown to customers on the homepage.</p>
-              </div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={config.whyMahdev?.enabled !== false}
-                  onChange={(e) => updateNested('whyMahdev', 'enabled', e.target.checked)}
-                  className="w-4 h-4 rounded text-blue-600"
-                />
-                <span className="font-bold text-slate-800">Show Section</span>
-              </label>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Badge</label>
-                <input
-                  type="text"
-                  value={config.whyMahdev?.badge || ''}
-                  onChange={(e) => updateNested('whyMahdev', 'badge', e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Title</label>
-                <input
-                  type="text"
-                  value={config.whyMahdev?.title || ''}
-                  onChange={(e) => updateNested('whyMahdev', 'title', e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Subtitle</label>
-                <textarea
-                  rows={3}
-                  value={config.whyMahdev?.subtitle || ''}
-                  onChange={(e) => updateNested('whyMahdev', 'subtitle', e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'leadership' && (
-          <div className="space-y-6 text-xs">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="font-display text-base font-bold text-slate-900">Executive Leadership</h3>
-                <p className="text-xs text-slate-500">Update the leadership section displayed on the About page with real saved Firestore values.</p>
-              </div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={config.leadership?.enabled !== false}
-                  onChange={(e) => updateNested('leadership', 'enabled', e.target.checked)}
-                  className="w-4 h-4 rounded text-blue-600"
-                />
-                <span className="font-bold text-slate-800">Show Section</span>
-              </label>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Section Title</label>
-                <input
-                  type="text"
-                  value={config.leadership?.title || ''}
-                  onChange={(e) => updateNested('leadership', 'title', e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Section Subtitle</label>
-                <input
-                  type="text"
-                  value={config.leadership?.subtitle || ''}
-                  onChange={(e) => updateNested('leadership', 'subtitle', e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-                />
-              </div>
-            </div>
-          </div>
-        )}
+        {/* ===================== TAB 2: FEATURED SERVICES ===================== */}
 
         {activeTab === 'services' && (
           <div className="space-y-6 text-xs">

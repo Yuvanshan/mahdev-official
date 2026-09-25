@@ -45,6 +45,12 @@ export const AdminModal: React.FC<AdminModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, isDirty]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      setShowUnsavedPrompt(false);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleRequestClose = () => {
