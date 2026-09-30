@@ -58,8 +58,27 @@ export function mapFirestoreProductToCatalog(
     lowStockThreshold: 10,
     trackInventory: true,
     stockStatus: fp.stock === 0 ? 'out_of_stock' : fp.stock <= 10 ? 'low_stock' : 'in_stock',
-    specifications: (fp as any).specifications || [],
     tags: (fp as any).tags || [],
+    specifications: (() => {
+      const raw = (fp as any).specifications;
+      if (Array.isArray(raw)) {
+        return raw.map((s: any) => ({
+          label: s.label || s.name || s.key || 'Specification',
+          value: String(s.value ?? s),
+          group: s.group,
+        }));
+      }
+      if (raw && typeof raw === 'object') {
+        return Object.entries(raw).map(([k, v]) => ({
+          label: k,
+          value: String(v),
+        }));
+      }
+      if (typeof raw === 'string' && raw.trim()) {
+        return [{ label: 'Details', value: raw.trim() }];
+      }
+      return [];
+    })(),
     rating: (fp as any).rating || 5.0,
     reviewsCount: (fp as any).reviewsCount || 0,
     isFeatured: (fp as any).isFeatured ?? true,

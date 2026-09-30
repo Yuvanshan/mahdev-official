@@ -191,7 +191,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                   }
                   alt={project.title}
                   className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 group-hover:opacity-75 transition-all duration-700 ease-out"
-                  referrerPolicy="no-referrer"
+                  
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
 
@@ -296,7 +296,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                         src={activeImg}
                         alt={selectedProject.title}
                         className="w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
+                        
                       />
                       <div className="absolute top-4 left-4">
                         <Badge variant="electric" size="sm">
@@ -322,7 +322,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                               src={img}
                               alt={`Thumbnail ${i + 1}`}
                               className="w-full h-full object-cover"
-                              referrerPolicy="no-referrer"
+                              
                             />
                           </button>
                         ))}

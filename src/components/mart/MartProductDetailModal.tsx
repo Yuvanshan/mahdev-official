@@ -54,6 +54,21 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
   const handleIncrement = () => setQuantity((q) => q + 1);
   const handleDecrement = () => setQuantity((q) => (q > 1 ? q - 1 : 1));
 
+  const specsList = React.useMemo(() => {
+    if (!product) return [];
+    const raw = (product as any).specifications;
+    if (Array.isArray(raw)) return raw;
+    if (raw && typeof raw === 'object') {
+      return Object.entries(raw).map(([k, v]) => ({ label: k, value: String(v) }));
+    }
+    if (typeof raw === 'string' && raw.trim()) {
+      return [{ label: 'Details', value: raw.trim() }];
+    }
+    return [];
+  }, [product]);
+
+  const tagsList = Array.isArray(product.tags) ? product.tags : [];
+
   const handleAddToCart = () => {
     onAddToCart(product, currentVariant || undefined, quantity);
   };
@@ -302,7 +317,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                     : 'border-transparent text-slate-400 hover:text-slate-700'
                 }`}
               >
-                Specifications ({product.specifications.length})
+                Specifications ({specsList.length})
               </button>
               <button
                 type="button"
@@ -313,43 +328,49 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                     : 'border-transparent text-slate-400 hover:text-slate-700'
                 }`}
               >
-                Customer Reviews ({product.reviewsCount})
+                Customer Reviews ({product.reviewsCount || 0})
               </button>
             </div>
 
             {activeTab === 'desc' && (
               <div className="space-y-3 text-xs sm:text-sm text-slate-700 leading-relaxed max-w-3xl">
                 <p>{product.description}</p>
-                <div className="flex flex-wrap gap-1.5 pt-2">
-                  {product.tags.map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 text-[11px] font-mono"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
+                {tagsList.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-2">
+                    {tagsList.map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 text-[11px] font-mono"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
             {activeTab === 'specs' && (
               <div className="rounded-xl border border-slate-200 overflow-hidden text-xs max-w-3xl">
-                <table className="w-full text-left">
-                  <tbody>
-                    {product.specifications.map((spec, idx) => (
-                      <tr
-                        key={idx}
-                        className={idx % 2 === 0 ? 'bg-slate-50/70' : 'bg-white'}
-                      >
-                        <td className="p-3 font-semibold text-slate-900 w-1/3 border-r border-slate-100">
-                          {spec.label}
-                        </td>
-                        <td className="p-3 text-slate-600">{spec.value}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                {specsList.length === 0 ? (
+                  <div className="p-4 text-center text-slate-400">No specifications listed.</div>
+                ) : (
+                  <table className="w-full text-left">
+                    <tbody>
+                      {specsList.map((spec, idx) => (
+                        <tr
+                          key={idx}
+                          className={idx % 2 === 0 ? 'bg-slate-50/70' : 'bg-white'}
+                        >
+                          <td className="p-3 font-semibold text-slate-900 w-1/3 border-r border-slate-100">
+                            {spec.label}
+                          </td>
+                          <td className="p-3 text-slate-600">{spec.value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             )}
 

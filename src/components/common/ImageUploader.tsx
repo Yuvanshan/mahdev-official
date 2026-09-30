@@ -170,7 +170,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                 src={previewUrl}
                 alt="Uploaded media preview"
                 className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
+                
               />
               <a
                 href={previewUrl}

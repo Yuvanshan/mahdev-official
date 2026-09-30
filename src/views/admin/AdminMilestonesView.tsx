@@ -664,7 +664,7 @@ export const AdminMilestonesView: React.FC = () => {
               />
               {formData.imageUrl && (
                 <div className="w-9 h-9 rounded-lg overflow-hidden border border-slate-200 shrink-0">
-                  <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover"  />
                 </div>
               )}
             </div>

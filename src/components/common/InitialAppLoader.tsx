@@ -91,7 +91,7 @@ export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
               src={effectiveLogo}
               alt="Mahdev (Pvt) Ltd"
               className="h-20 sm:h-24 md:h-28 w-auto max-w-[280px] sm:max-w-[340px] object-contain drop-shadow-xs relative z-10"
-              referrerPolicy="no-referrer"
+              
               animate={{
                 scale: [1, 1.015, 1],
               }}

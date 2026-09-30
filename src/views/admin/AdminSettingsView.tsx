@@ -341,12 +341,14 @@ export const AdminSettingsView: React.FC = () => {
       const resolvedLogo = systemSettings.logoUrl || companyData.logoUrl || '';
       const resolvedDarkLogo = systemSettings.darkLogoUrl || companyData.darkLogoUrl || '';
       const resolvedFavicon = systemSettings.faviconUrl || companyData.faviconUrl || '';
+      const resolvedMobileLogo = systemSettings.mobileLogoUrl || '';
 
       const updatedSite: FirestoreSiteSettings = {
         ...systemSettings,
         logoUrl: resolvedLogo,
         darkLogoUrl: resolvedDarkLogo,
         faviconUrl: resolvedFavicon,
+        mobileLogoUrl: resolvedMobileLogo,
         brandingUpdatedAt: new Date().toISOString(),
         brandingVersion: (systemSettings.brandingVersion || 1) + 1,
       };
@@ -1530,13 +1532,43 @@ export const AdminSettingsView: React.FC = () => {
                   <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                     Or Direct Image URL
                   </label>
-                  <input
-                    type="text"
-                    value={systemSettings.mobileLogoUrl || ''}
-                    onChange={(e) => setSystemSettings({ ...systemSettings, mobileLogoUrl: e.target.value })}
-                    placeholder="https://storage.googleapis.com/.../mobile_icon.png"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={systemSettings.mobileLogoUrl || ''}
+                      onChange={(e) => setSystemSettings({ ...systemSettings, mobileLogoUrl: e.target.value })}
+                      onBlur={async () => {
+                        if (systemSettings.mobileLogoUrl) {
+                          try {
+                            const trimmed = systemSettings.mobileLogoUrl.trim();
+                            await firestoreSettingsService.updateSiteSettings({ mobileLogoUrl: trimmed });
+                            await updateContextSiteSettings({ mobileLogoUrl: trimmed });
+                          } catch {}
+                        }
+                      }}
+                      placeholder="https://storage.googleapis.com/.../mobile_icon.png"
+                      className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const trimmed = (systemSettings.mobileLogoUrl || '').trim();
+                          await firestoreSettingsService.updateSiteSettings({ mobileLogoUrl: trimmed });
+                          await updateContextSiteSettings({ mobileLogoUrl: trimmed });
+                          await refreshAll();
+                          addToast('success', 'Mobile Icon URL Applied', 'Mobile app icon URL saved and published live.');
+                        } catch (err: any) {
+                          addToast('error', 'Failed to Apply Mobile Icon', err?.message || 'Error saving URL');
+                        }
+                      }}
+                      className="text-xs shrink-0"
+                    >
+                      Apply
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -1548,12 +1580,21 @@ export const AdminSettingsView: React.FC = () => {
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden shadow-2xs">
                     {systemSettings.mobileLogoUrl ? (
-                      <img
-                        src={systemSettings.mobileLogoUrl}
-                        alt="Mobile Icon"
-                        className="w-7 h-7 object-contain"
-                        referrerPolicy="no-referrer"
-                      />
+                      <>
+                        <img
+                          src={systemSettings.mobileLogoUrl}
+                          alt="Mobile Icon"
+                          className="w-7 h-7 object-contain"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
+                            if (fb) fb.classList.remove('hidden');
+                          }}
+                        />
+                        <div className="hidden w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
+                          {(companyData.name || 'M').charAt(0).toUpperCase()}
+                        </div>
+                      </>
                     ) : (
                       <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
                         M
@@ -1630,13 +1671,47 @@ export const AdminSettingsView: React.FC = () => {
                   <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                     Or Direct Favicon URL
                   </label>
-                  <input
-                    type="text"
-                    value={systemSettings.faviconUrl || ''}
-                    onChange={(e) => setSystemSettings({ ...systemSettings, faviconUrl: e.target.value })}
-                    placeholder="https://storage.googleapis.com/.../favicon.ico"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={systemSettings.faviconUrl || ''}
+                      onChange={(e) => setSystemSettings({ ...systemSettings, faviconUrl: e.target.value })}
+                      onBlur={async () => {
+                        if (systemSettings.faviconUrl) {
+                          try {
+                            const trimmed = systemSettings.faviconUrl.trim();
+                            await firestoreSettingsService.updateSiteSettings({ faviconUrl: trimmed });
+                            await firestoreSettingsService.updateCompanySettings({ faviconUrl: trimmed });
+                            await updateContextCompanySettings({ faviconUrl: trimmed });
+                            await updateContextSiteSettings({ faviconUrl: trimmed });
+                          } catch {}
+                        }
+                      }}
+                      placeholder="https://storage.googleapis.com/.../favicon.ico"
+                      className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const trimmed = (systemSettings.faviconUrl || '').trim();
+                          await firestoreSettingsService.updateSiteSettings({ faviconUrl: trimmed });
+                          await firestoreSettingsService.updateCompanySettings({ faviconUrl: trimmed });
+                          await updateContextCompanySettings({ faviconUrl: trimmed });
+                          await updateContextSiteSettings({ faviconUrl: trimmed });
+                          await refreshAll();
+                          addToast('success', 'Favicon URL Applied', 'Browser tab favicon URL saved and published live.');
+                        } catch (err: any) {
+                          addToast('error', 'Failed to Apply Favicon', err?.message || 'Error saving URL');
+                        }
+                      }}
+                      className="text-xs shrink-0"
+                    >
+                      Apply
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -1648,12 +1723,21 @@ export const AdminSettingsView: React.FC = () => {
                 <div className="bg-slate-200/70 p-2 rounded-xl border border-slate-300/80">
                   <div className="inline-flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg shadow-2xs border border-slate-200 max-w-full">
                     {systemSettings.faviconUrl ? (
-                      <img
-                        src={systemSettings.faviconUrl}
-                        alt="Favicon"
-                        className="w-4 h-4 object-contain rounded-xs"
-                        referrerPolicy="no-referrer"
-                      />
+                      <>
+                        <img
+                          src={systemSettings.faviconUrl}
+                          alt="Favicon"
+                          className="w-4 h-4 object-contain rounded-xs"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
+                            if (fb) fb.classList.remove('hidden');
+                          }}
+                        />
+                        <div className="hidden w-4 h-4 bg-blue-600 rounded-xs flex items-center justify-center text-white font-bold text-[9px]">
+                          {(companyData.name || 'M').charAt(0).toUpperCase()}
+                        </div>
+                      </>
                     ) : (
                       <div className="w-4 h-4 bg-blue-600 rounded-xs flex items-center justify-center text-white font-bold text-[9px]">
                         {(companyData.name || 'M').charAt(0).toUpperCase()}

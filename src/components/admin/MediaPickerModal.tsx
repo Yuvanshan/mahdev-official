@@ -531,7 +531,7 @@ export const MediaPickerModal: React.FC<MediaPickerModalProps> = ({
                       src={uploadedUrl}
                       alt="Uploaded asset"
                       className="max-h-full max-w-full object-contain"
-                      referrerPolicy="no-referrer"
+                      
                     />
                   </div>
                 </div>

@@ -88,7 +88,19 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
           availableStock: typeof p.stock === 'number' ? p.stock : 10,
           minOrderQuantity: 1,
           imageUrl: p.images && p.images.length > 0 ? p.images[0] : (p as any).imageUrl || '',
-          features: (p as any).specifications?.map((s: any) => typeof s === 'string' ? s : `${s.label}: ${s.value}`) || [],
+          features: (() => {
+            const rawSpecs = (p as any).specifications;
+            if (Array.isArray(rawSpecs)) {
+              return rawSpecs.map((s: any) => typeof s === 'string' ? s : `${s.label || s.name || s.key || ''}: ${s.value || ''}`);
+            }
+            if (rawSpecs && typeof rawSpecs === 'object') {
+              return Object.entries(rawSpecs).map(([k, v]) => `${k}: ${v}`);
+            }
+            if (typeof rawSpecs === 'string' && rawSpecs.trim()) {
+              return [rawSpecs.trim()];
+            }
+            return [];
+          })(),
           specs: [],
           badge: (p as any).badge,
           popular: !!(p as any).isFeatured,

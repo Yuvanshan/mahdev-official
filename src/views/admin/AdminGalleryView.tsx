@@ -925,8 +925,16 @@ export const AdminGalleryView: React.FC = () => {
                     <img
                       src={img}
                       alt={`Gallery item ${idx + 1}`}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
+                        if (fb) fb.classList.remove('hidden');
+                      }}
                       className="w-full h-full object-cover"
                     />
+                    <div className="hidden w-full h-full bg-slate-100 flex items-center justify-center text-slate-400">
+                      <ImageIcon className="w-5 h-5 text-slate-300" />
+                    </div>
 
                     {/* Cover badge */}
                     {idx === 0 ? (

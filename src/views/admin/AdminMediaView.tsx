@@ -477,7 +477,7 @@ export const AdminMediaView: React.FC = () => {
                       src={item.url}
                       alt={item.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      referrerPolicy="no-referrer"
+                      
                       loading="lazy"
                     />
                     <div className="absolute top-2 left-2 flex items-center gap-1">
@@ -743,7 +743,7 @@ export const AdminMediaView: React.FC = () => {
                   src={editUrl}
                   alt={editTitle}
                   className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
+                  
                 />
               </div>
               <div className="space-y-1 flex-1 min-w-0">
@@ -1037,7 +1037,7 @@ export const AdminMediaView: React.FC = () => {
                 src={previewItem.url}
                 alt={previewItem.title}
                 className="max-h-[68vh] object-contain rounded-lg"
-                referrerPolicy="no-referrer"
+                
               />
             </div>
             <div className="p-3 bg-slate-900 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">

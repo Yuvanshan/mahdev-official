@@ -569,7 +569,7 @@ export const AdminTestimonialsView: React.FC = () => {
                           src={review.authorPhotoUrl}
                           alt={review.authorName}
                           className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
+                          
                         />
                       ) : (
                         <span>{review.authorName.slice(0, 2).toUpperCase()}</span>

@@ -450,8 +450,17 @@ export const AdminProductsView: React.FC = () => {
                   <img
                     src={activeItem.imageUrl}
                     alt={activeItem.name}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
+                      if (fb) fb.classList.remove('hidden');
+                    }}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
+                  <div className="hidden w-full h-full bg-slate-100 flex flex-col items-center justify-center text-slate-400 p-4 text-center">
+                    <Package className="w-10 h-10 mb-2 text-slate-300" />
+                    <span className="text-[11px] font-medium text-slate-500">{activeItem.name}</span>
+                  </div>
                   <a
                     href={activeItem.imageUrl}
                     target="_blank"
@@ -472,7 +481,14 @@ export const AdminProductsView: React.FC = () => {
                         rel="noreferrer"
                         className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden shrink-0 bg-white"
                       >
-                        <img src={img} alt="Gallery" className="w-full h-full object-cover" />
+                        <img
+                          src={img}
+                          alt="Gallery"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLElement).style.display = 'none';
+                          }}
+                          className="w-full h-full object-cover"
+                        />
                       </a>
                     ))}
                   </div>
@@ -600,14 +616,21 @@ export const AdminProductsView: React.FC = () => {
                   <tr key={prod.id} className={`hover:bg-slate-50/80 transition-colors ${prod.isDeleted ? 'bg-slate-50/50 opacity-60' : ''}`}>
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
-                        <img
-                          src={prod.imageUrl}
-                          alt={prod.name}
-                          className="w-10 h-10 rounded-lg object-cover bg-slate-100 border border-slate-200 shrink-0"
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = 'none';
-                          }}
-                        />
+                        {prod.imageUrl ? (
+                          <img
+                            src={prod.imageUrl}
+                            alt={prod.name}
+                            className="w-10 h-10 rounded-lg object-cover bg-slate-100 border border-slate-200 shrink-0"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
+                              if (fb) fb.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <div className={`w-10 h-10 rounded-lg bg-slate-100 text-slate-500 border border-slate-200 flex items-center justify-center shrink-0 ${prod.imageUrl ? 'hidden' : ''}`}>
+                          <Package className="w-5 h-5 text-slate-400" />
+                        </div>
                         <div>
                           <span className="font-bold text-slate-900 block truncate max-w-xs">{prod.name}</span>
                           <span className="font-mono text-[10px] text-slate-500 font-bold">{prod.sku}</span>
@@ -881,9 +904,17 @@ export const AdminProductsView: React.FC = () => {
                 <img
                   src={formData.imageUrl}
                   alt="Thumbnail"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
+                    if (fb) fb.classList.remove('hidden');
+                  }}
                   className="w-14 h-14 rounded-xl object-cover border border-slate-200 bg-slate-50"
                 />
-                <span className="text-[11px] text-slate-500">Live image preview verified.</span>
+                <div className="hidden w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
+                  <Package className="w-6 h-6" />
+                </div>
+                <span className="text-[11px] text-slate-500">Live image preview.</span>
               </div>
             )}
           </div>

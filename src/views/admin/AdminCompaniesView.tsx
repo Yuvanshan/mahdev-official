@@ -285,7 +285,7 @@ export const AdminCompaniesView: React.FC = () => {
                           src={company.logoUrl}
                           alt={company.name}
                           className="w-full h-full object-contain"
-                          referrerPolicy="no-referrer"
+                          
                         />
                       ) : (
                         <Building className="w-6 h-6 text-slate-400" />
@@ -544,7 +544,7 @@ export const AdminCompaniesView: React.FC = () => {
                     src={formData.logoUrl}
                     alt="Preview"
                     className="w-full h-full object-contain"
-                    referrerPolicy="no-referrer"
+                    
                   />
                 </div>
               )}

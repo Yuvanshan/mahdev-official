@@ -58,7 +58,7 @@ export const Image: React.FC<ImageProps> = ({
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
           {...(priority ? { fetchPriority: 'high' as any } : { fetchPriority: 'auto' as any })}
-          referrerPolicy="no-referrer"
+          
           onLoad={() => setIsLoaded(true)}
           onError={() => setHasError(true)}
           className={`w-full h-full object-cover transition-all duration-500 ease-out transform-gpu will-change-transform ${

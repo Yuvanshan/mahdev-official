@@ -344,7 +344,7 @@ export const AdminBannersView: React.FC = () => {
                       src={banner.imageUrl}
                       alt={banner.title}
                       className="absolute inset-0 w-full h-full object-cover opacity-35"
-                      referrerPolicy="no-referrer"
+                      
                     />
                   )}
                   <div className="relative z-10 space-y-1">

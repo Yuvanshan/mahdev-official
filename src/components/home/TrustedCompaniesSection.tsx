@@ -71,7 +71,7 @@ export const TrustedCompaniesSection: React.FC<TrustedCompaniesSectionProps> = (
                   src={company.logoUrl}
                   alt={company.name}
                   className="h-9 max-w-[120px] object-contain mb-1.5 group-hover:scale-105 transition-transform"
-                  referrerPolicy="no-referrer"
+                  
                 />
               ) : (
                 <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-base mb-1">

@@ -171,8 +171,17 @@ export const HomeGallerySection: React.FC = () => {
             <img
               src={activeImage.url}
               alt={activeImage.title}
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
+                if (fb) fb.classList.remove('hidden');
+              }}
               className="max-h-[85vh] w-auto max-w-full rounded-2xl object-contain shadow-2xl"
             />
+            <div className="hidden w-80 h-64 bg-slate-900/80 rounded-2xl border border-white/10 flex flex-col items-center justify-center text-center p-6 text-slate-300">
+              <span className="font-semibold text-sm mb-1">{activeImage.title}</span>
+              <span className="text-xs text-slate-400">{activeImage.category}</span>
+            </div>
             <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-slate-200">
               <span className="truncate font-medium">{activeImage.title}</span>
               <span className="rounded-full bg-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-slate-300">

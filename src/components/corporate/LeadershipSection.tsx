@@ -78,7 +78,7 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({ onContactL
                         }
                         alt={member.name}
                         className="w-full h-full object-cover object-top opacity-90 group-hover:scale-105 group-hover:opacity-100 transition-all duration-500"
-                        referrerPolicy="no-referrer"
+                        
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
 
@@ -205,7 +205,7 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({ onContactL
                 }
                 alt={selectedMember.name}
                 className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover object-top border-2 border-blue-500 shadow-md shrink-0"
-                referrerPolicy="no-referrer"
+                
               />
               <div className="text-center sm:text-left space-y-1 flex-1">
                 <Badge variant="electric" size="sm">

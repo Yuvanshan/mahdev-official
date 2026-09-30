@@ -343,7 +343,7 @@ export const TestimonialsView: React.FC<TestimonialsViewProps> = ({ onNavigate }
                               src={review.authorPhotoUrl}
                               alt={review.authorName}
                               className="w-11 h-11 rounded-full object-cover border border-slate-200 shadow-2xs shrink-0"
-                              referrerPolicy="no-referrer"
+                              
                             />
                           ) : (
                             <div className="w-11 h-11 rounded-full bg-blue-600 text-white font-bold text-sm flex items-center justify-center shadow-2xs">

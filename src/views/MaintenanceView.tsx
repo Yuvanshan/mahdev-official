@@ -52,7 +52,7 @@ export const MaintenanceView: React.FC<MaintenanceViewProps> = ({ onAdminLogin }
               src={imageUrl}
               alt="Scheduled Maintenance Banner"
               className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
+              
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
             <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md border border-amber-500/30 text-amber-300 text-[11px] font-bold tracking-wide">

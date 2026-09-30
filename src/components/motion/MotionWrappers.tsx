@@ -297,7 +297,7 @@ export const ImageReveal: React.FC<{
   if (reducedMotion) {
     return (
       <div className={`overflow-hidden rounded-2xl ${aspectRatio} ${className}`}>
-        <img src={validSrc} alt={alt} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+        <img src={validSrc} alt={alt} className="w-full h-full object-cover"  />
       </div>
     );
   }
@@ -314,7 +314,7 @@ export const ImageReveal: React.FC<{
         src={validSrc}
         alt={alt}
         className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-        referrerPolicy="no-referrer"
+        
       />
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-transparent opacity-60 pointer-events-none" />
     </motion.div>

@@ -301,7 +301,7 @@ export const AdminSeoView: React.FC = () => {
                   src={currentEntry.ogImage}
                   alt="OG Preview"
                   className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
+                  
                 />
               </div>
               <div className="p-3 space-y-1">

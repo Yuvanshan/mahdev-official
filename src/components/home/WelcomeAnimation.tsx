@@ -158,7 +158,7 @@ export const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({
                   src={uploadedLogo && uploadedLogo.trim() !== '' ? uploadedLogo : '/logo.png'}
                   alt={brandName}
                   className="h-16 sm:h-20 w-auto object-contain max-w-[240px]"
-                  referrerPolicy="no-referrer"
+                  
                   onError={(e) => {
                     const target = e.currentTarget as HTMLImageElement;
                     target.onerror = null;

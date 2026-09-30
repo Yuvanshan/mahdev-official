@@ -218,7 +218,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
                       src={review.avatarUrl}
                       alt={review.authorName}
                       className="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-2xs"
-                      referrerPolicy="no-referrer"
+                      
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shadow-2xs">

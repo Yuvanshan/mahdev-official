@@ -178,7 +178,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
             src={uploadedLogo}
             alt={brandName}
             className={`${currentSize.imgHeight} w-auto max-w-[340px] sm:max-w-[420px] object-contain transition-transform duration-200 group-hover:scale-[1.02] filter drop-shadow-xs`}
-            referrerPolicy="no-referrer"
+            
             onError={() => setImgError(true)}
           />
           {divisionLabel && (
