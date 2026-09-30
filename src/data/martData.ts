@@ -185,8 +185,8 @@ export const MART_PRODUCTS: Product[] = catalogService
           })),
         }
       : undefined,
-    specifications: p.specifications.map((s) => ({ label: s.label, value: s.value })),
-    tags: p.tags,
+    specifications: Array.isArray(p.specifications) ? p.specifications.map((s) => ({ label: s.label, value: s.value })) : [],
+    tags: Array.isArray(p.tags) ? p.tags : [],
     reviews: p.reviews?.map((r) => ({
       id: r.id,
       author: r.author,

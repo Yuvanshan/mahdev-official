@@ -132,7 +132,15 @@ export const AdminGalleryView: React.FC = () => {
       );
     }
 
-    setGalleryItems(data);
+    const seenGalIds = new Set<string>();
+    const deduplicated: CmsGalleryItem[] = [];
+    for (const item of data) {
+      if (!seenGalIds.has(item.id)) {
+        seenGalIds.add(item.id);
+        deduplicated.push(item);
+      }
+    }
+    setGalleryItems(deduplicated);
 
     // Refresh categories from CMS and current gallery items
     const cmsCats = cmsService.getAll<CmsCategory>('categories');

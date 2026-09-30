@@ -331,7 +331,7 @@ export const CatalogProductModal: React.FC<CatalogProductModalProps> = ({
             </div>
 
             {/* Product Specifications Section */}
-            {product.specifications && product.specifications.length > 0 && (
+            {Array.isArray(product.specifications) && product.specifications.length > 0 && (
               <div className="pt-6 border-t border-neutral-200">
                 <h3 className="text-base font-semibold text-neutral-900 mb-4 flex items-center gap-2">
                   <LayersIcon className="w-4 h-4 text-amber-600" />

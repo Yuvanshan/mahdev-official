@@ -196,7 +196,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   });
   const [milestones, setMilestones] = useState<FirestoreMilestone[]>(() => {
     if (Array.isArray(cachedMs) && cachedMs.length > 0) return cachedMs;
-    return DEFAULT_OFFICIAL_MILESTONES;
+    return [];
   });
   const [trustedCompanies, setTrustedCompanies] = useState<FirestoreTrustedCompany[]>(() => {
     return Array.isArray(cachedComps) ? cachedComps : [];
@@ -317,7 +317,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
               const otherServices = prev.filter(
                 (s) => !isSameDivision(s.division, canonicalId) && !isSameDivision((s as any).divisionId, canonicalId)
               );
-              const merged = [...otherServices, ...srvs];
+              const seen = new Set(srvs.map((s) => s.id));
+              const merged = [...otherServices.filter((s) => !seen.has(s.id)), ...srvs];
               try { localStorage.setItem('mahdev_cached_services', JSON.stringify(merged)); } catch {}
               return merged;
             });
@@ -339,7 +340,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
               const otherGal = prev.filter(
                 (g) => !isSameDivision(g.division, canonicalId) && !isSameDivision((g as any).divisionId, canonicalId)
               );
-              const merged = [...otherGal, ...gal];
+              const seen = new Set(gal.map((g) => g.id));
+              const merged = [...otherGal.filter((g) => !seen.has(g.id)), ...gal];
               try { localStorage.setItem('mahdev_cached_gallery', JSON.stringify(merged)); } catch {}
               return merged;
             });
@@ -370,7 +372,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
               const otherProds = prev.filter(
                 (p) => !isSameDivision(p.division, canonicalId) && !isSameDivision((p as any).divisionId, canonicalId)
               );
-              const merged = [...otherProds, ...prods];
+              const seen = new Set(prods.map((p) => p.id));
+              const merged = [...otherProds.filter((p) => !seen.has(p.id)), ...prods];
               try { localStorage.setItem('mahdev_cached_products', JSON.stringify(merged)); } catch {}
               return merged;
             });
@@ -384,7 +387,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
               const otherCats = prev.filter(
                 (c) => !isSameDivision(c.division, canonicalId) && !isSameDivision((c as any).divisionId, canonicalId)
               );
-              const merged = [...otherCats, ...cats];
+              const seen = new Set(cats.map((c) => c.id));
+              const merged = [...otherCats.filter((c) => !seen.has(c.id)), ...cats];
               try { localStorage.setItem('mahdev_cached_categories', JSON.stringify(merged)); } catch {}
               return merged;
             });
@@ -393,7 +397,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
               const otherPort = prev.filter(
                 (p) => !isSameDivision(p.division, canonicalId) && !isSameDivision((p as any).divisionId, canonicalId)
               );
-              const merged = [...otherPort, ...port];
+              const seen = new Set(port.map((p) => p.id));
+              const merged = [...otherPort.filter((p) => !seen.has(p.id)), ...port];
               try { localStorage.setItem('mahdev_cached_portfolio', JSON.stringify(merged)); } catch {}
               return merged;
             });
@@ -815,6 +820,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     // Realtime snapshot listeners stream data one-by-one from Firestore (or IndexedDB persistent cache)
     // and dismiss individual section shimmers the millisecond each snapshot arrives.
     markReady();
+
+    // Trigger fresh synchronization across all collections to sync real Firestore data
+    refreshAll(false).catch(() => {});
 
     // Emergency fail-safe timeout only in case network drops completely
     const failsafeTimer = setTimeout(() => {

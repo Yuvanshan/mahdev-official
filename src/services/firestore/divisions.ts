@@ -97,19 +97,19 @@ export const DIVISION_DOCUMENT_MAP: Record<string, {
 export function normalizeDivisionId(id: string): { canonicalDocId: string; alternateId: string; shortId: string } {
   const clean = (id || '').toLowerCase().replace(/^div-/, '').trim();
   if (clean === 'sws' || clean === 'sws-event-management' || clean === 'sws-events' || clean === 'events') {
-    return { canonicalDocId: 'sws', alternateId: 'sws-event-management', shortId: 'sws' };
+    return { canonicalDocId: 'sws', alternateId: 'sws', shortId: 'sws' };
   }
   if (clean === 'u1' || clean === 'u1-studio' || clean === 'u1-cinema' || clean === 'studio' || clean === 'photography') {
-    return { canonicalDocId: 'u1-studio', alternateId: 'u1', shortId: 'u1' };
+    return { canonicalDocId: 'u1', alternateId: 'u1', shortId: 'u1' };
   }
   if (clean === 'it' || clean === 'it-solutions' || clean === 'mahdev-it' || clean === 'solutions') {
-    return { canonicalDocId: 'it-solutions', alternateId: 'it', shortId: 'it' };
+    return { canonicalDocId: 'it', alternateId: 'it', shortId: 'it' };
   }
   if (clean === 'travels' || clean === 'mahdev-travels' || clean === 'travel') {
-    return { canonicalDocId: 'travels', alternateId: 'mahdev-travels', shortId: 'travels' };
+    return { canonicalDocId: 'travels', alternateId: 'travels', shortId: 'travels' };
   }
   if (clean === 'mart' || clean === 'online-mart' || clean === 'mahdev-mart' || clean === 'shop') {
-    return { canonicalDocId: 'online-mart', alternateId: 'mart', shortId: 'mart' };
+    return { canonicalDocId: 'mart', alternateId: 'mart', shortId: 'mart' };
   }
   return { canonicalDocId: clean, alternateId: clean, shortId: clean };
 }
@@ -567,23 +567,6 @@ export const firestoreDivisionsService = {
         new Promise((resolve) => setTimeout(resolve, 3500)),
       ]);
       console.log(`[Firestore Divisions] Division "${canonicalDocId}" committed to Firestore.`);
-
-      if (alternateId && alternateId !== canonicalDocId) {
-        try {
-          await Promise.race([
-            setDoc(doc(db, 'divisions', alternateId), { ...payload, id: alternateId }, { merge: true }),
-            new Promise((resolve) => setTimeout(resolve, 2000)),
-          ]);
-        } catch {}
-      }
-      if (shortId && shortId !== canonicalDocId && shortId !== alternateId) {
-        try {
-          await Promise.race([
-            setDoc(doc(db, 'divisions', shortId), { ...payload, id: shortId }, { merge: true }),
-            new Promise((resolve) => setTimeout(resolve, 2000)),
-          ]);
-        } catch {}
-      }
     } catch (fsErr) {
       console.warn(`[Firestore Divisions] Cloud commit notice for "${canonicalDocId}":`, fsErr);
     }

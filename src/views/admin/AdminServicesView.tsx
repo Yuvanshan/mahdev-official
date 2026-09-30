@@ -121,7 +121,15 @@ export const AdminServicesView: React.FC = () => {
       );
     }
 
-    setServices(data);
+    const seenSrvIds = new Set<string>();
+    const deduplicated: CmsService[] = [];
+    for (const item of data) {
+      if (!seenSrvIds.has(item.id)) {
+        seenSrvIds.add(item.id);
+        deduplicated.push(item);
+      }
+    }
+    setServices(deduplicated);
 
     // Load available categories
     const allCats = cmsService.getAll<CmsCategory>('categories');

@@ -313,7 +313,18 @@ export const AdminDivisionsView: React.FC = () => {
       const ordB = typeof b.order === 'number' ? b.order : 99;
       return ordA - ordB;
     });
-    setDivisions(sorted);
+
+    const uniqueDivKeys = new Set<string>();
+    const deduplicated: CmsDivision[] = [];
+    for (const d of sorted) {
+      const key = normalizeDivisionId(d.divisionKey || d.id || '').shortId;
+      if (key && !uniqueDivKeys.has(key)) {
+        uniqueDivKeys.add(key);
+        deduplicated.push(d);
+      }
+    }
+
+    setDivisions(deduplicated);
   };
 
   useEffect(() => {
