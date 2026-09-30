@@ -32,6 +32,20 @@ export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) =>
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (Number(a.year) || 0) - (Number(b.year) || 0));
   }, [milestones]);
 
+  // 1. Shimmer during loading until data fetches
+  if (isMilestonesLoading && displayMilestones.length === 0) {
+    return (
+      <div className="pt-24 pb-12 bg-white">
+        <SEOHead
+          title="Our Milestones & Achievements | Mahdev Pvt Ltd"
+          description="Explore the journey of Mahdev Pvt Ltd from 2022 foundation to islandwide expansion, IT innovation, and 1,800+ delivered projects."
+          canonicalUrl="https://mahdev.lk/milestones"
+        />
+        <MilestonesTimelineShimmer />
+      </div>
+    );
+  }
+
   return (
     <div className="pt-24 pb-12 bg-white">
       <SEOHead
@@ -71,7 +85,6 @@ export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) =>
           <div className="space-y-12 sm:space-y-16 relative z-10">
             {displayMilestones.map((ms: any, index: number) => {
               const isEven = index % 2 === 0;
-              const Icon = ms.icon || Award;
 
               return (
                 <ScrollReveal key={ms.id ? `ms-view-${ms.id}` : `ms-view-${ms.year}-${index}`} direction="up" delay={index * 0.08}>
@@ -88,11 +101,29 @@ export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) =>
                     {/* Timeline Content Card */}
                     <div className={`w-full sm:w-[calc(50%-2rem)] pl-12 sm:pl-0 ${isEven ? 'sm:text-right' : ''}`}>
                       <TiltCard maxTilt={4} glareEffect>
-                        <div className="p-6 sm:p-7 rounded-2xl bg-slate-50 border border-slate-200 hover:border-[#0052FF] hover:bg-white hover:shadow-xl transition-all duration-300 group">
-                          <div className={`flex items-center gap-2 mb-3 ${isEven ? 'sm:justify-end' : ''}`}>
+                        <div className="p-6 sm:p-7 rounded-2xl bg-slate-50 border border-slate-200 hover:border-[#0052FF] hover:bg-white hover:shadow-xl transition-all duration-300 group overflow-hidden">
+                          {/* Image preview if provided in Firestore */}
+                          {ms.imageUrl && (
+                            <div className="mb-4 rounded-xl overflow-hidden max-h-48 border border-slate-200/90 shadow-2xs">
+                              <img
+                                src={ms.imageUrl}
+                                alt={ms.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                loading={index < 2 ? "eager" : "lazy"}
+                                decoding="async"
+                              />
+                            </div>
+                          )}
+
+                          <div className={`flex items-center gap-2 mb-3 flex-wrap ${isEven ? 'sm:justify-end' : ''}`}>
                             <span className="px-2.5 py-1 rounded-md bg-blue-100/90 text-[#0052FF] font-bold text-xs">
                               {ms.year}
                             </span>
+                            {ms.date && (
+                              <span className="text-xs font-mono text-slate-500">
+                                {ms.date}
+                              </span>
+                            )}
                             {ms.badge && (
                               <Badge variant="outline" size="sm">
                                 {ms.badge}
@@ -105,14 +136,29 @@ export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) =>
                           </h3>
 
                           {ms.subtitle && (
-                            <p className="text-xs font-semibold text-[#0052FF] mb-3">
+                            <p className="text-xs font-semibold text-[#0052FF] mb-2">
                               {ms.subtitle}
                             </p>
                           )}
 
-                          <p className="text-sm text-slate-600 leading-relaxed mb-4">
+                          {ms.metric && (
+                            <div className={`mb-3 ${isEven ? 'sm:text-right' : ''}`}>
+                              <span className="inline-block px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 text-xs font-mono font-bold">
+                                {ms.metric}
+                              </span>
+                            </div>
+                          )}
+
+                          <p className="text-sm text-slate-600 leading-relaxed mb-4 text-left">
                             {ms.description}
                           </p>
+
+                          {ms.keyOutcome && (
+                            <div className="pt-2 text-xs text-blue-800 font-semibold flex items-start gap-1.5 text-left mb-3 bg-blue-50/70 p-2.5 rounded-lg border border-blue-100">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                              <span><strong>Key Outcome:</strong> {ms.keyOutcome}</span>
+                            </div>
+                          )}
 
                           {ms.details && ms.details.length > 0 && (
                             <div className="pt-3 border-t border-slate-200/80 space-y-1.5 text-left">

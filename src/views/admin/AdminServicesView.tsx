@@ -35,6 +35,7 @@ import { QuickCategoryCreator } from '../../components/admin/QuickCategoryCreato
 import { DivisionId } from '../../types';
 import { formatCurrency, formatLKR } from '../../utils/currency';
 import { compressDataUrl } from '../../utils/imageOptimizer';
+import { uploadMediaAsset } from '../../services/mediaUploadService';
 
 export const AdminServicesView: React.FC = () => {
   const { refreshAll } = useFirestoreDataContext();
@@ -242,16 +243,24 @@ export const AdminServicesView: React.FC = () => {
     const newImages: string[] = [];
     for (const file of filesToProcess) {
       try {
-        const base64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-        const compressed = await compressDataUrl(base64, 1200, 0.82);
-        newImages.push(compressed);
+        const uploadedUrl = await uploadMediaAsset(file);
+        if (uploadedUrl) {
+          newImages.push(uploadedUrl);
+        }
       } catch (err) {
-        console.error('Failed to compress image:', err);
+        console.warn('Direct upload fallback:', err);
+        try {
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+          const compressed = await compressDataUrl(base64, 800, 0.7);
+          newImages.push(compressed);
+        } catch (compErr) {
+          console.error('Failed to process image:', compErr);
+        }
       }
     }
 
@@ -354,7 +363,10 @@ export const AdminServicesView: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      addToast('warning', 'Validation Incomplete', 'Please fill in the service title and description before saving.');
+      return;
+    }
 
     setIsSaving(true);
     try {

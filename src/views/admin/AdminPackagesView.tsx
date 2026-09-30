@@ -181,7 +181,10 @@ export const AdminPackagesView: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      addToast('warning', 'Validation Incomplete', 'Please provide a valid package name and price before saving.');
+      return;
+    }
 
     setIsSaving(true);
     try {

@@ -151,14 +151,14 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   const cachedMedia = getCache('mahdev_cached_media_assets');
 
   // Individual Per-Entity Loading States (Hold shimmer until that specific entity arrives from Firestore!)
-  const [isDivisionsLoading, setIsDivisionsLoading] = useState<boolean>(!cachedDivs || !Array.isArray(cachedDivs) || cachedDivs.length === 0);
-  const [isMilestonesLoading, setIsMilestonesLoading] = useState<boolean>(!cachedMs || !Array.isArray(cachedMs));
-  const [isServicesLoading, setIsServicesLoading] = useState<boolean>(!cachedSrvs || !Array.isArray(cachedSrvs));
-  const [isGalleryLoading, setIsGalleryLoading] = useState<boolean>(!cachedGal || !Array.isArray(cachedGal));
-  const [isProductsLoading, setIsProductsLoading] = useState<boolean>(!cachedProds || !Array.isArray(cachedProds));
-  const [isPortfolioLoading, setIsPortfolioLoading] = useState<boolean>(!cachedPort || !Array.isArray(cachedPort));
-  const [isTestimonialsLoading, setIsTestimonialsLoading] = useState<boolean>(!cachedTestis || !Array.isArray(cachedTestis));
-  const [isCompaniesLoading, setIsCompaniesLoading] = useState<boolean>(!cachedComps || !Array.isArray(cachedComps));
+  const [isDivisionsLoading, setIsDivisionsLoading] = useState<boolean>(false);
+  const [isMilestonesLoading, setIsMilestonesLoading] = useState<boolean>(!cachedMs || !Array.isArray(cachedMs) || cachedMs.length === 0);
+  const [isServicesLoading, setIsServicesLoading] = useState<boolean>(!cachedSrvs || !Array.isArray(cachedSrvs) || cachedSrvs.length === 0);
+  const [isGalleryLoading, setIsGalleryLoading] = useState<boolean>(!cachedGal || !Array.isArray(cachedGal) || cachedGal.length === 0);
+  const [isProductsLoading, setIsProductsLoading] = useState<boolean>(!cachedProds || !Array.isArray(cachedProds) || cachedProds.length === 0);
+  const [isPortfolioLoading, setIsPortfolioLoading] = useState<boolean>(!cachedPort || !Array.isArray(cachedPort) || cachedPort.length === 0);
+  const [isTestimonialsLoading, setIsTestimonialsLoading] = useState<boolean>(!cachedTestis || !Array.isArray(cachedTestis) || cachedTestis.length === 0);
+  const [isCompaniesLoading, setIsCompaniesLoading] = useState<boolean>(!cachedComps || !Array.isArray(cachedComps) || cachedComps.length === 0);
   const [isHomepageConfigLoading, setIsHomepageConfigLoading] = useState<boolean>(!cachedHome);
   const [isSettingsLoading, setIsSettingsLoading] = useState<boolean>(!cachedCompany || !cachedSite);
 
@@ -183,8 +183,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     if (Array.isArray(cachedDivs) && cachedDivs.length > 0) {
       return sortDivisions(cachedDivs);
     }
-    // Return empty array while loading so shimmer is shown and NO fake data appears
-    return [];
+    return sortDivisions(getDefaultDivisions());
   });
   const [categories, setCategories] = useState<FirestoreCategory[]>(() => {
     return Array.isArray(cachedCats) ? cachedCats : [];
@@ -523,6 +522,15 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           divisionsRef.current = sortedDivs;
           setDivisions(sortedDivs);
           setIsDivisionsLoading(false);
+          setLoadedDivisions((prev) => {
+            const next = { ...prev };
+            sortedDivs.forEach((d) => {
+              next[d.id] = true;
+              if (d.slug) next[d.slug] = true;
+            });
+            try { localStorage.setItem('mahdev_cached_loaded_divisions', JSON.stringify(next)); } catch {}
+            return next;
+          });
           cmsService.syncEntityFromFirestore('divisions', sortedDivs);
           try { localStorage.setItem('mahdev_cached_divisions', JSON.stringify(sortedDivs)); } catch {}
           setSyncProgress((p) => Math.min(95, p + 8));
@@ -595,6 +603,15 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         .then((allServices) => {
           setServices(allServices);
           setIsServicesLoading(false);
+          setLoadedServices((prev) => {
+            const next = { ...prev };
+            allServices.forEach((s) => {
+              if (s.division) next[s.division] = true;
+              if ((s as any).divisionId) next[(s as any).divisionId] = true;
+            });
+            try { localStorage.setItem('mahdev_cached_loaded_services', JSON.stringify(next)); } catch {}
+            return next;
+          });
           bookingService.syncWithFirestore(allServices);
           cmsService.syncEntityFromFirestore('services', allServices);
           try { localStorage.setItem('mahdev_cached_services', JSON.stringify(allServices)); } catch {}
@@ -648,6 +665,15 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         .then((allGallery) => {
           setGallery(allGallery);
           setIsGalleryLoading(false);
+          setLoadedGallery((prev) => {
+            const next = { ...prev };
+            allGallery.forEach((g) => {
+              if (g.division) next[g.division] = true;
+              if ((g as any).divisionId) next[(g as any).divisionId] = true;
+            });
+            try { localStorage.setItem('mahdev_cached_loaded_gallery', JSON.stringify(next)); } catch {}
+            return next;
+          });
           cmsService.syncEntityFromFirestore('gallery', allGallery);
           try { localStorage.setItem('mahdev_cached_gallery', JSON.stringify(allGallery)); } catch {}
         })
@@ -786,29 +812,15 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     };
 
-    // Initial fetch: if not cached, wait until 100% of Firestore data is synchronized before dismissing loader.
-    // If already cached, run silently in background without blocking the user!
-    refreshAll()
-      .then(() => {
-        if (isMounted) {
-          setTimeout(() => {
-            if (isMounted) {
-              markReady();
-            }
-          }, 120);
-        }
-      })
-      .catch((err) => {
-        console.warn('[FirestoreDataContext] Initial hydration warning:', err);
-        if (isMounted) {
-          markReady();
-        }
-      });
+    // Immediately mark app shell ready so page structure and per-section shimmers render instantly.
+    // Realtime snapshot listeners stream data one-by-one from Firestore (or IndexedDB persistent cache)
+    // and dismiss individual section shimmers the millisecond each snapshot arrives.
+    markReady();
 
     // Emergency fail-safe timeout only in case network drops completely
     const failsafeTimer = setTimeout(() => {
       markReady();
-    }, 25000);
+    }, 15000);
 
     // 1. Core Realtime Centralized Listeners (Single Source of Truth, zero duplicate listeners)
     const unsubCompany = firestoreSettingsService.subscribeCompanySettings((data) => {
@@ -866,6 +878,15 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         divisionsRef.current = sorted;
         setDivisions(sorted);
         setIsDivisionsLoading(false);
+        setLoadedDivisions((prev) => {
+          const next = { ...prev };
+          sorted.forEach((d) => {
+            next[d.id] = true;
+            if (d.slug) next[d.slug] = true;
+          });
+          try { localStorage.setItem('mahdev_cached_loaded_divisions', JSON.stringify(next)); } catch {}
+          return next;
+        });
         try {
           localStorage.setItem('mahdev_cached_divisions', JSON.stringify(sorted));
         } catch {}
@@ -876,6 +897,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubCats = firestoreCategoriesService.subscribeCategories((data) => {
       if (isMounted) {
         setCategories(data);
+        try {
+          localStorage.setItem('mahdev_cached_categories', JSON.stringify(data));
+        } catch {}
         cmsService.syncEntityFromFirestore('categories', data);
       }
     });
@@ -884,6 +908,18 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       if (isMounted) {
         setServices(data);
         setIsServicesLoading(false);
+        setLoadedServices((prev) => {
+          const next = { ...prev };
+          data.forEach((s) => {
+            if (s.division) next[s.division] = true;
+            if ((s as any).divisionId) next[(s as any).divisionId] = true;
+          });
+          try { localStorage.setItem('mahdev_cached_loaded_services', JSON.stringify(next)); } catch {}
+          return next;
+        });
+        try {
+          localStorage.setItem('mahdev_cached_services', JSON.stringify(data));
+        } catch {}
         bookingService.syncWithFirestore(data);
         cmsService.syncEntityFromFirestore('services', data);
       }
@@ -893,6 +929,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       if (isMounted) {
         setProducts(data);
         setIsProductsLoading(false);
+        try {
+          localStorage.setItem('mahdev_cached_products', JSON.stringify(data));
+        } catch {}
         catalogService.syncWithFirestore(data, categories);
         cmsService.syncEntityFromFirestore('products', data);
       }
@@ -903,6 +942,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       if (isMounted) {
         setMilestones(data);
         setIsMilestonesLoading(false);
+        try {
+          localStorage.setItem('mahdev_cached_milestones', JSON.stringify(data));
+        } catch {}
         cmsService.syncEntityFromFirestore('milestones', data);
       }
     });
@@ -911,6 +953,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       if (isMounted) {
         setTrustedCompanies(data);
         setIsCompaniesLoading(false);
+        try {
+          localStorage.setItem('mahdev_cached_companies', JSON.stringify(data));
+        } catch {}
         cmsService.syncEntityFromFirestore('companies', data);
       }
     });
@@ -919,22 +964,38 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       if (isMounted) {
         setTestimonials(data);
         setIsTestimonialsLoading(false);
+        try {
+          localStorage.setItem('mahdev_cached_testimonials', JSON.stringify(data));
+        } catch {}
         cmsService.syncEntityFromFirestore('testimonials', data);
       }
     });
 
     const unsubGoogleConfig = firestoreGoogleReviewsService.subscribeConfig((data) => {
-      if (isMounted) setGoogleReviewsConfig(data);
+      if (isMounted) {
+        setGoogleReviewsConfig(data);
+        try {
+          localStorage.setItem('mahdev_cached_google_reviews_config', JSON.stringify(data));
+        } catch {}
+      }
     });
 
     const unsubGoogleReviews = firestoreGoogleReviewsService.subscribeReviews((data) => {
-      if (isMounted) setGoogleReviews(data);
+      if (isMounted) {
+        setGoogleReviews(data);
+        try {
+          localStorage.setItem('mahdev_cached_google_reviews', JSON.stringify(data));
+        } catch {}
+      }
     });
 
     const unsubPort = firestorePortfolioService.subscribePortfolio((data) => {
       if (isMounted) {
         setPortfolio(data);
         setIsPortfolioLoading(false);
+        try {
+          localStorage.setItem('mahdev_cached_portfolio', JSON.stringify(data));
+        } catch {}
         cmsService.syncEntityFromFirestore('portfolio', data);
       }
     });
@@ -943,6 +1004,18 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       if (isMounted) {
         setGallery(data);
         setIsGalleryLoading(false);
+        setLoadedGallery((prev) => {
+          const next = { ...prev };
+          data.forEach((g) => {
+            if (g.division) next[g.division] = true;
+            if ((g as any).divisionId) next[(g as any).divisionId] = true;
+          });
+          try { localStorage.setItem('mahdev_cached_loaded_gallery', JSON.stringify(next)); } catch {}
+          return next;
+        });
+        try {
+          localStorage.setItem('mahdev_cached_gallery', JSON.stringify(data));
+        } catch {}
         cmsService.syncEntityFromFirestore('gallery', data);
       }
     });

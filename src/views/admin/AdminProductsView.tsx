@@ -212,7 +212,10 @@ export const AdminProductsView: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      addToast('warning', 'Validation Incomplete', 'Please fill in product name, SKU, price, and image before saving.');
+      return;
+    }
 
     setIsSaving(true);
     try {

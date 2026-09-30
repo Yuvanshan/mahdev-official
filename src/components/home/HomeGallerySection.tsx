@@ -8,7 +8,7 @@ import { GallerySectionShimmer } from '../common/GallerySectionShimmer';
 
 /** A premium gallery that mirrors the polished presentation used in the division pages. */
 export const HomeGallerySection: React.FC = () => {
-  const { gallery, isInitialLoading, isFetching } = useFirestoreDataContext();
+  const { gallery, isGalleryLoading, isInitialLoading, isFetching } = useFirestoreDataContext();
   const [activeImage, setActiveImage] = useState<{ url: string; title: string; category: string; location?: string } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
@@ -37,7 +37,7 @@ export const HomeGallerySection: React.FC = () => {
     : items.filter((item) => item.category === selectedCategory);
 
   if (!items.length) {
-    if (isInitialLoading || isFetching) {
+    if (isGalleryLoading) {
       return <GallerySectionShimmer divisionName="Corporate" />;
     }
     return null;
@@ -95,7 +95,8 @@ export const HomeGallerySection: React.FC = () => {
               <img
                 src={item.url}
                 alt={item.title}
-                loading="lazy"
+                loading={index < 4 ? 'eager' : 'lazy'}
+                decoding="async"
                 className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/25 to-transparent" />

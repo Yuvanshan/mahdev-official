@@ -138,21 +138,14 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
         onExploreServices={() => onNavigate('/divisions')}
       />
 
-      {/* 2. BELOW HERO SECTION: SHOW SHIMMER UNTIL DATA LOADS FROM FIRESTORE (NO DEFAULT DATA) */}
-      {isDataLoading ? (
-        <HomeBelowHeroShimmer />
-      ) : (
-        <>
-          {/* CORE DYNAMIC CMS SECTIONS */}
-          {renderedSections}
+      {/* 2. DYNAMIC CONTENT SECTIONS: Progressive one-by-one streaming directly from Firestore */}
+      {renderedSections}
 
-          {/* MILESTONES (FROM FIRESTORE) */}
-          <MilestonesSection onNavigate={onNavigate} />
+      {/* MILESTONES (FROM FIRESTORE) */}
+      <MilestonesSection onNavigate={onNavigate} />
 
-          {/* TESTIMONIALS (FROM FIRESTORE) */}
-          <TestimonialsSection onNavigate={onNavigate} />
-        </>
-      )}
+      {/* TESTIMONIALS (FROM FIRESTORE) */}
+      <TestimonialsSection onNavigate={onNavigate} />
     </div>
   );
 };

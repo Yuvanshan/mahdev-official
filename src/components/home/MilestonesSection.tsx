@@ -132,6 +132,18 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
     }
   }, [displayMilestones, activeMilestoneId]);
 
+  // Eagerly preload all milestone images into browser memory so transitions are instant
+  useEffect(() => {
+    if (displayMilestones.length > 0) {
+      displayMilestones.forEach((m) => {
+        if (m.imageUrl) {
+          const img = new Image();
+          img.src = m.imageUrl;
+        }
+      });
+    }
+  }, [displayMilestones]);
+
   const currentMilestone = useMemo(() => {
     if (displayMilestones.length === 0) return null;
     const found = displayMilestones.find(
@@ -419,15 +431,29 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
                       >
                         {ms.title}
                       </h4>
-                      <p className="text-[11px] font-semibold text-blue-600 truncate">
-                        {ms.subtitle || ms.badge || 'Official Milestone'}
-                      </p>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-[11px] font-semibold text-blue-600 truncate">
+                          {ms.subtitle || ms.badge || 'Official Milestone'}
+                        </p>
+                        {ms.date && (
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            • {ms.date}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Card Description Snippet */}
                     <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed pt-2 border-t border-slate-100">
                       {ms.keyOutcome || ms.description}
                     </p>
+
+                    {/* Milestone Metric Badge if configured in Admin */}
+                    {ms.metric && (
+                      <div className="mt-2 text-[10px] font-mono font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/80 inline-block w-fit">
+                        {ms.metric}
+                      </div>
+                    )}
 
                     {/* Active Milestone Status Pin */}
                     {isSelected && (
@@ -474,7 +500,7 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-mono font-semibold text-blue-400 uppercase tracking-wider">
-                        {currentMilestone.year} Trajectory Milestone
+                        {currentMilestone.year} {currentMilestone.date ? `• ${currentMilestone.date}` : ''} Trajectory Milestone
                       </span>
                       <span className="text-slate-500">•</span>
                       <span className="text-xs font-mono text-cyan-300">
@@ -487,11 +513,16 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {currentMilestone.badge && (
                     <Badge variant="secondary" className="bg-blue-900/80 text-blue-200 border-blue-700">
                       {currentMilestone.badge}
                     </Badge>
+                  )}
+                  {currentMilestone.metric && (
+                    <div className="px-2.5 py-1 rounded-lg bg-cyan-950/80 border border-cyan-700/80 text-[11px] font-mono font-bold text-cyan-300">
+                      {currentMilestone.metric}
+                    </div>
                   )}
                   <div className="px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700 text-[11px] font-mono text-slate-300">
                     Mode: {activeTransportMode.toUpperCase()}
@@ -499,15 +530,35 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
                 </div>
               </div>
 
-              <div className="relative z-10 space-y-3">
-                <p className="text-base sm:text-lg text-slate-200 leading-relaxed font-normal">
-                  {currentMilestone.description}
-                </p>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10 items-center">
+                <div className={`${currentMilestone.imageUrl ? 'lg:col-span-7' : 'lg:col-span-12'} space-y-3`}>
+                  <p className="text-base sm:text-lg text-slate-200 leading-relaxed font-normal">
+                    {currentMilestone.description}
+                  </p>
 
-                {currentMilestone.keyOutcome && (
-                  <div className="flex items-start gap-2 pt-2 text-xs sm:text-sm text-cyan-300 font-medium">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span><strong>Key Outcome:</strong> {currentMilestone.keyOutcome}</span>
+                  {currentMilestone.keyOutcome && (
+                    <div className="flex items-start gap-2 pt-2 text-xs sm:text-sm text-cyan-300 font-medium">
+                      <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                      <span><strong>Key Outcome:</strong> {currentMilestone.keyOutcome}</span>
+                    </div>
+                  )}
+                </div>
+
+                {currentMilestone.imageUrl && (
+                  <div className="lg:col-span-5">
+                    <div className="relative rounded-xl overflow-hidden border border-slate-700/90 shadow-2xl max-h-56 group">
+                      <img
+                        src={currentMilestone.imageUrl}
+                        alt={currentMilestone.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="eager"
+                        decoding="async"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
+                      <div className="absolute bottom-2 left-3 right-3 text-[11px] text-cyan-200 font-mono truncate">
+                        {currentMilestone.title}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

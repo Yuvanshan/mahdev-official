@@ -152,14 +152,8 @@ export const firestoreMilestonesService = {
 
     inFlightMilestonesPromise = (async () => {
       try {
-        const q = query(collection(db, 'milestones'), orderBy('order', 'asc'));
-        let snap;
-        try {
-          snap = await getDocs(q);
-        } catch {
-          // If indexing or order field is missing on some documents, fallback to unsorted query and sort in memory
-          snap = await getDocs(collection(db, 'milestones'));
-        }
+        // Fast collection query with in-memory sorting for near-instant retrieval
+        const snap = await getDocs(collection(db, 'milestones'));
 
         if (!snap.empty) {
           const data = snap.docs.map((d) => {
@@ -172,7 +166,7 @@ export const firestoreMilestonesService = {
             } as FirestoreMilestone;
           });
 
-          data.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+          data.sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (Number(a.year) || 0) - (Number(b.year) || 0));
           cachedMilestones = { data, timestamp: Date.now() };
           try {
             if (typeof window !== 'undefined') {

@@ -27,6 +27,7 @@ import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { QuickCategoryCreator } from '../../components/admin/QuickCategoryCreator';
 import { DivisionId } from '../../types';
 import { compressDataUrl } from '../../utils/imageOptimizer';
+import { uploadMediaAsset } from '../../services/mediaUploadService';
 import { firestoreGalleryService } from '../../services/firestore/gallery';
 import { purgeRemovedStudioPostsFromFirestore } from '../../services/firestore/databaseManagement';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
@@ -230,16 +231,24 @@ export const AdminGalleryView: React.FC = () => {
     const newImages: string[] = [];
     for (const file of filesToProcess) {
       try {
-        const base64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-        const compressed = await compressDataUrl(base64, 1280, 0.82);
-        newImages.push(compressed);
+        const uploadedUrl = await uploadMediaAsset(file);
+        if (uploadedUrl) {
+          newImages.push(uploadedUrl);
+        }
       } catch (err) {
-        console.error('Failed to compress gallery image:', err);
+        console.warn('Direct upload fallback:', err);
+        try {
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+          const compressed = await compressDataUrl(base64, 800, 0.7);
+          newImages.push(compressed);
+        } catch (compErr) {
+          console.error('Failed to process gallery image:', compErr);
+        }
       }
     }
 
@@ -316,7 +325,10 @@ export const AdminGalleryView: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      addToast('warning', 'Validation Incomplete', 'Please provide a title and at least one image before saving.');
+      return;
+    }
 
     setIsSaving(true);
     try {

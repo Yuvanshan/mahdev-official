@@ -13,8 +13,10 @@ import {
   Firestore,
   doc,
   getDocFromServer,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  persistentSingleTabManager,
   memoryLocalCache,
-  memoryEagerGarbageCollector,
 } from 'firebase/firestore';
 import {
   initializeAuth,
@@ -68,17 +70,33 @@ export const app: FirebaseApp =
   getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 // Initialize Centralized Cloud Firestore Database connected to the production named database
-// Configured with memoryLocalCache to eliminate IndexedDB lockups in iframe & sandbox environments
-// and experimentalForceLongPolling to connect immediately without 20-second WebSocket timeout
+// Configured with persistentLocalCache & multi-tab manager for near-instant retrieval,
+// with safe memoryLocalCache fallback. Multiplexes queries natively over WebSockets.
 export const db: Firestore = (() => {
   try {
+    let cacheConfig;
+    try {
+      if (typeof window !== 'undefined' && window.indexedDB) {
+        let isIframe = false;
+        try {
+          isIframe = window.self !== window.top;
+        } catch {
+          isIframe = true;
+        }
+        cacheConfig = persistentLocalCache({
+          tabManager: isIframe ? persistentSingleTabManager({}) : persistentMultipleTabManager(),
+        });
+      } else {
+        cacheConfig = memoryLocalCache();
+      }
+    } catch {
+      cacheConfig = memoryLocalCache();
+    }
+
     return initializeFirestore(
       app,
       {
-        localCache: memoryLocalCache({
-          garbageCollector: memoryEagerGarbageCollector(),
-        }),
-        experimentalForceLongPolling: true,
+        localCache: cacheConfig,
       },
       activeFirestoreDatabaseId || undefined
     );

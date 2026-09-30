@@ -25,6 +25,7 @@ import { validateFile, validateSvgSecurity, optimizeImage, compressDataUrl } fro
 import { safeStorage } from '../utils/safeStorage';
 import { authService } from './authService';
 import { adminService, syncAdminFirebaseAuth } from './adminService';
+import { uploadMediaAsset } from './mediaUploadService';
 
 const MEDIA_CATALOG_STORAGE_KEY = 'mahdev_media_catalog_v1';
 
@@ -326,15 +327,25 @@ class StorageService {
           storageError
         );
 
-        // If user is verified administrative personnel or standard customer, fallback to high-fidelity Data URL 
-        // to prevent unblocking workflow when external Storage bucket rules require server claims
-        const rawDataUrl = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (e) => resolve(e.target?.result as string);
-          reader.readAsDataURL(fileToUpload);
-        });
-        downloadUrl = await compressDataUrl(rawDataUrl, 1280, 0.75);
-        options?.onProgress?.(100);
+        // Fallback to direct high-speed server asset upload (/api/upload/media)
+        try {
+          const serverUrl = await uploadMediaAsset(fileToUpload, (pct) => options?.onProgress?.(pct));
+          if (serverUrl) {
+            downloadUrl = serverUrl;
+            options?.onProgress?.(100);
+          } else {
+            throw new Error('No server URL returned');
+          }
+        } catch (serverUploadErr) {
+          console.warn('[StorageService] Server upload fallback failed, using compressed preview:', serverUploadErr);
+          const rawDataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target?.result as string);
+            reader.readAsDataURL(fileToUpload);
+          });
+          downloadUrl = await compressDataUrl(rawDataUrl, 800, 0.7);
+          options?.onProgress?.(100);
+        }
       }
 
       const activeAdmin = adminService.getCurrentAdmin();

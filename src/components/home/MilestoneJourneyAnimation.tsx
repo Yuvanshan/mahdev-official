@@ -201,8 +201,21 @@ export const Milestone3DOverlay: React.FC<Milestone3DOverlayProps> = ({
                 to { stroke-dashoffset: -36; }
               }
               @keyframes beaconPulse {
-                0% { r: 6; opacity: 0.9; }
-                100% { r: 16; opacity: 0; }
+                0% { r: 6; opacity: 0.95; }
+                50% { r: 18; opacity: 0.4; }
+                100% { r: 26; opacity: 0; }
+              }
+              @keyframes beaconOuterWave {
+                0% { r: 10; opacity: 0.8; }
+                100% { r: 34; opacity: 0; }
+              }
+              @keyframes particlePulse {
+                0%, 100% { transform: scale(1); opacity: 0.7; }
+                50% { transform: scale(1.4); opacity: 1; }
+              }
+              @keyframes beamFlicker {
+                0%, 100% { opacity: 0.65; transform: scaleX(1); }
+                50% { opacity: 0.95; transform: scaleX(1.15); }
               }
             `}</style>
           </defs>
@@ -212,8 +225,8 @@ export const Milestone3DOverlay: React.FC<Milestone3DOverlayProps> = ({
             d={generateSmoothPath(cardCenters)}
             fill="none"
             stroke="#0052FF"
-            strokeWidth="7"
-            strokeOpacity="0.25"
+            strokeWidth="9"
+            strokeOpacity="0.28"
             filter="url(#neonGlow)"
           />
 
@@ -222,10 +235,39 @@ export const Milestone3DOverlay: React.FC<Milestone3DOverlayProps> = ({
             d={generateSmoothPath(cardCenters)}
             fill="none"
             stroke="url(#pathGradient)"
-            strokeWidth="3"
-            strokeDasharray="9 6"
-            style={{ animation: 'laserPathFlow 1.6s linear infinite' }}
+            strokeWidth="3.5"
+            strokeDasharray="10 6"
+            style={{ animation: 'laserPathFlow 1.4s linear infinite' }}
           />
+
+          {/* Trailing luminous energy particles along active segment */}
+          {characterPos.x > 0 && (
+            <g>
+              <circle
+                cx={characterPos.x - 14}
+                cy={characterPos.y - 4}
+                r="3.5"
+                fill="#38BDF8"
+                opacity="0.8"
+                filter="url(#neonGlow)"
+                style={{ animation: 'particlePulse 0.9s ease-in-out infinite' }}
+              />
+              <circle
+                cx={characterPos.x - 28}
+                cy={characterPos.y - 8}
+                r="2.5"
+                fill="#60A5FA"
+                opacity="0.5"
+              />
+              <circle
+                cx={characterPos.x - 42}
+                cy={characterPos.y - 12}
+                r="1.8"
+                fill="#818CF8"
+                opacity="0.3"
+              />
+            </g>
+          )}
 
           {/* Waypoint circles over each milestone card */}
           {cardCenters.map((pt, i) => {
@@ -234,23 +276,32 @@ export const Milestone3DOverlay: React.FC<Milestone3DOverlayProps> = ({
             return (
               <g key={i} transform={`translate(${pt.x}, ${pt.y})`}>
                 {isCurrent && (
-                  <circle
-                    r="8"
-                    fill="none"
-                    stroke="#38BDF8"
-                    strokeWidth="1.8"
-                    style={{ animation: 'beaconPulse 1.4s ease-out infinite' }}
-                  />
+                  <>
+                    <circle
+                      r="12"
+                      fill="none"
+                      stroke="#38BDF8"
+                      strokeWidth="2"
+                      style={{ animation: 'beaconPulse 1.6s ease-out infinite' }}
+                    />
+                    <circle
+                      r="18"
+                      fill="none"
+                      stroke="#0052FF"
+                      strokeWidth="1.2"
+                      style={{ animation: 'beaconOuterWave 2.2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite' }}
+                    />
+                  </>
                 )}
                 <circle
-                  r="7"
+                  r="7.5"
                   fill={isVisited ? '#0052FF' : '#ffffff'}
                   stroke="#38BDF8"
-                  strokeWidth="2.5"
+                  strokeWidth="2.8"
                   filter="url(#neonGlow)"
                 />
                 <circle
-                  r="3"
+                  r="3.2"
                   fill="#ffffff"
                 />
               </g>
@@ -270,22 +321,31 @@ export const Milestone3DOverlay: React.FC<Milestone3DOverlayProps> = ({
             willChange: 'left, top, transform',
           }}
         >
-          {/* Downward 3D Spotlight Beam projected onto the card surface below */}
-          <div className="absolute left-1/2 -bottom-3 -translate-x-1/2 w-28 h-12 bg-gradient-to-b from-blue-500/30 via-cyan-400/15 to-transparent rounded-full blur-md pointer-events-none transform -rotate-12" />
+          {/* Holographic Downward 3D Spotlight Beam projected onto the card surface below */}
+          <div
+            className="absolute left-1/2 -bottom-4 -translate-x-1/2 w-32 h-14 bg-gradient-to-b from-cyan-400/40 via-blue-500/20 to-transparent rounded-full blur-md pointer-events-none transform -rotate-12"
+            style={{ animation: 'beamFlicker 2s ease-in-out infinite' }}
+          />
 
           {/* Parallax Depth Ambient Shadow */}
-          <div className="absolute left-1/2 bottom-0 -translate-x-1/2 w-20 h-4 bg-slate-950/40 rounded-full blur-[3px] transform scale-x-110" />
+          <div className="absolute left-1/2 bottom-0 -translate-x-1/2 w-24 h-4.5 bg-slate-950/45 rounded-full blur-[3px] transform scale-x-110" />
 
           {/* Handsome Professional Character Figure in 3/4 Isometric 3D Perspective */}
-          <div className="relative transform hover:scale-105 transition-transform duration-200 filter drop-shadow-[0_14px_28px_rgba(0,82,255,0.45)]">
+          <div className="relative transform hover:scale-105 transition-transform duration-200 filter drop-shadow-[0_16px_32px_rgba(0,82,255,0.5)]">
             <HandsomeBoyWithTransport mode={activeMode} />
           </div>
 
           {/* Floating High-Tech HUD Tooltip indicating Milestone Trajectory & Mode */}
-          <div className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1 rounded-full bg-slate-950/95 border border-blue-400/50 text-[10px] font-mono font-bold text-blue-300 shadow-xl flex items-center gap-1.5 backdrop-blur-md">
+          <div className="absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap px-3.5 py-1.5 rounded-full bg-slate-950/95 border border-cyan-400/60 text-[10px] font-mono font-bold text-cyan-300 shadow-2xl flex items-center gap-1.5 backdrop-blur-md ring-2 ring-blue-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-            <span className="text-white">{milestones[activeIndex]?.year || 'Trajectory'}</span>
-            <span className="text-slate-500">•</span>
+            <span className="text-white font-extrabold">{milestones[activeIndex]?.year || 'Trajectory'}</span>
+            {milestones[activeIndex]?.date && (
+              <>
+                <span className="text-slate-600">•</span>
+                <span className="text-slate-300 text-[9px]">{milestones[activeIndex].date}</span>
+              </>
+            )}
+            <span className="text-slate-600">•</span>
             <span className="text-cyan-300 text-[9px] font-sans font-semibold uppercase tracking-wider">
               {activeMode}
             </span>

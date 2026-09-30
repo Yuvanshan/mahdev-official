@@ -8,6 +8,7 @@ import { getRentalAssetCount } from '../../utils/assetMetrics';
 import { ParallelWatermark } from '../motion/ParallelScroll';
 import { useDeviceMotion } from '../motion/MotionWrappers';
 import { DataLoadingOverlay } from '../common/DataLoadingOverlay';
+import { DivisionsSectionShimmer } from '../common/DivisionsSectionShimmer';
 
 interface DivisionsSectionProps {
   onNavigate: (route: string) => void;
@@ -94,12 +95,17 @@ const DEFAULT_DIVISION_BENTO_DATA: BentoDivisionItem[] = [
 ];
 
 export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }) => {
-  const { companySettings, siteSettings, homepageConfig, divisions, products, isInitialLoading, isFetching } = useFirestoreDataContext();
+  const { companySettings, siteSettings, homepageConfig, divisions, products, isDivisionsLoading, isInitialLoading, isFetching } = useFirestoreDataContext();
 
   const rentalAssetCountStr = getRentalAssetCount(
     products,
     (companySettings as any)?.rentalAssetCount || (siteSettings as any)?.rentalAssetCount
   );
+
+  // 1. SHOW CRISP SHIMMER UNTIL DATA LOADS FROM CLOUD FIRESTORE
+  if (isDivisionsLoading && (!divisions || divisions.length === 0)) {
+    return <DivisionsSectionShimmer />;
+  }
 
   // Dynamically map divisions using live updates from Admin Portal / FirestoreDataContext
   const bentoDivisions = useMemo<BentoDivisionItem[]>(() => {

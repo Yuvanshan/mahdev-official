@@ -19,7 +19,7 @@ interface FeaturedServicesSectionProps {
 }
 
 export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (props) => {
-  const { services, homepageConfig, isInitialLoading, isFetching } = useFirestoreDataContext();
+  const { services, homepageConfig, isServicesLoading, isInitialLoading, isFetching } = useFirestoreDataContext();
 
   if (homepageConfig.featuredServices && !homepageConfig.featuredServices.enabled) {
     return null;
@@ -30,7 +30,7 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
     .sort((a, b) => (a.order ?? (a as any).sortOrder ?? 0) - (b.order ?? (b as any).sortOrder ?? 0));
 
   if (activeServices.length === 0) {
-    if (isInitialLoading || isFetching) {
+    if (isServicesLoading) {
       return <ServicesSectionShimmer divisionName="Featured" />;
     }
     return null;
@@ -82,6 +82,8 @@ const FeaturedServiceCard: React.FC<{
             <img
               src={serviceImages[activeImgIdx] || serviceImages[0]}
               alt={service.title || service.name}
+              loading={idx < 3 ? 'eager' : 'lazy'}
+              decoding="async"
               className="w-full h-full object-cover transition-all duration-300"
             />
             {serviceImages.length > 1 && (

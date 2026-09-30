@@ -57,7 +57,8 @@ class CmsService {
 
   constructor() {
     this.initializeAllEntities();
-    this.attachFirestoreSync();
+    // Centralized hydration in FirestoreDataContext syncs to CmsService via syncEntityFromFirestore
+    // to avoid duplicate active subscriptions that exhaust network sockets.
     this.attachCrossTabSync();
   }
 
