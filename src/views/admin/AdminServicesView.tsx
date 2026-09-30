@@ -616,13 +616,17 @@ export const AdminServicesView: React.FC = () => {
                           <img
                             src={srv.imageUrl || (srv.images && srv.images[0])}
                             alt=""
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
+                              if (fb) fb.classList.remove('hidden');
+                            }}
                             className="w-8 h-8 rounded-lg object-cover border border-slate-200 shrink-0"
                           />
-                        ) : (
-                          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                            <Briefcase className="w-4 h-4" />
-                          </div>
-                        )}
+                        ) : null}
+                        <div className={`w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 ${srv.imageUrl || (srv.images && srv.images[0]) ? 'hidden' : ''}`}>
+                          <Briefcase className="w-4 h-4" />
+                        </div>
                         <div>
                           <div className="flex items-center gap-1.5">
                             <span className="font-bold text-slate-900">{srv.title}</span>

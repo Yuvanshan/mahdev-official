@@ -245,7 +245,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
           loop
           muted
           playsInline
-          preload="auto"
+          preload="metadata"
           onCanPlay={() => {
             const v = videoRef.current;
             if (v) {

@@ -84,8 +84,16 @@ const FeaturedServiceCard: React.FC<{
               alt={service.title || service.name}
               loading={idx < 3 ? 'eager' : 'lazy'}
               decoding="async"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
+                if (fb) fb.classList.remove('hidden');
+              }}
               className="w-full h-full object-cover transition-all duration-300"
             />
+            <div className="hidden h-full w-full bg-gradient-to-br from-slate-100 via-purple-50 to-blue-50 flex items-center justify-center p-4">
+              <span className="text-xs font-bold text-slate-700 text-center">{service.title || service.name}</span>
+            </div>
             {serviceImages.length > 1 && (
               <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/60 backdrop-blur-xs px-2 py-1 rounded-full z-10">
                 {serviceImages.map((_, dIdx) => (

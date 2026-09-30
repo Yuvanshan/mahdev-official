@@ -591,11 +591,22 @@ export const AdminGalleryView: React.FC = () => {
               }`}
             >
               <div className="relative aspect-16/10 bg-slate-100 overflow-hidden group">
-                <img
-                  src={item.mediaUrl}
-                  alt={item.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
+                {item.mediaUrl || item.url || item.thumbnailUrl || (item.images && item.images[0]) ? (
+                  <img
+                    src={item.mediaUrl || item.url || item.thumbnailUrl || (item.images && item.images[0])}
+                    alt={item.title}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
+                      if (fallback) fallback.classList.remove('hidden');
+                    }}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : null}
+                <div className={`w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-400 p-4 text-center ${item.mediaUrl || item.url || item.thumbnailUrl || (item.images && item.images[0]) ? 'hidden' : ''}`}>
+                  <ImageIcon className="w-8 h-8 mb-1 opacity-50 text-slate-400" />
+                  <span className="text-[10px] font-medium text-slate-500 truncate max-w-full px-2">{item.title}</span>
+                </div>
                 <div className="absolute top-2 left-2 flex items-center gap-1 bg-blue-600/90 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
                   {item.category || (Array.isArray(item.tags) && item.tags[0]) || 'Weddings'}
                 </div>

@@ -297,10 +297,29 @@ async function startServer() {
 
   // Static uploads directory serving
   const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+  const distUploadsDir = path.join(process.cwd(), 'dist', 'uploads');
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
+
+  // Set explicit Cross-Origin and Cache headers for all uploads
+  app.use('/uploads', (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
+    res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+    next();
+  });
+
   app.use('/uploads', express.static(uploadsDir));
+  if (fs.existsSync(distUploadsDir)) {
+    app.use('/uploads', express.static(distUploadsDir));
+  }
+
+  // 404 Guard: NEVER allow /uploads requests to fall through to the SPA HTML route!
+  app.use('/uploads', (req, res) => {
+    res.status(404).set('Content-Type', 'text/plain').send('Media asset not found');
+  });
 
   // Static assets directory serving (/public/assets)
   const assetsDir = path.join(process.cwd(), 'public', 'assets');
@@ -1774,6 +1793,10 @@ async function startServer() {
 
     // Development SPA fallback for deep links like /sws, /u1, /it, /admin
     app.get('*', async (req: Request, res: Response, next: NextFunction) => {
+      if (req.path.startsWith('/api/') || req.path.startsWith('/uploads/') || req.path.startsWith('/assets/')) {
+        res.status(404).end();
+        return;
+      }
       const url = req.originalUrl;
       try {
         const indexPath = path.resolve(process.cwd(), 'index.html');
@@ -1789,6 +1812,10 @@ async function startServer() {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req: Request, res: Response) => {
+      if (req.path.startsWith('/api/') || req.path.startsWith('/uploads/') || req.path.startsWith('/assets/')) {
+        res.status(404).end();
+        return;
+      }
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

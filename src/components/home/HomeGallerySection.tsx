@@ -97,8 +97,17 @@ export const HomeGallerySection: React.FC = () => {
                 alt={item.title}
                 loading={index < 4 ? 'eager' : 'lazy'}
                 decoding="async"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
+                  if (fb) fb.classList.remove('hidden');
+                }}
                 className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
               />
+              <div className="hidden h-full w-full bg-gradient-to-br from-slate-900 to-blue-950 flex flex-col items-center justify-center p-4 text-center">
+                <span className="text-white/80 font-display font-semibold text-sm">{item.title}</span>
+                <span className="text-blue-400 text-xs mt-1">{item.category}</span>
+              </div>
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/25 to-transparent" />
 
               <div className="absolute left-3 top-3 flex items-center gap-2">

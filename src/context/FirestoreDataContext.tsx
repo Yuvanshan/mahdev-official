@@ -39,7 +39,7 @@ import {
   isSameDivision,
 } from '../services/firestore/divisions';
 import { firestoreCategoriesService } from '../services/firestore/categories';
-import { firestoreServicesService } from '../services/firestore/services';
+import { firestoreServicesService, getDefaultServices } from '../services/firestore/services';
 import { firestoreProductsService } from '../services/firestore/products';
 import { firestoreMilestonesService, DEFAULT_OFFICIAL_MILESTONES } from '../services/firestore/milestones';
 import { firestoreTrustedCompaniesService } from '../services/firestore/trustedCompanies';
@@ -47,7 +47,7 @@ import { firestoreTestimonialsService } from '../services/firestore/testimonials
 import { firestoreGoogleReviewsService, DEFAULT_GOOGLE_REVIEWS_CONFIG } from '../services/firestore/googleReviews';
 import { GoogleReview, GoogleReviewsConfig } from '../types/googleReviews';
 import { firestorePortfolioService } from '../services/firestore/portfolio';
-import { firestoreGalleryService } from '../services/firestore/gallery';
+import { firestoreGalleryService, getDefaultGallery } from '../services/firestore/gallery';
 import { cmsService } from '../services/cmsService';
 import { catalogService } from '../services/catalogService';
 import { bookingService } from '../services/bookingService';
@@ -150,11 +150,11 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   const cachedGal = getCache('mahdev_cached_gallery');
   const cachedMedia = getCache('mahdev_cached_media_assets');
 
-  // Individual Per-Entity Loading States (Hold shimmer until that specific entity arrives from Firestore!)
+  // Individual Per-Entity Loading States (All core corporate entities pre-seeded for 0ms instant rendering!)
   const [isDivisionsLoading, setIsDivisionsLoading] = useState<boolean>(false);
-  const [isMilestonesLoading, setIsMilestonesLoading] = useState<boolean>(!cachedMs || !Array.isArray(cachedMs) || cachedMs.length === 0);
-  const [isServicesLoading, setIsServicesLoading] = useState<boolean>(!cachedSrvs || !Array.isArray(cachedSrvs) || cachedSrvs.length === 0);
-  const [isGalleryLoading, setIsGalleryLoading] = useState<boolean>(!cachedGal || !Array.isArray(cachedGal) || cachedGal.length === 0);
+  const [isMilestonesLoading, setIsMilestonesLoading] = useState<boolean>(false);
+  const [isServicesLoading, setIsServicesLoading] = useState<boolean>(false);
+  const [isGalleryLoading, setIsGalleryLoading] = useState<boolean>(false);
   const [isProductsLoading, setIsProductsLoading] = useState<boolean>(!cachedProds || !Array.isArray(cachedProds) || cachedProds.length === 0);
   const [isPortfolioLoading, setIsPortfolioLoading] = useState<boolean>(!cachedPort || !Array.isArray(cachedPort) || cachedPort.length === 0);
   const [isTestimonialsLoading, setIsTestimonialsLoading] = useState<boolean>(!cachedTestis || !Array.isArray(cachedTestis) || cachedTestis.length === 0);
@@ -189,15 +189,14 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     return Array.isArray(cachedCats) ? cachedCats : [];
   });
   const [services, setServices] = useState<FirestoreService[]>(() => {
-    return Array.isArray(cachedSrvs) ? cachedSrvs : [];
+    return Array.isArray(cachedSrvs) && cachedSrvs.length > 0 ? cachedSrvs : getDefaultServices();
   });
   const [products, setProducts] = useState<FirestoreProduct[]>(() => {
     return Array.isArray(cachedProds) ? cachedProds : [];
   });
   const [milestones, setMilestones] = useState<FirestoreMilestone[]>(() => {
-    if (Array.isArray(cachedMs)) return cachedMs;
-    // Return empty array while loading so shimmer is shown and NO fake data appears
-    return [];
+    if (Array.isArray(cachedMs) && cachedMs.length > 0) return cachedMs;
+    return DEFAULT_OFFICIAL_MILESTONES;
   });
   const [trustedCompanies, setTrustedCompanies] = useState<FirestoreTrustedCompany[]>(() => {
     return Array.isArray(cachedComps) ? cachedComps : [];
@@ -239,7 +238,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         if (cached) return JSON.parse(cached);
       }
     } catch {}
-    return [];
+    return getDefaultGallery();
   });
   const [mediaAssets, setMediaAssets] = useState<StoredMediaItem[]>(() => {
     try {
