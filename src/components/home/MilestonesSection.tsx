@@ -320,38 +320,26 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10 items-center">
-                <div className={`${currentMilestone.imageUrl ? 'lg:col-span-7' : 'lg:col-span-12'} space-y-3`}>
-                  <p className="text-base sm:text-lg text-slate-200 leading-relaxed font-normal">
-                    {currentMilestone.description}
-                  </p>
+              <div className="space-y-4 relative z-10">
+                <p className="text-base sm:text-lg text-slate-200 leading-relaxed font-normal">
+                  {currentMilestone.description}
+                </p>
 
-                  {currentMilestone.keyOutcome && (
-                    <div className="flex items-start gap-2 pt-2 text-xs sm:text-sm text-cyan-300 font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                      <span><strong>Key Outcome:</strong> {currentMilestone.keyOutcome}</span>
-                    </div>
-                  )}
-                </div>
+                {currentMilestone.keyOutcome && (
+                  <div className="flex items-start gap-2.5 pt-2 text-sm sm:text-base text-cyan-300 font-medium bg-slate-900/60 p-4 rounded-xl border border-slate-800/80">
+                    <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+                    <span><strong>Key Outcome:</strong> {currentMilestone.keyOutcome}</span>
+                  </div>
+                )}
 
-                {currentMilestone.imageUrl && (
-                  <div className="lg:col-span-5">
-                    <div className="relative rounded-xl overflow-hidden border border-slate-700/90 shadow-2xl max-h-56 group bg-slate-900">
-                      <img
-                        src={currentMilestone.imageUrl}
-                        alt={currentMilestone.title}
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="eager"
-                        decoding="async"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
-                      <div className="absolute bottom-2 left-3 right-3 text-[11px] text-cyan-200 font-mono truncate">
-                        {currentMilestone.title}
+                {Array.isArray(currentMilestone.details) && currentMilestone.details.length > 0 && (
+                  <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-slate-300">
+                    {currentMilestone.details.map((detail: string, dIdx: number) => (
+                      <div key={dIdx} className="flex items-start gap-2 bg-slate-900/50 p-3 rounded-xl border border-slate-800/60">
+                        <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                        <span>{detail}</span>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 )}
               </div>

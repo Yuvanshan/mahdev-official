@@ -77,8 +77,10 @@ export function mapFirestoreProductToMart(p: any, categories: any[] = []): Produ
   const originalPrice = p.compareAtPrice !== undefined ? Number(p.compareAtPrice) : price;
   const discountPercent =
     originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
-  const img = Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : (p.imageUrl || '');
-  const gallery = Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.gallery || (img ? [img] : []));
+  const img = (p as any).imageUrl || (Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : '');
+  const gallery = Array.isArray(p.images) && p.images.length > 0
+    ? (img && !p.images.includes(img) ? [img, ...p.images] : p.images)
+    : (p.gallery || (img ? [img] : []));
   const stock = typeof p.stock === 'number' ? p.stock : (typeof p.stockQuantity === 'number' ? p.stockQuantity : 100);
 
   return {

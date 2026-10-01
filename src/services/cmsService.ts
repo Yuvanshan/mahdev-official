@@ -32,7 +32,7 @@ import {
   firestoreTrustedCompaniesService,
   firestoreTestimonialsService,
 } from './firestore';
-import { sortDivisions, normalizeDivisionId } from './firestore/divisions';
+import { sortDivisions, normalizeDivisionId, getDefaultDivisions } from './firestore/divisions';
 import { safeStorage } from '../utils/safeStorage';
 
 const CMS_STORAGE_PREFIX = 'mahdev_cms_v1_';
@@ -234,21 +234,25 @@ class CmsService {
 
         const resolvedVideo = d.heroVideoUrl || d.videoUrl || d.hero?.videoUrl || '';
         const resolvedImg =
-          d.defaultImageUrl ||
           d.heroImageUrl ||
           d.imageUrl ||
-          d.hero?.defaultImageUrl ||
+          d.defaultImageUrl ||
           d.hero?.imageUrl ||
           d.hero?.bgImage ||
-          (fallbackConfig as any).heroImageUrl ||
+          d.hero?.defaultImageUrl ||
           '';
         const resolvedMediaType =
           d.heroMediaType ||
           d.hero?.mediaType ||
           (resolvedVideo ? 'video' : 'image');
 
+        const resolvedLogo =
+          d.logoUrl ||
+          d.logo ||
+          `/assets/images/${divKey}_logo.svg`;
+
         return {
-          id: d.id.startsWith('div-') ? d.id : `div-${d.id}`,
+          id: shortId || d.id,
           divisionKey: divKey,
           name: d.name || fallbackConfig.name,
           shortName: d.shortName || (fallbackConfig as any).shortName || d.name,
@@ -256,7 +260,7 @@ class CmsService {
           tagline: d.hero?.subtitle || d.shortDescription || fallbackConfig.tagline,
           description: d.description || fallbackConfig.description,
           badge: d.hero?.badge || fallbackConfig.badge,
-          route: d.route || `/${d.slug || d.id}`,
+          route: d.route || `/${d.slug || shortId}`,
           accentColor: d.accentColor || fallbackConfig.accentColor || '#1d4ed8',
           gradient: (fallbackConfig as any).gradient || 'from-blue-600 to-indigo-700',
           heroHeadline: d.hero?.title || d.heroHeadline || fallbackConfig.heroHeadline,
@@ -283,8 +287,8 @@ class CmsService {
           comingSoonMessage: d.comingSoonMessage || '',
           comingSoonExpectedLaunch: d.comingSoonExpectedLaunch || '',
           rentalAssetCount: (d as any).rentalAssetCount || '',
-          logoUrl: d.logoUrl || d.logo || (fallbackConfig as any).logoUrl || '',
-          contactEmail: d.contactEmail || (fallbackConfig as any).contactEmail || 'contact@mahdev.lk',
+          logoUrl: resolvedLogo,
+          contactEmail: d.contactEmail || (fallbackConfig as any).contactEmail || 'info.mahdev.lk@gmail.com',
           iconName: (d as any).iconName || fallbackConfig.iconName || 'Sparkles',
           stats: (d as any).stats || fallbackConfig.stats || [],
           galleryImages: (d as any).galleryImages || [],
@@ -292,7 +296,7 @@ class CmsService {
             metaTitle: `${d.name} | Mahdev Group`,
             metaDescription: d.description,
             ogImage: resolvedImg,
-            canonicalUrl: `https://mahdev.lk${d.route || '/' + d.slug}`,
+            canonicalUrl: `https://mahdev.lk${d.route || '/' + shortId}`,
           },
           isActive: d.status !== 'inactive' && d.isPublished !== false,
           isDeleted: d.status === 'inactive' && d.isPublished === false,
@@ -343,33 +347,52 @@ class CmsService {
       });
       mapped.sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0));
     } else if (entity === 'products') {
-      mapped = rawItems.map((p) => ({
-        id: p.id,
-        sku: p.sku || p.id,
-        name: p.name,
-        slug: p.slug || p.id,
-        divisionId: p.division || 'mart',
-        divisionName: 'Mahdev Online Mart',
-        categoryId: p.categoryId || 'gear',
-        categoryName: (p as any).categoryName || 'General Gear',
-        price: p.price || 0,
-        compareAtPrice: p.compareAtPrice || p.discountPrice || 0,
-        currency: p.currency || 'USD',
-        shortDescription: p.shortDescription || p.description?.substring(0, 100) || '',
-        description: p.description || '',
-        imageUrl: p.images?.[0] || (p as any).imageUrl || '',
-        galleryImages: p.images || ((p as any).imageUrl ? [(p as any).imageUrl] : []),
-        stockQuantity: p.stock || 0,
-        stockStatus: (p.stock || 0) > 5 ? 'in_stock' : (p.stock || 0) > 0 ? 'low_stock' : 'out_of_stock',
-        lowStockThreshold: 5,
-        isFeatured: Boolean(p.isPublished),
-        tags: (p as any).tags || [],
-        specifications: (p as any).specifications || {},
-        isActive: p.status !== 'draft' && p.status !== 'archived' && p.status !== 'out_of_stock',
-        isDeleted: p.status === 'archived',
-        createdAt: p.createdAt || now,
-        updatedAt: p.updatedAt || now,
-      }));
+      mapped = rawItems.map((p) => {
+        const primaryImg = (p as any).imageUrl || (p.images && p.images[0]) || '';
+        const allImgs = Array.isArray(p.images) && p.images.length > 0
+          ? p.images
+          : (primaryImg ? [primaryImg] : []);
+        const divId = p.division || (p as any).divisionId || 'mart';
+        const divName =
+          divId === 'sws'
+            ? 'SWS Event Management'
+            : divId === 'u1'
+            ? 'U1 Studio'
+            : divId === 'it'
+            ? 'Mahdev IT & Solutions'
+            : divId === 'travels'
+            ? 'Mahdev Travels'
+            : 'Mahdev Online Mart';
+
+        return {
+          id: p.id,
+          sku: p.sku || p.id,
+          name: p.name,
+          slug: p.slug || p.id,
+          divisionId: divId,
+          divisionName: divName,
+          categoryId: p.categoryId || 'gear',
+          categoryName: (p as any).categoryName || 'General Gear',
+          price: p.price || 0,
+          compareAtPrice: p.compareAtPrice || p.discountPrice || 0,
+          currency: p.currency || 'LKR',
+          shortDescription: p.shortDescription || p.description?.substring(0, 100) || '',
+          description: p.description || '',
+          imageUrl: primaryImg,
+          images: allImgs,
+          galleryImages: allImgs,
+          stockQuantity: typeof p.stock === 'number' ? p.stock : (p as any).stockQuantity ?? 0,
+          stockStatus: (p.stock || 0) > 5 ? 'in_stock' : (p.stock || 0) > 0 ? 'low_stock' : 'out_of_stock',
+          lowStockThreshold: 5,
+          isFeatured: Boolean(p.isPublished),
+          tags: (p as any).tags || [],
+          specifications: (p as any).specifications || {},
+          isActive: p.status !== 'draft' && p.status !== 'archived',
+          isDeleted: p.status === 'archived',
+          createdAt: p.createdAt || now,
+          updatedAt: p.updatedAt || now,
+        };
+      });
     } else if (entity === 'categories') {
       mapped = rawItems.map((c) => ({
         id: c.id,
@@ -597,12 +620,12 @@ class CmsService {
 
     switch (entity) {
       case 'divisions':
-        return Object.values(DIVISIONS).map((d) => ({
-          id: `div-${d.id}`,
+        return getDefaultDivisions().map((d) => ({
+          id: d.id,
           divisionKey: d.id,
           name: d.name,
-          shortName: d.shortName,
-          tagline: d.tagline,
+          shortName: d.shortName || d.name,
+          tagline: d.tagline || d.shortDescription,
           description: d.description,
           badge: d.badge,
           route: d.route,
@@ -610,44 +633,24 @@ class CmsService {
           gradient: d.gradient,
           heroHeadline: d.heroHeadline,
           heroSubheadline: d.heroSubheadline,
-          heroImageUrl:
-            d.id === 'sws'
-              ? 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'
-              : d.id === 'u1'
-              ? 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1200&q=80'
-              : d.id === 'it'
-              ? 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80'
-              : d.id === 'travels'
-              ? 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=80'
-              : 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=1200&q=80',
-          logoUrl: `https://mahdev.lk/assets/divisions/${d.id}-logo.png`,
-          contactEmail: d.contactEmail,
-          iconName: d.iconName,
-          stats: d.stats,
-          galleryImages: [
-            {
-              url:
-                d.id === 'sws'
-                  ? 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'
-                  : d.id === 'u1'
-                  ? 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1200&q=80'
-                  : d.id === 'it'
-                  ? 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80'
-                  : d.id === 'travels'
-                  ? 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=80'
-                  : 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=1200&q=80',
-              title: `${d.name} Showcase Rig`,
-              caption: `State-of-the-art deployment by ${d.name}.`,
-            },
-          ],
-          seo: {
+          heroImageUrl: d.heroImageUrl || '',
+          defaultImageUrl: d.defaultImageUrl || '',
+          heroVideoUrl: d.heroVideoUrl || '',
+          videoUrl: d.videoUrl || '',
+          heroMediaType: d.heroMediaType || 'image',
+          logoUrl: d.logoUrl || `/assets/images/${d.id}_logo.svg`,
+          contactEmail: d.contactEmail || 'info.mahdev.lk@gmail.com',
+          iconName: d.iconName || 'Sparkles',
+          stats: d.stats || [],
+          galleryImages: [],
+          seo: d.seo || {
             metaTitle: `${d.name} | Mahdev Group`,
-            metaDescription: `${d.tagline} — ${d.description}`,
-            ogImage: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
+            metaDescription: d.description,
+            ogImage: d.heroImageUrl || '',
             canonicalUrl: `https://mahdev.lk${d.route}`,
           },
-          isActive: true,
-          isDeleted: false,
+          isActive: d.status !== 'inactive' && d.isPublished !== false,
+          isDeleted: d.status === 'inactive' && d.isPublished === false,
           createdAt: now,
           updatedAt: now,
         }));
@@ -879,9 +882,11 @@ class CmsService {
     // Safety net for divisions: If divisions cache has fewer than 5 divisions, ensure all 5 canonical divisions exist
     if (entity === 'divisions' && list.length < 5) {
       const canonicalDefaults = this.getSeedDataForEntity('divisions');
-      const seen = new Set(list.map((d) => d.divisionKey || normalizeDivisionId(d.id || '').shortId));
+      const seen = new Set(list.map((d) => normalizeDivisionId(d.divisionKey || d.id || '').shortId));
       for (const def of canonicalDefaults) {
-        if (!seen.has(def.divisionKey)) {
+        const key = normalizeDivisionId(def.divisionKey || def.id || '').shortId;
+        if (!seen.has(key)) {
+          seen.add(key);
           list.push(def);
         }
       }
@@ -946,7 +951,30 @@ class CmsService {
       });
     }
 
-    return results as T[];
+    // Strict deduplication
+    if (entity === 'divisions') {
+      const seenDivs = new Set<string>();
+      const deduped: any[] = [];
+      for (const item of results) {
+        const key = normalizeDivisionId(item.divisionKey || item.id || '').shortId;
+        if (key && !seenDivs.has(key)) {
+          seenDivs.add(key);
+          deduped.push(item);
+        }
+      }
+      return deduped as T[];
+    } else {
+      const seenIds = new Set<string>();
+      const deduped: any[] = [];
+      for (const item of results) {
+        const key = item.id;
+        if (key && !seenIds.has(key)) {
+          seenIds.add(key);
+          deduped.push(item);
+        }
+      }
+      return deduped as T[];
+    }
   }
 
   /**
@@ -1087,19 +1115,30 @@ class CmsService {
           iconName: item.iconName,
         });
       } else if (entity === 'products') {
+        const primaryImg = item.imageUrl || (item.images && item.images[0]) || (item.galleryImages && item.galleryImages[0]) || '';
+        const otherImgs = ((item.galleryImages || item.images || []) as string[]).filter((u: string) => u && u !== primaryImg);
+        const allImages = primaryImg ? [primaryImg, ...otherImgs] : otherImgs;
+
         await firestoreProductsService.saveProduct(item.id, {
           id: item.id,
           division: item.divisionId || item.division || 'mart',
+          divisionId: item.divisionId || item.division || 'mart',
           name: item.name,
           slug: item.slug || item.id,
           sku: item.sku || item.id,
           categoryId: item.categoryId || 'gear',
           description: item.description || item.shortDescription || '',
+          shortDescription: item.shortDescription || '',
           price: item.price || 0,
           compareAtPrice: item.compareAtPrice || item.originalPrice || 0,
-          images: item.galleryImages && item.galleryImages.length > 0 ? item.galleryImages : item.imageUrl ? [item.imageUrl] : [],
-          stock: item.stockQuantity || item.stock || 0,
+          currency: item.currency || 'LKR',
+          imageUrl: primaryImg,
+          images: allImages,
+          galleryImages: allImages,
+          stock: typeof item.stockQuantity === 'number' ? item.stockQuantity : (item.stock || 0),
+          stockQuantity: typeof item.stockQuantity === 'number' ? item.stockQuantity : (item.stock || 0),
           status: item.isDeleted ? 'draft' : (item.isActive === false ? 'draft' : 'active'),
+          isPublished: !item.isDeleted && item.isActive !== false,
           hasVariants: Boolean(item.variants && item.variants.options && item.variants.options.length > 0),
           variants: item.variants?.options,
         });

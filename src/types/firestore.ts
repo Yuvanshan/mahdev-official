@@ -160,12 +160,16 @@ export interface FirestoreProduct {
   discountPrice?: number;
   compareAtPrice?: number;
   images: string[];
+  imageUrl?: string;
+  galleryImages?: string[];
   categoryId: string;
   stock: number;
+  stockQuantity?: number;
   sku: string;
   isAvailable?: boolean;
   isPublished?: boolean;
   division?: DivisionId | string;
+  divisionId?: DivisionId | string;
   status?: 'active' | 'draft' | 'out_of_stock' | 'archived';
   hasVariants?: boolean;
   variants?: FirestoreProductVariant[];
@@ -583,6 +587,7 @@ export interface FirestoreMilestone {
   date?: string;
   badge?: string;
   keyOutcome?: string;
+  details?: string[];
   metric?: string;
   divisionId?: string;
   status?: 'active' | 'published' | 'draft' | 'archived';

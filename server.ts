@@ -1292,19 +1292,29 @@ async function startServer() {
     const { id } = req.params;
     const data = req.body;
     if (id && data) {
-      serverDivisionsMap.set(id, { ...data, id, updatedAt: new Date().toISOString() });
+      const rawId = (id || '').toLowerCase().replace(/^div-/, '').trim();
+      const cleanId =
+        rawId === 'sws' || rawId === 'sws-event-management' || rawId === 'sws-events' || rawId === 'events' ? 'sws' :
+        rawId === 'u1' || rawId === 'u1-studio' || rawId === 'u1-cinema' || rawId === 'studio' || rawId === 'photography' ? 'u1' :
+        rawId === 'it' || rawId === 'it-solutions' || rawId === 'mahdev-it' || rawId === 'solutions' ? 'it' :
+        rawId === 'travels' || rawId === 'mahdev-travels' || rawId === 'travel' ? 'travels' :
+        rawId === 'mart' || rawId === 'online-mart' || rawId === 'mahdev-mart' || rawId === 'shop' ? 'mart' : rawId;
+
+      serverDivisionsMap.set(cleanId, { ...data, id: cleanId, slug: cleanId, updatedAt: new Date().toISOString() });
       // Asynchronously sync to Firestore
       (async () => {
         try {
           const { db } = await import('./src/lib/firebase');
           const { doc, setDoc } = await import('firebase/firestore');
-          await setDoc(doc(db, 'divisions', id), data, { merge: true });
+          await setDoc(doc(db, 'divisions', cleanId), { ...data, id: cleanId, slug: cleanId }, { merge: true });
         } catch (err) {
           console.warn('[Server Divisions] Async sync notice:', err);
         }
       })();
+      res.json({ success: true, division: serverDivisionsMap.get(cleanId) });
+      return;
     }
-    res.json({ success: true, division: serverDivisionsMap.get(id) });
+    res.json({ success: false, error: 'Invalid ID or data' });
   });
 
   // ==========================================

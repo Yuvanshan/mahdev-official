@@ -166,9 +166,22 @@ export const firestoreProductsService = {
    */
   async saveProduct(id: string, data: Partial<FirestoreProduct>): Promise<void> {
     const docRef = doc(db, 'products', id);
+    const primaryImg = (data as any).imageUrl || (data.images && data.images[0]) || '';
+    const otherImgs = ((data.images || (data as any).galleryImages || []) as string[]).filter(
+      (u: string) => u && u !== primaryImg
+    );
+    const allImages = primaryImg ? [primaryImg, ...otherImgs] : otherImgs;
+
     const payload = sanitizeForFirestore({
       ...data,
       id,
+      imageUrl: primaryImg,
+      images: allImages,
+      galleryImages: allImages,
+      division: data.division || (data as any).divisionId || 'mart',
+      divisionId: (data as any).divisionId || data.division || 'mart',
+      stock: typeof data.stock === 'number' ? data.stock : ((data as any).stockQuantity ?? 0),
+      stockQuantity: typeof data.stock === 'number' ? data.stock : ((data as any).stockQuantity ?? 0),
       updatedAt: new Date().toISOString(),
     });
     if (cachedProducts) {

@@ -108,7 +108,9 @@ export const AdminPortfolioView: React.FC = () => {
       status: statusFilter,
       includeDeleted: statusFilter === 'deleted' || statusFilter === 'all',
     });
-    setPortfolioItems(data);
+    const seen = new Set<string>();
+    const deduped = data.filter((p) => !seen.has(p.id) && seen.add(p.id));
+    setPortfolioItems(deduped);
   };
 
   useEffect(() => {
@@ -205,11 +207,19 @@ export const AdminPortfolioView: React.FC = () => {
 
       if (editingItem) {
         cmsService.update<CmsPortfolioProject>('portfolio', editingItem.id, payload);
-        firestorePortfolioService.savePortfolio(editingItem.id, payload as any).catch(() => {});
+        try {
+          await firestorePortfolioService.savePortfolio(editingItem.id, payload as any);
+        } catch (fErr) {
+          console.warn('[AdminPortfolio] Firestore save notice:', fErr);
+        }
         addToast('success', 'Case Study Saved', `"${formData.title}" updated.`);
       } else {
         const created = cmsService.create<CmsPortfolioProject>('portfolio', payload);
-        firestorePortfolioService.savePortfolio(created.id, payload as any).catch(() => {});
+        try {
+          await firestorePortfolioService.savePortfolio(created.id, payload as any);
+        } catch (fErr) {
+          console.warn('[AdminPortfolio] Firestore create notice:', fErr);
+        }
         addToast('success', 'Case Study Created', `"${formData.title}" added to portfolio.`);
       }
       setIsDirty(false);

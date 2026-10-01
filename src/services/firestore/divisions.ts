@@ -43,30 +43,30 @@ export const DIVISION_DOCUMENT_MAP: Record<string, {
     slug: 'sws',
     shortDescription: 'Premier luxury wedding and stage decorations, audio-visual production, mandap architecture, and concert staging.',
     description: DIVISIONS.sws.description,
-    imageUrl: DIVISIONS.sws.imageUrl || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=85',
-    logoUrl: '/assets/images/sws_logo.png',
+    imageUrl: '',
+    logoUrl: '/assets/images/sws_logo.svg',
     route: '/sws',
     order: 1,
   },
   'u1-studio': {
-    docId: 'u1-studio',
+    docId: 'u1',
     name: 'U1 Studio',
-    slug: 'u1-studio',
+    slug: 'u1',
     shortDescription: 'State-of-the-art photography, 8K cinematic films, wedding photojournalism, and studio fashion productions.',
     description: DIVISIONS.u1.description,
-    imageUrl: DIVISIONS.u1.imageUrl || 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=1200&q=85',
-    logoUrl: '/assets/images/u1_logo.png',
+    imageUrl: '',
+    logoUrl: '/assets/images/u1_logo.svg',
     route: '/u1',
     order: 2,
   },
   'it-solutions': {
-    docId: 'it-solutions',
+    docId: 'it',
     name: 'Mahdev IT Solutions',
-    slug: 'it-solutions',
+    slug: 'it',
     shortDescription: 'Enterprise software engineering, modern cloud architecture, scalable web/mobile platforms, and cybersecurity.',
     description: DIVISIONS.it.description,
-    imageUrl: DIVISIONS.it.imageUrl || 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=85',
-    logoUrl: '/assets/images/it_logo.png',
+    imageUrl: '',
+    logoUrl: '/assets/images/it_logo.svg',
     route: '/it',
     order: 3,
   },
@@ -76,19 +76,19 @@ export const DIVISION_DOCUMENT_MAP: Record<string, {
     slug: 'travels',
     shortDescription: 'Bespoke travel curation, VIP corporate retreats, luxury island expeditions, and chauffeur services.',
     description: DIVISIONS.travels.description,
-    imageUrl: DIVISIONS.travels.imageUrl || 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=85',
-    logoUrl: '/assets/images/travels_logo.png',
+    imageUrl: '',
+    logoUrl: '/assets/images/travels_logo.svg',
     route: '/travels',
     order: 4,
   },
   'online-mart': {
-    docId: 'online-mart',
+    docId: 'mart',
     name: 'Mahdev Online Mart',
-    slug: 'online-mart',
+    slug: 'mart',
     shortDescription: 'Curated e-commerce storefront delivering verified camera gear, audio hardware, and computing essentials.',
     description: DIVISIONS.mart.description,
-    imageUrl: DIVISIONS.mart.imageUrl || 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1200&q=85',
-    logoUrl: '/assets/images/mart_logo.png',
+    imageUrl: '',
+    logoUrl: '/assets/images/mart_logo.svg',
     route: '/mart',
     order: 5,
   },
@@ -545,18 +545,11 @@ export const firestoreDivisionsService = {
 
     // 3. Immediately sync to server backend
     try {
-      fetch('/api/divisions/' + canonicalDocId, {
+      fetch('/api/divisions/' + shortId, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...payload, id: shortId }),
       }).catch(() => {});
-      if (shortId && shortId !== canonicalDocId) {
-        fetch('/api/divisions/' + shortId, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...payload, id: shortId }),
-        }).catch(() => {});
-      }
     } catch {}
 
     // 4. Commit to Firestore with resilient non-blocking timeout fallback

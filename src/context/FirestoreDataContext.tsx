@@ -317,8 +317,14 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
               const otherServices = prev.filter(
                 (s) => !isSameDivision(s.division, canonicalId) && !isSameDivision((s as any).divisionId, canonicalId)
               );
-              const seen = new Set(srvs.map((s) => s.id));
-              const merged = [...otherServices.filter((s) => !seen.has(s.id)), ...srvs];
+              const uniqueMap = new Map<string, FirestoreService>();
+              for (const s of otherServices) {
+                if (s && s.id) uniqueMap.set(s.id, s);
+              }
+              for (const s of srvs) {
+                if (s && s.id) uniqueMap.set(s.id, s);
+              }
+              const merged = Array.from(uniqueMap.values());
               try { localStorage.setItem('mahdev_cached_services', JSON.stringify(merged)); } catch {}
               return merged;
             });
@@ -340,8 +346,14 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
               const otherGal = prev.filter(
                 (g) => !isSameDivision(g.division, canonicalId) && !isSameDivision((g as any).divisionId, canonicalId)
               );
-              const seen = new Set(gal.map((g) => g.id));
-              const merged = [...otherGal.filter((g) => !seen.has(g.id)), ...gal];
+              const uniqueMap = new Map<string, FirestoreGallery>();
+              for (const g of otherGal) {
+                if (g && g.id) uniqueMap.set(g.id, g);
+              }
+              for (const g of gal) {
+                if (g && g.id) uniqueMap.set(g.id, g);
+              }
+              const merged = Array.from(uniqueMap.values());
               try { localStorage.setItem('mahdev_cached_gallery', JSON.stringify(merged)); } catch {}
               return merged;
             });
@@ -372,8 +384,14 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
               const otherProds = prev.filter(
                 (p) => !isSameDivision(p.division, canonicalId) && !isSameDivision((p as any).divisionId, canonicalId)
               );
-              const seen = new Set(prods.map((p) => p.id));
-              const merged = [...otherProds.filter((p) => !seen.has(p.id)), ...prods];
+              const uniqueMap = new Map<string, FirestoreProduct>();
+              for (const p of otherProds) {
+                if (p && p.id) uniqueMap.set(p.id, p);
+              }
+              for (const p of prods) {
+                if (p && p.id) uniqueMap.set(p.id, p);
+              }
+              const merged = Array.from(uniqueMap.values());
               try { localStorage.setItem('mahdev_cached_products', JSON.stringify(merged)); } catch {}
               return merged;
             });
@@ -387,8 +405,14 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
               const otherCats = prev.filter(
                 (c) => !isSameDivision(c.division, canonicalId) && !isSameDivision((c as any).divisionId, canonicalId)
               );
-              const seen = new Set(cats.map((c) => c.id));
-              const merged = [...otherCats.filter((c) => !seen.has(c.id)), ...cats];
+              const uniqueMap = new Map<string, FirestoreCategory>();
+              for (const c of otherCats) {
+                if (c && c.id) uniqueMap.set(c.id, c);
+              }
+              for (const c of cats) {
+                if (c && c.id) uniqueMap.set(c.id, c);
+              }
+              const merged = Array.from(uniqueMap.values());
               try { localStorage.setItem('mahdev_cached_categories', JSON.stringify(merged)); } catch {}
               return merged;
             });
@@ -397,8 +421,14 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
               const otherPort = prev.filter(
                 (p) => !isSameDivision(p.division, canonicalId) && !isSameDivision((p as any).divisionId, canonicalId)
               );
-              const seen = new Set(port.map((p) => p.id));
-              const merged = [...otherPort.filter((p) => !seen.has(p.id)), ...port];
+              const uniqueMap = new Map<string, FirestorePortfolio>();
+              for (const p of otherPort) {
+                if (p && p.id) uniqueMap.set(p.id, p);
+              }
+              for (const p of port) {
+                if (p && p.id) uniqueMap.set(p.id, p);
+              }
+              const merged = Array.from(uniqueMap.values());
               try { localStorage.setItem('mahdev_cached_portfolio', JSON.stringify(merged)); } catch {}
               return merged;
             });
@@ -605,20 +635,22 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       const fetchServicesTask = firestoreServicesService
         .getServices(undefined, forceRefresh)
         .then((allServices) => {
-          setServices(allServices);
+          const seen = new Set<string>();
+          const dedupedServices = allServices.filter((s) => s && s.id && !seen.has(s.id) && seen.add(s.id));
+          setServices(dedupedServices);
           setIsServicesLoading(false);
           setLoadedServices((prev) => {
             const next = { ...prev };
-            allServices.forEach((s) => {
+            dedupedServices.forEach((s) => {
               if (s.division) next[s.division] = true;
               if ((s as any).divisionId) next[(s as any).divisionId] = true;
             });
             try { localStorage.setItem('mahdev_cached_loaded_services', JSON.stringify(next)); } catch {}
             return next;
           });
-          bookingService.syncWithFirestore(allServices);
-          cmsService.syncEntityFromFirestore('services', allServices);
-          try { localStorage.setItem('mahdev_cached_services', JSON.stringify(allServices)); } catch {}
+          bookingService.syncWithFirestore(dedupedServices);
+          cmsService.syncEntityFromFirestore('services', dedupedServices);
+          try { localStorage.setItem('mahdev_cached_services', JSON.stringify(dedupedServices)); } catch {}
           setSyncProgress((p) => Math.min(95, p + 8));
         })
         .catch(() => {
@@ -629,11 +661,13 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       const fetchProductsTask = firestoreProductsService
         .getProducts({}, forceRefresh)
         .then((allProducts) => {
-          setProducts(allProducts);
+          const seen = new Set<string>();
+          const dedupedProducts = allProducts.filter((p) => p && p.id && !seen.has(p.id) && seen.add(p.id));
+          setProducts(dedupedProducts);
           setIsProductsLoading(false);
-          catalogService.syncWithFirestore(allProducts);
-          cmsService.syncEntityFromFirestore('products', allProducts);
-          try { localStorage.setItem('mahdev_cached_products', JSON.stringify(allProducts)); } catch {}
+          catalogService.syncWithFirestore(dedupedProducts);
+          cmsService.syncEntityFromFirestore('products', dedupedProducts);
+          try { localStorage.setItem('mahdev_cached_products', JSON.stringify(dedupedProducts)); } catch {}
           setSyncProgress((p) => Math.min(95, p + 6));
         })
         .catch(() => {
@@ -644,9 +678,11 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       const fetchCategoriesTask = firestoreCategoriesService
         .getCategories(undefined, forceRefresh)
         .then((allCategories) => {
-          setCategories(allCategories);
-          cmsService.syncEntityFromFirestore('categories', allCategories);
-          try { localStorage.setItem('mahdev_cached_categories', JSON.stringify(allCategories)); } catch {}
+          const seen = new Set<string>();
+          const dedupedCategories = allCategories.filter((c) => c && c.id && !seen.has(c.id) && seen.add(c.id));
+          setCategories(dedupedCategories);
+          cmsService.syncEntityFromFirestore('categories', dedupedCategories);
+          try { localStorage.setItem('mahdev_cached_categories', JSON.stringify(dedupedCategories)); } catch {}
         })
         .catch(() => {});
 
@@ -654,10 +690,12 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       const fetchPortfolioTask = firestorePortfolioService
         .getPortfolio(undefined, forceRefresh)
         .then((allPortfolio) => {
-          setPortfolio(allPortfolio);
+          const seen = new Set<string>();
+          const dedupedPortfolio = allPortfolio.filter((p) => p && p.id && !seen.has(p.id) && seen.add(p.id));
+          setPortfolio(dedupedPortfolio);
           setIsPortfolioLoading(false);
-          cmsService.syncEntityFromFirestore('portfolio', allPortfolio);
-          try { localStorage.setItem('mahdev_cached_portfolio', JSON.stringify(allPortfolio)); } catch {}
+          cmsService.syncEntityFromFirestore('portfolio', dedupedPortfolio);
+          try { localStorage.setItem('mahdev_cached_portfolio', JSON.stringify(dedupedPortfolio)); } catch {}
         })
         .catch(() => {
           setIsPortfolioLoading(false);
@@ -667,19 +705,21 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       const fetchGalleryTask = firestoreGalleryService
         .getGallery(undefined, forceRefresh)
         .then((allGallery) => {
-          setGallery(allGallery);
+          const seen = new Set<string>();
+          const dedupedGallery = allGallery.filter((g) => g && g.id && !seen.has(g.id) && seen.add(g.id));
+          setGallery(dedupedGallery);
           setIsGalleryLoading(false);
           setLoadedGallery((prev) => {
             const next = { ...prev };
-            allGallery.forEach((g) => {
+            dedupedGallery.forEach((g) => {
               if (g.division) next[g.division] = true;
               if ((g as any).divisionId) next[(g as any).divisionId] = true;
             });
             try { localStorage.setItem('mahdev_cached_loaded_gallery', JSON.stringify(next)); } catch {}
             return next;
           });
-          cmsService.syncEntityFromFirestore('gallery', allGallery);
-          try { localStorage.setItem('mahdev_cached_gallery', JSON.stringify(allGallery)); } catch {}
+          cmsService.syncEntityFromFirestore('gallery', dedupedGallery);
+          try { localStorage.setItem('mahdev_cached_gallery', JSON.stringify(dedupedGallery)); } catch {}
         })
         .catch(() => {
           setIsGalleryLoading(false);
@@ -913,11 +953,13 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const unsubSrvs = firestoreServicesService.subscribeServices((data) => {
       if (isMounted) {
-        setServices(data);
+        const seen = new Set<string>();
+        const deduped = data.filter((s) => s && s.id && !seen.has(s.id) && seen.add(s.id));
+        setServices(deduped);
         setIsServicesLoading(false);
         setLoadedServices((prev) => {
           const next = { ...prev };
-          data.forEach((s) => {
+          deduped.forEach((s) => {
             if (s.division) next[s.division] = true;
             if ((s as any).divisionId) next[(s as any).divisionId] = true;
           });
@@ -925,22 +967,24 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           return next;
         });
         try {
-          localStorage.setItem('mahdev_cached_services', JSON.stringify(data));
+          localStorage.setItem('mahdev_cached_services', JSON.stringify(deduped));
         } catch {}
-        bookingService.syncWithFirestore(data);
-        cmsService.syncEntityFromFirestore('services', data);
+        bookingService.syncWithFirestore(deduped);
+        cmsService.syncEntityFromFirestore('services', deduped);
       }
     });
 
     const unsubProds = firestoreProductsService.subscribeProducts((data) => {
       if (isMounted) {
-        setProducts(data);
+        const seen = new Set<string>();
+        const deduped = data.filter((p) => p && p.id && !seen.has(p.id) && seen.add(p.id));
+        setProducts(deduped);
         setIsProductsLoading(false);
         try {
-          localStorage.setItem('mahdev_cached_products', JSON.stringify(data));
+          localStorage.setItem('mahdev_cached_products', JSON.stringify(deduped));
         } catch {}
-        catalogService.syncWithFirestore(data, categories);
-        cmsService.syncEntityFromFirestore('products', data);
+        catalogService.syncWithFirestore(deduped, categories);
+        cmsService.syncEntityFromFirestore('products', deduped);
       }
     });
 
@@ -1009,11 +1053,13 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const unsubGal = firestoreGalleryService.subscribeGallery(undefined, (data) => {
       if (isMounted) {
-        setGallery(data);
+        const seen = new Set<string>();
+        const deduped = data.filter((g) => g && g.id && !seen.has(g.id) && seen.add(g.id));
+        setGallery(deduped);
         setIsGalleryLoading(false);
         setLoadedGallery((prev) => {
           const next = { ...prev };
-          data.forEach((g) => {
+          deduped.forEach((g) => {
             if (g.division) next[g.division] = true;
             if ((g as any).divisionId) next[(g as any).divisionId] = true;
           });
@@ -1021,9 +1067,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           return next;
         });
         try {
-          localStorage.setItem('mahdev_cached_gallery', JSON.stringify(data));
+          localStorage.setItem('mahdev_cached_gallery', JSON.stringify(deduped));
         } catch {}
-        cmsService.syncEntityFromFirestore('gallery', data);
+        cmsService.syncEntityFromFirestore('gallery', deduped);
       }
     });
 

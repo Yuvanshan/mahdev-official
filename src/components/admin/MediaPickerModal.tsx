@@ -257,17 +257,18 @@ export const MediaPickerModal: React.FC<MediaPickerModalProps> = ({
 
     setIsUploading(false);
 
-    if (result.success && result.url) {
-      setUploadedUrl(result.url);
-      setSelectedUrls([result.url]);
+    const assetUrl = result.url || result.item?.url;
+    if (result.success && assetUrl) {
+      setUploadedUrl(assetUrl);
+      setSelectedUrls([assetUrl]);
       // Persist to Firestore media repository
       mediaService
         .saveMediaAsset({
           id: `med-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
           title: file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' '),
           category: uploadCategory,
-          url: result.url,
-          storagePath: result.storagePath,
+          url: assetUrl,
+          storagePath: result.storagePath || result.item?.storagePath || '',
           dimensions: result.item?.dimensions
             ? `${result.item.dimensions.width}x${result.item.dimensions.height}`
             : '1920x1080',
@@ -288,6 +289,14 @@ export const MediaPickerModal: React.FC<MediaPickerModalProps> = ({
         onSelect(customUrl.trim());
         if (multiple && onSelectMultiple) {
           onSelectMultiple([customUrl.trim()]);
+        }
+      }
+    } else if (activeTab === 'upload') {
+      const chosen = uploadedUrl || selectedUrls[0];
+      if (chosen) {
+        onSelect(chosen);
+        if (multiple && onSelectMultiple) {
+          onSelectMultiple([chosen]);
         }
       }
     } else {

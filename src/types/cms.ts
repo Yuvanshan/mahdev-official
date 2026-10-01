@@ -111,7 +111,9 @@ export interface CmsProduct extends BaseCmsEntity {
   shortDescription: string;
   description: string;
   imageUrl: string;
+  images?: string[];
   galleryImages: string[];
+  division?: string;
   stockQuantity: number;
   stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock' | 'preorder';
   lowStockThreshold: number;

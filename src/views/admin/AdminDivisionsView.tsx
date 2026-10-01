@@ -252,7 +252,7 @@ export const AdminDivisionsView: React.FC = () => {
             fsMatch.comingSoon ||
             fsMatch.status === 'coming_soon'
         );
-        const resolvedVideo = d.heroVideoUrl || fsMatch.heroVideoUrl || fsMatch.videoUrl || fsMatch.hero?.videoUrl || '';
+        const resolvedVideo = fsMatch.heroVideoUrl || fsMatch.videoUrl || fsMatch.hero?.videoUrl || d.heroVideoUrl || '';
         const dImg = (d as any).defaultImageUrl || (d as any).fallbackImageUrl || d.heroImageUrl || '';
         const fsImg =
           (fsMatch as any).defaultImageUrl ||
@@ -264,10 +264,10 @@ export const AdminDivisionsView: React.FC = () => {
           fsMatch.hero?.imageUrl ||
           fsMatch.hero?.bgImage ||
           '';
-        const resolvedImg = dImg || fsImg || '';
+        const resolvedImg = fsImg || dImg || '';
         const dLogo = d.logoUrl || (d as any).logo || '';
         const fsLogo = fsMatch.logoUrl || (fsMatch as any).logo || '';
-        const resolvedLogo = dLogo || fsLogo || '';
+        const resolvedLogo = fsLogo || dLogo || `/assets/images/${normalizeDivisionId(d.divisionKey || d.id || '').shortId}_logo.svg`;
 
         return {
           ...d,

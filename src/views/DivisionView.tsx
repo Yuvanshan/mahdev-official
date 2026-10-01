@@ -58,16 +58,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
       ? 'travels'
       : (divisionId as DivisionId);
 
-  const canonicalDocId =
-    normalizedKey === 'u1'
-      ? 'u1-studio'
-      : normalizedKey === 'it'
-      ? 'it-solutions'
-      : normalizedKey === 'mart'
-      ? 'online-mart'
-      : normalizedKey === 'sws'
-      ? 'sws-event-management'
-      : normalizedKey;
+  const canonicalDocId = normalizedKey;
 
   // Retrieve cached data synchronously to eliminate initial render glitch
   const cachedDivision = useMemo(() => {
@@ -131,11 +122,8 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
     ) || cachedDivision;
 
   React.useEffect(() => {
-    loadDivisionData(divisionId);
-    if (canonicalDocId && canonicalDocId !== divisionId) {
-      loadDivisionData(canonicalDocId);
-    }
-  }, [divisionId, canonicalDocId, loadDivisionData]);
+    loadDivisionData(normalizedKey);
+  }, [normalizedKey, loadDivisionData]);
 
   // Check if live division data is actively loading from Firestore
   const isDivisionDataLoading = isInitialLoading || (!firestoreDiv && divisions.length === 0) || !isDivisionLoaded(divisionId);

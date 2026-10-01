@@ -102,19 +102,6 @@ export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) =>
                     <div className={`w-full sm:w-[calc(50%-2rem)] pl-12 sm:pl-0 ${isEven ? 'sm:text-right' : ''}`}>
                       <TiltCard maxTilt={4} glareEffect>
                         <div className="p-6 sm:p-7 rounded-2xl bg-slate-50 border border-slate-200 hover:border-[#0052FF] hover:bg-white hover:shadow-xl transition-all duration-300 group overflow-hidden">
-                          {/* Image preview if provided in Firestore */}
-                          {ms.imageUrl && (
-                            <div className="mb-4 rounded-xl overflow-hidden max-h-48 border border-slate-200/90 shadow-2xs">
-                              <img
-                                src={ms.imageUrl}
-                                alt={ms.title}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                loading={index < 2 ? "eager" : "lazy"}
-                                decoding="async"
-                              />
-                            </div>
-                          )}
-
                           <div className={`flex items-center gap-2 mb-3 flex-wrap ${isEven ? 'sm:justify-end' : ''}`}>
                             <span className="px-2.5 py-1 rounded-md bg-blue-100/90 text-[#0052FF] font-bold text-xs">
                               {ms.year}

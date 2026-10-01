@@ -435,15 +435,19 @@ export const AdminServicesView: React.FC = () => {
 
       if (editingService) {
         cmsService.update<CmsService>('services', editingService.id, payload);
-        firestoreServicesService.saveService(editingService.id, firestoreData).catch((fErr) => {
+        try {
+          await firestoreServicesService.saveService(editingService.id, firestoreData);
+        } catch (fErr) {
           console.warn('[AdminServices] Firestore background sync notice:', fErr);
-        });
+        }
         addToast('success', 'Service Updated', `"${formData.title}" saved successfully.`);
       } else {
         const created = cmsService.create<CmsService>('services', payload);
-        firestoreServicesService.saveService(created.id, firestoreData).catch((fErr) => {
+        try {
+          await firestoreServicesService.saveService(created.id, firestoreData);
+        } catch (fErr) {
           console.warn('[AdminServices] Firestore background sync notice:', fErr);
-        });
+        }
         addToast('success', 'Service Created', `"${formData.title}" saved successfully.`);
       }
       setIsDirty(false);

@@ -14,7 +14,6 @@ import {
   EyeOff,
   Radio,
   Layers,
-  Image as ImageIcon,
   Archive,
   RotateCcw,
   ExternalLink,
@@ -55,7 +54,6 @@ export const AdminMilestonesView: React.FC = () => {
     metric: '',
     keyOutcome: '',
     divisionId: 'all',
-    imageUrl: '',
     iconName: 'Sparkles',
     order: 1,
     isPublished: true,
@@ -101,7 +99,6 @@ export const AdminMilestonesView: React.FC = () => {
       metric: 'Enterprise Landmark',
       keyOutcome: '',
       divisionId: 'all',
-      imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=800&auto=format&fit=crop',
       iconName: 'Sparkles',
       order: milestones.length + 1,
       isPublished: true,
@@ -123,7 +120,6 @@ export const AdminMilestonesView: React.FC = () => {
       metric: m.metric || '',
       keyOutcome: m.keyOutcome || '',
       divisionId: m.divisionId || 'all',
-      imageUrl: m.imageUrl || '',
       iconName: m.iconName || 'Sparkles',
       order: m.order || 1,
       isPublished: m.isPublished !== false && m.status !== 'draft' && m.status !== 'archived',
@@ -161,7 +157,6 @@ export const AdminMilestonesView: React.FC = () => {
         metric: formData.metric.trim() || undefined,
         keyOutcome: formData.keyOutcome.trim() || formData.metric.trim() || undefined,
         divisionId: formData.divisionId === 'all' ? undefined : formData.divisionId,
-        imageUrl: formData.imageUrl.trim() || undefined,
         iconName: formData.iconName || 'Sparkles',
         order: Number(formData.order) || 1,
         isPublished: formData.isPublished,
@@ -649,26 +644,6 @@ export const AdminMilestonesView: React.FC = () => {
             />
           </div>
 
-          <div>
-            <label className="block font-semibold text-slate-700 mb-1">Archival Image URL</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={formData.imageUrl}
-                onChange={(e) => {
-                  setFormData({ ...formData, imageUrl: e.target.value });
-                  setIsDirty(true);
-                }}
-                placeholder="https://images.unsplash.com/..."
-                className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-              {formData.imageUrl && (
-                <div className="w-9 h-9 rounded-lg overflow-hidden border border-slate-200 shrink-0">
-                  <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover"  />
-                </div>
-              )}
-            </div>
-          </div>
 
           <div>
             <label className="block font-semibold text-slate-700 mb-1">Description *</label>

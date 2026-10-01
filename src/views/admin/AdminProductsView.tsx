@@ -18,6 +18,9 @@ import {
   Eye,
   Copy,
   Check,
+  Upload,
+  Loader2,
+  X,
 } from 'lucide-react';
 import { CmsProduct, CmsCategory } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
@@ -30,14 +33,20 @@ import { QuickCategoryCreator } from '../../components/admin/QuickCategoryCreato
 import { firestoreProductsService } from '../../services/firestore/products';
 import { DivisionId } from '../../types';
 import { formatCurrency, formatLKR } from '../../utils/currency';
+import { uploadMediaAsset } from '../../services/mediaUploadService';
+import { compressDataUrl } from '../../utils/imageOptimizer';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 export const AdminProductsView: React.FC = () => {
+  const { refreshAll } = useFirestoreDataContext();
   const [products, setProducts] = useState<CmsProduct[]>([]);
   const [categories, setCategories] = useState<CmsCategory[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [divisionFilter, setDivisionFilter] = useState<string>('all');
   const [stockFilter, setStockFilter] = useState<string>('all');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Modal & Inspector States
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -98,7 +107,9 @@ export const AdminProductsView: React.FC = () => {
       status: stockFilter,
       includeDeleted: stockFilter === 'deleted' || stockFilter === 'all',
     });
-    setProducts(prods);
+    const seen = new Set<string>();
+    const uniqueProds = prods.filter((p) => !seen.has(p.id) && seen.add(p.id));
+    setProducts(uniqueProds);
 
     const cats = cmsService.getAll<CmsCategory>('categories');
     setCategories(cats);
@@ -157,8 +168,8 @@ export const AdminProductsView: React.FC = () => {
       currency: prod.currency || 'LKR',
       shortDescription: prod.shortDescription || '',
       description: prod.description || '',
-      imageUrl: prod.imageUrl,
-      galleryImages: prod.galleryImages || [],
+      imageUrl: prod.imageUrl || (prod.images && prod.images[0]) || (prod.galleryImages && prod.galleryImages[0]) || '',
+      galleryImages: prod.galleryImages || prod.images || [],
       stockQuantity: prod.stockQuantity,
       stockStatus: prod.stockStatus,
       lowStockThreshold: prod.lowStockThreshold || 10,
@@ -210,6 +221,47 @@ export const AdminProductsView: React.FC = () => {
     return Object.keys(errors).length === 0;
   };
 
+  const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    try {
+      const uploadedUrl = await uploadMediaAsset(file);
+      if (uploadedUrl) {
+        setFormData((prev) => ({
+          ...prev,
+          imageUrl: uploadedUrl,
+          galleryImages: [uploadedUrl, ...(prev.galleryImages || []).filter((g) => g !== uploadedUrl)],
+        }));
+        setIsDirty(true);
+        addToast('success', 'Image Uploaded', 'Product image uploaded and attached.');
+      }
+    } catch (err: any) {
+      console.warn('Direct media upload fallback:', err);
+      try {
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+          const rawBase64 = ev.target?.result as string;
+          const compressed = await compressDataUrl(rawBase64, 1200, 0.85);
+          setFormData((prev) => ({
+            ...prev,
+            imageUrl: compressed,
+            galleryImages: [compressed, ...(prev.galleryImages || []).filter((g) => g !== compressed)],
+          }));
+          setIsDirty(true);
+          addToast('info', 'Image Attached', 'Local image ready for save.');
+        };
+        reader.readAsDataURL(file);
+      } catch (readErr: any) {
+        addToast('error', 'Upload Failed', err.message || 'Could not process image.');
+      }
+    } finally {
+      setIsUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) {
@@ -226,24 +278,72 @@ export const AdminProductsView: React.FC = () => {
           ? 'low_stock'
           : 'in_stock';
 
-      const payload = {
+      const primaryImg = formData.imageUrl.trim();
+      const otherImgs = (formData.galleryImages || []).filter((u) => u && u !== primaryImg);
+      const allImgs = primaryImg ? [primaryImg, ...otherImgs] : otherImgs;
+
+      const payload: CmsProduct = {
         ...formData,
+        imageUrl: primaryImg,
+        images: allImgs,
+        galleryImages: allImgs,
+        division: formData.divisionId,
+        divisionId: formData.divisionId,
+        stock: formData.stockQuantity,
+        stockQuantity: formData.stockQuantity,
         slug: formData.slug.trim() || formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         stockStatus,
-      };
+      } as any;
 
       if (editingProduct) {
-        cmsService.update<CmsProduct>('products', editingProduct.id, payload);
-        firestoreProductsService.saveProduct(editingProduct.id, payload as any).catch(() => {});
+        cmsService.update<CmsProduct>('products', editingProduct.id, payload as any);
+        try {
+          await firestoreProductsService.saveProduct(editingProduct.id, {
+            ...payload,
+            id: editingProduct.id,
+            imageUrl: primaryImg,
+            images: allImgs,
+            galleryImages: allImgs,
+            division: formData.divisionId,
+            divisionId: formData.divisionId,
+            stock: formData.stockQuantity,
+            stockQuantity: formData.stockQuantity,
+            isPublished: formData.isActive,
+            status: formData.isActive ? 'active' : 'draft',
+          } as any);
+        } catch (fErr) {
+          console.warn('[AdminProducts] Firestore save notice:', fErr);
+        }
         addToast('success', 'Product Updated', `SKU ${payload.sku} "${payload.name}" saved.`);
       } else {
-        const created = cmsService.create<CmsProduct>('products', payload);
-        firestoreProductsService.saveProduct(created.id, payload as any).catch(() => {});
+        const created = cmsService.create<CmsProduct>('products', payload as any);
+        try {
+          await firestoreProductsService.saveProduct(created.id, {
+            ...payload,
+            id: created.id,
+            imageUrl: primaryImg,
+            images: allImgs,
+            galleryImages: allImgs,
+            division: formData.divisionId,
+            divisionId: formData.divisionId,
+            stock: formData.stockQuantity,
+            stockQuantity: formData.stockQuantity,
+            isPublished: formData.isActive,
+            status: formData.isActive ? 'active' : 'draft',
+          } as any);
+        } catch (fErr) {
+          console.warn('[AdminProducts] Firestore create notice:', fErr);
+        }
         addToast('success', 'Product Created', `"${payload.name}" added to catalog.`);
       }
       setIsDirty(false);
       setIsEditorOpen(false);
       loadData();
+      try {
+        await refreshAll();
+      } catch (rErr) {
+        console.warn('refreshAll notice:', rErr);
+      }
     } catch (err: any) {
       addToast('error', 'Error Saving Product', err.message || 'Operation failed.');
     } finally {
@@ -270,20 +370,34 @@ export const AdminProductsView: React.FC = () => {
       stockQuantity: quickStockValue,
       stockStatus,
     });
+    firestoreProductsService.saveProduct(stockEditingProduct.id, {
+      stock: quickStockValue,
+    } as any).catch(() => {});
     addToast('success', 'Stock Adjusted', `Stock for SKU ${stockEditingProduct.sku} set to ${quickStockValue}.`);
     setIsStockModalOpen(false);
     setStockEditingProduct(null);
     loadData();
   };
 
-  const handleDeleteConfirm = (permanent: boolean) => {
+  const handleDeleteConfirm = async (permanent: boolean) => {
     if (!deletingProduct) return;
+    const itemToDelete = deletingProduct;
     if (permanent) {
-      cmsService.hardDelete('products', deletingProduct.id);
-      addToast('warning', 'Permanent Deletion', `Product "${deletingProduct.name}" removed from inventory.`);
+      cmsService.hardDelete('products', itemToDelete.id);
+      try {
+        await firestoreProductsService.deleteProduct(itemToDelete.id);
+      } catch (fErr) {
+        console.warn('[AdminProducts] Firestore delete notice:', fErr);
+      }
+      addToast('warning', 'Permanent Deletion', `Product "${itemToDelete.name}" removed from inventory.`);
     } else {
-      cmsService.softDelete('products', deletingProduct.id);
-      addToast('info', 'Product Archived', `Product "${deletingProduct.name}" archived.`);
+      cmsService.softDelete('products', itemToDelete.id);
+      try {
+        await firestoreProductsService.saveProduct(itemToDelete.id, { status: 'draft', isPublished: false } as any);
+      } catch (fErr) {
+        console.warn('[AdminProducts] Firestore archive notice:', fErr);
+      }
+      addToast('info', 'Product Archived', `Product "${itemToDelete.name}" archived.`);
     }
     setDeletingProduct(null);
     loadData();
@@ -876,45 +990,123 @@ export const AdminProductsView: React.FC = () => {
 
           {/* Media Image Manager */}
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">Primary Product Image *</label>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between mb-1">
+              <label className="block font-semibold text-slate-700">Primary Product Image *</label>
+              {formData.imageUrl && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData({ ...formData, imageUrl: '', galleryImages: [] });
+                    setIsDirty(true);
+                  }}
+                  className="text-[11px] text-red-600 hover:text-red-700 font-semibold inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                  Clear Image
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <input
                 type="url"
                 value={formData.imageUrl}
                 onChange={(e) => {
-                  setFormData({ ...formData, imageUrl: e.target.value });
+                  setFormData({
+                    ...formData,
+                    imageUrl: e.target.value,
+                    galleryImages: e.target.value ? [e.target.value] : [],
+                  });
                   setIsDirty(true);
                 }}
-                placeholder="https://images.unsplash.com/..."
-                className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
+                placeholder="https://images.unsplash.com/... or click Upload"
+                className="grow px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono text-xs"
               />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setIsMediaPickerOpen(true)}
-                className="shrink-0"
-              >
-                <ImageIcon className="w-3.5 h-3.5 mr-1" />
-                Select Media
-              </Button>
-            </div>
-            {formData.imageUrl && (
-              <div className="mt-2 flex items-center gap-3">
-                <img
-                  src={formData.imageUrl}
-                  alt="Thumbnail"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
-                    if (fb) fb.classList.remove('hidden');
-                  }}
-                  className="w-14 h-14 rounded-xl object-cover border border-slate-200 bg-slate-50"
+
+              <div className="flex items-center gap-2 shrink-0">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                  onChange={handleImageFileUpload}
+                  className="hidden"
                 />
-                <div className="hidden w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
-                  <Package className="w-6 h-6" />
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingImage}
+                  className="text-xs"
+                >
+                  {isUploadingImage ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-3.5 h-3.5 mr-1" />
+                      Upload File
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsMediaPickerOpen(true)}
+                  className="text-xs"
+                >
+                  <ImageIcon className="w-3.5 h-3.5 mr-1" />
+                  Media Library
+                </Button>
+              </div>
+            </div>
+
+            {formErrors.imageUrl && (
+              <p className="text-red-600 text-[10px] mt-1">{formErrors.imageUrl}</p>
+            )}
+
+            {formData.imageUrl && (
+              <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200 bg-white shrink-0 shadow-2xs">
+                    <img
+                      src={formData.imageUrl}
+                      alt="Thumbnail"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
+                        if (fb) fb.classList.remove('hidden');
+                      }}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="hidden w-full h-full bg-slate-100 flex items-center justify-center text-slate-400">
+                      <Package className="w-6 h-6" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-xs font-bold text-slate-900">Active Attached Image</span>
+                    </div>
+                    <span className="text-[11px] text-slate-500 font-mono truncate max-w-xs block mt-0.5">
+                      {formData.imageUrl.startsWith('data:') ? 'Local Image Attached (Base64 WebP)' : formData.imageUrl}
+                    </span>
+                  </div>
                 </div>
-                <span className="text-[11px] text-slate-500">Live image preview.</span>
+
+                <a
+                  href={formData.imageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-blue-600 hover:underline font-semibold flex items-center gap-1"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Preview
+                </a>
               </div>
             )}
           </div>

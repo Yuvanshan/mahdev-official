@@ -28,8 +28,10 @@ export function mapFirestoreProductToCatalog(
       ? 'Mahdev Travels'
       : 'Mahdev Group';
 
-  const img = fp.images && fp.images.length > 0 ? fp.images[0] : '';
-  const gallery = fp.images || [];
+  const img = (fp as any).imageUrl || (fp.images && fp.images.length > 0 ? fp.images[0] : '');
+  const gallery = Array.isArray(fp.images) && fp.images.length > 0
+    ? fp.images
+    : ((fp as any).imageUrl ? [(fp as any).imageUrl] : []);
   const price = Number(fp.price) || 0;
   const origPrice = fp.compareAtPrice !== undefined ? Number(fp.compareAtPrice) : price;
   const discountPercent =
@@ -52,7 +54,7 @@ export function mapFirestoreProductToCatalog(
     gallery: gallery,
     price: price,
     originalPrice: origPrice,
-    currency: fp.currency || 'USD',
+    currency: fp.currency || 'LKR',
     discountPercent: discountPercent,
     stockQuantity: typeof fp.stock === 'number' ? fp.stock : 100,
     lowStockThreshold: 10,
