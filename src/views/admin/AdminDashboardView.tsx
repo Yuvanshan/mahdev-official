@@ -136,7 +136,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       const res = await cmsService.importLocalDataFromJson(text);
       if (res.success) {
         await refreshAll(true);
-        setLocalSummary(cmsService.getLocalDataSummary());
         setSyncStatusMsg({
           type: 'success',
           text: `Successfully imported ${res.importedEntities} items and synced with Cloud Firestore!`,

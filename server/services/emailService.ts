@@ -4,6 +4,7 @@
  * using Nodemailer with SMTP / Gmail integration and resilient fallbacks.
  */
 
+// @ts-ignore
 import nodemailer, { type Transporter } from 'nodemailer';
 import { getServerConfig } from '../config/serverEnv';
 

@@ -263,6 +263,7 @@ export const firestoreServicesService = {
    * Create or update service
    */
   async saveService(id: string, data: Partial<FirestoreService>): Promise<void> {
+    const docRef = doc(db, 'services', id);
     const sanitizedData: any = {
       ...data,
       id,

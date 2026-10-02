@@ -8,7 +8,7 @@ import {
   CatalogSortOption,
   CatalogProduct,
 } from '../types/catalog';
-import { catalogService } from '../services/catalogService';
+import { catalogService, mapFirestoreProductToCatalog } from '../services/catalogService';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
 import { InquiredItemShimmer } from '../components/common/InquiredItemShimmer';
