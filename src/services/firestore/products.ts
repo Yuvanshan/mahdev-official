@@ -23,6 +23,7 @@ import {
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreProduct, DivisionId } from '../../types/firestore';
 import { isSameDivision } from './divisions';
+import { compressDataUrl } from '../../utils/imageOptimizer';
 
 const CACHE_TTL_MS = 1000 * 60 * 15; // 15-minute memoized cache
 let cachedProducts: { data: FirestoreProduct[]; timestamp: number } | null = null;
@@ -172,12 +173,25 @@ export const firestoreProductsService = {
     );
     const allImages = primaryImg ? [primaryImg, ...otherImgs] : otherImgs;
 
+    let finalPrimaryImg = primaryImg;
+    if (typeof finalPrimaryImg === 'string' && finalPrimaryImg.startsWith('data:image/') && finalPrimaryImg.length > 30000) {
+      finalPrimaryImg = await compressDataUrl(finalPrimaryImg, 1000, 0.75);
+    }
+    const finalAllImages = await Promise.all(
+      allImages.map(async (img: any) => {
+        if (typeof img === 'string' && img.startsWith('data:image/') && img.length > 30000) {
+          return await compressDataUrl(img, 1000, 0.75);
+        }
+        return img;
+      })
+    );
+
     const payload = sanitizeForFirestore({
       ...data,
       id,
-      imageUrl: primaryImg,
-      images: allImages,
-      galleryImages: allImages,
+      imageUrl: finalPrimaryImg,
+      images: finalAllImages,
+      galleryImages: finalAllImages,
       division: data.division || (data as any).divisionId || 'mart',
       divisionId: (data as any).divisionId || data.division || 'mart',
       stock: typeof data.stock === 'number' ? data.stock : ((data as any).stockQuantity ?? 0),

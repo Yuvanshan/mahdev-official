@@ -34,6 +34,7 @@ import {
 } from './firestore';
 import { sortDivisions, normalizeDivisionId, getDefaultDivisions } from './firestore/divisions';
 import { safeStorage } from '../utils/safeStorage';
+import { compressDataUrl } from '../utils/imageOptimizer';
 
 const CMS_STORAGE_PREFIX = 'mahdev_cms_v1_';
 
@@ -1175,14 +1176,42 @@ class CmsService {
           status: item.isDeleted ? 'draft' : (item.isActive === false ? 'draft' : 'published'),
         });
       } else if (entity === 'gallery') {
+        let primaryUrl = item.url || item.mediaUrl || item.imageUrl || '';
+        let thumbUrl = item.thumbnailUrl || primaryUrl;
+        let imagesList: string[] = Array.isArray(item.images) && item.images.length > 0
+          ? [...item.images]
+          : (primaryUrl ? [primaryUrl] : []);
+
+        if (typeof primaryUrl === 'string' && primaryUrl.startsWith('data:image/') && primaryUrl.length > 30000) {
+          primaryUrl = await compressDataUrl(primaryUrl, 1000, 0.75);
+          item.url = primaryUrl;
+          item.mediaUrl = primaryUrl;
+        }
+        if (typeof thumbUrl === 'string' && thumbUrl.startsWith('data:image/') && thumbUrl.length > 30000) {
+          thumbUrl = await compressDataUrl(thumbUrl, 800, 0.7);
+          item.thumbnailUrl = thumbUrl;
+        }
+        if (Array.isArray(imagesList)) {
+          imagesList = await Promise.all(
+            imagesList.map(async (img: string) => {
+              if (typeof img === 'string' && img.startsWith('data:image/') && img.length > 30000) {
+                return await compressDataUrl(img, 1000, 0.75);
+              }
+              return img;
+            })
+          );
+          item.images = imagesList;
+        }
+
         await firestoreGalleryService.saveGallery(item.id, {
           id: item.id,
           sku: item.sku || undefined,
           title: item.title,
           division: item.divisionId || item.division || 'sws',
           type: item.type || item.mediaType || 'image',
-          url: item.url || item.mediaUrl || item.imageUrl || '',
-          thumbnailUrl: item.thumbnailUrl || item.url || item.mediaUrl || '',
+          url: primaryUrl,
+          thumbnailUrl: thumbUrl,
+          images: imagesList,
           caption: item.caption || '',
           aspectRatio: item.aspectRatio || '16:9',
           tag: item.category || (Array.isArray(item.tags) ? item.tags[0] : (item.tag || 'General')),

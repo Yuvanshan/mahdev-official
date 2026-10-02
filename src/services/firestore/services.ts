@@ -19,6 +19,7 @@ import {
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreService, DivisionId } from '../../types/firestore';
 import { isSameDivision } from './divisions';
+import { compressDataUrl } from '../../utils/imageOptimizer';
 
 const CACHE_TTL_MS = 1000 * 60 * 15; // 15 min cache
 let cachedServices: { data: FirestoreService[]; timestamp: number } | null = null;
@@ -262,12 +263,27 @@ export const firestoreServicesService = {
    * Create or update service
    */
   async saveService(id: string, data: Partial<FirestoreService>): Promise<void> {
-    const docRef = doc(db, 'services', id);
-    const payload = sanitizeForFirestore({
+    const sanitizedData: any = {
       ...data,
       id,
       updatedAt: new Date().toISOString(),
-    });
+    };
+
+    if (typeof sanitizedData.imageUrl === 'string' && sanitizedData.imageUrl.startsWith('data:image/') && sanitizedData.imageUrl.length > 30000) {
+      sanitizedData.imageUrl = await compressDataUrl(sanitizedData.imageUrl, 1000, 0.75);
+    }
+    if (Array.isArray(sanitizedData.images)) {
+      sanitizedData.images = await Promise.all(
+        sanitizedData.images.map(async (img: any) => {
+          if (typeof img === 'string' && img.startsWith('data:image/') && img.length > 30000) {
+            return await compressDataUrl(img, 1000, 0.75);
+          }
+          return img;
+        })
+      );
+    }
+
+    const payload = sanitizeForFirestore(sanitizedData);
     if (cachedServices) {
       const idx = cachedServices.data.findIndex((s) => s.id === id);
       if (idx >= 0) {

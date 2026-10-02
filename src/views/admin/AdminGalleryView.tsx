@@ -241,7 +241,10 @@ export const AdminGalleryView: React.FC = () => {
       try {
         const uploadedUrl = await uploadMediaAsset(file);
         if (uploadedUrl) {
-          newImages.push(uploadedUrl);
+          const safeUrl = uploadedUrl.startsWith('data:image/') && uploadedUrl.length > 30000
+            ? await compressDataUrl(uploadedUrl, 1000, 0.75)
+            : uploadedUrl;
+          newImages.push(safeUrl);
         }
       } catch (err) {
         console.warn('Direct upload fallback:', err);

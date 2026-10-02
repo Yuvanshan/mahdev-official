@@ -17,6 +17,7 @@ import {
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreGallery, DivisionId } from '../../types/firestore';
 import { isSameDivision } from './divisions';
+import { compressDataUrl } from '../../utils/imageOptimizer';
 
 const CACHE_TTL_MS = 1000 * 60 * 20;
 let cachedGallery: { data: FirestoreGallery[]; timestamp: number } | null = null;
@@ -215,7 +216,30 @@ export const firestoreGalleryService = {
 
   async saveGallery(id: string, data: Partial<FirestoreGallery>): Promise<void> {
     const docRef = doc(db, 'gallery', id);
-    const payload = sanitizeForFirestore({ ...data, id });
+    const sanitizedData: any = { ...data, id };
+
+    // Automatic compression guard for Firestore 1MB document boundary
+    if (typeof sanitizedData.url === 'string' && sanitizedData.url.startsWith('data:image/') && sanitizedData.url.length > 30000) {
+      sanitizedData.url = await compressDataUrl(sanitizedData.url, 1000, 0.75);
+    }
+    if (typeof sanitizedData.mediaUrl === 'string' && sanitizedData.mediaUrl.startsWith('data:image/') && sanitizedData.mediaUrl.length > 30000) {
+      sanitizedData.mediaUrl = sanitizedData.url;
+    }
+    if (typeof sanitizedData.thumbnailUrl === 'string' && sanitizedData.thumbnailUrl.startsWith('data:image/') && sanitizedData.thumbnailUrl.length > 30000) {
+      sanitizedData.thumbnailUrl = await compressDataUrl(sanitizedData.thumbnailUrl, 800, 0.7);
+    }
+    if (Array.isArray(sanitizedData.images)) {
+      sanitizedData.images = await Promise.all(
+        sanitizedData.images.map(async (img: any) => {
+          if (typeof img === 'string' && img.startsWith('data:image/') && img.length > 30000) {
+            return await compressDataUrl(img, 1000, 0.75);
+          }
+          return img;
+        })
+      );
+    }
+
+    const payload = sanitizeForFirestore(sanitizedData);
     if (cachedGallery) {
       const idx = cachedGallery.data.findIndex((g) => g.id === id);
       if (idx >= 0) {

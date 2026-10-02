@@ -8,6 +8,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { signInAnonymously } from 'firebase/auth';
 import { auth, storage } from '../lib/firebase';
 import { uploadMediaToFirestore } from './firestoreMediaService';
+import { optimizeImage, compressDataUrl } from '../utils/imageOptimizer';
 
 export interface UploadMediaProgressCallback {
   (percent: number): void;
@@ -37,7 +38,25 @@ export async function uploadMediaAsset(
     file.name.toLowerCase().endsWith('.mov') ||
     file.name.toLowerCase().endsWith('.m4v');
 
-  const cleanName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+  // Pre-optimize high-resolution mobile photos client-side to prevent network lag & Firestore size limits
+  let fileToUpload = file;
+  if (!isVideo && file.type.startsWith('image/') && !file.type.includes('svg') && !file.type.includes('gif')) {
+    try {
+      const { optimizedFile } = await optimizeImage(file, {
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.8,
+        targetFormat: 'image/webp',
+      });
+      if (optimizedFile && optimizedFile.size < file.size) {
+        fileToUpload = optimizedFile;
+      }
+    } catch (e) {
+      console.warn('[MediaUpload] Pre-upload client compression notice:', e);
+    }
+  }
+
+  const cleanName = `${Date.now()}_${fileToUpload.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 
   // PRIORITY 1: Direct Server-Side High-Speed Binary Streaming (/api/upload/media)
   // Streams the raw binary payload directly over HTTP without decoding frames or converting to Base64.
@@ -51,7 +70,7 @@ export async function uploadMediaAsset(
 
       xhr.setRequestHeader(
         'Content-Type',
-        file.type || (isVideo ? 'video/mp4' : 'application/octet-stream')
+        fileToUpload.type || (isVideo ? 'video/mp4' : 'application/octet-stream')
       );
       xhr.setRequestHeader('x-filename', cleanName);
 
@@ -91,13 +110,17 @@ export async function uploadMediaAsset(
       // 5-minute timeout for large video uploads
       xhr.timeout = 300000;
 
-      xhr.send(file);
+      xhr.send(fileToUpload);
     });
 
+    if (typeof serverUrl === 'string' && serverUrl.startsWith('data:image/') && serverUrl.length > 30000) {
+      return await compressDataUrl(serverUrl, 1000, 0.75);
+    }
     return serverUrl;
   } catch (serverErr) {
     console.warn('[MediaUpload] Server direct upload failed, attempting cloud storage fallback:', serverErr);
   }
+
 
   // PRIORITY 2: Firebase Storage Fallback (direct cloud bucket upload)
   try {

@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
+import sharp from 'sharp';
 
 export const config = {
   api: {
@@ -23,8 +24,23 @@ export default async function handler(req: IncomingMessage & { method?: string }
       for await (const chunk of req) {
         chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
       }
-      const buffer = Buffer.concat(chunks);
-      const mimeType = req.headers['content-type'] || 'video/mp4';
+      let buffer = Buffer.concat(chunks);
+      let mimeType = (req.headers['content-type'] || 'application/octet-stream').toLowerCase();
+
+      // If it's an image (except SVG), optimize and compress to WebP using sharp
+      if (mimeType.startsWith('image/') && !mimeType.includes('svg')) {
+        try {
+          const optimizedBuffer = await sharp(buffer)
+            .resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true })
+            .webp({ quality: 80 })
+            .toBuffer();
+          buffer = optimizedBuffer;
+          mimeType = 'image/webp';
+        } catch (sharpErr) {
+          console.warn('[UploadMedia API] Sharp optimization warning, continuing with buffer:', sharpErr);
+        }
+      }
+
       const base64 = buffer.toString('base64');
       const dataUri = `data:${mimeType};base64,${base64}`;
 
@@ -36,7 +52,7 @@ export default async function handler(req: IncomingMessage & { method?: string }
           url: dataUri,
           size: buffer.length,
           mimeType,
-          message: 'Uploaded successfully via serverless buffer',
+          message: 'Uploaded and optimized successfully via serverless buffer',
         })
       );
     } catch (err: any) {
@@ -51,3 +67,4 @@ export default async function handler(req: IncomingMessage & { method?: string }
   res.setHeader('Content-Type', 'application/json');
   res.end(JSON.stringify({ status: 'active', endpoint: '/api/upload/media' }));
 }
+

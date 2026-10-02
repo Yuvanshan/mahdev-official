@@ -21,6 +21,7 @@ import { StorageCategory } from '../../types/storage';
 import { storageService } from '../storageService';
 import { deleteMediaBlobFromFirestore } from '../firestoreMediaService';
 import { safeStorage } from '../../utils/safeStorage';
+import { compressDataUrl } from '../../utils/imageOptimizer';
 
 export interface StoredMediaItem {
   id: string;
@@ -379,6 +380,10 @@ export const mediaService = {
         updatedAt: new Date().toISOString(),
         isDeleted: false,
       });
+    }
+
+    if (typeof payload.url === 'string' && payload.url.startsWith('data:image/') && payload.url.length > 30000) {
+      payload.url = await compressDataUrl(payload.url, 1000, 0.75);
     }
 
     const docRef = doc(db, COLLECTION_NAME, id);
