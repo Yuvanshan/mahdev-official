@@ -181,12 +181,10 @@ export const firestoreGoogleReviewsService = {
       }
     }
     try {
-      await Promise.race([
-        setDoc(docRef, payload, { merge: true }),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
+      await setDoc(docRef, payload, { merge: true });
     } catch (err) {
-      console.warn('[Firestore GoogleReviews] save warning:', err);
+      console.error('[Firestore GoogleReviews] save error:', err);
+      throw err;
     }
   },
 

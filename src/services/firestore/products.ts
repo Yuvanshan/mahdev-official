@@ -193,12 +193,10 @@ export const firestoreProductsService = {
       }
     }
     try {
-      await Promise.race([
-        setDoc(docRef, payload, { merge: true }),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
+      await setDoc(docRef, payload, { merge: true });
     } catch (err) {
       console.warn('[Firestore Products] save warning:', err);
+      throw err;
     }
   },
 
@@ -211,12 +209,10 @@ export const firestoreProductsService = {
       cachedProducts.data = cachedProducts.data.filter((p) => p.id !== id);
     }
     try {
-      await Promise.race([
-        deleteDoc(docRef),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
+      await deleteDoc(docRef);
     } catch (err) {
       console.warn('[Firestore Products] delete warning:', err);
+      throw err;
     }
   },
 

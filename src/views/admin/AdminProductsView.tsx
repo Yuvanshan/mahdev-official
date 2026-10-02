@@ -339,9 +339,9 @@ export const AdminProductsView: React.FC = () => {
       }
 
       if (cloudSynced) {
-        addToast('success', editingProduct ? 'Product Updated' : 'Product Created', `"${payload.name}" saved and synced to Cloud Firestore.`);
+        addToast('success', editingProduct ? 'Product Updated' : 'Product Created', `"${payload.name}" saved to Cloud Firestore and reflected live everywhere.`);
       } else {
-        addToast('warning', 'Saved on this Device Only', `"${payload.name}" saved locally. Cloud sync failed. Use "Push Device Data to Cloud" on the Dashboard when online.`);
+        addToast('info', 'Saved Locally (Auto-Sync Queued)', `"${payload.name}" saved on device. Auto-sync will persist it to Cloud Firestore in the background.`);
       }
       setIsDirty(false);
       setIsEditorOpen(false);

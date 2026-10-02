@@ -454,13 +454,12 @@ export const firestoreSettingsService = {
     // 3. Sync to authoritative server endpoint
     syncToServerApi('company', payload);
 
-    // 4. Commit to Firestore with a 5000ms safety race to prevent UI freeze
+    // 4. Commit to Firestore
     try {
-      const writePromise = setDoc(docRef, payload, { merge: true });
-      const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, 5000));
-      await Promise.race([writePromise, timeoutPromise]);
+      await setDoc(docRef, payload, { merge: true });
     } catch (err) {
-      console.warn('[Firestore Settings] updateCompanySettings remote write notice:', err);
+      console.error('[Firestore Settings] updateCompanySettings remote write error:', err);
+      throw err;
     }
   },
 
@@ -605,13 +604,12 @@ export const firestoreSettingsService = {
     // 3. Sync to authoritative server endpoint
     syncToServerApi('site', payload);
 
-    // 4. Commit to Firestore with a 5000ms safety race to prevent UI freeze
+    // 4. Commit to Firestore
     try {
-      const writePromise = setDoc(docRef, payload, { merge: true });
-      const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, 5000));
-      await Promise.race([writePromise, timeoutPromise]);
+      await setDoc(docRef, payload, { merge: true });
     } catch (err) {
-      console.warn('[Firestore Settings] updateSiteSettings remote write notice:', err);
+      console.error('[Firestore Settings] updateSiteSettings remote write error:', err);
+      throw err;
     }
   },
 

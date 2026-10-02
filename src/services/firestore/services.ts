@@ -278,12 +278,10 @@ export const firestoreServicesService = {
       cachedServices.data.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     }
     try {
-      await Promise.race([
-        setDoc(docRef, payload, { merge: true }),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
+      await setDoc(docRef, payload, { merge: true });
     } catch (err) {
       console.warn('[Firestore Services] save warning:', err);
+      throw err;
     }
   },
 
@@ -300,12 +298,10 @@ export const firestoreServicesService = {
     });
 
     try {
-      await Promise.race([
-        batch.commit(),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
+      await batch.commit();
     } catch (err) {
       console.warn('[Firestore Services] reorder warning:', err);
+      throw err;
     }
 
     if (cachedServices) {
@@ -327,12 +323,10 @@ export const firestoreServicesService = {
       cachedServices.data = cachedServices.data.filter((s) => s.id !== id);
     }
     try {
-      await Promise.race([
-        deleteDoc(docRef),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
+      await deleteDoc(docRef);
     } catch (err) {
       console.warn('[Firestore Services] delete warning:', err);
+      throw err;
     }
   },
 

@@ -138,12 +138,10 @@ export const firestorePortfolioService = {
       }
     }
     try {
-      await Promise.race([
-        setDoc(docRef, payload, { merge: true }),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
+      await setDoc(docRef, payload, { merge: true });
     } catch (err) {
-      console.warn('[Firestore Portfolio] save warning:', err);
+      console.error('[Firestore Portfolio] save error:', err);
+      throw err;
     }
   },
 
@@ -153,12 +151,10 @@ export const firestorePortfolioService = {
       cachedPortfolio.data = cachedPortfolio.data.filter((p) => p.id !== id);
     }
     try {
-      await Promise.race([
-        deleteDoc(docRef),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
+      await deleteDoc(docRef);
     } catch (err) {
-      console.warn('[Firestore Portfolio] delete warning:', err);
+      console.error('[Firestore Portfolio] delete error:', err);
+      throw err;
     }
   },
 

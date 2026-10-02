@@ -916,12 +916,16 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     })();
     const isCacheStale = !cacheTs || Date.now() - cacheTs > 1000 * 60 * 15;
 
-    // Trigger fresh synchronization across all collections to sync real Firestore data
-    refreshAll(isCacheStale).catch(() => {});
+    // Always trigger fresh live synchronization from Cloud Firestore
+    refreshAll(true).catch(() => {});
 
-    // Listen for tab focus/visibility on desktop to automatically pull latest Firestore data
+    // Silently synchronize any local stranded data (e.g. from mobile phone edits) to Cloud Firestore
+    cmsService.autoSyncStrandedLocalData(true).catch(() => {});
+
+    // Listen for tab focus/visibility to automatically pull latest Firestore data and sync changes
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
+        cmsService.autoSyncStrandedLocalData().catch(() => {});
         const lastTs = (() => {
           try {
             const ts = localStorage.getItem('mahdev_cache_timestamp');

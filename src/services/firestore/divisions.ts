@@ -559,16 +559,14 @@ export const firestoreDivisionsService = {
       }).catch(() => {});
     } catch {}
 
-    // 4. Commit to Firestore with resilient non-blocking timeout fallback
+    // 4. Commit to Firestore
     try {
       const docRef = doc(db, 'divisions', canonicalDocId);
-      await Promise.race([
-        setDoc(docRef, payload, { merge: true }),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
+      await setDoc(docRef, payload, { merge: true });
       console.log(`[Firestore Divisions] Division "${canonicalDocId}" committed to Firestore.`);
     } catch (fsErr) {
-      console.warn(`[Firestore Divisions] Cloud commit notice for "${canonicalDocId}":`, fsErr);
+      console.error(`[Firestore Divisions] Cloud commit error for "${canonicalDocId}":`, fsErr);
+      throw fsErr;
     }
   },
 

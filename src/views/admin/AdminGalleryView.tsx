@@ -419,9 +419,9 @@ export const AdminGalleryView: React.FC = () => {
       }
 
       if (cloudSynced) {
-        addToast('success', editingItem ? 'Gallery Item Saved' : 'Gallery Item Created', `"${formData.title}" saved and synced to Cloud Firestore.`);
+        addToast('success', editingItem ? 'Gallery Item Saved' : 'Gallery Item Created', `"${formData.title}" saved to Cloud Firestore and reflected live everywhere.`);
       } else {
-        addToast('warning', 'Saved on this Device Only', `"${formData.title}" saved locally. Cloud sync failed. Use "Push Device Data to Cloud" on the Dashboard when online.`);
+        addToast('info', 'Saved Locally (Auto-Sync Queued)', `"${formData.title}" saved on device. Auto-sync will persist it to Cloud Firestore in the background.`);
       }
       setIsDirty(false);
       setIsEditorOpen(false);

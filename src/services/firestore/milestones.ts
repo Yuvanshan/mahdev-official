@@ -225,12 +225,10 @@ export const firestoreMilestonesService = {
 
     const docRef = doc(db, 'milestones', id);
     try {
-      await Promise.race([
-        setDoc(docRef, payload, { merge: true }),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
+      await setDoc(docRef, payload, { merge: true });
     } catch (err) {
-      console.warn('[Firestore Milestones] create warning:', err);
+      console.error('[Firestore Milestones] create error:', err);
+      throw err;
     }
 
     return id;
@@ -260,12 +258,10 @@ export const firestoreMilestonesService = {
     }
 
     try {
-      await Promise.race([
-        setDoc(docRef, payload, { merge: true }),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
+      await setDoc(docRef, payload, { merge: true });
     } catch (err) {
-      console.warn('[Firestore Milestones] save warning:', err);
+      console.error('[Firestore Milestones] save error:', err);
+      throw err;
     }
   },
 
@@ -278,12 +274,10 @@ export const firestoreMilestonesService = {
       cachedMilestones.data = cachedMilestones.data.filter((m) => m.id !== id);
     }
     try {
-      await Promise.race([
-        deleteDoc(docRef),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
+      await deleteDoc(docRef);
     } catch (err) {
-      console.warn('[Firestore Milestones] delete warning:', err);
+      console.error('[Firestore Milestones] delete error:', err);
+      throw err;
     }
   },
 
@@ -307,12 +301,10 @@ export const firestoreMilestonesService = {
     }
 
     try {
-      await Promise.race([
-        setDoc(docRef, payload, { merge: true }),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
+      await setDoc(docRef, payload, { merge: true });
     } catch (err) {
-      console.warn('[Firestore Milestones] togglePublish warning:', err);
+      console.error('[Firestore Milestones] togglePublish error:', err);
+      throw err;
     }
   },
 

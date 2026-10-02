@@ -1034,7 +1034,7 @@ class CmsService {
     return newItem as T;
   }
 
-  private async syncEntityItemToFirestore(entity: CmsEntityType, item: any): Promise<void> {
+  public async syncEntityItemToFirestore(entity: CmsEntityType, item: any): Promise<void> {
     try {
       if (entity === 'divisions') {
         const divKey = item.divisionKey || item.id?.replace('div-', '') || item.id;
@@ -1099,10 +1099,10 @@ class CmsService {
           slug: item.slug || item.id,
           description: item.description || item.shortDescription || '',
           imageUrl: item.imageUrl || (item.images && item.images[0]) || '',
-          images: item.imageUrl ? [item.imageUrl] : item.images || [],
+          images: Array.isArray(item.images) && item.images.length > 0 ? item.images : (item.imageUrl ? [item.imageUrl] : []),
           price: item.startingPrice || item.price || 0,
           startingPrice: item.startingPrice || item.price || 0,
-          currency: item.currency || 'USD',
+          currency: item.currency || 'LKR',
           status: item.isDeleted ? 'draft' : (item.isActive === false ? 'draft' : 'active'),
           bookingEnabled: item.bookingEnabled !== false,
           quoteEnabled: item.quoteEnabled !== false,
@@ -1996,6 +1996,44 @@ class CmsService {
       counts.testimonials;
 
     return counts;
+  }
+
+  private autoSyncPromise: Promise<void> | null = null;
+
+  /**
+   * Silently detects if this browser/device has local CMS data (e.g. added on mobile)
+   * that needs to be synchronized to Firestore so it reflects everywhere automatically.
+   * Runs completely in the background without needing any manual user action.
+   */
+  public async autoSyncStrandedLocalData(force = false): Promise<void> {
+    if (this.autoSyncPromise) return this.autoSyncPromise;
+
+    this.autoSyncPromise = (async () => {
+      try {
+        const lastAutoSync = safeStorage.getItem('mahdev_last_autosync_ts');
+        const now = Date.now();
+        // Throttle auto-sync to once every 2 minutes unless explicit
+        if (!force && lastAutoSync && now - parseInt(lastAutoSync, 10) < 1000 * 60 * 2) {
+          return;
+        }
+
+        const summary = this.getLocalDataSummary();
+        if (summary.total > 0) {
+          console.log(`[AutoSync] Detected ${summary.total} local items on this device. Silently syncing to Cloud Firestore in background...`);
+          const res = await this.syncAllLocalToFirestore();
+          if (res.totalSynced > 0) {
+            console.log(`[AutoSync] Successfully synced ${res.totalSynced} items to Cloud Firestore.`);
+          }
+          safeStorage.setItem('mahdev_last_autosync_ts', String(now));
+        }
+      } catch (err) {
+        console.warn('[AutoSync] Background cloud synchronization notice:', err);
+      } finally {
+        this.autoSyncPromise = null;
+      }
+    })();
+
+    return this.autoSyncPromise;
   }
 
   /**

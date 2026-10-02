@@ -80,12 +80,10 @@ export const firestoreCategoriesService = {
       }
     }
     try {
-      await Promise.race([
-        setDoc(docRef, payload, { merge: true }),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
+      await setDoc(docRef, payload, { merge: true });
     } catch (err) {
-      console.warn('[Firestore Categories] save warning:', err);
+      console.error('[Firestore Categories] save error:', err);
+      throw err;
     }
   },
 
@@ -98,12 +96,10 @@ export const firestoreCategoriesService = {
       cachedCategories.data = cachedCategories.data.filter((c) => c.id !== id);
     }
     try {
-      await Promise.race([
-        deleteDoc(docRef),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
+      await deleteDoc(docRef);
     } catch (err) {
-      console.warn('[Firestore Categories] delete warning:', err);
+      console.error('[Firestore Categories] delete error:', err);
+      throw err;
     }
   },
 
