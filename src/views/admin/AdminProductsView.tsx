@@ -229,10 +229,13 @@ export const AdminProductsView: React.FC = () => {
     try {
       const uploadedUrl = await uploadMediaAsset(file);
       if (uploadedUrl) {
+        const safeUrl = uploadedUrl.startsWith('data:image/') && uploadedUrl.length > 30000
+          ? await compressDataUrl(uploadedUrl, 1000, 0.75)
+          : uploadedUrl;
         setFormData((prev) => ({
           ...prev,
-          imageUrl: uploadedUrl,
-          galleryImages: [uploadedUrl, ...(prev.galleryImages || []).filter((g) => g !== uploadedUrl)],
+          imageUrl: safeUrl,
+          galleryImages: [safeUrl, ...(prev.galleryImages || []).filter((g) => g !== safeUrl)],
         }));
         setIsDirty(true);
         addToast('success', 'Image Uploaded', 'Product image uploaded and attached.');
@@ -278,9 +281,19 @@ export const AdminProductsView: React.FC = () => {
           ? 'low_stock'
           : 'in_stock';
 
-      const primaryImg = formData.imageUrl.trim();
+      let primaryImg = formData.imageUrl.trim();
+      if (primaryImg.startsWith('data:image/') && primaryImg.length > 30000) {
+        primaryImg = await compressDataUrl(primaryImg, 1000, 0.75);
+      }
       const otherImgs = (formData.galleryImages || []).filter((u) => u && u !== primaryImg);
-      const allImgs = primaryImg ? [primaryImg, ...otherImgs] : otherImgs;
+      const allImgs = await Promise.all(
+        (primaryImg ? [primaryImg, ...otherImgs] : otherImgs).map(async (u) => {
+          if (typeof u === 'string' && u.startsWith('data:image/') && u.length > 30000) {
+            return await compressDataUrl(u, 1000, 0.75);
+          }
+          return u;
+        })
+      );
 
       const payload: CmsProduct = {
         ...formData,
@@ -854,7 +867,7 @@ export const AdminProductsView: React.FC = () => {
         isDirty={isDirty}
         maxWidth="3xl"
       >
-        <form onSubmit={handleSave} className="space-y-4 text-xs">
+        <form onSubmit={handleSave} noValidate className="space-y-4 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="sm:col-span-2">
               <label className="block font-semibold text-slate-700 mb-1">Product Title *</label>
@@ -1016,7 +1029,7 @@ export const AdminProductsView: React.FC = () => {
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <input
-                type="url"
+                type="text"
                 value={formData.imageUrl}
                 onChange={(e) => {
                   setFormData({

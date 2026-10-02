@@ -14,6 +14,8 @@ import { Order } from '../types/order';
 import { Booking } from '../types/booking';
 import { PaymentTransaction } from '../types/payment';
 import { COMPANY_INFO } from '../config/company';
+import { collection, doc, setDoc, onSnapshot, query, limit, updateDoc } from 'firebase/firestore';
+import { db, sanitizeForFirestore } from '../lib/firebase';
 
 const NOTIFICATIONS_STORAGE_KEY = 'mahdev_notifications_v1';
 
@@ -23,6 +25,7 @@ class NotificationService {
 
   constructor() {
     this.loadFromStorage();
+    this.initFirestoreSync();
   }
 
   private loadFromStorage(): void {
@@ -44,6 +47,34 @@ class NotificationService {
       this.notifyListeners();
     } catch (e) {
       console.warn('[NotificationService] Local storage save failed:', e);
+    }
+  }
+
+  private initFirestoreSync(): void {
+    if (typeof window === 'undefined') return;
+    try {
+      const q = query(collection(db, 'notifications'), limit(100));
+      onSnapshot(q, (snap) => {
+        if (!snap.empty) {
+          const cloudNotifs: AppNotification[] = snap.docs.map((d) => ({
+            id: d.id,
+            ...d.data(),
+          })) as AppNotification[];
+          const existingIds = new Set(cloudNotifs.map((n) => n.id));
+          const localOnly = this.notifications.filter((n) => !existingIds.has(n.id));
+          const merged = [...cloudNotifs, ...localOnly];
+          merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          this.notifications = merged.slice(0, 100);
+          try {
+            localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(this.notifications));
+          } catch {}
+          this.notifyListeners();
+        }
+      }, (err) => {
+        console.warn('[NotificationService] Firestore listener notice:', err);
+      });
+    } catch (e) {
+      console.warn('[NotificationService] Firestore sync init notice:', e);
     }
   }
 
@@ -84,6 +115,12 @@ class NotificationService {
     // 1. Immediately store in client in-app store
     this.notifications.unshift(notification);
     this.saveToStorage();
+
+    // 2. Persist to Cloud Firestore so all admin logins across devices receive the alert
+    try {
+      const docRef = doc(db, 'notifications', notification.id);
+      setDoc(docRef, sanitizeForFirestore(notification)).catch(() => {});
+    } catch {}
 
     // 2. Asynchronously fire server email/SMS dispatcher without blocking caller
     (async () => {
@@ -410,6 +447,10 @@ class NotificationService {
       item.readAt = new Date().toISOString();
       item.status = 'read';
       this.saveToStorage();
+      try {
+        const docRef = doc(db, 'notifications', id);
+        updateDoc(docRef, { readAt: item.readAt, status: 'read' }).catch(() => {});
+      } catch {}
     }
   }
 

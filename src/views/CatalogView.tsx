@@ -34,6 +34,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     categories: firestoreCategories,
     isInitialLoading,
     isFetching,
+    isLiveHydrated,
   } = useFirestoreDataContext();
 
   const [filters, setFilters] = useState<CatalogFilterOptions>({
@@ -54,7 +55,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     if (initialProductId) return initialProductId;
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const q = params.get('sku') || params.get('id') || params.get('product');
+      const q = params.get('sku') || params.get('id') || params.get('product') || params.get('title') || params.get('name');
       if (q && q.trim()) return q.trim();
     }
     return null;
@@ -79,7 +80,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     const clean = targetSkuOrId.trim().toLowerCase();
     const cleanNorm = normalizeCode(clean);
     const all = catalogService.queryProducts();
-    const found =
+    let found =
       all.find(
         (p) =>
           p.id.toLowerCase() === clean ||
@@ -94,12 +95,50 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
       catalogService.getProductById(targetSkuOrId) ||
       catalogService.getProductBySlug(targetSkuOrId);
 
+    // If not found in memory cache, search directly in real-time firestoreProducts
+    if (!found && firestoreProducts && firestoreProducts.length > 0) {
+      const fp = firestoreProducts.find((p) => {
+        const pSku = (p.sku || '').toLowerCase();
+        const pId = p.id.toLowerCase();
+        const pSlug = (p.slug || '').toLowerCase();
+        const pName = (p.name || '').toLowerCase();
+        return (
+          pSku === clean ||
+          pId === clean ||
+          pSlug === clean ||
+          normalizeCode(pSku) === cleanNorm ||
+          normalizeCode(pId) === cleanNorm ||
+          pName.includes(clean) ||
+          clean.includes(pName)
+        );
+      });
+      if (fp) {
+        found = mapFirestoreProductToCatalog(fp, firestoreCategories);
+      }
+    }
+
+    // Also check query param 'title' or 'name' from WhatsApp link
+    if (!found && typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const titleParam = (params.get('title') || params.get('name') || '').toLowerCase().trim();
+      if (titleParam) {
+        const titleNorm = normalizeCode(titleParam);
+        const fp = (firestoreProducts || []).find((p) => {
+          const pName = (p.name || '').toLowerCase();
+          return pName.includes(titleParam) || titleParam.includes(pName) || normalizeCode(pName) === titleNorm;
+        });
+        if (fp) {
+          found = mapFirestoreProductToCatalog(fp, firestoreCategories);
+        }
+      }
+    }
+
     if (found) {
       setSelectedProduct(found);
       setInquiredProduct(found);
       setShowFullCatalog(false);
     }
-  }, [targetSkuOrId, firestoreProducts]);
+  }, [targetSkuOrId, firestoreProducts, firestoreCategories]);
 
   // Query categories for active filters
   const categories = useMemo(() => {
@@ -144,7 +183,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   // If customer is navigating to a specific product query from a link:
   if (targetSkuOrId && !showFullCatalog) {
     // 1. Shimmer state while Firestore data is actively loading
-    if (isInitialLoading || (firestoreProducts.length === 0 && isFetching)) {
+    if ((isInitialLoading || !isLiveHydrated) && firestoreProducts.length === 0) {
       return (
         <div className="min-h-screen bg-neutral-50 flex flex-col pt-16">
           <InquiredItemShimmer />

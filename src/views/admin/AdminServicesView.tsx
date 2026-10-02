@@ -253,7 +253,10 @@ export const AdminServicesView: React.FC = () => {
       try {
         const uploadedUrl = await uploadMediaAsset(file);
         if (uploadedUrl) {
-          newImages.push(uploadedUrl);
+          const safeUrl = uploadedUrl.startsWith('data:image/') && uploadedUrl.length > 30000
+            ? await compressDataUrl(uploadedUrl, 1000, 0.75)
+            : uploadedUrl;
+          newImages.push(safeUrl);
         }
       } catch (err) {
         console.warn('Direct upload fallback:', err);
@@ -762,7 +765,7 @@ export const AdminServicesView: React.FC = () => {
         isDirty={isDirty}
         maxWidth="2xl"
       >
-        <form onSubmit={handleSave} className="space-y-4 text-xs">
+        <form onSubmit={handleSave} noValidate className="space-y-4 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="sm:col-span-1 lg:col-span-1">
               <label className="block font-semibold text-slate-700 mb-1">Service Title *</label>
@@ -939,7 +942,7 @@ export const AdminServicesView: React.FC = () => {
 
               <div className="flex items-center gap-1 grow min-w-[200px]">
                 <input
-                  type="url"
+                  type="text"
                   value={imageUrlInput}
                   onChange={(e) => setImageUrlInput(e.target.value)}
                   placeholder="Paste image URL..."

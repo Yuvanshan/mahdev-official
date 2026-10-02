@@ -13,6 +13,7 @@ import {
   DisplayGalleryItem,
   matchGalleryItem,
   resolveMediaAssetSku,
+  synthesizeInquiryItemFromParams,
 } from '../utils/itemLookup';
 import { InquiredItemSpotlight } from '../components/common/InquiredItemSpotlight';
 import { InquiredItemShimmer } from '../components/common/InquiredItemShimmer';
@@ -24,7 +25,7 @@ interface GalleryPageViewProps {
 }
 
 export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, initialSku }) => {
-  const { gallery, mediaAssets, isInitialLoading, isFetching, isReady } = useFirestoreDataContext();
+  const { gallery, mediaAssets, isInitialLoading, isFetching, isLiveHydrated } = useFirestoreDataContext();
   const [activeItem, setActiveItem] = useState<DisplayGalleryItem | null>(null);
   const [inquiredItem, setInquiredItem] = useState<DisplayGalleryItem | null>(null);
   const [showFullGallery, setShowFullGallery] = useState<boolean>(false);
@@ -37,7 +38,12 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
     if (initialSku) return initialSku.trim();
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const q = params.get('sku') || params.get('id') || params.get('item');
+      const q =
+        params.get('sku') ||
+        params.get('id') ||
+        params.get('item') ||
+        params.get('title') ||
+        params.get('name');
       if (q && q.trim()) return q.trim();
     }
     return null;
@@ -179,11 +185,26 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
   useEffect(() => {
     if (!targetQuery) return;
     if (allItems.length > 0) {
-      const match = matchGalleryItem(allItems, targetQuery);
+      let match = matchGalleryItem(allItems, targetQuery);
+      if (!match && typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const titleParam = params.get('title') || params.get('name');
+        if (titleParam) {
+          match = matchGalleryItem(allItems, titleParam);
+        }
+      }
       if (match) {
         setInquiredItem(match);
         setActiveItem(match);
         setShowFullGallery(false);
+      } else if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const fallback = synthesizeInquiryItemFromParams(params);
+        if (fallback) {
+          setInquiredItem(fallback);
+          setActiveItem(fallback);
+          setShowFullGallery(false);
+        }
       }
     }
   }, [targetQuery, allItems]);
@@ -226,7 +247,7 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
   // If customer is navigating to a specific inquired item from a link:
   if (targetQuery && !showFullGallery) {
     // 1. Display shimmer while Firestore data is actively loading
-    if (isInitialLoading || (allItems.length === 0 && isFetching)) {
+    if ((isInitialLoading || !isLiveHydrated) && allItems.length === 0) {
       return (
         <div className="min-h-screen bg-slate-50 pt-20">
           <InquiredItemShimmer />
