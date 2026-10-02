@@ -454,6 +454,13 @@ export const firestoreDivisionsService = {
   },
 
   /**
+   * Invalidate in-memory divisions cache
+   */
+  clearCache(): void {
+    cachedDivisions = null;
+  },
+
+  /**
    * Update or create division document
    */
   async saveDivision(id: DivisionId | string, data: Partial<FirestoreDivision>): Promise<void> {

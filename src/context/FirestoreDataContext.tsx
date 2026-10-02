@@ -87,7 +87,8 @@ export interface FirestoreDataContextValue {
   portfolio: FirestorePortfolio[];
   gallery: FirestoreGallery[];
   mediaAssets: StoredMediaItem[];
-  refreshAll: () => Promise<void>;
+  refreshAll: (forceRefresh?: boolean) => Promise<void>;
+  forceRefreshAll: () => Promise<void>;
   updateSiteSettings: (data: Partial<FirestoreSiteSettings>) => Promise<void>;
   updateCompanySettings: (data: Partial<FirestoreCompanySettings>) => Promise<void>;
   updateHomepageConfig: (data: Partial<HomepageCmsConfig>) => Promise<void>;
@@ -832,6 +833,51 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  /**
+   * Complete forced cache purge and server re-sync
+   * Invalidate memory caches, local storage caches, and pull pristine Firestore documents.
+   */
+  const forceRefreshAll = useCallback(async () => {
+    try {
+      firestoreServicesService.clearCache();
+      firestoreGalleryService.clearCache();
+      firestoreProductsService.clearCache();
+      firestoreDivisionsService.clearCache();
+
+      if (typeof window !== 'undefined') {
+        const keysToRemove = [
+          'mahdev_cache_hydrated',
+          'mahdev_cache_timestamp',
+          'mahdev_cached_divisions',
+          'mahdev_cached_services',
+          'mahdev_cached_products',
+          'mahdev_cached_categories',
+          'mahdev_cached_gallery',
+          'mahdev_cached_portfolio',
+          'mahdev_cached_milestones',
+          'mahdev_cached_companies',
+          'mahdev_cached_testimonials',
+          'mahdev_cached_company_settings',
+          'mahdev_cached_site_settings',
+          'mahdev_cached_homepage_config',
+          'mahdev_cached_media_assets',
+          'mahdev_cached_loaded_divisions',
+          'mahdev_cached_loaded_services',
+          'mahdev_cached_loaded_gallery',
+          'mahdev_cached_google_reviews',
+          'mahdev_cached_google_reviews_config',
+        ];
+        keysToRemove.forEach((k) => {
+          try { localStorage.removeItem(k); } catch {}
+        });
+      }
+
+      await refreshAll(true);
+    } catch (err) {
+      console.error('[FirestoreDataContext] forceRefreshAll failed:', err);
+    }
+  }, [refreshAll]);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -857,12 +903,42 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     // Immediately mark app shell ready so page structure and per-section shimmers render instantly.
-    // Realtime snapshot listeners stream data one-by-one from Firestore (or IndexedDB persistent cache)
-    // and dismiss individual section shimmers the millisecond each snapshot arrives.
     markReady();
 
+    // Check cache freshness: if cache timestamp is missing or older than 15 minutes, perform a live force-refresh
+    const cacheTs = (() => {
+      try {
+        const ts = localStorage.getItem('mahdev_cache_timestamp');
+        return ts ? parseInt(ts, 10) : 0;
+      } catch {
+        return 0;
+      }
+    })();
+    const isCacheStale = !cacheTs || Date.now() - cacheTs > 1000 * 60 * 15;
+
     // Trigger fresh synchronization across all collections to sync real Firestore data
-    refreshAll(false).catch(() => {});
+    refreshAll(isCacheStale).catch(() => {});
+
+    // Listen for tab focus/visibility on desktop to automatically pull latest Firestore data
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const lastTs = (() => {
+          try {
+            const ts = localStorage.getItem('mahdev_cache_timestamp');
+            return ts ? parseInt(ts, 10) : 0;
+          } catch {
+            return 0;
+          }
+        })();
+        // If more than 5 minutes have passed since last refresh, silently refresh from Firestore
+        if (Date.now() - lastTs > 1000 * 60 * 5) {
+          refreshAll(true).catch(() => {});
+        }
+      }
+    };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
 
     // Emergency fail-safe timeout only in case network drops completely
     const failsafeTimer = setTimeout(() => {
@@ -1100,6 +1176,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       unsubPort();
       unsubGal();
       unsubMedia();
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
     };
   }, []);
 
@@ -1299,6 +1378,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       gallery,
       mediaAssets,
       refreshAll,
+      forceRefreshAll,
       updateSiteSettings,
       updateCompanySettings,
       updateHomepageConfig,
@@ -1352,6 +1432,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       gallery,
       mediaAssets,
       refreshAll,
+      forceRefreshAll,
       updateSiteSettings,
       updateCompanySettings,
       updateHomepageConfig,

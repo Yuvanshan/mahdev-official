@@ -281,4 +281,12 @@ export const firestoreGalleryService = {
       }
     );
   },
+
+  /**
+   * Explicitly invalidate in-memory gallery cache
+   */
+  clearCache(): void {
+    cachedGallery = null;
+    inFlightGalleryPromise = null;
+  },
 };

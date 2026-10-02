@@ -433,22 +433,29 @@ export const AdminServicesView: React.FC = () => {
         isActive: payload.isActive,
       };
 
+      let cloudSynced = true;
       if (editingService) {
         cmsService.update<CmsService>('services', editingService.id, payload);
         try {
           await firestoreServicesService.saveService(editingService.id, firestoreData);
         } catch (fErr) {
+          cloudSynced = false;
           console.warn('[AdminServices] Firestore background sync notice:', fErr);
         }
-        addToast('success', 'Service Updated', `"${formData.title}" saved successfully.`);
       } else {
         const created = cmsService.create<CmsService>('services', payload);
         try {
           await firestoreServicesService.saveService(created.id, firestoreData);
         } catch (fErr) {
+          cloudSynced = false;
           console.warn('[AdminServices] Firestore background sync notice:', fErr);
         }
-        addToast('success', 'Service Created', `"${formData.title}" saved successfully.`);
+      }
+
+      if (cloudSynced) {
+        addToast('success', editingService ? 'Service Updated' : 'Service Created', `"${formData.title}" saved and synced to Cloud Firestore.`);
+      } else {
+        addToast('warning', 'Saved on this Device Only', `"${formData.title}" saved locally. Cloud sync failed. Use "Push Device Data to Cloud" on the Dashboard when online.`);
       }
       setIsDirty(false);
       setIsEditorOpen(false);

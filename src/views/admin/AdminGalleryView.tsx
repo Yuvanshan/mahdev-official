@@ -399,22 +399,29 @@ export const AdminGalleryView: React.FC = () => {
         status: payload.isActive ? ('published' as const) : ('hidden' as const),
       };
 
+      let cloudSynced = true;
       if (editingItem) {
         cmsService.update<CmsGalleryItem>('gallery', editingItem.id, payload);
         try {
           await firestoreGalleryService.saveGallery(editingItem.id, firestoreData);
         } catch (fErr) {
+          cloudSynced = false;
           console.warn('[AdminGallery] Firestore background sync notice:', fErr);
         }
-        addToast('success', 'Gallery Item Saved', `"${formData.title}" saved successfully.`);
       } else {
         const created = cmsService.create<CmsGalleryItem>('gallery', payload);
         try {
           await firestoreGalleryService.saveGallery(created.id, firestoreData);
         } catch (fErr) {
+          cloudSynced = false;
           console.warn('[AdminGallery] Firestore background sync notice:', fErr);
         }
-        addToast('success', 'Gallery Item Created', `"${formData.title}" saved successfully.`);
+      }
+
+      if (cloudSynced) {
+        addToast('success', editingItem ? 'Gallery Item Saved' : 'Gallery Item Created', `"${formData.title}" saved and synced to Cloud Firestore.`);
+      } else {
+        addToast('warning', 'Saved on this Device Only', `"${formData.title}" saved locally. Cloud sync failed. Use "Push Device Data to Cloud" on the Dashboard when online.`);
       }
       setIsDirty(false);
       setIsEditorOpen(false);

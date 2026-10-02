@@ -251,6 +251,14 @@ export const firestoreServicesService = {
   },
 
   /**
+   * Explicitly invalidate in-memory services cache
+   */
+  clearCache(): void {
+    cachedServices = null;
+    inFlightServicesPromise = null;
+  },
+
+  /**
    * Create or update service
    */
   async saveService(id: string, data: Partial<FirestoreService>): Promise<void> {

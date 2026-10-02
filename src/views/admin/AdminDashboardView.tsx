@@ -29,9 +29,18 @@ import {
   BarChart3,
   CalendarRange,
   Zap,
+  Cloud,
+  UploadCloud,
+  HardDrive,
+  Download,
+  Upload,
+  Database,
+  Smartphone,
+  Laptop,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { cmsService } from '../../services/cmsService';
 import { firestoreOrdersService } from '../../services/firestore/orders';
 import { firestoreBookingsService } from '../../services/firestore/bookings';
 import { firestoreProductsService } from '../../services/firestore/products';
@@ -89,7 +98,114 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   onNavigateSection,
   onNavigateSite,
 }) => {
-  const { siteSettings, companySettings, divisions } = useFirestoreDataContext();
+  const { siteSettings, companySettings, divisions, refreshAll, forceRefreshAll } = useFirestoreDataContext();
+
+  // Multi-Device Cloud Sync Center states
+  const [isCloudSyncing, setIsCloudSyncing] = useState<boolean>(false);
+  const [isForceRefreshing, setIsForceRefreshing] = useState<boolean>(false);
+  const [syncStatusMsg, setSyncStatusMsg] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+  const [localSummary, setLocalSummary] = useState(() => cmsService.getLocalDataSummary());
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleSyncAllLocalToCloud = async () => {
+    setIsCloudSyncing(true);
+    setSyncStatusMsg(null);
+    try {
+      const res = await cmsService.syncAllLocalToFirestore();
+      await refreshAll(true);
+      setLocalSummary(cmsService.getLocalDataSummary());
+      if (res.success) {
+        setSyncStatusMsg({
+          type: 'success',
+          text: `Successfully pushed ${res.totalSynced} items to Cloud Firestore! All devices will now reflect these updates.`,
+        });
+      } else {
+        setSyncStatusMsg({
+          type: 'error',
+          text: `Pushed ${res.totalSynced} items, but encountered warnings: ${res.errors.slice(0, 2).join('; ')}`,
+        });
+      }
+    } catch (err: any) {
+      setSyncStatusMsg({
+        type: 'error',
+        text: `Sync failed: ${err?.message || 'Could not connect to Cloud Firestore.'}`,
+      });
+    } finally {
+      setIsCloudSyncing(false);
+    }
+  };
+
+  const handleForceCloudPull = async () => {
+    setIsForceRefreshing(true);
+    setSyncStatusMsg(null);
+    try {
+      await forceRefreshAll();
+      setLocalSummary(cmsService.getLocalDataSummary());
+      setSyncStatusMsg({
+        type: 'success',
+        text: 'Cleared local browser cache and pulled latest real-time documents from Cloud Firestore!',
+      });
+    } catch (err: any) {
+      setSyncStatusMsg({
+        type: 'error',
+        text: `Failed pulling cloud data: ${err?.message || 'Network error.'}`,
+      });
+    } finally {
+      setIsForceRefreshing(false);
+    }
+  };
+
+  const handleExportBackup = () => {
+    try {
+      const json = cmsService.exportLocalDataAsJson();
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mahdev_data_backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setSyncStatusMsg({
+        type: 'info',
+        text: 'Device backup downloaded successfully.',
+      });
+    } catch (err: any) {
+      setSyncStatusMsg({
+        type: 'error',
+        text: `Export failed: ${err?.message}`,
+      });
+    }
+  };
+
+  const handleImportFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const res = await cmsService.importLocalDataFromJson(text);
+      if (res.success) {
+        await refreshAll(true);
+        setLocalSummary(cmsService.getLocalDataSummary());
+        setSyncStatusMsg({
+          type: 'success',
+          text: `Successfully imported ${res.importedEntities} items and synced with Cloud Firestore!`,
+        });
+      } else {
+        setSyncStatusMsg({
+          type: 'error',
+          text: `Import failed: ${res.error}`,
+        });
+      }
+    } catch (err: any) {
+      setSyncStatusMsg({
+        type: 'error',
+        text: `File read error: ${err?.message}`,
+      });
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   // Firestore collection states
   const [orders, setOrders] = useState<FirestoreOrder[]>([]);
@@ -765,6 +881,116 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             Fulfillment Queue ({loadingOrders ? '...' : metrics.pendingOrders})
           </Button>
         </div>
+      </div>
+
+      {/* Multi-Device Cloud Synchronization & Cache Health Center */}
+      <div className="bg-gradient-to-br from-blue-50/90 via-indigo-50/50 to-slate-50 border border-blue-200/90 rounded-2xl p-5 shadow-xs transition-all">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                <UploadCloud className="w-4 h-4" />
+              </span>
+              <div>
+                <h3 className="font-display text-sm font-bold text-slate-900 flex items-center gap-2 flex-wrap">
+                  Cloud Synchronization & Multi-Device Sync Center
+                  <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    Database: mahdev-pvt-ldt
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-600">
+                  Added data on your mobile? Click <strong>Push Device Data to Cloud</strong> so your desktop browser and all visitors see your updates immediately.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium bg-white/90 px-2.5 py-1 rounded-lg border border-slate-200 text-slate-700 shadow-2xs">
+                <Smartphone className="w-3.5 h-3.5 text-blue-600" />
+                <span>This Device: <strong>{localSummary.total}</strong> stored items ({localSummary.services} services, {localSummary.products} products, {localSummary.gallery} gallery, {localSummary.categories} categories)</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium bg-white/90 px-2.5 py-1 rounded-lg border border-slate-200 text-slate-700 shadow-2xs">
+                <Database className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Cloud Status: <strong>Live Connected</strong></span>
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <Button
+              variant="electric"
+              size="sm"
+              onClick={handleSyncAllLocalToCloud}
+              isLoading={isCloudSyncing}
+              leftIcon={<UploadCloud className={`w-3.5 h-3.5 ${isCloudSyncing ? 'animate-bounce' : ''}`} />}
+              className="text-xs font-bold shadow-xs"
+            >
+              Push Device Data to Cloud
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleForceCloudPull}
+              isLoading={isForceRefreshing}
+              leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${isForceRefreshing ? 'animate-spin' : ''}`} />}
+              className="text-xs font-bold bg-white hover:bg-slate-50 border-slate-300"
+              title="Clears local browser cache and pulls latest real-time documents from Cloud Firestore"
+            >
+              Force Pull from Cloud
+            </Button>
+
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportBackup}
+                leftIcon={<Download className="w-3.5 h-3.5 text-slate-600" />}
+                className="text-xs font-medium bg-white hover:bg-slate-50 border-slate-300 px-2.5"
+                title="Download a JSON backup of this device's local data"
+              >
+                Export JSON
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                leftIcon={<Upload className="w-3.5 h-3.5 text-slate-600" />}
+                className="text-xs font-medium bg-white hover:bg-slate-50 border-slate-300 px-2.5"
+                title="Import a JSON backup to this device"
+              >
+                Import JSON
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleImportFileChange}
+                className="hidden"
+              />
+            </div>
+          </div>
+        </div>
+
+        {syncStatusMsg && (
+          <div
+            className={`mt-3 p-3 rounded-xl text-xs font-medium flex items-center justify-between gap-2 ${
+              syncStatusMsg.type === 'success'
+                ? 'bg-emerald-100/90 text-emerald-900 border border-emerald-300'
+                : syncStatusMsg.type === 'error'
+                ? 'bg-rose-100/90 text-rose-900 border border-rose-300'
+                : 'bg-blue-100/90 text-blue-900 border border-blue-300'
+            }`}
+          >
+            <span>{syncStatusMsg.text}</span>
+            <button
+              onClick={() => setSyncStatusMsg(null)}
+              className="text-xs font-bold underline shrink-0 hover:opacity-75"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Date Filter Toolbar */}

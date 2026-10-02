@@ -295,6 +295,7 @@ export const AdminProductsView: React.FC = () => {
         stockStatus,
       } as any;
 
+      let cloudSynced = true;
       if (editingProduct) {
         cmsService.update<CmsProduct>('products', editingProduct.id, payload as any);
         try {
@@ -312,9 +313,9 @@ export const AdminProductsView: React.FC = () => {
             status: formData.isActive ? 'active' : 'draft',
           } as any);
         } catch (fErr) {
+          cloudSynced = false;
           console.warn('[AdminProducts] Firestore save notice:', fErr);
         }
-        addToast('success', 'Product Updated', `SKU ${payload.sku} "${payload.name}" saved.`);
       } else {
         const created = cmsService.create<CmsProduct>('products', payload as any);
         try {
@@ -332,9 +333,15 @@ export const AdminProductsView: React.FC = () => {
             status: formData.isActive ? 'active' : 'draft',
           } as any);
         } catch (fErr) {
+          cloudSynced = false;
           console.warn('[AdminProducts] Firestore create notice:', fErr);
         }
-        addToast('success', 'Product Created', `"${payload.name}" added to catalog.`);
+      }
+
+      if (cloudSynced) {
+        addToast('success', editingProduct ? 'Product Updated' : 'Product Created', `"${payload.name}" saved and synced to Cloud Firestore.`);
+      } else {
+        addToast('warning', 'Saved on this Device Only', `"${payload.name}" saved locally. Cloud sync failed. Use "Push Device Data to Cloud" on the Dashboard when online.`);
       }
       setIsDirty(false);
       setIsEditorOpen(false);
