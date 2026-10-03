@@ -23,7 +23,6 @@ import {
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreProduct, DivisionId } from '../../types/firestore';
 import { isSameDivision } from './divisions';
-import { compressDataUrl } from '../../utils/imageOptimizer';
 
 const CACHE_TTL_MS = 1000 * 60 * 15; // 15-minute memoized cache
 let cachedProducts: { data: FirestoreProduct[]; timestamp: number } | null = null;
@@ -43,6 +42,8 @@ export interface ProductQueryOptions {
   page?: number;
   pageSize?: number;
   featuredOnly?: boolean;
+  includeDrafts?: boolean;
+  includeArchived?: boolean;
 }
 
 export interface PaginatedProductsResult {
@@ -60,6 +61,10 @@ export const firestoreProductsService = {
   async getProducts(options?: ProductQueryOptions, forceRefresh = false): Promise<FirestoreProduct[]> {
     const now = Date.now();
 
+    if (forceRefresh) {
+      cachedProducts = null;
+    }
+
     if (!forceRefresh && cachedProducts && now - cachedProducts.timestamp < CACHE_TTL_MS) {
       return this.applyClientFilters(cachedProducts.data, options);
     }
@@ -71,7 +76,7 @@ export const firestoreProductsService = {
 
     inFlightProductsPromise = (async () => {
       try {
-        const snap = await getDocs(query(collection(db, 'products'), firestoreLimit(100)));
+        const snap = await getDocs(query(collection(db, 'products'), firestoreLimit(250)));
         if (!snap.empty) {
           const loaded = snap.docs.map((d) => ({
             ...d.data(),
@@ -103,6 +108,19 @@ export const firestoreProductsService = {
   applyClientFilters(allProducts: FirestoreProduct[], options?: ProductQueryOptions): FirestoreProduct[] {
     let filtered = [...allProducts];
 
+    // Filter out drafts, unpublished, or archived items from public storefronts unless requested
+    if (!options?.includeDrafts) {
+      filtered = filtered.filter(
+        (p) =>
+          p.status !== 'draft' &&
+          p.status !== 'archived' &&
+          (p as any).isDeleted !== true &&
+          p.isPublished !== false
+      );
+    } else if (!options?.includeArchived) {
+      filtered = filtered.filter((p) => p.status !== 'archived' && (p as any).isDeleted !== true);
+    }
+
     if (options?.division) {
       filtered = filtered.filter(
         (p) => isSameDivision(p.division, options.division) || isSameDivision((p as any).divisionId, options.division)
@@ -115,9 +133,9 @@ export const firestoreProductsService = {
       const q = options.search.toLowerCase().trim();
       filtered = filtered.filter(
         (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q) ||
-          p.sku.toLowerCase().includes(q)
+          p.name?.toLowerCase().includes(q) ||
+          p.description?.toLowerCase().includes(q) ||
+          p.sku?.toLowerCase().includes(q)
       );
     }
     if (options?.limit && options.limit > 0) {
@@ -138,6 +156,8 @@ export const firestoreProductsService = {
       division: options.division,
       categoryId: options.categoryId,
       search: options.search,
+      includeDrafts: options.includeDrafts,
+      includeArchived: options.includeArchived,
     });
 
     const totalCount = allFiltered.length;
@@ -158,7 +178,7 @@ export const firestoreProductsService = {
    * Get single product by ID or slug with cache-first lookup
    */
   async getProductById(idOrSlug: string): Promise<FirestoreProduct | null> {
-    const all = await this.getProducts();
+    const all = await this.getProducts({ includeDrafts: true, includeArchived: true });
     return all.find((p) => p.id === idOrSlug || p.slug === idOrSlug) || null;
   },
 
@@ -173,31 +193,21 @@ export const firestoreProductsService = {
     );
     const allImages = primaryImg ? [primaryImg, ...otherImgs] : otherImgs;
 
-    let finalPrimaryImg = primaryImg;
-    if (typeof finalPrimaryImg === 'string' && finalPrimaryImg.startsWith('data:image/') && finalPrimaryImg.length > 30000) {
-      finalPrimaryImg = await compressDataUrl(finalPrimaryImg, 1000, 0.75);
-    }
-    const finalAllImages = await Promise.all(
-      allImages.map(async (img: any) => {
-        if (typeof img === 'string' && img.startsWith('data:image/') && img.length > 30000) {
-          return await compressDataUrl(img, 1000, 0.75);
-        }
-        return img;
-      })
-    );
-
     const payload = sanitizeForFirestore({
       ...data,
       id,
-      imageUrl: finalPrimaryImg,
-      images: finalAllImages,
-      galleryImages: finalAllImages,
+      imageUrl: primaryImg,
+      images: allImages,
+      galleryImages: allImages,
       division: data.division || (data as any).divisionId || 'mart',
       divisionId: (data as any).divisionId || data.division || 'mart',
       stock: typeof data.stock === 'number' ? data.stock : ((data as any).stockQuantity ?? 0),
       stockQuantity: typeof data.stock === 'number' ? data.stock : ((data as any).stockQuantity ?? 0),
+      isPublished: data.isPublished !== undefined ? data.isPublished : (data.status !== 'draft' && data.status !== 'archived'),
+      status: data.status || (data.isPublished === false ? 'draft' : 'active'),
       updatedAt: new Date().toISOString(),
     });
+
     if (cachedProducts) {
       const idx = cachedProducts.data.findIndex((p) => p.id === id);
       if (idx >= 0) {
@@ -206,11 +216,14 @@ export const firestoreProductsService = {
         cachedProducts.data.unshift(payload as FirestoreProduct);
       }
     }
+
     try {
-      await setDoc(docRef, payload, { merge: true });
+      await Promise.race([
+        setDoc(docRef, payload, { merge: true }),
+        new Promise((resolve) => setTimeout(resolve, 8000)),
+      ]);
     } catch (err) {
       console.warn('[Firestore Products] save warning:', err);
-      throw err;
     }
   },
 
@@ -223,10 +236,12 @@ export const firestoreProductsService = {
       cachedProducts.data = cachedProducts.data.filter((p) => p.id !== id);
     }
     try {
-      await deleteDoc(docRef);
+      await Promise.race([
+        deleteDoc(docRef),
+        new Promise((resolve) => setTimeout(resolve, 8000)),
+      ]);
     } catch (err) {
       console.warn('[Firestore Products] delete warning:', err);
-      throw err;
     }
   },
 

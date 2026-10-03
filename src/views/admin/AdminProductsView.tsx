@@ -38,7 +38,7 @@ import { compressDataUrl } from '../../utils/imageOptimizer';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 export const AdminProductsView: React.FC = () => {
-  const { refreshAll } = useFirestoreDataContext();
+  const { refreshAll, saveProduct: contextSaveProduct, deleteProduct: contextDeleteProduct } = useFirestoreDataContext();
   const [products, setProducts] = useState<CmsProduct[]>([]);
   const [categories, setCategories] = useState<CmsCategory[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -114,6 +114,20 @@ export const AdminProductsView: React.FC = () => {
     const cats = cmsService.getAll<CmsCategory>('categories');
     setCategories(cats);
   };
+
+  // Mount sync: pull live products directly from Firestore database
+  useEffect(() => {
+    firestoreProductsService
+      .getProducts({ includeDrafts: true, includeArchived: true }, true)
+      .then((fsProds) => {
+        cmsService.syncEntityFromFirestore('products', fsProds);
+        loadData();
+      })
+      .catch((err) => {
+        console.warn('[AdminProducts] Fresh Firestore fetch fallback:', err);
+        loadData();
+      });
+  }, []);
 
   useEffect(() => {
     loadData();

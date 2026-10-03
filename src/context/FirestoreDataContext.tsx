@@ -97,6 +97,8 @@ export interface FirestoreDataContextValue {
   reorderDivisions: (orderedIds: string[]) => Promise<void>;
   updateDivisionOrder: (id: string, order: number) => Promise<void>;
   saveDivision: (id: string, data: Partial<FirestoreDivision>) => Promise<void>;
+  saveProduct: (id: string, data: Partial<FirestoreProduct>) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
   loadedDivisions: Record<string, boolean>;
   loadedServices: Record<string, boolean>;
   loadedGallery: Record<string, boolean>;
@@ -376,7 +378,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
         // 4. Fetch products, categories, portfolio
         const fetchOthersPromise = Promise.all([
-          firestoreProductsService.getProducts({ division: canonicalId as DivisionId }, false),
+          firestoreProductsService.getProducts({ division: canonicalId as DivisionId }, true),
           firestoreCategoriesService.getCategories(canonicalId as DivisionId, false),
           firestorePortfolioService.getPortfolio(canonicalId as DivisionId, false),
         ])
@@ -1347,6 +1349,63 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  const saveProduct = useCallback(async (id: string, data: Partial<FirestoreProduct>) => {
+    // 1. Commit to Firestore repository with cleared cache
+    firestoreProductsService.clearCache();
+    await firestoreProductsService.saveProduct(id, data);
+
+    // 2. Immediately update local products state and synchronizers
+    setProducts((prev) => {
+      const idx = prev.findIndex((p) => p.id === id);
+      const primaryImg = (data as any).imageUrl || (data.images && data.images[0]) || (idx >= 0 ? prev[idx].imageUrl : '');
+      const otherImgs = ((data.images || (data as any).galleryImages || (idx >= 0 ? prev[idx].images : [])) as string[]).filter(
+        (u: string) => u && u !== primaryImg
+      );
+      const allImages = primaryImg ? [primaryImg, ...otherImgs] : otherImgs;
+
+      const mergedProduct: FirestoreProduct = {
+        ...(idx >= 0 ? prev[idx] : {}),
+        ...data,
+        id,
+        imageUrl: primaryImg,
+        images: allImages,
+        galleryImages: allImages,
+        division: data.division || (data as any).divisionId || (idx >= 0 ? prev[idx].division : 'mart'),
+        divisionId: (data as any).divisionId || data.division || (idx >= 0 ? (prev[idx] as any).divisionId : 'mart'),
+        isPublished: data.isPublished !== undefined ? data.isPublished : (data.status !== 'draft' && data.status !== 'archived'),
+        status: data.status || (data.isPublished === false ? 'draft' : 'active'),
+        updatedAt: new Date().toISOString(),
+      } as FirestoreProduct;
+
+      const updated = idx >= 0 ? prev.map((p) => (p.id === id ? mergedProduct : p)) : [mergedProduct, ...prev];
+      try {
+        localStorage.setItem('mahdev_cached_products', JSON.stringify(updated));
+      } catch {}
+
+      catalogService.syncWithFirestore(updated);
+      cmsService.syncEntityFromFirestore('products', updated);
+      return updated;
+    });
+  }, []);
+
+  const deleteProduct = useCallback(async (id: string) => {
+    // 1. Commit delete to Firestore with cleared cache
+    firestoreProductsService.clearCache();
+    await firestoreProductsService.deleteProduct(id);
+
+    // 2. Immediately update local products state and synchronizers
+    setProducts((prev) => {
+      const updated = prev.filter((p) => p.id !== id);
+      try {
+        localStorage.setItem('mahdev_cached_products', JSON.stringify(updated));
+      } catch {}
+
+      catalogService.syncWithFirestore(updated);
+      cmsService.hardDelete('products', id);
+      return updated;
+    });
+  }, []);
+
   const value = useMemo<FirestoreDataContextValue>(
     () => ({
       isInitialLoading,
@@ -1391,6 +1450,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       reorderDivisions,
       updateDivisionOrder,
       saveDivision,
+      saveProduct,
+      deleteProduct,
       loadedDivisions,
       loadedServices,
       loadedGallery,
@@ -1445,6 +1506,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       reorderDivisions,
       updateDivisionOrder,
       saveDivision,
+      saveProduct,
+      deleteProduct,
       loadedDivisions,
       loadedServices,
       loadedGallery,
