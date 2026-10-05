@@ -119,20 +119,7 @@ export const DEFAULT_OFFICIAL_MILESTONES: FirestoreMilestone[] = [
 ];
 
 const CACHE_TTL_MS = 1000 * 60 * 30; // 30-minute memoized cache
-let cachedMilestones: { data: FirestoreMilestone[]; timestamp: number } | null = (() => {
-  try {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('mahdev_cached_milestones');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return { data: parsed, timestamp: Date.now() };
-        }
-      }
-    }
-  } catch {}
-  return null;
-})();
+let cachedMilestones: { data: FirestoreMilestone[]; timestamp: number } | null = null;
 let inFlightMilestonesPromise: Promise<FirestoreMilestone[]> | null = null;
 
 export const firestoreMilestonesService = {
@@ -168,21 +155,11 @@ export const firestoreMilestonesService = {
 
           data.sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (Number(a.year) || 0) - (Number(b.year) || 0));
           cachedMilestones = { data, timestamp: Date.now() };
-          try {
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('mahdev_cached_milestones', JSON.stringify(data));
-            }
-          } catch {}
           return data;
         }
 
         // Return empty array when no documents exist in Firestore (zero fake data)
         cachedMilestones = { data: [], timestamp: Date.now() };
-        try {
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('mahdev_cached_milestones', JSON.stringify([]));
-          }
-        } catch {}
         return [];
       } catch (err) {
         console.warn('[Firestore Milestones] getMilestones notice:', err);

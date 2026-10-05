@@ -13,7 +13,10 @@ import {
   ArrowRight,
   ShieldCheck,
 } from 'lucide-react';
-import { U1_SERVICES, U1_PACKAGES, U1Service, U1Package } from '../../data/u1Data';
+import { U1Service, U1Package } from '../../data/u1Data';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { isSameDivision } from '../../services/firestore/divisions';
+import { formatCurrency } from '../../utils/currency';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
@@ -34,6 +37,14 @@ export const U1BookingModal: React.FC<U1BookingModalProps> = ({
   initialService,
   initialPackage,
 }) => {
+  const { services: rawServices } = useFirestoreDataContext();
+
+  const u1Services = React.useMemo(() => {
+    return (rawServices || []).filter(
+      (s) => isSameDivision(s.division, 'u1') || isSameDivision((s as any).divisionId, 'u1')
+    );
+  }, [rawServices]);
+
   const [selectedServiceId, setSelectedServiceId] = useState(initialService?.id || '');
   const [selectedPackageId, setSelectedPackageId] = useState(initialPackage?.id || '');
   const [sessionDate, setSessionDate] = useState('');
@@ -68,11 +79,12 @@ export const U1BookingModal: React.FC<U1BookingModalProps> = ({
 
   if (!isOpen) return null;
 
-  const selectedPkg = selectedPackageId ? U1_PACKAGES.find((p) => p.id === selectedPackageId) : null;
-  const selectedSrv = selectedServiceId ? U1_SERVICES.find((s) => s.id === selectedServiceId) : null;
-  const selectedName = selectedPkg?.name || selectedSrv?.name || 'Studio Session';
-  const selectedSku = (selectedPkg as any)?.sku || (selectedSrv as any)?.sku || `SRV-U1-${selectedSrv?.id?.slice(0, 4)?.toUpperCase() || 'STU'}`;
-  const selectedImg = selectedSrv?.imageUrl || selectedPkg?.imageUrl || 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1200&q=80';
+  const selectedSrv = selectedServiceId
+    ? u1Services.find((s) => s.id === selectedServiceId) || (initialService?.id === selectedServiceId ? initialService : null)
+    : null;
+  const selectedName = selectedSrv?.name || (selectedSrv as any)?.title || initialPackage?.name || 'Studio Session';
+  const selectedSku = (selectedSrv as any)?.sku || `SRV-U1-${selectedSrv?.id?.slice(0, 4)?.toUpperCase() || 'STU'}`;
+  const selectedImg = (selectedSrv as any)?.imageUrl || ((selectedSrv as any)?.images && (selectedSrv as any)?.images[0]) || '';
 
   const getFullWhatsAppUrl = (refId?: string) => {
     const text = buildWhatsAppMessage({
@@ -80,7 +92,7 @@ export const U1BookingModal: React.FC<U1BookingModalProps> = ({
       sku: selectedSku,
       category: 'Creative Photography & Cinema',
       divisionName: 'U1 Studio',
-      packageName: selectedPkg?.name,
+      packageName: initialPackage?.name,
       bookingId: refId || bookingRef || 'WEB-U1-BOOKING',
       date: sessionDate || 'Date to be confirmed',
       time: sessionTimeSlot,
@@ -282,21 +294,16 @@ export const U1BookingModal: React.FC<U1BookingModalProps> = ({
                   }}
                   className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 >
-                  <optgroup label="Curated Packages">
-                    {U1_PACKAGES.map((p) => (
-                      <option key={p.id} value={`pkg:${p.id}`}>
-                        {p.name} ({p.price})
-                      </option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Individual 11 Studio Services">
-                    {U1_SERVICES.map((s) => (
-                      <option key={s.id} value={`svc:${s.id}`}>
-                        {s.name} (from {s.startingPrice})
-                      </option>
-                    ))}
-                  </optgroup>
-                  <option value="custom">Custom Commercial / Multi-Day Shoot</option>
+                  {u1Services.length > 0 && (
+                    <optgroup label="U1 Studio Services">
+                      {u1Services.map((s) => (
+                        <option key={s.id} value={`svc:${s.id}`}>
+                          {s.name || (s as any).title} ({typeof s.price === 'number' ? formatCurrency(s.price, s.currency || 'LKR') : (s as any).startingPrice || 'Custom Quote'})
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  <option value="custom">Custom Commercial / Studio Booking</option>
                 </select>
               </div>
 

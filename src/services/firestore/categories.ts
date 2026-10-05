@@ -114,21 +114,36 @@ export const firestoreCategoriesService = {
     const onData = typeof onDataOrDivision === 'function' ? onDataOrDivision : onDataCallback || (() => {});
 
     const colRef = collection(db, 'categories');
-    const q = division ? query(colRef, where('division', '==', division)) : colRef;
 
     return onSnapshot(
-      q,
+      colRef,
       (snap) => {
         const data = snap.docs.map((d) => ({
           ...d.data(),
           id: d.id,
         })) as FirestoreCategory[];
         cachedCategories = { data, timestamp: Date.now() };
-        onData(data);
+        if (division) {
+          const filtered = data.filter(
+            (c) => isSameDivision(c.division, division) || isSameDivision((c as any).divisionId, division)
+          );
+          onData(filtered);
+        } else {
+          onData(data);
+        }
       },
       (err) => {
         console.warn('[Firestore Categories] Listener error:', err);
-        onData(cachedCategories?.data || []);
+        const fallback = cachedCategories?.data || [];
+        if (division) {
+          onData(
+            fallback.filter(
+              (c) => isSameDivision(c.division, division) || isSameDivision((c as any).divisionId, division)
+            )
+          );
+        } else {
+          onData(fallback);
+        }
       }
     );
   },

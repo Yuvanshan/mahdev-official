@@ -7,8 +7,6 @@ import { Badge } from '../components/ui/Badge';
 import { openWhatsAppInquiry, deriveLookupSku } from '../utils/whatsapp';
 import { CallToActionSection } from '../components/home/CallToActionSection';
 import { shareMediaAsset, inquireMediaAssetOnWhatsApp } from '../utils/mediaShare';
-import { SWS_GALLERY_ITEMS } from '../data/swsData';
-import { U1_PORTFOLIO_ITEMS } from '../data/u1Data';
 import {
   DisplayGalleryItem,
   matchGalleryItem,
@@ -109,75 +107,6 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
           }
         });
     }
-
-    // 3. From SWS Event Management Gallery dataset
-    if (SWS_GALLERY_ITEMS && SWS_GALLERY_ITEMS.length > 0) {
-      SWS_GALLERY_ITEMS.forEach((sws) => {
-        if (!seenUrls.has(sws.imageUrl)) {
-          seenUrls.add(sws.imageUrl);
-          items.push({
-            id: sws.id,
-            sku: `SWS-${sws.id.toUpperCase()}`,
-            url: sws.imageUrl,
-            title: sws.title,
-            category: sws.category,
-            divisionId: 'sws',
-            divisionName: 'SWS Event Management',
-            location: sws.location,
-            description: sws.description,
-            year: sws.year,
-            tags: sws.tags,
-          });
-        }
-      });
-    }
-
-    // 4. From U1 Cinema & Studio Portfolio dataset
-    if (U1_PORTFOLIO_ITEMS && U1_PORTFOLIO_ITEMS.length > 0) {
-      U1_PORTFOLIO_ITEMS.forEach((u1) => {
-        if (!seenUrls.has(u1.imageUrl)) {
-          seenUrls.add(u1.imageUrl);
-          items.push({
-            id: u1.id,
-            sku: `U1-${u1.id.toUpperCase()}`,
-            url: u1.imageUrl,
-            title: u1.title,
-            category: u1.category,
-            divisionId: 'u1',
-            divisionName: 'U1 Cinema & Studio',
-            location: u1.location,
-            description: u1.description,
-            year: u1.year,
-            tags: u1.tags,
-          });
-        }
-      });
-    }
-
-    // 5. Travels Scenic Stories
-    const travelPhotos = [
-      { id: 'trv-sigiriya', title: 'Sigiriya Rock Fortress at Dawn', url: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=80', location: 'Cultural Triangle, Sri Lanka' },
-      { id: 'trv-ella', title: 'Nine Arch Bridge & Mist-Covered Tea Valleys', url: 'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=1200&q=80', location: 'Ella Highlands, Sri Lanka' },
-      { id: 'trv-yala', title: 'Sri Lankan Wild Leopard in Yala', url: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=1200&q=80', location: 'Yala National Park, Sri Lanka' },
-      { id: 'trv-mirissa', title: 'Mirissa Golden Beach & Palm Tree Grove', url: 'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?auto=format&fit=crop&w=1200&q=80', location: 'Southern Coast, Sri Lanka' },
-    ];
-    travelPhotos.forEach((tp) => {
-      if (!seenUrls.has(tp.url)) {
-        seenUrls.add(tp.url);
-        items.push({
-          id: tp.id,
-          sku: `TRV-${tp.id.toUpperCase()}`,
-          url: tp.url,
-          title: tp.title,
-          category: 'Travels & Safari',
-          divisionId: 'travels',
-          divisionName: 'Mahdev Travels',
-          location: tp.location,
-          description: `Exclusive wildlife & heritage expedition moment by Mahdev Travels in ${tp.location}.`,
-        });
-      }
-    });
-
     return items;
   }, [gallery, mediaAssets]);
 

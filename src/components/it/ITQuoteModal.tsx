@@ -18,7 +18,9 @@ import {
   Terminal,
   Clock,
 } from 'lucide-react';
-import { IT_SERVICES, ITService } from '../../data/itData';
+import { ITService } from '../../data/itData';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { isSameDivision } from '../../services/firestore/divisions';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
@@ -40,6 +42,14 @@ export const ITQuoteModal: React.FC<ITQuoteModalProps> = ({
   initialService,
   initialType = 'quote',
 }) => {
+  const { services: rawServices } = useFirestoreDataContext();
+
+  const itServices = React.useMemo(() => {
+    return (rawServices || []).filter(
+      (s) => isSameDivision(s.division, 'it') || isSameDivision((s as any).divisionId, 'it')
+    );
+  }, [rawServices]);
+
   const [modalType, setModalType] = useState<ITModalType>(initialType);
   const [selectedServiceId, setSelectedServiceId] = useState(initialService?.id || 'all-custom');
   const [name, setName] = useState('');
@@ -125,7 +135,7 @@ export const ITQuoteModal: React.FC<ITQuoteModalProps> = ({
 
   const serviceName = selectedServiceId === 'all-custom'
     ? 'Custom Multi-Service Architecture'
-    : IT_SERVICES.find((s) => s.id === selectedServiceId)?.name || 'IT & Solutions';
+    : itServices.find((s) => s.id === selectedServiceId)?.name || initialService?.name || 'IT & Solutions';
 
   const modalTitle =
     modalType === 'project'
@@ -303,9 +313,9 @@ export const ITQuoteModal: React.FC<ITQuoteModalProps> = ({
                   className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 >
                   <option value="all-custom">Custom Multi-Service Architecture / Digital Transformation</option>
-                  {IT_SERVICES.map((s) => (
+                  {itServices.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name} ({s.tagline})
+                      {s.name || (s as any).title} ({(s as any).tagline || s.description?.slice(0, 50) || 'Engineering Service'})
                     </option>
                   ))}
                 </select>

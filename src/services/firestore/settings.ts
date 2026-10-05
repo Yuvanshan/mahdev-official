@@ -17,26 +17,8 @@ import { COMPANY_INFO } from '../../config/company';
 
 const CACHE_TTL_MS = 1000 * 60 * 15; // 15 minutes cache
 
-function getInitialCachedCompany(): { data: FirestoreCompanySettings; timestamp: number } | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = localStorage.getItem('mahdev_cached_company_settings');
-    if (raw) return { data: JSON.parse(raw), timestamp: Date.now() };
-  } catch {}
-  return null;
-}
-
-function getInitialCachedSite(): { data: FirestoreSiteSettings; timestamp: number } | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = localStorage.getItem('mahdev_cached_site_settings');
-    if (raw) return { data: JSON.parse(raw), timestamp: Date.now() };
-  } catch {}
-  return null;
-}
-
-let cachedCompanySettings: { data: FirestoreCompanySettings; timestamp: number } | null = getInitialCachedCompany();
-let cachedSiteSettings: { data: FirestoreSiteSettings; timestamp: number } | null = getInitialCachedSite();
+let cachedCompanySettings: { data: FirestoreCompanySettings; timestamp: number } | null = null;
+let cachedSiteSettings: { data: FirestoreSiteSettings; timestamp: number } | null = null;
 let cachedHomepageSettings: { data: HomepageCmsConfig; timestamp: number } | null = null;
 
 export const DEFAULT_HOMEPAGE_SECTIONS = [
@@ -396,33 +378,14 @@ export const firestoreSettingsService = {
         const data = snap.data() as FirestoreCompanySettings;
         const merged = { ...getDefaultCompanySettings(), ...(cachedCompanySettings?.data || {}), ...data };
         cachedCompanySettings = { data: merged, timestamp: now };
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem('mahdev_cached_company_settings', JSON.stringify(merged));
-          } catch {}
-        }
         return merged;
-      }
-
-      // Check localStorage backup before defaulting
-      if (typeof window !== 'undefined') {
-        const local = localStorage.getItem('mahdev_cached_company_settings');
-        if (local) {
-          try {
-            const parsed = JSON.parse(local);
-            if (parsed && (parsed.logoUrl || parsed.name)) {
-              cachedCompanySettings = { data: parsed, timestamp: now };
-              return parsed;
-            }
-          } catch {}
-        }
       }
 
       const defaultSettings = cachedCompanySettings?.data || getDefaultCompanySettings();
       cachedCompanySettings = { data: defaultSettings, timestamp: now };
       return defaultSettings;
     } catch (err) {
-      console.warn('[Firestore Settings] getCompanySettings fallback to local defaults:', err);
+      console.warn('[Firestore Settings] getCompanySettings fallback to defaults:', err);
       return cachedCompanySettings?.data || getDefaultCompanySettings();
     }
   },
@@ -440,13 +403,8 @@ export const firestoreSettingsService = {
     };
     const payload = sanitizeForFirestore(merged);
 
-    // 1. Instant local and in-memory cache update
+    // 1. Instant in-memory cache update
     cachedCompanySettings = { data: payload, timestamp: Date.now() };
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('mahdev_cached_company_settings', JSON.stringify(payload));
-      } catch {}
-    }
 
     // 2. Broadcast across tabs and window context immediately
     broadcastUpdate('company', payload);
@@ -501,11 +459,6 @@ export const firestoreSettingsService = {
         if (snap.exists()) {
           const data = snap.data() as FirestoreCompanySettings;
           cachedCompanySettings = { data, timestamp: Date.now() };
-          if (typeof window !== 'undefined') {
-            try {
-              localStorage.setItem('mahdev_cached_company_settings', JSON.stringify(data));
-            } catch {}
-          }
           onData(data);
         } else {
           onData(cachedCompanySettings?.data || getDefaultCompanySettings());
@@ -546,26 +499,7 @@ export const firestoreSettingsService = {
         const data = snap.data() as FirestoreSiteSettings;
         const merged = { ...getDefaultSiteSettings(), ...(cachedSiteSettings?.data || {}), ...data };
         cachedSiteSettings = { data: merged, timestamp: now };
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem('mahdev_cached_site_settings', JSON.stringify(merged));
-          } catch {}
-        }
         return merged;
-      }
-
-      // Check localStorage backup before defaulting
-      if (typeof window !== 'undefined') {
-        const local = localStorage.getItem('mahdev_cached_site_settings');
-        if (local) {
-          try {
-            const parsed = JSON.parse(local);
-            if (parsed && (parsed.logoUrl || parsed.siteName || parsed.currency)) {
-              cachedSiteSettings = { data: parsed, timestamp: now };
-              return parsed;
-            }
-          } catch {}
-        }
       }
 
       const defaultSite = cachedSiteSettings?.data || getDefaultSiteSettings();
@@ -590,13 +524,8 @@ export const firestoreSettingsService = {
     };
     const payload = sanitizeForFirestore(merged);
 
-    // 1. Local cache update
+    // 1. In-memory cache update
     cachedSiteSettings = { data: payload, timestamp: Date.now() };
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('mahdev_cached_site_settings', JSON.stringify(payload));
-      } catch {}
-    }
 
     // 2. Broadcast across all active tabs
     broadcastUpdate('site', payload);
@@ -650,11 +579,6 @@ export const firestoreSettingsService = {
         if (snap.exists()) {
           const data = snap.data() as FirestoreSiteSettings;
           cachedSiteSettings = { data, timestamp: Date.now() };
-          if (typeof window !== 'undefined') {
-            try {
-              localStorage.setItem('mahdev_cached_site_settings', JSON.stringify(data));
-            } catch {}
-          }
           onData(data);
         } else {
           onData(cachedSiteSettings?.data || getDefaultSiteSettings());
@@ -687,17 +611,6 @@ export const firestoreSettingsService = {
     // 1. Memory cache check
     if (!forceRefresh && cachedHomepageSettings && now - cachedHomepageSettings.timestamp < CACHE_TTL_MS) {
       return cachedHomepageSettings.data;
-    }
-
-    // 2. Check LocalStorage fallback before anything else
-    let localSaved: HomepageCmsConfig | null = null;
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('mahdev_cached_homepage_config');
-        if (stored) {
-          localSaved = JSON.parse(stored);
-        }
-      } catch {}
     }
 
     try {
@@ -744,20 +657,15 @@ export const firestoreSettingsService = {
           },
         };
         cachedHomepageSettings = { data, timestamp: now };
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(data));
-          } catch {}
-        }
         return data;
       }
 
-      const defaultHome = localSaved || cachedHomepageSettings?.data || getDefaultHomepageSettings();
+      const defaultHome = cachedHomepageSettings?.data || getDefaultHomepageSettings();
       cachedHomepageSettings = { data: defaultHome, timestamp: now };
       return defaultHome;
     } catch (err) {
       console.warn('[Firestore Settings] getHomepageSettings fallback:', err);
-      return localSaved || cachedHomepageSettings?.data || getDefaultHomepageSettings();
+      return cachedHomepageSettings?.data || getDefaultHomepageSettings();
     }
   },
 
@@ -802,11 +710,6 @@ export const firestoreSettingsService = {
     const payload = sanitizeForFirestore(merged);
 
     cachedHomepageSettings = { data: payload, timestamp: Date.now() };
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(payload));
-      } catch {}
-    }
     broadcastUpdate('homepage', payload);
     syncToServerApi('homepage', payload);
 
@@ -831,11 +734,6 @@ export const firestoreSettingsService = {
     const handleBroadcast = (event: MessageEvent) => {
       if (event.data?.type === 'homepage' && event.data?.data) {
         cachedHomepageSettings = { data: event.data.data, timestamp: Date.now() };
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(event.data.data));
-          } catch {}
-        }
         onData(event.data.data);
       }
     };
@@ -844,11 +742,6 @@ export const firestoreSettingsService = {
       const customEvent = e as CustomEvent<HomepageCmsConfig>;
       if (customEvent.detail) {
         cachedHomepageSettings = { data: customEvent.detail, timestamp: Date.now() };
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(customEvent.detail));
-          } catch {}
-        }
         onData(customEvent.detail);
       }
     };
@@ -901,11 +794,6 @@ export const firestoreSettingsService = {
             },
           };
           cachedHomepageSettings = { data, timestamp: Date.now() };
-          if (typeof window !== 'undefined') {
-            try {
-              localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(data));
-            } catch {}
-          }
           onData(data);
         } else {
           onData(cachedHomepageSettings?.data || getDefaultHomepageSettings());

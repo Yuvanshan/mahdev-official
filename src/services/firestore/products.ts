@@ -23,16 +23,16 @@ import {
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreProduct, DivisionId } from '../../types/firestore';
 import { isSameDivision } from './divisions';
+import { compressDataUrl } from '../../utils/imageOptimizer';
 
 const CACHE_TTL_MS = 1000 * 60 * 15; // 15-minute memoized cache
 let cachedProducts: { data: FirestoreProduct[]; timestamp: number } | null = null;
 let inFlightProductsPromise: Promise<FirestoreProduct[]> | null = null;
 
 export function getDefaultProducts(): FirestoreProduct[] {
-  // Phase 60: Real Data Architecture - Zero fake products by default.
-  // Real catalog items are populated through Admin Portal or Firestore collection.
   return [];
 }
+
 
 export interface ProductQueryOptions {
   division?: DivisionId;
@@ -63,6 +63,7 @@ export const firestoreProductsService = {
 
     if (forceRefresh) {
       cachedProducts = null;
+      inFlightProductsPromise = null;
     }
 
     if (!forceRefresh && cachedProducts && now - cachedProducts.timestamp < CACHE_TTL_MS) {
@@ -191,14 +192,26 @@ export const firestoreProductsService = {
     const otherImgs = ((data.images || (data as any).galleryImages || []) as string[]).filter(
       (u: string) => u && u !== primaryImg
     );
-    const allImages = primaryImg ? [primaryImg, ...otherImgs] : otherImgs;
+    let safePrimaryImg = primaryImg;
+    if (typeof safePrimaryImg === 'string' && safePrimaryImg.startsWith('data:image/') && safePrimaryImg.length > 30000) {
+      safePrimaryImg = await compressDataUrl(safePrimaryImg, 1000, 0.75);
+    }
+    const allImages = [safePrimaryImg, ...otherImgs].filter(Boolean);
+    const safeImages = await Promise.all(
+      allImages.map(async (img: string) => {
+        if (typeof img === 'string' && img.startsWith('data:image/') && img.length > 30000) {
+          return await compressDataUrl(img, 1000, 0.75);
+        }
+        return img;
+      })
+    );
 
     const payload = sanitizeForFirestore({
       ...data,
       id,
-      imageUrl: primaryImg,
-      images: allImages,
-      galleryImages: allImages,
+      imageUrl: safePrimaryImg,
+      images: safeImages,
+      galleryImages: safeImages,
       division: data.division || (data as any).divisionId || 'mart',
       divisionId: (data as any).divisionId || data.division || 'mart',
       stock: typeof data.stock === 'number' ? data.stock : ((data as any).stockQuantity ?? 0),
@@ -218,12 +231,10 @@ export const firestoreProductsService = {
     }
 
     try {
-      await Promise.race([
-        setDoc(docRef, payload, { merge: true }),
-        new Promise((resolve) => setTimeout(resolve, 8000)),
-      ]);
+      await setDoc(docRef, payload, { merge: true });
     } catch (err) {
-      console.warn('[Firestore Products] save warning:', err);
+      console.error('[Firestore Products] save error:', err);
+      throw err;
     }
   },
 
@@ -236,12 +247,10 @@ export const firestoreProductsService = {
       cachedProducts.data = cachedProducts.data.filter((p) => p.id !== id);
     }
     try {
-      await Promise.race([
-        deleteDoc(docRef),
-        new Promise((resolve) => setTimeout(resolve, 8000)),
-      ]);
+      await deleteDoc(docRef);
     } catch (err) {
-      console.warn('[Firestore Products] delete warning:', err);
+      console.error('[Firestore Products] delete error:', err);
+      throw err;
     }
   },
 
@@ -263,21 +272,36 @@ export const firestoreProductsService = {
     const onData = typeof onDataOrDivision === 'function' ? onDataOrDivision : onDataCallback || (() => {});
 
     const colRef = collection(db, 'products');
-    const q = division ? query(colRef, where('division', '==', division)) : colRef;
 
     return onSnapshot(
-      q,
+      colRef,
       (snap) => {
         const data = snap.docs.map((d) => ({
           ...d.data(),
           id: d.id,
         })) as FirestoreProduct[];
         cachedProducts = { data, timestamp: Date.now() };
-        onData(data);
+        if (division) {
+          const filtered = data.filter(
+            (p) => isSameDivision(p.division, division) || isSameDivision((p as any).divisionId, division)
+          );
+          onData(filtered);
+        } else {
+          onData(data);
+        }
       },
       (err) => {
         console.warn('[Firestore Products] Listener fallback error:', err);
-        onData(cachedProducts?.data || []);
+        const fallback = cachedProducts?.data || [];
+        if (division) {
+          onData(
+            fallback.filter(
+              (p) => isSameDivision(p.division, division) || isSameDivision((p as any).divisionId, division)
+            )
+          );
+        } else {
+          onData(fallback);
+        }
       }
     );
   },

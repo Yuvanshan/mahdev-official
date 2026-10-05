@@ -11,7 +11,7 @@ import {
   Star,
   Info,
 } from 'lucide-react';
-import { SWSPackage, SWS_PACKAGES } from '../../data/swsData';
+import { SWSPackage } from '../../data/swsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';

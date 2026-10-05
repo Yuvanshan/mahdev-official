@@ -12,7 +12,7 @@ import {
   Share2,
   Check,
 } from 'lucide-react';
-import { SWS_GALLERY_ITEMS, SWSGalleryItem } from '../../data/swsData';
+import { SWSGalleryItem } from '../../data/swsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';
@@ -30,31 +30,34 @@ export const SWSGallerySection: React.FC = () => {
   const [shareToast, setShareToast] = useState<string | null>(null);
 
   const galleryItems = useMemo<SWSGalleryItem[]>(() => {
+    const list: SWSGalleryItem[] = [];
+    const seen = new Set<string>();
+
     if (rawGallery && rawGallery.length > 0) {
       const swsGal = rawGallery.filter(
         (g) => isSameDivision(g.division, 'sws') || isSameDivision((g as any).divisionId, 'sws')
       );
-      if (swsGal.length > 0) {
-        return swsGal.map((g) => {
-          const cat = (g as any).category || (g as any).tag || 'Weddings';
-          const images = (g as any).images && (g as any).images.length > 0
-            ? (g as any).images.slice(0, 3)
-            : ((g as any).imageUrl || (g as any).url || (g as any).image ? [(g as any).imageUrl || (g as any).url || (g as any).image] : []);
-          return {
-            id: g.id,
-            title: g.title,
-            category: cat as any,
-            imageUrl: images[0] || (g as any).imageUrl || (g as any).url || '',
-            images: images,
-            location: (g as any).location || 'Colombo, Sri Lanka',
-            year: (g as any).year || '2024',
-            description: (g as any).description || (g as any).caption || '',
-            tags: (g as any).tags || [cat],
-          };
+      swsGal.forEach((g) => {
+        seen.add(g.id);
+        seen.add(g.title.toLowerCase().trim());
+        const cat = (g as any).category || (g as any).tag || 'Weddings';
+        const images = (g as any).images && (g as any).images.length > 0
+          ? (g as any).images.slice(0, 3)
+          : ((g as any).imageUrl || (g as any).url || (g as any).image ? [(g as any).imageUrl || (g as any).url || (g as any).image] : []);
+        list.push({
+          id: g.id,
+          title: g.title,
+          category: cat as any,
+          imageUrl: images[0] || (g as any).imageUrl || (g as any).url || '',
+          images: images,
+          location: (g as any).location || 'Colombo, Sri Lanka',
+          year: (g as any).year || '2024',
+          description: (g as any).description || (g as any).caption || '',
+          tags: (g as any).tags || [cat],
         });
-      }
+      });
     }
-    return [];
+    return list;
   }, [rawGallery]);
 
   const categories = useMemo<string[]>(() => {

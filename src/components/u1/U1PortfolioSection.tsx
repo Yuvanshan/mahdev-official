@@ -15,7 +15,7 @@ import {
   MessageCircle,
   Check,
 } from 'lucide-react';
-import { U1_PORTFOLIO_ITEMS, U1PortfolioItem } from '../../data/u1Data';
+import { U1PortfolioItem } from '../../data/u1Data';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { GallerySectionShimmer } from '../common/GallerySectionShimmer';
 import { SectionContainer } from '../ui/SectionContainer';

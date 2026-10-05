@@ -73,6 +73,10 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     return null;
   });
 
+  useEffect(() => {
+    catalogService.syncWithFirestore(firestoreProducts || [], firestoreCategories || []);
+  }, [firestoreProducts, firestoreCategories]);
+
   // Sync selected product when query params (e.g. ?sku=...) or initialProductId change
   useEffect(() => {
     if (!targetSkuOrId) return;

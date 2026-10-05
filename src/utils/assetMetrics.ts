@@ -18,7 +18,7 @@ export interface RentalAssetOptions {
 export function getRentalAssetCount(
   products: any[] = [],
   customCount?: string | number | null,
-  fallback = '100+'
+  fallback = '0'
 ): string {
   // 1. Explicit Admin Override has highest priority
   if (customCount !== undefined && customCount !== null && String(customCount).trim().length > 0) {
@@ -58,7 +58,7 @@ export function getRentalAssetCount(
       return `${displayCount.toLocaleString()}+`;
     }
 
-    // Fallback if products exist but none specifically tagged for rent
+    // If products exist but none specifically tagged for rent
     return `${products.length.toLocaleString()}+`;
   }
 

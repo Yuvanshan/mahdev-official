@@ -16,13 +16,13 @@ import {
   Layers,
 } from 'lucide-react';
 import {
-  SWS_SERVICES,
-  SWS_PACKAGES,
-  SWS_RENTAL_INVENTORY,
   SWSService,
   SWSPackage,
   SWSRentalItem,
 } from '../../data/swsData';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { isSameDivision } from '../../services/firestore/divisions';
+import { formatCurrency } from '../../utils/currency';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
@@ -47,6 +47,19 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
   initialRentalItem,
   isQuoteMode = false,
 }) => {
+  const { services: rawServices, products: rawProducts } = useFirestoreDataContext();
+
+  const swsServices = React.useMemo(() => {
+    return (rawServices || [])
+      .filter((s) => isSameDivision(s.division, 'sws') || isSameDivision((s as any).divisionId, 'sws'))
+      .sort((a, b) => (a.order ?? (a as any).sortOrder ?? 0) - (b.order ?? (b as any).sortOrder ?? 0));
+  }, [rawServices]);
+
+  const swsRentals = React.useMemo(() => {
+    return (rawProducts || [])
+      .filter((p) => isSameDivision(p.division, 'sws') || isSameDivision((p as any).divisionId, 'sws') || (p as any).category === 'rentals');
+  }, [rawProducts]);
+
   const [eventType, setEventType] = useState('Wedding');
   const [selectedServiceId, setSelectedServiceId] = useState(initialService?.id || '');
   const [selectedPackageId, setSelectedPackageId] = useState(initialPackage?.id || '');
@@ -91,9 +104,9 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
 
   if (!isOpen) return null;
 
-  const selectedSrv = selectedServiceId ? SWS_SERVICES.find((s) => s.id === selectedServiceId) : null;
-  const selectedPkg = selectedPackageId ? SWS_PACKAGES.find((p) => p.id === selectedPackageId) : null;
-  const selectedRent = selectedRentalId ? SWS_RENTAL_INVENTORY.find((r) => r.id === selectedRentalId) : null;
+  const selectedSrv = selectedServiceId ? swsServices.find((s) => s.id === selectedServiceId) : null;
+  const selectedPkg = selectedPackageId && initialPackage?.id === selectedPackageId ? initialPackage : null;
+  const selectedRent = selectedRentalId ? swsRentals.find((r) => r.id === selectedRentalId) : null;
 
   const getFullWhatsAppUrl = (refId?: string) => {
     const title = selectedPkg?.name || selectedSrv?.name || selectedRent?.name || `${eventType} Event Production`;
@@ -325,10 +338,11 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
                         setSelectedRentalId(rId);
                         setSelectedServiceId('');
                         setSelectedPackageId('');
-                        const found = SWS_RENTAL_INVENTORY.find((r) => r.id === rId);
+                        const found = swsRentals.find((r) => r.id === rId);
                         if (found) {
+                          const rateStr = found.price !== undefined ? formatCurrency(Number(found.price) || 0, found.currency || 'LKR') : 'Rate on request';
                           setSpecialRequirements(
-                            `Rental Item: ${found.name} (${found.categoryLabel})\nRate: ${found.dailyRate} ${found.unit}\nEstimated Quantity: ${found.minOrderQuantity || 1} units`
+                            `Rental Item: ${found.name}\nRate: ${rateStr}\nEstimated Quantity: 1 units`
                           );
                         }
                       } else {
@@ -339,27 +353,31 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
                     }}
                     className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
                   >
-                    <optgroup label="Turnkey Packages">
-                      {SWS_PACKAGES.map((p) => (
-                        <option key={p.id} value={`pkg:${p.id}`}>
-                          {p.name} ({p.price})
+                    {initialPackage && (
+                      <optgroup label="Selected Package">
+                        <option value={`pkg:${initialPackage.id}`}>
+                          {initialPackage.name} ({initialPackage.price})
                         </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="Individual Core Services">
-                      {SWS_SERVICES.map((s) => (
-                        <option key={s.id} value={`svc:${s.id}`}>
-                          {s.name} (from {s.startingPrice})
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="Rental Equipment & Furniture">
-                      {SWS_RENTAL_INVENTORY.map((r) => (
-                        <option key={r.id} value={`rnt:${r.id}`}>
-                          {r.name} ({r.dailyRate} {r.unit})
-                        </option>
-                      ))}
-                    </optgroup>
+                      </optgroup>
+                    )}
+                    {swsServices.length > 0 && (
+                      <optgroup label="Individual Core Services">
+                        {swsServices.map((s) => (
+                          <option key={s.id} value={`svc:${s.id}`}>
+                            {s.name || (s as any).title} {s.price || (s as any).startingPrice ? `(from ${s.price || (s as any).startingPrice})` : ''}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {swsRentals.length > 0 && (
+                      <optgroup label="Rental Equipment & Furniture">
+                        {swsRentals.map((r) => (
+                          <option key={r.id} value={`rnt:${r.id}`}>
+                            {r.name} {r.price ? `(${r.price})` : ''}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                     <option value="custom">Custom Multi-Service / Multi-Equipment Scope</option>
                   </select>
                 </div>

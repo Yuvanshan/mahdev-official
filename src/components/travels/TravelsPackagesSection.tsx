@@ -11,7 +11,7 @@ import {
   Users,
   Compass,
 } from 'lucide-react';
-import { TRAVEL_PACKAGES, TravelPackage } from '../../data/travelsData';
+import { TravelPackage } from '../../data/travelsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';

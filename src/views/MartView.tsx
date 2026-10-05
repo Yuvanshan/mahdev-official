@@ -19,7 +19,7 @@ import { SectionContainer } from '../components/ui/SectionContainer';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { IconRenderer } from '../components/ui/IconRenderer';
-import { Product, ProductVariant, MART_PRODUCTS, mapFirestoreProductToMart } from '../data/martData';
+import { Product, ProductVariant, mapFirestoreProductToMart } from '../data/martData';
 import { DIVISION_LIST } from '../config/divisions';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useCart } from '../context/CartContext';

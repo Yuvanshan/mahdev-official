@@ -26,11 +26,11 @@ import {
   SWSRentalItem,
   RentalCategory,
   SWSService,
-  SWS_RENTAL_INVENTORY,
 } from '../../data/swsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { getRentalAssetCount } from '../../utils/assetMetrics';
+import { formatCurrency } from '../../utils/currency';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
@@ -46,7 +46,7 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
   onBookRental,
   onRequestQuote,
 }) => {
-  const { products: rawProducts, services: rawServices, companySettings, siteSettings, divisions } = useFirestoreDataContext();
+  const { products: rawProducts, services: rawServices, categories: rawCategories, companySettings, siteSettings, divisions } = useFirestoreDataContext();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeDetailItem, setActiveDetailItem] = useState<SWSRentalItem | null>(null);
@@ -68,6 +68,8 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
 
   const inventory = useMemo<SWSRentalItem[]>(() => {
     const items: SWSRentalItem[] = [];
+    const seen = new Set<string>();
+
     if (rawProducts && rawProducts.length > 0) {
       const swsProds = rawProducts.filter(
         (p) =>
@@ -76,17 +78,36 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
           (p as any).category === 'rentals'
       );
       swsProds.forEach((p) => {
+        seen.add(p.id);
+        const nameStr = p.name || (p as any).title || 'Rental Item';
+        seen.add(nameStr.toLowerCase().trim());
+
+        const rawCatId = (p as any).categoryId || (p as any).category;
+        const matchedCategoryDoc = (rawCategories || []).find(
+          (c) => c.id === rawCatId || (c as any).slug === rawCatId
+        );
+        const resolvedLabel =
+          (p as any).categoryLabel ||
+          (matchedCategoryDoc ? matchedCategoryDoc.name : '') ||
+          ((p as any).rentalCategory ? String((p as any).rentalCategory).charAt(0).toUpperCase() + String((p as any).rentalCategory).slice(1).replace(/-/g, ' ') : 'Equipment & Rentals');
+        const resolvedCategory = (p as any).rentalCategory || (matchedCategoryDoc ? matchedCategoryDoc.name : '') || rawCatId || 'seating';
+
+        const rawPrice = p.price !== undefined ? p.price : (p as any).dailyRate;
+        const formattedDailyRate = typeof rawPrice === 'number'
+          ? `${formatCurrency(rawPrice, p.currency || 'LKR')}/day`
+          : String(rawPrice || 'Rs. 1,500/day');
+
         items.push({
           id: p.id,
-          name: p.name,
-          category: ((p as any).rentalCategory || 'seating') as RentalCategory,
-          categoryLabel: (p as any).categoryLabel || 'Equipment & Rentals',
+          name: nameStr,
+          category: resolvedCategory as RentalCategory,
+          categoryLabel: resolvedLabel,
           tagline: p.shortDescription || p.description?.slice(0, 60) || '',
           description: p.description || '',
-          dailyRate: typeof p.price === 'number' ? `$${p.price}/day` : String(p.price || '$50/day'),
-          unit: 'Day',
+          dailyRate: formattedDailyRate,
+          unit: (p as any).unit || 'Day',
           availableStock: typeof p.stock === 'number' ? p.stock : 10,
-          minOrderQuantity: 1,
+          minOrderQuantity: (p as any).minOrderQuantity || 1,
           imageUrl: p.images && p.images.length > 0 ? p.images[0] : (p as any).imageUrl || '',
           features: (() => {
             const rawSpecs = (p as any).specifications;
@@ -99,24 +120,32 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
             if (typeof rawSpecs === 'string' && rawSpecs.trim()) {
               return [rawSpecs.trim()];
             }
-            return [];
+            return (p as any).features || [];
           })(),
           specs: [],
           badge: (p as any).badge,
-          popular: !!(p as any).isFeatured,
         });
       });
     }
     return items;
-  }, [rawProducts, rawServices]);
+  }, [rawProducts, rawServices, rawCategories]);
 
   const rentalCategories = useMemo(() => {
-    const unique = Array.from(new Set(inventory.map((i) => i.category)));
+    const catMap = new Map<string, string>();
+    inventory.forEach((i) => {
+      if (i.category && !catMap.has(i.category)) {
+        catMap.set(
+          i.category,
+          i.categoryLabel || String(i.category).charAt(0).toUpperCase() + String(i.category).slice(1).replace(/-/g, ' ')
+        );
+      }
+    });
+
     return [
       { id: 'all', label: 'All Inventory', icon: 'grid' },
-      ...unique.map((cat) => ({
-        id: cat,
-        label: cat ? String(cat).charAt(0).toUpperCase() + String(cat).slice(1).replace(/-/g, ' ') : 'Category',
+      ...Array.from(catMap.entries()).map(([catId, catLabel]) => ({
+        id: catId,
+        label: catLabel,
         icon: 'box',
       })),
     ];

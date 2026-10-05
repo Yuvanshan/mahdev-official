@@ -16,7 +16,6 @@ import {
   HomepageCmsConfig,
 } from '../types/cms';
 import { DIVISIONS } from '../config/divisions';
-import { COMPANY_MILESTONES } from '../data/homeData';
 import { adminService } from './adminService';
 import { DivisionId } from '../types';
 import { COMPANY_INFO, CompanyInformation } from '../config/company';
@@ -33,6 +32,9 @@ import {
   firestoreTestimonialsService,
 } from './firestore';
 import { sortDivisions, normalizeDivisionId, getDefaultDivisions } from './firestore/divisions';
+import { getDefaultServices } from './firestore/services';
+import { getDefaultProducts } from './firestore/products';
+import { getDefaultGallery } from './firestore/gallery';
 import { safeStorage } from '../utils/safeStorage';
 import { compressDataUrl } from '../utils/imageOptimizer';
 
@@ -68,31 +70,9 @@ class CmsService {
       this.broadcastChannel.addEventListener('message', (e) => {
         if (e.data?.type === 'cms_entity_updated' && e.data?.entity) {
           const entity = e.data.entity as CmsEntityType;
-          const key = this.getStorageKey(entity);
-          const stored = safeStorage.getItem(key);
-          if (stored) {
-            try {
-              this.cache[entity] = JSON.parse(stored);
-            } catch {}
-          }
           const subs = this.listeners.get(entity);
           if (subs) {
             subs.forEach((cb) => cb());
-          }
-        }
-      });
-    }
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('storage', (e) => {
-        if (e.key && e.key.startsWith(CMS_STORAGE_PREFIX)) {
-          const entity = e.key.replace(CMS_STORAGE_PREFIX, '') as CmsEntityType;
-          if (this.cache[entity] && e.newValue) {
-            try {
-              this.cache[entity] = JSON.parse(e.newValue);
-              const subs = this.listeners.get(entity);
-              if (subs) subs.forEach((cb) => cb());
-            } catch {}
           }
         }
       });
@@ -105,36 +85,6 @@ class CmsService {
       firestoreSettingsService.subscribeCompanySettings(
         (firestoreCompany) => {
           if (firestoreCompany && firestoreCompany.name) {
-            const current = this.getCompanyInfo();
-            const colomboUpdate = firestoreCompany.offices?.colombo;
-            const trincoUpdate = firestoreCompany.offices?.trincomalee;
-
-            const merged: CompanyInformation = {
-              ...current,
-              ...firestoreCompany,
-              offices: {
-                colombo: {
-                  ...current.offices.colombo,
-                  ...(colomboUpdate || {}),
-                  fullAddress: colomboUpdate?.address || current.offices.colombo.fullAddress,
-                },
-                trincomalee: {
-                  ...current.offices.trincomalee,
-                  ...(trincoUpdate || {}),
-                  fullAddress: trincoUpdate?.address || current.offices.trincomalee.fullAddress,
-                },
-              },
-              socials: {
-                ...current.socials,
-                ...(firestoreCompany.socials || {}),
-              },
-              workingHours: {
-                ...current.workingHours,
-                ...(firestoreCompany.workingHours || {}),
-              },
-            };
-            const key = `${CMS_STORAGE_PREFIX}company_info`;
-            safeStorage.setItem(key, JSON.stringify(merged));
             this.notify('pages');
           }
         },
@@ -147,7 +97,8 @@ class CmsService {
           if (homepageConf) {
             this.syncHomepageConfig(homepageConf);
           }
-        }
+        },
+        () => {}
       );
 
       // 3. Divisions
@@ -446,13 +397,16 @@ class CmsService {
         mediaUrl: g.url || (g as any).mediaUrl || (g as any).imageUrl || '',
         url: g.url || (g as any).mediaUrl || (g as any).imageUrl || '',
         thumbnailUrl: g.thumbnailUrl || g.url || (g as any).mediaUrl || (g as any).imageUrl || '',
+        images: Array.isArray(g.images) && g.images.length > 0 ? g.images : [g.url || (g as any).mediaUrl || (g as any).imageUrl || ''],
         caption: g.caption || '',
         aspectRatio: (g as any).aspectRatio || '16:9',
         tags: (g as any).tags || (g.tag ? [g.tag] : []),
         sortOrder: g.order || (g as any).sortOrder || 1,
         isFeatured: Boolean(g.featured || (g as any).isFeatured),
-        isActive: (g as any).isActive !== false && g.status !== 'inactive',
+        isActive: (g as any).isActive !== false && g.status !== 'inactive' && g.status !== 'hidden',
+        isPublished: g.status !== 'hidden' && g.status !== 'inactive',
         isDeleted: g.status === 'inactive' && (g as any).isActive === false,
+        status: g.status || 'published',
         createdAt: g.createdAt || now,
         updatedAt: g.updatedAt || now,
       }));
@@ -516,8 +470,6 @@ class CmsService {
     }
 
     this.cache[entity] = mapped;
-    safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(mapped));
-
     this.notify(entity);
   }
 
@@ -581,6 +533,18 @@ class CmsService {
   }
 
   public initializeAllEntities(forceReset = false): void {
+    // Zero-localStorage policy: purge any legacy stored CMS keys from browser storage
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        for (let i = window.localStorage.length - 1; i >= 0; i--) {
+          const k = window.localStorage.key(i);
+          if (k && (k.startsWith('mahdev_') || k.startsWith('cms_'))) {
+            window.localStorage.removeItem(k);
+          }
+        }
+      } catch {}
+    }
+
     const entities: CmsEntityType[] = [
       'divisions',
       'services',
@@ -598,21 +562,7 @@ class CmsService {
     ];
 
     entities.forEach((entity) => {
-      const key = this.getStorageKey(entity);
-      const stored = safeStorage.getItem(key);
-      if (!stored || forceReset) {
-        const seedData = this.getSeedDataForEntity(entity);
-        safeStorage.setItem(key, JSON.stringify(seedData));
-        this.cache[entity] = seedData;
-      } else {
-        try {
-          this.cache[entity] = JSON.parse(stored);
-        } catch {
-          const seedData = this.getSeedDataForEntity(entity);
-          safeStorage.setItem(key, JSON.stringify(seedData));
-          this.cache[entity] = seedData;
-        }
-      }
+      this.cache[entity] = this.getSeedDataForEntity(entity);
     });
   }
 
@@ -657,11 +607,9 @@ class CmsService {
         }));
 
       case 'services':
-        // Real services populated via Firestore / Admin Portal
         return [];
 
       case 'products':
-        // Real products populated via Firestore / Admin Portal
         return [];
 
       case 'categories':
@@ -677,7 +625,6 @@ class CmsService {
         return [];
 
       case 'gallery':
-        // Real gallery items populated via Firestore / Admin Portal
         return [];
 
       case 'milestones':
@@ -991,8 +938,6 @@ class CmsService {
       .sort((a, b) => (a.order ?? a.sortOrder ?? 0) - (b.order ?? b.sortOrder ?? 0));
 
     this.cache[entity] = updated;
-    safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(updated));
-
     this.notify(entity);
   }
 
@@ -1017,7 +962,6 @@ class CmsService {
     const current = this.cache[entity] || [];
     const updated = [newItem, ...current];
     this.cache[entity] = updated;
-    safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(updated));
 
     adminService.logAudit({
       action: `CMS_CREATE_${entity.toUpperCase()}`,
@@ -1314,7 +1258,6 @@ class CmsService {
 
     current[index] = updatedItem;
     this.cache[entity] = [...current];
-    safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(this.cache[entity]));
 
     adminService.logAudit({
       action: `CMS_UPDATE_${entity.toUpperCase()}`,
@@ -1348,7 +1291,6 @@ class CmsService {
 
     current.sort((a, b) => (a.order || 99) - (b.order || 99));
     this.cache.divisions = [...current];
-    safeStorage.setItem(this.getStorageKey('divisions'), JSON.stringify(this.cache.divisions));
 
     adminService.logAudit({
       action: 'CMS_REORDER_DIVISIONS',
@@ -1380,7 +1322,6 @@ class CmsService {
     };
 
     this.cache[entity] = [...current];
-    safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(this.cache[entity]));
 
     adminService.logAudit({
       action: `CMS_SOFT_DELETE_${entity.toUpperCase()}`,
@@ -1406,7 +1347,6 @@ class CmsService {
 
     const filtered = current.filter((i) => i.id !== id);
     this.cache[entity] = filtered;
-    safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(filtered));
 
     adminService.logAudit({
       action: `CMS_HARD_DELETE_${entity.toUpperCase()}`,
@@ -1444,7 +1384,6 @@ class CmsService {
     };
 
     this.cache[entity] = [...current];
-    safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(this.cache[entity]));
 
     adminService.logAudit({
       action: `CMS_RESTORE_${entity.toUpperCase()}`,
@@ -1465,7 +1404,6 @@ class CmsService {
   public resetEntityToDefaults(entity: CmsEntityType): void {
     const seed = this.getSeedDataForEntity(entity);
     this.cache[entity] = seed;
-    safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(seed));
 
     adminService.logAudit({
       action: `CMS_RESET_${entity.toUpperCase()}`,
