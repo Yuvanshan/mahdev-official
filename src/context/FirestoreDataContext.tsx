@@ -217,10 +217,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           .getServices(canonicalId as DivisionId, false)
           .then((srvs) => {
             setServices((prev) => {
-              const otherServices = sanitizeCachedServices(
-                prev.filter(
-                  (s) => !isSameDivision(s.division, canonicalId) && !isSameDivision((s as any).divisionId, canonicalId)
-                )
+              const otherServices = prev.filter(
+                (s) => !isSameDivision(s.division, canonicalId) && !isSameDivision((s as any).divisionId, canonicalId)
               );
               const uniqueMap = new Map<string, FirestoreService>();
               for (const s of otherServices) {
@@ -286,10 +284,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         ])
           .then(([prods, cats, port]) => {
             setProducts((prev) => {
-              const otherProds = sanitizeCachedProducts(
-                prev.filter(
-                  (p) => !isSameDivision(p.division, canonicalId) && !isSameDivision((p as any).divisionId, canonicalId)
-                )
+              const otherProds = prev.filter(
+                (p) => !isSameDivision(p.division, canonicalId) && !isSameDivision((p as any).divisionId, canonicalId)
               );
               const uniqueMap = new Map<string, FirestoreProduct>();
               for (const p of otherProds) {
@@ -1732,4 +1728,3 @@ export function useDivisionHydration(divisionId?: string) {
 
   return { isLoaded };
 }
-

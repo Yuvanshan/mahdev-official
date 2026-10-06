@@ -321,6 +321,58 @@ export function getDefaultSiteSettings(): FirestoreSiteSettings {
   };
 }
 
+function normalizeHomepageSettings(rawData: Partial<HomepageCmsConfig>): HomepageCmsConfig {
+  const defaults = getDefaultHomepageSettings();
+  const rawHero = rawData.hero || ({} as HomepageCmsConfig['hero']);
+  let videoUrl = String(rawHero.videoUrl || (rawHero as any).heroVideoUrl || '').trim();
+  let mediaUrl = String(rawHero.mediaUrl || '').trim();
+
+  if (videoUrl.includes('assets.mixkit.co')) {
+    videoUrl = 'firestore://media_blobs/vid_corporate_hero_v1';
+  }
+  if (mediaUrl.includes('assets.mixkit.co')) {
+    mediaUrl = 'firestore://media_blobs/vid_corporate_hero_v1';
+  }
+
+  const isVideoUrl = (url: string) =>
+    /(?:\.mp4|\.webm|\.ogg|\.mov|youtube\.com|youtu\.be|vimeo\.com|firestore:\/\/media_blobs\/vid_)/i.test(url);
+  const inferredMediaType = rawHero.mediaType ||
+    (videoUrl || isVideoUrl(mediaUrl)
+      ? 'video'
+      : mediaUrl
+      ? 'image'
+      : defaults.hero.mediaType);
+  const effectiveVideoUrl = inferredMediaType === 'video'
+    ? videoUrl || (isVideoUrl(mediaUrl) ? mediaUrl : '')
+    : '';
+  const effectiveMediaUrl = inferredMediaType === 'video'
+    ? effectiveVideoUrl
+    : inferredMediaType === 'image'
+    ? rawHero.imageUrl || rawHero.defaultImageUrl || (isVideoUrl(mediaUrl) ? '' : mediaUrl) || ''
+    : '';
+
+  return {
+    ...defaults,
+    ...rawData,
+    hero: {
+      ...defaults.hero,
+      ...rawHero,
+      videoUrl: effectiveVideoUrl,
+      mediaUrl: effectiveMediaUrl,
+      mediaType: inferredMediaType,
+    },
+    milestones: {
+      ...defaults.milestones,
+      ...(rawData.milestones || {}),
+      achievementsTitle: rawData.milestones?.achievementsTitle || defaults.milestones.achievementsTitle,
+      achievementsSubtitle: rawData.milestones?.achievementsSubtitle || defaults.milestones.achievementsSubtitle,
+      achievements: Array.isArray(rawData.milestones?.achievements)
+        ? rawData.milestones.achievements
+        : [],
+    },
+  };
+}
+
 // Real-time multi-device and multi-tab synchronization channels
 const SETTINGS_BROADCAST_CHANNEL = 'mahdev_settings_channel_v1';
 let broadcastChannel: BroadcastChannel | null = null;
@@ -403,18 +455,11 @@ export const firestoreSettingsService = {
     };
     const payload = sanitizeForFirestore(merged);
 
-    // 1. Instant in-memory cache update
-    cachedCompanySettings = { data: payload, timestamp: Date.now() };
-
-    // 2. Broadcast across tabs and window context immediately
-    broadcastUpdate('company', payload);
-
-    // 3. Sync to authoritative server endpoint
-    syncToServerApi('company', payload);
-
-    // 4. Commit to Firestore
     try {
       await setDoc(docRef, payload, { merge: true });
+      cachedCompanySettings = { data: payload, timestamp: Date.now() };
+      broadcastUpdate('company', payload);
+      syncToServerApi('company', payload);
     } catch (err) {
       console.error('[Firestore Settings] updateCompanySettings remote write error:', err);
       throw err;
@@ -524,18 +569,11 @@ export const firestoreSettingsService = {
     };
     const payload = sanitizeForFirestore(merged);
 
-    // 1. In-memory cache update
-    cachedSiteSettings = { data: payload, timestamp: Date.now() };
-
-    // 2. Broadcast across all active tabs
-    broadcastUpdate('site', payload);
-
-    // 3. Sync to authoritative server endpoint
-    syncToServerApi('site', payload);
-
-    // 4. Commit to Firestore
     try {
       await setDoc(docRef, payload, { merge: true });
+      cachedSiteSettings = { data: payload, timestamp: Date.now() };
+      broadcastUpdate('site', payload);
+      syncToServerApi('site', payload);
     } catch (err) {
       console.error('[Firestore Settings] updateSiteSettings remote write error:', err);
       throw err;
@@ -618,44 +656,7 @@ export const firestoreSettingsService = {
       const snap = await getDoc(docRef);
 
       if (snap && typeof snap.exists === 'function' && snap.exists()) {
-        const rawData = snap.data() as HomepageCmsConfig;
-        const def = getDefaultHomepageSettings();
-
-        // Ensure video and media URLs from Firestore take absolute precedence
-        const rawHero: any = rawData?.hero || {};
-        let firestoreVideo = (rawHero.videoUrl || (rawHero as any).heroVideoUrl || '').trim();
-        let firestoreMedia = (rawHero.mediaUrl || '').trim();
-
-        if (firestoreVideo.includes('assets.mixkit.co')) {
-          firestoreVideo = 'firestore://media_blobs/vid_corporate_hero_v1';
-        }
-        if (firestoreMedia.includes('assets.mixkit.co')) {
-          firestoreMedia = 'firestore://media_blobs/vid_corporate_hero_v1';
-        }
-
-        const effectiveVideo = firestoreVideo || (rawHero.mediaType === 'video' ? firestoreMedia : '') || firestoreMedia || def.hero.videoUrl;
-
-        const data: HomepageCmsConfig = {
-          ...def,
-          ...rawData,
-          hero: {
-            ...def.hero,
-            ...rawHero,
-            videoUrl: effectiveVideo,
-            mediaUrl: firestoreMedia || effectiveVideo || def.hero.mediaUrl,
-            mediaType: rawHero.mediaType || (effectiveVideo ? 'video' : 'image'),
-          },
-          milestones: {
-            ...def.milestones,
-            ...(rawData?.milestones || {}),
-            achievementsTitle: rawData?.milestones?.achievementsTitle || def.milestones.achievementsTitle,
-            achievementsSubtitle: rawData?.milestones?.achievementsSubtitle || def.milestones.achievementsSubtitle,
-            achievements:
-              Array.isArray(rawData?.milestones?.achievements)
-                ? rawData.milestones.achievements
-                : [],
-          },
-        };
+        const data = normalizeHomepageSettings(snap.data() as HomepageCmsConfig);
         cachedHomepageSettings = { data, timestamp: now };
         return data;
       }
@@ -678,13 +679,26 @@ export const firestoreSettingsService = {
 
     // Harmonize hero video and media properties
     const heroUpdates = data.hero ? { ...data.hero } : undefined;
-    if (heroUpdates) {
-      const v = (heroUpdates.videoUrl || (heroUpdates as any).heroVideoUrl || '').trim();
-      if (v) {
-        heroUpdates.videoUrl = v;
-        if (!heroUpdates.mediaUrl || heroUpdates.mediaType === 'video') {
-          heroUpdates.mediaUrl = v;
-        }
+    if (heroUpdates?.mediaType === 'image') {
+      heroUpdates.videoUrl = '';
+      heroUpdates.videoEmbedUrl = '';
+      heroUpdates.mediaUrl = heroUpdates.imageUrl || heroUpdates.defaultImageUrl || '';
+    } else if (heroUpdates?.mediaType === 'gradient') {
+      heroUpdates.videoUrl = '';
+      heroUpdates.videoEmbedUrl = '';
+      heroUpdates.mediaUrl = '';
+    } else if (heroUpdates) {
+      const existingMedia = String(heroUpdates.mediaUrl || '').trim();
+      const v = String(
+        heroUpdates.videoUrl ||
+        (heroUpdates as any).heroVideoUrl ||
+        (/(?:\.mp4|\.webm|\.ogg|\.mov|youtube\.com|youtu\.be|vimeo\.com|firestore:\/\/media_blobs\/vid_)/i.test(existingMedia)
+          ? existingMedia
+          : '')
+      ).trim();
+      heroUpdates.videoUrl = v;
+      heroUpdates.mediaUrl = v;
+      if (v && !heroUpdates.mediaType) {
         heroUpdates.mediaType = 'video';
       }
     }
@@ -709,16 +723,16 @@ export const firestoreSettingsService = {
 
     const payload = sanitizeForFirestore(merged);
 
-    cachedHomepageSettings = { data: payload, timestamp: Date.now() };
-    broadcastUpdate('homepage', payload);
-    syncToServerApi('homepage', payload);
-
     try {
       // Overwrite the entire document so deleted items/arrays are permanently removed from Firestore
       await setDoc(docRef, payload);
+      cachedHomepageSettings = { data: payload, timestamp: Date.now() };
+      broadcastUpdate('homepage', payload);
+      syncToServerApi('homepage', payload);
       console.log('[Firestore Settings] Homepage settings committed to Firestore.');
     } catch (err) {
       console.warn('[Firestore Settings] updateHomepageSettings write notice:', err);
+      throw err;
     }
   },
 
@@ -757,42 +771,7 @@ export const firestoreSettingsService = {
       docRef,
       (snap) => {
         if (snap.exists()) {
-          const rawData = snap.data() as HomepageCmsConfig;
-          const def = getDefaultHomepageSettings();
-          const rawHero: any = rawData?.hero || {};
-          let firestoreVideo = (rawHero.videoUrl || (rawHero as any).heroVideoUrl || '').trim();
-          let firestoreMedia = (rawHero.mediaUrl || '').trim();
-
-          if (firestoreVideo.includes('assets.mixkit.co')) {
-            firestoreVideo = 'firestore://media_blobs/vid_corporate_hero_v1';
-          }
-          if (firestoreMedia.includes('assets.mixkit.co')) {
-            firestoreMedia = 'firestore://media_blobs/vid_corporate_hero_v1';
-          }
-
-          const effectiveVideo = firestoreVideo || (rawHero.mediaType === 'video' ? firestoreMedia : '') || firestoreMedia || def.hero.videoUrl;
-
-          const data: HomepageCmsConfig = {
-            ...def,
-            ...rawData,
-            hero: {
-              ...def.hero,
-              ...rawHero,
-              videoUrl: effectiveVideo,
-              mediaUrl: firestoreMedia || effectiveVideo || def.hero.mediaUrl,
-              mediaType: rawHero.mediaType || (effectiveVideo ? 'video' : 'image'),
-            },
-            milestones: {
-              ...def.milestones,
-              ...(rawData?.milestones || {}),
-              achievementsTitle: rawData?.milestones?.achievementsTitle || def.milestones.achievementsTitle,
-              achievementsSubtitle: rawData?.milestones?.achievementsSubtitle || def.milestones.achievementsSubtitle,
-              achievements:
-                Array.isArray(rawData?.milestones?.achievements)
-                  ? rawData.milestones.achievements
-                  : [],
-            },
-          };
+          const data = normalizeHomepageSettings(snap.data() as HomepageCmsConfig);
           cachedHomepageSettings = { data, timestamp: Date.now() };
           onData(data);
         } else {

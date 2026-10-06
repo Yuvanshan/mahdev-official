@@ -2,6 +2,7 @@ import React from 'react';
 import { Handshake } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { Image } from '../ui/Image';
 import { FirestoreTrustedCompany } from '../../types/firestore';
 
 interface TrustedCompaniesSectionProps {
@@ -67,11 +68,11 @@ export const TrustedCompaniesSection: React.FC<TrustedCompaniesSectionProps> = (
               }`}
             >
               {company.logoUrl && company.logoUrl.trim() !== '' ? (
-                <img
+                <Image
                   src={company.logoUrl}
                   alt={company.name}
-                  className="h-9 max-w-[120px] object-contain mb-1.5 group-hover:scale-105 transition-transform"
-                  
+                  fit="contain"
+                  className="h-9 w-full max-w-[120px] !rounded-none mb-1.5 group-hover:scale-105 transition-transform"
                 />
               ) : (
                 <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-base mb-1">

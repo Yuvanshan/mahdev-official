@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'motion/react';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { Image } from '../ui/Image';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body } from '../ui/Heading';
 import { DecorationShowcaseVideo } from '../../types/cms';
@@ -300,14 +301,10 @@ const DecorationVideoShowcaseContent: React.FC<
                   >
                     {/* Thumbnail with mini play overlay */}
                     <div className="relative w-24 h-16 rounded-lg overflow-hidden shrink-0 bg-slate-950 border border-slate-800">
-                      <img
-                        src={
-                          video.thumbnailUrl && video.thumbnailUrl.trim() !== ''
-                            ? video.thumbnailUrl.trim()
-                            : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80'
-                        }
+                      <Image
+                        src={video.thumbnailUrl || ''}
                         alt={video.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full !rounded-none group-hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                         <div
