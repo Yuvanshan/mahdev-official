@@ -5,7 +5,6 @@ import { SectionContainer } from '../ui/SectionContainer';
 import { Caption, H2, Body } from '../ui/Heading';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { GallerySectionShimmer } from '../common/GallerySectionShimmer';
-import { Image } from '../ui/Image';
 
 /** A premium gallery that mirrors the polished presentation used in the division pages. */
 export const HomeGallerySection: React.FC = () => {
@@ -20,18 +19,16 @@ export const HomeGallerySection: React.FC = () => {
       return media.filter(Boolean).map((url, index) => ({
         id: `${item.id}-${index}`,
         url,
-        title: item.title || '',
-        category: item.category || item.tag || '',
-        location: (item as any).location || item.caption || '',
+        title: item.title || 'Mahdev Gallery',
+        category: item.category || item.tag || 'Mahdev Group',
+        location: (item as any).location || item.caption || 'Sri Lanka',
       }));
     })
     .slice(0, 9), [gallery]);
 
   const categories = useMemo<string[]>(() => {
     const set = new Set<string>();
-    items.forEach((item) => {
-      if (item.category) set.add(item.category);
-    });
+    items.forEach((item) => set.add(item.category));
     return ['All', ...Array.from(set)];
   }, [items]);
 
@@ -53,7 +50,7 @@ export const HomeGallerySection: React.FC = () => {
           <Caption className="mb-2 block text-[#0052FF]">Visual Showcase</Caption>
           <H2 className="text-slate-900">Selected Work Across Every Division</H2>
           <Body className="mt-2 text-slate-600">
-            Recent work from across our divisions.
+            A curated look at the craftsmanship, excitement, and production quality we deliver across events, media, technology, and lifestyle experiences.
           </Body>
         </div>
 
@@ -95,21 +92,28 @@ export const HomeGallerySection: React.FC = () => {
                 isFeatured ? 'col-span-2 sm:col-span-2 xl:col-span-2 aspect-[16/10]' : 'aspect-[4/5]'
               }`}
             >
-              <Image
+              <img
                 src={item.url}
                 alt={item.title}
                 loading={index < 4 ? 'eager' : 'lazy'}
                 decoding="async"
-                className="h-full w-full !rounded-none transition duration-500 group-hover:scale-105"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
+                  if (fb) fb.classList.remove('hidden');
+                }}
+                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
               />
+              <div className="hidden h-full w-full bg-gradient-to-br from-slate-900 to-blue-950 flex flex-col items-center justify-center p-4 text-center">
+                <span className="text-white/80 font-display font-semibold text-sm">{item.title}</span>
+                <span className="text-blue-400 text-xs mt-1">{item.category}</span>
+              </div>
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/25 to-transparent" />
 
               <div className="absolute left-3 top-3 flex items-center gap-2">
-                {item.category && (
-                  <span className="rounded-full border border-white/30 bg-slate-950/55 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white backdrop-blur-sm">
-                    {item.category}
-                  </span>
-                )}
+                <span className="rounded-full border border-white/30 bg-slate-950/55 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white backdrop-blur-sm">
+                  {item.category}
+                </span>
               </div>
 
               <button
@@ -133,18 +137,14 @@ export const HomeGallerySection: React.FC = () => {
               </button>
 
               <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                {item.location && (
-                  <div className="mb-2 flex items-center gap-2 text-[11px] text-slate-200">
-                    <MapPin className="h-3.5 w-3.5 text-[#95b8ff]" />
-                    <span>{item.location}</span>
-                  </div>
-                )}
-                {item.title && (
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-3.5 w-3.5 text-[#95b8ff]" />
-                    <span className="text-sm font-semibold sm:text-base">{item.title}</span>
-                  </div>
-                )}
+                <div className="mb-2 flex items-center gap-2 text-[11px] text-slate-200">
+                  <MapPin className="h-3.5 w-3.5 text-[#95b8ff]" />
+                  <span>{item.location}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-3.5 w-3.5 text-[#95b8ff]" />
+                  <span className="text-sm font-semibold sm:text-base">{item.title}</span>
+                </div>
               </div>
             </div>
           );
@@ -156,7 +156,7 @@ export const HomeGallerySection: React.FC = () => {
           className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/90 p-4"
           role="dialog"
           aria-modal="true"
-          aria-label={activeImage.title || 'Gallery image'}
+          aria-label={activeImage.title}
           onClick={() => setActiveImage(null)}
         >
           <div className="relative max-h-full max-w-5xl" onClick={(event) => event.stopPropagation()}>
@@ -168,18 +168,25 @@ export const HomeGallerySection: React.FC = () => {
             >
               <X className="h-5 w-5" />
             </button>
-            <Image
+            <img
               src={activeImage.url}
               alt={activeImage.title}
-              className="max-h-[85vh] w-auto max-w-full !rounded-none object-contain shadow-2xl"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
+                if (fb) fb.classList.remove('hidden');
+              }}
+              className="max-h-[85vh] w-auto max-w-full rounded-2xl object-contain shadow-2xl"
             />
+            <div className="hidden w-80 h-64 bg-slate-900/80 rounded-2xl border border-white/10 flex flex-col items-center justify-center text-center p-6 text-slate-300">
+              <span className="font-semibold text-sm mb-1">{activeImage.title}</span>
+              <span className="text-xs text-slate-400">{activeImage.category}</span>
+            </div>
             <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-slate-200">
               <span className="truncate font-medium">{activeImage.title}</span>
-              {activeImage.category && (
-                <span className="rounded-full bg-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-slate-300">
-                  {activeImage.category}
-                </span>
-              )}
+              <span className="rounded-full bg-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-slate-300">
+                {activeImage.category}
+              </span>
             </div>
           </div>
         </div>

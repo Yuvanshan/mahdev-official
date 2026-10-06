@@ -16,12 +16,11 @@ import {
   AlertCircle,
   Globe,
 } from 'lucide-react';
-import { TravelPackage, DayTour, Vehicle } from '../../data/travelsData';
+import { TRAVEL_PACKAGES, DAY_TOURS, VEHICLES, TravelPackage, DayTour, Vehicle } from '../../data/travelsData';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { COMPANY_INFO, getTelLink, getMailtoLink } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
-import { isSameDivision } from '../../services/firestore/divisions';
 import { buildWhatsAppMessage, MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
 import { firestoreInquiriesService } from '../../services/firestore/inquiries';
 
@@ -40,12 +39,7 @@ export const TravelsBookingModal: React.FC<TravelsBookingModalProps> = ({
   initialTour,
   initialVehicle,
 }) => {
-  const { companySettings, services: rawServices } = useFirestoreDataContext();
-  const travelServices = React.useMemo(() => {
-    return (rawServices || []).filter(
-      (s) => isSameDivision(s.division, 'travels') || isSameDivision((s as any).divisionId, 'travels')
-    );
-  }, [rawServices]);
+  const { companySettings } = useFirestoreDataContext();
   const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
   const contactEmail = companySettings?.email || COMPANY_INFO.email;
   const [packageType, setPackageType] = useState<string>('custom');
@@ -110,8 +104,9 @@ export const TravelsBookingModal: React.FC<TravelsBookingModalProps> = ({
     setTicketRef(ref);
     setIsSubmitted(true);
 
-    const matchedService = travelServices.find((s) => `pkg-${s.id}` === packageType || s.id === packageType);
-    const tripTitle = matchedService?.name || initialPackage?.title || initialTour?.title || initialVehicle?.name || 'Custom Private Tour';
+    const matchedPkg = TRAVEL_PACKAGES.find((p) => `pkg-${p.id}` === packageType) || initialPackage;
+    const matchedTour = DAY_TOURS.find((t) => `tour-${t.id}` === packageType) || initialTour;
+    const tripTitle = matchedPkg?.title || matchedTour?.title || initialVehicle?.name || `${packageType.toUpperCase()} Private Tour`;
 
     firestoreInquiriesService
       .createInquiry({
@@ -192,22 +187,20 @@ export const TravelsBookingModal: React.FC<TravelsBookingModalProps> = ({
                   onChange={(e) => setPackageType(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 >
-                  {travelServices.length > 0 && (
-                    <optgroup label="Curated Travel Packages">
-                      {travelServices.map((s) => (
-                        <option key={s.id} value={`pkg-${s.id}`}>
-                          {s.name} ({s.price ? `from ${s.price}` : 'Custom Quote'})
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                  {initialPackage && (
-                    <optgroup label="Selected Package">
-                      <option value={`pkg-${initialPackage.id}`}>
-                        {initialPackage.title} ({initialPackage.duration})
+                  <optgroup label="Multi-Day Curated Packages">
+                    {TRAVEL_PACKAGES.map((pkg) => (
+                      <option key={pkg.id} value={`pkg-${pkg.id}`}>
+                        {pkg.title} ({pkg.duration} — from {pkg.price})
                       </option>
-                    </optgroup>
-                  )}
+                    ))}
+                  </optgroup>
+                  <optgroup label="Single-Day Guided Excursions">
+                    {DAY_TOURS.map((tour) => (
+                      <option key={tour.id} value={`tour-${tour.id}`}>
+                        {tour.title} ({tour.price})
+                      </option>
+                    ))}
+                  </optgroup>
                   <optgroup label="Custom Tailor-Made">
                     <option value="custom">100% Tailor-Made Private Itinerary (Design from Scratch)</option>
                   </optgroup>

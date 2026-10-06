@@ -133,15 +133,8 @@ const ServiceCardItem: React.FC<{
               <button
                 type="button"
                 onClick={() => {
-                  const srvSku = (service as any).sku || service.id;
-                  const srvTitle = service.title || service.name || 'Service Offering';
-                  const srvUrl = typeof window !== 'undefined'
-                    ? `${window.location.origin}/services?sku=${encodeURIComponent(srvSku)}&title=${encodeURIComponent(srvTitle)}`
-                    : undefined;
                   openWhatsAppInquiry({
-                    title: srvTitle,
-                    sku: srvSku,
-                    itemUrl: srvUrl,
+                    title: service.title || service.name,
                     category: service.category,
                     divisionName: divisionBadgeText,
                     imageUrl: serviceImage,
@@ -183,19 +176,10 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
   const { services, companySettings, siteSettings, divisions, products, isInitialLoading, isFetching } = useFirestoreDataContext();
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
-    const skuParam =
-      params.get('sku') ||
-      params.get('packageSku') ||
-      params.get('service') ||
-      params.get('id') ||
-      params.get('title') ||
-      params.get('q');
+    const skuParam = params.get('sku') || params.get('packageSku') || params.get('q');
     if (skuParam) {
       setSearchQuery(skuParam);
-      setSelectedDivision('all');
-      setSelectedCategory('all');
     }
   }, []);
 
@@ -286,18 +270,12 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
         (srv as any).categoryId === selectedCategory;
 
       const query = searchQuery.toLowerCase().trim();
-      const queryNorm = query.replace(/[^a-z0-9]/g, '');
-      const srvSkuNorm = ((srv as any).sku || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const srvIdNorm = (srv.id || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const srvNameNorm = (srv.name || srv.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-
       const matchesQuery =
         !query ||
         (srv as any).sku?.toLowerCase().includes(query) ||
         srv.name?.toLowerCase().includes(query) ||
         srv.title?.toLowerCase().includes(query) ||
         srv.description?.toLowerCase().includes(query) ||
-        (queryNorm.length >= 3 && (srvSkuNorm.includes(queryNorm) || srvIdNorm.includes(queryNorm) || srvNameNorm.includes(queryNorm))) ||
         ((srv as any).packages as any[])?.some(
           (p: any) =>
             p?.name?.toLowerCase().includes(query) ||

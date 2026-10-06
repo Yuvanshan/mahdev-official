@@ -8,7 +8,7 @@ import {
   ArrowUpDown,
   Filter,
 } from 'lucide-react';
-import { Product, mapFirestoreProductToMart, mapFirestoreCategoryToMart } from '../../data/martData';
+import { Product, MART_PRODUCTS, MART_CATEGORIES, mapFirestoreProductToMart, mapFirestoreCategoryToMart } from '../../data/martData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { MartProductCard } from './MartProductCard';
 import { SectionContainer } from '../ui/SectionContainer';
@@ -167,7 +167,7 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
                 All Categories
               </button>
 
-              {allMartCategories.map((cat) => {
+              {MART_CATEGORIES.map((cat) => {
                 const isSelected = selectedCategoryId === cat.id;
                 return (
                   <button

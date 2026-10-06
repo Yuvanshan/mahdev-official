@@ -277,11 +277,7 @@ export function compressDataUrl(
   quality = 0.75
 ): Promise<string> {
   if (typeof window === 'undefined') return Promise.resolve(dataUrl);
-  if (!dataUrl || !dataUrl.startsWith('data:image/') || dataUrl.includes('image/svg+xml')) {
-    return Promise.resolve(dataUrl);
-  }
-  // If it's already a tiny data URL (< 30KB), no need to re-compress
-  if (dataUrl.length < 30000) {
+  if (!dataUrl || !dataUrl.startsWith('data:image/') || dataUrl.length < 25000 || dataUrl.includes('image/svg+xml')) {
     return Promise.resolve(dataUrl);
   }
 
@@ -290,41 +286,31 @@ export function compressDataUrl(
       const img = new Image();
       img.onload = () => {
         try {
-          const renderPass = (maxDim: number, q: number): string => {
-            let { width, height } = img;
-            if (width > maxDim || height > maxDim) {
-              const ratio = Math.min(maxDim / width, maxDim / height);
-              width = Math.max(1, Math.round(width * ratio));
-              height = Math.max(1, Math.round(height * ratio));
-            }
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return dataUrl;
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            ctx.drawImage(img, 0, 0, width, height);
-
-            let res = canvas.toDataURL('image/webp', q);
-            if (!res.startsWith('data:image/webp')) {
-              res = canvas.toDataURL('image/jpeg', q);
-            }
-            return res;
-          };
-
-          // First pass: requested dimensions and quality
-          let result = renderPass(maxDimension, quality);
-
-          // If still over 400KB, perform aggressive downscaling to guarantee Firestore 1MB safety
-          if (result.length > 400000) {
-            result = renderPass(800, 0.65);
+          let { width, height } = img;
+          if (width > maxDimension || height > maxDimension) {
+            const ratio = Math.min(maxDimension / width, maxDimension / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
           }
-          if (result.length > 700000) {
-            result = renderPass(500, 0.5);
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(dataUrl);
+            return;
+          }
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Try WebP first, fallback to JPEG
+          let compressed = canvas.toDataURL('image/webp', quality);
+          if (!compressed.startsWith('data:image/webp')) {
+            compressed = canvas.toDataURL('image/jpeg', quality);
           }
 
-          resolve(result.length < dataUrl.length ? result : (dataUrl.length > 800000 ? result : dataUrl));
+          resolve(compressed.length < dataUrl.length ? compressed : dataUrl);
         } catch {
           resolve(dataUrl);
         }
@@ -336,4 +322,3 @@ export function compressDataUrl(
     }
   });
 }
-

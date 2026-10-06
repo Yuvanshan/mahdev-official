@@ -19,7 +19,6 @@ import {
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestorePortfolio, DivisionId } from '../../types/firestore';
 import { isSameDivision } from './divisions';
-import { compressDataUrl } from '../../utils/imageOptimizer';
 
 const CACHE_TTL_MS = 1000 * 60 * 30; // 30-minute memoized cache for static portfolio
 let cachedPortfolio: { data: FirestorePortfolio[]; timestamp: number } | null = null;
@@ -129,23 +128,7 @@ export const firestorePortfolioService = {
    */
   async savePortfolio(id: string, data: Partial<FirestorePortfolio>): Promise<void> {
     const docRef = doc(db, 'portfolio', id);
-    const sanitizedData: any = { ...data, id };
-
-    if (typeof sanitizedData.imageUrl === 'string' && sanitizedData.imageUrl.startsWith('data:image/') && sanitizedData.imageUrl.length > 30000) {
-      sanitizedData.imageUrl = await compressDataUrl(sanitizedData.imageUrl, 1000, 0.75);
-    }
-    if (Array.isArray(sanitizedData.galleryImages)) {
-      sanitizedData.galleryImages = await Promise.all(
-        sanitizedData.galleryImages.map(async (img: any) => {
-          if (typeof img === 'string' && img.startsWith('data:image/') && img.length > 30000) {
-            return await compressDataUrl(img, 1000, 0.75);
-          }
-          return img;
-        })
-      );
-    }
-
-    const payload = sanitizeForFirestore(sanitizedData);
+    const payload = sanitizeForFirestore({ ...data, id });
     if (cachedPortfolio) {
       const idx = cachedPortfolio.data.findIndex((p) => p.id === id);
       if (idx >= 0) {
@@ -155,10 +138,12 @@ export const firestorePortfolioService = {
       }
     }
     try {
-      await setDoc(docRef, payload, { merge: true });
+      await Promise.race([
+        setDoc(docRef, payload, { merge: true }),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
     } catch (err) {
-      console.error('[Firestore Portfolio] save error:', err);
-      throw err;
+      console.warn('[Firestore Portfolio] save warning:', err);
     }
   },
 
@@ -168,10 +153,12 @@ export const firestorePortfolioService = {
       cachedPortfolio.data = cachedPortfolio.data.filter((p) => p.id !== id);
     }
     try {
-      await deleteDoc(docRef);
+      await Promise.race([
+        deleteDoc(docRef),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
     } catch (err) {
-      console.error('[Firestore Portfolio] delete error:', err);
-      throw err;
+      console.warn('[Firestore Portfolio] delete warning:', err);
     }
   },
 

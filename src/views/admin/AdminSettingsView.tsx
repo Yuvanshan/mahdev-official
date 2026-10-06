@@ -1181,7 +1181,7 @@ export const AdminSettingsView: React.FC = () => {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => refreshAll()}
+                onClick={refreshAll}
                 className="cursor-pointer"
               >
                 Discard Edits

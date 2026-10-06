@@ -10,7 +10,7 @@ import {
   Headphones,
   Laptop,
 } from 'lucide-react';
-import { MartCategory, mapFirestoreCategoryToMart } from '../../data/martData';
+import { MART_CATEGORIES, MartCategory, mapFirestoreCategoryToMart } from '../../data/martData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';

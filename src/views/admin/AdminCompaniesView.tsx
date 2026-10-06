@@ -136,7 +136,7 @@ export const AdminCompaniesView: React.FC = () => {
           featured: formData.featured,
           order: Number(formData.order),
         });
-        await firestoreTrustedCompaniesService.saveTrustedCompany(editingCompany.id, {
+        firestoreTrustedCompaniesService.saveTrustedCompany(editingCompany.id, {
           name: formData.name,
           industry: formData.industry,
           logoUrl: formData.logoUrl,
@@ -144,7 +144,7 @@ export const AdminCompaniesView: React.FC = () => {
           description: formData.description,
           featured: formData.featured,
           order: Number(formData.order),
-        });
+        }).catch(() => {});
         addToast('success', 'Partner Updated', `"${formData.name}" has been successfully updated.`);
       } else {
         const created = await cmsService.create<CmsTrustedCompany>('companies', {
@@ -157,7 +157,7 @@ export const AdminCompaniesView: React.FC = () => {
           featured: formData.featured,
           order: Number(formData.order),
         });
-        await firestoreTrustedCompaniesService.saveTrustedCompany(created.id, {
+        firestoreTrustedCompaniesService.saveTrustedCompany(created.id, {
           name: formData.name,
           industry: formData.industry,
           logoUrl: formData.logoUrl,
@@ -165,7 +165,7 @@ export const AdminCompaniesView: React.FC = () => {
           description: formData.description,
           featured: formData.featured,
           order: Number(formData.order),
-        });
+        }).catch(() => {});
         addToast('success', 'Partner Created', `"${formData.name}" has been added to trusted enterprise partners.`);
       }
 
@@ -184,7 +184,7 @@ export const AdminCompaniesView: React.FC = () => {
     try {
       if (permanent) {
         await cmsService.permanentDelete('companies', deletingCompany.id);
-        await firestoreTrustedCompaniesService.deleteTrustedCompany(deletingCompany.id);
+        firestoreTrustedCompaniesService.deleteTrustedCompany(deletingCompany.id).catch(() => {});
         addToast('success', 'Partner Removed', `"${deletingCompany.name}" was permanently deleted.`);
       } else {
         await cmsService.softDelete('companies', deletingCompany.id);

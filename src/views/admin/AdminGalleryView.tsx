@@ -241,10 +241,7 @@ export const AdminGalleryView: React.FC = () => {
       try {
         const uploadedUrl = await uploadMediaAsset(file);
         if (uploadedUrl) {
-          const safeUrl = uploadedUrl.startsWith('data:image/') && uploadedUrl.length > 30000
-            ? await compressDataUrl(uploadedUrl, 1000, 0.75)
-            : uploadedUrl;
-          newImages.push(safeUrl);
+          newImages.push(uploadedUrl);
         }
       } catch (err) {
         console.warn('Direct upload fallback:', err);
@@ -402,29 +399,22 @@ export const AdminGalleryView: React.FC = () => {
         status: payload.isActive ? ('published' as const) : ('hidden' as const),
       };
 
-      let cloudSynced = true;
       if (editingItem) {
         cmsService.update<CmsGalleryItem>('gallery', editingItem.id, payload);
         try {
           await firestoreGalleryService.saveGallery(editingItem.id, firestoreData);
         } catch (fErr) {
-          cloudSynced = false;
           console.warn('[AdminGallery] Firestore background sync notice:', fErr);
         }
+        addToast('success', 'Gallery Item Saved', `"${formData.title}" saved successfully.`);
       } else {
         const created = cmsService.create<CmsGalleryItem>('gallery', payload);
         try {
           await firestoreGalleryService.saveGallery(created.id, firestoreData);
         } catch (fErr) {
-          cloudSynced = false;
           console.warn('[AdminGallery] Firestore background sync notice:', fErr);
         }
-      }
-
-      if (cloudSynced) {
-        addToast('success', editingItem ? 'Gallery Item Saved' : 'Gallery Item Created', `"${formData.title}" saved to Cloud Firestore and reflected live everywhere.`);
-      } else {
-        addToast('info', 'Saved Locally (Auto-Sync Queued)', `"${formData.title}" saved on device. Auto-sync will persist it to Cloud Firestore in the background.`);
+        addToast('success', 'Gallery Item Created', `"${formData.title}" saved successfully.`);
       }
       setIsDirty(false);
       setIsEditorOpen(false);

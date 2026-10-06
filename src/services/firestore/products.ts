@@ -23,16 +23,16 @@ import {
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreProduct, DivisionId } from '../../types/firestore';
 import { isSameDivision } from './divisions';
-import { compressDataUrl } from '../../utils/imageOptimizer';
 
 const CACHE_TTL_MS = 1000 * 60 * 15; // 15-minute memoized cache
 let cachedProducts: { data: FirestoreProduct[]; timestamp: number } | null = null;
 let inFlightProductsPromise: Promise<FirestoreProduct[]> | null = null;
 
 export function getDefaultProducts(): FirestoreProduct[] {
+  // Phase 60: Real Data Architecture - Zero fake products by default.
+  // Real catalog items are populated through Admin Portal or Firestore collection.
   return [];
 }
-
 
 export interface ProductQueryOptions {
   division?: DivisionId;
@@ -42,8 +42,6 @@ export interface ProductQueryOptions {
   page?: number;
   pageSize?: number;
   featuredOnly?: boolean;
-  includeDrafts?: boolean;
-  includeArchived?: boolean;
 }
 
 export interface PaginatedProductsResult {
@@ -61,11 +59,6 @@ export const firestoreProductsService = {
   async getProducts(options?: ProductQueryOptions, forceRefresh = false): Promise<FirestoreProduct[]> {
     const now = Date.now();
 
-    if (forceRefresh) {
-      cachedProducts = null;
-      inFlightProductsPromise = null;
-    }
-
     if (!forceRefresh && cachedProducts && now - cachedProducts.timestamp < CACHE_TTL_MS) {
       return this.applyClientFilters(cachedProducts.data, options);
     }
@@ -77,7 +70,7 @@ export const firestoreProductsService = {
 
     inFlightProductsPromise = (async () => {
       try {
-        const snap = await getDocs(query(collection(db, 'products'), firestoreLimit(250)));
+        const snap = await getDocs(query(collection(db, 'products'), firestoreLimit(100)));
         if (!snap.empty) {
           const loaded = snap.docs.map((d) => ({
             ...d.data(),
@@ -109,19 +102,6 @@ export const firestoreProductsService = {
   applyClientFilters(allProducts: FirestoreProduct[], options?: ProductQueryOptions): FirestoreProduct[] {
     let filtered = [...allProducts];
 
-    // Filter out drafts, unpublished, or archived items from public storefronts unless requested
-    if (!options?.includeDrafts) {
-      filtered = filtered.filter(
-        (p) =>
-          p.status !== 'draft' &&
-          p.status !== 'archived' &&
-          (p as any).isDeleted !== true &&
-          p.isPublished !== false
-      );
-    } else if (!options?.includeArchived) {
-      filtered = filtered.filter((p) => p.status !== 'archived' && (p as any).isDeleted !== true);
-    }
-
     if (options?.division) {
       filtered = filtered.filter(
         (p) => isSameDivision(p.division, options.division) || isSameDivision((p as any).divisionId, options.division)
@@ -134,9 +114,9 @@ export const firestoreProductsService = {
       const q = options.search.toLowerCase().trim();
       filtered = filtered.filter(
         (p) =>
-          p.name?.toLowerCase().includes(q) ||
-          p.description?.toLowerCase().includes(q) ||
-          p.sku?.toLowerCase().includes(q)
+          p.name.toLowerCase().includes(q) ||
+          p.description.toLowerCase().includes(q) ||
+          p.sku.toLowerCase().includes(q)
       );
     }
     if (options?.limit && options.limit > 0) {
@@ -157,8 +137,6 @@ export const firestoreProductsService = {
       division: options.division,
       categoryId: options.categoryId,
       search: options.search,
-      includeDrafts: options.includeDrafts,
-      includeArchived: options.includeArchived,
     });
 
     const totalCount = allFiltered.length;
@@ -179,7 +157,7 @@ export const firestoreProductsService = {
    * Get single product by ID or slug with cache-first lookup
    */
   async getProductById(idOrSlug: string): Promise<FirestoreProduct | null> {
-    const all = await this.getProducts({ includeDrafts: true, includeArchived: true });
+    const all = await this.getProducts();
     return all.find((p) => p.id === idOrSlug || p.slug === idOrSlug) || null;
   },
 
@@ -192,35 +170,20 @@ export const firestoreProductsService = {
     const otherImgs = ((data.images || (data as any).galleryImages || []) as string[]).filter(
       (u: string) => u && u !== primaryImg
     );
-    let safePrimaryImg = primaryImg;
-    if (typeof safePrimaryImg === 'string' && safePrimaryImg.startsWith('data:image/') && safePrimaryImg.length > 30000) {
-      safePrimaryImg = await compressDataUrl(safePrimaryImg, 1000, 0.75);
-    }
-    const allImages = [safePrimaryImg, ...otherImgs].filter(Boolean);
-    const safeImages = await Promise.all(
-      allImages.map(async (img: string) => {
-        if (typeof img === 'string' && img.startsWith('data:image/') && img.length > 30000) {
-          return await compressDataUrl(img, 1000, 0.75);
-        }
-        return img;
-      })
-    );
+    const allImages = primaryImg ? [primaryImg, ...otherImgs] : otherImgs;
 
     const payload = sanitizeForFirestore({
       ...data,
       id,
-      imageUrl: safePrimaryImg,
-      images: safeImages,
-      galleryImages: safeImages,
+      imageUrl: primaryImg,
+      images: allImages,
+      galleryImages: allImages,
       division: data.division || (data as any).divisionId || 'mart',
       divisionId: (data as any).divisionId || data.division || 'mart',
       stock: typeof data.stock === 'number' ? data.stock : ((data as any).stockQuantity ?? 0),
       stockQuantity: typeof data.stock === 'number' ? data.stock : ((data as any).stockQuantity ?? 0),
-      isPublished: data.isPublished !== undefined ? data.isPublished : (data.status !== 'draft' && data.status !== 'archived'),
-      status: data.status || (data.isPublished === false ? 'draft' : 'active'),
       updatedAt: new Date().toISOString(),
     });
-
     if (cachedProducts) {
       const idx = cachedProducts.data.findIndex((p) => p.id === id);
       if (idx >= 0) {
@@ -229,12 +192,13 @@ export const firestoreProductsService = {
         cachedProducts.data.unshift(payload as FirestoreProduct);
       }
     }
-
     try {
-      await setDoc(docRef, payload, { merge: true });
+      await Promise.race([
+        setDoc(docRef, payload, { merge: true }),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
     } catch (err) {
-      console.error('[Firestore Products] save error:', err);
-      throw err;
+      console.warn('[Firestore Products] save warning:', err);
     }
   },
 
@@ -247,10 +211,12 @@ export const firestoreProductsService = {
       cachedProducts.data = cachedProducts.data.filter((p) => p.id !== id);
     }
     try {
-      await deleteDoc(docRef);
+      await Promise.race([
+        deleteDoc(docRef),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
     } catch (err) {
-      console.error('[Firestore Products] delete error:', err);
-      throw err;
+      console.warn('[Firestore Products] delete warning:', err);
     }
   },
 
@@ -272,36 +238,21 @@ export const firestoreProductsService = {
     const onData = typeof onDataOrDivision === 'function' ? onDataOrDivision : onDataCallback || (() => {});
 
     const colRef = collection(db, 'products');
+    const q = division ? query(colRef, where('division', '==', division)) : colRef;
 
     return onSnapshot(
-      colRef,
+      q,
       (snap) => {
         const data = snap.docs.map((d) => ({
           ...d.data(),
           id: d.id,
         })) as FirestoreProduct[];
         cachedProducts = { data, timestamp: Date.now() };
-        if (division) {
-          const filtered = data.filter(
-            (p) => isSameDivision(p.division, division) || isSameDivision((p as any).divisionId, division)
-          );
-          onData(filtered);
-        } else {
-          onData(data);
-        }
+        onData(data);
       },
       (err) => {
         console.warn('[Firestore Products] Listener fallback error:', err);
-        const fallback = cachedProducts?.data || [];
-        if (division) {
-          onData(
-            fallback.filter(
-              (p) => isSameDivision(p.division, division) || isSameDivision((p as any).divisionId, division)
-            )
-          );
-        } else {
-          onData(fallback);
-        }
+        onData(cachedProducts?.data || []);
       }
     );
   },

@@ -10,7 +10,7 @@ import {
   ExternalLink,
   ChevronRight,
 } from 'lucide-react';
-import { SWSPortfolioItem } from '../../data/swsData';
+import { SWS_PORTFOLIO_ITEMS, SWSPortfolioItem } from '../../data/swsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';

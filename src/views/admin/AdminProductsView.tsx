@@ -38,7 +38,7 @@ import { compressDataUrl } from '../../utils/imageOptimizer';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 export const AdminProductsView: React.FC = () => {
-  const { refreshAll, saveProduct: contextSaveProduct, deleteProduct: contextDeleteProduct } = useFirestoreDataContext();
+  const { refreshAll } = useFirestoreDataContext();
   const [products, setProducts] = useState<CmsProduct[]>([]);
   const [categories, setCategories] = useState<CmsCategory[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -114,20 +114,6 @@ export const AdminProductsView: React.FC = () => {
     const cats = cmsService.getAll<CmsCategory>('categories');
     setCategories(cats);
   };
-
-  // Mount sync: pull live products directly from Firestore database
-  useEffect(() => {
-    firestoreProductsService
-      .getProducts({ includeDrafts: true, includeArchived: true }, true)
-      .then((fsProds) => {
-        cmsService.syncEntityFromFirestore('products', fsProds);
-        loadData();
-      })
-      .catch((err) => {
-        console.warn('[AdminProducts] Fresh Firestore fetch fallback:', err);
-        loadData();
-      });
-  }, []);
 
   useEffect(() => {
     loadData();
@@ -243,13 +229,10 @@ export const AdminProductsView: React.FC = () => {
     try {
       const uploadedUrl = await uploadMediaAsset(file);
       if (uploadedUrl) {
-        const safeUrl = uploadedUrl.startsWith('data:image/') && uploadedUrl.length > 30000
-          ? await compressDataUrl(uploadedUrl, 1000, 0.75)
-          : uploadedUrl;
         setFormData((prev) => ({
           ...prev,
-          imageUrl: safeUrl,
-          galleryImages: [safeUrl, ...(prev.galleryImages || []).filter((g) => g !== safeUrl)],
+          imageUrl: uploadedUrl,
+          galleryImages: [uploadedUrl, ...(prev.galleryImages || []).filter((g) => g !== uploadedUrl)],
         }));
         setIsDirty(true);
         addToast('success', 'Image Uploaded', 'Product image uploaded and attached.');
@@ -295,19 +278,9 @@ export const AdminProductsView: React.FC = () => {
           ? 'low_stock'
           : 'in_stock';
 
-      let primaryImg = formData.imageUrl.trim();
-      if (primaryImg.startsWith('data:image/') && primaryImg.length > 30000) {
-        primaryImg = await compressDataUrl(primaryImg, 1000, 0.75);
-      }
+      const primaryImg = formData.imageUrl.trim();
       const otherImgs = (formData.galleryImages || []).filter((u) => u && u !== primaryImg);
-      const allImgs = await Promise.all(
-        (primaryImg ? [primaryImg, ...otherImgs] : otherImgs).map(async (u) => {
-          if (typeof u === 'string' && u.startsWith('data:image/') && u.length > 30000) {
-            return await compressDataUrl(u, 1000, 0.75);
-          }
-          return u;
-        })
-      );
+      const allImgs = primaryImg ? [primaryImg, ...otherImgs] : otherImgs;
 
       const payload: CmsProduct = {
         ...formData,
@@ -322,7 +295,6 @@ export const AdminProductsView: React.FC = () => {
         stockStatus,
       } as any;
 
-      let cloudSynced = true;
       if (editingProduct) {
         cmsService.update<CmsProduct>('products', editingProduct.id, payload as any);
         try {
@@ -340,9 +312,9 @@ export const AdminProductsView: React.FC = () => {
             status: formData.isActive ? 'active' : 'draft',
           } as any);
         } catch (fErr) {
-          cloudSynced = false;
           console.warn('[AdminProducts] Firestore save notice:', fErr);
         }
+        addToast('success', 'Product Updated', `SKU ${payload.sku} "${payload.name}" saved.`);
       } else {
         const created = cmsService.create<CmsProduct>('products', payload as any);
         try {
@@ -360,15 +332,9 @@ export const AdminProductsView: React.FC = () => {
             status: formData.isActive ? 'active' : 'draft',
           } as any);
         } catch (fErr) {
-          cloudSynced = false;
           console.warn('[AdminProducts] Firestore create notice:', fErr);
         }
-      }
-
-      if (cloudSynced) {
-        addToast('success', editingProduct ? 'Product Updated' : 'Product Created', `"${payload.name}" saved to Cloud Firestore and reflected live everywhere.`);
-      } else {
-        addToast('info', 'Saved Locally (Auto-Sync Queued)', `"${payload.name}" saved on device. Auto-sync will persist it to Cloud Firestore in the background.`);
+        addToast('success', 'Product Created', `"${payload.name}" added to catalog.`);
       }
       setIsDirty(false);
       setIsEditorOpen(false);
@@ -881,7 +847,7 @@ export const AdminProductsView: React.FC = () => {
         isDirty={isDirty}
         maxWidth="3xl"
       >
-        <form onSubmit={handleSave} noValidate className="space-y-4 text-xs">
+        <form onSubmit={handleSave} className="space-y-4 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="sm:col-span-2">
               <label className="block font-semibold text-slate-700 mb-1">Product Title *</label>
@@ -1043,7 +1009,7 @@ export const AdminProductsView: React.FC = () => {
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <input
-                type="text"
+                type="url"
                 value={formData.imageUrl}
                 onChange={(e) => {
                   setFormData({

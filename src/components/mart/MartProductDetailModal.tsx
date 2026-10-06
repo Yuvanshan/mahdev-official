@@ -14,9 +14,7 @@ import {
   Plus,
   Share2,
 } from 'lucide-react';
-import { Product, ProductVariant, mapFirestoreProductToMart } from '../../data/martData';
-import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
-import { isSameDivision } from '../../services/firestore/divisions';
+import { Product, ProductVariant, MART_PRODUCTS } from '../../data/martData';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 
@@ -35,21 +33,10 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
   onAddToCart,
   onSelectRelatedProduct,
 }) => {
-  const { products: rawProducts, categories: rawCategories } = useFirestoreDataContext();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'specs' | 'desc' | 'reviews'>('desc');
-
-  const relatedProducts = React.useMemo(() => {
-    if (!product || !rawProducts) return [];
-    const martProds = rawProducts
-      .filter((p) => isSameDivision(p.division, 'mart') || isSameDivision((p as any).divisionId, 'mart'))
-      .map((p) => mapFirestoreProductToMart(p, rawCategories));
-    return martProds
-      .filter((p) => p.category === product.category && p.id !== product.id)
-      .slice(0, 3);
-  }, [product, rawProducts, rawCategories]);
 
   if (!isOpen || !product) return null;
 
@@ -58,6 +45,11 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
   const variantModifier = currentVariant?.priceModifier || 0;
   const unitPrice = product.price + variantModifier;
   const originalUnitPrice = product.originalPrice ? product.originalPrice + variantModifier : undefined;
+
+  // Find related products in the same category
+  const relatedProducts = MART_PRODUCTS.filter(
+    (p) => p.category === product.category && p.id !== product.id
+  ).slice(0, 3);
 
   const handleIncrement = () => setQuantity((q) => q + 1);
   const handleDecrement = () => setQuantity((q) => (q > 1 ? q - 1 : 1));

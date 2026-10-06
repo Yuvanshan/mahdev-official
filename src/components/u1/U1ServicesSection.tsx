@@ -13,7 +13,7 @@ import {
   Palette,
   Frame,
 } from 'lucide-react';
-import { U1Service } from '../../data/u1Data';
+import { U1_SERVICES, U1Service } from '../../data/u1Data';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { ServicesSectionShimmer } from '../common/ServicesSectionShimmer';
 import { isSameDivision } from '../../services/firestore/divisions';

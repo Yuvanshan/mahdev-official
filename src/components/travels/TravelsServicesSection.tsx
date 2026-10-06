@@ -1,5 +1,15 @@
 import React, { useMemo } from 'react';
-import { Compass, CheckCircle2 } from 'lucide-react';
+import {
+  Compass,
+  Plane,
+  Building2,
+  Users,
+  FileCheck,
+  Zap,
+  CheckCircle2,
+  ShieldCheck,
+  Sparkles,
+} from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { ScrollReveal } from '../motion/MotionWrappers';
@@ -8,6 +18,39 @@ import { isSameDivision } from '../../services/firestore/divisions';
 
 export const TravelsServicesSection: React.FC = () => {
   const { services: rawServices } = useFirestoreDataContext();
+
+  const defaultServices = [
+    {
+      title: 'Custom Itinerary Design',
+      desc: 'Bespoke route planning mapped around your exact interests—photography, culinary, wellness, surfing, architecture, or wildlife.',
+      icon: <Compass className="w-5 h-5 text-blue-600" />,
+    },
+    {
+      title: 'Bandaranaike Airport VIP Transfers',
+      desc: 'Meet-and-greet curbside concierge, luggage handling, and direct express highway transit to your resort in Colombo, Negombo, or Galle.',
+      icon: <Plane className="w-5 h-5 text-sky-600" />,
+    },
+    {
+      title: 'Boutique & Heritage Hotel Bookings',
+      desc: 'Preferred rates and room upgrades at Sri Lanka’s finest luxury resorts, colonial tea bungalows, and wild tented safari camps.',
+      icon: <Building2 className="w-5 h-5 text-amber-600" />,
+    },
+    {
+      title: 'National Multilingual Tourist Guides',
+      desc: 'SLTDA-licensed English, German, French, Mandarin, and Russian speaking lecturer guides with deep archaeological expertise.',
+      icon: <Users className="w-5 h-5 text-emerald-600" />,
+    },
+    {
+      title: 'Visa & ETA Concierge Advisory',
+      desc: 'Assistance with online Electronic Travel Authorization (ETA), fast-track immigration protocols, and customs clearance.',
+      icon: <FileCheck className="w-5 h-5 text-indigo-600" />,
+    },
+    {
+      title: 'Helicopter & Scenic Charters',
+      desc: 'Direct point-to-point luxury Airbus helicopter charters connecting Colombo directly to Sigiriya, Castlereagh Lake, or Yala in 40 minutes.',
+      icon: <Zap className="w-5 h-5 text-rose-600" />,
+    },
+  ];
 
   const travelServices = useMemo(() => {
     if (rawServices && rawServices.length > 0) {

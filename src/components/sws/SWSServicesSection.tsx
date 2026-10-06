@@ -6,7 +6,7 @@ import {
   Layers,
   Tag,
 } from 'lucide-react';
-import { SWSService } from '../../data/swsData';
+import { SWSService, SWS_SERVICES } from '../../data/swsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { formatCurrency } from '../../utils/currency';
@@ -30,41 +30,33 @@ export const SWSServicesSection: React.FC<SWSServicesSectionProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeModalService, setActiveModalService] = useState<SWSService | null>(null);
 
-  // Dynamically resolve services strictly from Firestore
+  // Dynamically resolve services from Firestore if available
   const allServices = useMemo<SWSService[]>(() => {
-    const list: SWSService[] = [];
-    const seen = new Set<string>();
-
     if (rawServices && rawServices.length > 0) {
       const swsServices = rawServices
         .filter((s) => isSameDivision(s.division, 'sws') || isSameDivision((s as any).divisionId, 'sws'))
         .sort((a, b) => (a.order ?? (a as any).sortOrder ?? 0) - (b.order ?? (b as any).sortOrder ?? 0));
-
-      swsServices.forEach((s) => {
-        seen.add(s.id);
-        const serviceName = s.name || (s as any).title || 'Event Service';
-        seen.add(serviceName.toLowerCase().trim());
-        list.push({
+      if (swsServices.length > 0) {
+        return swsServices.map((s) => ({
           id: s.id,
-          name: serviceName,
+          name: s.name,
           category: (s.category || (s as any).categoryId || 'General') as any,
           tagline: (s as any).tagline || s.description?.slice(0, 60) || '',
           description: s.description || '',
           detailedDescription: (s as any).detailedDescription || s.description || '',
           startingPrice: typeof s.price === 'number' || typeof (s as any).startingPrice === 'number'
             ? formatCurrency(s.price || (s as any).startingPrice || 0, s.currency || 'LKR')
-            : String(s.price || (s as any).startingPrice || 'Custom Quote'),
+            : String(s.price || 'Rs. 75,000'),
           priceNote: (s as any).priceNote || 'Customized to event scale',
           imageUrl: s.images && s.images.length > 0 ? s.images[0] : (s as any).imageUrl || '',
           gallery: s.images || [],
           features: s.features || ['Professional Consultation', 'Dedicated Stage Crew'],
           specs: (s as any).specs || [],
           badge: s.badge || 'Featured Service',
-        });
-      });
+        }));
+      }
     }
-
-    return list;
+    return [];
   }, [rawServices]);
 
   // Dynamically build category tabs ONLY from Admin Portal / Firestore categories

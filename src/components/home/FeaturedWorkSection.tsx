@@ -9,7 +9,6 @@ import { DIVISIONS } from '../../config/divisions';
 import { DivisionId } from '../../types';
 import { ParallelWatermark } from '../motion/ParallelScroll';
 import { useDeviceMotion } from '../motion/MotionWrappers';
-import { Image } from '../ui/Image';
 
 interface FeaturedWorkSectionProps {
   onNavigate: (route: string) => void;
@@ -103,10 +102,14 @@ const FeaturedWorkSectionContent: React.FC<
             >
               {/* Large Project Image */}
               <div className="lg:col-span-7 relative aspect-16/10 lg:aspect-auto min-h-[320px] sm:min-h-[420px] overflow-hidden bg-slate-900">
-                <Image
-                  src={featuredHeroProject.imageUrl || ''}
+                <img
+                  src={
+                    (featuredHeroProject.imageUrl && featuredHeroProject.imageUrl.trim() !== '')
+                      ? featuredHeroProject.imageUrl.trim()
+                      : 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'
+                  }
                   alt={featuredHeroProject.title}
-                  className="h-full w-full !rounded-none opacity-90 group-hover:scale-105 transition-transform duration-700 ease-out"
+                  className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-700 ease-out"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent lg:hidden" />
@@ -140,11 +143,9 @@ const FeaturedWorkSectionContent: React.FC<
                 </div>
 
                 <div className="pt-8 mt-6 border-t border-slate-800 flex items-center justify-between">
-                  {featuredHeroProject.client && (
-                    <span className="text-xs font-mono uppercase tracking-wider text-slate-400">
-                      Client: {featuredHeroProject.client}
-                    </span>
-                  )}
+                  <span className="text-xs font-mono uppercase tracking-wider text-slate-400">
+                    Client: {featuredHeroProject.client || 'Enterprise Partner'}
+                  </span>
                   <div className="inline-flex items-center gap-2 text-sm font-bold text-blue-400 group-hover:text-white transition-colors">
                     <span>View Project</span>
                     <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -174,10 +175,14 @@ const FeaturedWorkSectionContent: React.FC<
                       <div>
                         {/* Large Project Image */}
                         <div className="relative aspect-16/10 overflow-hidden bg-slate-100">
-                          <Image
-                            src={project.imageUrl || ''}
+                          <img
+                            src={
+                              (project.imageUrl && project.imageUrl.trim() !== '')
+                                ? project.imageUrl.trim()
+                                : 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80'
+                            }
                             alt={project.title}
-                            className="h-full w-full !rounded-none transition-transform duration-700 group-hover:scale-105"
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                             loading="lazy"
                           />
                           <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2">
@@ -213,7 +218,9 @@ const FeaturedWorkSectionContent: React.FC<
 
                       {/* View project arrow */}
                       <div className="px-6 sm:px-7 pb-6 pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                        <span className="text-slate-400 font-normal">{project.client || ''}</span>
+                        <span className="text-slate-400 font-normal">
+                          {project.client || 'Client Project'}
+                        </span>
                         <div className="inline-flex items-center gap-1.5">
                           <span>View Project</span>
                           <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />

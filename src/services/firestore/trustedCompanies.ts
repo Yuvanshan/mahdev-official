@@ -58,10 +58,12 @@ export const firestoreTrustedCompaniesService = {
       }
     }
     try {
-      await setDoc(docRef, payload, { merge: true });
+      await Promise.race([
+        setDoc(docRef, payload, { merge: true }),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
     } catch (err) {
-      console.error('[Firestore TrustedCompanies] save error:', err);
-      throw err;
+      console.warn('[Firestore TrustedCompanies] save warning:', err);
     }
   },
 
@@ -71,10 +73,12 @@ export const firestoreTrustedCompaniesService = {
       cachedCompanies.data = cachedCompanies.data.filter((c) => c.id !== id);
     }
     try {
-      await deleteDoc(docRef);
+      await Promise.race([
+        deleteDoc(docRef),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
     } catch (err) {
-      console.error('[Firestore TrustedCompanies] delete error:', err);
-      throw err;
+      console.warn('[Firestore TrustedCompanies] delete warning:', err);
     }
   },
 

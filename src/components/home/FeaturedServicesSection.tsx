@@ -12,7 +12,6 @@ import { ParallelWatermark } from '../motion/ParallelScroll';
 import { useDeviceMotion } from '../motion/MotionWrappers';
 import { DataLoadingOverlay } from '../common/DataLoadingOverlay';
 import { ServicesSectionShimmer } from '../common/ServicesSectionShimmer';
-import { Image } from '../ui/Image';
 
 interface FeaturedServicesSectionProps {
   onNavigate: (route: string) => void;
@@ -80,13 +79,21 @@ const FeaturedServiceCard: React.FC<{
       <div>
         {serviceImages.length > 0 && (
           <div className="mb-4 aspect-16/9 rounded-xl overflow-hidden bg-purple-50/50 border border-purple-100 relative">
-            <Image
+            <img
               src={serviceImages[activeImgIdx] || serviceImages[0]}
               alt={service.title || service.name}
               loading={idx < 3 ? 'eager' : 'lazy'}
               decoding="async"
-              className="h-full w-full !rounded-none"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
+                if (fb) fb.classList.remove('hidden');
+              }}
+              className="w-full h-full object-cover transition-all duration-300"
             />
+            <div className="hidden h-full w-full bg-gradient-to-br from-slate-100 via-purple-50 to-blue-50 flex items-center justify-center p-4">
+              <span className="text-xs font-bold text-slate-700 text-center">{service.title || service.name}</span>
+            </div>
             {serviceImages.length > 1 && (
               <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/60 backdrop-blur-xs px-2 py-1 rounded-full z-10">
                 {serviceImages.map((_, dIdx) => (

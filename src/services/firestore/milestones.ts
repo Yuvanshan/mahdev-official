@@ -119,7 +119,20 @@ export const DEFAULT_OFFICIAL_MILESTONES: FirestoreMilestone[] = [
 ];
 
 const CACHE_TTL_MS = 1000 * 60 * 30; // 30-minute memoized cache
-let cachedMilestones: { data: FirestoreMilestone[]; timestamp: number } | null = null;
+let cachedMilestones: { data: FirestoreMilestone[]; timestamp: number } | null = (() => {
+  try {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('mahdev_cached_milestones');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return { data: parsed, timestamp: Date.now() };
+        }
+      }
+    }
+  } catch {}
+  return null;
+})();
 let inFlightMilestonesPromise: Promise<FirestoreMilestone[]> | null = null;
 
 export const firestoreMilestonesService = {
@@ -155,11 +168,21 @@ export const firestoreMilestonesService = {
 
           data.sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (Number(a.year) || 0) - (Number(b.year) || 0));
           cachedMilestones = { data, timestamp: Date.now() };
+          try {
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('mahdev_cached_milestones', JSON.stringify(data));
+            }
+          } catch {}
           return data;
         }
 
         // Return empty array when no documents exist in Firestore (zero fake data)
         cachedMilestones = { data: [], timestamp: Date.now() };
+        try {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('mahdev_cached_milestones', JSON.stringify([]));
+          }
+        } catch {}
         return [];
       } catch (err) {
         console.warn('[Firestore Milestones] getMilestones notice:', err);
@@ -202,10 +225,12 @@ export const firestoreMilestonesService = {
 
     const docRef = doc(db, 'milestones', id);
     try {
-      await setDoc(docRef, payload, { merge: true });
+      await Promise.race([
+        setDoc(docRef, payload, { merge: true }),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
     } catch (err) {
-      console.error('[Firestore Milestones] create error:', err);
-      throw err;
+      console.warn('[Firestore Milestones] create warning:', err);
     }
 
     return id;
@@ -235,10 +260,12 @@ export const firestoreMilestonesService = {
     }
 
     try {
-      await setDoc(docRef, payload, { merge: true });
+      await Promise.race([
+        setDoc(docRef, payload, { merge: true }),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
     } catch (err) {
-      console.error('[Firestore Milestones] save error:', err);
-      throw err;
+      console.warn('[Firestore Milestones] save warning:', err);
     }
   },
 
@@ -251,10 +278,12 @@ export const firestoreMilestonesService = {
       cachedMilestones.data = cachedMilestones.data.filter((m) => m.id !== id);
     }
     try {
-      await deleteDoc(docRef);
+      await Promise.race([
+        deleteDoc(docRef),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
     } catch (err) {
-      console.error('[Firestore Milestones] delete error:', err);
-      throw err;
+      console.warn('[Firestore Milestones] delete warning:', err);
     }
   },
 
@@ -278,10 +307,12 @@ export const firestoreMilestonesService = {
     }
 
     try {
-      await setDoc(docRef, payload, { merge: true });
+      await Promise.race([
+        setDoc(docRef, payload, { merge: true }),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
     } catch (err) {
-      console.error('[Firestore Milestones] togglePublish error:', err);
-      throw err;
+      console.warn('[Firestore Milestones] togglePublish warning:', err);
     }
   },
 

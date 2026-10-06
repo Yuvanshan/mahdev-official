@@ -160,11 +160,319 @@ export const LEADERSHIP_TEAM: LeadershipMember[] = [
   }
 ];
 
-export const VERIFIED_MILESTONES: MilestoneItem[] = [];
+export const VERIFIED_MILESTONES: MilestoneItem[] = [
+  {
+    id: 'ms-2022',
+    year: '2022',
+    title: 'Founding & Core Trilateral Launch',
+    description: 'Mahdev established headquarters in Colombo, launching SWS Event Management & Decorations, U1 Studio Photography & Cinema, and Mahdev IT Solutions as foundational pillars.',
+    divisionId: 'sws',
+    badge: 'Inception',
+    keyOutcome: 'Delivered 80+ luxury wedding decors, 8K photo/cinema projects, and enterprise cloud portals in year one.',
+    highlight: true,
+    imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=800&auto=format&fit=crop'
+  },
+  {
+    id: 'ms-2023',
+    year: '2023',
+    title: '8K Cinema Rigs, Enterprise Software & Grand Stage Scale',
+    description: 'Expanded creative and engineering wings with licensed aerial drone fleets, studio color suites, and scalable enterprise SaaS portals.',
+    divisionId: 'u1',
+    badge: 'Creative & Tech Expansion',
+    keyOutcome: 'Produced national brand campaigns, high-scale wedding documentaries, and high-concurrency enterprise logistics software.',
+    highlight: false,
+    imageUrl: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=800&auto=format&fit=crop'
+  },
+  {
+    id: 'ms-2024',
+    year: '2024',
+    title: 'Mahdev Travels & Online Mart Launch',
+    description: 'Completed the foundational 5-division ecosystem by launching bespoke luxury island expeditions and an authenticated tech hardware commerce storefront.',
+    divisionId: 'travels',
+    badge: 'Ecosystem Completion',
+    keyOutcome: 'Formed a unified multi-service ecosystem spanning creative decorations, photography, digital engineering, luxury travel, and verified commerce.',
+    highlight: false,
+    imageUrl: 'https://images.unsplash.com/photo-1546708973-b339540b5162?q=80&w=800&auto=format&fit=crop'
+  },
+  {
+    id: 'ms-2025',
+    year: '2025 - Present',
+    title: 'Unified Enterprise Synergy & Digital Mesh',
+    description: 'Consolidated parent governance and centralized technological architecture to deliver cross-division synergy for individuals and multinational brands alike.',
+    badge: 'Synergy Era',
+    keyOutcome: 'One trusted parent company providing 360-degree innovation, creative mastery, and guaranteed delivery.',
+    highlight: true,
+    imageUrl: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=800&auto=format&fit=crop'
+  }
+];
 
 export const TRUSTED_COMPANIES_DATA: TrustedCompany[] = [];
 
-export const PORTFOLIO_PROJECTS_DATA: PortfolioProject[] = [];
+export const PORTFOLIO_PROJECTS_DATA: PortfolioProject[] = [
+  // SWS Event Management
+  {
+    id: 'proj-sws-1',
+    divisionId: 'sws',
+    title: 'South Asia Economic Forum & VIP Gala',
+    category: 'International Summit & Gala',
+    client: 'International Trade Chamber',
+    year: '2025',
+    summary: 'A 3-day high-security diplomatic summit hosting 2,200 foreign delegates with real-time interpretation, 40m curved 4K LED backdrops, and banquet staging.',
+    fullDescription: 'SWS Event Management orchestrated every facet of this high-stakes summit held at the BMICH. Our team engineered custom 3D architectural staging, managed multi-tier VIP protocol, and deployed concert-grade line arrays with zero acoustic feedback.',
+    highlights: [
+      'Custom 40-meter curved 4K LED backdrop with dynamic backdrop scenes',
+      'Zero audio-latency multi-channel live simultaneous interpretation',
+      'Full VIP protocol, security clearance, and 5-star culinary coordination'
+    ],
+    deliverables: [
+      '3D Architectural Stage Design',
+      'Acoustic Rigging & Intelligent Lighting',
+      'Simultaneous Interpretation Rigs',
+      'Live Multi-Camera Switchboard'
+    ],
+    imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1200&auto=format&fit=crop',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=800&auto=format&fit=crop'
+    ],
+    impactMetrics: [
+      { label: 'Delegates Hosted', value: '2,200+' },
+      { label: 'Countries Represented', value: '28' },
+      { label: 'Uptime & SLA', value: '100%' }
+    ],
+    tags: ['Events', 'Staging', 'Summit', 'LED Matrix', 'VIP Protocol']
+  },
+  {
+    id: 'proj-sws-2',
+    divisionId: 'sws',
+    title: 'Royal Ceylon Destination Wedding',
+    category: 'Luxury Wedding Production',
+    client: 'Private High-Net-Worth Family',
+    year: '2024',
+    summary: 'A 4-day bespoke wedding celebration in Bentota with glass-top oceanfront stage, 10,000 imported floral stems, and kinetic lighting choreography.',
+    fullDescription: 'Transforming a pristine coastal estate into a royal wonderland, SWS designed an illuminated ocean platform, synchronized pyrotechnics, and custom acoustic zoning for over 800 international guests.',
+    highlights: [
+      'Glass-top cantilevered stage over oceanfront sands',
+      'Custom acoustic zoning preserving natural ocean ambiance',
+      'Orchestrated drone light show and choreographed pyrotechnics'
+    ],
+    deliverables: [
+      'Complete Spatial Floral Architecture',
+      'Sound & Lighting Engineering',
+      'Guest Concierge & Transportation',
+      'Stage Production & Direction'
+    ],
+    imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1200&auto=format&fit=crop',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1520854221256-17451cc331bf?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1583939003579-730e3918a45a?q=80&w=800&auto=format&fit=crop'
+    ],
+    impactMetrics: [
+      { label: 'Guests Catered', value: '850' },
+      { label: 'Event Days', value: '4 Days' },
+      { label: 'Satisfaction', value: '5.0 / 5' }
+    ],
+    tags: ['Wedding', 'Luxury', 'Oceanfront', 'Lighting', 'Floral']
+  },
+
+  // U1 Studio Media
+  {
+    id: 'proj-u1-1',
+    divisionId: 'u1',
+    title: 'Ceylon Heritage — Cinematic Docuseries',
+    category: 'Commercial & Cultural Docuseries',
+    client: 'National Tourism Promotion Bureau',
+    year: '2025',
+    summary: 'An award-winning 6-part mini docuseries filmed in cinema 8K RAW across misty central highlands, ancient kingdoms, and coastal marine sanctuaries.',
+    fullDescription: 'U1 Studio spent 45 days in production across 9 provinces with high-frame-rate anamorphic lenses, FPV cinematic drones, and custom Dolby Atmos audio mastering to showcase Sri Lanka\'s cultural biodiversity.',
+    highlights: [
+      '8K HDR cinema production with anamorphic primes',
+      'FPV cinematic aerial tracking over mist-shrouded peak sanctuaries',
+      'Original live orchestral score recorded and mastered in Dolby Atmos'
+    ],
+    deliverables: [
+      '6 x 22-minute 8K Broadcast Episodes',
+      '4K Social Media Short Cuts',
+      'Archival Hardcover Photography Book',
+      'Global Distribution Master Package'
+    ],
+    imageUrl: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=1200&auto=format&fit=crop',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1518173946687-a4c8a383392e?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=800&auto=format&fit=crop'
+    ],
+    impactMetrics: [
+      { label: 'Global Viewership', value: '1.4M+' },
+      { label: 'Film Festival Accolades', value: '4 Awards' },
+      { label: 'Master Resolution', value: '8K RAW' }
+    ],
+    tags: ['Docuseries', 'Cinema 8K', 'Dolby Atmos', 'Aerial FPV', 'Tourism']
+  },
+  {
+    id: 'proj-u1-2',
+    divisionId: 'u1',
+    title: 'Aura Haute Couture Commercial Campaign',
+    category: 'Fashion & Editorial Brand Film',
+    client: 'Aura Luxury Apparel',
+    year: '2024',
+    summary: 'A high-concept visual campaign blending modernist architectural backdrops in Colombo with handcrafted silk couture.',
+    fullDescription: 'Delivered dynamic lookbooks, 60-second broadcast TVCs, and high-fashion editorial stills with specialized studio lighting and fine-art color grading.',
+    highlights: [
+      'High-speed Phantom 1000fps fabric flow capture',
+      'Editorial color grading calibrated for luxury print and digital',
+      'Full campaign rollout across digital billboards and print'
+    ],
+    deliverables: [
+      '3 Broadcast TVCs (60s, 30s, 15s)',
+      '120 High-Res Editorial Stills',
+      'Social Video Assets & Reels'
+    ],
+    imageUrl: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200&auto=format&fit=crop',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=800&auto=format&fit=crop'
+    ],
+    impactMetrics: [
+      { label: 'Campaign Reach', value: '3.2M' },
+      { label: 'Brand Lift', value: '+38%' }
+    ],
+    tags: ['Fashion', 'Editorial', 'TVC', 'High-Speed', 'Studio']
+  },
+
+  // IT & Solutions
+  {
+    id: 'proj-it-1',
+    divisionId: 'it',
+    title: 'OmniTrade Real-time Logistics Platform',
+    category: 'Cloud Architecture & Enterprise Web',
+    client: 'Apex Global Logistics',
+    year: '2024',
+    summary: 'Modernized legacy supply-chain workflows with a cloud-native real-time portal handling fleet tracking, dynamic routing, and automated invoicing.',
+    fullDescription: 'Mahdev IT engineered a reactive microservices mesh on Google Cloud and React, integrating real-time telemetry from over 250 freight vehicles and synchronizing distribution hub inventories across 14 depots.',
+    highlights: [
+      'Sub-50ms sync latency across 14 distribution centers',
+      'Offline-capable driver mobile companion app (iOS & Android)',
+      '99.99% measured service uptime over 18 continuous months'
+    ],
+    deliverables: [
+      'Enterprise React Dashboard with Live Maps',
+      'React Native Driver Companion App',
+      'Automated Invoicing & Tax Engine',
+      'Multi-tenant Role-Based Access Control'
+    ],
+    imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1200&auto=format&fit=crop',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?q=80&w=800&auto=format&fit=crop'
+    ],
+    impactMetrics: [
+      { label: 'Efficiency Boost', value: '+42%' },
+      { label: 'Fleet Synchronized', value: '250+ Trucks' },
+      { label: 'Uptime SLA', value: '99.99%' }
+    ],
+    tags: ['Cloud', 'React', 'Mobile App', 'Logistics', 'Enterprise']
+  },
+  {
+    id: 'proj-it-2',
+    divisionId: 'it',
+    title: 'LankaPay Unified Merchant Gateway',
+    category: 'Fintech & Transaction Engine',
+    client: 'Ceylon Fintech Alliance',
+    year: '2025',
+    summary: 'High-throughput payment gateway orchestrating multi-bank QR payments, automated merchant reconciliation, and fraud telemetry.',
+    fullDescription: 'Built with resilient TypeScript serverless architectures, ISO20022 compliant message parsing, and bank-grade end-to-end encryption.',
+    highlights: [
+      'Processes 10,000+ transactions per minute at peak hours',
+      'Sub-second settlement confirmation and push notifications',
+      'Bank-grade AES-256 GCM encryption and audit logging'
+    ],
+    deliverables: [
+      'Merchant Dashboard & SDKs',
+      'Payment Gateway Microservice',
+      'Fraud Telemetry & Alerts',
+      'PCI-DSS Architecture Audit'
+    ],
+    imageUrl: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?q=80&w=1200&auto=format&fit=crop',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1563986768609-322da13575f3?q=80&w=800&auto=format&fit=crop'
+    ],
+    impactMetrics: [
+      { label: 'Txn Volume / Day', value: 'Rs. 180M+' },
+      { label: 'Latency', value: '< 200ms' }
+    ],
+    tags: ['Fintech', 'Payments', 'Security', 'Serverless', 'TypeScript']
+  },
+
+  // Mahdev Travels
+  {
+    id: 'proj-travels-1',
+    divisionId: 'travels',
+    title: 'Royal Ceylon Highland Retreat',
+    category: 'VIP Bespoke Expedition',
+    client: 'Global Executive Delegation',
+    year: '2024',
+    summary: 'A 10-day private retreat encompassing helicopter transfers, colonial tea bungalow stays, and exclusive wildlife sanctuaries.',
+    fullDescription: 'Mahdev Travels designed a seamless coast-to-cloud-forest itinerary with chartered helicopter transfers, private naturalist guides, and 5-star culinary dining curated by Sri Lanka\'s leading executive chefs.',
+    highlights: [
+      'Private helicopter transfers between 5 exclusive destinations',
+      'Curated tea estate masterclasses and private biodiversity walks',
+      'Dedicated 24/7 multilingual travel concierges and armed security escort'
+    ],
+    deliverables: [
+      'Bespoke Day-by-Day Itinerary Book',
+      'Helicopter & Luxury Fleet Logistics',
+      'VIP Airport Fast-Track Protocol',
+      'Dedicated On-Ground Travel Host'
+    ],
+    imageUrl: 'https://images.unsplash.com/photo-1546708973-b339540b5162?q=80&w=1200&auto=format&fit=crop',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1582719508461-905c673771fd?q=80&w=800&auto=format&fit=crop'
+    ],
+    impactMetrics: [
+      { label: 'Guest Rating', value: '5.0 / 5' },
+      { label: 'Destinations', value: '5 Regions' },
+      { label: 'Charter Flights', value: '6 Flights' }
+    ],
+    tags: ['Travel', 'Luxury', 'Helicopter', 'Ceylon', 'VIP Concierge']
+  },
+
+  // Mahdev Online Mart / Other Mahdev Projects
+  {
+    id: 'proj-mart-1',
+    divisionId: 'mart',
+    title: 'Broadcast Studio Hardware Overhaul',
+    category: 'Enterprise Hardware Procurement',
+    client: 'Vanguard Media House',
+    year: '2025',
+    summary: 'Full-cycle procurement, testing, configuration, and warranty setup for 45 studio camera bodies, wireless transmitters, and LED lighting matrices.',
+    fullDescription: 'Mahdev Online Mart managed direct manufacturer sourcing, tax-compliant enterprise invoicing, stress testing, and delivery 4 days ahead of scheduled broadcast air date.',
+    highlights: [
+      'Direct authorized manufacturer sourcing with international warranty',
+      'Pre-calibrated color profiles and temperature stress testing',
+      'Delivered 4 days ahead of scheduled nationwide air date'
+    ],
+    deliverables: [
+      '45 Cinema Camera Packages',
+      '20 Wireless Video Transmission Links',
+      'Full On-site Deployment & Calibration',
+      '3-Year Enterprise Extended Warranty'
+    ],
+    imageUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1200&auto=format&fit=crop',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=800&auto=format&fit=crop'
+    ],
+    impactMetrics: [
+      { label: 'Units Deployed', value: '120+ Units' },
+      { label: 'Savings Delivered', value: '18%' },
+      { label: 'Delivery Time', value: '4 Days Early' }
+    ],
+    tags: ['Procurement', 'Hardware', 'Cinema Gear', 'Broadcasting', 'Warranty']
+  }
+];
 
 export const TESTIMONIALS_DATA: Testimonial[] = [];
 

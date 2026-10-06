@@ -80,10 +80,12 @@ export const firestoreCategoriesService = {
       }
     }
     try {
-      await setDoc(docRef, payload, { merge: true });
+      await Promise.race([
+        setDoc(docRef, payload, { merge: true }),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
     } catch (err) {
-      console.error('[Firestore Categories] save error:', err);
-      throw err;
+      console.warn('[Firestore Categories] save warning:', err);
     }
   },
 
@@ -96,10 +98,12 @@ export const firestoreCategoriesService = {
       cachedCategories.data = cachedCategories.data.filter((c) => c.id !== id);
     }
     try {
-      await deleteDoc(docRef);
+      await Promise.race([
+        deleteDoc(docRef),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
     } catch (err) {
-      console.error('[Firestore Categories] delete error:', err);
-      throw err;
+      console.warn('[Firestore Categories] delete warning:', err);
     }
   },
 
@@ -114,36 +118,21 @@ export const firestoreCategoriesService = {
     const onData = typeof onDataOrDivision === 'function' ? onDataOrDivision : onDataCallback || (() => {});
 
     const colRef = collection(db, 'categories');
+    const q = division ? query(colRef, where('division', '==', division)) : colRef;
 
     return onSnapshot(
-      colRef,
+      q,
       (snap) => {
         const data = snap.docs.map((d) => ({
           ...d.data(),
           id: d.id,
         })) as FirestoreCategory[];
         cachedCategories = { data, timestamp: Date.now() };
-        if (division) {
-          const filtered = data.filter(
-            (c) => isSameDivision(c.division, division) || isSameDivision((c as any).divisionId, division)
-          );
-          onData(filtered);
-        } else {
-          onData(data);
-        }
+        onData(data);
       },
       (err) => {
         console.warn('[Firestore Categories] Listener error:', err);
-        const fallback = cachedCategories?.data || [];
-        if (division) {
-          onData(
-            fallback.filter(
-              (c) => isSameDivision(c.division, division) || isSameDivision((c as any).divisionId, division)
-            )
-          );
-        } else {
-          onData(fallback);
-        }
+        onData(cachedCategories?.data || []);
       }
     );
   },

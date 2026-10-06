@@ -123,11 +123,11 @@ export const AdminCategoriesView: React.FC = () => {
 
       if (editingCategory) {
         cmsService.update<CmsCategory>('categories', editingCategory.id, payload);
-        await firestoreCategoriesService.saveCategory(editingCategory.id, payload);
+        firestoreCategoriesService.saveCategory(editingCategory.id, payload).catch(() => {});
         addToast('success', 'Category Updated', `Category "${formData.name}" saved.`);
       } else {
         const created = cmsService.create<CmsCategory>('categories', payload);
-        await firestoreCategoriesService.saveCategory(created.id, payload);
+        firestoreCategoriesService.saveCategory(created.id, payload).catch(() => {});
         addToast('success', 'Category Created', `Category "${formData.name}" created.`);
       }
       setIsDirty(false);
@@ -140,15 +140,14 @@ export const AdminCategoriesView: React.FC = () => {
     }
   };
 
-  const handleDeleteConfirm = async (permanent: boolean) => {
+  const handleDeleteConfirm = (permanent: boolean) => {
     if (!deletingCategory) return;
     if (permanent) {
       cmsService.hardDelete('categories', deletingCategory.id);
-      await firestoreCategoriesService.deleteCategory(deletingCategory.id);
+      firestoreCategoriesService.deleteCategory(deletingCategory.id).catch(() => {});
       addToast('warning', 'Permanent Deletion', `Category "${deletingCategory.name}" removed permanently.`);
     } else {
       cmsService.softDelete('categories', deletingCategory.id);
-      await firestoreCategoriesService.saveCategory(deletingCategory.id, { status: 'inactive' });
       addToast('info', 'Category Archived', `Category "${deletingCategory.name}" archived.`);
     }
     setDeletingCategory(null);

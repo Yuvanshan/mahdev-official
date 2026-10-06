@@ -18,7 +18,7 @@ import {
   Terminal,
   ExternalLink,
 } from 'lucide-react';
-import { ITService } from '../../data/itData';
+import { IT_SERVICES, ITService } from '../../data/itData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';

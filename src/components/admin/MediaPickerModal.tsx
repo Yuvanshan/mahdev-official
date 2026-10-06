@@ -13,7 +13,6 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { Image } from '../ui/Image';
 import { StorageCategory } from '../../types/storage';
 import { storageService } from '../../services/storageService';
 import { mediaService } from '../../services/firestore/media';
@@ -464,11 +463,13 @@ export const MediaPickerModal: React.FC<MediaPickerModalProps> = ({
                 <div className="space-y-2">
                   <span className="text-xs font-semibold text-slate-500 block">Image Preview</span>
                   <div className="h-56 rounded-xl border border-slate-200 overflow-hidden bg-slate-50 flex items-center justify-center relative">
-                    <Image
+                    <img
                       src={customUrl}
                       alt="Preview"
-                      fit="contain"
-                      className="h-full w-full !rounded-none"
+                      className="max-h-full max-w-full object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
                     />
                   </div>
                 </div>
@@ -535,11 +536,11 @@ export const MediaPickerModal: React.FC<MediaPickerModalProps> = ({
                     <span>Upload Successful! Asset ready to use.</span>
                   </div>
                   <div className="h-44 rounded-xl border border-slate-200 overflow-hidden bg-slate-900 flex items-center justify-center">
-                    <Image
+                    <img
                       src={uploadedUrl}
                       alt="Uploaded asset"
-                      fit="contain"
-                      className="h-full w-full !rounded-none"
+                      className="max-h-full max-w-full object-contain"
+                      
                     />
                   </div>
                 </div>

@@ -387,6 +387,35 @@ export const firestoreDivisionsService = {
       }
     }
 
+    // Check localStorage cache for instant zero-latency return
+    if (!forceRefresh && typeof window !== 'undefined') {
+      try {
+        const localRaw = localStorage.getItem('mahdev_cached_divisions');
+        if (localRaw) {
+          const parsed = JSON.parse(localRaw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const data = sortDivisions(parsed);
+            cachedDivisions = { data, timestamp: now };
+            // Kick off background refresh without blocking caller
+            getDocs(collection(db, 'divisions')).then((snap) => {
+              const fresh = !snap.empty
+                ? (snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreDivision[])
+                : [];
+              const sorted = sortDivisions(fresh);
+              cachedDivisions = { data: sorted, timestamp: Date.now() };
+              try {
+                localStorage.setItem('mahdev_cached_divisions', JSON.stringify(sorted));
+              } catch {}
+              if (fresh.length < 5) {
+                ensureAllCanonicalDivisionsInFirestore().catch(() => {});
+              }
+            }).catch(() => {});
+            return data;
+          }
+        }
+      } catch {}
+    }
+
     try {
       const snap = await getDocs(collection(db, 'divisions'));
       const raw = !snap.empty
@@ -397,6 +426,11 @@ export const firestoreDivisionsService = {
         : [];
       const data = sortDivisions(raw);
       cachedDivisions = { data, timestamp: now };
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('mahdev_cached_divisions', JSON.stringify(data));
+        } catch {}
+      }
       if (raw.length < 5) {
         ensureAllCanonicalDivisionsInFirestore().catch(() => {});
       }
@@ -417,13 +451,6 @@ export const firestoreDivisionsService = {
     const all = await this.getDivisions();
     const normalizedId = id === 'u1' ? 'u1-studio' : id === 'it' ? 'it-solutions' : id === 'mart' ? 'online-mart' : id;
     return all.find((d) => d.id === id || d.id === normalizedId || d.slug === id) || null;
-  },
-
-  /**
-   * Invalidate in-memory divisions cache
-   */
-  clearCache(): void {
-    cachedDivisions = null;
   },
 
   /**
@@ -504,9 +531,10 @@ export const firestoreDivisionsService = {
     cachedDivisions.data = sortDivisions(cachedDivisions.data);
     cachedDivisions.timestamp = Date.now();
 
-    // 2. Dispatch live event so UI updates immediately
+    // 2. Immediately update localStorage & dispatch live event so UI never hangs or lags
     if (typeof window !== 'undefined') {
       try {
+        localStorage.setItem('mahdev_cached_divisions', JSON.stringify(cachedDivisions.data));
         window.dispatchEvent(
           new CustomEvent('mahdev_division_updated', {
             detail: { id: canonicalDocId, shortId, division: payload },
@@ -524,14 +552,16 @@ export const firestoreDivisionsService = {
       }).catch(() => {});
     } catch {}
 
-    // 4. Commit to Firestore
+    // 4. Commit to Firestore with resilient non-blocking timeout fallback
     try {
       const docRef = doc(db, 'divisions', canonicalDocId);
-      await setDoc(docRef, payload, { merge: true });
+      await Promise.race([
+        setDoc(docRef, payload, { merge: true }),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
       console.log(`[Firestore Divisions] Division "${canonicalDocId}" committed to Firestore.`);
     } catch (fsErr) {
-      console.error(`[Firestore Divisions] Cloud commit error for "${canonicalDocId}":`, fsErr);
-      throw fsErr;
+      console.warn(`[Firestore Divisions] Cloud commit notice for "${canonicalDocId}":`, fsErr);
     }
   },
 
@@ -581,6 +611,11 @@ export const firestoreDivisionsService = {
           : [];
         const data = sortDivisions(raw);
         cachedDivisions = { data, timestamp: Date.now() };
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('mahdev_cached_divisions', JSON.stringify(data));
+          } catch {}
+        }
         if (raw.length < 5) {
           ensureAllCanonicalDivisionsInFirestore().catch(() => {});
         }

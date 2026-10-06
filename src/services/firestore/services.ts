@@ -19,16 +19,179 @@ import {
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreService, DivisionId } from '../../types/firestore';
 import { isSameDivision } from './divisions';
-import { compressDataUrl } from '../../utils/imageOptimizer';
 
 const CACHE_TTL_MS = 1000 * 60 * 15; // 15 min cache
 let cachedServices: { data: FirestoreService[]; timestamp: number } | null = null;
 let inFlightServicesPromise: Promise<FirestoreService[]> | null = null;
 
 export function getDefaultServices(): FirestoreService[] {
-  return [];
+  return [
+    {
+      id: 'ser-mtr6myjc-diqc',
+      price: 25000,
+      turnaroundTime: '2-3 Weeks',
+      description: 'Full Cradle Ceremony Decoration with Name reveal board amd Welcome board and colots can be customised ',
+      badge: 'Traditional Cradle Ceremony ',
+      popular: true,
+      quoteEnabled: true,
+      divisionName: 'SWS Event Management',
+      imageUrl: '/uploads/images/services_ser-mtr6myjc-diqc_imageUrl_munpwzrt.webp',
+      status: 'active',
+      title: 'Cradle Ceremony Decoration ',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-09-07T11:53:53.503Z',
+      images: ['/uploads/images/services_ser-mtr6myjc-diqc_images_0_munpwzxc.webp'],
+      iconName: 'Sparkles',
+      name: 'Cradle Ceremony Decoration ',
+      features: [
+        'Colors Can Be Customised',
+        'Name Reveal Board',
+        'Welcome Board',
+        'Grass Carpet',
+        'Elegant Design',
+      ],
+      division: 'sws',
+      bookingEnabled: true,
+      currency: 'LKR',
+      startingPrice: 25000,
+      category: 'Cradle Ceremony',
+      slug: 'ser-mtr6myjc-diqc',
+      divisionId: 'sws',
+    },
+    {
+      id: 'ser-mu71rh63-jxyp',
+      badge: 'Wedding Decor',
+      price: 45000,
+      category: 'Wedding Decoration',
+      slug: 'ser-mu71rh63-jxyp',
+      status: 'active',
+      bookingEnabled: true,
+      currency: 'LKR',
+      features: [
+        '24/7 Dedicated Concierge',
+        'Custom Architectural CAD Renderings',
+        'High Reliability Delivery',
+      ],
+      description: "We'll Deliver Elegance Best Ever Decoration for your wedding and special occasions ",
+      title: 'Wedding Decoration ',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-09-18T14:21:45.030Z',
+      popular: false,
+      division: 'sws',
+      images: ['/uploads/images/services_ser-mu71rh63-jxyp_images_0_munpx0fc.webp'],
+      name: 'Wedding Decoration ',
+      iconName: 'Sparkles',
+      divisionId: 'sws',
+      imageUrl: '/uploads/images/services_ser-mu71rh63-jxyp_imageUrl_munpx0a7.webp',
+      startingPrice: 45000,
+      quoteEnabled: true,
+      divisionName: 'SWS Event Management',
+      turnaroundTime: '1 week',
+    },
+    {
+      id: 'ser-mu71u7g1-43hh',
+      images: ['/uploads/images/services_ser-mu71u7g1-43hh_images_0_munpx0x7.webp'],
+      badge: 'Birthday Decoration ',
+      startingPrice: 48000,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-09-18T14:23:52.395Z',
+      category: 'Birthday Decoration',
+      bookingEnabled: true,
+      name: 'Birthday Decoration ',
+      slug: 'ser-mu71u7g1-43hh',
+      description: "We'll Deliver Birthday Decorations",
+      sku: 'SRV-SWS-BIRT-291',
+      turnaroundTime: '2-3 Weeks',
+      popular: true,
+      division: 'sws',
+      status: 'active',
+      features: [
+        '24/7 Dedicated Concierge',
+        'Custom Architectural CAD Renderings',
+        'High Reliability Delivery',
+      ],
+      price: 48000,
+      divisionName: 'SWS Event Management',
+      currency: 'LKR',
+      quoteEnabled: true,
+      divisionId: 'sws',
+      title: 'Birthday Decoration ',
+      imageUrl: '/uploads/images/services_ser-mu71u7g1-43hh_imageUrl_munpx0ry.webp',
+      iconName: 'Sparkles',
+    },
+    {
+      id: 'ser-mubdf0vj-4a2e',
+      category: 'Album',
+      popular: true,
+      divisionName: 'U1 Studio',
+      quoteEnabled: true,
+      status: 'active',
+      badge: 'Mini Album',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-09-21T14:59:04.138Z',
+      bookingEnabled: true,
+      sku: 'SRV-U1-MINI-452',
+      slug: 'ser-mubdf0vj-4a2e',
+      divisionId: 'u1',
+      division: 'u1',
+      features: [
+        'High Reliability Delivery',
+        '30 Sheets',
+        'Onday Event Photography ( 3 to 4 hrs)',
+        'One day Out door ( 2 to 3 hrs)',
+        'Professional color corrected sift copies ( google drive)',
+      ],
+      currency: 'LKR',
+      description: "30 Sheets Album we'll do the onday event photography (3 to 4 hrs) and one day out doot Photography ",
+      turnaroundTime: '4 weeks',
+      imageUrl: '/uploads/images/services_ser-mubdf0vj-4a2e_imageUrl_munpx1aq.webp',
+      startingPrice: 30000,
+      images: [
+        '/uploads/images/services_ser-mubdf0vj-4a2e_images_0_munpx1h9.webp',
+        '/uploads/images/services_ser-mubdf0vj-4a2e_images_1_munpx1na.webp',
+        '/uploads/images/services_ser-mubdf0vj-4a2e_images_2_munpx1t0.webp',
+        '/uploads/images/services_ser-mubdf0vj-4a2e_images_3_munpx1xo.webp',
+      ],
+      name: 'Mini Album',
+      title: 'Mini Album',
+      iconName: 'Sparkles',
+      price: 30000,
+    },
+    {
+      id: 'ser-mubdk7r1-52s1',
+      quoteEnabled: true,
+      imageUrl: '/uploads/images/services_ser-mubdk7r1-52s1_imageUrl_munpx293.webp',
+      divisionName: 'U1 Studio',
+      iconName: 'Sparkles',
+      divisionId: 'u1',
+      status: 'active',
+      popular: true,
+      badge: '12 x 36 album',
+      features: [
+        'High Reliability Delivery',
+        '12 x 36 size 30 sheets album',
+        'Sadangu Day photography',
+        'Function day photography',
+        'One day outdoor Photography',
+      ],
+      division: 'u1',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-09-21T15:03:06.330Z',
+      currency: 'LKR',
+      description: 'Function Day and Sadangu Day photography and one day outdoor photography full day with 12 x 36 album 30 sheets',
+      startingPrice: 148000,
+      sku: 'SRV-U1-PUBE-682',
+      images: ['/uploads/images/services_ser-mubdk7r1-52s1_images_0_munpx2f7.webp'],
+      name: 'Puberty Ceremony Photography ',
+      turnaroundTime: '4 weeks',
+      category: 'Album',
+      price: 148000,
+      bookingEnabled: true,
+      slug: 'ser-mubdk7r1-52s1',
+      title: 'Puberty Ceremony Photography ',
+    },
+  ];
 }
-
 
 export const firestoreServicesService = {
   /**
@@ -38,15 +201,10 @@ export const firestoreServicesService = {
     const now = Date.now();
     let allServices: FirestoreService[] = [];
 
-    if (forceRefresh) {
-      cachedServices = null;
-      inFlightServicesPromise = null;
-    }
-
     // 1. Return fresh in-memory cache immediately if not forced to refresh
     if (!forceRefresh && cachedServices && now - cachedServices.timestamp < CACHE_TTL_MS) {
       allServices = cachedServices.data;
-    } else if (inFlightServicesPromise && !forceRefresh) {
+    } else if (inFlightServicesPromise) {
       // 2. Reuse concurrent in-flight request to avoid duplicate network roundtrips
       allServices = await inFlightServicesPromise;
     } else {
@@ -93,39 +251,15 @@ export const firestoreServicesService = {
   },
 
   /**
-   * Explicitly invalidate in-memory services cache
-   */
-  clearCache(): void {
-    cachedServices = null;
-    inFlightServicesPromise = null;
-  },
-
-  /**
    * Create or update service
    */
   async saveService(id: string, data: Partial<FirestoreService>): Promise<void> {
     const docRef = doc(db, 'services', id);
-    const sanitizedData: any = {
+    const payload = sanitizeForFirestore({
       ...data,
       id,
       updatedAt: new Date().toISOString(),
-    };
-
-    if (typeof sanitizedData.imageUrl === 'string' && sanitizedData.imageUrl.startsWith('data:image/') && sanitizedData.imageUrl.length > 30000) {
-      sanitizedData.imageUrl = await compressDataUrl(sanitizedData.imageUrl, 1000, 0.75);
-    }
-    if (Array.isArray(sanitizedData.images)) {
-      sanitizedData.images = await Promise.all(
-        sanitizedData.images.map(async (img: any) => {
-          if (typeof img === 'string' && img.startsWith('data:image/') && img.length > 30000) {
-            return await compressDataUrl(img, 1000, 0.75);
-          }
-          return img;
-        })
-      );
-    }
-
-    const payload = sanitizeForFirestore(sanitizedData);
+    });
     if (cachedServices) {
       const idx = cachedServices.data.findIndex((s) => s.id === id);
       if (idx >= 0) {
@@ -136,10 +270,12 @@ export const firestoreServicesService = {
       cachedServices.data.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     }
     try {
-      await setDoc(docRef, payload, { merge: true });
+      await Promise.race([
+        setDoc(docRef, payload, { merge: true }),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
     } catch (err) {
       console.warn('[Firestore Services] save warning:', err);
-      throw err;
     }
   },
 
@@ -156,10 +292,12 @@ export const firestoreServicesService = {
     });
 
     try {
-      await batch.commit();
+      await Promise.race([
+        batch.commit(),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
     } catch (err) {
       console.warn('[Firestore Services] reorder warning:', err);
-      throw err;
     }
 
     if (cachedServices) {
@@ -181,10 +319,12 @@ export const firestoreServicesService = {
       cachedServices.data = cachedServices.data.filter((s) => s.id !== id);
     }
     try {
-      await deleteDoc(docRef);
+      await Promise.race([
+        deleteDoc(docRef),
+        new Promise((resolve) => setTimeout(resolve, 3500)),
+      ]);
     } catch (err) {
       console.warn('[Firestore Services] delete warning:', err);
-      throw err;
     }
   },
 

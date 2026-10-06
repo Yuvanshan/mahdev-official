@@ -36,7 +36,6 @@ import {
   Upload,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
-import { Image } from '../../components/ui/Image';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
 import { getYouTubeEmbedUrl, extractYouTubeId } from '../../utils/youtube';
@@ -72,9 +71,7 @@ export const AdminHomepageView: React.FC = () => {
   const [mediaPickerTarget, setMediaPickerTarget] = useState<'hero' | 'seo' | string>('hero');
   const [previewVideoSrc, setPreviewVideoSrc] = useState<string>('');
 
-  const currentHeroVideo = config.hero.mediaType === 'video'
-    ? config.hero.videoUrl || config.hero.mediaUrl || ''
-    : '';
+  const currentHeroVideo = config.hero.videoUrl || (config.hero.mediaType === 'video' ? config.hero.mediaUrl : '');
 
   useEffect(() => {
     let isMounted = true;
@@ -800,14 +797,14 @@ export const AdminHomepageView: React.FC = () => {
 
                     <div className="relative w-full max-w-xl h-52 rounded-xl overflow-hidden border border-blue-200 bg-slate-950 shadow-md">
                       {/* Underneath Poster Image */}
-                      <Image
+                      <img
                         src={
                           config.hero.defaultImageUrl ||
                           config.hero.imageUrl ||
-                          ''
+                          'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=85'
                         }
                         alt="Hero Poster"
-                        className="absolute inset-0 w-full h-full !rounded-none z-0"
+                        className="absolute inset-0 w-full h-full object-cover z-0"
                       />
 
                       {/* Video Player on Top if Video Mode */}

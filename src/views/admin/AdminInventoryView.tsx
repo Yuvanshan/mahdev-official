@@ -78,7 +78,32 @@ export const AdminInventoryView: React.FC = () => {
       if (stored) {
         setAdjustmentLogs(JSON.parse(stored));
       } else {
-        setAdjustmentLogs([]);
+        const seedLogs: StockAdjustmentLog[] = [
+          {
+            id: 'LOG-001',
+            sku: 'MD-TEA-ST01-100G',
+            productName: 'Royal Ceylon Silver Tips Reserve Tea',
+            previousQty: 12,
+            newQty: 45,
+            delta: 33,
+            reason: 'Restock Supplier Purchase Order (Estate Batch #2026-A)',
+            timestamp: '2026-08-15T08:30:00.000Z',
+            author: 'Warehouse Lead Niluka',
+          },
+          {
+            id: 'LOG-002',
+            sku: 'MD-SPC-ALBA01',
+            productName: 'Organic Ceylon Alba Grade Cinnamon Quills',
+            previousQty: 60,
+            newQty: 52,
+            delta: -8,
+            reason: 'Physical Inventory Count Correction',
+            timestamp: '2026-08-14T14:10:00.000Z',
+            author: 'Operations Admin',
+          },
+        ];
+        setAdjustmentLogs(seedLogs);
+        localStorage.setItem(STOCK_LOGS_KEY, JSON.stringify(seedLogs));
       }
     } catch {
       setAdjustmentLogs([]);

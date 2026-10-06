@@ -326,6 +326,33 @@ function AppContent() {
     const isDefaultComingSoon = normalized === 'travels' || normalized === 'it' || normalized === 'mart';
 
     if (!matched) {
+      try {
+        const cachedStr = typeof window !== 'undefined' ? localStorage.getItem('mahdev_cached_divisions') : null;
+        if (cachedStr) {
+          const cachedDivs = JSON.parse(cachedStr);
+          const cachedMatched = cachedDivs.find(
+            (d: any) =>
+              d.id === rawDivId ||
+              d.id === normalized ||
+              d.slug === rawDivId ||
+              d.slug === normalized ||
+              (normalized === 'u1' && (d.id === 'u1-studio' || d.slug === 'u1-studio')) ||
+              (normalized === 'it' && (d.id === 'it-solutions' || d.slug === 'it-solutions')) ||
+              (normalized === 'travels' && (d.id === 'mahdev-travels' || d.slug === 'mahdev-travels')) ||
+              (normalized === 'mart' && (d.id === 'online-mart' || d.slug === 'online-mart')) ||
+              (normalized === 'sws' && (d.id === 'sws-event-management' || d.slug === 'sws-event-management'))
+          );
+          if (cachedMatched) {
+            return (cachedMatched as any).isComingSoon !== undefined
+              ? !!(cachedMatched as any).isComingSoon
+              : (cachedMatched as any).comingSoon !== undefined
+              ? !!(cachedMatched as any).comingSoon
+              : cachedMatched.status !== undefined
+              ? cachedMatched.status === 'coming_soon'
+              : isDefaultComingSoon;
+          }
+        }
+      } catch {}
       return isDefaultComingSoon;
     }
     return (matched as any).isComingSoon !== undefined

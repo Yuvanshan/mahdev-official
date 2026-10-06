@@ -29,18 +29,9 @@ import {
   BarChart3,
   CalendarRange,
   Zap,
-  Cloud,
-  UploadCloud,
-  HardDrive,
-  Download,
-  Upload,
-  Database,
-  Smartphone,
-  Laptop,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
-import { cmsService } from '../../services/cmsService';
 import { firestoreOrdersService } from '../../services/firestore/orders';
 import { firestoreBookingsService } from '../../services/firestore/bookings';
 import { firestoreProductsService } from '../../services/firestore/products';
@@ -98,62 +89,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   onNavigateSection,
   onNavigateSite,
 }) => {
-  const { siteSettings, companySettings, divisions, refreshAll, forceRefreshAll } = useFirestoreDataContext();
-
-  // Real-time Cloud Sync states
-  const [syncStatusMsg, setSyncStatusMsg] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
-
-  const handleExportBackup = () => {
-    try {
-      const json = cmsService.exportLocalDataAsJson();
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `mahdev_data_backup_${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      setSyncStatusMsg({
-        type: 'info',
-        text: 'Device backup downloaded successfully.',
-      });
-    } catch (err: any) {
-      setSyncStatusMsg({
-        type: 'error',
-        text: `Export failed: ${err?.message}`,
-      });
-    }
-  };
-
-  const handleImportFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const text = await file.text();
-      const res = await cmsService.importLocalDataFromJson(text);
-      if (res.success) {
-        await refreshAll(true);
-        setSyncStatusMsg({
-          type: 'success',
-          text: `Successfully imported ${res.importedEntities} items and synced with Cloud Firestore!`,
-        });
-      } else {
-        setSyncStatusMsg({
-          type: 'error',
-          text: `Import failed: ${res.error}`,
-        });
-      }
-    } catch (err: any) {
-      setSyncStatusMsg({
-        type: 'error',
-        text: `File read error: ${err?.message}`,
-      });
-    }
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
+  const { siteSettings, companySettings, divisions } = useFirestoreDataContext();
 
   // Firestore collection states
   const [orders, setOrders] = useState<FirestoreOrder[]>([]);
@@ -219,9 +155,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     setLoadingProducts(true);
     setLoadingUsers(true);
     setFetchError(null);
-
-    // Silently auto-sync any local device items to Cloud Firestore in the background
-    cmsService.autoSyncStrandedLocalData().catch(() => {});
 
     let unsubOrders: (() => void) | undefined;
     let unsubBookings: (() => void) | undefined;
@@ -833,80 +766,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           </Button>
         </div>
       </div>
-
-      {/* Real-Time Cloud Firestore Sync Indicator */}
-      <div className="bg-gradient-to-r from-emerald-50/80 via-teal-50/40 to-slate-50 border border-emerald-200/80 rounded-2xl p-4 shadow-xs transition-all">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs shrink-0 relative">
-              <Database className="w-4 h-4" />
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 border border-white" />
-            </span>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-display text-xs font-bold text-slate-900">
-                  Cloud Firestore: Live Connected
-                </h3>
-                <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  Database: mahdev-pvt-ldt
-                </span>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                  Auto-Saved & Real-Time Everywhere
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-600 mt-0.5">
-                Every service, product, category, division, and setting is automatically saved to Cloud Firestore and instantly reflected across all screens in real-time.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportBackup}
-              leftIcon={<Download className="w-3.5 h-3.5 text-slate-600" />}
-              className="text-xs font-medium bg-white hover:bg-slate-50 border-slate-300 px-2.5 h-8"
-              title="Download a JSON backup of data"
-            >
-              Export JSON
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-              leftIcon={<Upload className="w-3.5 h-3.5 text-slate-600" />}
-              className="text-xs font-medium bg-white hover:bg-slate-50 border-slate-300 px-2.5 h-8"
-              title="Import a JSON backup"
-            >
-              Import JSON
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".json"
-              onChange={handleImportFileChange}
-              className="hidden"
-            />
-          </div>
-        </div>
-
-        {syncStatusMsg && (
-          <div className="mt-2.5 flex items-center justify-between text-xs px-3 py-1.5 rounded-lg border bg-white/90">
-            <span className={syncStatusMsg.type === 'error' ? 'text-red-700 font-medium' : 'text-emerald-700 font-medium'}>
-              {syncStatusMsg.text}
-            </span>
-            <button
-              onClick={() => setSyncStatusMsg(null)}
-              className="text-slate-400 hover:text-slate-600 text-xs ml-2 cursor-pointer font-bold"
-            >
-              ×
-            </button>
-          </div>
-        )}
-      </div>
-
 
       {/* Date Filter Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50/80 p-3 rounded-2xl border border-slate-200">
