@@ -766,14 +766,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     let isMounted = true;
 
-    // If cached data is available, instantly synchronize catalog & booking services from cache
-    if (hasCachedData) {
-      if (products.length > 0) catalogService.syncWithFirestore(products);
-      if (services.length > 0) bookingService.syncWithFirestore(services);
-      if (divisions.length > 0) cmsService.syncEntityFromFirestore('divisions', divisions);
-      if (homepageConfig) cmsService.syncHomepageConfig(homepageConfig);
-    }
-
     const markReady = () => {
       if (isMounted) {
         setSyncProgress(100);
@@ -789,17 +781,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Immediately mark app shell ready so page structure and per-section shimmers render instantly.
     markReady();
-
-    // Check cache freshness: if cache timestamp is missing or older than 15 minutes, perform a live force-refresh
-    const cacheTs = (() => {
-      try {
-        const ts = localStorage.getItem('mahdev_cache_timestamp');
-        return ts ? parseInt(ts, 10) : 0;
-      } catch {
-        return 0;
-      }
-    })();
-    const isCacheStale = !cacheTs || Date.now() - cacheTs > 1000 * 60 * 15;
 
     // Always trigger fresh live synchronization from Cloud Firestore
     refreshAll(true).catch(() => {});
@@ -1751,5 +1732,4 @@ export function useDivisionHydration(divisionId?: string) {
 
   return { isLoaded };
 }
-
 
