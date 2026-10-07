@@ -14,7 +14,7 @@ import {
   getDocs,
   query,
   orderBy,
-} from 'firebase/firestore';
+} from '../lib/tursoFirestore';
 import { db } from '../lib/firebase';
 
 const CHUNK_SIZE_BYTES = 450 * 1024; // 450KB per chunk (~600KB in base64, safe under 1MB limit)
@@ -28,57 +28,6 @@ export interface FirestoreMediaMetadata {
   size: number;
   chunkCount: number;
   createdAt: string;
-}
-
-// Simple browser IndexedDB cache helper for zero-latency playback
-const IDB_NAME = 'mahdev_media_vault_v1';
-const IDB_STORE = 'blobs';
-
-function openMediaDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    if (typeof window === 'undefined' || !window.indexedDB) {
-      return reject(new Error('IndexedDB not supported'));
-    }
-    const req = window.indexedDB.open(IDB_NAME, 1);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains(IDB_STORE)) {
-        db.createObjectStore(IDB_STORE);
-      }
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-async function getCachedBlobFromIdb(key: string): Promise<Blob | null> {
-  try {
-    const idbPromise = openMediaDB();
-    const timeoutPromise = new Promise<null>((r) => setTimeout(() => r(null), 300));
-    const idb = await Promise.race([idbPromise, timeoutPromise]);
-    if (!idb) return null;
-    return new Promise((resolve) => {
-      const tx = idb.transaction(IDB_STORE, 'readonly');
-      const store = tx.objectStore(IDB_STORE);
-      const req = store.get(key);
-      req.onsuccess = () => resolve(req.result || null);
-      req.onerror = () => resolve(null);
-    });
-  } catch {
-    return null;
-  }
-}
-
-async function saveCachedBlobToIdb(key: string, blob: Blob): Promise<void> {
-  try {
-    const idbPromise = openMediaDB();
-    const timeoutPromise = new Promise<null>((r) => setTimeout(() => r(null), 300));
-    const idb = await Promise.race([idbPromise, timeoutPromise]);
-    if (!idb) return;
-    const tx = idb.transaction(IDB_STORE, 'readwrite');
-    const store = tx.objectStore(IDB_STORE);
-    store.put(blob, key);
-  } catch {}
 }
 
 /**
@@ -156,12 +105,8 @@ export async function uploadMediaToFirestore(
     }
   }
 
-  // Pre-cache into IndexedDB and memory URL cache for instantaneous playback in current session
-  try {
-    await saveCachedBlobToIdb(blobId, file);
-    const localUrl = URL.createObjectURL(file);
-    memoryBlobUrlCache.set(blobId, localUrl);
-  } catch {}
+  const localUrl = URL.createObjectURL(file);
+  memoryBlobUrlCache.set(blobId, localUrl);
 
   onProgress?.(100);
   return `firestore://media_blobs/${blobId}`;
@@ -196,15 +141,7 @@ export async function resolveMediaUrl(rawUrl: string | undefined): Promise<strin
     return memoryBlobUrlCache.get(blobId)!;
   }
 
-  // 2. Check IndexedDB persistent local cache
-  const cachedBlob = await getCachedBlobFromIdb(blobId);
-  if (cachedBlob) {
-    const objUrl = URL.createObjectURL(cachedBlob);
-    memoryBlobUrlCache.set(blobId, objUrl);
-    return objUrl;
-  }
-
-  // 3. Deduplicate concurrent in-flight download promises
+  // Deduplicate concurrent in-flight downloads.
   if (inFlightResolutions.has(blobId)) {
     return inFlightResolutions.get(blobId)!;
   }
@@ -249,9 +186,6 @@ export async function resolveMediaUrl(rawUrl: string | undefined): Promise<strin
       }
 
       const reconstructedBlob = new Blob(chunkDataParts, { type: meta.mimeType || 'video/mp4' });
-      // Non-blocking write to IDB in background
-      saveCachedBlobToIdb(blobId, reconstructedBlob).catch(() => {});
-
       const objectUrl = URL.createObjectURL(reconstructedBlob);
       memoryBlobUrlCache.set(blobId, objectUrl);
       return objectUrl;
@@ -350,7 +284,7 @@ export async function deleteMediaBlobFromFirestore(rawUrl: string): Promise<bool
     const metaDocRef = doc(db, 'media_blobs', blobId);
     await deleteDoc(metaDocRef);
 
-    // 3. Clear memory and IDB cache
+    // Clear the in-memory object URL cache.
     if (memoryBlobUrlCache.has(blobId)) {
       const oldUrl = memoryBlobUrlCache.get(blobId);
       if (oldUrl && oldUrl.startsWith('blob:')) {
@@ -358,12 +292,6 @@ export async function deleteMediaBlobFromFirestore(rawUrl: string): Promise<bool
       }
       memoryBlobUrlCache.delete(blobId);
     }
-
-    try {
-      const dbInstance = await openMediaDB();
-      const tx = dbInstance.transaction('blobs', 'readwrite');
-      tx.objectStore('blobs').delete(blobId);
-    } catch {}
 
     return true;
   } catch (err) {

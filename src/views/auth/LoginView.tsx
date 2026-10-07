@@ -9,14 +9,12 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
-  Sparkles,
   ChevronRight,
   CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { SEOHead } from '../../components/layout/SEOHead';
-import { authService } from '../../services/authService';
 
 interface LoginViewProps {
   onNavigate: (path: string) => void;
@@ -24,7 +22,7 @@ interface LoginViewProps {
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({ onNavigate, redirectPath = '/account' }) => {
-  const { login, switchAccount, user } = useAuth();
+  const { login } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,8 +30,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onNavigate, redirectPath =
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const demoAccounts = authService.getAllDemoAccounts();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,11 +49,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onNavigate, redirectPath =
     } else {
       setErrorMessage(result.error || 'Invalid credentials. Please verify and try again.');
     }
-  };
-
-  const handleQuickDemoLogin = (demoEmail: string) => {
-    switchAccount(demoEmail);
-    onNavigate(redirectPath);
   };
 
   return (
@@ -82,46 +73,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onNavigate, redirectPath =
             <p className="text-xs text-slate-500 max-w-xs mx-auto">
               Access your centralized Mahdev orders, cross-division service bookings, and verified invoices.
             </p>
-          </div>
-
-          {/* Quick Demo Switcher for Instant Evaluation */}
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-            <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
-              <span className="flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                <span>Quick Demo Accounts:</span>
-              </span>
-              <span className="text-[10px] text-slate-400 font-normal">1-Click Sign In</span>
-            </div>
-            <div className="grid grid-cols-1 gap-1.5">
-              {demoAccounts.map((acc) => (
-                <button
-                  key={acc.id}
-                  type="button"
-                  onClick={() => handleQuickDemoLogin(acc.email)}
-                  className="w-full p-2 rounded-xl bg-white hover:bg-blue-50/70 border border-slate-200/80 hover:border-blue-300 text-left transition-all flex items-center justify-between group cursor-pointer"
-                >
-                  <div className="flex items-center gap-2 overflow-hidden">
-                    <img
-                      src={acc.avatarUrl}
-                      alt={acc.fullName}
-                      className="w-7 h-7 rounded-full object-cover shrink-0 border border-slate-200"
-                    />
-                    <div className="truncate">
-                      <span className="text-xs font-bold text-slate-900 block truncate group-hover:text-blue-600">
-                        {acc.fullName}
-                      </span>
-                      <span className="text-[10px] text-slate-500 font-mono block truncate">
-                        {acc.email}
-                      </span>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200 shrink-0">
-                    {acc.accountType === 'corporate' ? 'Business' : 'Individual'}
-                  </span>
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Error Message */}

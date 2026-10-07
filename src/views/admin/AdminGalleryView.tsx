@@ -351,7 +351,7 @@ export const AdminGalleryView: React.FC = () => {
         .find((c) => c.name.toLowerCase() === resolvedCategory.toLowerCase());
 
       if (!existingCategory) {
-        cmsService.create<CmsCategory>('categories', {
+        await cmsService.create<CmsCategory>('categories', {
           name: resolvedCategory,
           slug: resolvedCategory
             .toLowerCase()
@@ -400,7 +400,7 @@ export const AdminGalleryView: React.FC = () => {
       };
 
       if (editingItem) {
-        cmsService.update<CmsGalleryItem>('gallery', editingItem.id, payload);
+        await cmsService.update<CmsGalleryItem>('gallery', editingItem.id, payload);
         try {
           await firestoreGalleryService.saveGallery(editingItem.id, firestoreData);
         } catch (fErr) {
@@ -408,7 +408,7 @@ export const AdminGalleryView: React.FC = () => {
         }
         addToast('success', 'Gallery Item Saved', `"${formData.title}" saved successfully.`);
       } else {
-        const created = cmsService.create<CmsGalleryItem>('gallery', payload);
+        const created = await cmsService.create<CmsGalleryItem>('gallery', payload);
         try {
           await firestoreGalleryService.saveGallery(created.id, firestoreData);
         } catch (fErr) {
@@ -437,20 +437,10 @@ export const AdminGalleryView: React.FC = () => {
     const itemToDelete = deletingItem;
     try {
       if (permanent) {
-        cmsService.hardDelete('gallery', itemToDelete.id);
-        try {
-          await firestoreGalleryService.deleteGallery(itemToDelete.id);
-        } catch (fErr) {
-          console.warn('[AdminGallery] Firestore deletion warning:', fErr);
-        }
+        await cmsService.hardDelete('gallery', itemToDelete.id);
         addToast('warning', 'Permanent Deletion', `"${itemToDelete.title}" permanently removed from Firestore & storage.`);
       } else {
-        cmsService.softDelete('gallery', itemToDelete.id);
-        try {
-          await firestoreGalleryService.saveGallery(itemToDelete.id, { status: 'hidden' });
-        } catch (fErr) {
-          console.warn('[AdminGallery] Firestore archive warning:', fErr);
-        }
+        await cmsService.softDelete('gallery', itemToDelete.id);
         addToast('info', 'Gallery Item Archived', `"${itemToDelete.title}" archived.`);
       }
       await refreshAll();
@@ -480,10 +470,15 @@ export const AdminGalleryView: React.FC = () => {
     }
   };
 
-  const handleRestore = (item: CmsGalleryItem) => {
-    cmsService.restore('gallery', item.id);
-    addToast('success', 'Gallery Item Restored', `"${item.title}" restored.`);
-    loadData();
+  const handleRestore = async (item: CmsGalleryItem) => {
+    try {
+      await cmsService.restore('gallery', item.id);
+      addToast('success', 'Gallery Item Restored', `"${item.title}" restored.`);
+      loadData();
+    } catch (error) {
+      console.error('[AdminGallery] Restore failed:', error);
+      addToast('error', 'Restore Failed', error instanceof Error ? error.message : 'Could not update the database.');
+    }
   };
 
   return (

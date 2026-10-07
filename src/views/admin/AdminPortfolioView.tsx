@@ -206,7 +206,7 @@ export const AdminPortfolioView: React.FC = () => {
       };
 
       if (editingItem) {
-        cmsService.update<CmsPortfolioProject>('portfolio', editingItem.id, payload);
+        await cmsService.update<CmsPortfolioProject>('portfolio', editingItem.id, payload);
         try {
           await firestorePortfolioService.savePortfolio(editingItem.id, payload as any);
         } catch (fErr) {
@@ -214,7 +214,7 @@ export const AdminPortfolioView: React.FC = () => {
         }
         addToast('success', 'Case Study Saved', `"${formData.title}" updated.`);
       } else {
-        const created = cmsService.create<CmsPortfolioProject>('portfolio', payload);
+        const created = await cmsService.create<CmsPortfolioProject>('portfolio', payload);
         try {
           await firestorePortfolioService.savePortfolio(created.id, payload as any);
         } catch (fErr) {
@@ -236,11 +236,10 @@ export const AdminPortfolioView: React.FC = () => {
     if (!deletingItem) return;
     try {
       if (permanent) {
-        cmsService.hardDelete('portfolio', deletingItem.id);
-        await firestorePortfolioService.deletePortfolio(deletingItem.id);
+        await cmsService.hardDelete('portfolio', deletingItem.id);
         addToast('warning', 'Permanent Deletion', `"${deletingItem.title}" removed permanently from Firestore & CMS.`);
       } else {
-        cmsService.softDelete('portfolio', deletingItem.id);
+        await cmsService.softDelete('portfolio', deletingItem.id);
         addToast('info', 'Case Study Archived', `"${deletingItem.title}" archived.`);
       }
     } catch (err: any) {
@@ -272,10 +271,15 @@ export const AdminPortfolioView: React.FC = () => {
     }
   };
 
-  const handleRestore = (item: CmsPortfolioProject) => {
-    cmsService.restore('portfolio', item.id);
-    addToast('success', 'Case Study Restored', `"${item.title}" restored.`);
-    loadData();
+  const handleRestore = async (item: CmsPortfolioProject) => {
+    try {
+      await cmsService.restore('portfolio', item.id);
+      addToast('success', 'Case Study Restored', `"${item.title}" restored.`);
+      loadData();
+    } catch (error) {
+      console.error('[AdminPortfolio] Restore failed:', error);
+      addToast('error', 'Restore Failed', error instanceof Error ? error.message : 'Could not update the database.');
+    }
   };
 
   return (

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { SEOMetaData } from '../../types';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
-
-const SEO_STORAGE_KEY = 'mahdev_cms_seo_configs_v1';
+import { db } from '../../lib/firebase';
+import { doc, getDoc } from '../../lib/tursoFirestore';
 
 export const SEOHead: React.FC<SEOMetaData> = ({
   title,
@@ -14,14 +14,17 @@ export const SEOHead: React.FC<SEOMetaData> = ({
 }) => {
   const { siteSettings, companySettings } = useFirestoreDataContext();
   const [seoVersion, setSeoVersion] = useState(0);
+  const [seoConfigs, setSeoConfigs] = useState<Array<{
+    route: string;
+    title: string;
+    description: string;
+    ogImage: string;
+    canonicalUrl: string;
+  }>>([]);
 
   useEffect(() => {
     const handleUpdate = () => setSeoVersion((v) => v + 1);
     window.addEventListener('mahdev_seo_updated', handleUpdate);
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === SEO_STORAGE_KEY) handleUpdate();
-    };
-    window.addEventListener('storage', handleStorage);
 
     let bc: BroadcastChannel | null = null;
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
@@ -35,10 +38,25 @@ export const SEOHead: React.FC<SEOMetaData> = ({
 
     return () => {
       window.removeEventListener('mahdev_seo_updated', handleUpdate);
-      window.removeEventListener('storage', handleStorage);
       if (bc) bc.close();
     };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    getDoc(doc(db, 'settings', 'seo'))
+      .then((snapshot) => {
+        if (!active || !snapshot.exists()) return;
+        const configs = snapshot.data().configs;
+        if (Array.isArray(configs)) setSeoConfigs(configs);
+      })
+      .catch((error) => {
+        console.error('[SEOHead] Could not load SEO overrides from Turso:', error);
+      });
+    return () => {
+      active = false;
+    };
+  }, [seoVersion]);
 
   useEffect(() => {
     // 1. Dynamic Favicon synchronization from Firestore
@@ -82,39 +100,25 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     let effectiveCanonical = canonicalUrl;
     let effectiveOgImage = siteSettings?.ogImageUrl || 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80';
 
-    try {
-      const stored = localStorage.getItem(SEO_STORAGE_KEY);
-      if (stored) {
-        const configs: Array<{
-          route: string;
-          title: string;
-          description: string;
-          ogImage: string;
-          canonicalUrl: string;
-        }> = JSON.parse(stored);
+    const currentPath = window.location.pathname || '/';
+    const matched = seoConfigs.find(
+      (config) => config.route === currentPath ||
+        (config.canonicalUrl && canonicalUrl && config.canonicalUrl.includes(currentPath))
+    );
 
-        const currentPath = window.location.pathname || '/';
-        const matched = configs.find(
-          (c) => c.route === currentPath || (c.canonicalUrl && canonicalUrl && c.canonicalUrl.includes(currentPath))
-        );
-
-        if (matched) {
-          if (matched.title) effectiveTitle = matched.title;
-          if (matched.description) effectiveDesc = matched.description;
-          if (matched.ogImage) effectiveOgImage = matched.ogImage;
-          if (matched.canonicalUrl) effectiveCanonical = matched.canonicalUrl;
-          effectiveOgTitle = matched.title;
-          effectiveOgDesc = matched.description;
-        }
-      }
-    } catch {
-      // Use standard props
+    if (matched) {
+      if (matched.title) effectiveTitle = matched.title;
+      if (matched.description) effectiveDesc = matched.description;
+      if (matched.ogImage) effectiveOgImage = matched.ogImage;
+      if (matched.canonicalUrl) effectiveCanonical = matched.canonicalUrl;
+      effectiveOgTitle = matched.title;
+      effectiveOgDesc = matched.description;
     }
 
     // Ensure canonical URL is always fully qualified with production domain https://mahdev.lk
-    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
+    const canonicalPath = typeof window !== 'undefined' ? window.location.pathname : '/';
     if (!effectiveCanonical || !effectiveCanonical.startsWith('http')) {
-      const cleanPath = effectiveCanonical ? (effectiveCanonical.startsWith('/') ? effectiveCanonical : `/${effectiveCanonical}`) : currentPath;
+      const cleanPath = effectiveCanonical ? (effectiveCanonical.startsWith('/') ? effectiveCanonical : `/${effectiveCanonical}`) : canonicalPath;
       effectiveCanonical = `https://mahdev.lk${cleanPath === '/' ? '' : cleanPath}`;
     }
 
@@ -209,8 +213,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     };
 
     scriptTag.textContent = JSON.stringify(schema);
-  }, [title, description, canonicalUrl, ogTitle, ogDescription, ogType, siteSettings, companySettings, seoVersion]);
+  }, [title, description, canonicalUrl, ogTitle, ogDescription, ogType, siteSettings, companySettings, seoConfigs]);
 
   return null;
 };
-

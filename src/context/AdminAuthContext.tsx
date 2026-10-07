@@ -9,7 +9,7 @@ interface AdminAuthContextType {
   isLoading: boolean;
   login: (email: string, password?: string, pin?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
-  logAuditAction: (action: string, entityType: string, entityId: string, details: string, status?: 'success' | 'warning' | 'error') => Promise<void>;
+  logAuditAction: (action: string, entityType: string, entityId: string, details: string, status?: 'success' | 'warning' | 'error') => Promise<boolean>;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
@@ -56,7 +56,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     details: string,
     status: 'success' | 'warning' | 'error' = 'success'
   ) => {
-    await adminService.logAudit({ action, entityType, entityId, details, status });
+    return adminService.logAudit({ action, entityType, entityId, details, status });
   };
 
   return (

@@ -22,12 +22,9 @@ import {
   DeleteResult,
 } from '../types/storage';
 import { validateFile, validateSvgSecurity, optimizeImage, compressDataUrl } from '../utils/imageOptimizer';
-import { safeStorage } from '../utils/safeStorage';
 import { authService } from './authService';
 import { adminService, syncAdminFirebaseAuth } from './adminService';
 import { uploadMediaAsset } from './mediaUploadService';
-
-const MEDIA_CATALOG_STORAGE_KEY = 'mahdev_media_catalog_v1';
 
 // Admin-only categories that customers/public are strictly forbidden to modify
 const ADMIN_ONLY_CATEGORIES: StorageCategory[] = [
@@ -83,6 +80,7 @@ export function translateStorageError(err: any): string {
 }
 
 class StorageService {
+  private indexedItems: UploadedMediaItem[] = [];
   /**
    * Generates standard hierarchical path in Firebase Storage
    */
@@ -463,41 +461,21 @@ class StorageService {
   // --- Internal Metadata Indexing Methods ---
 
   private getIndexedItems(): UploadedMediaItem[] {
-    try {
-      const data = localStorage.getItem(MEDIA_CATALOG_STORAGE_KEY);
-      return data ? JSON.parse(data) : [];
-    } catch {
-      return [];
-    }
+    return [...this.indexedItems];
   }
 
   private indexMediaItem(item: UploadedMediaItem): void {
-    try {
-      const items = this.getIndexedItems();
-      const existingIdx = items.findIndex((i) => i.storagePath === item.storagePath);
-      if (existingIdx >= 0) {
-        items[existingIdx] = item;
-      } else {
-        items.unshift(item);
-      }
-      // Keep up to 30 items in local cache and prevent storing massive raw base64 data
-      const safeItems = items.slice(0, 30).map((i) => {
-        if (i.url && typeof i.url === 'string' && i.url.startsWith('data:') && i.url.length > 30000) {
-          return { ...i, url: i.url.slice(0, 120) + '...[compacted]' };
-        }
-        return i;
-      });
-      safeStorage.setItem(MEDIA_CATALOG_STORAGE_KEY, JSON.stringify(safeItems));
-    } catch (err) {
-      console.warn('[StorageService] Failed to index media item:', err);
+    const existingIdx = this.indexedItems.findIndex((entry) => entry.storagePath === item.storagePath);
+    if (existingIdx >= 0) {
+      this.indexedItems[existingIdx] = item;
+    } else {
+      this.indexedItems.unshift(item);
     }
+    this.indexedItems = this.indexedItems.slice(0, 30);
   }
 
   private removeIndexedItem(storagePath: string): void {
-    try {
-      const items = this.getIndexedItems().filter((i) => i.storagePath !== storagePath);
-      safeStorage.setItem(MEDIA_CATALOG_STORAGE_KEY, JSON.stringify(items));
-    } catch {}
+    this.indexedItems = this.indexedItems.filter((item) => item.storagePath !== storagePath);
   }
 }
 

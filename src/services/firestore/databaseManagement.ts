@@ -7,7 +7,7 @@ import {
   setDoc,
   serverTimestamp,
   writeBatch,
-} from 'firebase/firestore';
+} from '../../lib/tursoFirestore';
 import { db } from '../../lib/firebase';
 
 export const MANAGED_COLLECTIONS = [

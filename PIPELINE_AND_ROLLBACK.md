@@ -138,7 +138,7 @@ If data corruption occurred:
 | **GitHub** | GitHub Repositories | **VERIFIED** | Branch protection enabled on `main`. Automated GitHub Actions workflow (`.github/workflows/production-pipeline.yml`). |
 | **Vercel** | Vercel Serverless / Edge CDN | **VERIFIED** | Connected to GitHub. Output directory set to `dist/`. SPA rewrite and caching headers configured in `vercel.json`. |
 | **Firebase** | Google Cloud Firebase Platform | **VERIFIED** | Initialized via SDK (`for-her-33ea9`). Config in `firebase-applet-config.json`. |
-| **Firestore** | Google Cloud Firestore (Database) | **VERIFIED** | Database ID `ai-studio-mahdevpvtltd-b6505c20-1d3d-4de0-a4bb-a8fb7ae999dd`. Production rules in `firestore.rules`. |
+| **Application database** | Turso (libSQL) | **CONFIGURED VIA SERVER ENVIRONMENT** | Connection uses `TURSO_DATABASE_URL` and secret `TURSO_AUTH_TOKEN`; app provisions one SQL table per collection. Firebase remains for Authentication and Storage. |
 | **Authentication** | Firebase Auth & HMAC Server Kernel | **VERIFIED** | Multi-factor customer auth, admin HMAC token generation with salt, and role separation. |
 | **Storage** | Firebase Storage Buckets | **VERIFIED** | Bucket `for-her-33ea9.firebasestorage.app`. Partitioned security rules in `storage.rules`. |
 | **Domain & TLS** | LK Domain / Vercel DNS (`mahdev.lk`) | **VERIFIED** | DNS mapped (`A` -> `76.76.21.21`, `CNAME` -> `cname.vercel-dns.com`). Automated TLS 1.3 certificate. |

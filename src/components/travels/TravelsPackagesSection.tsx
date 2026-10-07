@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Calendar,
   Clock,
@@ -19,6 +19,8 @@ import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
+import { CmsPackage } from '../../types/cms';
+import { cmsService } from '../../services/cmsService';
 
 interface TravelsPackagesSectionProps {
   onSelectPackage: (pkg: TravelPackage) => void;
@@ -30,8 +32,47 @@ export const TravelsPackagesSection: React.FC<TravelsPackagesSectionProps> = ({
   onBookPackageDirect,
 }) => {
   const { services: rawServices } = useFirestoreDataContext();
+  const [cmsPackages, setCmsPackages] = useState<CmsPackage[]>(() =>
+    cmsService.getAll<CmsPackage>('packages', { divisionId: 'travels', status: 'active' })
+  );
+
+  useEffect(() => {
+    const refreshPackages = () => {
+      setCmsPackages(cmsService.getAll<CmsPackage>('packages', { divisionId: 'travels', status: 'active' }));
+    };
+    const unsubscribe = cmsService.subscribe('packages', refreshPackages);
+    refreshPackages();
+    return unsubscribe;
+  }, []);
 
   const packages = useMemo<TravelPackage[]>(() => {
+    if (cmsPackages.length > 0) {
+      return cmsPackages.map((pkg) => ({
+        id: pkg.id,
+        title: pkg.name,
+        destination: pkg.serviceTitle || 'Sri Lanka',
+        duration: pkg.duration || 'Available on request',
+        tagline: pkg.tagline || pkg.name,
+        description: pkg.tagline || pkg.name,
+        heroImage: '',
+        gallery: [],
+        highlights: pkg.features,
+        price: `${pkg.currency} ${pkg.price.toLocaleString()}`,
+        pricePerPerson: pkg.price,
+        priceNote: pkg.billingCycle || 'Per package',
+        availability: 'Available on request',
+        difficulty: 'Moderate',
+        tourType: 'Private Tour',
+        badge: pkg.badge || 'Signature Itinerary',
+        overview: pkg.tagline || pkg.name,
+        itinerary: [],
+        included: pkg.features,
+        excluded: [],
+        pricingTiers: [],
+        faqs: [],
+      }));
+    }
+
     if (rawServices && rawServices.length > 0) {
       const travelServices = rawServices.filter(
         (s) => isSameDivision(s.division, 'travels') || isSameDivision((s as any).divisionId, 'travels')
@@ -67,7 +108,7 @@ export const TravelsPackagesSection: React.FC<TravelsPackagesSectionProps> = ({
       }
     }
     return [];
-  }, [rawServices]);
+  }, [cmsPackages, rawServices]);
 
   if (packages.length === 0) {
     return null;

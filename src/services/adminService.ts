@@ -10,161 +10,57 @@ import { bookingService } from './bookingService';
 import { paymentService } from './paymentService';
 import { authService } from './authService';
 import { auth, db } from '../lib/firebase';
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  updateProfile,
-  signOut,
-} from 'firebase/auth';
-import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
-import { FirestoreOrder, FirestoreBooking, FirestoreProduct, FirestoreUser } from '../types/firestore';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { collection, deleteDoc, doc, getDocs, limit, orderBy, query, setDoc } from '../lib/tursoFirestore';
+import { FirestoreOrder, FirestoreBooking, FirestoreProduct } from '../types/firestore';
 
-const ADMIN_SESSION_STORAGE_KEY = 'mahdev_admin_session_v1';
-const ADMIN_AUDIT_STORAGE_KEY = 'mahdev_admin_audit_logs_v1';
-
-let activeAdminSyncPromise: Promise<boolean> | null = null;
-let lastAdminSyncTimestamp = 0;
-
-/**
- * Synchronizes the executive administrator session with Firebase Authentication.
- * Ensures the client has an authenticated Firebase user matching the admin email and claims,
- * satisfying Firebase Storage and Firestore security rule constraints (e.g., isStaff()).
- */
 export async function syncAdminFirebaseAuth(adminUser: AdminUser): Promise<boolean> {
-  if (activeAdminSyncPromise) {
-    return activeAdminSyncPromise;
+  try {
+    await auth.authStateReady();
+    return Boolean(
+      auth.currentUser &&
+      auth.currentUser.email?.toLowerCase() === adminUser.email.toLowerCase() &&
+      auth.currentUser.emailVerified
+    );
+  } catch (error) {
+    console.error('[AdminService] Firebase Auth session check failed:', error);
+    return false;
   }
-
-  const email = (adminUser?.email || 'info.mahdev.lk@gmail.com').toLowerCase().trim();
-  const now = Date.now();
-
-  // If recently synced (within 60s) and user matches, return immediately to prevent write exhaustion
-  if (
-    now - lastAdminSyncTimestamp < 60000 &&
-    auth.currentUser &&
-    auth.currentUser.email?.toLowerCase() === email
-  ) {
-    return true;
-  }
-
-  activeAdminSyncPromise = (async () => {
-    try {
-      const defaultPassword = 'MahdevExecutive#2026';
-
-      // If current firebase user already matches this admin email, return true
-      if (auth.currentUser && auth.currentUser.email?.toLowerCase() === email) {
-        lastAdminSyncTimestamp = Date.now();
-        return true;
-      }
-
-      // Attempt sign in with standard executive credential
-      try {
-        await signInWithEmailAndPassword(auth, email, defaultPassword);
-      } catch (signInErr: any) {
-        if (
-          signInErr.code === 'auth/user-not-found' ||
-          signInErr.code === 'auth/invalid-credential' ||
-          signInErr.code === 'auth/invalid-login-credentials'
-        ) {
-          try {
-            await createUserWithEmailAndPassword(auth, email, defaultPassword);
-          } catch (createErr: any) {
-            console.warn('[AdminService] Firebase Auth creation notice:', createErr);
-          }
-        }
-      }
-
-      if (auth.currentUser) {
-        if (adminUser.name && auth.currentUser.displayName !== adminUser.name) {
-          try {
-            await updateProfile(auth.currentUser, { displayName: adminUser.name });
-          } catch {}
-        }
-
-        // Provision Firestore user and admin privilege records only if missing or out of sync
-        try {
-          const userRef = doc(db, 'users', auth.currentUser.uid);
-          const adminRef = doc(db, 'admins', auth.currentUser.uid);
-          const [userSnap, adminSnap] = await Promise.all([
-            getDoc(userRef).catch(() => null),
-            getDoc(adminRef).catch(() => null),
-          ]);
-
-          if (userSnap && !userSnap.exists()) {
-            await setDoc(
-              userRef,
-              {
-                uid: auth.currentUser.uid,
-                email: email,
-                displayName: adminUser.name,
-                role: 'superAdmin',
-                isAdmin: true,
-                status: 'active',
-                updatedAt: new Date().toISOString(),
-              },
-              { merge: true }
-            ).catch((err) => console.warn('[AdminService] userDoc write notice:', err));
-          }
-
-          if (adminSnap && !adminSnap.exists()) {
-            await setDoc(
-              adminRef,
-              {
-                uid: auth.currentUser.uid,
-                email: email,
-                name: adminUser.name,
-                role: adminUser.role || 'super_admin',
-                department: adminUser.department || 'Executive Enterprise Operations',
-                updatedAt: new Date().toISOString(),
-              },
-              { merge: true }
-            ).catch((err) => console.warn('[AdminService] adminDoc write notice:', err));
-          }
-        } catch (dbErr) {
-          console.warn('[AdminService] Firestore admin record registration notice:', dbErr);
-        }
-
-        lastAdminSyncTimestamp = Date.now();
-        console.log(`[AdminService] Firebase Auth synchronized for ${email} (UID: ${auth.currentUser.uid})`);
-        return true;
-      }
-      return false;
-    } catch (err) {
-      console.warn('[AdminService] Failed to synchronize Firebase Auth session:', err);
-      return false;
-    } finally {
-      activeAdminSyncPromise = null;
-    }
-  })();
-
-  return activeAdminSyncPromise;
 }
 
 class AdminService {
   private currentSession: AdminSession | null = null;
 
-  constructor() {
-    this.restoreSession();
-  }
+  constructor() {}
 
-  private restoreSession(): void {
-    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
+  private async validateRestoredSession(session: AdminSession): Promise<void> {
     try {
-      const stored = localStorage.getItem(ADMIN_SESSION_STORAGE_KEY);
-      if (stored) {
-        const session: AdminSession = JSON.parse(stored);
-        if (new Date(session.expiresAt).getTime() > Date.now()) {
-          this.currentSession = session;
-          // Synchronize Firebase Auth in background
-          syncAdminFirebaseAuth(session.user).catch(() => {});
-        } else {
-          localStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
-        }
+      await auth.authStateReady();
+      const currentUser = auth.currentUser;
+      if (!currentUser || !currentUser.emailVerified) {
+        throw new Error('A verified Firebase session is required.');
       }
-    } catch {
-      try {
-        localStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
-      } catch {}
+      const tokenResult = await currentUser.getIdTokenResult();
+      const response = await fetch('/api/admin/auth/verify', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${tokenResult.token}` },
+      });
+      const result = await response.json() as { success?: boolean; user?: AdminUser };
+      if (!response.ok || !result.success || !result.user) {
+        throw new Error('The Firebase account is no longer authorized for admin access.');
+      }
+
+      const refreshedSession: AdminSession = {
+        ...session,
+        token: '',
+        user: result.user,
+        expiresAt: tokenResult.expirationTime,
+      };
+      this.currentSession = refreshedSession;
+    } catch (error) {
+      console.warn('[AdminService] Stored admin session validation failed:', error);
+      if (this.currentSession === session) this.currentSession = null;
+      await signOut(auth);
     }
   }
 
@@ -181,137 +77,85 @@ class AdminService {
     return new Date(this.currentSession.expiresAt).getTime() > Date.now();
   }
 
-  public async login(email: string, password?: string, pin?: string): Promise<{ success: boolean; session?: AdminSession; error?: string }> {
-    try {
-      // Call server-side admin authentication endpoint
-      const response = await fetch('/api/admin/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, pin }),
-      });
-
-      const contentType = response.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        const data = await response.json();
-
-        if (data.success && data.token && data.user) {
-          const session: AdminSession = {
-            token: data.token,
-            user: data.user,
-            expiresAt: data.expiresAt,
-            signature: data.token.slice(-16),
-          };
-          this.currentSession = session;
-          localStorage.setItem(ADMIN_SESSION_STORAGE_KEY, JSON.stringify(session));
-
-          // Synchronize Firebase Auth for Storage & Firestore rules
-          await syncAdminFirebaseAuth(session.user);
-
-          this.logAudit({
-            action: 'ADMIN_PORTAL_SIGNIN',
-            entityType: 'Authentication',
-            entityId: session.user.id,
-            details: `Executive login verified for ${session.user.name} (${session.user.role}).`,
-            status: 'success',
-          });
-
-          return { success: true, session };
-        } else if (data.error && response.status !== 404) {
-          return { success: false, error: data.error || 'Invalid administrator credentials.' };
-        }
-      }
-    } catch {
-      // Endpoint unavailable or returned non-JSON (static rewrite), fall through to client validation
+  public async login(
+    email: string,
+    password?: string,
+    _pin?: string
+  ): Promise<{ success: boolean; session?: AdminSession; error?: string }> {
+    if (!password?.trim()) {
+      return { success: false, error: 'Enter your Firebase Authentication password.' };
     }
 
-    // Direct credential validation fallback for static/Vercel hosting
-    const emailClean = (email || '').trim().toLowerCase();
-    const pinClean = (pin || '').trim();
-    const passClean = (password || '').trim();
+    try {
+      const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      if (!credential.user.emailVerified) {
+        await signOut(auth);
+        return { success: false, error: 'Verify your email address before signing in to the admin portal.' };
+      }
 
-    const isPinValid = pinClean === '202688' || pinClean === '884910';
-    const isPassValid =
-      passClean === 'MahdevSecret#2026' ||
-      passClean === 'MahdevExecutive#2026' ||
-      passClean === '••••••••••••' ||
-      passClean.length >= 6;
-
-    const isAdminEmail =
-      emailClean === 'info.mahdev.lk@gmail.com' ||
-      emailClean === 'admin@mahdev.lk' ||
-      emailClean === 'yuvanshan875@gmail.com' ||
-      emailClean.includes('admin') ||
-      emailClean.includes('operations@mahdev.lk') ||
-      emailClean.endsWith('@mahdev.lk');
-
-    if ((isPinValid || isPassValid) && (isAdminEmail || emailClean.length > 4)) {
-      const isSuperAdmin = !emailClean.includes('operations');
-      const adminUser: AdminUser = {
-        id: isSuperAdmin ? 'ADM-ROOT-01' : 'ADM-OPS-02',
-        name: isSuperAdmin ? 'Yuvanshan Prabakaran' : 'Executive Operations Director',
-        email: emailClean || (isSuperAdmin ? 'info.mahdev.lk@gmail.com' : 'operations@mahdev.lk'),
-        role: isSuperAdmin ? 'super_admin' : 'operations_admin',
-        department: 'Executive Enterprise Operations & Digital Systems',
-        divisionAccess: ['all'],
-        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-        lastLogin: new Date().toISOString(),
-        createdAt: '2026-01-01T00:00:00.000Z',
+      const tokenResult = await credential.user.getIdTokenResult(true);
+      const response = await fetch('/api/admin/auth/verify', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${tokenResult.token}` },
+      });
+      const result = await response.json() as {
+        success?: boolean;
+        user?: AdminUser;
+        error?: string;
       };
+      if (!response.ok || !result.success || !result.user) {
+        await signOut(auth);
+        return {
+          success: false,
+          error: result.error || 'This account is not authorized for admin access.',
+        };
+      }
 
       const session: AdminSession = {
-        token: `TOKEN-ADM-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        user: adminUser,
-        expiresAt: new Date(Date.now() + 8 * 3600 * 1000).toISOString(),
-        signature: 'SECURE-HMAC-VERIFIED',
+        token: '',
+        user: result.user,
+        expiresAt: tokenResult.expirationTime,
+        signature: 'firebase-id-token-verified',
       };
-
       this.currentSession = session;
-      localStorage.setItem(ADMIN_SESSION_STORAGE_KEY, JSON.stringify(session));
-
-      // Synchronize Firebase Auth in background
-      syncAdminFirebaseAuth(adminUser).catch(() => {});
-
+      await this.logAudit({
+        action: 'ADMIN_PORTAL_SIGNIN',
+        entityType: 'Authentication',
+        entityId: result.user.id,
+        details: `Firebase-authenticated admin sign-in for ${result.user.name}.`,
+        status: 'success',
+      });
       return { success: true, session };
+    } catch (error) {
+      console.error('[AdminService] Firebase admin sign-in failed:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Firebase admin sign-in failed.',
+      };
     }
-
-    return { success: false, error: 'Unauthorized administrative credentials. Please check your credentials or use a preset.' };
   }
 
   public async logout(): Promise<void> {
-    if (this.currentSession) {
-      try {
-        await fetch('/api/admin/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Admin-Token': this.currentSession.token,
-            'X-App-Authorization': `Bearer ${this.currentSession.token}`,
-          },
-        });
-      } catch {}
-    }
     this.currentSession = null;
-    localStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
     try {
       await signOut(auth);
-    } catch {}
+    } catch (error) {
+      console.error('[AdminService] Firebase sign-out failed:', error);
+    }
   }
 
   public async getDashboardStats(): Promise<AdminDashboardStats> {
     try {
-      // Query genuine Firestore collections
-      const [ordersSnap, bookingsSnap, productsSnap, usersSnap] = await Promise.all([
+      const [ordersSnap, bookingsSnap, productsSnap, allUsers] = await Promise.all([
         getDocs(collection(db, 'orders')).catch(() => ({ docs: [] as any[] })),
         getDocs(collection(db, 'bookings')).catch(() => ({ docs: [] as any[] })),
         getDocs(collection(db, 'products')).catch(() => ({ docs: [] as any[] })),
-        getDocs(collection(db, 'users')).catch(() => ({ docs: [] as any[] })),
+        authService.getAllCustomers(),
       ]);
 
       const allOrders: FirestoreOrder[] = ordersSnap.docs.map((d: any) => ({ ...d.data(), id: d.id }));
       const allBookings: FirestoreBooking[] = bookingsSnap.docs.map((d: any) => ({ ...d.data(), id: d.id }));
       const allProducts: FirestoreProduct[] = productsSnap.docs.map((d: any) => ({ ...d.data(), id: d.id }));
-      const allUsers: FirestoreUser[] = usersSnap.docs.map((d: any) => ({ ...d.data(), uid: d.id }));
-
       const now = new Date();
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
@@ -463,128 +307,55 @@ class AdminService {
 
   public async getAuditLogs(): Promise<AuditLogEntry[]> {
     try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (this.currentSession?.token) {
-        headers['X-Admin-Token'] = this.currentSession.token;
-        headers['X-App-Authorization'] = `Bearer ${this.currentSession.token}`;
-      }
-      const res = await fetch('/api/admin/audit-logs', { headers });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && Array.isArray(data.logs)) {
-          return data.logs;
-        }
-      }
-    } catch {}
-
-    const local = localStorage.getItem(ADMIN_AUDIT_STORAGE_KEY);
-    if (local) {
-      try {
-        return JSON.parse(local);
-      } catch {}
+      const snapshot = await getDocs(query(
+        collection(db, 'auditLogs'),
+        orderBy('timestamp', 'desc'),
+        limit(100)
+      ));
+      return snapshot.docs.map((document) => ({
+        ...document.data(),
+        id: document.id,
+      })) as AuditLogEntry[];
+    } catch (error) {
+      console.error('[AdminService] Turso audit-log read failed:', error);
+      throw error;
     }
-
-    return [
-      {
-        id: 'AUD-2026-0001',
-        timestamp: new Date().toISOString(),
-        adminEmail: 'info.mahdev.lk@gmail.com',
-        adminName: 'Yuvanshan Prabakaran',
-        action: 'SYSTEM_BOOTSTRAP',
-        entityType: 'System',
-        entityId: 'SYS-ROOT',
-        details: 'Mahdev Enterprise Multi-Division Core initialized with TLS 1.3 encryption.',
-        status: 'success',
-      },
-    ];
   }
 
-  public async logAudit(entry: Omit<AuditLogEntry, 'id' | 'timestamp' | 'adminEmail' | 'adminName'>): Promise<void> {
+  public async logAudit(entry: Omit<AuditLogEntry, 'id' | 'timestamp' | 'adminEmail' | 'adminName'>): Promise<boolean> {
     const currentAdmin = this.getCurrentAdmin();
     const newEntry: AuditLogEntry = {
-      id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+      id: `AUD-${Date.now()}-${crypto.randomUUID()}`,
       timestamp: new Date().toISOString(),
-      adminEmail: currentAdmin ? currentAdmin.email : 'info.mahdev.lk@gmail.com',
-      adminName: currentAdmin ? currentAdmin.name : 'Yuvanshan Prabakaran',
+      adminEmail: currentAdmin?.email || 'unknown',
+      adminName: currentAdmin?.name || 'Unknown administrator',
       ...entry,
     };
 
     try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (this.currentSession?.token) {
-        headers['X-Admin-Token'] = this.currentSession.token;
-        headers['X-App-Authorization'] = `Bearer ${this.currentSession.token}`;
-      }
-      await fetch('/api/admin/audit-logs/log', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(newEntry),
-      });
-    } catch {}
-
-    try {
-      const current = await this.getAuditLogs();
-      const updated = [newEntry, ...current].slice(0, 100);
-      localStorage.setItem(ADMIN_AUDIT_STORAGE_KEY, JSON.stringify(updated));
-    } catch {}
+      await setDoc(doc(db, 'auditLogs', newEntry.id), newEntry);
+      return true;
+    } catch (error) {
+      console.error('[AdminService] Failed to persist audit log in Turso:', error);
+      return false;
+    }
   }
 
   // Admin User Management
   public async getAdminUsers(): Promise<AdminUser[]> {
-    const key = 'mahdev_admin_users_list_v1';
-    const stored = localStorage.getItem(key);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          // Purge unwanted legacy demo/test staff accounts
-          const cleaned = parsed
-            .filter(
-              (u: AdminUser) =>
-                u.username !== 'dilshan.m' &&
-                u.username !== 'anuki.s' &&
-                !u.email?.includes('operations@mahdev.lk') &&
-                !u.email?.includes('finance@mahdev.lk') &&
-                !u.email?.includes('demo') &&
-                !u.email?.includes('test')
-            )
-            .map((u: AdminUser) =>
-              u.username === 'yuvanshan' || u.role === 'super_admin'
-                ? { ...u, name: 'Yuvanshan Prabakaran', email: 'info.mahdev.lk@gmail.com' }
-                : u
-            );
-
-          if (cleaned.length > 0) {
-            localStorage.setItem(key, JSON.stringify(cleaned));
-            return cleaned;
-          }
-        }
-      } catch {}
-    }
-
-    const defaultUsers: AdminUser[] = [
-      {
-        id: 'ADM-ROOT-01',
-        username: 'yuvanshan',
-        name: 'Yuvanshan Prabakaran',
-        email: 'info.mahdev.lk@gmail.com',
-        role: 'super_admin',
-        department: 'Executive Board',
-        divisionAccess: ['all'],
-        divisionScope: 'all',
-        isActive: true,
-        lastLoginAt: new Date().toISOString(),
-        createdAt: '2026-01-01T00:00:00.000Z',
-      },
-    ];
-
-    localStorage.setItem(key, JSON.stringify(defaultUsers));
-    return defaultUsers;
+    const snapshot = await getDocs(collection(db, 'admins'));
+    return snapshot.docs.map((document) => ({
+      ...document.data(),
+      id: document.id,
+    })) as AdminUser[];
   }
 
   public async createAdminUser(data: Partial<AdminUser>): Promise<AdminUser> {
-    const key = 'mahdev_admin_users_list_v1';
     const list = await this.getAdminUsers();
+    const email = data.email?.trim().toLowerCase() || '';
+    if (list.some((user) => user.email.toLowerCase() === email)) {
+      throw new Error('An administrator with this email already exists.');
+    }
     const newUser: AdminUser = {
       id: `ADM-USR-${Date.now().toString(36).toUpperCase()}`,
       username: data.username || `user_${Date.now().toString(36)}`,
@@ -599,8 +370,7 @@ class AdminService {
       createdAt: new Date().toISOString(),
     };
 
-    const updated = [newUser, ...list];
-    localStorage.setItem(key, JSON.stringify(updated));
+    await setDoc(doc(db, 'admins', newUser.id), newUser);
 
     this.logAudit({
       action: 'ADMIN_USER_PROVISIONED',
@@ -614,7 +384,6 @@ class AdminService {
   }
 
   public async updateAdminUser(id: string, data: Partial<AdminUser>): Promise<AdminUser | null> {
-    const key = 'mahdev_admin_users_list_v1';
     const list = await this.getAdminUsers();
     const index = list.findIndex((u) => u.id === id);
     if (index === -1) return null;
@@ -624,8 +393,7 @@ class AdminService {
       ...data,
     };
 
-    list[index] = updated;
-    localStorage.setItem(key, JSON.stringify(list));
+    await setDoc(doc(db, 'admins', id), updated);
 
     this.logAudit({
       action: 'ADMIN_USER_MODIFIED',
@@ -639,10 +407,7 @@ class AdminService {
   }
 
   public async deleteAdminUser(id: string): Promise<boolean> {
-    const key = 'mahdev_admin_users_list_v1';
-    const list = await this.getAdminUsers();
-    const filtered = list.filter((u) => u.id !== id);
-    localStorage.setItem(key, JSON.stringify(filtered));
+    await deleteDoc(doc(db, 'admins', id));
 
     this.logAudit({
       action: 'ADMIN_USER_REVOKED',

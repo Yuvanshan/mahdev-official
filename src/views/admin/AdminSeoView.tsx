@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Globe,
   Save,
@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
+import { db } from '../../lib/firebase';
+import { doc, getDoc, setDoc } from '../../lib/tursoFirestore';
 
 interface PageSeoEntry {
   route: string;
@@ -81,24 +83,25 @@ const DEFAULT_SEO_CONFIGS: PageSeoEntry[] = [
   },
 ];
 
-const SEO_STORAGE_KEY = 'mahdev_cms_seo_configs_v1';
-
 export const AdminSeoView: React.FC = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const [configs, setConfigs] = useState<PageSeoEntry[]>(() => {
-    const saved = localStorage.getItem(SEO_STORAGE_KEY);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        // fallback
-      }
-    }
-    return DEFAULT_SEO_CONFIGS;
-  });
+  const [configs, setConfigs] = useState<PageSeoEntry[]>(DEFAULT_SEO_CONFIGS);
 
   const [activeRoute, setActiveRoute] = useState<string>('/');
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    getDoc(doc(db, 'settings', 'seo'))
+      .then((snapshot) => {
+        if (!snapshot.exists()) return;
+        const storedConfigs = snapshot.data().configs;
+        if (Array.isArray(storedConfigs)) setConfigs(storedConfigs as PageSeoEntry[]);
+      })
+      .catch((error) => {
+        console.error('[Admin SEO] Could not load SEO settings from Turso:', error);
+        addToast('error', 'Load Failed', 'Could not load SEO configuration from the database.');
+      });
+  }, []);
 
   const addToast = (type: ToastMessage['type'], title: string, message: string) => {
     const id = Date.now().toString();
@@ -116,10 +119,10 @@ export const AdminSeoView: React.FC = () => {
     );
   };
 
-  const handleSaveAll = () => {
+  const handleSaveAll = async () => {
     setIsSaving(true);
     try {
-      localStorage.setItem(SEO_STORAGE_KEY, JSON.stringify(configs));
+      await setDoc(doc(db, 'settings', 'seo'), { configs, updatedAt: new Date().toISOString() }, { merge: true });
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('mahdev_seo_updated', { detail: configs }));
         try {

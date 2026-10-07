@@ -7,7 +7,7 @@ import {
   User as FirebaseUser,
   updateProfile as updateFirebaseProfile,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from '../lib/tursoFirestore';
 import { auth, db } from '../lib/firebase';
 import {
   CustomerUser,
@@ -21,16 +21,9 @@ import { FirestoreUser } from '../types/firestore';
 import { Order } from '../types/order';
 import { Booking } from '../types/booking';
 
-const SESSION_STORAGE_KEY = 'mahdev_customer_session_v1';
-const ACCOUNTS_STORAGE_KEY = 'mahdev_customer_accounts_v1';
-
-// Initial pre-seeded accounts - strictly real, no fake placeholder customers
-const INITIAL_DEMO_ACCOUNTS: CustomerUser[] = [];
-
 type AuthListener = (user: CustomerUser | null) => void;
 
 class AuthService {
-  private accounts: CustomerUser[] = [];
   private currentUser: CustomerUser | null = null;
   private listeners: Set<AuthListener> = new Set();
   private authInitialized = false;
@@ -41,57 +34,7 @@ class AuthService {
   }
 
   private init() {
-    // Load local accounts and purge any legacy fake customer data
-    try {
-      const stored = localStorage.getItem(ACCOUNTS_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          // Filter out legacy fake demo accounts
-          this.accounts = parsed.filter(
-            (a: any) =>
-              a.id !== 'CUST-2026-3910' &&
-              a.id !== 'CUST-2026-1088' &&
-              a.uid !== 'demo-user-ruwan' &&
-              a.uid !== 'demo-user-elena' &&
-              !a.email?.includes('ruwan.wick') &&
-              !a.email?.includes('elena.rostova') &&
-              !a.email?.includes('creative.co') &&
-              !a.email?.includes('ceyloncorp.lk')
-          );
-          this.saveAccounts();
-        } else {
-          this.accounts = [];
-        }
-      } else {
-        this.accounts = [];
-      }
-    } catch {
-      this.accounts = [];
-    }
-
-    // Load active local session and ensure no fake customer remains
-    try {
-      const activeSession = localStorage.getItem(SESSION_STORAGE_KEY);
-      if (activeSession) {
-        const parsed = JSON.parse(activeSession);
-        if (
-          parsed.uid === 'demo-user-ruwan' ||
-          parsed.uid === 'demo-user-elena' ||
-          parsed.email?.includes('ruwan.wick') ||
-          parsed.email?.includes('elena.rostova')
-        ) {
-          this.currentUser = null;
-          localStorage.removeItem(SESSION_STORAGE_KEY);
-        } else {
-          this.currentUser = parsed;
-        }
-      } else {
-        this.currentUser = this.accounts[0] || null;
-      }
-    } catch {
-      this.currentUser = null;
-    }
+    this.currentUser = null;
   }
 
   private setupFirebaseListener() {
@@ -135,7 +78,6 @@ class AuthService {
               };
 
               this.currentUser = mappedUser;
-              this.saveSession();
               this.notifyListeners();
             } else {
               // Profile doc doesn't exist yet, provision it now
@@ -182,7 +124,6 @@ class AuthService {
               };
 
               this.currentUser = mappedUser;
-              this.saveSession();
               this.notifyListeners();
             }
           } catch (err) {
@@ -204,32 +145,8 @@ class AuthService {
     this.listeners.forEach((l) => l(this.currentUser));
   }
 
-  private saveAccounts() {
-    try {
-      localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(this.accounts));
-    } catch (e) {
-      console.error('Failed to persist accounts', e);
-    }
-  }
-
-  private saveSession() {
-    try {
-      if (this.currentUser) {
-        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(this.currentUser));
-      } else {
-        localStorage.removeItem(SESSION_STORAGE_KEY);
-      }
-    } catch (e) {
-      console.error('Failed to persist session', e);
-    }
-  }
-
   public getCurrentUser(): CustomerUser | null {
     return this.currentUser;
-  }
-
-  public getAllDemoAccounts(): CustomerUser[] {
-    return this.accounts;
   }
 
   /**
@@ -305,7 +222,6 @@ class AuthService {
           };
 
           this.currentUser = customerUser;
-          this.saveSession();
           this.notifyListeners();
           return { success: true, user: customerUser };
         } catch (firebaseErr: any) {
@@ -314,27 +230,9 @@ class AuthService {
             firebaseErr.code === 'auth/wrong-password' ||
             firebaseErr.code === 'auth/invalid-credential'
           ) {
-            // Check if it's one of our pre-configured demo evaluation accounts
-            const demoAcc = this.accounts.find((a) => a.email.toLowerCase() === emailClean);
-            if (demoAcc) {
-              demoAcc.lastLogin = new Date().toISOString();
-              this.currentUser = demoAcc;
-              this.saveSession();
-              this.notifyListeners();
-              return { success: true, user: demoAcc };
-            }
             return { success: false, error: 'Incorrect password. Please verify your credentials.' };
           }
           if (firebaseErr.code === 'auth/user-not-found') {
-            // Check demo accounts
-            const demoAcc = this.accounts.find((a) => a.email.toLowerCase() === emailClean);
-            if (demoAcc) {
-              demoAcc.lastLogin = new Date().toISOString();
-              this.currentUser = demoAcc;
-              this.saveSession();
-              this.notifyListeners();
-              return { success: true, user: demoAcc };
-            }
             return { success: false, error: 'No account found with this email. Please register.' };
           }
           if (firebaseErr.code === 'auth/invalid-email') {
@@ -343,56 +241,11 @@ class AuthService {
           if (firebaseErr.code === 'auth/too-many-requests') {
             return { success: false, error: 'Too many attempts. Please try again in a few moments.' };
           }
-          console.warn('[Firebase Auth] Login notice:', firebaseErr.message);
+          console.error('[Firebase Auth] Login failed:', firebaseErr);
+          return { success: false, error: firebaseErr.message || 'Firebase sign-in failed.' };
         }
       }
-
-      // 2. Demo Account fallback for sandbox / offline testing
-      let account = this.accounts.find((a) => a.email.toLowerCase() === emailClean);
-      if (!account && emailClean.includes('@')) {
-        const newId = `CUST-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-        account = {
-          id: newId,
-          uid: newId,
-          fullName: emailClean
-            .split('@')[0]
-            .replace(/[._]/g, ' ')
-            .replace(/\b\w/g, (l) => l.toUpperCase()),
-          email: emailClean,
-          phone: '+94 75 092 8078',
-          accountType: 'individual',
-          role: 'customer',
-          address: {
-            street: '100 Galle Road',
-            city: 'Colombo',
-            state: 'Western Province',
-            postalCode: '00300',
-            country: 'Sri Lanka',
-          },
-          preferences: {
-            currency: 'USD',
-            preferredContactMethod: 'email',
-            orderNotifications: true,
-            promotionalUpdates: true,
-            smsAlerts: false,
-            twoFactorEnabled: false,
-          },
-          createdAt: new Date().toISOString(),
-          lastLogin: new Date().toISOString(),
-        };
-        this.accounts.push(account);
-        this.saveAccounts();
-      }
-
-      if (account) {
-        account.lastLogin = new Date().toISOString();
-        this.currentUser = account;
-        this.saveSession();
-        this.notifyListeners();
-        return { success: true, user: account };
-      }
-
-      return { success: false, error: 'Invalid email address or credentials.' };
+      return { success: false, error: 'Password is required.' };
     } catch (err: any) {
       return { success: false, error: err.message || 'Login failed.' };
     }
@@ -425,7 +278,7 @@ class AuthService {
     }
 
     try {
-      let uid = `CUST-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      let uid: string;
 
       // 1. Primary: Create User in Firebase Auth
       try {
@@ -458,7 +311,8 @@ class AuthService {
             error: 'The provided email address is invalid.',
           };
         }
-        console.warn('[Firebase Auth] Registration warning:', authErr.message);
+        console.error('[Firebase Auth] Registration failed:', authErr);
+        return { success: false, error: authErr.message || 'Firebase registration failed.' };
       }
 
       // 2. Create Firestore Customer Profile Document at users/{uid}
@@ -477,7 +331,12 @@ class AuthService {
       try {
         await setDoc(doc(db, 'users', uid), firestoreUserProfile, { merge: true });
       } catch (firestoreErr) {
-        console.warn('[Firestore] Profile creation notice:', firestoreErr);
+        console.error('[Turso] Customer profile creation failed:', firestoreErr);
+        await signOut(auth);
+        return {
+          success: false,
+          error: firestoreErr instanceof Error ? firestoreErr.message : 'Could not save the customer profile.',
+        };
       }
 
       const newCustomerUser: CustomerUser = {
@@ -508,10 +367,7 @@ class AuthService {
         lastLogin: now,
       };
 
-      this.accounts.push(newCustomerUser);
       this.currentUser = newCustomerUser;
-      this.saveAccounts();
-      this.saveSession();
       this.notifyListeners();
 
       return { success: true, user: newCustomerUser };
@@ -530,7 +386,6 @@ class AuthService {
       console.warn('[Firebase Auth] Logout notice:', err);
     }
     this.currentUser = null;
-    localStorage.removeItem(SESSION_STORAGE_KEY);
     this.notifyListeners();
   }
 
@@ -562,35 +417,24 @@ class AuthService {
           message: '',
         };
       }
-      // Demo / fallback simulation for frictionless evaluation
+      console.error('[Firebase Auth] Password reset request failed:', err);
       return {
-        success: true,
-        message: `Password reset instructions have been dispatched to ${cleanEmail}. Check your inbox for the secure verification link.`,
+        success: false,
+        error: err instanceof Error ? err.message : 'Could not send password reset instructions.',
+        message: '',
       };
     }
-  }
-
-  public switchDemoAccount(email: string): CustomerUser | null {
-    const found = this.accounts.find((a) => a.email.toLowerCase() === email.toLowerCase());
-    if (found) {
-      this.currentUser = found;
-      this.saveSession();
-      this.notifyListeners();
-      return found;
-    }
-    return null;
   }
 
   public async updateProfile(
     userId: string,
     updates: Partial<CustomerUser>
   ): Promise<{ success: boolean; user?: CustomerUser; error?: string }> {
-    const index = this.accounts.findIndex((a) => a.id === userId || a.uid === userId);
-    if (index === -1 && !this.currentUser) {
+    if (!this.currentUser || (this.currentUser.id !== userId && this.currentUser.uid !== userId)) {
       return { success: false, error: 'Customer account not found.' };
     }
 
-    const current = this.currentUser || this.accounts[index];
+    const current = this.currentUser;
     const updated: CustomerUser = {
       ...current,
       ...updates,
@@ -604,14 +448,6 @@ class AuthService {
       },
     };
 
-    if (index !== -1) {
-      this.accounts[index] = updated;
-    }
-    this.currentUser = updated;
-    this.saveAccounts();
-    this.saveSession();
-
-    // Sync updates to Firestore users/{uid}
     try {
       const targetUid = current.uid || current.id;
       const userRef = doc(db, 'users', targetUid);
@@ -628,16 +464,63 @@ class AuthService {
         },
         { merge: true }
       );
+      this.currentUser = updated;
+      this.notifyListeners();
+      return { success: true, user: updated };
     } catch (err) {
-      console.warn('[Firestore] Profile update sync notice:', err);
+      console.error('[Turso] Customer profile update failed:', err);
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Could not save customer profile changes.',
+      };
     }
-
-    this.notifyListeners();
-    return { success: true, user: updated };
   }
 
-  public getAllCustomers(): CustomerUser[] {
-    return [...this.accounts];
+  public async getAllCustomers(): Promise<CustomerUser[]> {
+    const currentUser = auth.currentUser;
+    if (!currentUser) throw new Error('Sign in to the admin portal to load customer records.');
+
+    const response = await fetch('/api/admin/customers', {
+      headers: { Authorization: `Bearer ${await currentUser.getIdToken()}` },
+    });
+    const result = await response.json() as {
+      success: boolean;
+      customers?: Array<FirestoreUser & Record<string, any> & { id: string }>;
+      error?: string;
+    };
+    if (!response.ok || !result.success || !result.customers) {
+      throw new Error(result.error || 'Could not load customers from the database.');
+    }
+
+    return result.customers.map((data) => {
+      return {
+        id: data.id,
+        uid: data.uid || data.id,
+        fullName: data.name || data.displayName || 'Mahdev Customer',
+        email: data.email || '',
+        phone: data.phone || '',
+        company: data.company || '',
+        accountType: data.accountType || 'individual',
+        role: (data.role as CustomerRole) || 'customer',
+        avatarUrl: data.photoURL || data.photoUrl || '',
+        address: data.address || {
+          street: '',
+          city: '',
+          postalCode: '',
+          country: '',
+        },
+        preferences: data.preferences || {
+          currency: 'LKR',
+          preferredContactMethod: 'email',
+          orderNotifications: true,
+          promotionalUpdates: false,
+          smsAlerts: false,
+          twoFactorEnabled: false,
+        },
+        createdAt: data.createdAt || '',
+        lastLogin: data.lastLogin || data.updatedAt || data.createdAt || '',
+      } satisfies CustomerUser;
+    });
   }
 
   // ==========================================

@@ -15,10 +15,8 @@ import {
 import { CartSummary, CartItem } from '../types/cart';
 import { notificationService } from './notificationService';
 import { db, sanitizeForFirestore } from '../lib/firebase';
-import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc } from '../lib/tursoFirestore';
 import { firestoreOrdersService } from './firestore/orders';
-
-const ORDERS_STORAGE_KEY = 'mahdev_orders_v1';
 
 export const SHIPPING_METHODS: ShippingMethod[] = [
   {
@@ -57,7 +55,6 @@ class OrderService {
   private syncInFlight: Set<string> = new Set();
 
   constructor() {
-    this.loadOrders();
     this.initFirestoreSync();
   }
 
@@ -130,54 +127,8 @@ class OrderService {
     }
   }
 
-  private loadOrders(): void {
-    try {
-      const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          // Permanently purge any hardcoded test or demo orders (never delete legitimate customer orders like ORD-2026-6104)
-          const testOrderIds = new Set(['ORD-2026-8941', 'ORD-2026-7219', 'ORD-2026-5530']);
-          const testEmails = ['colombomed.lk', 'singhania.in', 'ceylondigital.lk', 'kandytech.lk', 'innovate.sg', 'example.com'];
-          const genuine = parsed.filter((o: any) => {
-            if (!o || !o.id) return false;
-            if (testOrderIds.has(o.id)) return false;
-            if (typeof o.id === 'string' && (o.id.startsWith('TEST-') || o.id.startsWith('FAKE-') || o.id.startsWith('DEMO-'))) return false;
-            const email = (o.customer?.email || '').toLowerCase();
-            if (testEmails.some((domain) => email.includes(domain))) return false;
-            return true;
-          });
-          this.orders = genuine;
-          if (genuine.length !== parsed.length) {
-            this.saveOrders();
-          }
-        } else {
-          this.orders = [];
-        }
-      } else {
-        this.orders = [];
-      }
-    } catch {
-      this.orders = [];
-    }
-  }
-
   private saveOrders(): void {
-    try {
-      // Strip massive base64 images to prevent localStorage QuotaExceededError
-      const safeOrders = this.orders.map((order) => ({
-        ...order,
-        items: (order.items || []).map((item) => ({
-          ...item,
-          imageUrl: item.imageUrl && item.imageUrl.startsWith('data:') ? '' : item.imageUrl,
-        })),
-      }));
-      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(safeOrders));
-    } catch (e) {
-      console.warn('[OrderService] Could not cache orders to localStorage (memory retained):', e);
-    } finally {
-      this.notify();
-    }
+    this.notify();
   }
 
   public syncOrderToFirestore(order: Order): void {

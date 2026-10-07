@@ -1,6 +1,6 @@
-# Mahdev Pvt Ltd — Firestore Query Optimization & Indexing Architecture (Phase 33)
+# Mahdev Pvt Ltd — Legacy Firestore Query Optimization & Indexing Notes
 
-This report details the comprehensive audit, architectural refactoring, and indexing strategy implemented to optimize Google Cloud Firestore database performance, minimize document reads, and eliminate unnecessary real-time listeners.
+This report documents the previous Google Cloud Firestore implementation. The app now stores application records in Turso; Firestore indexes and optimizations below are retained only as historical migration context and are not used by the current data adapter.
 
 ---
 

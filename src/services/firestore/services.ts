@@ -15,7 +15,7 @@ import {
   onSnapshot,
   Unsubscribe,
   writeBatch,
-} from 'firebase/firestore';
+} from '../../lib/tursoFirestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreService, DivisionId } from '../../types/firestore';
 import { isSameDivision } from './divisions';

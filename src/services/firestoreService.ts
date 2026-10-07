@@ -16,7 +16,7 @@ import {
   limit,
   DocumentData,
   QueryConstraint,
-} from 'firebase/firestore';
+} from '../lib/tursoFirestore';
 import { db, sanitizeForFirestore } from '../lib/firebase';
 import {
   FirestoreUser,

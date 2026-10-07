@@ -938,23 +938,33 @@ export const AdminDivisionsView: React.FC = () => {
     }
   };
 
-  const handleDeleteConfirm = (permanent: boolean) => {
+  const handleDeleteConfirm = async (permanent: boolean) => {
     if (!deletingDivision) return;
-    if (permanent) {
-      cmsService.hardDelete('divisions', deletingDivision.id);
-      addToast('warning', 'Permanent Deletion', `"${deletingDivision.name}" was permanently removed.`);
-    } else {
-      cmsService.softDelete('divisions', deletingDivision.id);
-      addToast('info', 'Division Archived', `"${deletingDivision.name}" was moved to archive.`);
+    try {
+      if (permanent) {
+        await cmsService.hardDelete('divisions', deletingDivision.id);
+        addToast('warning', 'Permanent Deletion', `"${deletingDivision.name}" was permanently removed.`);
+      } else {
+        await cmsService.softDelete('divisions', deletingDivision.id);
+        addToast('info', 'Division Archived', `"${deletingDivision.name}" was moved to archive.`);
+      }
+      setDeletingDivision(null);
+      loadDivisions();
+    } catch (error) {
+      console.error('[AdminDivisions] Delete failed:', error);
+      addToast('error', 'Delete Failed', error instanceof Error ? error.message : 'Could not update the database.');
     }
-    setDeletingDivision(null);
-    loadDivisions();
   };
 
-  const handleRestore = (div: CmsDivision) => {
-    cmsService.restore('divisions', div.id);
-    addToast('success', 'Division Restored', `"${div.name}" is now active again.`);
-    loadDivisions();
+  const handleRestore = async (div: CmsDivision) => {
+    try {
+      await cmsService.restore('divisions', div.id);
+      addToast('success', 'Division Restored', `"${div.name}" is now active again.`);
+      loadDivisions();
+    } catch (error) {
+      console.error('[AdminDivisions] Restore failed:', error);
+      addToast('error', 'Restore Failed', error instanceof Error ? error.message : 'Could not update the database.');
+    }
   };
 
   const comingSoonDivisions = divisions.filter(

@@ -11,7 +11,7 @@ import { FirestoreService, FirestoreBooking } from '../types/firestore';
 import { notificationService } from './notificationService';
 import { firestoreBookingsService } from './firestore/bookings';
 import { db } from '../lib/firebase';
-import { doc, deleteDoc } from 'firebase/firestore';
+import { doc, deleteDoc } from '../lib/tursoFirestore';
 
 export function mapFirestoreBookingToUniversal(fb: any): Booking {
   const rawCustomer = fb.customer || {};
@@ -127,8 +127,6 @@ export function mapFirestoreServiceToBookable(fs: FirestoreService): BookableSer
   };
 }
 
-const STORAGE_KEY = 'mahdev_bookings_store_v1';
-
 class UniversalBookingService {
   private services: BookableServiceItem[] = [];
   private bookings: Booking[] = [];
@@ -136,7 +134,6 @@ class UniversalBookingService {
   private unsubscribeFirestore: (() => void) | null = null;
 
   constructor() {
-    this.loadFromStorage();
     this.initFirestoreSubscription();
   }
 
@@ -216,35 +213,8 @@ class UniversalBookingService {
     }
   }
 
-  private loadFromStorage(): void {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          const genuine = parsed.filter((b: any) => {
-            if (!b || !b.id) return false;
-            if (typeof b.id === 'string' && (b.id.startsWith('DEMO-') || b.id.startsWith('FAKE-'))) return false;
-            return true;
-          });
-          this.bookings = genuine;
-        } else {
-          this.bookings = [];
-        }
-      } else {
-        this.bookings = [];
-      }
-    } catch {
-      this.bookings = [];
-    }
-  }
-
   private saveToStorage(): void {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.bookings));
-    } catch (e) {
-      console.error('Failed to persist bookings to localStorage', e);
-    }
+    // Bookings are synchronized through Turso, not browser storage.
   }
 
   // ----------------------------------------------------

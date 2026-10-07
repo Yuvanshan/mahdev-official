@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import { CmsService, CmsCategory } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
-import { firestoreServicesService } from '../../services/firestore/services';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { Button } from '../../components/ui/Button';
 import { AdminModal } from '../../components/admin/AdminModal';
@@ -157,13 +156,13 @@ export const AdminServicesView: React.FC = () => {
 
     try {
       const orderedIds = newOrder.map((s) => s.id);
-      cmsService.reorder('services', orderedIds);
-      await firestoreServicesService.reorderServices(orderedIds);
+      await cmsService.reorder('services', orderedIds);
       addToast('info', 'Service Order Updated', 'New service display order saved and updated on website.');
       await refreshAll();
     } catch (err: any) {
       console.error('[AdminServices] Reorder error:', err);
       addToast('error', 'Reorder Failed', err.message || 'Failed to persist services order.');
+      loadServices();
     }
   };
 
@@ -389,7 +388,7 @@ export const AdminServicesView: React.FC = () => {
         .find((c) => c.name.toLowerCase() === resolvedCategory.toLowerCase());
 
       if (!existingCategory && resolvedCategory !== 'General') {
-        cmsService.create<CmsCategory>('categories', {
+        await cmsService.create<CmsCategory>('categories', {
           name: resolvedCategory,
           slug: resolvedCategory
             .toLowerCase()
@@ -415,39 +414,11 @@ export const AdminServicesView: React.FC = () => {
         features: cleanFeatures.length > 0 ? cleanFeatures : ['Professional Service Consultation'],
       };
 
-      const firestoreData = {
-        title: payload.title,
-        division: payload.divisionId as DivisionId,
-        divisionName: payload.divisionName,
-        category: payload.category,
-        sku: payload.sku,
-        description: payload.description,
-        imageUrl: payload.imageUrl,
-        images: payload.images,
-        features: payload.features,
-        price: payload.startingPrice,
-        startingPrice: payload.startingPrice,
-        currency: payload.currency,
-        badge: payload.badge,
-        popular: payload.popular,
-        isActive: payload.isActive,
-      };
-
       if (editingService) {
-        cmsService.update<CmsService>('services', editingService.id, payload);
-        try {
-          await firestoreServicesService.saveService(editingService.id, firestoreData);
-        } catch (fErr) {
-          console.warn('[AdminServices] Firestore background sync notice:', fErr);
-        }
+        await cmsService.update<CmsService>('services', editingService.id, payload);
         addToast('success', 'Service Updated', `"${formData.title}" saved successfully.`);
       } else {
-        const created = cmsService.create<CmsService>('services', payload);
-        try {
-          await firestoreServicesService.saveService(created.id, firestoreData);
-        } catch (fErr) {
-          console.warn('[AdminServices] Firestore background sync notice:', fErr);
-        }
+        await cmsService.create<CmsService>('services', payload);
         addToast('success', 'Service Created', `"${formData.title}" saved successfully.`);
       }
       setIsDirty(false);
@@ -468,12 +439,10 @@ export const AdminServicesView: React.FC = () => {
     if (!deletingService) return;
     try {
       if (permanent) {
-        cmsService.hardDelete('services', deletingService.id);
-        await firestoreServicesService.deleteService(deletingService.id);
+        await cmsService.hardDelete('services', deletingService.id);
         addToast('warning', 'Permanent Deletion', `"${deletingService.title}" was permanently removed from Firestore.`);
       } else {
-        cmsService.softDelete('services', deletingService.id);
-        await firestoreServicesService.saveService(deletingService.id, { status: 'inactive', isPublished: false });
+        await cmsService.softDelete('services', deletingService.id);
         addToast('info', 'Service Archived', `"${deletingService.title}" was archived.`);
       }
       await refreshAll();
@@ -485,10 +454,15 @@ export const AdminServicesView: React.FC = () => {
     loadServices();
   };
 
-  const handleRestore = (srv: CmsService) => {
-    cmsService.restore('services', srv.id);
-    addToast('success', 'Service Restored', `"${srv.title}" is restored.`);
-    loadServices();
+  const handleRestore = async (srv: CmsService) => {
+    try {
+      await cmsService.restore('services', srv.id);
+      addToast('success', 'Service Restored', `"${srv.title}" is restored.`);
+      loadServices();
+    } catch (error) {
+      console.error('[AdminServices] Restore failed:', error);
+      addToast('error', 'Restore Failed', error instanceof Error ? error.message : 'Could not update the database.');
+    }
   };
 
   return (

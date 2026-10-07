@@ -22,7 +22,6 @@ export interface ServerEnvironmentConfig {
 
   /** Security & Cryptographic Salts */
   security: {
-    adminSecretSalt: string;
     orderSignatureSecret: string;
     invoiceSigningSalt: string;
     notificationSecretSalt: string;
@@ -64,7 +63,6 @@ export function getServerConfig(): ServerEnvironmentConfig {
     },
 
     security: {
-      adminSecretSalt: process.env.ADMIN_SECRET_SALT || 'mahdev_admin_salt_2026_secure_kernel',
       orderSignatureSecret: process.env.ORDER_SIGNATURE_SECRET || 'mahdev_order_signature_secret_2026',
       invoiceSigningSalt: process.env.INVOICE_SIGNING_SALT || 'mahdev_invoice_hmac_salt_2026',
       notificationSecretSalt: process.env.NOTIFICATION_SECRET_SALT || 'mahdev_notification_secret_2026',
@@ -111,7 +109,7 @@ export function validateServerSecrets(): {
   diagnostics.push({
     category: 'Security Kernel',
     status: 'configured',
-    description: 'HMAC-SHA256 order signing and admin verification active',
+    description: 'HMAC-SHA256 order signing and Firebase admin token verification active',
   });
 
   // 3. Communications

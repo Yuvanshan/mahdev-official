@@ -5,7 +5,7 @@ import {
   updateDoc,
   onSnapshot,
   serverTimestamp,
-} from 'firebase/firestore';
+} from '../../lib/tursoFirestore';
 import { db } from '../../lib/firebase';
 import {
   AboutUsContent,

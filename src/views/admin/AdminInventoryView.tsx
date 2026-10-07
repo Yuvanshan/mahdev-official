@@ -29,6 +29,7 @@ import { useAdminAuth } from '../../context/AdminAuthContext';
 import { Button } from '../../components/ui/Button';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { AdminModal } from '../../components/admin/AdminModal';
+import { adminService } from '../../services/adminService';
 
 interface StockAdjustmentLog {
   id: string;
@@ -41,8 +42,6 @@ interface StockAdjustmentLog {
   timestamp: string;
   author: string;
 }
-
-const STOCK_LOGS_KEY = 'mahdev_stock_adjustment_logs_v1';
 
 export const AdminInventoryView: React.FC = () => {
   const { admin, logAuditAction } = useAdminAuth();
@@ -72,41 +71,32 @@ export const AdminInventoryView: React.FC = () => {
     }, 4000);
   };
 
-  const loadLogs = () => {
+  const loadLogs = async () => {
     try {
-      const stored = localStorage.getItem(STOCK_LOGS_KEY);
-      if (stored) {
-        setAdjustmentLogs(JSON.parse(stored));
-      } else {
-        const seedLogs: StockAdjustmentLog[] = [
-          {
-            id: 'LOG-001',
-            sku: 'MD-TEA-ST01-100G',
-            productName: 'Royal Ceylon Silver Tips Reserve Tea',
-            previousQty: 12,
-            newQty: 45,
-            delta: 33,
-            reason: 'Restock Supplier Purchase Order (Estate Batch #2026-A)',
-            timestamp: '2026-08-15T08:30:00.000Z',
-            author: 'Warehouse Lead Niluka',
-          },
-          {
-            id: 'LOG-002',
-            sku: 'MD-SPC-ALBA01',
-            productName: 'Organic Ceylon Alba Grade Cinnamon Quills',
-            previousQty: 60,
-            newQty: 52,
-            delta: -8,
-            reason: 'Physical Inventory Count Correction',
-            timestamp: '2026-08-14T14:10:00.000Z',
-            author: 'Operations Admin',
-          },
-        ];
-        setAdjustmentLogs(seedLogs);
-        localStorage.setItem(STOCK_LOGS_KEY, JSON.stringify(seedLogs));
-      }
-    } catch {
-      setAdjustmentLogs([]);
+      const auditEntries = await adminService.getAuditLogs();
+      const logs = auditEntries
+        .filter((entry) => entry.action === 'INVENTORY_STOCK_ADJUSTMENT')
+        .map((entry) => {
+          const match = entry.details.match(/^SKU (.*?): (-?\d+) -> (-?\d+) \([^)]*\)\. Reason: (.*)$/);
+          const product = products.find((item) => item.id === entry.entityId);
+          const previousQty = Number(match?.[2] || 0);
+          const newQty = Number(match?.[3] || 0);
+          return {
+            id: entry.id,
+            sku: match?.[1] || product?.sku || entry.entityId,
+            productName: product?.name || entry.entityId,
+            previousQty,
+            newQty,
+            delta: newQty - previousQty,
+            reason: match?.[4] || entry.details,
+            timestamp: entry.timestamp,
+            author: entry.adminName,
+          };
+        });
+      setAdjustmentLogs(logs);
+    } catch (error) {
+      console.error('[AdminInventory] Could not load adjustment history:', error);
+      addToast('error', 'History Unavailable', 'Could not load stock adjustment history from the database.');
     }
   };
 
@@ -126,10 +116,13 @@ export const AdminInventoryView: React.FC = () => {
 
   useEffect(() => {
     loadInventory();
-    loadLogs();
     const unsub = cmsService.subscribe('products', loadInventory);
     return () => unsub();
   }, [searchQuery, stockFilter]);
+
+  useEffect(() => {
+    void loadLogs();
+  }, []);
 
   const handleQuickAdjust = (product: CmsProduct) => {
     setAdjustingProduct(product);
@@ -177,16 +170,24 @@ export const AdminInventoryView: React.FC = () => {
         author,
       };
 
-      const updatedLogs = [newLog, ...adjustmentLogs];
-      setAdjustmentLogs(updatedLogs);
-      localStorage.setItem(STOCK_LOGS_KEY, JSON.stringify(updatedLogs));
-
-      logAuditAction(
-        'INVENTORY_STOCK_ADJUSTMENT',
-        'Inventory',
-        adjustingProduct.id,
-        `SKU ${adjustingProduct.sku}: ${adjustingProduct.stockQuantity} -> ${adjustQty} (${delta >= 0 ? `+${delta}` : delta}). Reason: ${adjustReason}`
-      );
+      try {
+        const auditSaved = await logAuditAction(
+          'INVENTORY_STOCK_ADJUSTMENT',
+          'Inventory',
+          adjustingProduct.id,
+          `SKU ${adjustingProduct.sku}: ${adjustingProduct.stockQuantity} -> ${adjustQty} (${delta >= 0 ? `+${delta}` : delta}). Reason: ${adjustReason}`
+        );
+        if (auditSaved) {
+          await loadLogs();
+        } else {
+          addToast('warning', 'History Not Recorded', 'Stock was updated, but the audit record could not be saved.');
+          setAdjustmentLogs((current) => [newLog, ...current]);
+        }
+      } catch (error) {
+        console.error('[AdminInventory] Could not record stock adjustment audit:', error);
+        addToast('warning', 'History Not Recorded', 'Stock was updated, but the audit record could not be saved.');
+        setAdjustmentLogs((current) => [newLog, ...current]);
+      }
 
       addToast('success', 'Stock Adjusted', `Updated SKU ${adjustSku} quantity to ${adjustQty} units (${delta >= 0 ? `+${delta}` : delta}).`);
       setAdjustingProduct(null);

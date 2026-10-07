@@ -11,7 +11,7 @@ import {
   deleteDoc,
   onSnapshot,
   Unsubscribe,
-} from 'firebase/firestore';
+} from '../../lib/tursoFirestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreTrustedCompany } from '../../types/firestore';
 

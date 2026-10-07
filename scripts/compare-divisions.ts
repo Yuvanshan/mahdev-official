@@ -1,4 +1,4 @@
-import { db } from '../src/lib/firebase';
+import { db } from './legacyFirestoreSource';
 import { doc, getDoc } from 'firebase/firestore';
 
 async function comparePairs() {

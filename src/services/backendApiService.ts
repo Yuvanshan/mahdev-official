@@ -6,6 +6,7 @@
  */
 
 import { getAppCheckAttestationToken } from '../lib/appCheck';
+import { auth } from '../lib/firebase';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -25,8 +26,12 @@ class BackendApiService {
       headers['X-Firebase-AppCheck'] = appCheckToken;
     }
 
-    // Attach Admin Token if available in localStorage
-    const adminToken = localStorage.getItem('mahdev_admin_session_token');
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      headers.Authorization = `Bearer ${await currentUser.getIdToken()}`;
+    }
+
+    const adminToken = '';
     if (adminToken) {
       headers['X-Admin-Token'] = adminToken;
       headers['X-App-Authorization'] = `Bearer ${adminToken}`;

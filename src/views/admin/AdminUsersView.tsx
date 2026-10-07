@@ -56,8 +56,16 @@ export const AdminUsersView: React.FC = () => {
   };
 
   const loadUsers = async () => {
-    const list = await adminService.getAdminUsers();
-    setUsers(list);
+    try {
+      const list = await adminService.getAdminUsers();
+      setUsers(list);
+    } catch (error) {
+      addToast(
+        'error',
+        'Could Not Load Administrators',
+        error instanceof Error ? error.message : 'The administrator registry is unavailable.'
+      );
+    }
   };
 
   useEffect(() => {
@@ -176,7 +184,7 @@ export const AdminUsersView: React.FC = () => {
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Manage administrative console operators, security roles, division scopes, and audit credentials.
+            Manage verified Firebase accounts and their Turso roles. Create the Firebase account first; bootstrap administrators are controlled by TURSO_ADMIN_EMAILS.
           </p>
         </div>
 

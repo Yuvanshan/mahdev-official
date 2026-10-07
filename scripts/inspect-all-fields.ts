@@ -1,4 +1,4 @@
-import { db } from '../src/lib/firebase';
+import { db } from './legacyFirestoreSource';
 import { collection, getDocs } from 'firebase/firestore';
 
 async function main() {

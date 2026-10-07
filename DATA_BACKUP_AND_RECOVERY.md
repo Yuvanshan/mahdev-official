@@ -4,9 +4,20 @@ This operational manual outlines the enterprise data-protection architecture, sc
 
 ---
 
+> **Current database:** Application records now live in Turso. The Firestore export and restore procedures below describe the previous Firestore deployment and do not back up or restore Turso data. The checked-in `firestore-dump.json` is the initial migration source; import it with `npm run migrate:turso`.
+
+## Current Turso Migration Notes
+
+- The server provisions a separate Turso table for each application collection.
+- Set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in server runtime secrets before starting the server or migration command.
+- The migration command upserts the JSON backup and does not delete existing Turso records.
+- Configure and verify database backups for the Turso database in the Turso dashboard before production use.
+
+## Legacy Firestore Backup and Restore Procedures
+
 ## 1. Protected Data Collections & Classification
 
-The Mahdev platform stores mission-critical transactional, fiscal, and operational records in Google Cloud Firestore database (`ai-studio-mahdevpvtltd-b6505c20-1d3d-4de0-a4bb-a8fb7ae999dd`):
+The previous Firestore deployment stored mission-critical transactional, fiscal, and operational records in Google Cloud Firestore database (`ai-studio-mahdevpvtltd-b6505c20-1d3d-4de0-a4bb-a8fb7ae999dd`):
 
 | Collection | Data Type | Classification | RPO Target | RTO Target |
 | :--- | :--- | :--- | :--- | :--- |

@@ -4,7 +4,7 @@
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.0+-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-4.0+-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![Firebase](https://img.shields.io/badge/Firebase-Firestore_%26_Auth-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com/)
+[![Turso](https://img.shields.io/badge/Turso-libSQL-4FF8D2?logo=turso&logoColor=black)](https://turso.tech/)
 [![License](https://img.shields.io/badge/License-Proprietary-red.svg)](#license)
 
 Mahdev Pvt Ltd is a premier Sri Lankan multinational conglomerate operating five integrated business divisions. This repository contains the unified, enterprise-grade web application, e-commerce catalog, booking engine, administrative portal, and secure backend microservices.
@@ -30,7 +30,7 @@ Mahdev Pvt Ltd is a premier Sri Lankan multinational conglomerate operating five
 
 - **Frontend**: React 18, TypeScript, Tailwind CSS v4, Motion (`motion/react`), Lucide Icons.
 - **Backend & APIs**: Node.js, Express, Vite middleware mode, ESBuild CommonJS bundler.
-- **Data & Storage**: Google Cloud Firestore, Firebase Authentication, Firebase Storage, Firebase App Check (reCAPTCHA Enterprise).
+- **Data & Storage**: Turso (libSQL) collection tables, Firebase Authentication, Firebase Storage, Firebase App Check (reCAPTCHA Enterprise).
 - **Payments & IPG**: LankaPay National Payment Network, Stripe IPG, Bank Direct Transfer, HMAC-SHA256 verification.
 - **Security & Integrity**: Sub-second velocity filtering, Honeypot traps, Rate limiting, Cryptographic invoice signing.
 
@@ -58,7 +58,7 @@ Copy `.env.example` to `.env`:
 ```bash
 cp .env.example .env
 ```
-Fill in the required keys for Firebase, Payments, and Admin secrets.
+Fill in the Turso database URL and auth token, plus the Firebase Authentication/Storage, Payments, and Admin settings. In the Turso dashboard, select a database and copy its connection URL; create an auth token for that database. Keep `TURSO_AUTH_TOKEN` server-side and do not expose it as a `VITE_` variable.
 
 ### 4. Start the Full-Stack Dev Server
 ```bash
@@ -75,6 +75,7 @@ The server will boot on `http://localhost:3000` binding Express backend APIs and
 | `npm run dev` | Starts Express + Vite unified development server on port 3000 |
 | `npm run build` | Builds optimized frontend assets to `dist/` and compiles backend server to `dist/server.cjs` |
 | `npm run start` | Boots production server from `dist/server.cjs` |
+| `npm run migrate:turso` | Imports `firestore-dump.json` into Turso (or pass a backup path) |
 | `npm run lint` | Runs TypeScript static analysis and linter (`tsc --noEmit`) |
 
 ---
@@ -91,21 +92,22 @@ The server will boot on `http://localhost:3000` binding Express backend APIs and
 | `ORDER_SIGNATURE_SECRET` | Server | Salt for generating immutable order hashes |
 | `INVOICE_SIGNING_SALT` | Server | Salt for signing fiscal enterprise invoices |
 | `NOTIFICATION_SECRET_SALT`| Server | Salt for securing multi-channel notifications |
+| `TURSO_DATABASE_URL` | Server | Turso database connection URL (`libsql://...` or `https://...`) |
+| `TURSO_AUTH_TOKEN` | Server | Private Turso database authentication token |
+| `VITE_TURSO_DATABASE_NAME` | Client | Optional public display label for admin diagnostics |
 | `VITE_FIREBASE_*` | Client | Public Firebase project keys (`apiKey`, `projectId`, `appId`, etc.) |
 | `VITE_FIREBASE_RECAPTCHA_SITE_KEY` | Client | reCAPTCHA v3 / Enterprise site key for App Check |
 
 ---
 
-## 🔥 Firebase Setup & Security
+## 🗄️ Turso Database Setup
 
-1. **Firestore Database ID**:
-   - `ai-studio-mahdevpvtltd-b6505c20-1d3d-4de0-a4bb-a8fb7ae999dd`
-2. **Security Rules**:
-   - Rules are strictly governed in `firestore.rules`.
-   - Client writes are restricted to authenticated users matching document ownership.
-   - Administrative collections (`/admin_roles/`, `/audit_logs/`, `/system_settings/`) enforce role-based access.
-3. **App Check**:
-   - Automatically initializes in `src/App.tsx` with environment-sensitive debug attestation in development and reCAPTCHA v3 in production.
+1. Create/select a database in the Turso dashboard and copy its database URL from the database connection details. Generate an auth token for the database.
+2. Put `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in the server environment (root `.env` locally; deployment secrets in production). Never use a `VITE_` prefix for the auth token.
+3. Start the server. It provisions one physical SQL table for every known application collection, plus the `turso_collections` and `turso_migrations` metadata tables. New collection tables are provisioned on first access.
+4. To import the repository’s Firestore backup, run `npm run migrate:turso`. To use another JSON backup, run `npm run migrate:turso -- path/to/backup.json`. Imports are upserts and do not clear existing Turso rows.
+
+Firebase remains in use for Authentication, Storage, and App Check; application records are stored in Turso. App Check initializes in `src/App.tsx` with environment-sensitive debug attestation in development and reCAPTCHA v3 in production.
 
 ---
 

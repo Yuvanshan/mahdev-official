@@ -3,13 +3,8 @@ import {
   Shield,
   Lock,
   Mail,
-  KeyRound,
   ArrowRight,
   AlertCircle,
-  CheckCircle2,
-  Building,
-  Terminal,
-  Cpu,
   ChevronRight,
 } from 'lucide-react';
 import { useAdminAuth } from '../../context/AdminAuthContext';
@@ -24,9 +19,8 @@ interface AdminLoginViewProps {
 export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNavigate }) => {
   const { login } = useAdminAuth();
 
-  const [email, setEmail] = useState('info.mahdev.lk@gmail.com');
-  const [password, setPassword] = useState('••••••••••••');
-  const [pin, setPin] = useState('202688');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -36,7 +30,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
     setIsLoading(true);
 
     try {
-      const res = await login(email, password, pin);
+      const res = await login(email, password);
       if (res.success) {
         if (onSuccess) {
           onSuccess();
@@ -51,13 +45,6 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleQuickPreset = (presetEmail: string, presetPin: string) => {
-    setEmail(presetEmail);
-    setPassword('MahdevSecret#2026');
-    setPin(presetPin);
-    setError(null);
   };
 
   return (
@@ -123,7 +110,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
             {/* Admin Password */}
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-300">
-                Security Passkey
+                Firebase Password
               </label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -132,29 +119,8 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
+                  placeholder="Enter your Firebase password"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
-                />
-              </div>
-            </div>
-
-            {/* 2FA PIN */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold text-slate-300">
-                  Hardware / Authenticator PIN (2FA)
-                </label>
-                <span className="text-[10px] text-blue-400 font-mono">HMAC-SHA256</span>
-              </div>
-              <div className="relative">
-                <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  maxLength={6}
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value)}
-                  placeholder="202688"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono tracking-widest"
                 />
               </div>
             </div>
@@ -176,44 +142,10 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
                 }
                 className="py-3 text-xs font-bold shadow-lg shadow-blue-900/30"
               >
-                {isLoading ? 'Verifying Cryptographic Credentials...' : 'Authenticate & Enter Console'}
+                {isLoading ? 'Verifying Firebase credentials...' : 'Authenticate & Enter Console'}
               </Button>
             </div>
           </form>
-
-          {/* Quick Demo Switchers */}
-          <div className="pt-4 border-t border-slate-800 space-y-2">
-            <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold block">
-              Quick Administrative Presets:
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickPreset('info.mahdev.lk@gmail.com', '202688')}
-                className="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-950 border border-slate-800 text-left transition-all cursor-pointer group"
-              >
-                <span className="text-[11px] font-bold text-blue-400 group-hover:text-blue-300 block">
-                  Super Admin
-                </span>
-                <span className="text-[10px] text-slate-500 font-mono block truncate">
-                  info.mahdev.lk@gmail.com
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickPreset('operations@mahdev.lk', '884910')}
-                className="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-950 border border-slate-800 text-left transition-all cursor-pointer group"
-              >
-                <span className="text-[11px] font-bold text-purple-400 group-hover:text-purple-300 block">
-                  Operations Admin
-                </span>
-                <span className="text-[10px] text-slate-500 font-mono block truncate">
-                  operations@mahdev.lk
-                </span>
-              </button>
-            </div>
-          </div>
 
           {/* Return to Public Site */}
           <div className="pt-2 text-center">
@@ -230,7 +162,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
         {/* Security Stamp */}
         <div className="flex items-center justify-center gap-2 text-[10px] text-slate-600 font-mono">
           <Lock className="w-3 h-3 text-slate-500" />
-          <span>SESSION TOKENS SIGNED WITH HMAC-SHA256 • AUDIT TRAIL LOGGED</span>
+          <span>FIREBASE AUTHENTICATION • SERVER-VERIFIED ADMIN ACCESS</span>
         </div>
       </div>
     </div>

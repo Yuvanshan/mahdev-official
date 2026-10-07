@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import fs from 'fs';
@@ -20,6 +21,17 @@ import {
   dispatchServerNotification,
 } from './server/services/secureNotificationService';
 import {
+  getTursoDocument,
+  initializeTursoDatabase,
+  writeTursoDocument,
+} from './server/tursoDatabase';
+import { createTursoRouter } from './server/tursoRoutes';
+import {
+  AdminAuthenticationError,
+  getBearerToken,
+  verifyFirebaseAdminToken,
+} from './server/firebaseAdminAuth';
+import {
   sendEnquiryEmail,
 } from './server/services/emailService';
 import {
@@ -33,7 +45,6 @@ const serverConfig = getServerConfig();
 const STRIPE_SECRET_KEY = serverConfig.payments.stripeSecretKey;
 const PAYMENT_WEBHOOK_SECRET = serverConfig.payments.webhookSecret;
 const PAYMENT_GATEWAY_ENV = serverConfig.payments.gatewayEnv;
-const ADMIN_SECRET_SALT = serverConfig.security.adminSecretSalt;
 
 // In-Memory Transaction Store (Persistent during server lifecycle)
 const transactionStore = new Map<string, PaymentTransaction>();
@@ -131,146 +142,46 @@ function rateLimit(options: { windowMs: number; max: number; endpointName: strin
   };
 }
 
-// Server Audit Logs
-const serverAuditLogs: any[] = [
-  {
-    id: 'AUD-2026-0001',
-    timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
-    adminEmail: 'info.mahdev.lk@gmail.com',
-    adminName: 'Yuvanshan Prabakaran (Super Admin)',
-    action: 'SYSTEM_BOOTSTRAP',
-    entityType: 'System',
-    entityId: 'SYS-ROOT',
-    details: 'Mahdev Enterprise Multi-Division Core initialized with TLS 1.3 encryption and automated rate-limiting.',
-    status: 'success',
-  },
-  {
-    id: 'AUD-2026-0002',
-    timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
-    adminEmail: 'operations@mahdev.lk',
-    adminName: 'Kamal Jayawardena',
-    action: 'INVENTORY_THRESHOLD_AUDIT',
-    entityType: 'Inventory',
-    entityId: 'MART-TEA-102',
-    details: 'Automated replenishment threshold alert verified for Silver Tips Imperial Reserve.',
-    status: 'warning',
-  },
-];
-
-// Admin Token Signatures & Verification
-function generateAdminSessionToken(
-  adminId: string,
-  email: string,
-  role: string,
-  expiresAt: number
-): { token: string; signature: string } {
-  const payload = `${adminId}:${email}:${role}:${expiresAt}`;
-  const signature = crypto.createHmac('sha256', ADMIN_SECRET_SALT).update(payload).digest('hex');
-  const token = Buffer.from(JSON.stringify({ adminId, email, role, expiresAt, signature })).toString('base64');
-  return { token, signature };
-}
-
-function verifyAdminToken(token: string): { isValid: boolean; session?: any } {
-  try {
-    const decoded = JSON.parse(Buffer.from(token, 'base64').toString('utf-8'));
-    const { adminId, email, role, expiresAt, signature } = decoded;
-
-    if (!adminId || !email || !role || !expiresAt || !signature) {
-      return { isValid: false };
-    }
-
-    if (Date.now() > expiresAt) {
-      return { isValid: false };
-    }
-
-    const expectedPayload = `${adminId}:${email}:${role}:${expiresAt}`;
-    const expectedSignature = crypto.createHmac('sha256', ADMIN_SECRET_SALT).update(expectedPayload).digest('hex');
-
-    if (!crypto.timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(signature))) {
-      return { isValid: false };
-    }
-
-    return { isValid: true, session: { adminId, email, role, expiresAt } };
-  } catch {
-    return { isValid: false };
-  }
-}
+const serverAuditLogs: any[] = [];
 
 // Authentication & Authorization Guard Middleware
 function requireAdminAuth(allowedRoles?: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
-    const rawHeader = (
-      req.headers['x-admin-token'] ||
-      req.headers['x-app-authorization'] ||
-      req.headers['x-app-token'] ||
-      req.headers.authorization ||
-      ''
-    ) as string;
-    const token =
-      rawHeader.replace(/^Bearer\s+/i, '').trim() ||
-      (req.headers['x-admin-token'] as string)?.trim() ||
-      (req.body && req.body.token);
-
-    if (!token) {
-      serverAuditLogs.unshift({
-        id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-        timestamp: new Date().toISOString(),
-        adminEmail: 'anonymous',
-        adminName: 'Unauthenticated Request',
-        action: 'UNAUTHORIZED_ACCESS_BLOCKED',
-        entityType: 'SecurityFilter',
-        entityId: req.path,
-        details: `Blocked unauthenticated request to protected endpoint: ${req.method} ${req.path}`,
-        status: 'error',
-      });
-
-      res.status(401).json({
-        success: false,
-        error: 'Authentication required. Missing administrative bearer authorization token.',
-      });
-      return;
-    }
-
-    const verification = verifyAdminToken(token);
-    if (!verification.isValid || !verification.session) {
-      res.status(403).json({
-        success: false,
-        error: 'Invalid, forged, or expired administrative session token.',
-      });
-      return;
-    }
-
-    // Role-based Access Control Check
-    if (allowedRoles && allowedRoles.length > 0) {
-      const userRole = verification.session.role;
-      const isSuperAdmin = userRole === 'super_admin';
-      if (!isSuperAdmin && !allowedRoles.includes(userRole)) {
-        serverAuditLogs.unshift({
-          id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-          timestamp: new Date().toISOString(),
-          adminEmail: verification.session.email,
-          adminName: verification.session.adminId,
-          action: 'FORBIDDEN_ROLE_ACTION',
-          entityType: 'RBAC',
-          entityId: req.path,
-          details: `Role "${userRole}" lacks required privileges [${allowedRoles.join(', ')}] for ${req.method} ${req.path}`,
-          status: 'warning',
-        });
-
-        res.status(403).json({
+    void verifyFirebaseAdminToken(getBearerToken(req.header('authorization')))
+      .then((verification) => {
+        if (
+          allowedRoles?.length &&
+          verification.role !== 'super_admin' &&
+          !allowedRoles.includes(verification.role)
+        ) {
+          res.status(403).json({
+            success: false,
+            error: `Insufficient role permissions. Action requires: ${allowedRoles.join(' or ')}.`,
+          });
+          return;
+        }
+        (req as any).adminSession = {
+          adminId: verification.uid,
+          email: verification.email,
+          role: verification.role,
+        };
+        next();
+      })
+      .catch((error: unknown) => {
+        const status = error instanceof AdminAuthenticationError ? error.statusCode : 401;
+        if (!(error instanceof AdminAuthenticationError)) {
+          console.error('[Admin Auth] Firebase token verification failed:', error);
+        }
+        res.status(status).json({
           success: false,
-          error: `Insufficient role permissions. Action requires: ${allowedRoles.join(' or ')}.`,
+          error: error instanceof Error ? error.message : 'Admin authentication failed.',
         });
-        return;
-      }
-    }
-
-    (req as any).adminSession = verification.session;
-    next();
+      });
   };
 }
 
 async function startServer() {
+  await initializeTursoDatabase();
   const app = express();
 
   // Production Security Headers & CORS Middleware (MUST BE FIRST)
@@ -284,7 +195,7 @@ async function startServer() {
     res.header('Access-Control-Allow-Origin', '*');
     res.header(
       'Access-Control-Allow-Headers',
-      'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Firebase-AppCheck, X-Admin-Token, X-App-Authorization, X-App-Token, x-filename, X-Filename, x-file-name, *'
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Firebase-AppCheck, x-filename, X-Filename, x-file-name, *'
     );
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
 
@@ -390,6 +301,7 @@ async function startServer() {
   // JSON & URL-Encoded Body Parsers supporting high-capacity media, rich base64 assets and division configs (100MB limit)
   app.use(express.json({ limit: '100mb' }));
   app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+  app.use('/api/database', createTursoRouter());
 
   // Graceful body-parser error handler (catches PayloadTooLargeError and malformed JSON before route handlers)
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {
@@ -902,105 +814,37 @@ async function startServer() {
   // ADMIN AUTHENTICATION & SECURITY ENDPOINTS
   // ==========================================
 
-  // Admin Login Endpoint (Strictly Rate-Limited to prevent brute-force attacks)
-  app.post(
-    '/api/admin/auth/login',
-    rateLimit({ windowMs: 15 * 60 * 1000, max: 10, endpointName: 'admin_login' }),
-    (req: Request, res: Response) => {
-      const { email } = req.body;
-      const emailClean = sanitizeString(email, 100).toLowerCase();
-
-      const isRootAdmin =
-        emailClean === 'info.mahdev.lk@gmail.com' ||
-        emailClean === 'admin@mahdev.lk' ||
-        emailClean === 'yuvanshan875@gmail.com' ||
-        emailClean === 'operations@mahdev.lk';
-
-      // Verify admin credentials
-      if (!isRootAdmin && !emailClean.includes('admin') && !emailClean.includes('mahdev') && !emailClean.includes('yuvanshan')) {
-        serverAuditLogs.unshift({
-          id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-          timestamp: new Date().toISOString(),
-          adminEmail: emailClean || 'unknown',
-          adminName: 'Unauthorized Attempt',
-          action: 'ADMIN_LOGIN_FAILED',
-          entityType: 'Authentication',
-          entityId: 'AUTH-GATE',
-          details: `Rejected unauthorized login attempt for "${emailClean}".`,
-          status: 'error',
-        });
-
-        res.status(401).json({ success: false, error: 'Unauthorized credentials for Mahdev Admin Portal.' });
-        return;
-      }
-
-      const isSuperAdmin = !emailClean.includes('operations');
-      const adminUser = {
-        id: isSuperAdmin ? 'ADM-ROOT-01' : 'ADM-OPS-02',
-        name: isSuperAdmin ? 'Yuvanshan Prabakaran (Super Admin)' : 'Executive Administrator',
-        email: isSuperAdmin ? 'info.mahdev.lk@gmail.com' : emailClean,
-        role: isSuperAdmin ? 'super_admin' : 'operations_admin',
-        department: 'Corporate Operations & Technology Executive',
-        divisionAccess: ['all'],
-        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-        lastLogin: new Date().toISOString(),
-        createdAt: '2026-01-01T00:00:00.000Z',
-      };
-
-      const expiresAt = Date.now() + 8 * 3600 * 1000; // 8-hour executive session
-      const { token } = generateAdminSessionToken(adminUser.id, adminUser.email, adminUser.role, expiresAt);
-
-      serverAuditLogs.unshift({
-        id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-        timestamp: new Date().toISOString(),
-        adminEmail: adminUser.email,
-        adminName: adminUser.name,
-        action: 'ADMIN_LOGIN_SUCCESS',
-        entityType: 'Authentication',
-        entityId: adminUser.id,
-        details: `Admin authenticated successfully via Role: ${adminUser.role.toUpperCase()} (Session TTL: 8 hours).`,
-        status: 'success',
-      });
-
-      res.json({
-        success: true,
-        token,
-        user: adminUser,
-        expiresAt: new Date(expiresAt).toISOString(),
-      });
-    }
+  app.post('/api/admin/auth/login', (_req: Request, res: Response) =>
+    res.status(410).json({
+      success: false,
+      error: 'Use Firebase Authentication to sign in to the admin portal.',
+    })
   );
 
   // Admin Verify Session Token
-  app.post('/api/admin/auth/verify', (req: Request, res: Response) => {
-    const rawHeader = (
-      req.headers['x-admin-token'] ||
-      req.headers['x-app-authorization'] ||
-      req.headers['x-app-token'] ||
-      req.headers.authorization ||
-      ''
-    ) as string;
-    const token =
-      rawHeader.replace(/^Bearer\s+/i, '').trim() ||
-      (req.headers['x-admin-token'] as string)?.trim() ||
-      req.body?.token;
-
-    if (!token) {
-      res.status(401).json({ success: false, error: 'No authorization token provided.' });
-      return;
+  app.post('/api/admin/auth/verify', async (req: Request, res: Response) => {
+    try {
+      const verification = await verifyFirebaseAdminToken(getBearerToken(req.header('authorization')));
+      res.json({
+        success: true,
+        valid: true,
+        session: {
+          adminId: verification.uid,
+          email: verification.email,
+          role: verification.role,
+        },
+        user: verification.user,
+      });
+    } catch (error) {
+      const status = error instanceof AdminAuthenticationError ? error.statusCode : 401;
+      if (!(error instanceof AdminAuthenticationError)) {
+        console.error('[Admin Auth] Firebase token verification failed:', error);
+      }
+      res.status(status).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Admin authentication failed.',
+      });
     }
-
-    const verification = verifyAdminToken(token);
-    if (!verification.isValid) {
-      res.status(401).json({ success: false, error: 'Invalid or expired administrative session token.' });
-      return;
-    }
-
-    res.json({
-      success: true,
-      valid: true,
-      session: verification.session,
-    });
   });
 
   // Admin Logout
@@ -1081,58 +925,23 @@ async function startServer() {
   let serverSiteSettings: any = { ...defaultSiteSettings };
   let serverHomepageSettings: any = null;
 
-  /**
-   * Safely reads a Firestore document with retry logic to gracefully accommodate
-   * the brief initial connection handshake without throwing offline errors.
-   */
-  async function fetchFirestoreDocSafe(collectionName: string, docId: string, maxAttempts = 3): Promise<any | null> {
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        const { db } = await import('./src/lib/firebase');
-        const { doc, getDoc } = await import('firebase/firestore');
-        const snap = await getDoc(doc(db, collectionName, docId));
-        if (snap.exists()) {
-          return snap.data();
-        }
-        return null;
-      } catch (err: any) {
-        const isOffline = err?.code === 'unavailable' || String(err?.message || '').includes('client is offline');
-        if (isOffline && attempt < maxAttempts) {
-          await new Promise((res) => setTimeout(res, 400 * attempt));
-          continue;
-        }
-        return null;
-      }
-    }
-    return null;
+  async function fetchTursoDocument(collectionName: string, docId: string): Promise<any | null> {
+    const document = await getTursoDocument(collectionName, '', docId);
+    return document?.data || null;
   }
 
-  // Preload settings from Firestore on server boot with a grace period for network handshake
-  (async () => {
-    await new Promise((resolve) => setTimeout(resolve, 350));
-    try {
-      const [cData, sData, hData] = await Promise.all([
-        fetchFirestoreDocSafe('settings', 'company', 3),
-        fetchFirestoreDocSafe('settings', 'site', 3),
-        fetchFirestoreDocSafe('settings', 'homepage', 3),
-      ]);
-      if (cData) {
-        serverCompanySettings = { ...serverCompanySettings, ...cData };
-      }
-      if (sData) {
-        serverSiteSettings = { ...serverSiteSettings, ...sData };
-      }
-      if (hData) {
-        serverHomepageSettings = { ...(serverHomepageSettings || {}), ...hData };
-      }
-    } catch {
-      // Retains safe default settings
-    }
-  })();
+  const [companyData, siteData, homepageData] = await Promise.all([
+    fetchTursoDocument('settings', 'company'),
+    fetchTursoDocument('settings', 'site'),
+    fetchTursoDocument('settings', 'homepage'),
+  ]);
+  if (companyData) serverCompanySettings = { ...serverCompanySettings, ...companyData };
+  if (siteData) serverSiteSettings = { ...serverSiteSettings, ...siteData };
+  if (homepageData) serverHomepageSettings = { ...homepageData };
 
   app.get('/api/settings/company', async (req: Request, res: Response) => {
     if (!serverCompanySettings || !serverCompanySettings.updatedAt) {
-      const live = await fetchFirestoreDocSafe('settings', 'company', 2);
+      const live = await fetchTursoDocument('settings', 'company');
       if (live) {
         serverCompanySettings = { ...serverCompanySettings, ...live };
       }
@@ -1149,22 +958,26 @@ async function startServer() {
       res.status(400).json({ success: false, error: 'Invalid company settings payload' });
       return;
     }
-    serverCompanySettings = {
+    const updatedCompanySettings = {
       ...(serverCompanySettings || {}),
       ...data,
       updatedAt: new Date().toISOString(),
     };
-
-    // Async sync to Firestore
-    (async () => {
-      try {
-        const { db } = await import('./src/lib/firebase');
-        const { doc, setDoc } = await import('firebase/firestore');
-        await setDoc(doc(db, 'settings', 'company'), serverCompanySettings, { merge: true });
-      } catch {
-        // Non-blocking catch to ensure transaction continuity
-      }
-    })();
+    try {
+      await writeTursoDocument({
+        type: 'set',
+        collection: 'settings',
+        parentPath: '',
+        id: 'company',
+        data: updatedCompanySettings,
+        merge: true,
+      });
+    } catch (error) {
+      console.error('[Turso] Failed to save company settings:', error);
+      res.status(503).json({ success: false, error: 'Failed to persist company settings to Turso.' });
+      return;
+    }
+    serverCompanySettings = updatedCompanySettings;
 
     serverAuditLogs.unshift({
       id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -1185,7 +998,7 @@ async function startServer() {
 
   app.get('/api/settings/site', async (req: Request, res: Response) => {
     if (!serverSiteSettings || !serverSiteSettings.updatedAt) {
-      const live = await fetchFirestoreDocSafe('settings', 'site', 2);
+      const live = await fetchTursoDocument('settings', 'site');
       if (live) {
         serverSiteSettings = { ...serverSiteSettings, ...live };
       }
@@ -1202,22 +1015,26 @@ async function startServer() {
       res.status(400).json({ success: false, error: 'Invalid site settings payload' });
       return;
     }
-    serverSiteSettings = {
+    const updatedSiteSettings = {
       ...(serverSiteSettings || {}),
       ...data,
       updatedAt: new Date().toISOString(),
     };
-
-    // Async sync to Firestore
-    (async () => {
-      try {
-        const { db } = await import('./src/lib/firebase');
-        const { doc, setDoc } = await import('firebase/firestore');
-        await setDoc(doc(db, 'settings', 'site'), serverSiteSettings, { merge: true });
-      } catch {
-        // Non-blocking catch to ensure transaction continuity
-      }
-    })();
+    try {
+      await writeTursoDocument({
+        type: 'set',
+        collection: 'settings',
+        parentPath: '',
+        id: 'site',
+        data: updatedSiteSettings,
+        merge: true,
+      });
+    } catch (error) {
+      console.error('[Turso] Failed to save site settings:', error);
+      res.status(503).json({ success: false, error: 'Failed to persist site settings to Turso.' });
+      return;
+    }
+    serverSiteSettings = updatedSiteSettings;
 
     serverAuditLogs.unshift({
       id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -1238,7 +1055,7 @@ async function startServer() {
 
   app.get('/api/settings/homepage', async (req: Request, res: Response) => {
     if (!serverHomepageSettings || !serverHomepageSettings.updatedAt) {
-      const live = await fetchFirestoreDocSafe('settings', 'homepage', 2);
+      const live = await fetchTursoDocument('settings', 'homepage');
       if (live) {
         serverHomepageSettings = { ...(serverHomepageSettings || {}), ...live };
       }
@@ -1255,23 +1072,26 @@ async function startServer() {
       res.status(400).json({ success: false, error: 'Invalid homepage settings payload' });
       return;
     }
-    serverHomepageSettings = {
+    const updatedHomepageSettings = {
       ...(serverHomepageSettings || {}),
       ...data,
       updatedAt: new Date().toISOString(),
     };
-
-    // Durable async sync to Firestore directly from server backend
-    (async () => {
-      try {
-        const { db } = await import('./src/lib/firebase');
-        const { doc, setDoc } = await import('firebase/firestore');
-        await setDoc(doc(db, 'settings', 'homepage'), serverHomepageSettings, { merge: true });
-        console.log('[Server Settings] Homepage settings synchronized to Firestore.');
-      } catch (err) {
-        console.warn('[Server Settings] Firestore async homepage sync notice:', err);
-      }
-    })();
+    try {
+      await writeTursoDocument({
+        type: 'set',
+        collection: 'settings',
+        parentPath: '',
+        id: 'homepage',
+        data: updatedHomepageSettings,
+        merge: true,
+      });
+    } catch (error) {
+      console.error('[Turso] Failed to save homepage settings:', error);
+      res.status(503).json({ success: false, error: 'Failed to persist homepage settings to Turso.' });
+      return;
+    }
+    serverHomepageSettings = updatedHomepageSettings;
 
     res.json({
       success: true,
@@ -1288,7 +1108,7 @@ async function startServer() {
     });
   });
 
-  app.post('/api/divisions/:id', (req: Request, res: Response) => {
+  app.post('/api/divisions/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
     const data = req.body;
     if (id && data) {
@@ -1300,17 +1120,22 @@ async function startServer() {
         rawId === 'travels' || rawId === 'mahdev-travels' || rawId === 'travel' ? 'travels' :
         rawId === 'mart' || rawId === 'online-mart' || rawId === 'mahdev-mart' || rawId === 'shop' ? 'mart' : rawId;
 
-      serverDivisionsMap.set(cleanId, { ...data, id: cleanId, slug: cleanId, updatedAt: new Date().toISOString() });
-      // Asynchronously sync to Firestore
-      (async () => {
-        try {
-          const { db } = await import('./src/lib/firebase');
-          const { doc, setDoc } = await import('firebase/firestore');
-          await setDoc(doc(db, 'divisions', cleanId), { ...data, id: cleanId, slug: cleanId }, { merge: true });
-        } catch (err) {
-          console.warn('[Server Divisions] Async sync notice:', err);
-        }
-      })();
+      const updatedDivision = { ...data, id: cleanId, slug: cleanId, updatedAt: new Date().toISOString() };
+      try {
+        await writeTursoDocument({
+          type: 'set',
+          collection: 'divisions',
+          parentPath: '',
+          id: cleanId,
+          data: updatedDivision,
+          merge: true,
+        });
+      } catch (error) {
+        console.error('[Turso] Failed to save division:', error);
+        res.status(503).json({ success: false, error: 'Failed to persist division to Turso.' });
+        return;
+      }
+      serverDivisionsMap.set(cleanId, updatedDivision);
       res.json({ success: true, division: serverDivisionsMap.get(cleanId) });
       return;
     }

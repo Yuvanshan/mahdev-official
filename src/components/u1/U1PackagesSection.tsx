@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Calendar,
   Sparkles,
@@ -19,6 +19,8 @@ import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
+import { CmsPackage } from '../../types/cms';
+import { cmsService } from '../../services/cmsService';
 
 interface U1PackagesSectionProps {
   onBookPackage: (pkg: U1Package) => void;
@@ -27,8 +29,40 @@ interface U1PackagesSectionProps {
 export const U1PackagesSection: React.FC<U1PackagesSectionProps> = ({ onBookPackage }) => {
   const { services: rawServices } = useFirestoreDataContext();
   const [activeImageIndices, setActiveImageIndices] = useState<Record<string, number>>({});
+  const [cmsPackages, setCmsPackages] = useState<CmsPackage[]>(() =>
+    cmsService.getAll<CmsPackage>('packages', { divisionId: 'u1', status: 'active' })
+  );
+
+  useEffect(() => {
+    const refreshPackages = () => {
+      setCmsPackages(cmsService.getAll<CmsPackage>('packages', { divisionId: 'u1', status: 'active' }));
+    };
+    const unsubscribe = cmsService.subscribe('packages', refreshPackages);
+    refreshPackages();
+    return unsubscribe;
+  }, []);
 
   const packages = useMemo<U1Package[]>(() => {
+    if (cmsPackages.length > 0) {
+      return cmsPackages.map((pkg) => ({
+        id: pkg.id,
+        name: pkg.name,
+        tier: pkg.badge || 'Studio Package',
+        tagline: pkg.tagline || pkg.name,
+        description: pkg.tagline || pkg.name,
+        duration: pkg.duration || 'Available on request',
+        price: `${pkg.currency} ${pkg.price.toLocaleString()}`,
+        priceNote: pkg.billingCycle || 'Package rate',
+        deliverables: pkg.features,
+        imageUrl: '',
+        gallery: [],
+        popular: pkg.popular,
+        badge: pkg.badge || 'Studio Package',
+        idealFor: pkg.serviceTitle || 'Photography and cinema productions',
+        locationType: 'Studio & On-Location',
+      }));
+    }
+
     if (rawServices && rawServices.length > 0) {
       const u1Packages = rawServices.filter(
         (s) =>
@@ -56,7 +90,7 @@ export const U1PackagesSection: React.FC<U1PackagesSectionProps> = ({ onBookPack
       }
     }
     return [];
-  }, [rawServices]);
+  }, [cmsPackages, rawServices]);
 
   if (packages.length === 0) {
     return null;

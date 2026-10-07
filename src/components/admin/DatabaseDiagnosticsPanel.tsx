@@ -33,8 +33,8 @@ import { bookingService } from '../../services/bookingService';
 import { analyticsService } from '../../services/analyticsService';
 import { AdminConfirmDialog } from './AdminConfirmDialog';
 import {
+  activeDatabaseName,
   TARGET_FIREBASE_PROJECT_ID,
-  TARGET_FIRESTORE_DATABASE_ID,
 } from '../../lib/firebase';
 
 export const DatabaseDiagnosticsPanel: React.FC = () => {
@@ -76,7 +76,7 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
       await runDiagnostics();
     } catch (err: any) {
       setActionMessage({
-        text: `Failed to clear Firestore: ${err?.message || err}`,
+        text: `Failed to clear Turso data: ${err?.message || err}`,
         type: 'error',
       });
     } finally {
@@ -91,7 +91,7 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
     try {
       await seedPristineProductionSettings();
       setActionMessage({
-        text: 'Successfully seeded pristine Mahdev Pvt Ltd production settings into Firestore.',
+        text: 'Successfully seeded pristine Mahdev Pvt Ltd production settings into Turso.',
         type: 'success',
       });
       await runDiagnostics();
@@ -133,7 +133,7 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
     try {
       const res = await purgeRemovedStudioPostsFromFirestore(false);
       setActionMessage({
-        text: `Purged removed Studio posts from Firestore: ${res.galleryDeleted} gallery records and ${res.portfolioDeleted} portfolio records permanently deleted.`,
+        text: `Purged removed Studio posts from Turso: ${res.galleryDeleted} gallery records and ${res.portfolioDeleted} portfolio records permanently deleted.`,
         type: res.success ? 'success' : 'error',
       });
       await runDiagnostics();
@@ -200,9 +200,9 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
               )}
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Authoritative validation against Firebase Project{' '}
-              <code className="font-mono text-blue-600 font-semibold">{TARGET_FIREBASE_PROJECT_ID}</code> and named Firestore Database{' '}
-              <code className="font-mono text-blue-600 font-semibold">{TARGET_FIRESTORE_DATABASE_ID}</code>.
+              Firebase Authentication project{' '}
+              <code className="font-mono text-blue-600 font-semibold">{TARGET_FIREBASE_PROJECT_ID}</code> with application data in Turso{' '}
+              <code className="font-mono text-blue-600 font-semibold">{activeDatabaseName}</code>.
             </p>
           </div>
         </div>
@@ -264,11 +264,11 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
             leftIcon={<Trash2 className="w-3.5 h-3.5 text-rose-600" />}
             className="text-xs font-semibold text-rose-700 hover:bg-rose-50 border-rose-200"
           >
-            Clear Firestore Data
+            Clear Turso Data
           </Button>
 
           <a
-            href={`https://console.firebase.google.com/project/${TARGET_FIREBASE_PROJECT_ID}/firestore/databases/${TARGET_FIRESTORE_DATABASE_ID}`}
+            href="https://app.turso.tech/yuvanshan"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition-colors"
@@ -329,30 +329,30 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
               </div>
             </div>
 
-            {/* Card 2: Firestore Database ID */}
+            {/* Card 2: Turso Database */}
             <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
               <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 <span className="flex items-center gap-1.5">
                   <Database className="w-3.5 h-3.5 text-indigo-600" />
-                  Firestore Database
+                  Turso Database
                 </span>
-                {report.firestoreDatabase.isDatabaseMatch ? (
+                {report.tursoDatabase.isDatabaseMatch ? (
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                 ) : (
                   <XCircle className="w-3.5 h-3.5 text-rose-600" />
                 )}
               </div>
               <p className="font-mono text-xs font-bold text-slate-900 truncate">
-                {report.firestoreDatabase.activeDatabaseId}
+                {report.tursoDatabase.activeDatabaseId}
               </p>
               <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1">
-                <span>Non-Default Named DB</span>
+                <span>Application data store</span>
                 <span
                   className={`font-semibold ${
-                    report.firestoreDatabase.isDatabaseMatch ? 'text-emerald-600' : 'text-rose-600'
+                    report.tursoDatabase.isDatabaseMatch ? 'text-emerald-600' : 'text-rose-600'
                   }`}
                 >
-                  {report.firestoreDatabase.isDatabaseMatch ? 'Active' : 'Mismatch'}
+                  {report.tursoDatabase.isDatabaseMatch ? 'Active' : 'Mismatch'}
                 </span>
               </div>
             </div>
@@ -370,7 +370,7 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
                 {report.overallLatencyMs} ms
               </p>
               <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1">
-                <span>Status: {report.firestoreDatabase.serverReachable ? 'Reachable' : 'Offline'}</span>
+                <span>Status: {report.tursoDatabase.serverReachable ? 'Reachable' : 'Offline'}</span>
                 <span className="text-emerald-600 font-semibold font-mono">Real-Time</span>
               </div>
             </div>
@@ -446,8 +446,8 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
       {/* Confirmation Dialog for Complete Database Clear */}
       <AdminConfirmDialog
         isOpen={showClearDialog}
-        title="Wipe & Clear Firestore Data"
-        message="This will completely clear and delete all documents across all separate Firestore collections (products, services, categories, milestones, portfolio, projects, gallery, trustedCompanies, testimonials, orders, bookings, inquiries, contactMessages, navigation, heroSections, pages, statistics, team, faqs, blog). This resets your database to an empty zero-state."
+        title="Wipe & Clear Turso Data"
+        message="This will completely clear and delete all documents across the managed Turso collection tables (products, services, categories, milestones, portfolio, projects, gallery, trustedCompanies, testimonials, orders, bookings, inquiries, contactMessages, navigation, heroSections, pages, statistics, team, faqs, blog). This resets your database to an empty zero-state."
         confirmLabel="Clear Database"
         cancelLabel="Cancel"
         isDestructive

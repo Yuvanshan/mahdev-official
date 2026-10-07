@@ -14,7 +14,7 @@ import {
   onSnapshot,
   getDocs,
   Unsubscribe,
-} from 'firebase/firestore';
+} from '../../lib/tursoFirestore';
 import { db } from '../../lib/firebase';
 import {
   FirestoreOrder,

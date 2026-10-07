@@ -28,13 +28,12 @@ import { bookingService } from './bookingService';
 import { cmsService } from './cmsService';
 import { DIVISION_LIST } from '../config/divisions';
 
-const ANALYTICS_STORAGE_KEY = 'mahdev_analytics_events_v1';
-const SESSION_STORAGE_KEY = 'mahdev_analytics_session_id';
-const MAX_LOCAL_EVENTS = 600;
+const MAX_SESSION_EVENTS = 600;
 
 class AnalyticsService {
   private sessionId: string = '';
   private eventQueue: AnalyticsEvent[] = [];
+  private sessionEvents: AnalyticsEvent[] = [];
   private isFlushing: boolean = false;
   private isDntEnabled: boolean = false;
 
@@ -43,26 +42,11 @@ class AnalyticsService {
   }
 
   private initSession(): void {
-    try {
-      // Check Do-Not-Track (DNT)
-      if (typeof navigator !== 'undefined') {
-        const dnt = navigator.doNotTrack || (window as any).doNotTrack || (navigator as any).msDoNotTrack;
-        this.isDntEnabled = dnt === '1' || dnt === 'yes';
-      }
-
-      if (typeof window !== 'undefined' && window.sessionStorage) {
-        let sid = sessionStorage.getItem(SESSION_STORAGE_KEY);
-        if (!sid) {
-          sid = `s_${Math.random().toString(36).substring(2, 9)}_${Date.now()}`;
-          sessionStorage.setItem(SESSION_STORAGE_KEY, sid);
-        }
-        this.sessionId = sid;
-      } else {
-        this.sessionId = `s_${Date.now()}`;
-      }
-    } catch {
-      this.sessionId = `s_${Date.now()}`;
+    if (typeof navigator !== 'undefined') {
+      const dnt = navigator.doNotTrack || (window as any).doNotTrack || (navigator as any).msDoNotTrack;
+      this.isDntEnabled = dnt === '1' || dnt === 'yes';
     }
+    this.sessionId = `s_${Math.random().toString(36).substring(2, 9)}_${Date.now()}`;
   }
 
   // =========================================================================
@@ -92,6 +76,7 @@ class AnalyticsService {
     };
 
     this.eventQueue.push(event);
+    this.sessionEvents = [event, ...this.sessionEvents].slice(0, MAX_SESSION_EVENTS);
     this.scheduleFlush();
   }
 
@@ -132,29 +117,13 @@ class AnalyticsService {
     const batch = [...this.eventQueue];
     this.eventQueue = [];
 
-    try {
-      if (typeof localStorage === 'undefined') return;
-      const existingRaw = localStorage.getItem(ANALYTICS_STORAGE_KEY);
-      let existing: AnalyticsEvent[] = [];
-      if (existingRaw) {
-        existing = JSON.parse(existingRaw);
+    if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+      try {
+        const blob = new Blob([JSON.stringify({ events: batch })], { type: 'application/json' });
+        navigator.sendBeacon('/api/analytics/event', blob);
+      } catch (error) {
+        console.warn('[AnalyticsService] Could not dispatch telemetry:', error);
       }
-
-      // Prepend new batch and cap to MAX_LOCAL_EVENTS
-      const updated = [...batch, ...existing].slice(0, MAX_LOCAL_EVENTS);
-      localStorage.setItem(ANALYTICS_STORAGE_KEY, JSON.stringify(updated));
-
-      // Attempt non-blocking beacon to server if available
-      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-        try {
-          const blob = new Blob([JSON.stringify({ events: batch })], { type: 'application/json' });
-          navigator.sendBeacon('/api/analytics/event', blob);
-        } catch {
-          // sendBeacon error ignored safely
-        }
-      }
-    } catch (e) {
-      console.warn('[AnalyticsService] Local telemetry save deferred:', e);
     }
   }
 
@@ -298,22 +267,12 @@ class AnalyticsService {
   // =========================================================================
 
   public getRawEvents(): AnalyticsEvent[] {
-    try {
-      if (typeof localStorage === 'undefined') return [];
-      const data = localStorage.getItem(ANALYTICS_STORAGE_KEY);
-      return data ? JSON.parse(data) : [];
-    } catch {
-      return [];
-    }
+    return [...this.sessionEvents];
   }
 
   public clearAnalyticsEvents(): void {
-    try {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem(ANALYTICS_STORAGE_KEY);
-      }
-      this.eventQueue = [];
-    } catch {}
+    this.eventQueue = [];
+    this.sessionEvents = [];
   }
 
   public getExecutiveReport(

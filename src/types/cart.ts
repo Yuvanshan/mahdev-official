@@ -46,6 +46,7 @@ export interface CouponCode {
   discountType: 'percentage' | 'fixed' | 'free_shipping';
   discountValue: number; // e.g. 10 for 10%, 5 for $5
   minOrderAmount?: number;
+  maxDiscount?: number;
   expiryDate?: string;
 }
 

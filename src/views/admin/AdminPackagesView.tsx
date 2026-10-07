@@ -197,10 +197,10 @@ export const AdminPackagesView: React.FC = () => {
       };
 
       if (editingPackage) {
-        cmsService.update<CmsPackage>('packages', editingPackage.id, payload);
+        await cmsService.update<CmsPackage>('packages', editingPackage.id, payload);
         addToast('success', 'Package Updated', `Package "${formData.name}" updated.`);
       } else {
-        cmsService.create<CmsPackage>('packages', payload);
+        await cmsService.create<CmsPackage>('packages', payload);
         addToast('success', 'Package Created', `Package "${formData.name}" created.`);
       }
       setIsDirty(false);
@@ -213,23 +213,33 @@ export const AdminPackagesView: React.FC = () => {
     }
   };
 
-  const handleDeleteConfirm = (permanent: boolean) => {
+  const handleDeleteConfirm = async (permanent: boolean) => {
     if (!deletingPackage) return;
-    if (permanent) {
-      cmsService.hardDelete('packages', deletingPackage.id);
-      addToast('warning', 'Permanent Deletion', `Package "${deletingPackage.name}" removed.`);
-    } else {
-      cmsService.softDelete('packages', deletingPackage.id);
-      addToast('info', 'Package Archived', `Package "${deletingPackage.name}" archived.`);
+    try {
+      if (permanent) {
+        await cmsService.hardDelete('packages', deletingPackage.id);
+        addToast('warning', 'Permanent Deletion', `Package "${deletingPackage.name}" removed.`);
+      } else {
+        await cmsService.softDelete('packages', deletingPackage.id);
+        addToast('info', 'Package Archived', `Package "${deletingPackage.name}" archived.`);
+      }
+      setDeletingPackage(null);
+      loadPackages();
+    } catch (error) {
+      console.error('[AdminPackages] Delete failed:', error);
+      addToast('error', 'Delete Failed', error instanceof Error ? error.message : 'Could not update the database.');
     }
-    setDeletingPackage(null);
-    loadPackages();
   };
 
-  const handleRestore = (pkg: CmsPackage) => {
-    cmsService.restore('packages', pkg.id);
-    addToast('success', 'Package Restored', `"${pkg.name}" restored.`);
-    loadPackages();
+  const handleRestore = async (pkg: CmsPackage) => {
+    try {
+      await cmsService.restore('packages', pkg.id);
+      addToast('success', 'Package Restored', `"${pkg.name}" restored.`);
+      loadPackages();
+    } catch (error) {
+      console.error('[AdminPackages] Restore failed:', error);
+      addToast('error', 'Restore Failed', error instanceof Error ? error.message : 'Could not update the database.');
+    }
   };
 
   return (

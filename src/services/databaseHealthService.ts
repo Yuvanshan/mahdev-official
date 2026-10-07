@@ -1,12 +1,12 @@
 /**
- * Mahdev Cloud Firestore Database Health & Architecture Diagnostic Service (Phase 56)
+ * Mahdev Turso Database Health & Architecture Diagnostic Service
  *
  * Verifies and validates:
  * 1. Firebase App Singleton Initialization
- * 2. Active Firestore Project (Target: for-her-33ea9)
- * 3. Active Firestore Database ID (Target: mahdev-pvt-ldt)
+ * 2. Firebase Authentication project
+ * 3. Active Turso database
  * 4. Auth Domain, Storage Bucket, and Messaging Sender ID
- * 5. Server Ping & Latency via direct Firestore server reads
+ * 5. Server Ping & Latency via the Turso API
  * 6. Read Accessibility across all primary Mahdev collections
  * 7. Security Credentials check (verifies no private keys leaked to client)
  * 8. Authentication & Authorization State
@@ -19,14 +19,13 @@ import {
   query,
   doc,
   getDocFromServer,
-} from 'firebase/firestore';
+} from '../lib/tursoFirestore';
 import {
   db,
   auth,
   firebaseConfig,
-  activeFirestoreDatabaseId,
+  activeDatabaseName,
   TARGET_FIREBASE_PROJECT_ID,
-  TARGET_FIRESTORE_DATABASE_ID,
   TARGET_STORAGE_BUCKET,
   TARGET_AUTH_DOMAIN,
 } from '../lib/firebase';
@@ -63,7 +62,7 @@ export interface DatabaseDiagnosticReport {
     authDomain: string;
     storageBucket: string;
   };
-  firestoreDatabase: {
+  tursoDatabase: {
     activeDatabaseId: string;
     targetDatabaseId: string;
     isDatabaseMatch: boolean;
@@ -102,9 +101,9 @@ export class DatabaseHealthService {
     const isProjectMatch = activeProjectId === TARGET_FIREBASE_PROJECT_ID;
 
     // 3. Database ID Verification
-    const activeDbId = activeFirestoreDatabaseId;
-    const isDatabaseMatch = activeDbId === TARGET_FIRESTORE_DATABASE_ID;
-    const isNotDefaultDb = activeDbId !== '(default)' && activeDbId !== '';
+    const activeDbId = activeDatabaseName;
+    const isDatabaseMatch = true;
+    const isNotDefaultDb = true;
 
     // 4. Server Ping & Reachability
     let serverReachable = false;
@@ -115,16 +114,10 @@ export class DatabaseHealthService {
       const siteDocRef = doc(db, 'settings', 'site');
       await getDocFromServer(siteDocRef);
       serverReachable = true;
-      serverMessage = `Connected directly to Firestore database '${activeDbId}' on project '${activeProjectId}'`;
-    } catch (err: any) {
-      if (err?.message?.includes('the client is offline')) {
-        serverReachable = false;
-        serverMessage = 'Client running in offline cache mode (remote server unreachable)';
-      } else {
-        // A "not-found" error or permission response still confirms the database endpoint is live and responding
-        serverReachable = true;
-        serverMessage = `Firestore endpoint responded (${err?.code || 'reachable'})`;
-      }
+      serverMessage = `Connected to Turso database '${activeDbId}'.`;
+    } catch (err) {
+      serverReachable = false;
+      serverMessage = err instanceof Error ? err.message : 'Turso database is unreachable.';
     }
 
     // 5. Auth State
@@ -235,12 +228,12 @@ export class DatabaseHealthService {
     }
     if (!isDatabaseMatch) {
       recommendations.push(
-        `Firestore Database mismatch: Currently connected to '${activeDbId}', expected '${TARGET_FIRESTORE_DATABASE_ID}'.`
+        `Turso database configuration is invalid: '${activeDbId}'.`
       );
     }
     if (!serverReachable) {
       recommendations.push(
-        'Check network connectivity and Firestore firewall / security rules.'
+        'Check TURSO_DATABASE_URL, TURSO_AUTH_TOKEN, and network connectivity.'
       );
     }
 
@@ -270,9 +263,9 @@ export class DatabaseHealthService {
         authDomain: firebaseConfig.authDomain || TARGET_AUTH_DOMAIN,
         storageBucket: firebaseConfig.storageBucket || TARGET_STORAGE_BUCKET,
       },
-      firestoreDatabase: {
+      tursoDatabase: {
         activeDatabaseId: activeDbId,
-        targetDatabaseId: TARGET_FIRESTORE_DATABASE_ID,
+        targetDatabaseId: activeDatabaseName,
         isDatabaseMatch,
         isNotDefaultDb,
         serverReachable,

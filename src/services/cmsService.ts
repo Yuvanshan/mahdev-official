@@ -34,8 +34,11 @@ import {
 } from './firestore';
 import { sortDivisions, normalizeDivisionId, getDefaultDivisions } from './firestore/divisions';
 import { safeStorage } from '../utils/safeStorage';
+import { db } from '../lib/firebase';
+import { collection, deleteDoc, doc, onSnapshot, setDoc } from '../lib/tursoFirestore';
 
-const CMS_STORAGE_PREFIX = 'mahdev_cms_v1_';
+const CMS_STORAGE_PREFIX = 'mahdev_cms_session_v2_';
+const LEGACY_CMS_STORAGE_PREFIX = 'mahdev_cms_v1_';
 
 export interface CmsFilterOptions {
   search?: string;
@@ -57,6 +60,23 @@ class CmsService {
 
   constructor() {
     this.initializeAllEntities();
+    (['packages', 'pages', 'banners', 'coupons'] as const).forEach((entity) => {
+      onSnapshot(
+        collection(db, entity),
+        (snapshot) => {
+          const items = snapshot.docs.map((document) => ({
+            ...document.data(),
+            id: document.id,
+          }));
+          this.cache[entity] = items;
+          safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(items));
+          this.notify(entity);
+        },
+        (error) => {
+          console.error(`[CmsService] Could not subscribe to ${entity} in Turso:`, error);
+        }
+      );
+    });
     // Centralized hydration in FirestoreDataContext syncs to CmsService via syncEntityFromFirestore
     // to avoid duplicate active subscriptions that exhaust network sockets.
     this.attachCrossTabSync();
@@ -579,7 +599,7 @@ class CmsService {
     }
   }
 
-  public initializeAllEntities(forceReset = false): void {
+  public initializeAllEntities(): void {
     const entities: CmsEntityType[] = [
       'divisions',
       'services',
@@ -597,22 +617,10 @@ class CmsService {
     ];
 
     entities.forEach((entity) => {
-      const key = this.getStorageKey(entity);
-      const stored = safeStorage.getItem(key);
-      if (!stored || forceReset) {
-        const seedData = this.getSeedDataForEntity(entity);
-        safeStorage.setItem(key, JSON.stringify(seedData));
-        this.cache[entity] = seedData;
-      } else {
-        try {
-          this.cache[entity] = JSON.parse(stored);
-        } catch {
-          const seedData = this.getSeedDataForEntity(entity);
-          safeStorage.setItem(key, JSON.stringify(seedData));
-          this.cache[entity] = seedData;
-        }
-      }
+      safeStorage.removeItem(`${LEGACY_CMS_STORAGE_PREFIX}${entity}`);
+      this.cache[entity] = [];
     });
+    safeStorage.removeItem(`${LEGACY_CMS_STORAGE_PREFIX}homepage_config`);
   }
 
   private getSeedDataForEntity(entity: CmsEntityType): any[] {
@@ -877,23 +885,7 @@ class CmsService {
 
   // Generic Get All with filtering, search, sorting, and soft deletion toggle
   public getAll<T = any>(entity: CmsEntityType, options?: CmsFilterOptions): T[] {
-    let list: any[] = this.cache[entity] || [];
-
-    // Safety net for divisions: If divisions cache has fewer than 5 divisions, ensure all 5 canonical divisions exist
-    if (entity === 'divisions' && list.length < 5) {
-      const canonicalDefaults = this.getSeedDataForEntity('divisions');
-      const seen = new Set(list.map((d) => normalizeDivisionId(d.divisionKey || d.id || '').shortId));
-      for (const def of canonicalDefaults) {
-        const key = normalizeDivisionId(def.divisionKey || def.id || '').shortId;
-        if (!seen.has(key)) {
-          seen.add(key);
-          list.push(def);
-        }
-      }
-      list.sort((a, b) => (a.order || 99) - (b.order || 99));
-      this.cache['divisions'] = list;
-    }
-
+    const list: any[] = this.cache[entity] || [];
     let results = [...list];
 
     // Filter soft deleted by default unless requested
@@ -978,9 +970,9 @@ class CmsService {
   }
 
   /**
-   * Reorder items for an entity in CMS cache and localStorage
+   * Reorder items for an entity in the CMS cache
    */
-  public reorder(entity: CmsEntityType, orderedIds: string[]): void {
+  public async reorder(entity: CmsEntityType, orderedIds: string[]): Promise<void> {
     const list: any[] = this.cache[entity] || [];
     const updated = list
       .map((item) => {
@@ -989,6 +981,7 @@ class CmsService {
       })
       .sort((a, b) => (a.order ?? a.sortOrder ?? 0) - (b.order ?? b.sortOrder ?? 0));
 
+    await Promise.all(updated.map((item) => this.syncEntityItemToFirestore(entity, item)));
     this.cache[entity] = updated;
     safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(updated));
 
@@ -1001,7 +994,7 @@ class CmsService {
     return (item as T) || null;
   }
 
-  public create<T = any>(entity: CmsEntityType, data: Partial<T>): T {
+  public async create<T = any>(entity: CmsEntityType, data: Partial<T>): Promise<T> {
     const now = new Date().toISOString();
     const id = (data as any).id || `${entity.slice(0, 3)}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
     const newItem: any = {
@@ -1013,8 +1006,8 @@ class CmsService {
       deletedAt: null,
     };
 
-    const current = this.cache[entity] || [];
-    const updated = [newItem, ...current];
+    await this.syncEntityItemToFirestore(entity, newItem);
+    const updated = [newItem, ...(this.cache[entity] || [])];
     this.cache[entity] = updated;
     safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(updated));
 
@@ -1028,15 +1021,14 @@ class CmsService {
 
     this.notify(entity);
 
-    // Asynchronously synchronize to Firestore
-    this.syncEntityItemToFirestore(entity, newItem);
-
     return newItem as T;
   }
 
   private async syncEntityItemToFirestore(entity: CmsEntityType, item: any): Promise<void> {
     try {
-      if (entity === 'divisions') {
+      if (entity === 'packages' || entity === 'pages' || entity === 'banners' || entity === 'coupons') {
+        await setDoc(doc(db, entity, item.id), item);
+      } else if (entity === 'divisions') {
         const divKey = item.divisionKey || item.id?.replace('div-', '') || item.id;
         const videoUrl = item.heroVideoUrl || item.videoUrl || item.hero?.videoUrl || '';
         const imgUrl = item.defaultImageUrl || item.heroImageUrl || item.imageUrl || item.hero?.bgImage || '';
@@ -1239,13 +1231,16 @@ class CmsService {
         });
       }
     } catch (err) {
-      console.warn(`[Firestore Sync] Failed to sync ${entity}/${item.id}:`, err);
+      console.error(`[Turso CMS] Failed to sync ${entity}/${item.id}:`, err);
+      throw err;
     }
   }
 
   private async deleteEntityItemFromFirestore(entity: CmsEntityType, id: string): Promise<void> {
     try {
-      if (entity === 'products') {
+      if (entity === 'packages' || entity === 'pages' || entity === 'banners' || entity === 'coupons') {
+        await deleteDoc(doc(db, entity, id));
+      } else if (entity === 'products') {
         await firestoreProductsService.deleteProduct(id);
       } else if (entity === 'services') {
         await firestoreServicesService.deleteService(id);
@@ -1265,11 +1260,12 @@ class CmsService {
         await firestoreTestimonialsService.deleteTestimonial(id);
       }
     } catch (err) {
-      console.warn(`[Firestore Delete Sync] Failed to delete ${entity}/${id}:`, err);
+      console.error(`[Turso CMS] Failed to delete ${entity}/${id}:`, err);
+      throw err;
     }
   }
 
-  public update<T = any>(entity: CmsEntityType, id: string, data: Partial<T>): T | null {
+  public async update<T = any>(entity: CmsEntityType, id: string, data: Partial<T>): Promise<T | null> {
     const current: any[] = this.cache[entity] || [];
     const index = current.findIndex((i) => i.id === id);
     if (index === -1) return null;
@@ -1283,6 +1279,7 @@ class CmsService {
       updatedAt: now,
     };
 
+    await this.syncEntityItemToFirestore(entity, updatedItem);
     current[index] = updatedItem;
     this.cache[entity] = [...current];
     safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(this.cache[entity]));
@@ -1297,9 +1294,6 @@ class CmsService {
 
     this.notify(entity);
 
-    // Asynchronously synchronize update to Firestore
-    this.syncEntityItemToFirestore(entity, updatedItem);
-
     return updatedItem as T;
   }
 
@@ -1307,19 +1301,10 @@ class CmsService {
    * Reorder business divisions sequentially and sync to Firestore
    */
   public async reorderDivisions(orderedIds: string[]): Promise<void> {
-    const current: CmsDivision[] = (this.cache.divisions || []) as CmsDivision[];
-    orderedIds.forEach((rawId, idx) => {
-      const order = idx + 1;
-      const cleanId = rawId.replace('div-', '');
-      const found = current.find((d) => d.id === rawId || d.id === `div-${cleanId}` || d.divisionKey === cleanId);
-      if (found) {
-        found.order = order;
-      }
-    });
-
-    current.sort((a, b) => (a.order || 99) - (b.order || 99));
-    this.cache.divisions = [...current];
-    safeStorage.setItem(this.getStorageKey('divisions'), JSON.stringify(this.cache.divisions));
+    const cleanIds = orderedIds.map((id) => id.replace('div-', ''));
+    await firestoreDivisionsService.reorderDivisions(cleanIds);
+    const divisions = await firestoreDivisionsService.getDivisions(true);
+    this.syncEntityFromFirestore('divisions', divisions);
 
     adminService.logAudit({
       action: 'CMS_REORDER_DIVISIONS',
@@ -1330,26 +1315,23 @@ class CmsService {
     });
 
     this.notify('divisions');
-
-    // Sync to Firestore
-    const cleanIds = orderedIds.map((id) => id.replace('div-', ''));
-    await firestoreDivisionsService.reorderDivisions(cleanIds);
   }
 
   // Soft Deletion (marks isDeleted: true and sets deletedAt timestamp)
-  public softDelete(entity: CmsEntityType, id: string): boolean {
+  public async softDelete(entity: CmsEntityType, id: string): Promise<boolean> {
     const current: any[] = this.cache[entity] || [];
     const index = current.findIndex((i) => i.id === id);
     if (index === -1) return false;
 
     const now = new Date().toISOString();
-    current[index] = {
+    const updatedItem = {
       ...current[index],
       isDeleted: true,
       deletedAt: now,
       updatedAt: now,
     };
-
+    await this.syncEntityItemToFirestore(entity, updatedItem);
+    current[index] = updatedItem;
     this.cache[entity] = [...current];
     safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(this.cache[entity]));
 
@@ -1363,18 +1345,16 @@ class CmsService {
 
     this.notify(entity);
 
-    // Sync soft deletion state to Firestore
-    this.syncEntityItemToFirestore(entity, current[index]);
-
     return true;
   }
 
   // Hard Permanent Deletion (with audit log)
-  public hardDelete(entity: CmsEntityType, id: string): boolean {
+  public async hardDelete(entity: CmsEntityType, id: string): Promise<boolean> {
     const current: any[] = this.cache[entity] || [];
     const item = current.find((i) => i.id === id);
     if (!item) return false;
 
+    await this.deleteEntityItemFromFirestore(entity, id);
     const filtered = current.filter((i) => i.id !== id);
     this.cache[entity] = filtered;
     safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(filtered));
@@ -1389,31 +1369,29 @@ class CmsService {
 
     this.notify(entity);
 
-    // Sync permanent deletion to Firestore
-    this.deleteEntityItemFromFirestore(entity, id);
-
     return true;
   }
 
   // Alias for permanentDelete
-  public permanentDelete(entity: CmsEntityType, id: string): boolean {
+  public permanentDelete(entity: CmsEntityType, id: string): Promise<boolean> {
     return this.hardDelete(entity, id);
   }
 
   // Restore Soft-Deleted Item
-  public restore(entity: CmsEntityType, id: string): boolean {
+  public async restore(entity: CmsEntityType, id: string): Promise<boolean> {
     const current: any[] = this.cache[entity] || [];
     const index = current.findIndex((i) => i.id === id);
     if (index === -1) return false;
 
     const now = new Date().toISOString();
-    current[index] = {
+    const restoredItem = {
       ...current[index],
       isDeleted: false,
       deletedAt: null,
       updatedAt: now,
     };
-
+    await this.syncEntityItemToFirestore(entity, restoredItem);
+    current[index] = restoredItem;
     this.cache[entity] = [...current];
     safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(this.cache[entity]));
 
@@ -1427,14 +1405,12 @@ class CmsService {
 
     this.notify(entity);
 
-    // Sync restoration to Firestore
-    this.syncEntityItemToFirestore(entity, current[index]);
-
     return true;
   }
 
-  public resetEntityToDefaults(entity: CmsEntityType): void {
+  public async resetEntityToDefaults(entity: CmsEntityType): Promise<void> {
     const seed = this.getSeedDataForEntity(entity);
+    await Promise.all(seed.map((item) => this.syncEntityItemToFirestore(entity, item)));
     this.cache[entity] = seed;
     safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(seed));
 
@@ -1477,7 +1453,7 @@ class CmsService {
     return counts;
   }
 
-  // Get single division by division key with fallback to DIVISIONS config
+  // Get a database-backed division by key.
   public getDivisionByKey(key: DivisionId): CmsDivision | null {
     const divisions = this.getAll<CmsDivision>('divisions');
     const found = divisions.find((d) => d.divisionKey === key || d.id === `div-${key}` || d.id === key);
@@ -1497,12 +1473,10 @@ class CmsService {
         // fallback
       }
     }
-    const defaultConf = this.getDefaultHomepageConfig();
-    safeStorage.setItem(key, JSON.stringify(defaultConf));
-    return defaultConf;
+    return this.getDefaultHomepageConfig();
   }
 
-  public updateHomepageConfig(partial: Partial<HomepageCmsConfig>): HomepageCmsConfig {
+  public async updateHomepageConfig(partial: Partial<HomepageCmsConfig>): Promise<HomepageCmsConfig> {
     const current = this.getHomepageConfig();
     const updated: HomepageCmsConfig = {
       ...current,
@@ -1520,6 +1494,8 @@ class CmsService {
       updatedAt: new Date().toISOString(),
     };
 
+    await firestoreSettingsService.updateHomepageSettings(updated);
+
     const key = `${CMS_STORAGE_PREFIX}homepage_config`;
     safeStorage.setItem(key, JSON.stringify(updated));
 
@@ -1534,11 +1510,6 @@ class CmsService {
     // Notify listeners
     this.notifyHomepage();
 
-    // Async sync to Cloud Firestore
-    firestoreSettingsService.updateHomepageSettings(updated).catch((err) => {
-      console.warn('[Firestore Sync] Homepage settings sync error:', err);
-    });
-
     return updated;
   }
 
@@ -1548,31 +1519,12 @@ class CmsService {
       safeStorage.setItem(key, JSON.stringify(config));
       this.notifyHomepage();
     } catch (e) {
-      console.warn('[cmsService] Failed to sync homepage config to localStorage:', e);
+      console.warn('[cmsService] Failed to cache homepage config for this tab:', e);
     }
   }
 
   public resetHomepageConfig(): HomepageCmsConfig {
-    const defaultConf = this.getDefaultHomepageConfig();
-    const key = `${CMS_STORAGE_PREFIX}homepage_config`;
-    safeStorage.setItem(key, JSON.stringify(defaultConf));
-
-    adminService.logAudit({
-      action: 'CMS_RESET_HOMEPAGE',
-      entityType: 'homepage',
-      entityId: 'main-home',
-      details: 'Reset Homepage configuration to factory defaults.',
-      status: 'warning',
-    });
-
-    this.notifyHomepage();
-
-    // Async sync to Cloud Firestore
-    firestoreSettingsService.updateHomepageSettings(defaultConf).catch((err) => {
-      console.warn('[Firestore Sync] Homepage reset sync error:', err);
-    });
-
-    return defaultConf;
+    return this.getDefaultHomepageConfig();
   }
 
   private homepageListeners: Set<() => void> = new Set();

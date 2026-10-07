@@ -28,6 +28,11 @@ This document outlines the environment configuration architecture for the **Mahd
 | `APP_URL` | Server | Standard | Canonical base URL | `https://mahdev.lk` |
 | `VITE_APP_URL` | Client | Public | Public origin URL for redirects | `https://mahdev.lk` |
 | `GEMINI_API_KEY` | Server | **Confidential** | Google Gemini AI processing | Injected by AI Studio |
+| `TURSO_DATABASE_URL` | Server | Standard | Turso/libSQL connection URL | `libsql://<database>-<organization>.turso.io` |
+| `TURSO_AUTH_TOKEN` | Server | **Confidential** | Authentication token for the Turso database | Generated in the Turso dashboard |
+| `FIREBASE_PROJECT_ID` | Server | Standard | Firebase project ID used to verify Firebase ID tokens | `for-her-33ea9` |
+| `TURSO_ADMIN_EMAILS` | Server | **Confidential** | Allowlisted verified Firebase admin emails with optional `:role` suffix | `owner@example.com:super_admin` |
+| `VITE_TURSO_DATABASE_NAME` | Client | Public | Optional display name in database diagnostics | Database label |
 | `VITE_FIREBASE_API_KEY` | Client | Public | Firebase Web SDK API Key | `AIzaSy...` |
 | `VITE_FIREBASE_AUTH_DOMAIN` | Client | Public | Firebase Auth domain | `for-her-33ea9.firebaseapp.com` |
 | `VITE_FIREBASE_PROJECT_ID` | Client | Public | Firebase Project ID | `for-her-33ea9` |
@@ -35,14 +40,12 @@ This document outlines the environment configuration architecture for the **Mahd
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | Client | Public | FCM Sender ID | `1062826041810` |
 | `VITE_FIREBASE_APP_ID` | Client | Public | Firebase Web App ID | `1:1062826041810:web:...` |
 | `VITE_FIREBASE_MEASUREMENT_ID` | Client | Public | Firebase Analytics ID | `G-MWNCCXGY4F` |
-| `VITE_FIREBASE_FIRESTORE_DATABASE_ID` | Client | Public | Named Firestore Database ID | `ai-studio-mahdevpvtltd-...` |
 | `VITE_FIREBASE_RECAPTCHA_SITE_KEY` | Client | Public | App Check reCAPTCHA Site Key | `6Lf...` |
 | `PAYMENT_GATEWAY_ENV` | Server | Standard | Payment mode (`sandbox` / `production`) | `sandbox` |
 | `STRIPE_SECRET_KEY` | Server | **Confidential** | Stripe API Secret Key | `sk_test_...` / `sk_live_...` |
 | `PAYMENT_WEBHOOK_SECRET` | Server | **Confidential** | HMAC-SHA256 webhook verification | Custom cryptographic string |
 | `LANKAPAY_MERCHANT_ID` | Server | **Confidential** | LankaPay Merchant Identifier | Enterprise merchant code |
 | `LANKAPAY_SECRET_KEY` | Server | **Confidential** | LankaPay Signing Secret | Private cryptographic key |
-| `ADMIN_SECRET_SALT` | Server | **Confidential** | Admin token HMAC hashing salt | Secure kernel salt |
 | `ORDER_SIGNATURE_SECRET` | Server | **Confidential** | Order integrity cryptographic key | Secure HMAC secret |
 | `INVOICE_SIGNING_SALT` | Server | **Confidential** | Fiscal tax invoice HMAC salt | Tamper-proof hash key |
 | `NOTIFICATION_SECRET_SALT` | Server | **Confidential** | Notification dispatch verification | Secure salt |
@@ -62,7 +65,8 @@ This document outlines the environment configuration architecture for the **Mahd
 
 ### A. Development (Local / AI Studio Container)
 - Start command: `npm run dev`
-- Uses `.env` or defaults to sandbox modes automatically.
+- Set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in `.env`; the server requires both and creates the application collection tables at startup.
+- Firebase remains in use for Authentication, Storage, and App Check; application data is stored in Turso.
 - Payment gateway executes in simulated verification mode without contacting real banks.
 - Emails and notifications log to server console for inspection.
 
@@ -76,7 +80,7 @@ This document outlines the environment configuration architecture for the **Mahd
 - Set `PAYMENT_GATEWAY_ENV=production`
 - Set `STRIPE_SECRET_KEY=sk_live_...`
 - Set `LANKAPAY_MERCHANT_ID` and `LANKAPAY_SECRET_KEY`
-- Set `ADMIN_SECRET_SALT`, `ORDER_SIGNATURE_SECRET`, `INVOICE_SIGNING_SALT` to high-entropy 256-bit keys.
+- Set `ORDER_SIGNATURE_SECRET`, `INVOICE_SIGNING_SALT` to high-entropy 256-bit keys.
 - Set `SMTP_*` and `WHATSAPP_*` credentials for live customer receipts.
 - Enable App Check with production `VITE_FIREBASE_RECAPTCHA_SITE_KEY`.
 
@@ -88,11 +92,11 @@ This document outlines the environment configuration architecture for the **Mahd
 In the Google Cloud Console:
 1. Navigate to **Cloud Run** > Select Service (`mahdev-core`).
 2. Click **Edit & Deploy New Revision**.
-3. Under **Variables & Secrets**, add runtime environment variables or bind Secret Manager entries (for `STRIPE_SECRET_KEY`, `PAYMENT_WEBHOOK_SECRET`, etc.).
+3. Under **Variables & Secrets**, add runtime environment variables or bind Secret Manager entries (including `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`).
 4. Deploy the revision.
 
 ### Vercel Deployment
 In the Vercel Dashboard:
 1. Navigate to **Project Settings** > **Environment Variables**.
-2. Add variables specifying scopes: **Development**, **Preview**, and **Production**.
+2. Add server-only `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`, plus the other variables specifying scopes: **Development**, **Preview**, and **Production**. Never expose the Turso token as a `VITE_` variable.
 3. Re-deploy project.

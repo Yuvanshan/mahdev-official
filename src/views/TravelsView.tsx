@@ -28,22 +28,18 @@ import { TravelPackage, TravelDestination, DayTour, Vehicle } from '../data/trav
 import { DIVISION_LIST } from '../config/divisions';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
-import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
-import { DivisionBelowHeroShimmer } from '../components/common/DivisionBelowHeroShimmer';
 
 interface TravelsViewProps {
   onNavigate: (route: string) => void;
 }
 
 export const TravelsView: React.FC<TravelsViewProps> = ({ onNavigate }) => {
-  const { divisions, companySettings, isInitialLoading, isDivisionLoaded, loadDivisionData } = useFirestoreDataContext();
+  const { divisions, companySettings, loadDivisionData } = useFirestoreDataContext();
   const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
 
   React.useEffect(() => {
     loadDivisionData('travels');
   }, [loadDivisionData]);
-
-  const isDataLoading = isInitialLoading || !isDivisionLoaded('travels');
 
   const [selectedPackageForDetail, setSelectedPackageForDetail] = useState<TravelPackage | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
@@ -84,39 +80,29 @@ export const TravelsView: React.FC<TravelsViewProps> = ({ onNavigate }) => {
         onExploreDestinations={() => scrollToAnchor('destinations')}
       />
 
-      {/* 2. BELOW HERO SECTION: SHOW SHIMMER UNTIL DATA LOADS FROM FIRESTORE */}
-      {isDataLoading ? (
-        <DivisionBelowHeroShimmer divisionName="Mahdev Travels & Tours" />
-      ) : (
-        <>
-          {/* 2. DESTINATIONS SPOTLIGHT */}
-          <TravelsDestinationsSection
-            onPlanTripForDestination={(dest) => handleOpenBooking(null, null, null)}
-          />
+      {/* Render content progressively as each Turso-backed collection arrives. */}
+      <>
+        <TravelsDestinationsSection
+          onPlanTripForDestination={() => handleOpenBooking(null, null, null)}
+        />
 
-          {/* 3. CURATED PACKAGES */}
-          <TravelsPackagesSection
-            onSelectPackage={(pkg) => setSelectedPackageForDetail(pkg)}
-            onBookPackageDirect={(pkg) => handleOpenBooking(pkg)}
-          />
+        <TravelsPackagesSection
+          onSelectPackage={(pkg) => setSelectedPackageForDetail(pkg)}
+          onBookPackageDirect={(pkg) => handleOpenBooking(pkg)}
+        />
 
-          {/* 4. DAY TOURS & MICRO-ADVENTURES */}
-          <TravelsDayToursSection
-            onBookDayTour={(tour) => handleOpenBooking(null, tour)}
-          />
+        <TravelsDayToursSection
+          onBookDayTour={(tour) => handleOpenBooking(null, tour)}
+        />
 
-          {/* 5. PRIVATE TRANSPORT & CHAUFFEUR FLEET */}
-          <TravelsFleetSection
-            onBookTransport={(vehicle) => handleOpenBooking(null, null, vehicle)}
-          />
+        <TravelsFleetSection
+          onBookTransport={(vehicle) => handleOpenBooking(null, null, vehicle)}
+        />
 
-          {/* 6. CONCIERGE TRAVEL SERVICES */}
-          <TravelsServicesSection />
+        <TravelsServicesSection />
 
-          {/* 7. CINEMATIC GALLERY & GUEST STORIES */}
-          <TravelsGalleryStoriesSection />
-        </>
-      )}
+        <TravelsGalleryStoriesSection />
+      </>
 
       {/* 8. DETAILED DAY-BY-DAY ITINERARY MODAL */}
       <TravelsPackageDetailModal

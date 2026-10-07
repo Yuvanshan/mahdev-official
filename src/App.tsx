@@ -14,7 +14,7 @@ import { FirestoreDataProvider, useFirestoreDataContext } from './context/Firest
 import { CartDrawer } from './components/cart/CartDrawer';
 import { AnnouncementBanner } from './components/layout/AnnouncementBanner';
 import { BottomNavigation } from './components/layout/BottomNavigation';
-import { testFirestoreConnection, initAppCheck } from './lib/firebase';
+import { testTursoConnection, initAppCheck } from './lib/firebase';
 import { analyticsService } from './services/analyticsService';
 import { catalogService } from './services/catalogService';
 import { motion, AnimatePresence } from 'motion/react';
@@ -43,6 +43,7 @@ import { TestimonialsView } from './views/TestimonialsView';
 import { CareersView } from './views/CareersView';
 import { LegalPageView } from './views/LegalPageView';
 import { NotFoundView } from './views/NotFoundView';
+import { CmsPageView } from './views/CmsPageView';
 import { GalleryPageView } from './views/GalleryPageView';
 import { LoginView } from './views/auth/LoginView';
 import { RegisterView } from './views/auth/RegisterView';
@@ -138,8 +139,8 @@ function AppContent() {
   // Verify Cloud Firestore connectivity and App Check on boot
   useEffect(() => {
     initAppCheck();
-    testFirestoreConnection().then((res) => {
-      console.info('[Firebase] Firestore Foundation Status:', res.message);
+    testTursoConnection().then((res) => {
+      console.info('[Turso] Database Status:', res.message);
     });
   }, []);
 
@@ -327,7 +328,7 @@ function AppContent() {
 
     if (!matched) {
       try {
-        const cachedStr = typeof window !== 'undefined' ? localStorage.getItem('mahdev_cached_divisions') : null;
+        const cachedStr = typeof window !== 'undefined' ? sessionStorage.getItem('mahdev_cached_divisions') : null;
         if (cachedStr) {
           const cachedDivs = JSON.parse(cachedStr);
           const cachedMatched = cachedDivs.find(
@@ -1078,7 +1079,7 @@ function AppContent() {
       case '/contact':
         return <ContactView onNavigate={navigate} />;
       default:
-        return <NotFoundView onNavigate={navigate} />;
+        return <CmsPageView slug={normalizedPath.replace(/^\/+/, '')} onNavigate={navigate} />;
     }
   };
 

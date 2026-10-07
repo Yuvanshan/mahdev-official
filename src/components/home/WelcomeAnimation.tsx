@@ -14,22 +14,11 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 interface WelcomeAnimationProps {
   onComplete?: () => void;
-  forceShow?: boolean;
 }
 
-export const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({
-  onComplete,
-  forceShow = false,
-}) => {
+export const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({ onComplete }) => {
   const { companySettings, siteSettings, divisions, isReady } = useFirestoreDataContext();
-  const [isVisible, setIsVisible] = useState<boolean>(() => {
-    if (forceShow) return true;
-    if (typeof window !== 'undefined') {
-      const hasSeen = sessionStorage.getItem('mahdev_welcome_animation_shown');
-      return !hasSeen;
-    }
-    return true;
-  });
+  const [isVisible, setIsVisible] = useState(true);
 
   const [progress, setProgress] = useState<number>(10);
   const [isExiting, setIsExiting] = useState<boolean>(false);
@@ -68,9 +57,6 @@ export const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({
 
   const handleDismiss = () => {
     setIsExiting(true);
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem('mahdev_welcome_animation_shown', 'true');
-    }
     setTimeout(() => {
       setIsVisible(false);
       onComplete?.();

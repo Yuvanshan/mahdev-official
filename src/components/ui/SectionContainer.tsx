@@ -38,10 +38,10 @@ export const SectionContainer: React.FC<SectionContainerProps> = ({
   };
 
   const bgStyles = {
-    white: 'bg-[#FAF9F6]',
-    subtle: 'bg-[#F6F3F9]',
-    secondary: 'bg-[#FAF8FD]',
-    'electric-gradient': 'bg-gradient-to-br from-purple-950 via-[#1E0836] to-black text-white',
+    white: 'bg-white',
+    subtle: 'bg-slate-50',
+    secondary: 'bg-slate-50',
+    'electric-gradient': 'bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white',
     none: '',
   };
 
@@ -49,12 +49,12 @@ export const SectionContainer: React.FC<SectionContainerProps> = ({
     none: 'py-0',
     sm: 'py-8 sm:py-12',
     md: 'py-12 sm:py-16',
-    lg: 'py-16 sm:py-24',
-    xl: 'py-20 sm:py-32',
+    lg: 'py-12 sm:py-16',
+    xl: 'py-16 sm:py-20',
   };
 
-  const borderTopStyle = hasBorderTop ? 'border-t border-purple-200/50' : '';
-  const borderBottomStyle = hasBorderBottom ? 'border-b border-purple-200/50' : '';
+  const borderTopStyle = hasBorderTop ? 'border-t border-slate-200' : '';
+  const borderBottomStyle = hasBorderBottom ? 'border-b border-slate-200' : '';
 
   return (
     <Component

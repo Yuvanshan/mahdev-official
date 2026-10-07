@@ -14,10 +14,16 @@ export const AnnouncementBanner: React.FC<AnnouncementBannerProps> = ({ onNaviga
   const [dismissed, setDismissed] = useState(false);
 
   const loadCmsBanner = () => {
-    const banners = cmsService.getAll<CmsBanner>('banners', { status: 'active' });
-    const announcement =
-      banners.find((b) => b.placement === 'announcement_bar' && b.isActive && !b.isDeleted) ||
-      banners.find((b) => b.isActive && !b.isDeleted);
+    const now = Date.now();
+    const announcement = cmsService
+      .getAll<CmsBanner>('banners', { status: 'active' })
+      .filter((banner) => {
+        if (banner.placement !== 'announcement_bar') return false;
+        if (banner.startDate && new Date(`${banner.startDate}T00:00:00`).getTime() > now) return false;
+        if (banner.endDate && new Date(`${banner.endDate}T23:59:59`).getTime() < now) return false;
+        return true;
+      })
+      .sort((a, b) => (b.priority || 0) - (a.priority || 0))[0];
     setCmsBanner(announcement || null);
   };
 

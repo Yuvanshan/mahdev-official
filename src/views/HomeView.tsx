@@ -3,28 +3,17 @@ import { SEOHead } from '../components/layout/SEOHead';
 import { HeroSection } from '../components/home/HeroSection';
 import { DivisionsSection } from '../components/home/DivisionsSection';
 import { FeaturedServicesSection } from '../components/home/FeaturedServicesSection';
-import { HappyClientsAndProjectsSection } from '../components/home/HappyClientsAndProjectsSection';
-import { DecorationVideoShowcase } from '../components/home/DecorationVideoShowcase';
 import { FeaturedWorkSection } from '../components/home/FeaturedWorkSection';
-import { HomeGallerySection } from '../components/home/HomeGallerySection';
-import { MilestonesSection } from '../components/home/MilestonesSection';
-import { TestimonialsSection } from '../components/corporate/TestimonialsSection';
-import { CallToActionSection } from '../components/home/CallToActionSection';
-import { ContactCorporateSection } from '../components/corporate/ContactCorporateSection';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { DEFAULT_HOMEPAGE_SECTIONS } from '../services/firestore/settings';
 import { DynamicSectionItem } from '../types/cms';
-import { HomeBelowHeroShimmer } from '../components/home/HomeBelowHeroShimmer';
 
 interface HomeViewProps {
   onNavigate: (route: string) => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
-  const { companySettings, siteSettings, homepageConfig, isInitialLoading, isLiveHydrated, divisions } = useFirestoreDataContext();
-
-  const brandName = companySettings?.name || siteSettings?.siteName || 'Mahdev Pvt Ltd';
-  const tagline = companySettings?.tagline || 'Creating Moments. Capturing Memories. Delivering Innovation.';
+  const { companySettings, siteSettings, homepageConfig } = useFirestoreDataContext();
 
   const scrollToSection = (sectionId: string) => {
     const el = document.getElementById(sectionId);
@@ -33,37 +22,23 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
     }
   };
 
-  // Reorderable sections from Firestore CMS (excluding hero which is rendered primarily at top)
+  // Keep the homepage focused on the core offer and avoid rendering every CMS module at once.
   const activeSections: DynamicSectionItem[] = React.useMemo(() => {
     const sections = homepageConfig?.sectionsOrder && homepageConfig.sectionsOrder.length > 0
       ? homepageConfig.sectionsOrder
       : DEFAULT_HOMEPAGE_SECTIONS;
-
-    // Filter out 'hero' (rendered explicitly at the very top), and banned or bottom sections
-    const BANNED_SECTIONS = new Set([
-      'hero',
-      'about',
-      'aboutMahdev',
-      'whyMahdev',
-      'intro',
-      'advantage',
-      'leadership',
-      'cta',
-      'ctaSection',
-      'contact',
-      'pricing',
-      'randomEvents',
-      'welcomeAnimation',
-    ]);
-
-    // Bottom fixed sections that must appear at the very bottom before the footer
-    const BOTTOM_KEYS = new Set(['milestones', 'trustedCompanies', 'companies', 'testimonials']);
+    const HOMEPAGE_SECTIONS = new Set(['divisions', 'services', 'portfolio']);
 
     const middleSections = [...sections]
-      .filter((s) => s.enabled !== false && !BANNED_SECTIONS.has(s.sectionKey) && !BOTTOM_KEYS.has(s.sectionKey))
+      .filter((section) => section.enabled !== false && HOMEPAGE_SECTIONS.has(section.sectionKey))
       .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-    return middleSections;
+    return middleSections.some((section) => section.sectionKey === 'divisions')
+      ? middleSections
+      : [
+          { id: 'default-divisions', name: 'Businesses', sectionKey: 'divisions', enabled: true, order: 0 },
+          ...middleSections,
+        ];
   }, [homepageConfig?.sectionsOrder]);
 
   const renderSectionByKey = (sectionKey: string, id: string) => {
@@ -72,59 +47,29 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
         return <DivisionsSection key={id} onNavigate={onNavigate} />;
       case 'services':
         return <FeaturedServicesSection key={id} onNavigate={onNavigate} />;
-      case 'statistics':
-        return <HappyClientsAndProjectsSection key={id} />;
       case 'portfolio':
         return <FeaturedWorkSection key={id} onNavigate={onNavigate} />;
-      case 'gallery':
-        return <HomeGallerySection key={id} />;
-      case 'decorationShowcase':
-        return <DecorationVideoShowcase key={id} onNavigate={onNavigate} />;
       default:
         return null;
     }
   };
 
   const renderedSections = React.useMemo(() => {
-    const sections = activeSections.map((sec) => renderSectionByKey(sec.sectionKey, sec.id));
-    const servicesIndex = sections.findIndex((node) => node && (node as any)?.key === activeSections.find((sec) => sec.sectionKey === 'services')?.id);
-    const galleryIndex = sections.findIndex((node) => node && (node as any)?.key === activeSections.find((sec) => sec.sectionKey === 'gallery' || sec.sectionKey === 'portfolio')?.id);
-
-    if (servicesIndex >= 0 && galleryIndex >= 0 && galleryIndex < servicesIndex) {
-      const galleryNode = sections.splice(galleryIndex, 1)[0];
-      sections.splice(servicesIndex + 1, 0, galleryNode);
-    }
-
-    // A gallery is a required home section. CMS ordering may omit it on older
-    // installations, so inject it directly after Services without duplicating it.
-    const hasGallery = activeSections.some((section) => section.sectionKey === 'gallery');
-    if (!hasGallery) {
-      const serviceIndex = sections.findIndex((node) => node && (node as any)?.key === activeSections.find((section) => section.sectionKey === 'services')?.id);
-      sections.splice(serviceIndex >= 0 ? serviceIndex + 1 : sections.length, 0, <HomeGallerySection key="firestore-gallery" />);
-    }
-
-    return sections.filter(Boolean);
+    return activeSections
+      .map((section) => renderSectionByKey(section.sectionKey, section.id))
+      .filter(Boolean);
   }, [activeSections]);
 
   const effectiveBrandName = companySettings?.name
-    ? (companySettings.name.includes('(Pvt) Ltd') || companySettings.name.includes('Pvt Ltd') ? companySettings.name : `${companySettings.name} (Pvt) Ltd`)
-    : (siteSettings?.siteName || 'Mahdev (Pvt) Ltd');
-  const defaultPageTitle = `${effectiveBrandName} - Creating Moments | Capturing Memories | Delivering Innovation`;
-  const rawPageTitle = homepageConfig?.seo?.pageTitle;
-  const isCorporateTitle =
-    rawPageTitle &&
-    (rawPageTitle.toLowerCase().includes('corporate') ||
-      rawPageTitle.toLowerCase().includes('corporate ecosystem') ||
-      rawPageTitle.toLowerCase().includes('corporate eco'));
-  const effectivePageTitle = rawPageTitle && !isCorporateTitle ? rawPageTitle : defaultPageTitle;
-
-  const isDataLoading = (!divisions || divisions.length === 0) && isInitialLoading;
+    ? companySettings.name
+    : siteSettings?.siteName || 'Mahdev Group';
+  const effectivePageTitle = homepageConfig?.seo?.pageTitle || `${effectiveBrandName} | Products, experiences and technology`;
 
   return (
     <div className="w-full flex flex-col pb-24 lg:pb-0">
       <SEOHead
         title={effectivePageTitle}
-        description={homepageConfig?.seo?.metaDescription || `${effectiveBrandName} - Creating Moments | Capturing Memories | Delivering Innovation. Multi-division enterprise spanning Event Management, Studio Cinema, IT & Cloud, Travels, and E-Commerce.`}
+        description={homepageConfig?.seo?.metaDescription || `${effectiveBrandName} brings together events, creative studio, technology, travel and retail.`}
         canonicalUrl={homepageConfig?.seo?.canonicalUrl || 'https://mahdev.lk'}
         ogTitle={effectivePageTitle}
         ogDescription={homepageConfig?.seo?.metaDescription}
@@ -138,17 +83,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
         onExploreServices={() => onNavigate('/divisions')}
       />
 
-      {/* 2. DYNAMIC CONTENT SECTIONS: Progressive one-by-one streaming directly from Firestore */}
+      {/* Focused sections: businesses, selected services, and work. */}
       {renderedSections}
-
-      {/* MILESTONES (FROM FIRESTORE) */}
-      <MilestonesSection onNavigate={onNavigate} />
-
-      {/* TESTIMONIALS (FROM FIRESTORE) */}
-      <TestimonialsSection onNavigate={onNavigate} />
     </div>
   );
 };
-
-
-

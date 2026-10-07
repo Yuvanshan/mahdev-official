@@ -15,7 +15,7 @@ import {
   onSnapshot,
   arrayUnion,
   updateDoc,
-} from 'firebase/firestore';
+} from '../../lib/tursoFirestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { StorageCategory } from '../../types/storage';
 import { storageService } from '../storageService';

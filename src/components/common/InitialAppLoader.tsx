@@ -18,7 +18,7 @@ export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
 
   useEffect(() => {
     try {
-      const siteRaw = localStorage.getItem('mahdev_cached_site_settings');
+      const siteRaw = sessionStorage.getItem('mahdev_cached_site_settings');
       if (siteRaw) {
         const s = JSON.parse(siteRaw);
         if (s?.logoUrl?.trim()) {
@@ -26,7 +26,7 @@ export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
           return;
         }
       }
-      const compRaw = localStorage.getItem('mahdev_cached_company_settings');
+      const compRaw = sessionStorage.getItem('mahdev_cached_company_settings');
       if (compRaw) {
         const c = JSON.parse(compRaw);
         if (c?.logoUrl?.trim()) {

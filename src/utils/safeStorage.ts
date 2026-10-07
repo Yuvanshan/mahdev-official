@@ -1,13 +1,11 @@
 /**
- * Safe Browser Storage Utility
- * Prevents DOMException: QuotaExceededError crashes when storing large CMS payloads,
- * base64 media, or when browser storage reaches its 5MB capacity.
+ * Safe, tab-scoped storage for database-backed read caches.
  * 
  * Features:
  * - Graceful fallback with zero uncaught exceptions
  * - Automated progressive eviction of disposable cache keys (mahdev_cached_*)
- * - Base64 Data URL compaction for local offline storage
- * - Transparent in-memory retention when storage is physically exhausted
+ * - Base64 Data URL compaction for large cache entries
+ * - Cache data is cleared when its browser tab closes
  */
 
 const DISPOSABLE_CACHE_KEYS = [
@@ -31,7 +29,7 @@ const DISPOSABLE_CACHE_KEYS = [
  * Strips huge base64 Data URLs from serialized JSON objects or arrays
  * to prevent local storage blowout while preserving structural metadata.
  */
-function sanitizePayloadForLocalStorage(value: string): string {
+function sanitizePayloadForSessionStorage(value: string): string {
   if (!value.includes('data:image/')) {
     return value;
   }
@@ -46,7 +44,7 @@ function sanitizePayloadForLocalStorage(value: string): string {
       for (const prop of Object.keys(cleaned)) {
         const val = cleaned[prop];
         if (typeof val === 'string' && val.startsWith('data:image/') && val.length > 25000) {
-          // If it's a huge base64 image, keep a lightweight placeholder indicator for local cache
+          // Keep large inline images out of the session cache.
           cleaned[prop] = val.slice(0, 100) + '...[compacted_for_storage]';
         } else if (val && typeof val === 'object') {
           cleaned[prop] = sanitizeItem(val);
@@ -61,17 +59,53 @@ function sanitizePayloadForLocalStorage(value: string): string {
   }
 }
 
+function clearLegacyPersistentAppData(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    for (let index = window.localStorage.length - 1; index >= 0; index--) {
+      const key = window.localStorage.key(index);
+      if (key?.startsWith('mahdev_')) window.localStorage.removeItem(key);
+    }
+  } catch (error) {
+    console.warn('[SafeStorage] Could not clear legacy persistent app data:', error);
+  }
+
+  try {
+    for (const key of [
+      'mahdev_cms_seo_configs_v1',
+      'mahdev_welcome_animation_shown',
+      'mahdev_media_catalog_v1',
+    ]) {
+      window.sessionStorage.removeItem(key);
+    }
+  } catch (error) {
+    console.warn('[SafeStorage] Could not clear legacy browser-only state:', error);
+  }
+
+  try {
+    const request = window.indexedDB?.deleteDatabase('mahdev_media_vault_v1');
+    if (request) {
+      request.onerror = () => console.error('[SafeStorage] Could not remove the legacy media cache:', request.error);
+      request.onblocked = () => console.warn('[SafeStorage] Legacy media-cache deletion is blocked by another page.');
+    }
+  } catch (error) {
+    console.error('[SafeStorage] Could not remove the legacy media cache:', error);
+  }
+}
+
+clearLegacyPersistentAppData();
+
 /**
  * Emergency cache eviction when QuotaExceededError is detected
  */
 function runStorageEviction(targetKey: string): void {
-  if (typeof window === 'undefined' || !window.localStorage) return;
+  if (typeof window === 'undefined' || !window.sessionStorage) return;
 
   // Phase 1: Purge duplicated Firestore read caches (these can be re-queried anytime)
   for (const key of DISPOSABLE_CACHE_KEYS) {
     if (key !== targetKey) {
       try {
-        window.localStorage.removeItem(key);
+        window.sessionStorage.removeItem(key);
       } catch {}
     }
   }
@@ -79,7 +113,7 @@ function runStorageEviction(targetKey: string): void {
   // Phase 2: Compact media catalogs
   const mediaCatalogKey = 'mahdev_media_catalog_v1';
   try {
-    const raw = window.localStorage.getItem(mediaCatalogKey);
+    const raw = window.sessionStorage.getItem(mediaCatalogKey);
     if (raw) {
       const items = JSON.parse(raw);
       if (Array.isArray(items)) {
@@ -90,14 +124,14 @@ function runStorageEviction(targetKey: string): void {
           }
           return i;
         });
-        window.localStorage.setItem(mediaCatalogKey, JSON.stringify(compacted));
+        window.sessionStorage.setItem(mediaCatalogKey, JSON.stringify(compacted));
       }
     }
   } catch {}
 
   const adminMediaKey = 'mahdev_admin_media_v1';
   try {
-    const raw = window.localStorage.getItem(adminMediaKey);
+    const raw = window.sessionStorage.getItem(adminMediaKey);
     if (raw) {
       const items = JSON.parse(raw);
       if (Array.isArray(items)) {
@@ -107,7 +141,7 @@ function runStorageEviction(targetKey: string): void {
           }
           return i;
         });
-        window.localStorage.setItem(adminMediaKey, JSON.stringify(compacted));
+        window.sessionStorage.setItem(adminMediaKey, JSON.stringify(compacted));
       }
     }
   } catch {}
@@ -115,11 +149,11 @@ function runStorageEviction(targetKey: string): void {
   // Phase 3: Trim audit logs
   const auditKey = 'mahdev_admin_audit_logs_v1';
   try {
-    const raw = window.localStorage.getItem(auditKey);
+    const raw = window.sessionStorage.getItem(auditKey);
     if (raw) {
       const logs = JSON.parse(raw);
       if (Array.isArray(logs)) {
-        window.localStorage.setItem(auditKey, JSON.stringify(logs.slice(0, 20)));
+        window.sessionStorage.setItem(auditKey, JSON.stringify(logs.slice(0, 20)));
       }
     }
   } catch {}
@@ -127,12 +161,12 @@ function runStorageEviction(targetKey: string): void {
 
 export const safeStorage = {
   /**
-   * Safely reads from localStorage without throwing
+   * Safely reads from sessionStorage without throwing
    */
   getItem(key: string): string | null {
-    if (typeof window === 'undefined' || !window.localStorage) return null;
+    if (typeof window === 'undefined' || !window.sessionStorage) return null;
     try {
-      return window.localStorage.getItem(key);
+      return window.sessionStorage.getItem(key);
     } catch (e) {
       console.warn(`[SafeStorage] Failed to read key "${key}":`, e);
       return null;
@@ -140,16 +174,16 @@ export const safeStorage = {
   },
 
   /**
-   * Safely writes to localStorage. If quota is exceeded, automatically evicts
+   * Safely writes to sessionStorage. If quota is exceeded, automatically evicts
    * non-critical caches and retries. If storage remains physically full,
    * gracefully catches the error so the calling application NEVER crashes.
    */
   setItem(key: string, value: string): boolean {
-    if (typeof window === 'undefined' || !window.localStorage) return false;
+    if (typeof window === 'undefined' || !window.sessionStorage) return false;
 
     // Attempt 1: Direct write
     try {
-      window.localStorage.setItem(key, value);
+      window.sessionStorage.setItem(key, value);
       return true;
     } catch (err: any) {
       const isQuotaError =
@@ -172,28 +206,28 @@ export const safeStorage = {
       // Attempt 2: Run cache eviction and retry
       try {
         runStorageEviction(key);
-        window.localStorage.setItem(key, value);
+        window.sessionStorage.setItem(key, value);
         return true;
       } catch {}
 
       // Attempt 3: If payload contains large base64 strings, sanitize and compact it
       try {
-        const sanitized = sanitizePayloadForLocalStorage(value);
-        window.localStorage.setItem(key, sanitized);
+        const sanitized = sanitizePayloadForSessionStorage(value);
+        window.sessionStorage.setItem(key, sanitized);
         console.info(`[SafeStorage] Key "${key}" successfully saved after base64 compaction.`);
         return true;
       } catch {}
 
       // Attempt 4: More aggressive eviction across all mahdev keys except the target key
       try {
-        for (let i = window.localStorage.length - 1; i >= 0; i--) {
-          const k = window.localStorage.key(i);
+        for (let i = window.sessionStorage.length - 1; i >= 0; i--) {
+          const k = window.sessionStorage.key(i);
           if (k && k !== key && (k.startsWith('mahdev_cached_') || k.includes('_media_') || k.includes('_audit_'))) {
-            window.localStorage.removeItem(k);
+            window.sessionStorage.removeItem(k);
           }
         }
-        const sanitized = sanitizePayloadForLocalStorage(value);
-        window.localStorage.setItem(key, sanitized);
+        const sanitized = sanitizePayloadForSessionStorage(value);
+        window.sessionStorage.setItem(key, sanitized);
         return true;
       } catch (finalErr) {
         console.warn(
@@ -206,12 +240,12 @@ export const safeStorage = {
   },
 
   /**
-   * Safely removes a key from localStorage
+   * Safely removes a key from sessionStorage
    */
   removeItem(key: string): void {
-    if (typeof window === 'undefined' || !window.localStorage) return;
+    if (typeof window === 'undefined' || !window.sessionStorage) return;
     try {
-      window.localStorage.removeItem(key);
+      window.sessionStorage.removeItem(key);
     } catch (e) {
       console.warn(`[SafeStorage] Failed to remove key "${key}":`, e);
     }

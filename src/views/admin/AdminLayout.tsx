@@ -33,7 +33,7 @@ import {
   Loader2,
   Mail,
 } from 'lucide-react';
-import { activeFirestoreDatabaseId } from '../../lib/firebase';
+import { activeDatabaseName } from '../../lib/firebase';
 import { AdminSectionId } from '../../types/admin';
 import { useAdminAuth } from '../../context/AdminAuthContext';
 import { AdminLoginView } from './AdminLoginView';
@@ -432,7 +432,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
               title="Click to view Database Diagnostics in Settings"
             >
               <Database className="w-3 h-3 text-blue-600" />
-              <span>DB: {activeFirestoreDatabaseId}</span>
+              <span>DB: {activeDatabaseName}</span>
             </button>
 
             <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-mono font-bold">

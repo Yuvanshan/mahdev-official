@@ -19,7 +19,7 @@ import {
   DocumentSnapshot,
   onSnapshot,
   Unsubscribe,
-} from 'firebase/firestore';
+} from '../../lib/tursoFirestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreBooking, BookingStatus } from '../../types/firestore';
 

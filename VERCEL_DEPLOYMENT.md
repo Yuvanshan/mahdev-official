@@ -47,6 +47,10 @@ The project includes a root `vercel.json` configured specifically for modern Rea
 - **Immutable Static Assets**: `Cache-Control: public, max-age=31536000, immutable` for all files in `/assets/`.
 - **SPA Fallback**: Clean URL rewrite routing all unmatched routes to `/index.html`.
 
+### API coverage limitation
+
+Vercel deploys files under `api/` as serverless functions; it does not automatically run the Express routes in `server.ts`. The current functions cover Turso data, Firebase admin-token verification, and media upload only. The frontend still calls other `/api/*` paths for payments, order validation, email dispatch, settings, and Google Reviews. Those endpoints need Vercel handlers (or a separately hosted Express service) before those features can be considered production-ready on Vercel. The SPA fallback is not an API implementation.
+
 ---
 
 ## 3. Step-by-Step GitHub to Vercel Connection
@@ -84,17 +88,32 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | Production, Preview, Development | `1062826041810` |
 | `VITE_FIREBASE_APP_ID` | Production, Preview, Development | `1:1062826041810:web:2905a8e9f7bc3243dfa80b` |
 | `VITE_FIREBASE_MEASUREMENT_ID` | Production, Preview, Development | `G-MWNCCXGY4F` |
-| `VITE_FIREBASE_FIRESTORE_DATABASE_ID` | Production, Preview, Development | `ai-studio-mahdevpvtltd-b6505c20-1d3d-4de0-a4bb-a8fb7ae999dd` |
+| `TURSO_DATABASE_URL` | Production, Preview, Development | Server-side Turso connection URL (`libsql://...`) |
+| `TURSO_AUTH_TOKEN` | Production, Preview, Development | Server-side Turso auth token; store as a secret |
+| `FIREBASE_PROJECT_ID` | Production, Preview, Development | Firebase project ID used by the server to verify Firebase ID tokens |
+| `TURSO_ADMIN_EMAILS` | Production, Preview, Development | Server-only bootstrap allowlist for verified Firebase administrators; optional `:role` suffix |
+| `VITE_TURSO_DATABASE_NAME` | Production, Preview, Development | Optional public database label for diagnostics |
 | `VITE_FIREBASE_RECAPTCHA_SITE_KEY` | Production | reCAPTCHA v3 / Enterprise Site Key for App Check |
 | `PAYMENT_GATEWAY_ENV` | Production: `production`<br>Preview/Dev: `sandbox` | Payment verification engine mode |
 | `STRIPE_SECRET_KEY` | Production: `sk_live_...`<br>Preview/Dev: `sk_test_...` | Stripe Server Secret API Key |
 | `PAYMENT_WEBHOOK_SECRET` | Production, Preview | HMAC-SHA256 signature verification key |
-| `ADMIN_SECRET_SALT` | Production, Preview | Admin authentication kernel salt |
 | `ORDER_SIGNATURE_SECRET` | Production, Preview | Authoritative order signing secret |
 | `INVOICE_SIGNING_SALT` | Production, Preview | Tamper-proof tax invoice signature salt |
 | `GEMINI_API_KEY` | Production, Preview, Development | Gemini AI intelligence secret |
 
 > ⚠️ **Note**: After adding or modifying environment variables in Vercel, you must trigger a redeployment for the changes to take effect.
+
+### Admin sign-in and database permissions
+
+The admin portal authenticates through Firebase Email/Password Authentication. The browser sends its Firebase ID token to the server; the server verifies the signature and project audience with Firebase Admin SDK and requires a verified email. Access is granted to bootstrap addresses in `TURSO_ADMIN_EMAILS` or to active users in the Turso `admins` registry. No Firebase service-account private key is required for token verification.
+
+1. In Firebase Authentication, enable Email/Password and create the first admin account. Verify its email.
+2. In Vercel, set `FIREBASE_PROJECT_ID` and add that initial account to `TURSO_ADMIN_EMAILS`, for example `owner@example.com:super_admin`. An address without a role defaults to `super_admin`.
+3. Keep these variables server-only (do not prefix them with `VITE_`), then redeploy and sign in with the verified account.
+4. Create additional Firebase accounts and verify their emails, then provision their roles in the admin portal. Only a super administrator can read or change the Turso admin registry.
+5. Keep an environment allowlist entry for at least one bootstrap super administrator. Admin content writes and destructive database actions reject unverified or unauthorized requests; public reads remain available.
+
+The previous demo PIN and permissive password fallback are disabled. Do not deploy until the allowlist and Firebase admin accounts are configured.
 
 ---
 
@@ -133,4 +152,3 @@ npm run preflight
 ## 7. Rollback Reference
 
 For detailed instant rollback instructions via the Vercel Dashboard or CLI, refer to [PIPELINE_AND_ROLLBACK.md](./PIPELINE_AND_ROLLBACK.md).
-

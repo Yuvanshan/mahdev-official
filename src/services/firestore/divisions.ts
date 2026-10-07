@@ -17,7 +17,7 @@ import {
   deleteDoc,
   onSnapshot,
   Unsubscribe,
-} from 'firebase/firestore';
+} from '../../lib/tursoFirestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreDivision, DivisionId } from '../../types/firestore';
 import { DIVISIONS } from '../../config/divisions';
@@ -141,147 +141,27 @@ export function getDivisionFallbackOrder(id: string): number {
 }
 
 export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
-  const canonicalOrder = ['sws', 'u1', 'it', 'travels', 'mart'];
   const mapByCanonical = new Map<string, FirestoreDivision>();
-
-  // 1. ALWAYS seed with all 5 foundational canonical divisions as the baseline!
-  // This guarantees that all 5 divisions are ALWAYS present across the website and admin portal.
-  const defaults = getDefaultDivisions();
-  for (const def of defaults) {
-    const { shortId, canonicalDocId } = normalizeDivisionId(def.id || def.slug || '');
-    if (shortId) {
-      mapByCanonical.set(shortId, {
-        ...def,
-        id: shortId,
-        slug: shortId,
-        canonicalDocId,
-      });
-    }
-  }
-
-  // 2. Overlay incoming items from Firestore / admin updates
   for (const item of (Array.isArray(list) ? list : [])) {
     if (!item) continue;
     const { canonicalDocId, shortId } = normalizeDivisionId(item.id || item.slug || '');
     if (!shortId) continue;
-
-    const isDefaultComingSoon = shortId === 'it' || shortId === 'travels' || shortId === 'mart';
-    const isComingSoon = (item as any).isComingSoon !== undefined
-      ? !!(item as any).isComingSoon
-      : (item as any).comingSoon !== undefined
-      ? !!(item as any).comingSoon
-      : item.status !== undefined
-      ? item.status === 'coming_soon'
-      : isDefaultComingSoon;
-
-    const existing = mapByCanonical.get(shortId);
-    const normalizedItem: FirestoreDivision = {
-      ...(existing || {}),
+    const normalized: FirestoreDivision = {
       ...item,
       id: shortId,
-      slug: shortId,
+      slug: item.slug || shortId,
       canonicalDocId,
-      isComingSoon,
-      comingSoon: isComingSoon,
-      status: isComingSoon ? 'coming_soon' : (item.status || 'active'),
-    } as any;
-
-    if (!existing) {
-      mapByCanonical.set(shortId, normalizedItem);
-    } else {
-      // Pick the document with newer updatedAt as primary, but merge all defined fields
-      const existingTime = new Date(existing.updatedAt || 0).getTime();
-      const itemTime = new Date(normalizedItem.updatedAt || 0).getTime();
-      const primary = itemTime >= existingTime ? normalizedItem : existing;
-      const secondary = itemTime >= existingTime ? existing : normalizedItem;
-
-      const resolvedLogo = primary.logoUrl || secondary.logoUrl || (primary as any).logo || (secondary as any).logo || existing.logoUrl || (existing as any).logo || '';
-      const resolvedImg =
-        (primary as any).defaultImageUrl ||
-        (secondary as any).defaultImageUrl ||
-        (primary as any).fallbackImageUrl ||
-        (secondary as any).fallbackImageUrl ||
-        primary.hero?.imageUrl ||
-        secondary.hero?.imageUrl ||
-        primary.hero?.defaultImageUrl ||
-        secondary.hero?.defaultImageUrl ||
-        primary.heroImageUrl ||
-        secondary.heroImageUrl ||
-        primary.imageUrl ||
-        secondary.imageUrl ||
-        primary.hero?.bgImage ||
-        secondary.hero?.bgImage ||
-        existing.imageUrl ||
-        '';
-
-      const mergedHero = {
-        ...(secondary.hero || {}),
-        ...(primary.hero || {}),
-        title: primary.hero?.title || secondary.hero?.title || primary.heroHeadline || secondary.heroHeadline || primary.name,
-        subtitle: primary.hero?.subtitle || secondary.hero?.subtitle || primary.heroSubheadline || secondary.heroSubheadline || primary.shortDescription || secondary.shortDescription,
-        badge: primary.hero?.badge || secondary.hero?.badge || primary.badge || secondary.badge,
-        videoUrl: primary.hero?.videoUrl || secondary.hero?.videoUrl || (primary as any).heroVideoUrl || (secondary as any).heroVideoUrl || (primary as any).videoUrl || (secondary as any).videoUrl,
-        imageUrl: resolvedImg,
-        bgImage: primary.hero?.bgImage || secondary.hero?.bgImage || resolvedImg,
-      };
-
-      mapByCanonical.set(shortId, {
-        ...secondary,
-        ...primary,
-        id: shortId,
-        slug: shortId,
-        canonicalDocId,
-        name: primary.name || secondary.name || existing.name,
-        shortName: primary.shortName || secondary.shortName || existing.shortName,
-        heroHeadline: primary.heroHeadline || secondary.heroHeadline || mergedHero.title,
-        heroSubheadline: primary.heroSubheadline || secondary.heroSubheadline || mergedHero.subtitle,
-        shortDescription: primary.shortDescription || secondary.shortDescription || existing.shortDescription,
-        description: primary.description || secondary.description || existing.description,
-        badge: primary.badge || secondary.badge || existing.badge,
-        imageUrl: resolvedImg,
-        heroImageUrl: resolvedImg,
-        defaultImageUrl: resolvedImg,
-        fallbackImageUrl: resolvedImg,
-        videoUrl: primary.videoUrl || secondary.videoUrl || mergedHero.videoUrl,
-        heroVideoUrl: primary.heroVideoUrl || secondary.heroVideoUrl || mergedHero.videoUrl,
-        logoUrl: resolvedLogo,
-        logo: resolvedLogo,
-        hero: {
-          ...mergedHero,
-          imageUrl: resolvedImg,
-          defaultImageUrl: resolvedImg,
-          bgImage: resolvedImg,
-        },
-        status: primary.status || secondary.status,
-        isComingSoon: primary.isComingSoon !== undefined ? primary.isComingSoon : secondary.isComingSoon,
-        comingSoon: primary.comingSoon !== undefined ? primary.comingSoon : secondary.comingSoon,
-      });
+      divisionKey: item.divisionKey || shortId,
+    };
+    const existing = mapByCanonical.get(shortId);
+    if (!existing || new Date(normalized.updatedAt || 0) >= new Date(existing.updatedAt || 0)) {
+      mapByCanonical.set(shortId, normalized);
     }
   }
 
-  // Preserve canonical baseline divisions AND any newly created custom divisions!
-  const allDivisions: FirestoreDivision[] = [];
-  const handled = new Set<string>();
-
-  for (const key of canonicalOrder) {
-    const div = mapByCanonical.get(key);
-    if (div) {
-      allDivisions.push(div);
-      handled.add(key);
-    }
-  }
-
-  for (const [key, div] of mapByCanonical.entries()) {
-    if (!handled.has(key)) {
-      allDivisions.push(div);
-    }
-  }
-
-  return allDivisions.sort((a, b) => {
-    const orderA = typeof a.order === 'number' && a.order > 0 ? a.order : getDivisionFallbackOrder(a.id);
-    const orderB = typeof b.order === 'number' && b.order > 0 ? b.order : getDivisionFallbackOrder(b.id);
-    return orderA - orderB;
-  });
+  return Array.from(mapByCanonical.values()).sort(
+    (a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER)
+  );
 }
 
 export function getDefaultDivisions(): FirestoreDivision[] {
@@ -382,21 +262,18 @@ export const firestoreDivisionsService = {
   async getDivisions(forceRefresh = false): Promise<FirestoreDivision[]> {
     const now = Date.now();
     if (!forceRefresh && cachedDivisions && now - cachedDivisions.timestamp < CACHE_TTL_MS) {
-      if (cachedDivisions.data && cachedDivisions.data.length >= 5) {
-        return cachedDivisions.data;
-      }
+      return cachedDivisions.data;
     }
 
-    // Check localStorage cache for instant zero-latency return
+    // Use only records previously fetched from the database as an instant cache.
     if (!forceRefresh && typeof window !== 'undefined') {
       try {
-        const localRaw = localStorage.getItem('mahdev_cached_divisions');
+        const localRaw = sessionStorage.getItem('mahdev_cached_divisions');
         if (localRaw) {
           const parsed = JSON.parse(localRaw);
-          if (Array.isArray(parsed) && parsed.length > 0) {
+          if (Array.isArray(parsed)) {
             const data = sortDivisions(parsed);
             cachedDivisions = { data, timestamp: now };
-            // Kick off background refresh without blocking caller
             getDocs(collection(db, 'divisions')).then((snap) => {
               const fresh = !snap.empty
                 ? (snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreDivision[])
@@ -404,16 +281,19 @@ export const firestoreDivisionsService = {
               const sorted = sortDivisions(fresh);
               cachedDivisions = { data: sorted, timestamp: Date.now() };
               try {
-                localStorage.setItem('mahdev_cached_divisions', JSON.stringify(sorted));
-              } catch {}
-              if (fresh.length < 5) {
-                ensureAllCanonicalDivisionsInFirestore().catch(() => {});
+                sessionStorage.setItem('mahdev_cached_divisions', JSON.stringify(sorted));
+              } catch (error) {
+                console.warn('[Firestore Divisions] Could not refresh session cache:', error);
               }
-            }).catch(() => {});
+            }).catch((error) => {
+              console.error('[Firestore Divisions] Background refresh failed:', error);
+            });
             return data;
           }
         }
-      } catch {}
+      } catch (error) {
+        console.warn('[Firestore Divisions] Session cache could not be read:', error);
+      }
     }
 
     try {
@@ -428,19 +308,16 @@ export const firestoreDivisionsService = {
       cachedDivisions = { data, timestamp: now };
       if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem('mahdev_cached_divisions', JSON.stringify(data));
-        } catch {}
-      }
-      if (raw.length < 5) {
-        ensureAllCanonicalDivisionsInFirestore().catch(() => {});
+          sessionStorage.setItem('mahdev_cached_divisions', JSON.stringify(data));
+        } catch (error) {
+          console.warn('[Firestore Divisions] Could not cache database records for this session:', error);
+        }
       }
       return data;
     } catch (err) {
       console.warn('[Firestore Divisions] getDivisions error:', err);
-      const fallback = cachedDivisions?.data && cachedDivisions.data.length >= 5
-        ? cachedDivisions.data
-        : sortDivisions(getDefaultDivisions());
-      return fallback;
+      if (cachedDivisions) return cachedDivisions.data;
+      throw err;
     }
   },
 
@@ -512,56 +389,31 @@ export const firestoreDivisionsService = {
       updatedAt: new Date().toISOString(),
     });
 
-    // 1. Immediately update in-memory cache so all reads are instant and guaranteed
-    if (!cachedDivisions) {
-      cachedDivisions = { data: sortDivisions(getDefaultDivisions()), timestamp: Date.now() };
-    }
-    const targetIds = new Set([canonicalDocId, alternateId, shortId, id, `div-${shortId}`]);
-    let matchedAny = false;
-    cachedDivisions.data = cachedDivisions.data.map((d) => {
-      if (targetIds.has(d.id) || (d.slug && targetIds.has(d.slug))) {
-        matchedAny = true;
-        return { ...d, ...payload, id: d.id || canonicalDocId } as FirestoreDivision;
-      }
-      return d;
-    });
-    if (!matchedAny) {
-      cachedDivisions.data.push({ ...payload, id: canonicalDocId } as FirestoreDivision);
-    }
-    cachedDivisions.data = sortDivisions(cachedDivisions.data);
-    cachedDivisions.timestamp = Date.now();
-
-    // 2. Immediately update localStorage & dispatch live event so UI never hangs or lags
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('mahdev_cached_divisions', JSON.stringify(cachedDivisions.data));
-        window.dispatchEvent(
-          new CustomEvent('mahdev_division_updated', {
-            detail: { id: canonicalDocId, shortId, division: payload },
-          })
-        );
-      } catch {}
-    }
-
-    // 3. Immediately sync to server backend
-    try {
-      fetch('/api/divisions/' + shortId, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...payload, id: shortId }),
-      }).catch(() => {});
-    } catch {}
-
-    // 4. Commit to Firestore with resilient non-blocking timeout fallback
     try {
       const docRef = doc(db, 'divisions', canonicalDocId);
-      await Promise.race([
-        setDoc(docRef, payload, { merge: true }),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
-      console.log(`[Firestore Divisions] Division "${canonicalDocId}" committed to Firestore.`);
+      await setDoc(docRef, payload, { merge: true });
     } catch (fsErr) {
-      console.warn(`[Firestore Divisions] Cloud commit notice for "${canonicalDocId}":`, fsErr);
+      console.error(`[Turso Divisions] Could not save "${canonicalDocId}":`, fsErr);
+      throw fsErr;
+    }
+
+    const current = cachedDivisions?.data || [];
+    const next = sortDivisions([
+      ...current.filter((division) => normalizeDivisionId(division.id || division.slug || '').shortId !== shortId),
+      { ...payload, id: canonicalDocId } as FirestoreDivision,
+    ]);
+    cachedDivisions = { data: next, timestamp: Date.now() };
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('mahdev_cached_divisions', JSON.stringify(next));
+      } catch (error) {
+        console.warn('[Firestore Divisions] Could not update session cache:', error);
+      }
+      window.dispatchEvent(
+        new CustomEvent('mahdev_division_updated', {
+          detail: { id: canonicalDocId, shortId, division: payload },
+        })
+      );
     }
   },
 
@@ -592,6 +444,14 @@ export const firestoreDivisionsService = {
     await deleteDoc(doc(db, 'divisions', id));
     if (cachedDivisions) {
       cachedDivisions.data = cachedDivisions.data.filter((d) => d.id !== id);
+      cachedDivisions.timestamp = Date.now();
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.setItem('mahdev_cached_divisions', JSON.stringify(cachedDivisions.data));
+        } catch (error) {
+          console.warn('[Firestore Divisions] Could not update session cache after delete:', error);
+        }
+      }
     }
   },
 
@@ -613,20 +473,16 @@ export const firestoreDivisionsService = {
         cachedDivisions = { data, timestamp: Date.now() };
         if (typeof window !== 'undefined') {
           try {
-            localStorage.setItem('mahdev_cached_divisions', JSON.stringify(data));
-          } catch {}
-        }
-        if (raw.length < 5) {
-          ensureAllCanonicalDivisionsInFirestore().catch(() => {});
+            sessionStorage.setItem('mahdev_cached_divisions', JSON.stringify(data));
+          } catch (error) {
+            console.warn('[Firestore Divisions] Could not cache subscription data:', error);
+          }
         }
         callback(data);
       },
       (err) => {
         console.warn('[Firestore Divisions] subscribe error:', err);
-        const fallback = cachedDivisions?.data && cachedDivisions.data.length >= 5
-          ? cachedDivisions.data
-          : sortDivisions(getDefaultDivisions());
-        callback(fallback);
+        if (cachedDivisions) callback(cachedDivisions.data);
       }
     );
   },

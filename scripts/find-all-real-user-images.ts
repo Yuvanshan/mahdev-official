@@ -1,4 +1,4 @@
-import { db } from '../src/lib/firebase';
+import { db } from './legacyFirestoreSource';
 import { collection, getDocs } from 'firebase/firestore';
 import fs from 'fs';
 import sharp from 'sharp';

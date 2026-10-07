@@ -296,7 +296,7 @@ export const AdminProductsView: React.FC = () => {
       } as any;
 
       if (editingProduct) {
-        cmsService.update<CmsProduct>('products', editingProduct.id, payload as any);
+        await cmsService.update<CmsProduct>('products', editingProduct.id, payload as any);
         try {
           await firestoreProductsService.saveProduct(editingProduct.id, {
             ...payload,
@@ -316,7 +316,7 @@ export const AdminProductsView: React.FC = () => {
         }
         addToast('success', 'Product Updated', `SKU ${payload.sku} "${payload.name}" saved.`);
       } else {
-        const created = cmsService.create<CmsProduct>('products', payload as any);
+        const created = await cmsService.create<CmsProduct>('products', payload as any);
         try {
           await firestoreProductsService.saveProduct(created.id, {
             ...payload,
@@ -357,7 +357,7 @@ export const AdminProductsView: React.FC = () => {
     setIsStockModalOpen(true);
   };
 
-  const handleSaveQuickStock = () => {
+  const handleSaveQuickStock = async () => {
     if (!stockEditingProduct) return;
     const stockStatus =
       quickStockValue === 0
@@ -366,7 +366,7 @@ export const AdminProductsView: React.FC = () => {
         ? 'low_stock'
         : 'in_stock';
 
-    cmsService.update<CmsProduct>('products', stockEditingProduct.id, {
+    await cmsService.update<CmsProduct>('products', stockEditingProduct.id, {
       stockQuantity: quickStockValue,
       stockStatus,
     });
@@ -382,31 +382,31 @@ export const AdminProductsView: React.FC = () => {
   const handleDeleteConfirm = async (permanent: boolean) => {
     if (!deletingProduct) return;
     const itemToDelete = deletingProduct;
-    if (permanent) {
-      cmsService.hardDelete('products', itemToDelete.id);
-      try {
-        await firestoreProductsService.deleteProduct(itemToDelete.id);
-      } catch (fErr) {
-        console.warn('[AdminProducts] Firestore delete notice:', fErr);
+    try {
+      if (permanent) {
+        await cmsService.hardDelete('products', itemToDelete.id);
+        addToast('warning', 'Permanent Deletion', `Product "${itemToDelete.name}" removed from inventory.`);
+      } else {
+        await cmsService.softDelete('products', itemToDelete.id);
+        addToast('info', 'Product Archived', `Product "${itemToDelete.name}" archived.`);
       }
-      addToast('warning', 'Permanent Deletion', `Product "${itemToDelete.name}" removed from inventory.`);
-    } else {
-      cmsService.softDelete('products', itemToDelete.id);
-      try {
-        await firestoreProductsService.saveProduct(itemToDelete.id, { status: 'draft', isPublished: false } as any);
-      } catch (fErr) {
-        console.warn('[AdminProducts] Firestore archive notice:', fErr);
-      }
-      addToast('info', 'Product Archived', `Product "${itemToDelete.name}" archived.`);
+      setDeletingProduct(null);
+      loadData();
+    } catch (error) {
+      console.error('[AdminProducts] Delete failed:', error);
+      addToast('error', 'Delete Failed', error instanceof Error ? error.message : 'Could not update the database.');
     }
-    setDeletingProduct(null);
-    loadData();
   };
 
-  const handleRestore = (prod: CmsProduct) => {
-    cmsService.restore('products', prod.id);
-    addToast('success', 'Product Restored', `"${prod.name}" restored to active inventory.`);
-    loadData();
+  const handleRestore = async (prod: CmsProduct) => {
+    try {
+      await cmsService.restore('products', prod.id);
+      addToast('success', 'Product Restored', `"${prod.name}" restored to active inventory.`);
+      loadData();
+    } catch (error) {
+      console.error('[AdminProducts] Restore failed:', error);
+      addToast('error', 'Restore Failed', error instanceof Error ? error.message : 'Could not update the database.');
+    }
   };
 
   return (

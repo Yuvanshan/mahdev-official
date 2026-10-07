@@ -5,7 +5,7 @@
  * Features:
  * - Non-blocking asynchronous dispatch (never disrupts primary transactions)
  * - Strict customer PII & token sanitization
- * - Local fallback storage for In-App Notification Center
+ * - In-memory In-App Notification Center state
  */
 
 import { AppNotification, NotificationType, NotificationRecipient } from '../types/notification';
@@ -15,36 +15,12 @@ import { Booking } from '../types/booking';
 import { PaymentTransaction } from '../types/payment';
 import { COMPANY_INFO } from '../config/company';
 
-const NOTIFICATIONS_STORAGE_KEY = 'mahdev_notifications_v1';
-
 class NotificationService {
   private notifications: AppNotification[] = [];
   private listeners: Set<() => void> = new Set();
 
-  constructor() {
-    this.loadFromStorage();
-  }
-
-  private loadFromStorage(): void {
-    try {
-      const stored = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
-      if (stored) {
-        this.notifications = JSON.parse(stored);
-      } else {
-        this.notifications = [];
-      }
-    } catch {
-      this.notifications = [];
-    }
-  }
-
-  private saveToStorage(): void {
-    try {
-      localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(this.notifications.slice(0, 100)));
-      this.notifyListeners();
-    } catch (e) {
-      console.warn('[NotificationService] Local storage save failed:', e);
-    }
+  private notifyStateChanged(): void {
+    this.notifyListeners();
   }
 
   public subscribe(listener: () => void): () => void {
@@ -83,7 +59,7 @@ class NotificationService {
 
     // 1. Immediately store in client in-app store
     this.notifications.unshift(notification);
-    this.saveToStorage();
+    this.notifyStateChanged();
 
     // 2. Asynchronously fire server email/SMS dispatcher without blocking caller
     (async () => {
@@ -409,7 +385,7 @@ class NotificationService {
     if (item && !item.readAt) {
       item.readAt = new Date().toISOString();
       item.status = 'read';
-      this.saveToStorage();
+      this.notifyStateChanged();
     }
   }
 
@@ -420,12 +396,12 @@ class NotificationService {
       n.readAt = now;
       n.status = 'read';
     });
-    this.saveToStorage();
+    this.notifyStateChanged();
   }
 
   public clearAll(): void {
     this.notifications = [];
-    this.saveToStorage();
+    this.notifyStateChanged();
   }
 }
 

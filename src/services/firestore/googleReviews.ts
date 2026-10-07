@@ -16,7 +16,7 @@ import {
   orderBy,
   onSnapshot,
   Unsubscribe,
-} from 'firebase/firestore';
+} from '../../lib/tursoFirestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { GoogleReview, GoogleReviewsConfig } from '../../types/googleReviews';
 import { DivisionId } from '../../types/firestore';

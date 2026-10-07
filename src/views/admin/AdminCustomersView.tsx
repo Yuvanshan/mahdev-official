@@ -57,13 +57,17 @@ export const AdminCustomersView: React.FC = () => {
     }, 4000);
   };
 
-  const loadCustomers = () => {
-    const list = authService.getAllCustomers();
-    setCustomers(list);
+  const loadCustomers = async () => {
+    try {
+      setCustomers(await authService.getAllCustomers());
+    } catch (error) {
+      console.error('[AdminCustomers] Could not load customer records from Turso:', error);
+      addToast('error', 'Customers Unavailable', 'Could not load customers from the database.');
+    }
   };
 
   useEffect(() => {
-    loadCustomers();
+    void loadCustomers();
   }, []);
 
   const handleOpenCustomer = (customer: CustomerUser) => {

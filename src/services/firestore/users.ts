@@ -14,7 +14,7 @@ import {
   limit as firestoreLimit,
   onSnapshot,
   Unsubscribe,
-} from 'firebase/firestore';
+} from '../../lib/tursoFirestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreUser, UserRole } from '../../types/firestore';
 

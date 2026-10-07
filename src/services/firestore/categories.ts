@@ -14,7 +14,7 @@ import {
   where,
   onSnapshot,
   Unsubscribe,
-} from 'firebase/firestore';
+} from '../../lib/tursoFirestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreCategory, DivisionId } from '../../types/firestore';
 import { isSameDivision } from './divisions';

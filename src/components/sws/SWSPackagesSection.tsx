@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   CheckCircle2,
   Calendar,
@@ -19,6 +19,8 @@ import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
+import { CmsPackage } from '../../types/cms';
+import { cmsService } from '../../services/cmsService';
 
 interface SWSPackagesSectionProps {
   onBookPackage: (pkg: SWSPackage) => void;
@@ -27,8 +29,39 @@ interface SWSPackagesSectionProps {
 export const SWSPackagesSection: React.FC<SWSPackagesSectionProps> = ({ onBookPackage }) => {
   const { services: rawServices } = useFirestoreDataContext();
   const [activeImageIndices, setActiveImageIndices] = useState<Record<string, number>>({});
+  const [cmsPackages, setCmsPackages] = useState<CmsPackage[]>(() =>
+    cmsService.getAll<CmsPackage>('packages', { divisionId: 'sws', status: 'active' })
+  );
+
+  useEffect(() => {
+    const refreshPackages = () => {
+      setCmsPackages(cmsService.getAll<CmsPackage>('packages', { divisionId: 'sws', status: 'active' }));
+    };
+    const unsubscribe = cmsService.subscribe('packages', refreshPackages);
+    refreshPackages();
+    return unsubscribe;
+  }, []);
 
   const packages = useMemo<SWSPackage[]>(() => {
+    if (cmsPackages.length > 0) {
+      return cmsPackages.map((pkg) => ({
+        id: pkg.id,
+        name: pkg.name,
+        tier: pkg.badge || 'Premium Suite',
+        tagline: pkg.tagline || pkg.name,
+        description: pkg.tagline || pkg.name,
+        includedServices: pkg.features,
+        price: `${pkg.currency} ${pkg.price.toLocaleString()}`,
+        priceSubtext: pkg.billingCycle || 'Turnkey rate',
+        images: [],
+        availability: 'Available on request',
+        badge: pkg.badge,
+        popular: pkg.popular,
+        idealFor: pkg.serviceTitle || 'Events and corporate productions',
+        guestEstimate: pkg.duration || 'All scales',
+      }));
+    }
+
     if (rawServices && rawServices.length > 0) {
       const swsPackages = rawServices.filter(
         (s) =>
@@ -55,7 +88,7 @@ export const SWSPackagesSection: React.FC<SWSPackagesSectionProps> = ({ onBookPa
       }
     }
     return [];
-  }, [rawServices]);
+  }, [cmsPackages, rawServices]);
 
   if (packages.length === 0) {
     return null;

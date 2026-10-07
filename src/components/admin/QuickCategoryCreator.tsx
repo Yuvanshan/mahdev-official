@@ -53,7 +53,7 @@ export const QuickCategoryCreator: React.FC<QuickCategoryCreatorProps> = ({
     setError('');
   };
 
-  const handleSubmit = (e?: React.FormEvent) => {
+  const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const trimmedName = name.trim();
     if (!trimmedName) {
@@ -88,7 +88,7 @@ export const QuickCategoryCreator: React.FC<QuickCategoryCreatorProps> = ({
       }
 
       // Create new category in CMS and sync to Firestore
-      const newCategory = cmsService.create<CmsCategory>('categories', {
+      const newCategory = await cmsService.create<CmsCategory>('categories', {
         name: trimmedName,
         slug: slug || `cat-${Date.now().toString(36)}`,
         divisionId,

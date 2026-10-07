@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Building,
   Layers,
@@ -26,6 +26,7 @@ import { DIVISIONS } from '../../config/divisions';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { authService } from '../../services/authService';
 import { Button } from '../../components/ui/Button';
+import { CustomerUser } from '../../types/customer';
 
 interface AdminGenericViewProps {
   sectionId: AdminSectionId;
@@ -37,8 +38,15 @@ export const AdminGenericView: React.FC<AdminGenericViewProps> = ({
   onNavigateSection,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [customers, setCustomers] = useState<CustomerUser[]>([]);
   const { services, categories } = useFirestoreDataContext();
-  const customers = authService.getAllCustomers();
+
+  useEffect(() => {
+    if (sectionId !== 'customers') return;
+    authService.getAllCustomers()
+      .then(setCustomers)
+      .catch((error) => console.error('[AdminGenericView] Could not load customers from Turso:', error));
+  }, [sectionId]);
 
   // 1. DIVISIONS VIEW
   if (sectionId === 'divisions') {

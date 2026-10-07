@@ -23,7 +23,6 @@ interface AuthContextType {
   logout: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<{ success: boolean; message: string; error?: string }>;
   updateProfile: (updates: Partial<CustomerUser>) => Promise<{ success: boolean; error?: string }>;
-  switchAccount: (email: string) => void;
   refreshUser: () => void;
 }
 
@@ -137,15 +136,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const switchAccount = (email: string) => {
-    const switched = authService.switchDemoAccount(email);
-    if (switched) {
-      setUser(switched);
-      setStatus('authenticated');
-      setError(null);
-    }
-  };
-
   const isPrivileged = Boolean(
     user && ['admin', 'superAdmin', 'manager', 'staff'].includes(user.role)
   );
@@ -174,7 +164,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         requestPasswordReset,
         updateProfile,
-        switchAccount,
         refreshUser,
       }}
     >

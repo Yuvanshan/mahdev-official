@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from '
 import { CartItem, CartSummary, CouponCode, CartVariantSelection, CartBookingDetails } from '../types/cart';
 import { CatalogProduct, ProductVariantOption } from '../types/catalog';
 import { analyticsService } from '../services/analyticsService';
+import { cmsService } from '../services/cmsService';
+import { CmsCoupon } from '../types/cms';
 
 interface CartContextType {
   cartItems: CartItem[];
@@ -54,56 +56,24 @@ const VALID_COUPONS: CouponCode[] = [
   },
 ];
 
-const CART_STORAGE_KEY = 'mahdev_cart_v1';
-const COUPON_STORAGE_KEY = 'mahdev_coupon_v1';
 const FREE_SHIPPING_THRESHOLD = 15000; // 15,000 LKR for automatic free courier delivery
 const STANDARD_SHIPPING_RATE = 650; // 650 LKR standard islandwide shipping
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Load initial cart from LocalStorage
-  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
-    try {
-      const saved = localStorage.getItem(CART_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  // Load coupon from LocalStorage
-  const [appliedCoupon, setAppliedCoupon] = useState<CouponCode | null>(() => {
-    try {
-      const saved = localStorage.getItem(COUPON_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [appliedCoupon, setAppliedCoupon] = useState<CouponCode | null>(null);
 
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
-
-  // Sync with LocalStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
-    } catch (e) {
-      console.error('Failed to persist cart items to localStorage', e);
-    }
-  }, [cartItems]);
+  const [cmsCoupons, setCmsCoupons] = useState<CmsCoupon[]>(() => cmsService.getAll<CmsCoupon>('coupons'));
 
   useEffect(() => {
-    try {
-      if (appliedCoupon) {
-        localStorage.setItem(COUPON_STORAGE_KEY, JSON.stringify(appliedCoupon));
-      } else {
-        localStorage.removeItem(COUPON_STORAGE_KEY);
-      }
-    } catch (e) {
-      console.error('Failed to persist coupon to localStorage', e);
-    }
-  }, [appliedCoupon]);
+    const refreshCoupons = () => setCmsCoupons(cmsService.getAll<CmsCoupon>('coupons'));
+    const unsubscribe = cmsService.subscribe('coupons', refreshCoupons);
+    refreshCoupons();
+    return unsubscribe;
+  }, []);
 
   // Comprehensive cart calculations
   const cartSummary: CartSummary = useMemo(() => {
@@ -149,6 +119,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           couponDiscountTotal = (subtotal * appliedCoupon.discountValue) / 100;
         } else if (appliedCoupon.discountType === 'fixed') {
           couponDiscountTotal = Math.min(subtotal, appliedCoupon.discountValue);
+        }
+        if (appliedCoupon.maxDiscount !== undefined) {
+          couponDiscountTotal = Math.min(couponDiscountTotal, appliedCoupon.maxDiscount);
         }
       }
     }
@@ -284,7 +257,28 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const applyCoupon = (code: string): { success: boolean; message: string } => {
     const trimmed = code.trim().toUpperCase();
-    const found = VALID_COUPONS.find((c) => c.code === trimmed);
+    const now = Date.now();
+    const configuredCoupons = cmsCoupons.filter((coupon) => {
+      if (!coupon.isActive || coupon.isDeleted) return false;
+      if (coupon.validFrom && new Date(`${coupon.validFrom}T00:00:00`).getTime() > now) return false;
+      if (coupon.validUntil && new Date(`${coupon.validUntil}T23:59:59`).getTime() < now) return false;
+      if (coupon.usageLimit > 0 && coupon.usageCount >= coupon.usageLimit) return false;
+      return true;
+    });
+    const cmsCoupon = configuredCoupons.find((coupon) => coupon.code.toUpperCase() === trimmed);
+    const found = cmsCoupon
+      ? {
+          code: cmsCoupon.code,
+          description: cmsCoupon.description,
+          discountType: cmsCoupon.discountType,
+          discountValue: cmsCoupon.discountValue,
+          minOrderAmount: cmsCoupon.minSpend,
+          maxDiscount: cmsCoupon.maxDiscount,
+          expiryDate: cmsCoupon.validUntil,
+        }
+      : cmsCoupons.length === 0
+        ? VALID_COUPONS.find((coupon) => coupon.code === trimmed)
+        : undefined;
 
     if (!found) {
       return { success: false, message: `Coupon code "${code}" is invalid or expired.` };

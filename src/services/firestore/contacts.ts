@@ -10,7 +10,7 @@ import {
   orderBy,
   onSnapshot,
   Unsubscribe,
-} from 'firebase/firestore';
+} from '../../lib/tursoFirestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreContactSubmission } from '../../types/firestore';
 

@@ -14,7 +14,7 @@ import {
   onSnapshot,
   Unsubscribe,
   writeBatch,
-} from 'firebase/firestore';
+} from '../../lib/tursoFirestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreMilestone } from '../../types/firestore';
 
@@ -122,7 +122,7 @@ const CACHE_TTL_MS = 1000 * 60 * 30; // 30-minute memoized cache
 let cachedMilestones: { data: FirestoreMilestone[]; timestamp: number } | null = (() => {
   try {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('mahdev_cached_milestones');
+      const stored = sessionStorage.getItem('mahdev_cached_milestones');
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -170,7 +170,7 @@ export const firestoreMilestonesService = {
           cachedMilestones = { data, timestamp: Date.now() };
           try {
             if (typeof window !== 'undefined') {
-              localStorage.setItem('mahdev_cached_milestones', JSON.stringify(data));
+              sessionStorage.setItem('mahdev_cached_milestones', JSON.stringify(data));
             }
           } catch {}
           return data;
@@ -180,7 +180,7 @@ export const firestoreMilestonesService = {
         cachedMilestones = { data: [], timestamp: Date.now() };
         try {
           if (typeof window !== 'undefined') {
-            localStorage.setItem('mahdev_cached_milestones', JSON.stringify([]));
+            sessionStorage.setItem('mahdev_cached_milestones', JSON.stringify([]));
           }
         } catch {}
         return [];

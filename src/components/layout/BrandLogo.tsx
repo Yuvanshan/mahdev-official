@@ -30,7 +30,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
   useEffect(() => {
     const handleUpdate = () => {
       try {
-        const siteRaw = localStorage.getItem('mahdev_cached_site_settings');
+        const siteRaw = sessionStorage.getItem('mahdev_cached_site_settings');
         if (siteRaw) {
           const s = JSON.parse(siteRaw);
           if (isDark && s?.darkLogoUrl?.trim()) {
@@ -42,7 +42,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
             return;
           }
         }
-        const compRaw = localStorage.getItem('mahdev_cached_company_settings');
+        const compRaw = sessionStorage.getItem('mahdev_cached_company_settings');
         if (compRaw) {
           const c = JSON.parse(compRaw);
           if (isDark && c?.darkLogoUrl?.trim()) {
@@ -67,17 +67,17 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
     }
   }, [isDark]);
 
-  // Check localStorage for immediate zero-latency branding fallback
+  // Check sessionStorage for immediate zero-latency branding fallback
   const cachedLogo = React.useMemo(() => {
     if (typeof window === 'undefined') return '';
     try {
-      const siteRaw = localStorage.getItem('mahdev_cached_site_settings');
+      const siteRaw = sessionStorage.getItem('mahdev_cached_site_settings');
       if (siteRaw) {
         const s = JSON.parse(siteRaw);
         if (isDark && s?.darkLogoUrl?.trim()) return s.darkLogoUrl.trim();
         if (s?.logoUrl?.trim()) return s.logoUrl.trim();
       }
-      const compRaw = localStorage.getItem('mahdev_cached_company_settings');
+      const compRaw = sessionStorage.getItem('mahdev_cached_company_settings');
       if (compRaw) {
         const c = JSON.parse(compRaw);
         if (isDark && c?.darkLogoUrl?.trim()) return c.darkLogoUrl.trim();

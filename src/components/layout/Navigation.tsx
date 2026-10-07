@@ -197,8 +197,8 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
       <header
         className={`sticky top-0 z-[60] w-full transition-all duration-200 ${
           isScrolled
-            ? 'bg-[#FAF9F6]/90 backdrop-blur-md border-b border-blue-200/60 shadow-xs'
-            : 'bg-[#FAF9F6] border-b border-blue-100/70'
+            ? 'bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs'
+            : 'bg-white border-b border-slate-200'
         }`}
       >
         {/* Division Context Notice (when inside a child division) */}
@@ -207,7 +207,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-blue-300">{currentDivision.name}</span>
-                <span className="text-blue-200/70 hidden sm:inline">— A Division of Mahdev (Pvt) Ltd</span>
+                <span className="text-blue-200/70 hidden sm:inline">Mahdev Group</span>
               </div>
               <button
                 onClick={() => onNavigate('/')}
@@ -221,7 +221,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
         )}
 
         <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-18 sm:h-20 md:h-22">
+          <div className="flex items-center justify-between h-16 sm:h-[72px]">
             {/* Left: Brand Logo */}
             <div className="flex items-center shrink-0 min-w-0 mr-1 sm:mr-0">
               <BrandLogo
@@ -260,23 +260,14 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
                       {/* Dropdown Menu - perfectly constrained, responsive width, never overflows viewport */}
                       {isServicesOpen && (
-                        <div className="absolute left-0 mt-2 w-[360px] sm:w-[410px] max-w-[calc(100vw-2rem)] bg-[#FAF9F6] rounded-2xl shadow-2xl border border-blue-200/80 z-[70] animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col max-h-[calc(100vh-5rem)] overflow-hidden">
-                          <div className="px-4 py-3 bg-blue-50/80 border-b border-blue-100 flex items-center justify-between shrink-0">
-                            <div>
-                              <span className="text-[11px] font-bold uppercase tracking-wider text-blue-900 block">
-                                Operating Divisions
-                              </span>
-                              <span className="text-[10px] text-blue-600/80">
-                                Autonomous specialized enterprise units
-                              </span>
-                            </div>
-                            <span className="text-[10px] font-mono font-semibold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full border border-blue-200">
-                              {displayDivisions.length} Active
-                            </span>
+                        <div className="absolute left-0 mt-2 w-[360px] sm:w-[410px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-xl border border-slate-200 z-[70] animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col max-h-[calc(100vh-5rem)] overflow-hidden">
+                          <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between shrink-0">
+                            <span className="text-sm font-semibold text-slate-900">Our businesses</span>
+                            <span className="text-xs text-slate-500">{displayDivisions.length} teams</span>
                           </div>
 
                           {/* Scrollable division items container */}
-                          <div className="p-2 space-y-1 overflow-y-auto overscroll-contain max-h-[360px] divide-y divide-blue-50 scrollbar-thin">
+                          <div className="p-2 space-y-1 overflow-y-auto overscroll-contain max-h-[360px] divide-y divide-slate-100 scrollbar-thin">
                             {displayDivisions.map((division) => (
                               <button
                                 key={division.id}
@@ -321,7 +312,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                           </div>
 
                           {/* Action footer */}
-                          <div className="p-3 bg-blue-50/70 border-t border-blue-100 flex items-center gap-2 shrink-0">
+                          <div className="p-3 border-t border-slate-200 shrink-0">
                             <Button
                               variant="outline"
                               size="sm"
@@ -329,16 +320,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                               onClick={() => handleLinkClick('/divisions')}
                               className="text-xs font-semibold"
                             >
-                              All Divisions
-                            </Button>
-                            <Button
-                              variant="electric"
-                              size="sm"
-                              fullWidth
-                              onClick={() => handleLinkClick('/book')}
-                              className="text-xs font-bold shadow-xs"
-                            >
-                              Book Services
+                              Explore all businesses
                             </Button>
                           </div>
                         </div>

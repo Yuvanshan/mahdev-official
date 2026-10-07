@@ -7,7 +7,7 @@ import {
   query,
   onSnapshot,
   serverTimestamp,
-} from 'firebase/firestore';
+} from '../../lib/tursoFirestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 
 export type EnquiryStatus =

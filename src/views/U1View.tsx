@@ -25,8 +25,6 @@ import { U1Service, U1Package } from '../data/u1Data';
 import { DIVISION_LIST } from '../config/divisions';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
-import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
-import { DivisionBelowHeroShimmer } from '../components/common/DivisionBelowHeroShimmer';
 
 interface U1ViewProps {
   onNavigate: (route: string) => void;
@@ -36,8 +34,6 @@ export const U1View: React.FC<U1ViewProps> = ({ onNavigate }) => {
   const {
     divisions,
     companySettings,
-    isInitialLoading,
-    isDivisionLoaded,
     loadDivisionData,
   } = useFirestoreDataContext();
   const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
@@ -45,8 +41,6 @@ export const U1View: React.FC<U1ViewProps> = ({ onNavigate }) => {
   React.useEffect(() => {
     loadDivisionData('u1');
   }, [loadDivisionData]);
-
-  const isDataLoading = isInitialLoading || !isDivisionLoaded('u1');
 
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [activeServiceForBooking, setActiveServiceForBooking] = useState<U1Service | null>(null);
@@ -92,24 +86,16 @@ export const U1View: React.FC<U1ViewProps> = ({ onNavigate }) => {
         onExploreServices={() => scrollToAnchor('services')}
       />
 
-      {/* 2. BELOW HERO SECTION: SHOW SHIMMER UNTIL WHOLE DATA HAS LOADED FROM FIRESTORE */}
-      {isDataLoading ? (
-        <DivisionBelowHeroShimmer divisionName="U1 Studio" />
-      ) : (
-        <>
-          {/* 2. ALL STUDIO SERVICES */}
-          <U1ServicesSection onBookService={handleBookService} />
+      {/* Render content progressively as each Turso-backed collection arrives. */}
+      <>
+        <U1ServicesSection onBookService={handleBookService} />
 
-          {/* 3. VISUAL PORTFOLIO / GALLERY */}
-          <U1PortfolioSection />
+        <U1PortfolioSection />
 
-          {/* 4. PHOTOGRAPHY & CINEMA PACKAGES */}
-          <U1PackagesSection onBookPackage={handleBookPackage} />
+        <U1PackagesSection onBookPackage={handleBookPackage} />
 
-          {/* 5. STUDIO FACILITY, CYCLORAMA WALL & ALBUM CRAFT */}
-          <U1StudioExperienceSection />
-        </>
-      )}
+        <U1StudioExperienceSection />
+      </>
 
       {/* 6. DEDICATED U1 BOOKING MODAL */}
       <U1BookingModal

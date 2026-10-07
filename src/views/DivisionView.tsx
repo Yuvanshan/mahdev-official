@@ -63,7 +63,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
   // Retrieve cached data synchronously to eliminate initial render glitch
   const cachedDivision = useMemo(() => {
     try {
-      const raw = localStorage.getItem('mahdev_cached_divisions');
+      const raw = sessionStorage.getItem('mahdev_cached_divisions');
       if (raw) {
         const list = JSON.parse(raw);
         if (Array.isArray(list)) {

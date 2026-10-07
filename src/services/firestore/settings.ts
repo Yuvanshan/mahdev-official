@@ -9,7 +9,7 @@ import {
   setDoc,
   onSnapshot,
   Unsubscribe,
-} from 'firebase/firestore';
+} from '../../lib/tursoFirestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreCompanySettings, FirestoreSiteSettings } from '../../types/firestore';
 import { HomepageCmsConfig } from '../../types/cms';
@@ -20,7 +20,7 @@ const CACHE_TTL_MS = 1000 * 60 * 15; // 15 minutes cache
 function getInitialCachedCompany(): { data: FirestoreCompanySettings; timestamp: number } | null {
   if (typeof window === 'undefined') return null;
   try {
-    const raw = localStorage.getItem('mahdev_cached_company_settings');
+    const raw = sessionStorage.getItem('mahdev_cached_company_settings');
     if (raw) return { data: JSON.parse(raw), timestamp: Date.now() };
   } catch {}
   return null;
@@ -29,7 +29,7 @@ function getInitialCachedCompany(): { data: FirestoreCompanySettings; timestamp:
 function getInitialCachedSite(): { data: FirestoreSiteSettings; timestamp: number } | null {
   if (typeof window === 'undefined') return null;
   try {
-    const raw = localStorage.getItem('mahdev_cached_site_settings');
+    const raw = sessionStorage.getItem('mahdev_cached_site_settings');
     if (raw) return { data: JSON.parse(raw), timestamp: Date.now() };
   } catch {}
   return null;
@@ -63,27 +63,21 @@ export function getDefaultHomepageSettings(): HomepageCmsConfig {
     },
     sectionsOrder: DEFAULT_HOMEPAGE_SECTIONS,
     hero: {
-      badgeText: 'CORPORATE SYNERGY • EST. 2022',
-      titleLine1: 'Creating Moments...',
-      titleHighlight: 'Capturing Memories...',
-      titleLine2: '& Delivering Innovation...',
-      description:
-        'Mahdev Pvt Ltd is an integrated parent enterprise uniting luxury event and wedding decorations, fine-art photography and 8K cinema, scalable IT solutions, bespoke luxury travel, and verified tech commerce under a singular standard of perfection.',
-      mediaType: 'gradient',
-      mediaUrl: '',
+      badgeText: 'MAHDEV GROUP',
+      titleLine1: 'One group.',
+      titleHighlight: 'More ways forward.',
+      titleLine2: '',
+      description: 'Products and services for the moments, work and ideas that move life forward.',
+      mediaType: 'video',
+      mediaUrl: '/assets/hero_main.mp4',
       imageUrl: '',
       defaultImageUrl: '',
-      videoUrl: '',
+      videoUrl: '/assets/hero_main.mp4',
       primaryCtaLabel: 'Explore Ecosystem',
       primaryCtaLink: '#divisions',
       secondaryCtaLabel: 'Get In Touch',
       secondaryCtaLink: '/contact',
-      metrics: [
-        { label: 'Business Divisions', value: '5', subtext: 'Synergized Operations' },
-        { label: 'Client Satisfaction', value: '99.4%', subtext: 'Enterprise Rated' },
-        { label: 'Projects Delivered', value: '1,450+', subtext: 'Island-wide & Global' },
-        { label: 'Uptime & Reliability', value: '99.9%', subtext: 'Mission Critical' },
-      ],
+      metrics: [],
     },
     intro: {
       badge: 'THE MAHDEV ADVANTAGE',
@@ -398,15 +392,15 @@ export const firestoreSettingsService = {
         cachedCompanySettings = { data: merged, timestamp: now };
         if (typeof window !== 'undefined') {
           try {
-            localStorage.setItem('mahdev_cached_company_settings', JSON.stringify(merged));
+            sessionStorage.setItem('mahdev_cached_company_settings', JSON.stringify(merged));
           } catch {}
         }
         return merged;
       }
 
-      // Check localStorage backup before defaulting
+      // Check sessionStorage backup before defaulting
       if (typeof window !== 'undefined') {
-        const local = localStorage.getItem('mahdev_cached_company_settings');
+        const local = sessionStorage.getItem('mahdev_cached_company_settings');
         if (local) {
           try {
             const parsed = JSON.parse(local);
@@ -444,7 +438,7 @@ export const firestoreSettingsService = {
     cachedCompanySettings = { data: payload, timestamp: Date.now() };
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('mahdev_cached_company_settings', JSON.stringify(payload));
+        sessionStorage.setItem('mahdev_cached_company_settings', JSON.stringify(payload));
       } catch {}
     }
 
@@ -504,7 +498,7 @@ export const firestoreSettingsService = {
           cachedCompanySettings = { data, timestamp: Date.now() };
           if (typeof window !== 'undefined') {
             try {
-              localStorage.setItem('mahdev_cached_company_settings', JSON.stringify(data));
+              sessionStorage.setItem('mahdev_cached_company_settings', JSON.stringify(data));
             } catch {}
           }
           onData(data);
@@ -549,15 +543,15 @@ export const firestoreSettingsService = {
         cachedSiteSettings = { data: merged, timestamp: now };
         if (typeof window !== 'undefined') {
           try {
-            localStorage.setItem('mahdev_cached_site_settings', JSON.stringify(merged));
+            sessionStorage.setItem('mahdev_cached_site_settings', JSON.stringify(merged));
           } catch {}
         }
         return merged;
       }
 
-      // Check localStorage backup before defaulting
+      // Check sessionStorage backup before defaulting
       if (typeof window !== 'undefined') {
-        const local = localStorage.getItem('mahdev_cached_site_settings');
+        const local = sessionStorage.getItem('mahdev_cached_site_settings');
         if (local) {
           try {
             const parsed = JSON.parse(local);
@@ -595,7 +589,7 @@ export const firestoreSettingsService = {
     cachedSiteSettings = { data: payload, timestamp: Date.now() };
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('mahdev_cached_site_settings', JSON.stringify(payload));
+        sessionStorage.setItem('mahdev_cached_site_settings', JSON.stringify(payload));
       } catch {}
     }
 
@@ -654,7 +648,7 @@ export const firestoreSettingsService = {
           cachedSiteSettings = { data, timestamp: Date.now() };
           if (typeof window !== 'undefined') {
             try {
-              localStorage.setItem('mahdev_cached_site_settings', JSON.stringify(data));
+              sessionStorage.setItem('mahdev_cached_site_settings', JSON.stringify(data));
             } catch {}
           }
           onData(data);
@@ -695,7 +689,7 @@ export const firestoreSettingsService = {
     let localSaved: HomepageCmsConfig | null = null;
     if (typeof window !== 'undefined') {
       try {
-        const stored = localStorage.getItem('mahdev_cached_homepage_config');
+        const stored = sessionStorage.getItem('mahdev_cached_homepage_config');
         if (stored) {
           localSaved = JSON.parse(stored);
         }
@@ -732,7 +726,7 @@ export const firestoreSettingsService = {
             ...rawHero,
             videoUrl: effectiveVideo,
             mediaUrl: firestoreMedia || effectiveVideo || def.hero.mediaUrl,
-            mediaType: rawHero.mediaType || (effectiveVideo ? 'video' : 'image'),
+            mediaType: rawHero.mediaType === 'image' ? 'image' : 'video',
           },
           milestones: {
             ...def.milestones,
@@ -748,7 +742,7 @@ export const firestoreSettingsService = {
         cachedHomepageSettings = { data, timestamp: now };
         if (typeof window !== 'undefined') {
           try {
-            localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(data));
+            sessionStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(data));
           } catch {}
         }
         return data;
@@ -772,15 +766,12 @@ export const firestoreSettingsService = {
 
     // Harmonize hero video and media properties
     const heroUpdates = data.hero ? { ...data.hero } : undefined;
-    if (heroUpdates) {
+    if (heroUpdates && heroUpdates.mediaType !== 'image') {
       const v = (heroUpdates.videoUrl || (heroUpdates as any).heroVideoUrl || '').trim();
-      if (v) {
-        heroUpdates.videoUrl = v;
-        if (!heroUpdates.mediaUrl || heroUpdates.mediaType === 'video') {
-          heroUpdates.mediaUrl = v;
-        }
-        heroUpdates.mediaType = 'video';
-      }
+      const effectiveVideo = v || heroUpdates.mediaUrl || existing.hero.videoUrl || '/assets/hero_main.mp4';
+      heroUpdates.videoUrl = effectiveVideo;
+      heroUpdates.mediaUrl = effectiveVideo;
+      heroUpdates.mediaType = 'video';
     }
 
     const merged = {
@@ -803,22 +794,21 @@ export const firestoreSettingsService = {
 
     const payload = sanitizeForFirestore(merged);
 
+    try {
+      await setDoc(docRef, payload);
+    } catch (err) {
+      console.error('[Turso Settings] Homepage update failed:', err);
+      throw err;
+    }
+
     cachedHomepageSettings = { data: payload, timestamp: Date.now() };
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(payload));
+        sessionStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(payload));
       } catch {}
     }
     broadcastUpdate('homepage', payload);
     syncToServerApi('homepage', payload);
-
-    try {
-      // Overwrite the entire document so deleted items/arrays are permanently removed from Firestore
-      await setDoc(docRef, payload);
-      console.log('[Firestore Settings] Homepage settings committed to Firestore.');
-    } catch (err) {
-      console.warn('[Firestore Settings] updateHomepageSettings write notice:', err);
-    }
   },
 
   /**
@@ -835,7 +825,7 @@ export const firestoreSettingsService = {
         cachedHomepageSettings = { data: event.data.data, timestamp: Date.now() };
         if (typeof window !== 'undefined') {
           try {
-            localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(event.data.data));
+            sessionStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(event.data.data));
           } catch {}
         }
         onData(event.data.data);
@@ -848,7 +838,7 @@ export const firestoreSettingsService = {
         cachedHomepageSettings = { data: customEvent.detail, timestamp: Date.now() };
         if (typeof window !== 'undefined') {
           try {
-            localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(customEvent.detail));
+            sessionStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(customEvent.detail));
           } catch {}
         }
         onData(customEvent.detail);
@@ -905,7 +895,7 @@ export const firestoreSettingsService = {
           cachedHomepageSettings = { data, timestamp: Date.now() };
           if (typeof window !== 'undefined') {
             try {
-              localStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(data));
+              sessionStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(data));
             } catch {}
           }
           onData(data);

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
-import { db } from '../src/lib/firebase';
+import { db } from './legacyFirestoreSource';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 const pubDir = path.join(process.cwd(), 'public/uploads/images');
