@@ -1,4 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'http';
+import {
+  AdminSessionAuthError,
+  getAdminSessionFromCookie,
+} from '../../server/adminCredentialAuth';
 
 export const config = {
   api: {
@@ -7,18 +11,17 @@ export const config = {
 };
 
 export default async function handler(req: IncomingMessage & { method?: string }, res: ServerResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-filename');
+  res.setHeader('Cache-Control', 'no-store');
 
   if (req.method === 'OPTIONS') {
-    res.statusCode = 200;
+    res.statusCode = 204;
     res.end();
     return;
   }
 
   if (req.method === 'POST') {
     try {
+      getAdminSessionFromCookie(req.headers.cookie);
       const chunks: Buffer[] = [];
       for await (const chunk of req) {
         chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
@@ -40,7 +43,7 @@ export default async function handler(req: IncomingMessage & { method?: string }
         })
       );
     } catch (err: any) {
-      res.statusCode = 500;
+      res.statusCode = err instanceof AdminSessionAuthError ? err.statusCode : 500;
       res.setHeader('Content-Type', 'application/json');
       res.end(JSON.stringify({ success: false, error: err.message || 'Server upload failed' }));
     }

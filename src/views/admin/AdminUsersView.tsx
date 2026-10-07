@@ -184,7 +184,7 @@ export const AdminUsersView: React.FC = () => {
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Manage verified Firebase accounts and their Turso roles. Create the Firebase account first; bootstrap administrators are controlled by TURSO_ADMIN_EMAILS.
+            This Turso directory does not grant portal access. Admin sign-in is controlled by server-only Vercel credentials.
           </p>
         </div>
 

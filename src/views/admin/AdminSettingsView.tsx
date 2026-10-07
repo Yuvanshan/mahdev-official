@@ -51,7 +51,7 @@ import {
 import { cmsService } from '../../services/cmsService';
 import { storageService } from '../../services/storageService';
 import { BrandLogo } from '../../components/layout/BrandLogo';
-import { adminService, syncAdminFirebaseAuth } from '../../services/adminService';
+import { adminService, syncAdminServerSession } from '../../services/adminService';
 import { auth } from '../../lib/firebase';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { getRentalAssetCount } from '../../utils/assetMetrics';
@@ -289,8 +289,8 @@ export const AdminSettingsView: React.FC = () => {
     setIsSaving(true);
     try {
       if (currentAdmin) {
-        syncAdminFirebaseAuth(currentAdmin).catch((authErr) => {
-          console.warn('[AdminSettings] Background auth sync notice:', authErr);
+        syncAdminServerSession(currentAdmin).catch((authErr) => {
+          console.warn('[AdminSettings] Admin session check notice:', authErr);
         });
       }
 
@@ -437,7 +437,7 @@ export const AdminSettingsView: React.FC = () => {
     setIsSaving(true);
     try {
       if (currentAdmin) {
-        syncAdminFirebaseAuth(currentAdmin).catch(() => {});
+        syncAdminServerSession(currentAdmin).catch(() => {});
       }
       await firestoreSettingsService.updateCompanySettings(companyData);
       cmsService.updateCompanyInfo(companyData as any);

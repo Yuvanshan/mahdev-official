@@ -90,8 +90,9 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 | `VITE_FIREBASE_MEASUREMENT_ID` | Production, Preview, Development | `G-MWNCCXGY4F` |
 | `TURSO_DATABASE_URL` | Production, Preview, Development | Server-side Turso connection URL (`libsql://...`) |
 | `TURSO_AUTH_TOKEN` | Production, Preview, Development | Server-side Turso auth token; store as a secret |
-| `FIREBASE_PROJECT_ID` | Production, Preview, Development | Firebase project ID used by the server to verify Firebase ID tokens |
-| `TURSO_ADMIN_EMAILS` | Production, Preview, Development | Server-only bootstrap allowlist for verified Firebase administrators; optional `:role` suffix |
+| `ADMIN_LOGIN_EMAIL` | Production, Preview, Development | Server-side administrator email |
+| `ADMIN_LOGIN_PASSWORD_HASH` | Production, Preview, Development | scrypt password hash; generate locally with `npm run admin:hash-password` |
+| `ADMIN_SESSION_SECRET` | Production, Preview, Development | Random server-only session signing secret; generate with `openssl rand -base64 48` |
 | `VITE_TURSO_DATABASE_NAME` | Production, Preview, Development | Optional public database label for diagnostics |
 | `VITE_FIREBASE_RECAPTCHA_SITE_KEY` | Production | reCAPTCHA v3 / Enterprise Site Key for App Check |
 | `PAYMENT_GATEWAY_ENV` | Production: `production`<br>Preview/Dev: `sandbox` | Payment verification engine mode |
@@ -105,12 +106,12 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 
 ### Admin sign-in and database permissions
 
-The admin portal authenticates through Firebase Email/Password Authentication. The browser sends its Firebase ID token to the server; the server verifies the signature and project audience with Firebase Admin SDK and requires a verified email. Access is granted to bootstrap addresses in `TURSO_ADMIN_EMAILS` or to active users in the Turso `admins` registry. No Firebase service-account private key is required for token verification.
+Admin sign-in uses server-configured credentials, an scrypt password hash, and a signed HttpOnly/SameSite session cookie. Firebase Authentication remains available to customer accounts and Firebase Storage, but is not used for the admin portal.
 
-1. In Firebase Authentication, enable Email/Password and create the first admin account. Verify its email.
-2. In Vercel, set `FIREBASE_PROJECT_ID` and add that initial account to `TURSO_ADMIN_EMAILS`, for example `owner@example.com:super_admin`. An address without a role defaults to `super_admin`.
-3. Keep these variables server-only (do not prefix them with `VITE_`), then redeploy and sign in with the verified account.
-4. Create additional Firebase accounts and verify their emails, then provision their roles in the admin portal. Only a super administrator can read or change the Turso admin registry.
+1. Run `npm run admin:hash-password` in an interactive terminal and enter a new password of at least 12 characters. Do not reuse a password previously shared in chat. The password is not echoed; copy the generated `ADMIN_LOGIN_PASSWORD_HASH` value.
+2. In Vercel, set `ADMIN_LOGIN_EMAIL` to the administrator email, `ADMIN_LOGIN_PASSWORD_HASH` to the generated hash, and `ADMIN_SESSION_SECRET` to a random value from `openssl rand -base64 48`.
+3. Keep all three values server-only (never prefix them with `VITE_`), then redeploy. Changing the password requires generating and deploying a new hash.
+4. Admin database writes, audit reads, admin customer queries, and uploads require the server-issued session cookie. The session expires after eight hours.
 5. Keep an environment allowlist entry for at least one bootstrap super administrator. Admin content writes and destructive database actions reject unverified or unauthorized requests; public reads remain available.
 
 The previous demo PIN and permissive password fallback are disabled. Do not deploy until the allowlist and Firebase admin accounts are configured.

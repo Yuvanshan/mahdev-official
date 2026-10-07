@@ -1,9 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import {
-  AdminAuthenticationError,
-  getBearerToken,
-  verifyFirebaseAdminToken,
-} from '../../server/firebaseAdminAuth';
+  AdminSessionAuthError,
+  getAdminSessionFromCookie,
+} from '../../server/adminCredentialAuth';
 import { initializeTursoDatabase, listTursoDocuments } from '../../server/tursoDatabase';
 
 interface AdminCustomersRequest extends IncomingMessage {
@@ -30,11 +29,8 @@ export default async function handler(req: AdminCustomersRequest, res: ServerRes
   }
 
   try {
+    getAdminSessionFromCookie(Array.isArray(req.headers.cookie) ? req.headers.cookie[0] : req.headers.cookie);
     await ensureDatabaseInitialized();
-    const authorization = req.headers.authorization;
-    await verifyFirebaseAdminToken(getBearerToken(
-      Array.isArray(authorization) ? authorization[0] : authorization
-    ));
     const records = await listTursoDocuments('users', '');
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
@@ -43,15 +39,15 @@ export default async function handler(req: AdminCustomersRequest, res: ServerRes
       customers: records.map((record) => ({ ...record.data, id: record.id })),
     }));
   } catch (error) {
-    const status = error instanceof AdminAuthenticationError ? error.statusCode : 503;
-    if (!(error instanceof AdminAuthenticationError)) {
+    const status = error instanceof AdminSessionAuthError ? error.statusCode : 503;
+    if (!(error instanceof AdminSessionAuthError)) {
       console.error('[Admin Customers] Turso customer query failed:', error);
     }
     res.statusCode = status;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({
       success: false,
-      error: error instanceof AdminAuthenticationError
+      error: error instanceof AdminSessionAuthError
         ? error.message
         : 'Customer records could not be loaded.',
     }));

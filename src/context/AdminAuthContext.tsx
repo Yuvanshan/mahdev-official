@@ -20,12 +20,19 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const currentSession = adminService.getCurrentSession();
-    if (currentSession && adminService.isAuthenticated()) {
-      setSession(currentSession);
-      setAdmin(currentSession.user);
-    }
-    setIsLoading(false);
+    let active = true;
+    adminService.restoreSession()
+      .then((currentSession) => {
+        if (!active || !currentSession) return;
+        setSession(currentSession);
+        setAdmin(currentSession.user);
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const login = async (email: string, password?: string, pin?: string) => {
@@ -43,10 +50,13 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const logout = async () => {
     setIsLoading(true);
-    await adminService.logout();
-    setSession(null);
-    setAdmin(null);
-    setIsLoading(false);
+    try {
+      await adminService.logout();
+      setSession(null);
+      setAdmin(null);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const logAuditAction = async (

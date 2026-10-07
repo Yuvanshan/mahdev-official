@@ -23,7 +23,7 @@ import {
 } from '../types/storage';
 import { validateFile, validateSvgSecurity, optimizeImage, compressDataUrl } from '../utils/imageOptimizer';
 import { authService } from './authService';
-import { adminService, syncAdminFirebaseAuth } from './adminService';
+import { adminService, syncAdminServerSession } from './adminService';
 import { uploadMediaAsset } from './mediaUploadService';
 
 // Admin-only categories that customers/public are strictly forbidden to modify
@@ -180,7 +180,8 @@ class StorageService {
 
     if (currentAdmin && adminService.isAuthenticated()) {
       // Synchronize Firebase Auth with the active Administrator identity
-      await syncAdminFirebaseAuth(currentAdmin);
+      const valid = await syncAdminServerSession(currentAdmin);
+      if (!valid) throw new Error('The admin server session is no longer valid.');
       return;
     }
 

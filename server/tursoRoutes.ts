@@ -11,10 +11,9 @@ import {
   writeTursoDocument,
 } from './tursoDatabase';
 import {
-  AdminAuthenticationError,
-  getBearerToken,
-  verifyFirebaseAdminToken,
-} from './firebaseAdminAuth';
+  AdminSessionAuthError,
+  getAdminSessionFromCookie,
+} from './adminCredentialAuth';
 
 const ADMIN_MANAGED_COLLECTIONS = new Set([
   'admins',
@@ -101,17 +100,17 @@ export function requiresSuperAdminForDatabaseAction(input: unknown): boolean {
 
 export async function authorizeDatabaseAction(
   input: unknown,
-  authorizationHeader: string | undefined
+  cookieHeader: string | undefined
 ): Promise<void> {
   if (!requiresAdminForDatabaseAction(input)) return;
   try {
-    const admin = await verifyFirebaseAdminToken(getBearerToken(authorizationHeader));
-    if (requiresSuperAdminForDatabaseAction(input) && admin.role !== 'super_admin') {
-      throw new AdminAuthenticationError('Super administrator access is required for this action.', 403);
+    const { user } = getAdminSessionFromCookie(cookieHeader);
+    if (requiresSuperAdminForDatabaseAction(input) && user.role !== 'super_admin') {
+      throw new AdminSessionAuthError('Super administrator access is required for this action.', 403);
     }
   } catch (error) {
-    if (error instanceof AdminAuthenticationError) throw error;
-    throw new AdminAuthenticationError('Firebase admin authentication failed.', 401);
+    if (error instanceof AdminSessionAuthError) throw error;
+    throw new AdminSessionAuthError('Admin session authentication failed.', 401);
   }
 }
 
@@ -234,9 +233,9 @@ export function createTursoRouter(): Router {
   const router = Router();
   router.post('/', async (req: Request, res: Response) => {
     try {
-      await authorizeDatabaseAction(req.body, req.header('authorization'));
+      await authorizeDatabaseAction(req.body, req.header('cookie'));
     } catch (error) {
-      const status = error instanceof AdminAuthenticationError ? error.statusCode : 401;
+      const status = error instanceof AdminSessionAuthError ? error.statusCode : 401;
       res.status(status).json({
         success: false,
         error: error instanceof Error ? error.message : 'Admin authorization failed.',

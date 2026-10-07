@@ -14,16 +14,13 @@ import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { collection, deleteDoc, doc, getDocs, limit, orderBy, query, setDoc } from '../lib/tursoFirestore';
 import { FirestoreOrder, FirestoreBooking, FirestoreProduct } from '../types/firestore';
 
-export async function syncAdminFirebaseAuth(adminUser: AdminUser): Promise<boolean> {
+export async function syncAdminServerSession(adminUser: AdminUser): Promise<boolean> {
   try {
-    await auth.authStateReady();
-    return Boolean(
-      auth.currentUser &&
-      auth.currentUser.email?.toLowerCase() === adminUser.email.toLowerCase() &&
-      auth.currentUser.emailVerified
-    );
+    const response = await fetch('/api/admin/auth/verify', { cache: 'no-store' });
+    const result = await response.json() as { success?: boolean; user?: AdminUser };
+    return Boolean(response.ok && result.success && result.user?.email === adminUser.email);
   } catch (error) {
-    console.error('[AdminService] Firebase Auth session check failed:', error);
+    console.error('[AdminService] Admin server-session check failed:', error);
     return false;
   }
 }
@@ -32,6 +29,30 @@ class AdminService {
   private currentSession: AdminSession | null = null;
 
   constructor() {}
+
+  public async restoreSession(): Promise<AdminSession | null> {
+    try {
+      const response = await fetch('/api/admin/auth/verify', { cache: 'no-store' });
+      if (!response.ok) return null;
+      const result = await response.json() as {
+        success?: boolean;
+        user?: AdminUser;
+        expiresAt?: string;
+      };
+      if (!result.success || !result.user || !result.expiresAt) return null;
+      const session: AdminSession = {
+        token: '',
+        user: result.user,
+        expiresAt: result.expiresAt,
+        signature: 'server-cookie-session',
+      };
+      this.currentSession = session;
+      return session;
+    } catch (error) {
+      console.error('[AdminService] Could not restore admin session:', error);
+      return null;
+    }
+  }
 
   private async validateRestoredSession(session: AdminSession): Promise<void> {
     try {
@@ -82,11 +103,44 @@ class AdminService {
     password?: string,
     _pin?: string
   ): Promise<{ success: boolean; session?: AdminSession; error?: string }> {
-    if (!password?.trim()) {
-      return { success: false, error: 'Enter your Firebase Authentication password.' };
+    if (!password) {
+      return { success: false, error: 'Enter your administrator password.' };
     }
 
     try {
+      {
+        const response = await fetch('/api/admin/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim(), password }),
+        });
+        const result = await response.json() as {
+          success?: boolean;
+          user?: AdminUser;
+          expiresAt?: string;
+          error?: string;
+        };
+        if (!response.ok || !result.success || !result.user || !result.expiresAt) {
+          return { success: false, error: result.error || 'Admin sign-in was rejected.' };
+        }
+        const session: AdminSession = {
+          token: '',
+          user: result.user,
+          expiresAt: result.expiresAt,
+          signature: 'server-cookie-session',
+        };
+        this.currentSession = session;
+        await this.logAudit({
+          action: 'ADMIN_PORTAL_SIGNIN',
+          entityType: 'Authentication',
+          entityId: result.user.id,
+          details: `Server-authenticated admin sign-in for ${result.user.name}.`,
+          status: 'success',
+        });
+        return { success: true, session };
+      }
+
+      /* Legacy Firebase sign-in is unreachable; admin identity is server-session based. */
       const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
       if (!credential.user.emailVerified) {
         await signOut(auth);
@@ -122,7 +176,7 @@ class AdminService {
         action: 'ADMIN_PORTAL_SIGNIN',
         entityType: 'Authentication',
         entityId: result.user.id,
-        details: `Firebase-authenticated admin sign-in for ${result.user.name}.`,
+        details: `Server-authenticated admin sign-in for ${result.user.name}.`,
         status: 'success',
       });
       return { success: true, session };
@@ -138,9 +192,15 @@ class AdminService {
   public async logout(): Promise<void> {
     this.currentSession = null;
     try {
+      const response = await fetch('/api/admin/auth/logout', { method: 'POST' });
+      if (!response.ok) throw new Error('The server could not terminate the admin session.');
+      return;
+
+      /* Legacy Firebase sign-out is unreachable; admin identity is server-session based. */
       await signOut(auth);
     } catch (error) {
-      console.error('[AdminService] Firebase sign-out failed:', error);
+      console.error('[AdminService] Server sign-out failed:', error);
+      throw error;
     }
   }
 

@@ -9,6 +9,11 @@ process.env.TURSO_AUTH_TOKEN = 'local-test-token';
 
 const { getTursoClient, initializeTursoDatabase } = await import('../server/tursoDatabase');
 const {
+  authenticateAdminCredentials,
+  getAdminSessionFromCookie,
+  hashAdminPassword,
+} = await import('../server/adminCredentialAuth');
+const {
   authorizeDatabaseAction,
   handleTursoAction,
   requiresAdminForDatabaseAction,
@@ -31,6 +36,21 @@ async function removeIfPresent(filePath: string): Promise<void> {
 
 async function run(): Promise<void> {
   try {
+    process.env.ADMIN_LOGIN_EMAIL = 'test-admin@example.com';
+    process.env.ADMIN_SESSION_SECRET = 'test-only-session-signing-secret-with-at-least-32-bytes';
+    process.env.ADMIN_LOGIN_PASSWORD_HASH = hashAdminPassword('local-test-admin-password');
+    const login = authenticateAdminCredentials(
+      process.env.ADMIN_LOGIN_EMAIL,
+      'local-test-admin-password',
+      'test-runner'
+    );
+    const adminCookie = login.cookie.split(';')[0];
+    assert.equal(getAdminSessionFromCookie(adminCookie).user.role, 'super_admin');
+    assert.throws(
+      () => authenticateAdminCredentials(process.env.ADMIN_LOGIN_EMAIL, 'incorrect-password', 'test-runner'),
+      /Invalid admin email or password/
+    );
+
     await initializeTursoDatabase();
     assert.equal(requiresAdminForDatabaseAction({
       action: 'write',
@@ -53,8 +73,16 @@ async function run(): Promise<void> {
         action: 'write',
         write: { type: 'set', collection: 'services', id: 'svc-1' },
       }, undefined),
-      /Firebase sign-in token is required/
+      /An admin session is required/
     );
+    await authorizeDatabaseAction({
+      action: 'write',
+      write: { type: 'set', collection: 'services', id: 'svc-1' },
+    }, adminCookie);
+    await authorizeDatabaseAction({
+      action: 'write',
+      write: { type: 'set', collection: 'admins', id: 'admin-1' },
+    }, adminCookie);
     const metadata = await getTursoClient().execute(
       'SELECT COUNT(*) AS count FROM turso_collections'
     );

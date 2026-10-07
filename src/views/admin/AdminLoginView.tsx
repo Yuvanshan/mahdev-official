@@ -101,7 +101,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="info.mahdev.lk@gmail.com"
+                  placeholder="yuvanshan875@gmail.com"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                 />
               </div>
@@ -110,7 +110,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
             {/* Admin Password */}
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-300">
-                Firebase Password
+                Administrator Password
               </label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -119,7 +119,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your Firebase password"
+                  placeholder="Enter your administrator password"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                 />
               </div>
@@ -142,7 +142,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
                 }
                 className="py-3 text-xs font-bold shadow-lg shadow-blue-900/30"
               >
-                {isLoading ? 'Verifying Firebase credentials...' : 'Authenticate & Enter Console'}
+                {isLoading ? 'Verifying credentials...' : 'Authenticate & Enter Console'}
               </Button>
             </div>
           </form>
@@ -162,7 +162,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
         {/* Security Stamp */}
         <div className="flex items-center justify-center gap-2 text-[10px] text-slate-600 font-mono">
           <Lock className="w-3 h-3 text-slate-500" />
-          <span>FIREBASE AUTHENTICATION • SERVER-VERIFIED ADMIN ACCESS</span>
+          <span>SERVER-VERIFIED ADMIN ACCESS • SECURE SESSION COOKIE</span>
         </div>
       </div>
     </div>

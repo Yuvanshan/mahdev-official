@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { initializeTursoDatabase } from '../server/tursoDatabase';
-import { AdminAuthenticationError } from '../server/firebaseAdminAuth';
+import { AdminSessionAuthError } from '../server/adminCredentialAuth';
 import { authorizeDatabaseAction, handleTursoAction } from '../server/tursoRoutes';
 
 interface TursoApiRequest extends IncomingMessage {
@@ -45,13 +45,12 @@ export default async function handler(req: TursoApiRequest, res: ServerResponse)
   }
 
   try {
-    const authorization = req.headers.authorization;
     await authorizeDatabaseAction(
       req.body,
-      Array.isArray(authorization) ? authorization[0] : authorization
+      Array.isArray(req.headers.cookie) ? req.headers.cookie[0] : req.headers.cookie
     );
   } catch (error) {
-    const status = error instanceof AdminAuthenticationError ? error.statusCode : 401;
+    const status = error instanceof AdminSessionAuthError ? error.statusCode : 401;
     res.statusCode = status;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({

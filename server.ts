@@ -27,10 +27,11 @@ import {
 } from './server/tursoDatabase';
 import { createTursoRouter } from './server/tursoRoutes';
 import {
-  AdminAuthenticationError,
-  getBearerToken,
-  verifyFirebaseAdminToken,
-} from './server/firebaseAdminAuth';
+  AdminSessionAuthError,
+  authenticateAdminCredentials,
+  clearAdminSessionCookie,
+  getAdminSessionFromCookie,
+} from './server/adminCredentialAuth';
 import {
   sendEnquiryEmail,
 } from './server/services/emailService';
@@ -147,12 +148,12 @@ const serverAuditLogs: any[] = [];
 // Authentication & Authorization Guard Middleware
 function requireAdminAuth(allowedRoles?: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
-    void verifyFirebaseAdminToken(getBearerToken(req.header('authorization')))
-      .then((verification) => {
+    try {
+      const verification = getAdminSessionFromCookie(req.header('cookie'));
         if (
           allowedRoles?.length &&
-          verification.role !== 'super_admin' &&
-          !allowedRoles.includes(verification.role)
+          verification.user.role !== 'super_admin' &&
+          !allowedRoles.includes(verification.user.role)
         ) {
           res.status(403).json({
             success: false,
@@ -161,22 +162,21 @@ function requireAdminAuth(allowedRoles?: string[]) {
           return;
         }
         (req as any).adminSession = {
-          adminId: verification.uid,
-          email: verification.email,
-          role: verification.role,
+          adminId: verification.user.id,
+          email: verification.user.email,
+          role: verification.user.role,
         };
         next();
-      })
-      .catch((error: unknown) => {
-        const status = error instanceof AdminAuthenticationError ? error.statusCode : 401;
-        if (!(error instanceof AdminAuthenticationError)) {
-          console.error('[Admin Auth] Firebase token verification failed:', error);
-        }
-        res.status(status).json({
-          success: false,
-          error: error instanceof Error ? error.message : 'Admin authentication failed.',
-        });
+    } catch (error) {
+      const status = error instanceof AdminSessionAuthError ? error.statusCode : 401;
+      if (!(error instanceof AdminSessionAuthError)) {
+        console.error('[Admin Auth] Session verification failed:', error);
+      }
+      res.status(status).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Admin authentication failed.',
       });
+    }
   };
 }
 
@@ -814,31 +814,46 @@ async function startServer() {
   // ADMIN AUTHENTICATION & SECURITY ENDPOINTS
   // ==========================================
 
-  app.post('/api/admin/auth/login', (_req: Request, res: Response) =>
-    res.status(410).json({
-      success: false,
-      error: 'Use Firebase Authentication to sign in to the admin portal.',
-    })
-  );
-
-  // Admin Verify Session Token
-  app.post('/api/admin/auth/verify', async (req: Request, res: Response) => {
+  app.post('/api/admin/auth/login', (req: Request, res: Response) => {
     try {
-      const verification = await verifyFirebaseAdminToken(getBearerToken(req.header('authorization')));
+      const session = authenticateAdminCredentials(
+        req.body?.email,
+        req.body?.password,
+        req.ip || req.socket.remoteAddress || 'unknown'
+      );
+      res.setHeader('Cache-Control', 'no-store');
+      res.setHeader('Set-Cookie', session.cookie);
+      res.json({ success: true, user: session.user, expiresAt: session.expiresAt });
+    } catch (error) {
+      const status = error instanceof AdminSessionAuthError ? error.statusCode : 500;
+      if (!(error instanceof AdminSessionAuthError)) {
+        console.error('[Admin Auth] Credential login failed:', error);
+      }
+      res.status(status).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Admin sign-in failed.',
+      });
+    }
+  });
+
+  app.get('/api/admin/auth/verify', (req: Request, res: Response) => {
+    try {
+      const session = getAdminSessionFromCookie(req.header('cookie'));
+      res.setHeader('Cache-Control', 'no-store');
       res.json({
         success: true,
         valid: true,
         session: {
-          adminId: verification.uid,
-          email: verification.email,
-          role: verification.role,
+          adminId: session.user.id,
+          email: session.user.email,
+          role: session.user.role,
         },
-        user: verification.user,
+        ...session,
       });
     } catch (error) {
-      const status = error instanceof AdminAuthenticationError ? error.statusCode : 401;
-      if (!(error instanceof AdminAuthenticationError)) {
-        console.error('[Admin Auth] Firebase token verification failed:', error);
+      const status = error instanceof AdminSessionAuthError ? error.statusCode : 401;
+      if (!(error instanceof AdminSessionAuthError)) {
+        console.error('[Admin Auth] Session verification failed:', error);
       }
       res.status(status).json({
         success: false,
@@ -847,9 +862,10 @@ async function startServer() {
     }
   });
 
-  // Admin Logout
-  app.post('/api/admin/auth/logout', (req: Request, res: Response) => {
-    res.json({ success: true, message: 'Administrative session terminated.' });
+  app.post('/api/admin/auth/logout', (_req: Request, res: Response) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Set-Cookie', clearAdminSessionCookie());
+    res.json({ success: true });
   });
 
   // Admin Audit Logs API (Protected by requireAdminAuth)
