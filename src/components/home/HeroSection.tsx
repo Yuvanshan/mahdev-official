@@ -24,6 +24,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const configuredVideo = hero.videoUrl || (hero.mediaType === 'video' ? hero.mediaUrl : '');
   const videoUrl = configuredVideo || DEFAULT_HERO_VIDEO;
   const imageUrl = hero.defaultImageUrl || hero.imageUrl || (hero.mediaType === 'image' ? hero.mediaUrl : '');
+  const showVideo = hero.mediaType !== 'image';
 
   const navigateTo = (destination: string | undefined, fallback: () => void) => {
     const target = destination?.trim();
@@ -49,35 +50,80 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   };
 
   return (
-    <section className="bg-slate-50">
-      <div className="mx-auto grid min-h-[520px] max-w-7xl grid-cols-1 items-center gap-8 px-5 py-10 sm:px-8 sm:py-12 lg:min-h-[600px] lg:grid-cols-[0.9fr_1.1fr] lg:gap-12 lg:px-10 lg:py-16">
-        <div className="max-w-xl">
+    <section className="relative isolate min-h-[680px] overflow-hidden bg-slate-950 sm:min-h-[740px] lg:min-h-[min(820px,calc(100svh-5rem))]">
+      <div className="absolute inset-0 z-0 bg-slate-900">
+        {showVideo ? (
+          <video
+            key={videoUrl}
+            src={videoUrl}
+            poster={imageUrl || undefined}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : imageUrl ? (
+          <img
+            src={imageUrl}
+            alt=""
+            fetchPriority="high"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          <video
+            src={DEFAULT_HERO_VIDEO}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        )}
+      </div>
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 z-10 bg-gradient-to-r from-slate-950/95 via-slate-950/80 to-slate-950/10 sm:via-slate-950/65"
+      />
+      <div aria-hidden="true" className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/50 via-transparent to-slate-950/10" />
+
+      <div className="relative z-20 mx-auto flex min-h-[680px] max-w-7xl items-center px-5 py-20 sm:min-h-[740px] sm:px-8 lg:min-h-[min(820px,calc(100svh-5rem))] lg:px-10">
+        <div className="max-w-2xl">
           {hero.badgeText && (
-            <p className="mb-5 text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+            <p className="mb-5 text-xs font-semibold uppercase tracking-[0.2em] text-blue-200 sm:text-sm">
               {hero.badgeText}
             </p>
           )}
           {(hero.titleLine1 || hero.titleHighlight || hero.titleLine2) && (
-            <h1 className="font-display text-4xl font-semibold leading-[1.08] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+            <h1 className="font-display text-4xl font-semibold leading-[1.06] tracking-tight text-white sm:text-6xl lg:text-7xl">
               {hero.titleLine1}
-              {hero.titleHighlight && <span className="block text-blue-700">{hero.titleHighlight}</span>}
-              {hero.titleLine2 && <span className="block">{hero.titleLine2}</span>}
+              {hero.titleHighlight && (
+                <span className="block bg-gradient-to-r from-sky-300 via-blue-200 to-white bg-clip-text text-transparent">
+                  {hero.titleHighlight}
+                </span>
+              )}
+              {hero.titleLine2 && <span className="block text-white">{hero.titleLine2}</span>}
             </h1>
           )}
           {hero.description && (
-            <p className="mt-5 max-w-lg text-base leading-7 text-slate-600 sm:text-lg">
+            <p className="mt-6 max-w-xl text-base leading-7 text-white/80 sm:text-lg sm:leading-8">
               {hero.description}
             </p>
           )}
           {(hero.primaryCtaLabel || hero.secondaryCtaLabel) && (
-            <div className="mt-7 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-wrap gap-3">
               {hero.primaryCtaLabel && (
                 <button
                   type="button"
                   onClick={() =>
                     navigateTo(hero.primaryCtaLink, onExploreServices || onExploreMahdev)
                   }
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-blue-700 px-6 text-sm font-semibold text-white transition-colors hover:bg-blue-800"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-6 text-sm font-semibold text-slate-950 transition-colors hover:bg-blue-50"
                 >
                   {hero.primaryCtaLabel}
                   <ArrowRight className="h-4 w-4" />
@@ -89,7 +135,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   onClick={() =>
                     navigateTo(hero.secondaryCtaLink, onContactUs || (() => onNavigate('/contact')))
                   }
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-800 transition-colors hover:border-slate-500"
+                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/50 bg-white/10 px-6 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/20"
                 >
                   {hero.secondaryCtaLabel}
                 </button>
@@ -97,40 +143,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </div>
           )}
           {hero.metrics?.length > 0 && (
-            <div className="mt-8 flex flex-wrap gap-x-7 gap-y-3 border-t border-slate-200 pt-5">
+            <div className="mt-9 flex flex-wrap gap-x-8 gap-y-3 border-t border-white/25 pt-5">
               {hero.metrics.map((metric, index) => (
-                <div key={`${metric.label}-${index}`} className="text-sm text-slate-600">
-                  <strong className="text-slate-950">{metric.value}</strong>
+                <div key={`${metric.label}-${index}`} className="text-sm text-white/70">
+                  <strong className="text-white">{metric.value}</strong>
                   <span className="ml-1">{metric.label}</span>
                 </div>
               ))}
             </div>
           )}
-        </div>
-
-        <div className="relative min-h-[280px] overflow-hidden rounded-2xl bg-slate-200 sm:min-h-[390px] lg:min-h-[480px]">
-          {hero.mediaType === 'image' && imageUrl ? (
-            <img
-              src={imageUrl}
-              alt=""
-              fetchPriority="high"
-              decoding="async"
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          ) : (
-            <video
-              src={videoUrl}
-              poster={imageUrl || undefined}
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="metadata"
-              aria-hidden="true"
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/35 via-transparent to-transparent" />
         </div>
       </div>
     </section>
