@@ -16,8 +16,11 @@ import { FirestoreOrder, FirestoreBooking, FirestoreProduct } from '../types/fir
 async function readAdminApiResponse<T>(response: Response): Promise<T> {
   const contentType = response.headers.get('content-type') || '';
   if (!contentType.toLowerCase().includes('application/json')) {
+    const message = response.status >= 500
+      ? `Admin API failed on the server (HTTP ${response.status}). Check the Vercel Function Logs for /api/admin/auth/login.`
+      : `Admin API returned a non-JSON response (HTTP ${response.status}). Verify the latest Vercel API functions are deployed and /api/admin/auth/login is routed correctly.`;
     throw new Error(
-      `Admin API returned a non-JSON response (HTTP ${response.status}). Deploy the latest Vercel API functions and verify /api/admin/auth/login is available.`
+      message
     );
   }
   try {
