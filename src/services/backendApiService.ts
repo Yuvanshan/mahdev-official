@@ -7,6 +7,7 @@
 
 import { getAppCheckAttestationToken } from '../lib/appCheck';
 import { auth } from '../lib/firebase';
+import { apiFetch } from '../lib/apiClient';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -68,14 +69,11 @@ class BackendApiService {
   }): Promise<{ success: boolean; order?: any; error?: string }> {
     try {
       const headers = await this.getHeaders();
-      const res = await fetch('/api/orders/validate-and-create', {
+      return await apiFetch<{ success: boolean; order?: any; error?: string }>('/orders/validate-and-create', {
         method: 'POST',
         headers,
         body: JSON.stringify(payload),
       });
-
-      const data = await res.json();
-      return data;
     } catch (err: any) {
       console.warn('[BackendApiService] Order validation error:', err);
       return { success: false, error: err?.message || 'Network communication error' };
@@ -94,14 +92,11 @@ class BackendApiService {
   }): Promise<{ success: boolean; updatedOrder?: any; error?: string }> {
     try {
       const headers = await this.getHeaders();
-      const res = await fetch('/api/orders/status-update', {
+      return await apiFetch<{ success: boolean; updatedOrder?: any; error?: string }>('/orders/status-update', {
         method: 'POST',
         headers,
         body: JSON.stringify(payload),
       });
-
-      const data = await res.json();
-      return data;
     } catch (err: any) {
       console.warn('[BackendApiService] Status update error:', err);
       return { success: false, error: err?.message || 'Network communication error' };
@@ -135,14 +130,11 @@ class BackendApiService {
   }): Promise<{ success: boolean; invoice?: any; error?: string }> {
     try {
       const headers = await this.getHeaders();
-      const res = await fetch('/api/invoices/generate', {
+      return await apiFetch<{ success: boolean; invoice?: any; error?: string }>('/invoices/generate', {
         method: 'POST',
         headers,
         body: JSON.stringify(payload),
       });
-
-      const data = await res.json();
-      return data;
     } catch (err: any) {
       console.warn('[BackendApiService] Invoice generation error:', err);
       return { success: false, error: err?.message || 'Network communication error' };
@@ -164,14 +156,11 @@ class BackendApiService {
   }): Promise<{ success: boolean; notificationId?: string; error?: string }> {
     try {
       const headers = await this.getHeaders();
-      const res = await fetch('/api/notifications/dispatch', {
+      return await apiFetch<{ success: boolean; notificationId?: string; error?: string }>('/notifications/dispatch', {
         method: 'POST',
         headers,
         body: JSON.stringify(payload),
       });
-
-      const data = await res.json();
-      return data;
     } catch (err: any) {
       console.warn('[BackendApiService] Notification dispatch error:', err);
       return { success: false, error: err?.message || 'Network communication error' };

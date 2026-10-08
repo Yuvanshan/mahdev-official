@@ -1,0 +1,35 @@
+{
+  "users": [
+    {
+      "id": "user_admin",
+      "name": "Mahdev Admin",
+      "role": "admin",
+      "email": "admin@mahdev.lk"
+    },
+    {
+      "id": "user_customer",
+      "name": "Demo Customer",
+      "role": "customer",
+      "email": "customer@mahdev.lk"
+    }
+  ],
+  "products": [
+    {
+      "id": "prod_001",
+      "name": "Mahdev Enterprise Starter",
+      "price": 1999,
+      "inventory": 25
+    },
+    {
+      "id": "prod_002",
+      "name": "Mahdev Smart Business Kit",
+      "price": 4999,
+      "inventory": 12
+    }
+  ],
+  "settings": {
+    "appName": "Mahdev Enterprise",
+    "currency": "LKR",
+    "maintenanceMode": false
+  }
+}

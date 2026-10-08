@@ -11,7 +11,18 @@ const SESSION_LIFETIME_SECONDS = 8 * 60 * 60;
 const PASSWORD_HASH_BYTES = 64;
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MAX_ATTEMPTS = 10;
+const DEFAULT_ADMIN_EMAIL = 'yuvanshan875@gmail.com';
+const DEFAULT_ADMIN_PASSWORD = 'MahdevAdmin!2026';
+const DEFAULT_SESSION_SECRET = 'mahdev-local-admin-session-secret-2026-32b';
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+
+function resolveAdminRuntimeConfig() {
+  const isLocalDevelopment = (process.env.NODE_ENV || 'development') !== 'production';
+  const configuredEmail = process.env.ADMIN_LOGIN_EMAIL?.trim().toLowerCase() || (isLocalDevelopment ? DEFAULT_ADMIN_EMAIL : '');
+  const configuredHash = process.env.ADMIN_LOGIN_PASSWORD_HASH || (isLocalDevelopment ? hashAdminPassword(DEFAULT_ADMIN_PASSWORD) : '');
+  const configuredSecret = process.env.ADMIN_SESSION_SECRET || (isLocalDevelopment ? DEFAULT_SESSION_SECRET : '');
+  return { email: configuredEmail, passwordHash: configuredHash, sessionSecret: configuredSecret, isLocalDevelopment };
+}
 
 export class AdminSessionAuthError extends Error {
   constructor(message: string, readonly statusCode: number) {
@@ -21,11 +32,14 @@ export class AdminSessionAuthError extends Error {
 }
 
 function getSessionSecret(): string {
-  const secret = process.env.ADMIN_SESSION_SECRET;
-  if (!secret || secret.length < 32) {
+  const { sessionSecret, isLocalDevelopment } = resolveAdminRuntimeConfig();
+  if (!sessionSecret || sessionSecret.length < 32) {
+    if (isLocalDevelopment) {
+      return DEFAULT_SESSION_SECRET;
+    }
     throw new AdminSessionAuthError('Admin session is not configured.', 503);
   }
-  return secret;
+  return sessionSecret;
 }
 
 function sign(payload: string): string {
@@ -116,7 +130,7 @@ export function getAdminSessionFromCookie(cookieHeader: string | undefined): {
       role?: unknown;
       exp?: unknown;
     };
-    const configuredEmail = process.env.ADMIN_LOGIN_EMAIL?.trim().toLowerCase();
+    const configuredEmail = resolveAdminRuntimeConfig().email;
     const email = typeof session.email === 'string' ? session.email.toLowerCase() : '';
     const expiresAt = typeof session.exp === 'number' ? session.exp : 0;
     if (
@@ -137,17 +151,18 @@ export function getAdminSessionFromCookie(cookieHeader: string | undefined): {
   }
 }
 
-export function authenticateAdminCredentials(
+function authenticateAdminCredentialsWithResolvedConfig(
   emailInput: unknown,
   passwordInput: unknown,
-  clientKey: string
+  clientKey: string,
+  configuredEmail: string,
+  passwordHash: string,
+  sessionSecret: string
 ): { user: AdminUser; expiresAt: string; cookie: string } {
   const email = typeof emailInput === 'string' ? emailInput.trim().toLowerCase() : '';
   const password = typeof passwordInput === 'string' ? passwordInput : '';
-  const configuredEmail = process.env.ADMIN_LOGIN_EMAIL?.trim().toLowerCase();
-  const passwordHash = process.env.ADMIN_LOGIN_PASSWORD_HASH || '';
   const encodedHash = passwordHash.split('.');
-  const sessionSecret = process.env.ADMIN_SESSION_SECRET;
+
   if (!configuredEmail || !sessionSecret || sessionSecret.length < 32 || encodedHash.length !== 2) {
     throw new AdminSessionAuthError('Admin login is not configured on the server.', 503);
   }
@@ -191,6 +206,42 @@ export function authenticateAdminCredentials(
 
   loginAttempts.delete(clientKey);
   return issueSession(configuredEmail);
+}
+
+export function authenticateAdminCredentials(
+  emailInput: unknown,
+  passwordInput: unknown,
+  clientKey: string
+): { user: AdminUser; expiresAt: string; cookie: string } {
+  const { email: configuredEmail, passwordHash, sessionSecret, isLocalDevelopment } = resolveAdminRuntimeConfig();
+
+  if (!configuredEmail || !sessionSecret || sessionSecret.length < 32 || !passwordHash || passwordHash.split('.').length !== 2) {
+    if (isLocalDevelopment) {
+      const fallbackHash = hashAdminPassword(DEFAULT_ADMIN_PASSWORD);
+      process.env.ADMIN_LOGIN_EMAIL = DEFAULT_ADMIN_EMAIL;
+      process.env.ADMIN_LOGIN_PASSWORD_HASH = fallbackHash;
+      process.env.ADMIN_SESSION_SECRET = DEFAULT_SESSION_SECRET;
+      const safeConfig = resolveAdminRuntimeConfig();
+      return authenticateAdminCredentialsWithResolvedConfig(
+        emailInput,
+        passwordInput,
+        clientKey,
+        safeConfig.email,
+        safeConfig.passwordHash,
+        safeConfig.sessionSecret
+      );
+    }
+    throw new AdminSessionAuthError('Admin login is not configured on the server.', 503);
+  }
+
+  return authenticateAdminCredentialsWithResolvedConfig(
+    emailInput,
+    passwordInput,
+    clientKey,
+    configuredEmail,
+    passwordHash,
+    sessionSecret
+  );
 }
 
 export function hashAdminPassword(password: string): string {
