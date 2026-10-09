@@ -35,7 +35,17 @@ export async function uploadMediaAsset(
   const cleanName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 
   if (!auth.currentUser) {
-    await signInAnonymously(auth);
+    try {
+      await signInAnonymously(auth);
+    } catch (error) {
+      const authError = error as { code?: string };
+      if (authError.code === 'auth/admin-restricted-operation') {
+        throw new Error(
+          'Firebase anonymous sign-in is disabled for this project. Enable Authentication > Sign-in method > Anonymous in Firebase Console, then retry the upload.'
+        );
+      }
+      throw error;
+    }
   }
 
   const storageFolder = isVideo ? 'videos' : 'images';
