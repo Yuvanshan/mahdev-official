@@ -1,8 +1,7 @@
 import React from 'react';
-import { Camera, Calendar, ArrowRight, Phone, Film, ChevronLeft } from 'lucide-react';
+import { Calendar, ArrowRight, Film } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Button } from '../ui/Button';
-import { getTelLink } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { HeroVideoBackground } from '../common/HeroVideoBackground';
 
@@ -16,7 +15,7 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
   onBookSession,
   onExplorePortfolio,
 }) => {
-  const { divisions, companySettings, mediaAssets } = useFirestoreDataContext();
+  const { divisions, mediaAssets } = useFirestoreDataContext();
 
   const u1Div = divisions?.find(
     (d) =>
@@ -28,20 +27,6 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
       d.slug === 'u1' ||
       d.slug === 'u1-studio'
   );
-
-  const hotline =
-    (u1Div as any)?.contactPhone ||
-    (u1Div as any)?.contactNumber ||
-    companySettings?.primaryPhone ||
-    '075 092 8078';
-
-  const rawHeroVideo =
-    (u1Div as any)?.heroVideoUrl ||
-    (u1Div as any)?.videoUrl ||
-    (u1Div?.hero as any)?.videoUrl ||
-    ((u1Div?.hero as any)?.mediaType === 'video' ? (u1Div?.hero as any)?.mediaUrl : '') ||
-    ((u1Div?.hero as any)?.mediaUrl?.startsWith?.('firestore://') ? (u1Div?.hero as any)?.mediaUrl : '') ||
-    '';
 
   const rawHeroImage =
     (u1Div as any)?.defaultImageUrl ||
@@ -68,32 +53,17 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
       ? rawHeroImage.trim()
       : fallbackMediaImage;
 
-  const effectiveVideoUrl = (u1Div as any)?.heroMediaType === 'image' && !(u1Div as any)?.heroVideoUrl && !(u1Div as any)?.videoUrl ? '' : rawHeroVideo;
-
-  const badgeText =
-    (u1Div as any)?.hero?.badge ||
-    u1Div?.badge ||
-    'U1 Studio • Mahdev Media & Cinema Division';
-
   const headline =
     (u1Div as any)?.heroHeadline ||
     (u1Div as any)?.hero?.title ||
     u1Div?.name ||
     'Fine Art Photography & Cinema';
 
-  const subheadline =
-    (u1Div as any)?.heroSubheadline ||
-    (u1Div as any)?.hero?.subtitle ||
-    (u1Div as any)?.heroSubtitle ||
-    u1Div?.tagline ||
-    u1Div?.description ||
-    'Documenting legacy weddings, commercial cinematic productions, and high-fashion editorials with master optics, medium-format sensors, and cinematic colour grading.';
-
   return (
     <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-[#061033] text-white">
       {/* Reliable Full-Width Video Background with guaranteed autoplay */}
       <HeroVideoBackground
-        videoUrl={effectiveVideoUrl}
+        videoUrl="/assets/hero_main.mp4?v=2"
         imageUrl={heroImage}
         posterImageUrl={heroImage}
         title={u1Div?.name || 'U1 Studio Photography & Cinema'}
@@ -103,29 +73,6 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-28 z-20 w-full">
         <div className="max-w-3xl space-y-6">
           
-          {/* Breadcrumb Back Link */}
-          <div>
-            <a
-              href="/"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-bold text-white transition-all backdrop-blur-md cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4 text-blue-400" />
-              <span>Back to Home</span>
-            </a>
-          </div>
-
-          {/* Division Badge in Electric Blue */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0052FF]/20 border border-[#0052FF]/40 text-xs font-bold text-blue-300 backdrop-blur-md shadow-lg">
-              <Camera className="w-3.5 h-3.5 text-blue-400" />
-              <span className="tracking-wide">{badgeText}</span>
-            </div>
-          </motion.div>
-
           {/* High-Impact Headline */}
           <motion.h1
             initial={{ opacity: 0, y: 18 }}
@@ -135,18 +82,6 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
           >
             {headline}
           </motion.h1>
-
-          {/* Subheadline / Cinema Narrative */}
-          {subheadline && (
-            <motion.p
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-              className="text-base sm:text-lg lg:text-xl text-slate-200 font-normal leading-relaxed max-w-2xl drop-shadow"
-            >
-              {subheadline}
-            </motion.p>
-          )}
 
           {/* Action CTAs in Electric Blue */}
           <motion.div
@@ -176,14 +111,6 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
               View Visual Works
             </Button>
 
-            <a
-              href={getTelLink(hotline)}
-              className="inline-flex items-center gap-2 px-4 py-3.5 rounded-xl border border-white/20 bg-white/10 text-white text-sm font-semibold hover:bg-white/20 transition-all backdrop-blur-md"
-              title={`Call Production Desk ${hotline}`}
-            >
-              <Phone className="w-4 h-4 text-blue-400" />
-              <span>{hotline}</span>
-            </a>
           </motion.div>
 
         </div>

@@ -1,8 +1,7 @@
 import React from 'react';
-import { Calendar, ArrowRight, Phone, Layers, ChevronLeft } from 'lucide-react';
+import { Calendar, ArrowRight, Layers } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Button } from '../ui/Button';
-import { getTelLink } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { getRentalAssetCount } from '../../utils/assetMetrics';
 import { HeroVideoBackground } from '../common/HeroVideoBackground';
@@ -39,20 +38,6 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
     (swsDiv as any)?.rentalAssetCount || (companySettings as any)?.rentalAssetCount || (siteSettings as any)?.rentalAssetCount
   );
 
-  const hotline =
-    (swsDiv as any)?.contactPhone ||
-    (swsDiv as any)?.contactNumber ||
-    companySettings?.primaryPhone ||
-    '075 092 8078';
-
-  const rawHeroVideo =
-    (swsDiv as any)?.heroVideoUrl ||
-    (swsDiv as any)?.videoUrl ||
-    (swsDiv?.hero as any)?.videoUrl ||
-    ((swsDiv?.hero as any)?.mediaType === 'video' ? (swsDiv?.hero as any)?.mediaUrl : '') ||
-    ((swsDiv?.hero as any)?.mediaUrl?.startsWith?.('firestore://') ? (swsDiv?.hero as any)?.mediaUrl : '') ||
-    '';
-
   const rawHeroImage =
     (swsDiv as any)?.defaultImageUrl ||
     (swsDiv as any)?.heroImageUrl ||
@@ -66,32 +51,17 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
       ? rawHeroImage.trim()
       : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
 
-  const effectiveVideoUrl = (swsDiv as any)?.heroMediaType === 'image' && !(swsDiv as any)?.heroVideoUrl && !(swsDiv as any)?.videoUrl ? '' : rawHeroVideo;
-
-  const badgeText =
-    (swsDiv as any)?.hero?.badge ||
-    swsDiv?.badge ||
-    'SWS Event Management • Mahdev Flagship Division';
-
   const headline =
     (swsDiv as any)?.heroHeadline ||
     (swsDiv as any)?.hero?.title ||
     swsDiv?.name ||
     'Turnkey Luxury Event Production & Decor';
 
-  const subheadline =
-    (swsDiv as any)?.heroSubheadline ||
-    (swsDiv as any)?.hero?.subtitle ||
-    (swsDiv as any)?.heroSubtitle ||
-    swsDiv?.tagline ||
-    swsDiv?.description ||
-    'From intimate bespoke weddings to national stadium summits, SWS engineers sensory-rich environments through architectural lighting, imported floral couture, and master stagecraft.';
-
   return (
     <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-[#061033] text-white">
       {/* Reliable Full-Width Video Background with guaranteed autoplay */}
       <HeroVideoBackground
-        videoUrl={effectiveVideoUrl}
+        videoUrl="/assets/hero_main.mp4?v=2"
         imageUrl={heroImage}
         posterImageUrl={heroImage}
         title={swsDiv?.name || 'SWS Luxury Event Decor & Rentals'}
@@ -101,29 +71,6 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-28 z-20 w-full">
         <div className="max-w-3xl space-y-6">
           
-          {/* Breadcrumb Back Link */}
-          <div>
-            <a
-              href="/"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-bold text-white transition-all backdrop-blur-md cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4 text-blue-400" />
-              <span>Back to Home</span>
-            </a>
-          </div>
-
-          {/* Division Badge in Electric Blue */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0052FF]/20 border border-[#0052FF]/40 text-xs font-bold text-blue-300 backdrop-blur-md shadow-lg">
-              <span className="w-2 h-2 rounded-full bg-[#0052FF] animate-pulse" />
-              <span className="tracking-wide">{badgeText}</span>
-            </div>
-          </motion.div>
-
           {/* High-Impact Headline */}
           <motion.h1
             initial={{ opacity: 0, y: 18 }}
@@ -133,18 +80,6 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
           >
             {headline}
           </motion.h1>
-
-          {/* Hero Subheadline / Narrative from Admin Configuration */}
-          {subheadline && (
-            <motion.p
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-              className="text-base sm:text-lg lg:text-xl text-slate-200 font-normal leading-relaxed max-w-2xl drop-shadow"
-            >
-              {subheadline}
-            </motion.p>
-          )}
 
           {/* Clean, Non-Cluttered Action CTAs in Electric Blue */}
           <motion.div
@@ -176,14 +111,6 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
               </Button>
             )}
 
-            <a
-              href={getTelLink(hotline)}
-              className="inline-flex items-center gap-2 px-4 py-3.5 rounded-xl border border-white/20 bg-white/10 text-white text-sm font-semibold hover:bg-white/20 transition-all backdrop-blur-md"
-              title={`Call SWS Desk ${hotline}`}
-            >
-              <Phone className="w-4 h-4 text-blue-400" />
-              <span>{hotline}</span>
-            </a>
           </motion.div>
 
         </div>

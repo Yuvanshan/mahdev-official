@@ -73,13 +73,7 @@ export interface WriteBatch {
 
 const database: TursoDatabase = { type: 'turso' };
 const SNAPSHOT_POLL_INTERVAL_MS = 8000;
-let snapshotReadQueue: Promise<void> = Promise.resolve();
-
-function enqueueSnapshotRead<T>(read: () => Promise<T>): Promise<T> {
-  const result = snapshotReadQueue.then(read, read);
-  snapshotReadQueue = result.then(() => undefined, () => undefined);
-  return result;
-}
+const inFlightReads = new Map<string, Promise<ApiResponse<unknown>>>();
 
 function normalizeSegments(segments: string[]): string[] {
   if (!segments.length || segments.some((segment) => !segment || segment.includes('/'))) {
@@ -185,44 +179,50 @@ async function request<T>(
   action: string,
   payload: Record<string, unknown>
 ): Promise<ApiResponse<T>> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  const currentUser = getAuth().currentUser;
-  if (currentUser) {
-    headers.Authorization = `Bearer ${await currentUser.getIdToken()}`;
-  }
-  const collections = action === 'batch' && Array.isArray(payload.writes)
-    ? [...new Set(payload.writes
-      .filter((write): write is Record<string, unknown> => Boolean(write && typeof write === 'object'))
-      .map((write) => write.collection)
-      .filter((collection): collection is string => typeof collection === 'string'))]
-    : [typeof payload.collection === 'string'
-      ? payload.collection
-      : typeof payload.write === 'object' && payload.write !== null &&
-          typeof (payload.write as Record<string, unknown>).collection === 'string'
-        ? (payload.write as Record<string, unknown>).collection as string
-        : ''];
-  const resource = collections.length === 1 && !collections[0].includes('/')
-    ? collections[0]
+  const isRead = action === 'get' || action === 'list';
+  const readKey = isRead
+    ? JSON.stringify([getAuth().currentUser?.uid || 'anonymous', action, payload])
     : '';
-  const endpoint = action !== 'health' && action !== 'batch' && resource
-    ? `/api/data/${encodeURIComponent(resource)}`
-    : '/api/database';
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ action, ...payload }),
-  });
-  const responseText = await response.text();
-  let result: ApiResponse<T>;
-  try {
-    result = JSON.parse(responseText) as ApiResponse<T>;
-  } catch {
-    throw new Error(
-      `Turso API returned a non-JSON response (HTTP ${response.status}). Check the Vercel API route configuration.`
+  const pendingRead = readKey ? inFlightReads.get(readKey) : undefined;
+  if (pendingRead) return pendingRead as Promise<ApiResponse<T>>;
+
+  const requestPromise = (async (): Promise<ApiResponse<T>> => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const currentUser = getAuth().currentUser;
+    if (currentUser) {
+      headers.Authorization = `Bearer ${await currentUser.getIdToken()}`;
+    }
+    const response = await fetch('/api/database', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ action, ...payload }),
+    });
+    const responseText = await response.text();
+    let result: ApiResponse<T>;
+    try {
+      result = JSON.parse(responseText) as ApiResponse<T>;
+    } catch {
+      throw new Error(
+        `Turso API returned a non-JSON response (HTTP ${response.status}). Check the Vercel API route configuration.`
+      );
+    }
+    if (!response.ok) throw new Error(result.error || `Turso request failed (${response.status}).`);
+    return result;
+  })();
+
+  if (readKey) {
+    const cachedPromise = requestPromise as Promise<ApiResponse<unknown>>;
+    inFlightReads.set(readKey, cachedPromise);
+    void cachedPromise.then(
+      () => {
+        if (inFlightReads.get(readKey) === cachedPromise) inFlightReads.delete(readKey);
+      },
+      () => {
+        if (inFlightReads.get(readKey) === cachedPromise) inFlightReads.delete(readKey);
+      }
     );
   }
-  if (!response.ok) throw new Error(result.error || `Turso request failed (${response.status}).`);
-  return result;
+  return requestPromise;
 }
 
 function makeDocumentSnapshot<T extends DocumentData>(
@@ -406,9 +406,7 @@ export function onSnapshot<T extends DocumentData = DocumentData>(
           }))),
         };
       };
-      const { snapshot, serialized } = pollIntervalMs < SNAPSHOT_POLL_INTERVAL_MS
-        ? await readSnapshot()
-        : await enqueueSnapshotRead(readSnapshot);
+      const { snapshot, serialized } = await readSnapshot();
       if (stopped) return;
       if (!hasEmitted || serialized !== lastSnapshot) {
         hasEmitted = true;
