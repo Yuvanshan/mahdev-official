@@ -143,6 +143,10 @@ async function run(): Promise<void> {
       action: 'write',
       write: { type: 'set', collection: 'contactSubmissions', id: 'msg-1' },
     }), false);
+    for (const collection of ['contactSubmissions', 'inquiries', 'quoteRequests']) {
+      assert.equal(requiresAdminForDatabaseAction({ action: 'list', collection }), true);
+      assert.equal(requiresAdminForDatabaseAction({ action: 'get', collection }), true);
+    }
     assert.equal(requiresSuperAdminForDatabaseAction({
       action: 'write',
       write: { type: 'set', collection: 'admins', id: 'admin-1' },

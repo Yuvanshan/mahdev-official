@@ -47,14 +47,9 @@ function startContactFeed(): void {
 
 export const firestoreContactsService = {
   async getContacts(): Promise<FirestoreContactSubmission[]> {
-    try {
-      const q = query(collection(db, 'contactSubmissions'), orderBy('createdAt', 'desc'), limit(250));
-      const snap = await getDocs(q);
-      return snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreContactSubmission[];
-    } catch (err) {
-      console.warn('[Firestore Contacts] getContacts error:', err);
-      return [];
-    }
+    const q = query(collection(db, 'contactSubmissions'), orderBy('createdAt', 'desc'), limit(250));
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreContactSubmission[];
   },
 
   subscribeContacts(onData: (items: FirestoreContactSubmission[]) => void, onError?: (err: Error) => void): Unsubscribe {

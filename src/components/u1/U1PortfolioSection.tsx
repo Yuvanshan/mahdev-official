@@ -15,7 +15,7 @@ import {
   MessageCircle,
   Check,
 } from 'lucide-react';
-import { U1_PORTFOLIO_ITEMS, U1PortfolioItem } from '../../data/u1Data';
+import { U1PortfolioItem } from '../../data/u1Data';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { GallerySectionShimmer } from '../common/GallerySectionShimmer';
 import { SectionContainer } from '../ui/SectionContainer';
@@ -253,31 +253,32 @@ export const U1PortfolioSection: React.FC = () => {
       </div>
 
       {/* Visual Masonry / Dynamic Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
         {filteredItems.map((item, index) => (
           <div
             key={item.id}
+            role="button"
+            tabIndex={0}
             onClick={() => setActiveLightboxIndex(index)}
-            className="group relative rounded-2xl overflow-hidden bg-slate-950 aspect-[4/3] cursor-pointer border border-slate-200/90 shadow-sm hover:shadow-xl transition-all duration-500"
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                setActiveLightboxIndex(index);
+              }
+            }}
+            className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg"
           >
-            <img
-              src={item.imageUrl}
-              alt={item.title}
-              loading="lazy"
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108"
-            />
-            {/* Vignette Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent opacity-75 group-hover:opacity-90 transition-opacity" />
-
-            {/* Category Tag */}
-            <div className="absolute top-3 left-3">
-              <Badge variant="default" size="sm" className="bg-black/60 backdrop-blur-md text-white text-[10px]">
-                {item.category}
-              </Badge>
-            </div>
+            <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+              <img
+                src={item.imageUrl}
+                alt={item.title}
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              />
 
             {/* Top Action Icons: Inquire on WhatsApp, Share, Zoom */}
-            <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity z-10">
+            <div className="absolute right-3 top-3 flex items-center gap-1.5">
               {/* WhatsApp Quick Incur / Inquire */}
               <button
                 type="button"
@@ -315,7 +316,7 @@ export const U1PortfolioSection: React.FC = () => {
                   setCardCopiedId(item.id);
                   setTimeout(() => setCardCopiedId(null), 2000);
                 }}
-                className="w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105 cursor-pointer"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow-lg transition-transform hover:scale-105"
                 title="Share this frame"
                 aria-label="Share frame"
               >
@@ -331,19 +332,24 @@ export const U1PortfolioSection: React.FC = () => {
                 <Maximize2 className="w-3.5 h-3.5" />
               </div>
             </div>
+            </div>
 
-            {/* Bottom Meta */}
-            <div className="absolute bottom-4 left-4 right-4 text-white space-y-1">
-              <div className="flex items-center gap-2 text-[11px] text-blue-300 font-medium">
+            <div className="space-y-2 p-4">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="line-clamp-2 font-display text-sm font-semibold text-slate-900 sm:text-base">
+                  {item.title}
+                </h3>
+                <Badge variant="default" size="sm" className="shrink-0 bg-blue-50 text-blue-700">
+                  {item.category}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 text-[11px] text-slate-500">
                 <MapPin className="w-3 h-3 shrink-0" />
                 <span className="truncate">{item.location}</span>
-                <span className="text-white/40">•</span>
+                <span aria-hidden="true">·</span>
                 <span>{item.year}</span>
               </div>
-              <h3 className="font-display text-base font-bold text-white group-hover:text-blue-200 transition-colors">
-                {item.title}
-              </h3>
-              <p className="text-xs text-slate-300 line-clamp-1 opacity-90">{item.description}</p>
+              {item.description && <p className="line-clamp-2 text-xs leading-5 text-slate-600">{item.description}</p>}
             </div>
           </div>
         ))}

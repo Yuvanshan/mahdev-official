@@ -151,7 +151,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isDivisionsLoading, setIsDivisionsLoading] = useState<boolean>(!Array.isArray(cachedDivs));
   const [isMilestonesLoading, setIsMilestonesLoading] = useState<boolean>(false);
   const [isServicesLoading, setIsServicesLoading] = useState<boolean>(!Array.isArray(cachedSrvs));
-  const [isGalleryLoading, setIsGalleryLoading] = useState<boolean>(false);
+  const [isGalleryLoading, setIsGalleryLoading] = useState<boolean>(!Array.isArray(cachedGal));
   const [isProductsLoading, setIsProductsLoading] = useState<boolean>(!cachedProds || !Array.isArray(cachedProds) || cachedProds.length === 0);
   const [isPortfolioLoading, setIsPortfolioLoading] = useState<boolean>(!cachedPort || !Array.isArray(cachedPort) || cachedPort.length === 0);
   const [isTestimonialsLoading, setIsTestimonialsLoading] = useState<boolean>(!cachedTestis || !Array.isArray(cachedTestis) || cachedTestis.length === 0);

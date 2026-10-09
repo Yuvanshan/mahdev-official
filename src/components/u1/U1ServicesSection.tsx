@@ -163,30 +163,20 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
                   loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />
-
-                {/* Badge */}
-                {service.badge && (
-                  <div className="absolute top-3 left-3">
-                    <Badge variant="electric" size="sm" className="text-[10px]">
-                      {service.badge}
-                    </Badge>
-                  </div>
-                )}
-
                 {/* Quick Expand Icon */}
                 <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <Eye className="w-3.5 h-3.5" />
                 </div>
 
-                {/* Price pill */}
-                <div className="absolute bottom-3 left-3 text-[11px] font-semibold text-white bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-md">
-                  From {service.startingPrice}
-                </div>
               </div>
 
               {/* Content Details */}
               <div className="p-5 space-y-3">
+                {service.badge && (
+                  <Badge variant="electric" size="sm" className="text-[10px]">
+                    {service.badge}
+                  </Badge>
+                )}
                 <div>
                   <h3 className="font-display text-lg font-bold text-slate-900 group-hover:text-[#0052FF] transition-colors leading-snug">
                     {service.name}
@@ -197,6 +187,11 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
                 <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
                   {service.description}
                 </p>
+
+                <div className="rounded-xl bg-blue-50/70 px-3.5 py-3">
+                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">Starting from</span>
+                  <span className="font-display text-base font-bold text-slate-900">{service.startingPrice}</span>
+                </div>
 
                 {/* Key Deliverables sample */}
                 <div className="space-y-1.5 pt-2 border-t border-slate-100">

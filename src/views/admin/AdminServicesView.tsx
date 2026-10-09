@@ -36,7 +36,7 @@ import { formatCurrency, formatLKR } from '../../utils/currency';
 import { uploadMediaAsset } from '../../services/mediaUploadService';
 
 export const AdminServicesView: React.FC = () => {
-  const { refreshAll } = useFirestoreDataContext();
+  const { refreshAll, isServicesLoading } = useFirestoreDataContext();
   const [services, setServices] = useState<CmsService[]>([]);
   const [categories, setCategories] = useState<CmsCategory[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,6 +51,7 @@ export const AdminServicesView: React.FC = () => {
   const [editingService, setEditingService] = useState<CmsService | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   // Delete State
   const [deletingService, setDeletingService] = useState<CmsService | null>(null);
@@ -247,16 +248,22 @@ export const AdminServicesView: React.FC = () => {
     }
 
     const newImages: string[] = [];
-    for (const file of filesToProcess) {
-      try {
-        const uploadedUrl = await uploadMediaAsset(file);
-        if (uploadedUrl) {
+    setUploadProgress(0);
+    try {
+      for (const [index, file] of filesToProcess.entries()) {
+        try {
+          const uploadedUrl = await uploadMediaAsset(file, (percent) => {
+            setUploadProgress(Math.round(((index + percent / 100) / filesToProcess.length) * 100));
+          });
           newImages.push(uploadedUrl);
+        } catch (err) {
+          console.error('[AdminServices] Image upload failed:', err);
+          addToast('error', 'Image Upload Failed', err instanceof Error ? err.message : 'Could not upload image.');
         }
-      } catch (err) {
-        console.error('[AdminServices] Image upload failed:', err);
-        addToast('error', 'Image Upload Failed', err instanceof Error ? err.message : 'Could not upload image.');
       }
+    } finally {
+      setUploadProgress(null);
+      e.target.value = '';
     }
 
     if (newImages.length > 0) {
@@ -269,7 +276,6 @@ export const AdminServicesView: React.FC = () => {
       setIsDirty(true);
       addToast('success', 'Images Uploaded', `Successfully added ${newImages.length} image(s) (Total: ${merged.length}/5).`);
     }
-    e.target.value = '';
   };
 
   const handleAddImageUrl = (url: string) => {
@@ -548,7 +554,17 @@ export const AdminServicesView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
-              {services.length === 0 ? (
+              {isServicesLoading ? (
+                Array.from({ length: 5 }, (_, index) => (
+                  <tr key={`service-loading-${index}`} className="animate-pulse">
+                    {Array.from({ length: 7 }, (_, cellIndex) => (
+                      <td key={cellIndex} className="px-4 py-4">
+                        <div className="h-4 rounded bg-slate-100" />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : services.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-slate-500">
                     No services found matching filters.
@@ -847,7 +863,7 @@ export const AdminServicesView: React.FC = () => {
                   Service Images (Max 5 Images)
                 </label>
                 <p className="text-[11px] text-purple-700/80">
-                  Upload up to 5 photos saved to Firestore and rendered on the website. The first image is the cover.
+                  Upload up to 5 photos to Firebase Storage. Save this service to publish its image links from Turso. The first image is the cover.
                 </p>
               </div>
               <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
@@ -875,7 +891,7 @@ export const AdminServicesView: React.FC = () => {
                   accept="image/*"
                   multiple
                   onChange={handleImagesUpload}
-                  disabled={formData.images.length >= 5}
+                  disabled={formData.images.length >= 5 || uploadProgress !== null}
                   className="hidden"
                 />
               </label>
@@ -885,7 +901,7 @@ export const AdminServicesView: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsMediaPickerOpen(true)}
-                disabled={formData.images.length >= 5}
+                disabled={formData.images.length >= 5 || uploadProgress !== null}
                 className="flex items-center gap-1.5 cursor-pointer text-xs"
               >
                 <ImageIcon className="w-3.5 h-3.5" />
@@ -906,13 +922,25 @@ export const AdminServicesView: React.FC = () => {
                   variant="secondary"
                   size="sm"
                   onClick={() => handleAddImageUrl(imageUrlInput)}
-                  disabled={!imageUrlInput.trim() || formData.images.length >= 5}
+                  disabled={!imageUrlInput.trim() || formData.images.length >= 5 || uploadProgress !== null}
                   className="shrink-0 text-xs cursor-pointer"
                 >
                   Add URL
                 </Button>
               </div>
             </div>
+
+            {uploadProgress !== null && (
+              <div className="space-y-1" role="status" aria-live="polite">
+                <div className="flex justify-between text-[10px] font-semibold text-purple-800">
+                  <span>Uploading images</span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-purple-100">
+                  <div className="h-full rounded-full bg-purple-600 transition-all" style={{ width: `${uploadProgress}%` }} />
+                </div>
+              </div>
+            )}
 
             {/* Thumbnails grid */}
             {formData.images.length > 0 ? (
@@ -967,7 +995,7 @@ export const AdminServicesView: React.FC = () => {
               </div>
             ) : (
               <div className="p-4 border-2 border-dashed border-purple-200/80 rounded-xl text-center bg-white/60 text-purple-900/70 text-xs">
-                No images added yet. Upload up to 5 images (stored in Firestore and displayed on the website).
+                No images added yet. Upload up to 5 images to Firebase Storage, then save this service to publish them on the website.
               </div>
             )}
           </div>

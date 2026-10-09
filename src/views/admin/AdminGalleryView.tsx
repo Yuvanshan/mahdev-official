@@ -44,7 +44,7 @@ const PRESET_GALLERY_CATEGORIES = [
 ];
 
 export const AdminGalleryView: React.FC = () => {
-  const { refreshAll } = useFirestoreDataContext();
+  const { refreshAll, isGalleryLoading } = useFirestoreDataContext();
   const [galleryItems, setGalleryItems] = useState<CmsGalleryItem[]>([]);
   const [availableCategories, setAvailableCategories] = useState<string[]>(
     PRESET_GALLERY_CATEGORIES.filter((c) => c !== 'Other / Custom')
@@ -61,6 +61,7 @@ export const AdminGalleryView: React.FC = () => {
   const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [customCategoryInput, setCustomCategoryInput] = useState('');
 
   // Delete State
@@ -236,16 +237,22 @@ export const AdminGalleryView: React.FC = () => {
     }
 
     const newImages: string[] = [];
-    for (const file of filesToProcess) {
-      try {
-        const uploadedUrl = await uploadMediaAsset(file);
-        if (uploadedUrl) {
+    setUploadProgress(0);
+    try {
+      for (const [index, file] of filesToProcess.entries()) {
+        try {
+          const uploadedUrl = await uploadMediaAsset(file, (percent) => {
+            setUploadProgress(Math.round(((index + percent / 100) / filesToProcess.length) * 100));
+          });
           newImages.push(uploadedUrl);
+        } catch (err) {
+          console.error('[AdminGallery] Image upload failed:', err);
+          addToast('error', 'Image Upload Failed', err instanceof Error ? err.message : 'Could not upload image.');
         }
-      } catch (err) {
-        console.error('[AdminGallery] Image upload failed:', err);
-        addToast('error', 'Image Upload Failed', err instanceof Error ? err.message : 'Could not upload image.');
       }
+    } finally {
+      setUploadProgress(null);
+      e.target.value = '';
     }
 
     if (newImages.length > 0) {
@@ -259,7 +266,6 @@ export const AdminGalleryView: React.FC = () => {
       setIsDirty(true);
       addToast('success', 'Images Uploaded', `Added ${newImages.length} image(s) to gallery (Total: ${merged.length}/3).`);
     }
-    e.target.value = '';
   };
 
   const handleAddImageUrl = (url: string) => {
@@ -559,7 +565,18 @@ export const AdminGalleryView: React.FC = () => {
 
       {/* Grid of Gallery Items */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {galleryItems.filter((item) => {
+        {isGalleryLoading ? (
+          Array.from({ length: 8 }, (_, index) => (
+            <div key={`gallery-loading-${index}`} className="animate-pulse overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <div className="aspect-16/10 bg-slate-200" />
+              <div className="space-y-3 p-4">
+                <div className="h-4 w-2/3 rounded bg-slate-200" />
+                <div className="h-3 w-full rounded bg-slate-100" />
+                <div className="h-8 rounded bg-slate-100" />
+              </div>
+            </div>
+          ))
+        ) : galleryItems.filter((item) => {
           if (categoryFilter !== 'all') {
             const itemCat = item.category || (Array.isArray(item.tags) && item.tags[0]);
             if (itemCat !== categoryFilter) return false;
@@ -838,7 +855,7 @@ export const AdminGalleryView: React.FC = () => {
                   Gallery Photos (Max 3 Images) *
                 </label>
                 <p className="text-[11px] text-purple-700/80">
-                  Upload up to 3 showcase photos stored in Firestore and visible on the website. First image acts as primary cover.
+                  Upload up to 3 showcase photos to Firebase Storage. Save this gallery item to publish its image links from Turso. First image acts as primary cover.
                 </p>
               </div>
               <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
@@ -866,7 +883,7 @@ export const AdminGalleryView: React.FC = () => {
                   accept="image/*"
                   multiple
                   onChange={handleImagesUpload}
-                  disabled={formData.images.length >= 3}
+                  disabled={formData.images.length >= 3 || uploadProgress !== null}
                   className="hidden"
                 />
               </label>
@@ -876,7 +893,7 @@ export const AdminGalleryView: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsMediaPickerOpen(true)}
-                disabled={formData.images.length >= 3}
+                disabled={formData.images.length >= 3 || uploadProgress !== null}
                 className="flex items-center gap-1.5 cursor-pointer text-xs"
               >
                 <ImageIcon className="w-3.5 h-3.5" />
@@ -897,13 +914,25 @@ export const AdminGalleryView: React.FC = () => {
                   variant="secondary"
                   size="sm"
                   onClick={() => handleAddImageUrl(mediaUrlInput)}
-                  disabled={!mediaUrlInput.trim() || formData.images.length >= 3}
+                  disabled={!mediaUrlInput.trim() || formData.images.length >= 3 || uploadProgress !== null}
                   className="shrink-0 text-xs cursor-pointer"
                 >
                   Add URL
                 </Button>
               </div>
             </div>
+
+            {uploadProgress !== null && (
+              <div className="space-y-1" role="status" aria-live="polite">
+                <div className="flex justify-between text-[10px] font-semibold text-purple-800">
+                  <span>Uploading images</span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-purple-100">
+                  <div className="h-full rounded-full bg-purple-600 transition-all" style={{ width: `${uploadProgress}%` }} />
+                </div>
+              </div>
+            )}
 
             {formErrors.mediaUrl && <p className="text-red-600 text-[10px]">{formErrors.mediaUrl}</p>}
 
@@ -960,7 +989,7 @@ export const AdminGalleryView: React.FC = () => {
               </div>
             ) : (
               <div className="p-4 border-2 border-dashed border-purple-200/80 rounded-xl text-center bg-white/60 text-purple-900/70 text-xs">
-                No gallery photos added yet. Upload up to 3 images (stored in Firestore and showcased on the website).
+                No gallery photos added yet. Upload up to 3 images to Firebase Storage, then save this gallery item to publish them on the website.
               </div>
             )}
           </div>

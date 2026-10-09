@@ -237,6 +237,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                       key={item.id}
                       ref={servicesDropdownRef}
                       className="relative"
+                      onMouseEnter={() => setIsServicesOpen(true)}
+                      onMouseLeave={() => setIsServicesOpen(false)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Escape') setIsServicesOpen(false);
+                      }}
                     >
                       <button
                         type="button"
@@ -247,6 +252,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                             : 'text-slate-700 hover:text-[#0052FF] hover:bg-blue-50/50'
                         }`}
                         aria-expanded={isServicesOpen}
+                        aria-haspopup="true"
                       >
                         <span>Divisions</span>
                         <ChevronDown

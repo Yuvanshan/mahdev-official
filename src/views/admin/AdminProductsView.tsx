@@ -45,6 +45,7 @@ export const AdminProductsView: React.FC = () => {
   const [stockFilter, setStockFilter] = useState<string>('all');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Modal & Inspector States
@@ -225,8 +226,9 @@ export const AdminProductsView: React.FC = () => {
     if (!file) return;
 
     setIsUploadingImage(true);
+    setUploadProgress(0);
     try {
-      const uploadedUrl = await uploadMediaAsset(file);
+      const uploadedUrl = await uploadMediaAsset(file, setUploadProgress);
       if (uploadedUrl) {
         setFormData((prev) => ({
           ...prev,
@@ -991,7 +993,7 @@ export const AdminProductsView: React.FC = () => {
                   {isUploadingImage ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                      Uploading...
+                      Uploading {uploadProgress}%
                     </>
                   ) : (
                     <>
@@ -1013,6 +1015,11 @@ export const AdminProductsView: React.FC = () => {
                 </Button>
               </div>
             </div>
+            {isUploadingImage && (
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-blue-100" role="status" aria-label={`Image upload ${uploadProgress}% complete`}>
+                <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${uploadProgress}%` }} />
+              </div>
+            )}
 
             {formErrors.imageUrl && (
               <p className="text-red-600 text-[10px] mt-1">{formErrors.imageUrl}</p>

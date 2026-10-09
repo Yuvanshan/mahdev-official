@@ -192,11 +192,19 @@ async function request<T>(
     if (currentUser) {
       headers.Authorization = `Bearer ${await currentUser.getIdToken()}`;
     }
-    const response = await fetch('/api/database', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ action, ...payload }),
-    });
+    let response: Response;
+    try {
+      response = await fetch('/api/database', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action, ...payload }),
+      });
+    } catch (error) {
+      const detail = error instanceof Error ? ` ${error.message}` : '';
+      throw new Error(
+        `Cannot reach the database API at /api/database. Check that the backend/API is deployed and reachable, then verify its Turso configuration.${detail}`
+      );
+    }
     if (response.status === 413) {
       throw new Error(
         'The database request is too large for the hosting platform. Upload media to storage first and save its URL instead of embedding image data.'

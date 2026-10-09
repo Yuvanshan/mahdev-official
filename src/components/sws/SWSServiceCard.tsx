@@ -43,44 +43,18 @@ export const SWSServiceCard: React.FC<SWSServiceCardProps> = ({
             loading="lazy"
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
-
-          {/* Top Badge & Gallery Count */}
-          <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-            {service.badge ? (
-              <Badge variant="electric" size="sm" className="shadow-md text-[10px] py-0.5 px-2">
-                {service.badge}
-              </Badge>
-            ) : (
-              <span />
-            )}
-            {service.gallery && service.gallery.length > 1 && (
-              <span className="bg-black/60 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded-full border border-white/20">
-                {service.gallery.length} Photos
-              </span>
-            )}
-          </div>
-
-          {/* Starting Price Banner on Image Bottom */}
-          <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between text-white pointer-events-none">
-            <div>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-blue-200 block">
-                Starting from
-              </span>
-              <span className="font-display text-lg font-bold text-white drop-shadow-sm">
-                {service.startingPrice}
-              </span>
-            </div>
-            {service.leadTime && (
-              <span className="text-[10px] text-slate-300 bg-white/10 backdrop-blur-md px-2 py-0.5 rounded border border-white/15">
-                {service.leadTime.split(' ')[0]} {service.leadTime.split(' ')[1]}
-              </span>
-            )}
-          </div>
         </div>
 
         {/* Card Content */}
         <div className="p-5 sm:p-6 space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            {service.badge && <Badge variant="electric" size="sm" className="text-[10px]">{service.badge}</Badge>}
+            {service.gallery && service.gallery.length > 1 && (
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
+                {service.gallery.length} photos
+              </span>
+            )}
+          </div>
           <div className="flex items-start justify-between gap-3">
             <div>
               <h3 className="font-display text-lg font-bold text-slate-900 group-hover:text-[#0052FF] transition-colors leading-snug">
@@ -98,6 +72,18 @@ export const SWSServiceCard: React.FC<SWSServiceCardProps> = ({
           <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
             {service.description}
           </p>
+
+          <div className="flex items-end justify-between gap-3 rounded-xl bg-blue-50/70 px-3.5 py-3">
+            <div>
+              <span className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">Starting from</span>
+              <span className="font-display text-base font-bold text-slate-900">{service.startingPrice}</span>
+            </div>
+            {service.leadTime && (
+              <span className="text-right text-[10px] font-medium text-slate-500">
+                {service.leadTime}
+              </span>
+            )}
+          </div>
 
           {/* Key Features List */}
           <div className="space-y-1.5 pt-1">

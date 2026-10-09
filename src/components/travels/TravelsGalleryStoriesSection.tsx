@@ -11,7 +11,7 @@ import {
   Calendar,
   MessageCircle,
 } from 'lucide-react';
-import { TravelStory, TRAVEL_STORIES } from '../../data/travelsData';
+import { TravelStory } from '../../data/travelsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';
@@ -22,13 +22,6 @@ import { openWhatsAppInquiry, deriveLookupSku } from '../../utils/whatsapp';
 export const TravelsGalleryStoriesSection: React.FC = () => {
   const { gallery: rawGallery, testimonials: rawTestimonials } = useFirestoreDataContext();
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
-
-  const defaultGallery = [
-    { src: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=80', title: 'Sigiriya Rock Fortress at Dawn', location: 'Cultural Triangle' },
-    { src: 'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=1200&q=80', title: 'Nine Arch Bridge & Mist-Covered Tea Valleys', location: 'Ella Highlands' },
-    { src: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=1200&q=80', title: 'Sri Lankan Wild Leopard in Yala', location: 'Yala National Park' },
-    { src: 'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?auto=format&fit=crop&w=1200&q=80', title: 'Mirissa Golden Beach & Palm Tree Grove', location: 'Southern Coast' },
-  ];
 
   const galleryImages = useMemo(() => {
     if (rawGallery && rawGallery.length > 0) {
@@ -90,21 +83,21 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
       </div>
 
       {/* Gallery Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-20">
+      <div className="mb-20 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
         {galleryImages.map((img, idx) => (
           <div
             key={idx}
             onClick={() => setLightboxImage(img.src)}
-            className="group relative aspect-[4/3] rounded-2xl overflow-hidden bg-slate-950 cursor-pointer shadow-xs hover:shadow-xl transition-all duration-300"
+            className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
           >
-            <img
-              src={img.src}
-              alt={img.title}
-              loading="lazy"
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108"
-            />
-            {/* Quick WhatsApp Inquiry on Card */}
-            <div className="absolute top-3 right-3 z-10">
+            <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+              <img
+                src={img.src}
+                alt={img.title}
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              />
               <button
                 type="button"
                 onClick={(e) => {
@@ -119,20 +112,16 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
                   });
                 }}
                 title="Send inquiry with this photo to WhatsApp 0750928078"
-                className="px-2.5 py-1 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white flex items-center gap-1 text-[10px] font-bold shadow-md opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer active:scale-95"
+                aria-label={`Ask about ${img.title} on WhatsApp`}
+                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-[#25D366] text-white shadow-md transition hover:scale-105 hover:bg-[#20bd5a]"
               >
-                <MessageCircle className="w-3 h-3 fill-white/20" />
-                <span>WhatsApp</span>
+                <MessageCircle className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4 text-white">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-amber-300">
-                {img.location}
-              </span>
-              <h4 className="font-display text-xs sm:text-sm font-bold text-white leading-tight">
-                {img.title}
-              </h4>
+            <div className="space-y-1.5 p-4">
+              <h4 className="line-clamp-2 font-display text-sm font-semibold text-slate-900">{img.title}</h4>
+              <p className="text-xs text-slate-500">{img.location}</p>
             </div>
           </div>
         ))}
@@ -216,7 +205,7 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  const activeImg = galleryImages.find((g) => g.src === lightboxImage) || defaultGallery.find((g) => g.src === lightboxImage);
+                  const activeImg = galleryImages.find((g) => g.src === lightboxImage);
                   const imgTitle = activeImg?.title || 'Travel Expedition Moment';
                   openWhatsAppInquiry({
                     title: imgTitle,

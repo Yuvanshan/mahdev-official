@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Bell,
   Check,
@@ -112,6 +113,15 @@ export const AdminNotificationCenter: React.FC<AdminNotificationCenterProps> = (
     };
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [isOpen]);
+
   const handleMarkAllRead = () => {
     notificationService.markAllAsRead(undefined, 'admin');
     refresh();
@@ -193,10 +203,15 @@ export const AdminNotificationCenter: React.FC<AdminNotificationCenterProps> = (
         )}
       </button>
 
-      {isOpen && (
+      {isOpen && createPortal(
         <>
-          <div className="fixed inset-0 z-[55] bg-slate-950/20" onClick={() => setIsOpen(false)} />
-          <div className="fixed right-2 top-16 sm:right-4 sm:top-20 z-[60] flex w-[calc(100vw-1rem)] max-w-sm max-h-[calc(100dvh-5rem)] flex-col rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden">
+          <div className="fixed inset-0 z-[9998] bg-slate-950/25 backdrop-blur-[1px]" onClick={() => setIsOpen(false)} />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Live System Alerts"
+            className="fixed right-2 top-3 z-[9999] flex w-[calc(100vw-1rem)] max-w-sm max-h-[calc(100dvh-1.5rem)] flex-col rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden sm:right-4 sm:top-4"
+          >
             {/* Header */}
             <div className="p-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
               <div className="flex items-center gap-2">
@@ -272,7 +287,8 @@ export const AdminNotificationCenter: React.FC<AdminNotificationCenterProps> = (
               Mahdev Enterprise Event Dispatcher • TLS Protected
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );

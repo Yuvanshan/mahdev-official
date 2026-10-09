@@ -189,7 +189,7 @@ export const AdminMediaView: React.FC = () => {
     try {
       await mediaService.saveMediaAsset(newItem);
       setIsUploadOpen(false);
-      addToast('success', `Media asset "${newItem.title}" saved to Firestore (${newItem.category}).`);
+      addToast('success', `Media asset "${newItem.title}" saved to Turso (${newItem.category}); the image is in Firebase Storage.`);
     } catch (err: any) {
       addToast('error', `Failed to save media asset: ${err?.message || err}`);
     }
@@ -340,7 +340,7 @@ export const AdminMediaView: React.FC = () => {
             </h2>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Firestore Synced
+              Turso Synced
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -429,12 +429,17 @@ export const AdminMediaView: React.FC = () => {
 
       {/* Media Grid */}
       {isLoading ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center space-y-3">
-          <RefreshCw className="w-8 h-8 text-blue-600 mx-auto animate-spin" />
-          <h3 className="font-display text-sm font-bold text-slate-700">Connecting to Firestore Media Library...</h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">
-            Retrieving synced assets, categories, and binary metadata from the cloud database.
-          </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" role="status" aria-label="Loading media assets">
+          {Array.from({ length: 8 }, (_, index) => (
+            <div key={`media-loading-${index}`} className="animate-pulse overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <div className="aspect-video bg-slate-200" />
+              <div className="space-y-3 p-4">
+                <div className="h-4 w-2/3 rounded bg-slate-200" />
+                <div className="h-3 w-full rounded bg-slate-100" />
+                <div className="h-8 rounded bg-slate-100" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : filteredMedia.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3">
@@ -476,20 +481,10 @@ export const AdminMediaView: React.FC = () => {
                     <img
                       src={item.url}
                       alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="h-full w-full object-contain group-hover:scale-[1.02] transition-transform duration-300"
                       
                       loading="lazy"
                     />
-                    <div className="absolute top-2 left-2 flex items-center gap-1">
-                      <span className="px-2 py-0.5 rounded-md bg-slate-900/80 backdrop-blur-xs text-[10px] font-mono font-bold text-white uppercase tracking-wider">
-                        {item.category}/
-                      </span>
-                      {itemDiv && (
-                        <span className="px-2 py-0.5 rounded-md bg-blue-600/90 backdrop-blur-xs text-[10px] font-semibold text-white tracking-wide">
-                          {divLabel}
-                        </span>
-                      )}
-                    </div>
 
                     <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       {/* Inquire on WhatsApp */}
@@ -562,6 +557,16 @@ export const AdminMediaView: React.FC = () => {
                   </div>
 
                   <div className="p-3.5 space-y-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                        {item.category}
+                      </span>
+                      {itemDiv && (
+                        <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-semibold text-blue-700">
+                          {divLabel}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-start justify-between gap-2">
                       <h4 className="font-display text-xs font-bold text-slate-900 line-clamp-1" title={item.title}>
                         {item.title}

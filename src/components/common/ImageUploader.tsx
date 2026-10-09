@@ -231,7 +231,12 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
           {statusMessage && (
             <div className="mt-3 text-xs font-medium text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" />
-              {statusMessage}
+              {isUploading ? `${statusMessage} ${uploadProgress}%` : statusMessage}
+            </div>
+          )}
+          {isUploading && (
+            <div className="h-1.5 overflow-hidden rounded-full bg-blue-100" role="status" aria-label={`Media upload ${uploadProgress}% complete`}>
+              <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${uploadProgress}%` }} />
             </div>
           )}
         </div>
@@ -253,7 +258,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
               <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
               <div className="space-y-1">
                 <p className="text-xs font-bold text-slate-800">
-                  {statusMessage || 'Processing upload...'}
+                {statusMessage || `Processing upload... ${uploadProgress}%`}
                 </p>
                 <div className="w-48 bg-slate-200 h-1.5 rounded-full mx-auto overflow-hidden">
                   <div
@@ -261,6 +266,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
+                <p className="text-[10px] font-semibold text-blue-700">{uploadProgress}%</p>
               </div>
             </div>
           ) : (

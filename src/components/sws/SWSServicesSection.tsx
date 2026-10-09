@@ -25,7 +25,7 @@ export const SWSServicesSection: React.FC<SWSServicesSectionProps> = ({
   onBookNow,
   onRequestQuote,
 }) => {
-  const { services: rawServices, categories: rawCategories } = useFirestoreDataContext();
+  const { services: rawServices, categories: rawCategories, isDivisionServicesLoaded } = useFirestoreDataContext();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeModalService, setActiveModalService] = useState<SWSService | null>(null);
@@ -102,6 +102,31 @@ export const SWSServicesSection: React.FC<SWSServicesSectionProps> = ({
   }, [allServices, rawCategories]);
 
   if (allServices.length === 0) {
+    if (!isDivisionServicesLoaded('sws')) {
+      return (
+        <SectionContainer background="subtle" paddingY="xl">
+          <div className="animate-pulse space-y-8">
+            <div className="space-y-3">
+              <div className="h-3 w-28 rounded bg-slate-200" />
+              <div className="h-8 w-64 max-w-full rounded-lg bg-slate-200" />
+              <div className="h-4 w-96 max-w-full rounded bg-slate-100" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                  <div className="aspect-[4/3] bg-slate-200" />
+                  <div className="space-y-3 p-5">
+                    <div className="h-5 w-2/3 rounded bg-slate-200" />
+                    <div className="h-3 w-full rounded bg-slate-100" />
+                    <div className="h-3 w-4/5 rounded bg-slate-100" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </SectionContainer>
+      );
+    }
     return null;
   }
 

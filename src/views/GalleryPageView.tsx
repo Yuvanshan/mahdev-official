@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Expand, X, MapPin, Sparkles, MessageCircle, ArrowLeft, Filter, Camera, Share2, Check } from 'lucide-react';
+import { X, MapPin, Sparkles, MessageCircle, ArrowLeft, Filter, Camera, Share2, Check } from 'lucide-react';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { SectionContainer } from '../components/ui/SectionContainer';
 import { H1, H2, Body, Caption } from '../components/ui/Heading';
@@ -7,8 +7,6 @@ import { Badge } from '../components/ui/Badge';
 import { openWhatsAppInquiry, deriveLookupSku } from '../utils/whatsapp';
 import { CallToActionSection } from '../components/home/CallToActionSection';
 import { shareMediaAsset, inquireMediaAssetOnWhatsApp } from '../utils/mediaShare';
-import { SWS_GALLERY_ITEMS } from '../data/swsData';
-import { U1_PORTFOLIO_ITEMS } from '../data/u1Data';
 import {
   DisplayGalleryItem,
   matchGalleryItem,
@@ -103,74 +101,6 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
           }
         });
     }
-
-    // 3. From SWS Event Management Gallery dataset
-    if (SWS_GALLERY_ITEMS && SWS_GALLERY_ITEMS.length > 0) {
-      SWS_GALLERY_ITEMS.forEach((sws) => {
-        if (!seenUrls.has(sws.imageUrl)) {
-          seenUrls.add(sws.imageUrl);
-          items.push({
-            id: sws.id,
-            sku: `SWS-${sws.id.toUpperCase()}`,
-            url: sws.imageUrl,
-            title: sws.title,
-            category: sws.category,
-            divisionId: 'sws',
-            divisionName: 'SWS Event Management',
-            location: sws.location,
-            description: sws.description,
-            year: sws.year,
-            tags: sws.tags,
-          });
-        }
-      });
-    }
-
-    // 4. From U1 Cinema & Studio Portfolio dataset
-    if (U1_PORTFOLIO_ITEMS && U1_PORTFOLIO_ITEMS.length > 0) {
-      U1_PORTFOLIO_ITEMS.forEach((u1) => {
-        if (!seenUrls.has(u1.imageUrl)) {
-          seenUrls.add(u1.imageUrl);
-          items.push({
-            id: u1.id,
-            sku: `U1-${u1.id.toUpperCase()}`,
-            url: u1.imageUrl,
-            title: u1.title,
-            category: u1.category,
-            divisionId: 'u1',
-            divisionName: 'U1 Cinema & Studio',
-            location: u1.location,
-            description: u1.description,
-            year: u1.year,
-            tags: u1.tags,
-          });
-        }
-      });
-    }
-
-    // 5. Travels Scenic Stories
-    const travelPhotos = [
-      { id: 'trv-sigiriya', title: 'Sigiriya Rock Fortress at Dawn', url: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=80', location: 'Cultural Triangle, Sri Lanka' },
-      { id: 'trv-ella', title: 'Nine Arch Bridge & Mist-Covered Tea Valleys', url: 'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=1200&q=80', location: 'Ella Highlands, Sri Lanka' },
-      { id: 'trv-yala', title: 'Sri Lankan Wild Leopard in Yala', url: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=1200&q=80', location: 'Yala National Park, Sri Lanka' },
-      { id: 'trv-mirissa', title: 'Mirissa Golden Beach & Palm Tree Grove', url: 'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?auto=format&fit=crop&w=1200&q=80', location: 'Southern Coast, Sri Lanka' },
-    ];
-    travelPhotos.forEach((tp) => {
-      if (!seenUrls.has(tp.url)) {
-        seenUrls.add(tp.url);
-        items.push({
-          id: tp.id,
-          sku: `TRV-${tp.id.toUpperCase()}`,
-          url: tp.url,
-          title: tp.title,
-          category: 'Travels & Safari',
-          divisionId: 'travels',
-          divisionName: 'Mahdev Travels',
-          location: tp.location,
-          description: `Exclusive wildlife & heritage expedition moment by Mahdev Travels in ${tp.location}.`,
-        });
-      }
-    });
 
     return items;
   }, [gallery, mediaAssets]);
@@ -345,51 +275,45 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
                     src={item.url}
                     alt={item.title}
                     loading="lazy"
+                    decoding="async"
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2.5 sm:p-3">
+                  <div className="absolute right-2 top-2 flex items-center gap-1.5 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
                     {/* Top right quick actions */}
-                    <div className="flex items-center justify-end gap-1.5 z-10">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleInquire(item);
-                        }}
-                        className="w-7 h-7 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white flex items-center justify-center shadow-md transition-transform hover:scale-105 cursor-pointer"
-                        title="Inquire on WhatsApp"
-                        aria-label="Inquire on WhatsApp"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5 fill-white/20" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          const res = await shareMediaAsset({
-                            id: item.id,
-                            title: item.title,
-                            url: item.url,
-                            category: item.category,
-                            division: item.divisionId,
-                            sku: item.sku,
-                            description: item.description,
-                          });
-                          setShareFeedback(res.message);
-                          setTimeout(() => setShareFeedback(null), 2500);
-                        }}
-                        className="w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md text-white flex items-center justify-center shadow-md transition-transform hover:scale-105 cursor-pointer"
-                        title="Share Asset"
-                        aria-label="Share Asset"
-                      >
-                        <Share2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-white bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-full self-start">
-                      <Expand className="w-3.5 h-3.5" />
-                      View Frame
-                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleInquire(item);
+                      }}
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-[#25D366] text-white shadow-md transition-transform hover:scale-105 hover:bg-[#20bd5a]"
+                      title="Inquire on WhatsApp"
+                      aria-label="Inquire on WhatsApp"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        const res = await shareMediaAsset({
+                          id: item.id,
+                          title: item.title,
+                          url: item.url,
+                          category: item.category,
+                          division: item.divisionId,
+                          sku: item.sku,
+                          description: item.description,
+                        });
+                        setShareFeedback(res.message);
+                        setTimeout(() => setShareFeedback(null), 2500);
+                      }}
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-700 shadow-md transition-transform hover:scale-105"
+                      title="Share asset"
+                      aria-label="Share asset"
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
                 <div className="p-3">

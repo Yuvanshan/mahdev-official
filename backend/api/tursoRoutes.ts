@@ -52,6 +52,11 @@ const PUBLIC_READ_COLLECTIONS = new Set([
   'websiteContent',
 ]);
 const CUSTOMER_OWNED_COLLECTIONS = new Set(['users', 'orders', 'bookings', 'payments']);
+const ADMIN_ONLY_READ_COLLECTIONS = new Set([
+  'contactSubmissions',
+  'inquiries',
+  'quoteRequests',
+]);
 const PUBLIC_CREATE_COLLECTIONS = new Set([
   'contactSubmissions',
   'inquiries',
@@ -132,7 +137,7 @@ export function requiresAdminForDatabaseAction(input: unknown): boolean {
   if (body.action === 'clear') return true;
   if (body.action === 'get' || body.action === 'list') {
     const collection = typeof body.collection === 'string' ? body.collection.split('/')[0] : '';
-    if (collection === 'admins' || collection === 'auditLogs') return true;
+    if (collection === 'admins' || collection === 'auditLogs' || ADMIN_ONLY_READ_COLLECTIONS.has(collection)) return true;
   }
   if (body.action === 'write') return requiresAdminForWrite(body.write);
   if (body.action === 'batch' && Array.isArray(body.writes)) {

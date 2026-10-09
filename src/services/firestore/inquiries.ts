@@ -82,13 +82,10 @@ function startInquiryFeed(): void {
 
 export const firestoreInquiriesService = {
   async getInquiries(): Promise<FirestoreInquiry[]> {
-    try {
-      const snapshot = await getDocs(collection(db, COLLECTION_NAME));
-      return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreInquiry));
-    } catch (err) {
-      console.warn(`[FirestoreInquiries] Error fetching inquiries:`, err);
-      return [];
-    }
+    const snapshot = await getDocs(
+      query(collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc'), limit(250))
+    );
+    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreInquiry));
   },
 
   async createInquiry(data: Omit<FirestoreInquiry, 'id' | 'createdAt' | 'updatedAt' | 'status'> & { id?: string; status?: FirestoreInquiry['status'] }): Promise<string> {
