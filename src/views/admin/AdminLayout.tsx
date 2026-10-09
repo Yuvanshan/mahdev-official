@@ -36,39 +36,39 @@ import {
 import { activeDatabaseName } from '../../lib/firebase';
 import { AdminSectionId } from '../../types/admin';
 import { useAdminAuth } from '../../context/AdminAuthContext';
-import { AdminLoginView } from './AdminLoginView';
 import { AdminNotificationCenter } from '../../components/admin/AdminNotificationCenter';
 import { SEOHead } from '../../components/layout/SEOHead';
 import { BrandLogo } from '../../components/layout/BrandLogo';
 
-import { AdminDashboardView } from './AdminDashboardView';
-import { AdminAnalyticsView } from './AdminAnalyticsView';
-import { AdminDivisionsView } from './AdminDivisionsView';
-import { AdminServicesView } from './AdminServicesView';
-import { AdminProductsView } from './AdminProductsView';
-import { AdminCategoriesView } from './AdminCategoriesView';
-import { AdminPackagesView } from './AdminPackagesView';
-import { AdminPortfolioView } from './AdminPortfolioView';
-import { AdminGalleryView } from './AdminGalleryView';
-import { AdminMilestonesView } from './AdminMilestonesView';
-import { AdminCompaniesView } from './AdminCompaniesView';
-import { AdminTestimonialsView } from './AdminTestimonialsView';
-import { AdminPagesView } from './AdminPagesView';
-import { AdminBannersView } from './AdminBannersView';
-import { AdminCouponsView } from './AdminCouponsView';
-import { AdminEnquiriesView } from './AdminEnquiriesView';
-import { AdminOrdersView } from './AdminOrdersView';
-import { AdminBookingsView } from './AdminBookingsView';
-import { AdminCustomersView } from './AdminCustomersView';
-import { AdminInventoryView } from './AdminInventoryView';
-import { AdminMediaView } from './AdminMediaView';
-import { AdminSeoView } from './AdminSeoView';
-import { AdminSettingsView } from './AdminSettingsView';
-import { AdminUsersView } from './AdminUsersView';
-import { AdminAuditLogsView } from './AdminAuditLogsView';
-import { AdminHomepageView } from './AdminHomepageView';
-import { AdminWebsiteContentView } from './AdminWebsiteContentView';
-import { AdminGenericView } from './AdminGenericView';
+const AdminLoginView = React.lazy(() => import('./AdminLoginView').then((module) => ({ default: module.AdminLoginView })));
+const AdminDashboardView = React.lazy(() => import('./AdminDashboardView').then((module) => ({ default: module.AdminDashboardView })));
+const AdminAnalyticsView = React.lazy(() => import('./AdminAnalyticsView').then((module) => ({ default: module.AdminAnalyticsView })));
+const AdminDivisionsView = React.lazy(() => import('./AdminDivisionsView').then((module) => ({ default: module.AdminDivisionsView })));
+const AdminServicesView = React.lazy(() => import('./AdminServicesView').then((module) => ({ default: module.AdminServicesView })));
+const AdminProductsView = React.lazy(() => import('./AdminProductsView').then((module) => ({ default: module.AdminProductsView })));
+const AdminCategoriesView = React.lazy(() => import('./AdminCategoriesView').then((module) => ({ default: module.AdminCategoriesView })));
+const AdminPackagesView = React.lazy(() => import('./AdminPackagesView').then((module) => ({ default: module.AdminPackagesView })));
+const AdminPortfolioView = React.lazy(() => import('./AdminPortfolioView').then((module) => ({ default: module.AdminPortfolioView })));
+const AdminGalleryView = React.lazy(() => import('./AdminGalleryView').then((module) => ({ default: module.AdminGalleryView })));
+const AdminMilestonesView = React.lazy(() => import('./AdminMilestonesView').then((module) => ({ default: module.AdminMilestonesView })));
+const AdminCompaniesView = React.lazy(() => import('./AdminCompaniesView').then((module) => ({ default: module.AdminCompaniesView })));
+const AdminTestimonialsView = React.lazy(() => import('./AdminTestimonialsView').then((module) => ({ default: module.AdminTestimonialsView })));
+const AdminPagesView = React.lazy(() => import('./AdminPagesView').then((module) => ({ default: module.AdminPagesView })));
+const AdminBannersView = React.lazy(() => import('./AdminBannersView').then((module) => ({ default: module.AdminBannersView })));
+const AdminCouponsView = React.lazy(() => import('./AdminCouponsView').then((module) => ({ default: module.AdminCouponsView })));
+const AdminEnquiriesView = React.lazy(() => import('./AdminEnquiriesView').then((module) => ({ default: module.AdminEnquiriesView })));
+const AdminOrdersView = React.lazy(() => import('./AdminOrdersView').then((module) => ({ default: module.AdminOrdersView })));
+const AdminBookingsView = React.lazy(() => import('./AdminBookingsView').then((module) => ({ default: module.AdminBookingsView })));
+const AdminCustomersView = React.lazy(() => import('./AdminCustomersView').then((module) => ({ default: module.AdminCustomersView })));
+const AdminInventoryView = React.lazy(() => import('./AdminInventoryView').then((module) => ({ default: module.AdminInventoryView })));
+const AdminMediaView = React.lazy(() => import('./AdminMediaView').then((module) => ({ default: module.AdminMediaView })));
+const AdminSeoView = React.lazy(() => import('./AdminSeoView').then((module) => ({ default: module.AdminSeoView })));
+const AdminSettingsView = React.lazy(() => import('./AdminSettingsView').then((module) => ({ default: module.AdminSettingsView })));
+const AdminUsersView = React.lazy(() => import('./AdminUsersView').then((module) => ({ default: module.AdminUsersView })));
+const AdminAuditLogsView = React.lazy(() => import('./AdminAuditLogsView').then((module) => ({ default: module.AdminAuditLogsView })));
+const AdminHomepageView = React.lazy(() => import('./AdminHomepageView').then((module) => ({ default: module.AdminHomepageView })));
+const AdminWebsiteContentView = React.lazy(() => import('./AdminWebsiteContentView').then((module) => ({ default: module.AdminWebsiteContentView })));
+const AdminGenericView = React.lazy(() => import('./AdminGenericView').then((module) => ({ default: module.AdminGenericView })));
 
 const AdminSectionSkeleton: React.FC = () => (
   <div className="p-6 sm:p-8 max-w-7xl mx-auto animate-pulse space-y-6">
@@ -176,7 +176,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
 
   // 1. Authentication Guard: If not authenticated, show Admin Login View immediately
   if (!isAuthenticated || !admin) {
-    return <AdminLoginView onNavigate={onNavigate} onSuccess={() => setActiveSection('dashboard')} />;
+    return (
+      <React.Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+        <AdminLoginView onNavigate={onNavigate} onSuccess={() => setActiveSection('dashboard')} />
+      </React.Suspense>
+    );
   }
 
   // Render appropriate view based on active section
@@ -454,7 +458,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
 
         {/* WORKSPACE BODY */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl w-full mx-auto">
-          {renderActiveView()}
+          <React.Suspense fallback={<AdminSectionSkeleton />}>
+            {renderActiveView()}
+          </React.Suspense>
         </main>
       </div>
     </div>

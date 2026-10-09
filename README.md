@@ -60,11 +60,16 @@ cp .env.example .env
 ```
 Fill in the Turso database URL and auth token, plus the Firebase Authentication/Storage, Payments, and Admin settings. In the Turso dashboard, select a database and copy its connection URL; create an auth token for that database. Keep `TURSO_AUTH_TOKEN` server-side and do not expose it as a `VITE_` variable.
 
-### 4. Start the Full-Stack Dev Server
+### 4. Start the Frontend and Backend
+Start the backend in one terminal:
 ```bash
-npm run dev
+npm run dev:backend
 ```
-The server will boot on `http://localhost:3000` binding Express backend APIs and Vite frontend hot compilation.
+Start the frontend in a second terminal:
+```bash
+npm run dev:frontend
+```
+Open the Vite URL shown in the frontend terminal. Its `/api` proxy forwards requests to the backend at `http://localhost:4000`.
 
 ---
 
@@ -72,10 +77,12 @@ The server will boot on `http://localhost:3000` binding Express backend APIs and
 
 | Command | Purpose |
 | :--- | :--- |
-| `npm run dev` | Starts Express + Vite unified development server on port 3000 |
-| `npm run build` | Builds optimized frontend assets to `dist/` and compiles backend server to `dist/server.cjs` |
-| `npm run start` | Boots production server from `dist/server.cjs` |
-| `npm run migrate:turso` | Imports `firestore-dump.json` into Turso (or pass a backup path) |
+| `npm run dev:frontend` | Starts the Vite frontend; `/api` calls proxy to port 4000 |
+| `npm run dev:backend` | Starts the Express backend on port 4000 |
+| `npm run build` | Builds frontend assets and compiles the backend server to `dist/backend.cjs` |
+| `npm run start` | Starts the compiled backend server |
+| `npm run db:migrate` | Connects to Turso, provisions the application schema, and verifies the connection |
+| `npm run migrate:turso` | Imports a Firestore JSON backup into Turso using non-destructive upserts |
 | `npm run lint` | Runs TypeScript static analysis and linter (`tsc --noEmit`) |
 
 ---
@@ -104,8 +111,8 @@ The server will boot on `http://localhost:3000` binding Express backend APIs and
 
 1. Create/select a database in the Turso dashboard and copy its database URL from the database connection details. Generate an auth token for the database.
 2. Put `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in the server environment (root `.env` locally; deployment secrets in production). Never use a `VITE_` prefix for the auth token.
-3. Start the server. It provisions one physical SQL table for every known application collection, plus the `turso_collections` and `turso_migrations` metadata tables. New collection tables are provisioned on first access.
-4. To import the repository’s Firestore backup, run `npm run migrate:turso`. To use another JSON backup, run `npm run migrate:turso -- path/to/backup.json`. Imports are upserts and do not clear existing Turso rows.
+3. Run `npm run db:migrate` to provision/verify the Turso schema. The backend provisions one physical SQL table per application collection, plus `turso_collections` and `turso_migrations`; new collections are provisioned on first access.
+4. If historical Firestore records still need importing, run `npm run migrate:turso` or `npm run migrate:turso -- path/to/backup.json`. This explicitly imports the selected JSON backup using upserts and does not clear existing Turso rows. The backend does not seed demo users or products.
 
 Firebase remains in use for Authentication, Storage, and App Check; application records are stored in Turso. App Check initializes in `src/App.tsx` with environment-sensitive debug attestation in development and reCAPTCHA v3 in production.
 

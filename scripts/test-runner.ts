@@ -4,8 +4,8 @@
  */
 
 import { evaluateBotRisk, isDisposableEmail, checkActionThrottle, sanitizeClientInput } from '../src/utils/securityProtection';
-import { validateAndCreateAuthoritativeOrder, validateOrderStatusTransition } from '../server/services/secureOrderService';
-import { generateSecureFiscalInvoice } from '../server/services/secureInvoiceService';
+import { validateAndCreateAuthoritativeOrder, validateOrderStatusTransition } from '../backend/services/secureOrderService';
+import { generateSecureFiscalInvoice } from '../backend/services/secureInvoiceService';
 import { runSecurityRulesSimulation } from './test-security-rules';
 import { validateFile } from '../src/utils/imageOptimizer';
 import { runBackupRecoveryDrill } from './test-backup-recovery-drill';

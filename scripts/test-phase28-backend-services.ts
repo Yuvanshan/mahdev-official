@@ -6,16 +6,16 @@ import {
   validateAndCreateAuthoritativeOrder,
   validateOrderStatusTransition,
   generateOrderSignature,
-} from '../server/services/secureOrderService';
+} from '../backend/services/secureOrderService';
 
 import {
   generateSecureFiscalInvoice,
   signInvoicePayload,
-} from '../server/services/secureInvoiceService';
+} from '../backend/services/secureInvoiceService';
 
 import {
   dispatchServerNotification,
-} from '../server/services/secureNotificationService';
+} from '../backend/services/secureNotificationService';
 
 console.log('--- Running Phase 28: Secure Backend Services Verification ---');
 

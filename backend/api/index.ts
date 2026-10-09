@@ -1,21 +1,36 @@
 import { Router, type Request, type Response } from 'express';
-import { getDatabaseStatus, listSeededData } from '../db';
+import {
+  getDatabaseStatus,
+  listCustomersForAdmin,
+  listPublicCollection,
+} from '../db';
 import {
   AdminSessionAuthError,
   authenticateAdminCredentials,
   clearAdminSessionCookie,
   getAdminSessionFromCookie,
-} from '../../server/adminCredentialAuth';
+} from '../auth/adminCredentialAuth';
 
 const apiRouter = Router();
 
-apiRouter.get('/health', (_req, res) => {
-  res.json({
-    success: true,
-    service: 'mahdev-backend',
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-  });
+apiRouter.get('/health', async (_req, res) => {
+  try {
+    const database = await getDatabaseStatus();
+    res.json({
+      success: true,
+      service: 'mahdev-backend',
+      status: 'ok',
+      database,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(503).json({
+      success: false,
+      service: 'mahdev-backend',
+      status: 'unavailable',
+      error: error instanceof Error ? error.message : 'Turso connection failed.',
+    });
+  }
 });
 
 apiRouter.post('/admin/auth/login', (req: Request, res: Response) => {
@@ -75,31 +90,42 @@ apiRouter.get('/db/status', async (_req, res) => {
 
 apiRouter.get('/users', async (_req, res) => {
   try {
-    const data = await listSeededData('users');
-    res.json({ success: true, data });
+    getAdminSessionFromCookie(_req.header('cookie'));
+    const records = await listCustomersForAdmin();
+    res.json({
+      success: true,
+      data: records.map((record) => ({ ...record.data, id: record.id })),
+    });
   } catch (error) {
+    const status = error instanceof AdminSessionAuthError ? error.statusCode : 503;
     const message = error instanceof Error ? error.message : 'Users unavailable';
-    res.status(500).json({ success: false, error: message });
+    res.status(status).json({ success: false, error: message });
   }
 });
 
 apiRouter.get('/products', async (_req, res) => {
   try {
-    const data = await listSeededData('products');
-    res.json({ success: true, data });
+    const records = await listPublicCollection('products');
+    res.json({
+      success: true,
+      data: records.map((record) => ({ ...record.data, id: record.id })),
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Products unavailable';
-    res.status(500).json({ success: false, error: message });
+    res.status(503).json({ success: false, error: message });
   }
 });
 
 apiRouter.get('/settings', async (_req, res) => {
   try {
-    const data = await listSeededData('settings');
-    res.json({ success: true, data });
+    const records = await listPublicCollection('settings');
+    res.json({
+      success: true,
+      data: records.map((record) => ({ ...record.data, id: record.id })),
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Settings unavailable';
-    res.status(500).json({ success: false, error: message });
+    res.status(503).json({ success: false, error: message });
   }
 });
 

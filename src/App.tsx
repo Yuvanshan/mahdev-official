@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { Navigation } from './components/layout/Navigation';
 import { Footer } from './components/layout/Footer';
-import { HomeView } from './views/HomeView';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { DivisionId, LegalPolicyType } from './types';
 import { DIVISIONS } from './config/divisions';
@@ -19,38 +18,39 @@ import { analyticsService } from './services/analyticsService';
 import { catalogService } from './services/catalogService';
 import { motion, AnimatePresence } from 'motion/react';
 
-import { DivisionView } from './views/DivisionView';
-import { DivisionComingSoonView } from './views/DivisionComingSoonView';
-import { SWSView } from './views/SWSView';
-import { U1View } from './views/U1View';
-import { ITView } from './views/ITView';
-import { TravelsView } from './views/TravelsView';
-import { MartView } from './views/MartView';
-import { CatalogView } from './views/CatalogView';
-import { BookingView } from './views/BookingView';
-import { CheckoutView } from './views/CheckoutView';
-import { OrderConfirmationView } from './views/OrderConfirmationView';
-import { OrderLookupView } from './views/OrderLookupView';
-import { AboutView } from './views/AboutView';
-import { PortfolioView } from './views/PortfolioView';
-import { ProjectDetailView } from './views/ProjectDetailView';
-import { ContactView } from './views/ContactView';
-import { ServicesView } from './views/ServicesView';
-import { ClientsView } from './views/ClientsView';
-import { MilestonesView } from './views/MilestonesView';
-import { DivisionsPageView } from './views/DivisionsPageView';
-import { TestimonialsView } from './views/TestimonialsView';
-import { CareersView } from './views/CareersView';
-import { LegalPageView } from './views/LegalPageView';
-import { NotFoundView } from './views/NotFoundView';
-import { CmsPageView } from './views/CmsPageView';
-import { GalleryPageView } from './views/GalleryPageView';
-import { LoginView } from './views/auth/LoginView';
-import { RegisterView } from './views/auth/RegisterView';
-import { ForgotPasswordView } from './views/auth/ForgotPasswordView';
-import { AccountLayout } from './views/account/AccountLayout';
-import { AdminLayout } from './views/admin/AdminLayout';
-import { MaintenanceView } from './views/MaintenanceView';
+const HomeView = lazy(() => import('./views/HomeView').then((module) => ({ default: module.HomeView })));
+const DivisionView = lazy(() => import('./views/DivisionView').then((module) => ({ default: module.DivisionView })));
+const DivisionComingSoonView = lazy(() => import('./views/DivisionComingSoonView').then((module) => ({ default: module.DivisionComingSoonView })));
+const SWSView = lazy(() => import('./views/SWSView').then((module) => ({ default: module.SWSView })));
+const U1View = lazy(() => import('./views/U1View').then((module) => ({ default: module.U1View })));
+const ITView = lazy(() => import('./views/ITView').then((module) => ({ default: module.ITView })));
+const TravelsView = lazy(() => import('./views/TravelsView').then((module) => ({ default: module.TravelsView })));
+const MartView = lazy(() => import('./views/MartView').then((module) => ({ default: module.MartView })));
+const CatalogView = lazy(() => import('./views/CatalogView').then((module) => ({ default: module.CatalogView })));
+const BookingView = lazy(() => import('./views/BookingView').then((module) => ({ default: module.BookingView })));
+const CheckoutView = lazy(() => import('./views/CheckoutView').then((module) => ({ default: module.CheckoutView })));
+const OrderConfirmationView = lazy(() => import('./views/OrderConfirmationView').then((module) => ({ default: module.OrderConfirmationView })));
+const OrderLookupView = lazy(() => import('./views/OrderLookupView').then((module) => ({ default: module.OrderLookupView })));
+const AboutView = lazy(() => import('./views/AboutView').then((module) => ({ default: module.AboutView })));
+const PortfolioView = lazy(() => import('./views/PortfolioView').then((module) => ({ default: module.PortfolioView })));
+const ProjectDetailView = lazy(() => import('./views/ProjectDetailView').then((module) => ({ default: module.ProjectDetailView })));
+const ContactView = lazy(() => import('./views/ContactView').then((module) => ({ default: module.ContactView })));
+const ServicesView = lazy(() => import('./views/ServicesView').then((module) => ({ default: module.ServicesView })));
+const ClientsView = lazy(() => import('./views/ClientsView').then((module) => ({ default: module.ClientsView })));
+const MilestonesView = lazy(() => import('./views/MilestonesView').then((module) => ({ default: module.MilestonesView })));
+const DivisionsPageView = lazy(() => import('./views/DivisionsPageView').then((module) => ({ default: module.DivisionsPageView })));
+const TestimonialsView = lazy(() => import('./views/TestimonialsView').then((module) => ({ default: module.TestimonialsView })));
+const CareersView = lazy(() => import('./views/CareersView').then((module) => ({ default: module.CareersView })));
+const LegalPageView = lazy(() => import('./views/LegalPageView').then((module) => ({ default: module.LegalPageView })));
+const NotFoundView = lazy(() => import('./views/NotFoundView').then((module) => ({ default: module.NotFoundView })));
+const CmsPageView = lazy(() => import('./views/CmsPageView').then((module) => ({ default: module.CmsPageView })));
+const GalleryPageView = lazy(() => import('./views/GalleryPageView').then((module) => ({ default: module.GalleryPageView })));
+const LoginView = lazy(() => import('./views/auth/LoginView').then((module) => ({ default: module.LoginView })));
+const RegisterView = lazy(() => import('./views/auth/RegisterView').then((module) => ({ default: module.RegisterView })));
+const ForgotPasswordView = lazy(() => import('./views/auth/ForgotPasswordView').then((module) => ({ default: module.ForgotPasswordView })));
+const AccountLayout = lazy(() => import('./views/account/AccountLayout').then((module) => ({ default: module.AccountLayout })));
+const AdminLayout = lazy(() => import('./views/admin/AdminLayout').then(({ AdminLayout }) => ({ default: AdminLayout })));
+const MaintenanceView = lazy(() => import('./views/MaintenanceView').then((module) => ({ default: module.MaintenanceView })));
 import { DocumentScrollProgress } from './components/motion/ParallelScroll';
 
 function AppContent() {
@@ -393,7 +393,11 @@ function AppContent() {
 
   // Admin routes handle their own layout & auth flow
   if (isAdminRoute) {
-    return <AdminLayout currentPath={normalizedPath} onNavigate={navigate} />;
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+        <AdminLayout currentPath={normalizedPath} onNavigate={navigate} />
+      </Suspense>
+    );
   }
 
   // Determine if it's a legal page
@@ -1103,6 +1107,7 @@ function AppContent() {
 
       {/* Main Content Area with Smooth View Transitions */}
       <main className="flex-1 w-full max-w-full min-w-0" aria-live="polite">
+        <Suspense fallback={<div className="min-h-96" aria-busy="true" />}>
         <AnimatePresence mode="wait">
           {/* Fade only on first paint; avoid a layout-shifting entrance while Firestore hydrates. */}
           <motion.div
@@ -1116,6 +1121,7 @@ function AppContent() {
             {renderCurrentView()}
           </motion.div>
         </AnimatePresence>
+        </Suspense>
       </main>
 
       {/* Mobile Ergonomic Bottom Navigation Bar */}

@@ -34,6 +34,8 @@ This guide documents the end-to-end deployment lifecycle for hosting the **Mahde
 
 ## 2. Vercel Project Configuration
 
+The repository keeps browser code in `src/` and backend implementation in `backend/`. The top-level `api/` directory contains thin Vercel function entrypoints that forward requests to backend handlers. This preserves same-origin routes and HttpOnly login cookies while keeping Turso access server-only.
+
 The project includes a root `vercel.json` configured specifically for modern React + Vite single-page applications:
 
 - **Framework**: `vite`
@@ -49,7 +51,9 @@ The project includes a root `vercel.json` configured specifically for modern Rea
 
 ### API coverage limitation
 
-Vercel deploys files under `api/` as serverless functions; it does not automatically run the Express routes in `server.ts`. The current functions cover Turso data, Firebase admin-token verification, and media upload only. The frontend still calls other `/api/*` paths for payments, order validation, email dispatch, settings, and Google Reviews. Those endpoints need Vercel handlers (or a separately hosted Express service) before those features can be considered production-ready on Vercel. The SPA fallback is not an API implementation.
+Vercel deploys files under `api/` as serverless functions; it does not automatically run the Express process in `backend/server.ts`. The `/api` files are deployment adapters for handlers under `backend/api/handlers/`. Only routes with top-level files in `api/` are available on Vercel. `/api/health` is a safe Turso connectivity check; the Express-only payment, order, email, and settings endpoints are not automatically exposed as Vercel functions and need adapters before they can be used on Vercel. The SPA fallback is not an API implementation.
+
+The backend schema is provisioned in Turso, not in local JSON files. Run `npm run db:migrate` from an environment containing `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` to initialize and verify it. Vercel API functions initialize the schema on first request. The optional `migrate:turso` command is only for intentionally importing a selected Firestore backup; it is not run during deployment and never clears existing rows.
 
 ---
 
@@ -114,7 +118,7 @@ Admin sign-in uses server-configured credentials, an scrypt password hash, and a
 4. Admin database writes, audit reads, admin customer queries, and uploads require the server-issued session cookie. The session expires after eight hours.
 5. Keep an environment allowlist entry for at least one bootstrap super administrator. Admin content writes and destructive database actions reject unverified or unauthorized requests; public reads remain available.
 
-The previous demo PIN and permissive password fallback are disabled. Do not deploy until the allowlist and Firebase admin accounts are configured.
+Admin portal access uses `ADMIN_LOGIN_EMAIL`, `ADMIN_LOGIN_PASSWORD_HASH`, and `ADMIN_SESSION_SECRET` on the server. Do not add these values with a `VITE_` prefix.
 
 ---
 

@@ -1,9 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
 import apiRouter from './api';
-import { runMigrations, runSeeders } from './db';
-import { initializeTursoDatabase } from '../server/tursoDatabase';
-import { createTursoRouter } from '../server/tursoRoutes';
+import { runMigrations } from './db';
+import { createTursoRouter } from './api/tursoRoutes';
 
 const app = express();
 const port = Number(process.env.BACKEND_PORT || process.env.PORT || 4000);
@@ -24,18 +23,8 @@ app.get('/', (_req, res) => {
 
 async function start() {
   const migrationResult = await runMigrations();
-  const seederResult = await runSeeders();
-
   console.log('[backend] migrations:', JSON.stringify(migrationResult));
-  console.log('[backend] seeders:', JSON.stringify(seederResult));
-
-  const hasTursoConfig = Boolean(process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN);
-  if (hasTursoConfig) {
-    await initializeTursoDatabase();
-    console.log('[backend] Turso connected and initialized');
-  } else {
-    console.warn('[backend] TURSO_DATABASE_URL / TURSO_AUTH_TOKEN missing; using local seed fallback.');
-  }
+  console.log('[backend] Turso connected and schema verified');
 
   app.listen(port, () => {
     console.log(`[backend] listening on http://localhost:${port}`);

@@ -7,18 +7,23 @@ const databasePath = path.join(tmpdir(), `mahdev-turso-test-${process.pid}.db`);
 process.env.TURSO_DATABASE_URL = `file:${databasePath}`;
 process.env.TURSO_AUTH_TOKEN = 'local-test-token';
 
-const { getTursoClient, initializeTursoDatabase } = await import('../server/tursoDatabase');
+const { getTursoClient, initializeTursoDatabase } = await import('../backend/db/tursoDatabase');
 const {
   authenticateAdminCredentials,
   getAdminSessionFromCookie,
   hashAdminPassword,
-} = await import('../server/adminCredentialAuth');
+} = await import('../backend/auth/adminCredentialAuth');
 const {
   authorizeDatabaseAction,
   handleTursoAction,
   requiresAdminForDatabaseAction,
   requiresSuperAdminForDatabaseAction,
-} = await import('../server/tursoRoutes');
+} = await import('../backend/api/tursoRoutes');
+const {
+  getDatabaseStatus,
+  listPublicCollection,
+  runMigrations,
+} = await import('../backend/db');
 
 async function call(body: Record<string, unknown>): Promise<Record<string, unknown>> {
   const result = await handleTursoAction(body);
@@ -52,6 +57,12 @@ async function run(): Promise<void> {
     );
 
     await initializeTursoDatabase();
+    const migration = await runMigrations();
+    const databaseStatus = await getDatabaseStatus();
+    assert.equal(migration.connected, true);
+    assert.ok(migration.collections >= 35, 'Expected the backend migration to provision core collections.');
+    assert.equal(databaseStatus.database, 'turso');
+    assert.equal(databaseStatus.status, 'ready');
     assert.equal(requiresAdminForDatabaseAction({
       action: 'write',
       write: { type: 'set', collection: 'services', id: 'svc-1' },
@@ -132,6 +143,8 @@ async function run(): Promise<void> {
     const product = queriedDocuments.find((document) => document.id === 'turso-test-product');
     assert.ok(product, 'Expected to find the filtered product.');
     assert.deepEqual(product.data.deletedIds, ['first', 'second']);
+    const publicProducts = await listPublicCollection('products');
+    assert.ok(publicProducts.some((document) => document.id === 'turso-test-product'));
 
     await call({
       action: 'write',

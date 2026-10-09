@@ -1,4 +1,4 @@
-import { hashAdminPassword } from '../server/adminCredentialAuth';
+import { hashAdminPassword } from '../backend/auth/adminCredentialAuth';
 
 if (!process.stdin.isTTY || !process.stdin.setRawMode) {
   throw new Error('Run this command in an interactive terminal so the password is not echoed.');

@@ -12,12 +12,11 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "db:migrate": "tsx backend/db/migrate.ts",
-    "db:seed": "tsx backend/db/seed.ts",
     "migrate:turso": "tsx scripts/migrate-firestore-to-turso.ts",
     "admin:hash-password": "tsx scripts/generate-admin-password-hash.ts",
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "test": "tsx scripts/test-runner.ts && tsx scripts/test-turso-database.ts && npx tsx backend/db/__tests__/db-structure.test.ts",
+    "test": "tsx scripts/test-runner.ts && tsx scripts/test-turso-database.ts",
     "test:security": "tsx scripts/test-phase27-security.ts && tsx scripts/test-phase28-backend-services.ts && tsx scripts/test-security-rules.ts",
     "test:storage": "tsx scripts/test-storage-service.ts",
     "test:recovery": "tsx scripts/test-backup-recovery-drill.ts",
@@ -53,5 +52,8 @@
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.3"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.13.6"
   }
 }

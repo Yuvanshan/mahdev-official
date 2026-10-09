@@ -4,7 +4,7 @@ import {
   scryptSync,
   timingSafeEqual,
 } from 'node:crypto';
-import type { AdminRole, AdminUser } from '../src/types/admin';
+import type { AdminRole, AdminUser } from '../../src/types/admin';
 
 const SESSION_COOKIE = 'mahdev_admin_session';
 const SESSION_LIFETIME_SECONDS = 8 * 60 * 60;

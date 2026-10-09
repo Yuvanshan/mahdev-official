@@ -13,32 +13,32 @@ import {
   validateAndCreateAuthoritativeOrder,
   validateOrderStatusTransition,
   generateOrderSignature,
-} from './server/services/secureOrderService';
+} from './backend/services/secureOrderService';
 import {
   generateSecureFiscalInvoice,
-} from './server/services/secureInvoiceService';
+} from './backend/services/secureInvoiceService';
 import {
   dispatchServerNotification,
-} from './server/services/secureNotificationService';
+} from './backend/services/secureNotificationService';
 import {
   getTursoDocument,
   initializeTursoDatabase,
   writeTursoDocument,
-} from './server/tursoDatabase';
-import { createTursoRouter } from './server/tursoRoutes';
+} from './backend/db/tursoDatabase';
+import { createTursoRouter } from './backend/api/tursoRoutes';
 import {
   AdminSessionAuthError,
   authenticateAdminCredentials,
   clearAdminSessionCookie,
   getAdminSessionFromCookie,
-} from './server/adminCredentialAuth';
+} from './backend/auth/adminCredentialAuth';
 import {
   sendEnquiryEmail,
-} from './server/services/emailService';
+} from './backend/services/emailService';
 import {
   getServerConfig,
   validateServerSecrets,
-} from './server/config/serverEnv';
+} from './backend/config/serverEnv';
 
 const serverConfig = getServerConfig();
 

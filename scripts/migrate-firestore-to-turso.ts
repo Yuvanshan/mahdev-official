@@ -5,7 +5,7 @@ import {
   provisionTursoCollections,
   TursoDocument,
   upsertMigratedDocuments,
-} from '../server/tursoDatabase';
+} from '../backend/db/tursoDatabase';
 
 interface FirestoreBackup {
   [collection: string]: unknown;

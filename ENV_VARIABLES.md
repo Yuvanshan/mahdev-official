@@ -8,7 +8,7 @@ This document outlines the environment configuration architecture for the **Mahd
 
 1. **Strict Client/Server Isolation**:
    - **Client-Side Variables (`VITE_*`)**: Embedded into the frontend bundle at build time. Only non-sensitive configurations (Firebase public keys, analytics identifiers, map display tokens) may use the `VITE_` prefix.
-   - **Server-Side Secrets**: Processed strictly within `server.ts` or `server/*` via `process.env`. Never transmitted to the client browser or exposed via API error payloads.
+   - **Server-Side Secrets**: Processed strictly within `backend/*` via `process.env`. Never transmitted to the client browser or exposed via API error payloads.
 2. **Zero Hard-Coded Credentials**:
    - The application functions seamlessly in **Development**, **Preview**, and **Production** environments without embedding hardcoded secrets in source files.
    - Development fallbacks provide sandbox simulations (mock payment verification, console email dispatch) to enable frictionless local development.

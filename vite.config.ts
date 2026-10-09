@@ -11,6 +11,26 @@ export default defineConfig(() => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('/node_modules/')) return;
+            if (id.includes('/node_modules/@firebase/') || id.includes('/node_modules/firebase/')) {
+              return 'firebase-vendor';
+            }
+            if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/') || id.includes('/node_modules/scheduler/')) {
+              return 'react-vendor';
+            }
+            if (id.includes('/node_modules/motion/') || id.includes('/node_modules/@motionone/')) {
+              return 'motion-vendor';
+            }
+            if (id.includes('/node_modules/lucide-react/')) return 'icons-vendor';
+            if (id.includes('/node_modules/@google/genai/')) return 'genai-vendor';
+          },
+        },
+      },
+    },
     server: {
       port: 5173,
       proxy: {
