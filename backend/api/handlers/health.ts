@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { checkTursoConnection } from '../../db/tursoDatabase';
+import { checkTursoConnection } from '../../db/tursoDatabase.js';
 
 interface HealthRequest extends IncomingMessage {
   method?: string;

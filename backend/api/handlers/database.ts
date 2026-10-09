@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { initializeTursoDatabase } from '../../db/tursoDatabase';
-import { AdminSessionAuthError } from '../../auth/adminCredentialAuth';
-import { authorizeDatabaseAction, handleTursoAction } from '../tursoRoutes';
+import { initializeTursoDatabase } from '../../db/tursoDatabase.js';
+import { AdminSessionAuthError } from '../../auth/adminCredentialAuth.js';
+import { authorizeDatabaseAction, handleTursoAction } from '../tursoRoutes.js';
 
 interface TursoApiRequest extends IncomingMessage {
   method?: string;

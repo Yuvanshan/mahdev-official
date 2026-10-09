@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { clearAdminSessionCookie } from '../../../../auth/adminCredentialAuth';
+import { clearAdminSessionCookie } from '../../../../auth/adminCredentialAuth.js';
 
 export default function handler(req: IncomingMessage & { method?: string }, res: ServerResponse): void {
   res.setHeader('Cache-Control', 'no-store');

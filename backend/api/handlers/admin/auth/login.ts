@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import {
   AdminSessionAuthError,
   authenticateAdminCredentials,
-} from '../../../../auth/adminCredentialAuth';
+} from '../../../../auth/adminCredentialAuth.js';
 
 interface AdminLoginRequest extends IncomingMessage {
   method?: string;

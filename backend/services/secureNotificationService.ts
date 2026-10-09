@@ -6,7 +6,7 @@
  * with strict privacy filtering and non-blocking fault tolerance.
  */
 
-import { sendEnquiryEmail } from './emailService';
+import { sendEnquiryEmail } from './emailService.js';
 
 export interface NotificationPayload {
   type:

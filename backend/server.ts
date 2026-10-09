@@ -1,8 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
-import apiRouter from './api';
-import { runMigrations } from './db';
-import { createTursoRouter } from './api/tursoRoutes';
+import apiRouter from './api/index.js';
+import { runMigrations } from './db/index.js';
+import { createTursoRouter } from './api/tursoRoutes.js';
 
 const app = express();
 const port = Number(process.env.BACKEND_PORT || process.env.PORT || 4000);

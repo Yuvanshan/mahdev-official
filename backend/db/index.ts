@@ -3,7 +3,7 @@ import {
   getTursoClient,
   initializeTursoDatabase,
   listTursoDocuments,
-} from './tursoDatabase';
+} from './tursoDatabase.js';
 
 const PUBLIC_COLLECTIONS = new Set(['products', 'settings']);
 

@@ -2,8 +2,8 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import {
   AdminSessionAuthError,
   getAdminSessionFromCookie,
-} from '../../../auth/adminCredentialAuth';
-import { initializeTursoDatabase, listTursoDocuments } from '../../../db/tursoDatabase';
+} from '../../../auth/adminCredentialAuth.js';
+import { initializeTursoDatabase, listTursoDocuments } from '../../../db/tursoDatabase.js';
 
 interface AdminCustomersRequest extends IncomingMessage {
   method?: string;

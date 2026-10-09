@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import {
   AdminSessionAuthError,
   getAdminSessionFromCookie,
-} from '../../../auth/adminCredentialAuth';
+} from '../../../auth/adminCredentialAuth.js';
 
 export const config = {
   api: {

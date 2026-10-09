@@ -3,13 +3,13 @@ import {
   getDatabaseStatus,
   listCustomersForAdmin,
   listPublicCollection,
-} from '../db';
+} from '../db/index.js';
 import {
   AdminSessionAuthError,
   authenticateAdminCredentials,
   clearAdminSessionCookie,
   getAdminSessionFromCookie,
-} from '../auth/adminCredentialAuth';
+} from '../auth/adminCredentialAuth.js';
 
 const apiRouter = Router();
 

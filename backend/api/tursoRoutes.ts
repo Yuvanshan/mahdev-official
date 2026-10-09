@@ -9,11 +9,11 @@ import {
   TursoWrite,
   writeTursoBatch,
   writeTursoDocument,
-} from '../db/tursoDatabase';
+} from '../db/tursoDatabase.js';
 import {
   AdminSessionAuthError,
   getAdminSessionFromCookie,
-} from '../auth/adminCredentialAuth';
+} from '../auth/adminCredentialAuth.js';
 
 const ADMIN_MANAGED_COLLECTIONS = new Set([
   'admins',

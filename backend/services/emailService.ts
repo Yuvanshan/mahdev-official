@@ -5,7 +5,7 @@
  */
 
 import nodemailer, { type Transporter } from 'nodemailer';
-import { getServerConfig } from '../config/serverEnv';
+import { getServerConfig } from '../config/serverEnv.js';
 
 export interface WebsiteEnquiryPayload {
   senderName: string;
