@@ -151,23 +151,23 @@ function requireAdminAuth(allowedRoles?: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       const verification = getAdminSessionFromCookie(req.header('cookie'));
-        if (
-          allowedRoles?.length &&
-          verification.user.role !== 'super_admin' &&
-          !allowedRoles.includes(verification.user.role)
-        ) {
-          res.status(403).json({
-            success: false,
-            error: `Insufficient role permissions. Action requires: ${allowedRoles.join(' or ')}.`,
-          });
-          return;
-        }
-        (req as any).adminSession = {
-          adminId: verification.user.id,
-          email: verification.user.email,
-          role: verification.user.role,
-        };
-        next();
+      if (
+        allowedRoles?.length &&
+        verification.user.role !== 'super_admin' &&
+        !allowedRoles.includes(verification.user.role)
+      ) {
+        res.status(403).json({
+          success: false,
+          error: `Insufficient role permissions. Action requires: ${allowedRoles.join(' or ')}.`,
+        });
+        return;
+      }
+      (req as any).adminSession = {
+        adminId: verification.user.id,
+        email: verification.user.email,
+        role: verification.user.role,
+      };
+      next();
     } catch (error) {
       const status = error instanceof AdminSessionAuthError ? error.statusCode : 401;
       if (!(error instanceof AdminSessionAuthError)) {
@@ -640,8 +640,8 @@ async function startServer() {
             gateway === 'stripe_card'
               ? 'stripe_api'
               : gateway === 'lankapay_ipg'
-              ? 'lankapay_signature'
-              : 'server_hmac',
+                ? 'lankapay_signature'
+                : 'server_hmac',
           signatureDigest,
           authCode,
           rrn,
@@ -1100,10 +1100,10 @@ async function startServer() {
       const rawId = (id || '').toLowerCase().replace(/^div-/, '').trim();
       const cleanId =
         rawId === 'sws' || rawId === 'sws-event-management' || rawId === 'sws-events' || rawId === 'events' ? 'sws' :
-        rawId === 'u1' || rawId === 'u1-studio' || rawId === 'u1-cinema' || rawId === 'studio' || rawId === 'photography' ? 'u1' :
-        rawId === 'it' || rawId === 'it-solutions' || rawId === 'mahdev-it' || rawId === 'solutions' ? 'it' :
-        rawId === 'travels' || rawId === 'mahdev-travels' || rawId === 'travel' ? 'travels' :
-        rawId === 'mart' || rawId === 'online-mart' || rawId === 'mahdev-mart' || rawId === 'shop' ? 'mart' : rawId;
+          rawId === 'u1' || rawId === 'u1-studio' || rawId === 'u1-cinema' || rawId === 'studio' || rawId === 'photography' ? 'u1' :
+            rawId === 'it' || rawId === 'it-solutions' || rawId === 'mahdev-it' || rawId === 'solutions' ? 'it' :
+              rawId === 'travels' || rawId === 'mahdev-travels' || rawId === 'travel' ? 'travels' :
+                rawId === 'mart' || rawId === 'online-mart' || rawId === 'mahdev-mart' || rawId === 'shop' ? 'mart' : rawId;
 
       const updatedDivision = { ...data, id: cleanId, slug: cleanId, updatedAt: new Date().toISOString() };
       try {
