@@ -36,6 +36,7 @@ export async function uploadMediaAsset(
 
   const response = await fetch('/api/upload/media', {
     method: 'POST',
+    credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       filename: file.name,
@@ -63,7 +64,11 @@ export async function uploadMediaAsset(
         onProgress?.(Math.min(99, Math.round((event.loaded / event.total) * 100)));
       }
     };
-    uploadRequest.onerror = () => reject(new Error('Media upload failed due to a network or Firebase Storage CORS error.'));
+    uploadRequest.onerror = () => reject(new Error(
+      'The browser could not reach Firebase Storage. Apply the bucket CORS policy with ' +
+      '`gcloud storage buckets update gs://for-her-33ea9.firebasestorage.app --cors-file=storage.cors.json`, ' +
+      'then retry the upload.'
+    ));
     uploadRequest.onabort = () => reject(new Error('Media upload was cancelled.'));
     uploadRequest.onload = () => {
       if (uploadRequest.status >= 200 && uploadRequest.status < 300) {
