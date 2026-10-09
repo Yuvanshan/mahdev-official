@@ -12,7 +12,6 @@ import {
   listAll,
   UploadTaskSnapshot,
 } from 'firebase/storage';
-import { signInAnonymously } from 'firebase/auth';
 import { auth, storage } from '../lib/firebase';
 import {
   StorageCategory,
@@ -189,11 +188,7 @@ class StorageService {
       return;
     }
 
-    try {
-      await signInAnonymously(auth);
-    } catch (authErr) {
-      console.warn('[StorageService] Firebase Auth background initialization warning:', authErr);
-    }
+    throw new Error('Authentication required. Anonymous uploads are disabled.');
   }
 
   /**
@@ -258,8 +253,12 @@ class StorageService {
 
       options?.onProgress?.(25);
 
-      // 5. Ensure Firebase Auth session is active & synchronized with Admin identity
-      await this.ensureFirebaseAuthSession();
+      const isAdminUpload = adminService.isAuthenticated();
+      if (isAdminUpload) {
+        await this.ensureFirebaseAuthSession();
+      } else if (!auth.currentUser) {
+        throw new Error('Authentication required. Anonymous uploads are disabled.');
+      }
 
       const storagePath = this.getStoragePath(
         category,
@@ -270,10 +269,12 @@ class StorageService {
 
       let downloadUrl = '';
 
-      try {
-        // 6. Firebase Storage Resumable Upload
+      if (isAdminUpload) {
+        downloadUrl = await uploadMediaAsset(fileToUpload, (pct) => options?.onProgress?.(pct));
+      } else {
+        // Non-admin uploads are limited to authenticated customer-facing categories by Storage Rules.
+        await this.ensureFirebaseAuthSession();
         const storageReference = ref(storage, storagePath);
-        const currentAdmin = adminService.getCurrentAdmin();
         const currentUser = authService.getCurrentUser();
 
         // Determine content type safely (ensuring favicon .ico or svg MIME types are correct)
@@ -300,8 +301,8 @@ class StorageService {
             subfolder: subfolder || '',
             originalName: file.name,
             uploadedAt: new Date().toISOString(),
-            uploadedBy: currentAdmin?.email || currentUser?.email || auth.currentUser?.email || auth.currentUser?.uid || 'info.mahdev.lk@gmail.com',
-            userRole: currentAdmin?.role || currentUser?.role || 'super_admin',
+            uploadedBy: currentUser?.email || auth.currentUser?.email || auth.currentUser?.uid || 'authenticated-user',
+            userRole: currentUser?.role || 'customer',
           },
         };
 
@@ -320,24 +321,6 @@ class StorageService {
 
         downloadUrl = await getDownloadURL(storageReference);
         options?.onProgress?.(100);
-      } catch (storageError: any) {
-        console.warn(
-          '[StorageService] Live Firebase Storage upload notice, activating seamless secure asset handler:',
-          storageError
-        );
-
-        // Try the shared cloud upload flow before reporting the storage failure.
-        try {
-          const serverUrl = await uploadMediaAsset(fileToUpload, (pct) => options?.onProgress?.(pct));
-          if (serverUrl) {
-            downloadUrl = serverUrl;
-            options?.onProgress?.(100);
-          } else {
-            throw new Error('No server URL returned');
-          }
-        } catch (serverUploadErr) {
-          throw serverUploadErr;
-        }
       }
 
       const activeAdmin = adminService.getCurrentAdmin();

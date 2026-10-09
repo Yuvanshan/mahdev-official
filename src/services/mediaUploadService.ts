@@ -1,10 +1,8 @@
 /**
- * Uploads media to Firebase Storage and returns a compact URL for database records.
+ * Creates an admin-authorized resumable upload to Firebase Storage.
  */
 
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { signInAnonymously } from 'firebase/auth';
-import { auth, storage } from '../lib/firebase';
+import { adminService } from './adminService';
 
 export interface UploadMediaProgressCallback {
   (percent: number): void;
@@ -32,53 +30,53 @@ export async function uploadMediaAsset(
     );
   }
 
-  const cleanName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-
-  if (!auth.currentUser) {
-    try {
-      await signInAnonymously(auth);
-    } catch (error) {
-      const authError = error as { code?: string };
-      if (authError.code === 'auth/admin-restricted-operation') {
-        throw new Error(
-          'Firebase anonymous sign-in is disabled for this project. Enable Authentication > Sign-in method > Anonymous in Firebase Console, then retry the upload.'
-        );
-      }
-      throw error;
-    }
+  if (!adminService.isAuthenticated()) {
+    throw new Error('Administrator sign-in is required to upload media.');
   }
 
-  const storageFolder = isVideo ? 'videos' : 'images';
-  const storageReference = ref(storage, `${storageFolder}/${cleanName}`);
-  const uploadTask = uploadBytesResumable(storageReference, file, {
-    contentType: file.type || (isVideo ? 'video/mp4' : 'image/jpeg'),
+  const response = await fetch('/api/upload/media', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      filename: file.name,
+      contentType: file.type || (isVideo ? 'video/mp4' : 'image/jpeg'),
+      size: file.size,
+    }),
   });
+  const result = await response.json() as {
+    success?: boolean;
+    uploadUrl?: string;
+    downloadUrl?: string;
+    storagePath?: string;
+    error?: string;
+  };
+  if (!response.ok || !result.success || !result.uploadUrl || !result.downloadUrl) {
+    throw new Error(result.error || `Could not initialize media upload (HTTP ${response.status}).`);
+  }
 
   return new Promise<string>((resolve, reject) => {
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        if (snapshot.totalBytes > 0) {
-          const rawProgress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-          onProgress?.(Math.min(99, rawProgress));
-        }
-      },
-      reject,
-      async () => {
-        try {
-          const url = await getDownloadURL(storageReference);
-          onProgress?.(100);
-          resolve(url);
-        } catch (urlErr) {
-          reject(urlErr);
-        }
+    const uploadRequest = new XMLHttpRequest();
+    uploadRequest.open('PUT', result.uploadUrl!);
+    uploadRequest.setRequestHeader('Content-Type', file.type || (isVideo ? 'video/mp4' : 'image/jpeg'));
+    uploadRequest.upload.onprogress = (event) => {
+      if (event.lengthComputable && event.total > 0) {
+        onProgress?.(Math.min(99, Math.round((event.loaded / event.total) * 100)));
       }
-    );
-  }).catch((error: unknown) => {
-    console.error('[MediaUpload] Firebase Storage upload failed:', error);
-    if (error instanceof Error) {
-      throw new Error(`Firebase Storage upload failed: ${error.message}`);
+    };
+    uploadRequest.onerror = () => reject(new Error('Media upload failed due to a network or Firebase Storage CORS error.'));
+    uploadRequest.onabort = () => reject(new Error('Media upload was cancelled.'));
+    uploadRequest.onload = () => {
+      if (uploadRequest.status >= 200 && uploadRequest.status < 300) {
+        try {
+          onProgress?.(100);
+          resolve(result.downloadUrl!);
+        } catch (error) {
+          reject(error);
+        }
+      } else {
+        reject(new Error(`Firebase Storage rejected the upload (HTTP ${uploadRequest.status}).`));
+      }
     }
-    throw new Error('Firebase Storage upload failed. Check your connection and storage permissions.');
+    uploadRequest.send(file);
   });
 }

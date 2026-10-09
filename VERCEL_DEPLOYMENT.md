@@ -95,6 +95,8 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 | `VITE_FIREBASE_AUTH_DOMAIN` | Production, Preview, Development | `for-her-33ea9.firebaseapp.com` |
 | `VITE_FIREBASE_PROJECT_ID` | Production, Preview, Development | `for-her-33ea9` |
 | `VITE_FIREBASE_STORAGE_BUCKET` | Production, Preview, Development | `for-her-33ea9.firebasestorage.app` |
+| `FIREBASE_STORAGE_BUCKET` | Production, Preview, Development | Server-side Firebase Storage bucket (defaults to `for-her-33ea9.firebasestorage.app`) |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | Production, Preview, Development | Server-only Firebase service-account JSON used to create admin-authorized resumable uploads; store as a secret and never prefix with `VITE_` |
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | Production, Preview, Development | `1062826041810` |
 | `VITE_FIREBASE_APP_ID` | Production, Preview, Development | `1:1062826041810:web:2905a8e9f7bc3243dfa80b` |
 | `VITE_FIREBASE_MEASUREMENT_ID` | Production, Preview, Development | `G-MWNCCXGY4F` |
@@ -123,6 +125,8 @@ Admin sign-in uses server-configured credentials, an scrypt password hash, and a
 3. Keep all three values server-only (never prefix them with `VITE_`), then redeploy. Changing the password requires generating and deploying a new hash.
 4. Admin database writes, audit reads, admin customer queries, and uploads require the server-issued session cookie. The session expires after eight hours.
 5. Keep an environment allowlist entry for at least one bootstrap super administrator. Admin content writes and destructive database actions reject unverified or unauthorized requests; public reads remain available.
+6. Admin media uploads use the server session and Firebase Admin SDK; Firebase Anonymous Authentication is not used. Add a Firebase service account with Firebase Storage object create permission as `FIREBASE_SERVICE_ACCOUNT_JSON` in Vercel, then redeploy.
+7. Apply the repository's `storage.rules` in Firebase Storage. For browser resumable uploads, configure the bucket's CORS policy with `gcloud storage buckets update gs://for-her-33ea9.firebasestorage.app --cors-file=storage.cors.json`. The CORS file permits browser PUT requests only; it does not grant bucket write access.
 
 Admin portal access uses `ADMIN_LOGIN_EMAIL`, `ADMIN_LOGIN_PASSWORD_HASH`, and `ADMIN_SESSION_SECRET` on the server. Do not add these values with a `VITE_` prefix.
 
