@@ -33,7 +33,6 @@ import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
 import { QuickCategoryCreator } from '../../components/admin/QuickCategoryCreator';
 import { DivisionId } from '../../types';
 import { formatCurrency, formatLKR } from '../../utils/currency';
-import { compressDataUrl } from '../../utils/imageOptimizer';
 import { uploadMediaAsset } from '../../services/mediaUploadService';
 
 export const AdminServicesView: React.FC = () => {
@@ -255,19 +254,8 @@ export const AdminServicesView: React.FC = () => {
           newImages.push(uploadedUrl);
         }
       } catch (err) {
-        console.warn('Direct upload fallback:', err);
-        try {
-          const base64 = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          });
-          const compressed = await compressDataUrl(base64, 800, 0.7);
-          newImages.push(compressed);
-        } catch (compErr) {
-          console.error('Failed to process image:', compErr);
-        }
+        console.error('[AdminServices] Image upload failed:', err);
+        addToast('error', 'Image Upload Failed', err instanceof Error ? err.message : 'Could not upload image.');
       }
     }
 

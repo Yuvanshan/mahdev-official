@@ -197,6 +197,11 @@ async function request<T>(
       headers,
       body: JSON.stringify({ action, ...payload }),
     });
+    if (response.status === 413) {
+      throw new Error(
+        'The database request is too large for the hosting platform. Upload media to storage first and save its URL instead of embedding image data.'
+      );
+    }
     const responseText = await response.text();
     let result: ApiResponse<T>;
     try {

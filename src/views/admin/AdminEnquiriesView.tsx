@@ -40,6 +40,8 @@ export const AdminEnquiriesView: React.FC = () => {
   const { divisions } = useFirestoreDataContext();
   const [inquiries, setInquiries] = useState<FirestoreInquiry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [feedError, setFeedError] = useState<string | null>(null);
+  const [feedRetry, setFeedRetry] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
   const [selectedDivisionFilter, setSelectedDivisionFilter] = useState<string>('all');
@@ -56,8 +58,11 @@ export const AdminEnquiriesView: React.FC = () => {
   // Keep both Turso enquiry feeds live in the admin inbox.
   useEffect(() => {
     setLoading(true);
+    setFeedError(null);
     let latestInquiries: FirestoreInquiry[] | null = null;
     let latestContacts: any[] | null = null;
+    let inquiryFeedFailed = false;
+    let contactFeedFailed = false;
 
     const mergeAndSet = () => {
       if (!latestInquiries || !latestContacts) return;
@@ -112,35 +117,50 @@ export const AdminEnquiriesView: React.FC = () => {
       combined.forEach((inquiry) => knownInquiryIds.current.add(inquiry.id));
       setInquiries(combined);
       setLoading(false);
+      if (!inquiryFeedFailed && !contactFeedFailed) setFeedError(null);
       initialInquiryFeedsLoaded.current = true;
     };
 
+    const loadingTimeout = window.setTimeout(() => {
+      if (latestInquiries === null || latestContacts === null) {
+        setLoading(false);
+        setFeedError('The database did not respond. Check your connection and retry.');
+      }
+    }, 15000);
+
     const unsubInquiries = firestoreInquiriesService.subscribeInquiries((inqList) => {
+      inquiryFeedFailed = false;
       latestInquiries = inqList || [];
       mergeAndSet();
     }, (error) => {
+      inquiryFeedFailed = true;
       if (latestInquiries === null) latestInquiries = [];
+      setFeedError(`Could not load enquiries: ${error.message}`);
       mergeAndSet();
       addToast('error', 'Inquiry updates unavailable', error.message);
     });
 
     const unsubContacts = firestoreContactsService.subscribeContacts(
       (contactList) => {
+        contactFeedFailed = false;
         latestContacts = contactList || [];
         mergeAndSet();
       },
       (error) => {
+        contactFeedFailed = true;
         if (latestContacts === null) latestContacts = [];
+        setFeedError(`Could not load contact submissions: ${error.message}`);
         mergeAndSet();
         addToast('error', 'Contact updates unavailable', error.message);
       }
     );
 
     return () => {
+      window.clearTimeout(loadingTimeout);
       unsubInquiries();
       unsubContacts();
     };
-  }, []);
+  }, [feedRetry]);
 
   // Auto-open target inquiry if redirected from admin notification
   useEffect(() => {
@@ -471,6 +491,24 @@ export const AdminEnquiriesView: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {feedError && (
+        <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-amber-900">{feedError}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              initialInquiryFeedsLoaded.current = false;
+              knownInquiryIds.current.clear();
+              setFeedRetry((attempt) => attempt + 1);
+            }}
+            leftIcon={<RefreshCw className="h-4 w-4" />}
+          >
+            Retry
+          </Button>
+        </div>
+      )}
 
       {/* Metric Quick Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">

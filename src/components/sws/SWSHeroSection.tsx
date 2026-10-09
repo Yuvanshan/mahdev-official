@@ -1,9 +1,7 @@
 import React from 'react';
-import { Calendar, ArrowRight, Layers } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Button } from '../ui/Button';
+import { ArrowRight } from 'lucide-react';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
-import { getRentalAssetCount } from '../../utils/assetMetrics';
 import { HeroVideoBackground } from '../common/HeroVideoBackground';
 
 interface SWSHeroSectionProps {
@@ -15,12 +13,10 @@ interface SWSHeroSectionProps {
 }
 
 export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
-  onOpenBooking,
-  onBookNow,
+  onExploreServices,
   onExploreRentals,
 }) => {
-  const handleBook = onBookNow || onOpenBooking || (() => {});
-  const { divisions, companySettings, siteSettings, products } = useFirestoreDataContext();
+  const { divisions } = useFirestoreDataContext();
 
   const swsDiv = divisions?.find(
     (d) =>
@@ -31,11 +27,6 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
       (d as any).divisionKey === 'sws' ||
       d.slug === 'sws' ||
       d.slug === 'sws-event-management'
-  );
-
-  const rentalCount = getRentalAssetCount(
-    products,
-    (swsDiv as any)?.rentalAssetCount || (companySettings as any)?.rentalAssetCount || (siteSettings as any)?.rentalAssetCount
   );
 
   const rawHeroImage =
@@ -50,12 +41,6 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
     typeof rawHeroImage === 'string' && rawHeroImage.trim() !== ''
       ? rawHeroImage.trim()
       : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
-
-  const headline =
-    (swsDiv as any)?.heroHeadline ||
-    (swsDiv as any)?.hero?.title ||
-    swsDiv?.name ||
-    'Turnkey Luxury Event Production & Decor';
 
   return (
     <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-[#061033] text-white">
@@ -78,41 +63,30 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
             transition={{ duration: 0.5, delay: 0.1 }}
             className="font-display text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-white leading-[1.08] drop-shadow-md"
           >
-            {headline}
+            <span className="block">We Create Moments.</span>
+            <span className="block">You Make Memories.</span>
           </motion.h1>
 
-          {/* Clean, Non-Cluttered Action CTAs in Electric Blue */}
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="flex flex-wrap items-center gap-3.5 pt-2"
+            transition={{ duration: 0.45, delay: 0.18 }}
+            className="max-w-xl text-sm sm:text-base font-medium tracking-wide text-white/85 drop-shadow-md"
           >
-            <Button
-              variant="electric"
-              size="lg"
-              onClick={handleBook}
-              leftIcon={<Calendar className="w-4 h-4" />}
-              rightIcon={<ArrowRight className="w-4 h-4" />}
-              className="font-bold px-7 py-3.5 text-sm sm:text-base bg-[#0052FF] hover:bg-blue-600 shadow-lg shadow-blue-600/30"
-            >
-              Book Consultation
-            </Button>
+            Beautifully designed celebrations, thoughtfully crafted around your special moments.
+          </motion.p>
 
-            {onExploreRentals && (
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={onExploreRentals}
-                leftIcon={<Layers className="w-4 h-4" />}
-                className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-md px-6 py-3.5 text-sm font-semibold"
-              >
-                Browse {rentalCount} Rentals
-              </Button>
-            )}
-
-          </motion.div>
-
+          <motion.button
+            type="button"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.25 }}
+            onClick={onExploreServices || onExploreRentals}
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-6 text-sm font-semibold text-slate-950 transition-colors hover:bg-blue-50"
+          >
+            Explore Events
+            <ArrowRight className="h-4 w-4" />
+          </motion.button>
         </div>
       </div>
     </section>

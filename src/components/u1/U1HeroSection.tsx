@@ -1,7 +1,6 @@
 import React from 'react';
-import { Calendar, ArrowRight, Film } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Button } from '../ui/Button';
+import { ArrowRight } from 'lucide-react';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { HeroVideoBackground } from '../common/HeroVideoBackground';
 
@@ -12,8 +11,8 @@ interface U1HeroSectionProps {
 }
 
 export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
-  onBookSession,
   onExplorePortfolio,
+  onExploreServices,
 }) => {
   const { divisions, mediaAssets } = useFirestoreDataContext();
 
@@ -53,12 +52,6 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
       ? rawHeroImage.trim()
       : fallbackMediaImage;
 
-  const headline =
-    (u1Div as any)?.heroHeadline ||
-    (u1Div as any)?.hero?.title ||
-    u1Div?.name ||
-    'Fine Art Photography & Cinema';
-
   return (
     <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-[#061033] text-white">
       {/* Reliable Full-Width Video Background with guaranteed autoplay */}
@@ -80,39 +73,30 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
             transition={{ duration: 0.5, delay: 0.1 }}
             className="font-display text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-white leading-[1.08] drop-shadow-md"
           >
-            {headline}
+            <span className="block">Every Frame</span>
+            <span className="block">Tells a Story.</span>
           </motion.h1>
 
-          {/* Action CTAs in Electric Blue */}
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="flex flex-wrap items-center gap-3.5 pt-2"
+            transition={{ duration: 0.45, delay: 0.18 }}
+            className="max-w-xl text-sm sm:text-base font-medium tracking-wide text-white/85 drop-shadow-md"
           >
-            <Button
-              variant="electric"
-              size="lg"
-              onClick={onBookSession}
-              leftIcon={<Calendar className="w-4 h-4" />}
-              rightIcon={<ArrowRight className="w-4 h-4" />}
-              className="font-bold px-7 py-3.5 text-sm sm:text-base bg-[#0052FF] hover:bg-blue-600 shadow-lg shadow-blue-600/30"
-            >
-              Book Shoot / Session
-            </Button>
+            Professional photography and creative experiences that preserve your most precious memories.
+          </motion.p>
 
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={onExplorePortfolio}
-              leftIcon={<Film className="w-4 h-4" />}
-              className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-md px-6 py-3.5 text-sm font-semibold"
-            >
-              View Visual Works
-            </Button>
-
-          </motion.div>
-
+          <motion.button
+            type="button"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.25 }}
+            onClick={onExplorePortfolio || onExploreServices}
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-6 text-sm font-semibold text-slate-950 transition-colors hover:bg-blue-50"
+          >
+            Explore Our Studio
+            <ArrowRight className="h-4 w-4" />
+          </motion.button>
         </div>
       </div>
     </section>

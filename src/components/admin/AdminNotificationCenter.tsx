@@ -51,24 +51,36 @@ export const AdminNotificationCenter: React.FC<AdminNotificationCenterProps> = (
       const combined = [...latestInquiries, ...latestContacts];
       for (const inquiry of combined) {
         if (!seenInquiryIds.has(inquiry.id)) {
-          if (baselineLoaded) {
+          const status = String(inquiry.status || 'new').toLowerCase();
+          if (![
+            'contacted',
+            'replied',
+            'in progress',
+            'in-progress',
+            'in_review',
+            'in-review',
+            'completed',
+            'archived',
+            'cancelled',
+            'declined',
+            'converted',
+          ].includes(status)) {
             notificationService.notifyAdminInquiryReceived(inquiry);
           }
           seenInquiryIds.add(inquiry.id);
         }
       }
-      baselineLoaded = true;
     };
 
-    let latestInquiries: Array<{ id: string; name: string; email: string; subject: string }> = [];
-    let latestContacts: Array<{ id: string; name: string; email: string; subject: string }> = [];
-    let baselineLoaded = false;
+    let latestInquiries: Array<{ id: string; name: string; email: string; subject: string; status: string }> = [];
+    let latestContacts: Array<{ id: string; name: string; email: string; subject: string; status: string }> = [];
     const unsubInquiries = firestoreInquiriesService.subscribeInquiries((items) => {
       latestInquiries = items.map((item) => ({
         id: item.id,
         name: item.name || item.fullName || 'A customer',
         email: item.email || '',
         subject: item.subject || item.service || item.serviceName || 'Website enquiry',
+        status: String(item.status || 'new'),
       }));
       inquiriesLoaded = true;
       processIncomingInquiries();
@@ -83,6 +95,7 @@ export const AdminNotificationCenter: React.FC<AdminNotificationCenterProps> = (
         name: item.fullName || 'A customer',
         email: item.email || '',
         subject: item.subject || 'Website enquiry',
+        status: String(item.status || 'new'),
       }));
       contactsLoaded = true;
       processIncomingInquiries();
@@ -182,8 +195,8 @@ export const AdminNotificationCenter: React.FC<AdminNotificationCenterProps> = (
 
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white border border-slate-200 shadow-2xl z-50 overflow-hidden">
+          <div className="fixed inset-0 z-[55] bg-slate-950/20" onClick={() => setIsOpen(false)} />
+          <div className="fixed right-2 top-16 sm:right-4 sm:top-20 z-[60] flex w-[calc(100vw-1rem)] max-w-sm max-h-[calc(100dvh-5rem)] flex-col rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden">
             {/* Header */}
             <div className="p-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
               <div className="flex items-center gap-2">
@@ -216,7 +229,7 @@ export const AdminNotificationCenter: React.FC<AdminNotificationCenterProps> = (
             </div>
 
             {/* List */}
-            <div className="max-h-96 overflow-y-auto divide-y divide-slate-100">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain divide-y divide-slate-100">
               {notifications.length === 0 ? (
                 <div className="p-8 text-center text-slate-400 space-y-2">
                   <Bell className="w-8 h-8 mx-auto text-slate-300 stroke-[1.5]" />

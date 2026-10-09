@@ -34,7 +34,6 @@ import { firestoreProductsService } from '../../services/firestore/products';
 import { DivisionId } from '../../types';
 import { formatCurrency, formatLKR } from '../../utils/currency';
 import { uploadMediaAsset } from '../../services/mediaUploadService';
-import { compressDataUrl } from '../../utils/imageOptimizer';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 export const AdminProductsView: React.FC = () => {
@@ -238,24 +237,8 @@ export const AdminProductsView: React.FC = () => {
         addToast('success', 'Image Uploaded', 'Product image uploaded and attached.');
       }
     } catch (err: any) {
-      console.warn('Direct media upload fallback:', err);
-      try {
-        const reader = new FileReader();
-        reader.onload = async (ev) => {
-          const rawBase64 = ev.target?.result as string;
-          const compressed = await compressDataUrl(rawBase64, 1200, 0.85);
-          setFormData((prev) => ({
-            ...prev,
-            imageUrl: compressed,
-            galleryImages: [compressed, ...(prev.galleryImages || []).filter((g) => g !== compressed)],
-          }));
-          setIsDirty(true);
-          addToast('info', 'Image Attached', 'Local image ready for save.');
-        };
-        reader.readAsDataURL(file);
-      } catch (readErr: any) {
-        addToast('error', 'Upload Failed', err.message || 'Could not process image.');
-      }
+      console.error('[AdminProducts] Image upload failed:', err);
+      addToast('error', 'Upload Failed', err.message || 'Could not upload product image.');
     } finally {
       setIsUploadingImage(false);
       if (fileInputRef.current) fileInputRef.current.value = '';

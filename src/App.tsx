@@ -212,7 +212,6 @@ function AppContent() {
     if (targetPath !== currentPath) {
       window.history.pushState({}, '', targetPath);
       setCurrentPath(targetPath);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -1107,21 +1106,25 @@ function AppContent() {
 
       {/* Main Content Area with Smooth View Transitions */}
       <main className="flex-1 w-full max-w-full min-w-0" aria-live="polite">
-        <Suspense fallback={<div className="min-h-96" aria-busy="true" />}>
-        <AnimatePresence mode="wait">
+        <AnimatePresence
+          mode="wait"
+          initial={false}
+          onExitComplete={() => window.scrollTo({ top: 0, behavior: 'instant' })}
+        >
           {/* Fade only on first paint; avoid a layout-shifting entrance while Firestore hydrates. */}
           <motion.div
             key={normalizedPath}
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.24, ease: 'easeInOut' }}
             className="w-full max-w-full min-w-0"
           >
-            {renderCurrentView()}
+            <Suspense fallback={<div className="min-h-96" aria-busy="true" />}>
+              {renderCurrentView()}
+            </Suspense>
           </motion.div>
         </AnimatePresence>
-        </Suspense>
       </main>
 
       {/* Mobile Ergonomic Bottom Navigation Bar */}

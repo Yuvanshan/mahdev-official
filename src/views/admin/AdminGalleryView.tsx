@@ -26,7 +26,6 @@ import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { QuickCategoryCreator } from '../../components/admin/QuickCategoryCreator';
 import { DivisionId } from '../../types';
-import { compressDataUrl } from '../../utils/imageOptimizer';
 import { uploadMediaAsset } from '../../services/mediaUploadService';
 import { firestoreGalleryService } from '../../services/firestore/gallery';
 import { purgeRemovedStudioPostsFromFirestore } from '../../services/firestore/databaseManagement';
@@ -211,7 +210,7 @@ export const AdminGalleryView: React.FC = () => {
       aspectRatio: item.aspectRatio || '16:9',
       tags: item.tags || [],
       sortOrder: item.sortOrder || 1,
-      isActive: item.isActive,
+      isActive: item.isActive ?? true,
     });
     setMediaUrlInput('');
     setCustomCategoryInput(isPreset ? '' : existingCat);
@@ -244,19 +243,8 @@ export const AdminGalleryView: React.FC = () => {
           newImages.push(uploadedUrl);
         }
       } catch (err) {
-        console.warn('Direct upload fallback:', err);
-        try {
-          const base64 = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          });
-          const compressed = await compressDataUrl(base64, 800, 0.7);
-          newImages.push(compressed);
-        } catch (compErr) {
-          console.error('Failed to process gallery image:', compErr);
-        }
+        console.error('[AdminGallery] Image upload failed:', err);
+        addToast('error', 'Image Upload Failed', err instanceof Error ? err.message : 'Could not upload image.');
       }
     }
 

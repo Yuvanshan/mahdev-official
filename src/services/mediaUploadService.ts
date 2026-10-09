@@ -1,7 +1,5 @@
 /**
- * Mahdev Enterprise Media Upload Service
- * Handles uploading large video files (MP4, WebM, OGG, MOV) and high-res images.
- * Uses direct binary streaming via HTTP to prevent memory exhaustion and browser crashes ("Aw, Snap!").
+ * Uploads media to Firebase Storage and returns a compact URL for database records.
  */
 
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
@@ -39,67 +37,7 @@ export async function uploadMediaAsset(
 
   const cleanName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 
-  // PRIORITY 1: Direct Server-Side High-Speed Binary Streaming (/api/upload/media)
-  // Streams the raw binary payload directly over HTTP without decoding frames or converting to Base64.
-  // This guarantees ZERO browser memory spikes and prevents Chromium "Aw, Snap!" renderer crashes.
-  try {
-    const serverUrl = await new Promise<string>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      // Pass filename in both query string and header for cross-proxy reliability
-      const uploadEndpoint = `/api/upload/media?filename=${encodeURIComponent(cleanName)}`;
-      xhr.open('POST', uploadEndpoint, true);
-
-      xhr.setRequestHeader(
-        'Content-Type',
-        file.type || (isVideo ? 'video/mp4' : 'application/octet-stream')
-      );
-      xhr.setRequestHeader('x-filename', cleanName);
-
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable && event.total > 0) {
-          const rawPercent = Math.round((event.loaded / event.total) * 100);
-          onProgress?.(Math.min(99, rawPercent));
-        }
-      };
-
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const response = JSON.parse(xhr.responseText);
-            if (response.success && response.url) {
-              onProgress?.(100);
-              resolve(response.url);
-            } else {
-              reject(new Error(response.error || 'Server did not return a valid asset URL.'));
-            }
-          } catch {
-            reject(new Error('Invalid server response format during media upload.'));
-          }
-        } else {
-          reject(new Error(`Server upload returned status ${xhr.status}`));
-        }
-      };
-
-      xhr.onerror = () => {
-        reject(new Error('Network error connecting to /api/upload/media'));
-      };
-
-      xhr.ontimeout = () => {
-        reject(new Error('Upload request timed out after 5 minutes'));
-      };
-
-      // 5-minute timeout for large video uploads
-      xhr.timeout = 300000;
-
-      xhr.send(file);
-    });
-
-    return serverUrl;
-  } catch (serverErr) {
-    console.warn('[MediaUpload] Server direct upload failed, attempting cloud storage fallback:', serverErr);
-  }
-
-  // PRIORITY 2: Firebase Storage Fallback (direct cloud bucket upload)
+  // Store the binary asset outside Turso so content writes only carry a compact URL.
   try {
     if (!auth.currentUser) {
       try {
@@ -140,12 +78,10 @@ export async function uploadMediaAsset(
       );
     });
   } catch (fbErr) {
-    console.warn('[MediaUpload] Cloud Storage fallback notice:', fbErr);
+    console.warn('[MediaUpload] Firebase Storage upload failed; trying chunked database media storage:', fbErr);
   }
 
-  // PRIORITY 3: Firestore Native Chunked Storage (Supports videos & media up to 35MB)
-  // Saves directly to Firestore collection 'media_blobs' with chunked binary storage
-  // and returns 'firestore://media_blobs/{id}' seamlessly resolvable by HeroVideoBackground.
+  // Keep the legacy database-backed fallback for environments where Storage is unavailable.
   if (file.size <= 35 * 1024 * 1024) {
     try {
       console.info('[MediaUpload] Falling back to Firestore Native Chunked Media Storage for', file.name);
@@ -157,4 +93,3 @@ export async function uploadMediaAsset(
 
   throw new Error('Unable to upload media to server or cloud storage. Please verify your connection or use YouTube/Vimeo for video embedding.');
 }
-

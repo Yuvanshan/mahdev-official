@@ -21,7 +21,7 @@ import {
   UploadResult,
   DeleteResult,
 } from '../types/storage';
-import { validateFile, validateSvgSecurity, optimizeImage, compressDataUrl } from '../utils/imageOptimizer';
+import { validateFile, validateSvgSecurity, optimizeImage } from '../utils/imageOptimizer';
 import { authService } from './authService';
 import { adminService, syncAdminServerSession } from './adminService';
 import { uploadMediaAsset } from './mediaUploadService';
@@ -326,7 +326,7 @@ class StorageService {
           storageError
         );
 
-        // Fallback to direct high-speed server asset upload (/api/upload/media)
+        // Try the shared cloud upload flow before reporting the storage failure.
         try {
           const serverUrl = await uploadMediaAsset(fileToUpload, (pct) => options?.onProgress?.(pct));
           if (serverUrl) {
@@ -336,14 +336,7 @@ class StorageService {
             throw new Error('No server URL returned');
           }
         } catch (serverUploadErr) {
-          console.warn('[StorageService] Server upload fallback failed, using compressed preview:', serverUploadErr);
-          const rawDataUrl = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target?.result as string);
-            reader.readAsDataURL(fileToUpload);
-          });
-          downloadUrl = await compressDataUrl(rawDataUrl, 800, 0.7);
-          options?.onProgress?.(100);
+          throw serverUploadErr;
         }
       }
 
