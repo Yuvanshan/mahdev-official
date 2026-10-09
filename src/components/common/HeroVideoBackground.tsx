@@ -33,7 +33,7 @@ function extractVimeoId(url: string): string | null {
   return match && match[1] ? match[1] : null;
 }
 
-const DEFAULT_CORPORATE_VIDEO = '/assets/hero_main.mp4';
+const DEFAULT_CORPORATE_VIDEO = '/assets/hero_main.mp4?v=2';
 
 export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
   videoUrl,
@@ -291,4 +291,3 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
     </div>
   );
 };
-

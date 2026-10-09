@@ -212,7 +212,15 @@ async function request<T>(
     headers,
     body: JSON.stringify({ action, ...payload }),
   });
-  const result = await response.json() as ApiResponse<T>;
+  const responseText = await response.text();
+  let result: ApiResponse<T>;
+  try {
+    result = JSON.parse(responseText) as ApiResponse<T>;
+  } catch {
+    throw new Error(
+      `Turso API returned a non-JSON response (HTTP ${response.status}). Check the Vercel API route configuration.`
+    );
+  }
   if (!response.ok) throw new Error(result.error || `Turso request failed (${response.status}).`);
   return result;
 }

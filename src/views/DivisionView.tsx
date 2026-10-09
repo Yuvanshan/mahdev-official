@@ -330,7 +330,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
               (firestoreDiv?.hero as any)?.videoUrl ||
               ((firestoreDiv?.hero as any)?.mediaType === 'video' ? (firestoreDiv?.hero as any)?.mediaUrl : '') ||
               (baseDivision as any)?.heroVideoUrl ||
-              '/assets/hero_main.mp4';
+              '/assets/hero_main.mp4?v=2';
             const divImg =
               (firestoreDiv as any)?.defaultImageUrl ||
               (firestoreDiv as any)?.fallbackImageUrl ||
@@ -350,7 +350,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
               (firestoreDiv?.hero as any)?.videoUrl ||
               ((firestoreDiv?.hero as any)?.mediaType === 'video' && (firestoreDiv?.hero as any)?.mediaUrl)
             );
-            const effectiveVideo = hasFirestoreVideo ? divVideo : '/assets/hero_main.mp4';
+            const effectiveVideo = hasFirestoreVideo ? divVideo : '/assets/hero_main.mp4?v=2';
 
             return (
               <HeroVideoBackground

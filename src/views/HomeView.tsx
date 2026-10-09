@@ -105,7 +105,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
         ogDescription={homepageConfig?.seo?.metaDescription}
       />
 
-      {/* 1. PRIMARY LANDING HERO SECTION — ALWAYS USES /assets/hero_main.mp4 */}
+      {/* 1. PRIMARY LANDING HERO SECTION — ALWAYS USES THE DEFAULT HERO VIDEO */}
       <HeroSection
         onNavigate={onNavigate}
         onExploreMahdev={() => onNavigate('/services')}

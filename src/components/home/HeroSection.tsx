@@ -8,7 +8,7 @@ interface HeroSectionProps {
   onExploreServices?: () => void;
 }
 
-const HERO_VIDEO = '/assets/hero_main.mp4';
+const HERO_VIDEO = '/assets/hero_main.mp4?v=2';
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onNavigate,

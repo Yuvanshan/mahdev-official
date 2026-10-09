@@ -3,7 +3,7 @@
  * High-performance, privacy-compliant event tracking and executive intelligence aggregator.
  * 
  * Features:
- * - Asynchronous, batched event queue with non-blocking microtasks
+ * - Session-scoped event tracking without unsupported network dispatch
  * - Strict adherence to Do-Not-Track (DNT) browser settings
  * - Anonymized session IDs with zero third-party cross-site cookies
  * - Real dynamic report generation calculated from Orders, Bookings, CMS, and Site Events
@@ -32,9 +32,7 @@ const MAX_SESSION_EVENTS = 600;
 
 class AnalyticsService {
   private sessionId: string = '';
-  private eventQueue: AnalyticsEvent[] = [];
   private sessionEvents: AnalyticsEvent[] = [];
-  private isFlushing: boolean = false;
   private isDntEnabled: boolean = false;
 
   constructor() {
@@ -75,9 +73,7 @@ class AnalyticsService {
       metadata: metadata ? this.sanitizeMetadata(metadata) : undefined,
     };
 
-    this.eventQueue.push(event);
     this.sessionEvents = [event, ...this.sessionEvents].slice(0, MAX_SESSION_EVENTS);
-    this.scheduleFlush();
   }
 
   private sanitizeMetadata(data: Record<string, any>): Record<string, any> {
@@ -94,37 +90,6 @@ class AnalyticsService {
       }
     }
     return clean;
-  }
-
-  private scheduleFlush(): void {
-    if (this.isFlushing) return;
-    this.isFlushing = true;
-
-    // Use requestIdleCallback or setTimeout to guarantee zero UI interference
-    const scheduleFn =
-      typeof window !== 'undefined' && (window as any).requestIdleCallback
-        ? (window as any).requestIdleCallback
-        : (cb: any) => setTimeout(cb, 120);
-
-    scheduleFn(() => {
-      this.flushQueue();
-      this.isFlushing = false;
-    });
-  }
-
-  private flushQueue(): void {
-    if (this.eventQueue.length === 0) return;
-    const batch = [...this.eventQueue];
-    this.eventQueue = [];
-
-    if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-      try {
-        const blob = new Blob([JSON.stringify({ events: batch })], { type: 'application/json' });
-        navigator.sendBeacon('/api/analytics/event', blob);
-      } catch (error) {
-        console.warn('[AnalyticsService] Could not dispatch telemetry:', error);
-      }
-    }
   }
 
   // =========================================================================
@@ -271,7 +236,6 @@ class AnalyticsService {
   }
 
   public clearAnalyticsEvents(): void {
-    this.eventQueue = [];
     this.sessionEvents = [];
   }
 
