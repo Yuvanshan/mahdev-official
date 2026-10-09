@@ -315,7 +315,7 @@ export const AdminSettingsView: React.FC = () => {
           currency: activeCurrency,
           defaultCurrency: activeCurrency,
         });
-        await refreshAll();
+        await refreshAll(true);
       } catch {}
 
       addToast(
@@ -369,7 +369,7 @@ export const AdminSettingsView: React.FC = () => {
           faviconUrl: resolvedFavicon,
         });
         await updateContextSiteSettings(updatedSite);
-        await refreshAll();
+        await refreshAll(true);
       } catch {}
       addToast(
         'success',
@@ -393,7 +393,7 @@ export const AdminSettingsView: React.FC = () => {
       await firestoreSettingsService.updateSiteSettings(announcementData);
       try {
         await updateContextSiteSettings(announcementData);
-        await refreshAll();
+        await refreshAll(true);
       } catch {}
       addToast(
         'success',
@@ -419,7 +419,7 @@ export const AdminSettingsView: React.FC = () => {
       await firestoreSettingsService.updateSiteSettings(maintenanceData);
       try {
         await updateContextSiteSettings(maintenanceData);
-        await refreshAll();
+        await refreshAll(true);
       } catch {}
       addToast(
         'success',
@@ -443,7 +443,7 @@ export const AdminSettingsView: React.FC = () => {
       cmsService.updateCompanyInfo(companyData as any);
       try {
         await updateContextCompanySettings(companyData);
-        await refreshAll();
+        await refreshAll(true);
       } catch {}
       addToast(
         'success',
@@ -524,7 +524,7 @@ export const AdminSettingsView: React.FC = () => {
         try {
           await updateContextCompanySettings(defaultCompany);
           await updateContextSiteSettings(defaultSite);
-          await refreshAll();
+          await refreshAll(true);
         } catch {}
 
         addToast(
@@ -1181,7 +1181,7 @@ export const AdminSettingsView: React.FC = () => {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={refreshAll}
+                onClick={() => refreshAll(true)}
                 className="cursor-pointer"
               >
                 Discard Edits
@@ -1328,7 +1328,7 @@ export const AdminSettingsView: React.FC = () => {
                           await firestoreSettingsService.updateCompanySettings({ logoUrl: trimmed });
                           await updateContextCompanySettings({ logoUrl: trimmed });
                           await updateContextSiteSettings({ logoUrl: trimmed });
-                          await refreshAll();
+                          await refreshAll(true);
                           addToast('success', 'Logo URL Applied', 'Brand logo URL saved and published live to website.');
                         } catch (err: any) {
                           addToast('error', 'Failed to Apply Logo', err?.message || 'Error saving URL');
@@ -1443,7 +1443,7 @@ export const AdminSettingsView: React.FC = () => {
                           await firestoreSettingsService.updateCompanySettings({ darkLogoUrl: trimmed });
                           await updateContextCompanySettings({ darkLogoUrl: trimmed });
                           await updateContextSiteSettings({ darkLogoUrl: trimmed });
-                          await refreshAll();
+                          await refreshAll(true);
                           addToast('success', 'Dark Logo URL Applied', 'Dark contrast logo URL saved and published live.');
                         } catch (err: any) {
                           addToast('error', 'Failed to Apply Dark Logo', err?.message || 'Error saving URL');
@@ -1558,7 +1558,7 @@ export const AdminSettingsView: React.FC = () => {
                           const trimmed = (systemSettings.mobileLogoUrl || '').trim();
                           await firestoreSettingsService.updateSiteSettings({ mobileLogoUrl: trimmed });
                           await updateContextSiteSettings({ mobileLogoUrl: trimmed });
-                          await refreshAll();
+                          await refreshAll(true);
                           addToast('success', 'Mobile Icon URL Applied', 'Mobile app icon URL saved and published live.');
                         } catch (err: any) {
                           addToast('error', 'Failed to Apply Mobile Icon', err?.message || 'Error saving URL');
@@ -1701,7 +1701,7 @@ export const AdminSettingsView: React.FC = () => {
                           await firestoreSettingsService.updateCompanySettings({ faviconUrl: trimmed });
                           await updateContextCompanySettings({ faviconUrl: trimmed });
                           await updateContextSiteSettings({ faviconUrl: trimmed });
-                          await refreshAll();
+                          await refreshAll(true);
                           addToast('success', 'Favicon URL Applied', 'Browser tab favicon URL saved and published live.');
                         } catch (err: any) {
                           addToast('error', 'Failed to Apply Favicon', err?.message || 'Error saving URL');
@@ -2136,7 +2136,7 @@ export const AdminSettingsView: React.FC = () => {
                 await firestoreSettingsService.updateSiteSettings(updatedSettings);
                 try {
                   await updateContextSiteSettings(updatedSettings);
-                  await refreshAll();
+                  await refreshAll(true);
                 } catch {}
                 addToast(
                   nextState ? 'warning' : 'success',

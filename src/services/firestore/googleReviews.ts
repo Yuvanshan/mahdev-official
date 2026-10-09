@@ -172,6 +172,7 @@ export const firestoreGoogleReviewsService = {
       sourceBadge: 'Google Verified Review',
       updatedAt: new Date().toISOString(),
     });
+    await setDoc(docRef, payload, { merge: true });
     if (cachedReviews) {
       const idx = cachedReviews.data.findIndex((r) => r.id === id);
       if (idx >= 0) {
@@ -179,14 +180,7 @@ export const firestoreGoogleReviewsService = {
       } else {
         cachedReviews.data.unshift(payload as GoogleReview);
       }
-    }
-    try {
-      await Promise.race([
-        setDoc(docRef, payload, { merge: true }),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
-    } catch (err) {
-      console.warn('[Firestore GoogleReviews] save warning:', err);
+      cachedReviews.timestamp = Date.now();
     }
   },
 

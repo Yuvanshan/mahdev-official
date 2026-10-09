@@ -9,7 +9,7 @@ export const MilestonesTimelineShimmer: React.FC = () => {
         <div className="text-center space-y-2 mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5 text-blue-500 animate-spin" />
-            <span>Fetching Milestones from Cloud Firestore...</span>
+            <span>Fetching milestones from Turso...</span>
           </div>
         </div>
 

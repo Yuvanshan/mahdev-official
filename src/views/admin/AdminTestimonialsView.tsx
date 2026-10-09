@@ -292,7 +292,7 @@ export const AdminTestimonialsView: React.FC = () => {
       setIsEditorOpen(false);
       addToast('success', editingReview ? 'Review Updated' : 'Review Added', `Google review from "${formData.authorName}" (${branchName}) saved.`);
       if (typeof refreshAll === 'function') {
-        refreshAll().catch((rErr) => console.warn('[AdminTestimonialsView] refresh notice:', rErr));
+        refreshAll(true).catch((rErr) => console.warn('[AdminTestimonialsView] refresh notice:', rErr));
       }
     } catch (err: any) {
       addToast('error', 'Operation Failed', err.message || 'Could not save review.');

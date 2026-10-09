@@ -615,7 +615,7 @@ export const AdminDivisionsView: React.FC = () => {
           },
         });
         if (refreshAll) {
-          await refreshAll();
+          await refreshAll(true);
         }
         loadDivisions();
       }
@@ -683,7 +683,7 @@ export const AdminDivisionsView: React.FC = () => {
       }
 
       if (refreshAll) {
-        await refreshAll();
+        await refreshAll(true);
       }
       loadDivisions();
       setIsDirty(false);
@@ -810,7 +810,7 @@ export const AdminDivisionsView: React.FC = () => {
       });
 
       if (refreshAll) {
-        refreshAll().catch(() => {});
+        refreshAll(true).catch((error) => console.error('[AdminDivisions] Refresh failed after save:', error));
       }
       setVideoSaveSuccessMessage(null);
       setIsDirty(false);
@@ -854,7 +854,7 @@ export const AdminDivisionsView: React.FC = () => {
         status: nextVal ? 'coming_soon' : (div.isActive ? 'active' : 'inactive'),
       });
       if (refreshAll) {
-        await refreshAll();
+        await refreshAll(true);
       }
       loadDivisions();
       addToast(

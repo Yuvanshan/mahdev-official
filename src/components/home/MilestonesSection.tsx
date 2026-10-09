@@ -79,7 +79,7 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
     return Building2;
   };
 
-  // Verified Firestore milestones
+  // Published milestones from Turso
   const displayMilestones = useMemo<FirestoreMilestone[]>(() => {
     if (!milestones || !Array.isArray(milestones) || milestones.length === 0) {
       return [];
@@ -139,12 +139,12 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
     return null;
   }
 
-  // 1. SHOW CRISP SHIMMER UNTIL DATA LOADS FROM CLOUD FIRESTORE
+  // 1. Show the loading placeholder while Turso milestones are being fetched.
   if (isMilestonesLoading && displayMilestones.length === 0) {
     return <MilestonesSectionShimmer />;
   }
 
-  // 2. ZERO FAKE DATA: If loaded and 0 milestones in Firestore, show clean state
+  // 2. Show an empty state when there are no published milestones.
   if (displayMilestones.length === 0) {
     return (
       <div className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50/50 to-white py-16">
@@ -157,7 +157,7 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
               {milestonesCms?.title || 'Our Milestones & Trajectory'}
             </h3>
             <p className="text-slate-600 text-sm max-w-lg mx-auto">
-              {milestonesCms?.subtitle || 'Live synchronization with Cloud Firestore milestones. You can create, edit, and publish verified corporate milestones from the Admin Portal.'}
+              {milestonesCms?.subtitle || 'Create and publish corporate milestones from the Admin Portal.'}
             </p>
           </div>
         </SectionContainer>

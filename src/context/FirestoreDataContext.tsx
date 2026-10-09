@@ -1,11 +1,9 @@
 /**
- * Central Cloud Firestore Data Context & Real-Time Hydration Engine
- * Phase 47: Firestore-First Data Architecture
+ * Central Turso data context and live UI hydration.
  * 
  * Rules:
- * 1. Firestore is the single source of truth for all business and dynamic content.
- * 2. No hard-coded business data is rendered while Firestore is hydrating.
- * 3. Realtime subscriptions propagate live Firestore updates instantly across the UI.
+ * 1. Turso is the source of truth for business and dynamic content.
+ * 2. Live subscriptions keep the UI synchronized with Turso.
  */
 
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
@@ -86,7 +84,7 @@ export interface FirestoreDataContextValue {
   portfolio: FirestorePortfolio[];
   gallery: FirestoreGallery[];
   mediaAssets: StoredMediaItem[];
-  refreshAll: () => Promise<void>;
+  refreshAll: (forceRefresh?: boolean) => Promise<void>;
   updateSiteSettings: (data: Partial<FirestoreSiteSettings>) => Promise<void>;
   updateCompanySettings: (data: Partial<FirestoreCompanySettings>) => Promise<void>;
   updateHomepageConfig: (data: Partial<HomepageCmsConfig>) => Promise<void>;
@@ -281,7 +279,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Track active fetching state to prevent premature shimmer disappearance on mobile networks
   const [fetchingDivisions, setFetchingDivisions] = useState<Record<string, boolean>>({});
-  const inFlightDivisionLoadsRef = React.useRef<Record<string, Promise<void>>>({});
+  const inFlightDivisionLoadsRef = React.useRef<Record<string, Promise<void> | undefined>>({});
 
   const divisionsRef = React.useRef<FirestoreDivision[]>([]);
   divisionsRef.current = divisions;
@@ -535,6 +533,11 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   // the moment it resolves. Eliminates blocking Promise.all so mobile connections stream data one-by-one!
   const refreshAll = useCallback(async (forceRefresh = false) => {
     setIsFetching(true);
+    const reportRefreshError = (resource: string, cause: unknown) => {
+      const refreshError = cause instanceof Error ? cause : new Error(String(cause));
+      console.error(`[TursoDataContext] Failed to refresh ${resource}:`, refreshError);
+      setError((currentError) => currentError || refreshError);
+    };
     try {
       setError(null);
       setSyncProgress(20);
@@ -566,7 +569,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           setSyncProgress((p) => Math.min(95, p + 8));
         })
         .catch((err) => {
-          console.warn('[FirestoreDataContext] Divisions stream notice:', err);
+          reportRefreshError('divisions', err);
           setIsDivisionsLoading(false);
         });
 
@@ -581,7 +584,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           setSyncProgress((p) => Math.min(95, p + 8));
         })
         .catch((err) => {
-          console.warn('[FirestoreDataContext] Milestones stream notice:', err);
+          reportRefreshError('milestones', err);
           setIsMilestonesLoading(false);
         });
 
@@ -595,7 +598,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           try { sessionStorage.setItem('mahdev_cached_company_settings', JSON.stringify(finalCompany)); } catch {}
           setSyncProgress((p) => Math.min(95, p + 5));
         })
-        .catch(() => {
+        .catch((err) => {
+          reportRefreshError('company settings', err);
           setIsSettingsLoading(false);
         });
 
@@ -609,7 +613,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           try { sessionStorage.setItem('mahdev_cached_site_settings', JSON.stringify(finalSite)); } catch {}
           setSyncProgress((p) => Math.min(95, p + 5));
         })
-        .catch(() => {
+        .catch((err) => {
+          reportRefreshError('site settings', err);
           setIsSettingsLoading(false);
         });
 
@@ -623,7 +628,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           try { sessionStorage.setItem('mahdev_cached_homepage_config', JSON.stringify(home)); } catch {}
           setSyncProgress((p) => Math.min(95, p + 6));
         })
-        .catch(() => {
+        .catch((err) => {
+          reportRefreshError('homepage settings', err);
           setIsHomepageConfigLoading(false);
         });
 
@@ -649,7 +655,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           try { sessionStorage.setItem('mahdev_cached_services', JSON.stringify(dedupedServices)); } catch {}
           setSyncProgress((p) => Math.min(95, p + 8));
         })
-        .catch(() => {
+        .catch((err) => {
+          reportRefreshError('services', err);
           setIsServicesLoading(false);
         });
 
@@ -666,7 +673,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           try { sessionStorage.setItem('mahdev_cached_products', JSON.stringify(dedupedProducts)); } catch {}
           setSyncProgress((p) => Math.min(95, p + 6));
         })
-        .catch(() => {
+        .catch((err) => {
+          reportRefreshError('products', err);
           setIsProductsLoading(false);
         });
 
@@ -680,7 +688,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           cmsService.syncEntityFromFirestore('categories', dedupedCategories);
           try { sessionStorage.setItem('mahdev_cached_categories', JSON.stringify(dedupedCategories)); } catch {}
         })
-        .catch(() => {});
+        .catch((err) => {
+          reportRefreshError('categories', err);
+        });
 
       // 9. One-by-one API Call: Portfolio
       const fetchPortfolioTask = firestorePortfolioService
@@ -693,7 +703,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           cmsService.syncEntityFromFirestore('portfolio', dedupedPortfolio);
           try { sessionStorage.setItem('mahdev_cached_portfolio', JSON.stringify(dedupedPortfolio)); } catch {}
         })
-        .catch(() => {
+        .catch((err) => {
+          reportRefreshError('portfolio', err);
           setIsPortfolioLoading(false);
         });
 
@@ -717,7 +728,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           cmsService.syncEntityFromFirestore('gallery', dedupedGallery);
           try { sessionStorage.setItem('mahdev_cached_gallery', JSON.stringify(dedupedGallery)); } catch {}
         })
-        .catch(() => {
+        .catch((err) => {
+          reportRefreshError('gallery', err);
           setIsGalleryLoading(false);
         });
 
@@ -730,7 +742,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           cmsService.syncEntityFromFirestore('companies', allPartners);
           try { sessionStorage.setItem('mahdev_cached_companies', JSON.stringify(allPartners)); } catch {}
         })
-        .catch(() => {
+        .catch((err) => {
+          reportRefreshError('trusted companies', err);
           setIsCompaniesLoading(false);
         });
 
@@ -743,14 +756,21 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           cmsService.syncEntityFromFirestore('testimonials', allReviews);
           try { sessionStorage.setItem('mahdev_cached_testimonials', JSON.stringify(allReviews)); } catch {}
         })
-        .catch(() => {
+        .catch((err) => {
+          reportRefreshError('testimonials', err);
           setIsTestimonialsLoading(false);
         });
 
       // 13. One-by-one API Call: Google Reviews & Config
       const fetchGoogleReviewsTask = Promise.all([
-        firestoreGoogleReviewsService.getConfig(forceRefresh).catch(() => null),
-        firestoreGoogleReviewsService.getReviews().catch(() => []),
+        firestoreGoogleReviewsService.getConfig(forceRefresh).catch((err) => {
+          reportRefreshError('Google review settings', err);
+          return null;
+        }),
+        firestoreGoogleReviewsService.getReviews().catch((err) => {
+          reportRefreshError('Google reviews', err);
+          return [];
+        }),
       ])
         .then(([gConfig, gReviews]) => {
           if (gConfig) {
@@ -760,7 +780,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           setGoogleReviews(gReviews);
           try { sessionStorage.setItem('mahdev_cached_google_reviews', JSON.stringify(gReviews)); } catch {}
         })
-        .catch(() => {});
+        .catch((err) => {
+          reportRefreshError('Google reviews', err);
+        });
 
       // 14. One-by-one API Call: Media Assets
       const fetchMediaAssetsTask = mediaService
@@ -769,7 +791,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           setMediaAssets(allMediaAssets);
           try { sessionStorage.setItem('mahdev_cached_media_assets', JSON.stringify(allMediaAssets)); } catch {}
         })
-        .catch(() => {});
+        .catch((err) => {
+          reportRefreshError('media assets', err);
+        });
 
       // Await all one-by-one tasks settling to finalize sync flags
       await Promise.allSettled([

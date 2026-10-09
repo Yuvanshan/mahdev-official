@@ -1,6 +1,5 @@
 /**
- * Firestore Milestones Repository
- * Phase 54: Real-time Firestore Milestone Synchronization (Single Source of Truth)
+ * Turso milestones repository.
  */
 
 import {
@@ -11,6 +10,7 @@ import {
   deleteDoc,
   query,
   orderBy,
+  limit,
   onSnapshot,
   Unsubscribe,
   writeBatch,
@@ -118,7 +118,8 @@ export const DEFAULT_OFFICIAL_MILESTONES: FirestoreMilestone[] = [
   },
 ];
 
-const CACHE_TTL_MS = 1000 * 60 * 30; // 30-minute memoized cache
+const CACHE_TTL_MS = 1000 * 60 * 30;
+const MILESTONES_POLL_INTERVAL_MS = 3000;
 let cachedMilestones: { data: FirestoreMilestone[]; timestamp: number } | null = (() => {
   try {
     if (typeof window !== 'undefined') {
@@ -134,10 +135,22 @@ let cachedMilestones: { data: FirestoreMilestone[]; timestamp: number } | null =
   return null;
 })();
 let inFlightMilestonesPromise: Promise<FirestoreMilestone[]> | null = null;
+let milestonesCacheGeneration = 0;
+
+const invalidateMilestonesCache = () => {
+  milestonesCacheGeneration += 1;
+  cachedMilestones = null;
+  inFlightMilestonesPromise = null;
+  try {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('mahdev_cached_milestones');
+    }
+  } catch {}
+};
 
 export const firestoreMilestonesService = {
   /**
-   * Fetch all milestones directly from Firestore with instant cache-first return
+   * Fetch milestones from Turso, returning a fresh cached result when available.
    */
   async getMilestones(forceRefresh = false): Promise<FirestoreMilestone[]> {
     const now = Date.now();
@@ -150,10 +163,15 @@ export const firestoreMilestonesService = {
       return inFlightMilestonesPromise;
     }
 
-    inFlightMilestonesPromise = (async () => {
+    const requestGeneration = milestonesCacheGeneration;
+    let requestPromise: Promise<FirestoreMilestone[]>;
+    requestPromise = (async () => {
       try {
-        // Fast collection query with in-memory sorting for near-instant retrieval
-        const snap = await getDocs(collection(db, 'milestones'));
+        const snap = await getDocs(query(
+          collection(db, 'milestones'),
+          orderBy('order', 'asc'),
+          limit(500)
+        ));
 
         if (!snap.empty) {
           const data = snap.docs.map((d) => {
@@ -167,41 +185,47 @@ export const firestoreMilestonesService = {
           });
 
           data.sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (Number(a.year) || 0) - (Number(b.year) || 0));
-          cachedMilestones = { data, timestamp: Date.now() };
-          try {
-            if (typeof window !== 'undefined') {
-              sessionStorage.setItem('mahdev_cached_milestones', JSON.stringify(data));
-            }
-          } catch {}
+          if (requestGeneration === milestonesCacheGeneration) {
+            cachedMilestones = { data, timestamp: Date.now() };
+            try {
+              if (typeof window !== 'undefined') {
+                sessionStorage.setItem('mahdev_cached_milestones', JSON.stringify(data));
+              }
+            } catch {}
+          }
           return data;
         }
 
-        // Return empty array when no documents exist in Firestore (zero fake data)
-        cachedMilestones = { data: [], timestamp: Date.now() };
-        try {
-          if (typeof window !== 'undefined') {
-            sessionStorage.setItem('mahdev_cached_milestones', JSON.stringify([]));
-          }
-        } catch {}
+        if (requestGeneration === milestonesCacheGeneration) {
+          cachedMilestones = { data: [], timestamp: Date.now() };
+          try {
+            if (typeof window !== 'undefined') {
+              sessionStorage.setItem('mahdev_cached_milestones', JSON.stringify([]));
+            }
+          } catch {}
+        }
         return [];
       } catch (err) {
-        console.warn('[Firestore Milestones] getMilestones notice:', err);
-        return cachedMilestones?.data || [];
+        console.error('[Turso Milestones] Could not load milestones:', err);
+        throw err;
       } finally {
-        inFlightMilestonesPromise = null;
+        if (inFlightMilestonesPromise === requestPromise) {
+          inFlightMilestonesPromise = null;
+        }
       }
     })();
+    inFlightMilestonesPromise = requestPromise;
 
     // If we already have cached data, return it immediately while fetching in background
     if (cachedMilestones && cachedMilestones.data.length > 0 && !forceRefresh) {
       return cachedMilestones.data;
     }
 
-    return inFlightMilestonesPromise;
+    return requestPromise;
   },
 
   /**
-   * Create a new milestone in Firestore
+   * Create a new milestone in Turso.
    */
   async createMilestone(data: Omit<FirestoreMilestone, 'id'> & { id?: string }): Promise<string> {
     const id = data.id || `ms-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
@@ -217,27 +241,14 @@ export const firestoreMilestonesService = {
       updatedAt: now,
     });
 
-    if (cachedMilestones) {
-      cachedMilestones.data = [...cachedMilestones.data, payload].sort(
-        (a, b) => (a.order ?? 0) - (b.order ?? 0)
-      );
-    }
-
     const docRef = doc(db, 'milestones', id);
-    try {
-      await Promise.race([
-        setDoc(docRef, payload, { merge: true }),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
-    } catch (err) {
-      console.warn('[Firestore Milestones] create warning:', err);
-    }
-
+    await setDoc(docRef, payload);
+    invalidateMilestonesCache();
     return id;
   },
 
   /**
-   * Save or update an existing milestone in Firestore
+   * Save or update an existing milestone in Turso.
    */
   async saveMilestone(id: string, data: Partial<FirestoreMilestone>): Promise<void> {
     const docRef = doc(db, 'milestones', id);
@@ -248,43 +259,17 @@ export const firestoreMilestonesService = {
       updatedAt: now,
     });
 
-    if (cachedMilestones) {
-      const idx = cachedMilestones.data.findIndex((m) => m.id === id);
-      if (idx >= 0) {
-        cachedMilestones.data[idx] = { ...cachedMilestones.data[idx], ...payload } as FirestoreMilestone;
-        cachedMilestones.data.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-      } else {
-        cachedMilestones.data.push(payload as FirestoreMilestone);
-        cachedMilestones.data.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-      }
-    }
-
-    try {
-      await Promise.race([
-        setDoc(docRef, payload, { merge: true }),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
-    } catch (err) {
-      console.warn('[Firestore Milestones] save warning:', err);
-    }
+    await setDoc(docRef, payload, { merge: true });
+    invalidateMilestonesCache();
   },
 
   /**
-   * Delete a milestone permanently from Firestore
+   * Delete a milestone permanently from Turso.
    */
   async deleteMilestone(id: string): Promise<void> {
     const docRef = doc(db, 'milestones', id);
-    if (cachedMilestones) {
-      cachedMilestones.data = cachedMilestones.data.filter((m) => m.id !== id);
-    }
-    try {
-      await Promise.race([
-        deleteDoc(docRef),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
-    } catch (err) {
-      console.warn('[Firestore Milestones] delete warning:', err);
-    }
+    await deleteDoc(docRef);
+    invalidateMilestonesCache();
   },
 
   /**
@@ -299,21 +284,8 @@ export const firestoreMilestonesService = {
       updatedAt: now,
     });
 
-    if (cachedMilestones) {
-      const idx = cachedMilestones.data.findIndex((m) => m.id === id);
-      if (idx >= 0) {
-        cachedMilestones.data[idx] = { ...cachedMilestones.data[idx], ...payload };
-      }
-    }
-
-    try {
-      await Promise.race([
-        setDoc(docRef, payload, { merge: true }),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
-    } catch (err) {
-      console.warn('[Firestore Milestones] togglePublish warning:', err);
-    }
+    await setDoc(docRef, payload, { merge: true });
+    invalidateMilestonesCache();
   },
 
   /**
@@ -329,26 +301,18 @@ export const firestoreMilestonesService = {
     });
 
     await batch.commit();
-
-    if (cachedMilestones) {
-      cachedMilestones.data = cachedMilestones.data
-        .map((m) => {
-          const newOrder = orderedIds.indexOf(m.id);
-          return newOrder >= 0 ? { ...m, order: newOrder + 1 } : m;
-        })
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    }
+    invalidateMilestonesCache();
   },
 
   /**
-   * Realtime Firestore subscription for Milestones
+   * Poll the Turso collection for changes.
    */
   subscribeMilestones(
     onData: (data: FirestoreMilestone[]) => void,
     onError?: (err: Error) => void
   ): Unsubscribe {
     return onSnapshot(
-      collection(db, 'milestones'),
+      query(collection(db, 'milestones'), orderBy('order', 'asc'), limit(500)),
       (snap) => {
         const data = snap.docs.map((d) => {
           const item = d.data();
@@ -365,13 +329,12 @@ export const firestoreMilestonesService = {
         onData(data);
       },
       (err) => {
-        console.warn('[Firestore Milestones] Realtime listener error:', err);
+        console.error('[Turso Milestones] Subscription failed:', err);
         if (onError) {
           onError(err);
-        } else {
-          onData(cachedMilestones?.data || []);
         }
-      }
+      },
+      MILESTONES_POLL_INTERVAL_MS
     );
   },
 };

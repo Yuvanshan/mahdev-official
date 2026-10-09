@@ -129,6 +129,7 @@ export const firestorePortfolioService = {
   async savePortfolio(id: string, data: Partial<FirestorePortfolio>): Promise<void> {
     const docRef = doc(db, 'portfolio', id);
     const payload = sanitizeForFirestore({ ...data, id });
+    await setDoc(docRef, payload, { merge: true });
     if (cachedPortfolio) {
       const idx = cachedPortfolio.data.findIndex((p) => p.id === id);
       if (idx >= 0) {
@@ -136,29 +137,16 @@ export const firestorePortfolioService = {
       } else {
         cachedPortfolio.data.unshift(payload as FirestorePortfolio);
       }
-    }
-    try {
-      await Promise.race([
-        setDoc(docRef, payload, { merge: true }),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
-    } catch (err) {
-      console.warn('[Firestore Portfolio] save warning:', err);
+      cachedPortfolio.timestamp = Date.now();
     }
   },
 
   async deletePortfolio(id: string): Promise<void> {
     const docRef = doc(db, 'portfolio', id);
+    await deleteDoc(docRef);
     if (cachedPortfolio) {
       cachedPortfolio.data = cachedPortfolio.data.filter((p) => p.id !== id);
-    }
-    try {
-      await Promise.race([
-        deleteDoc(docRef),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
-    } catch (err) {
-      console.warn('[Firestore Portfolio] delete warning:', err);
+      cachedPortfolio.timestamp = Date.now();
     }
   },
 

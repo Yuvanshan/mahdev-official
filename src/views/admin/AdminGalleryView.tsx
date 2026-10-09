@@ -420,7 +420,7 @@ export const AdminGalleryView: React.FC = () => {
       setIsEditorOpen(false);
       loadData();
       if (typeof refreshAll === 'function') {
-        refreshAll().catch((rErr) => console.warn('[AdminGallery] refresh notice:', rErr));
+        refreshAll(true).catch((rErr) => console.warn('[AdminGallery] refresh notice:', rErr));
       }
     } catch (err: any) {
       console.error('[AdminGallery] Save error:', err);
@@ -443,7 +443,7 @@ export const AdminGalleryView: React.FC = () => {
         await cmsService.softDelete('gallery', itemToDelete.id);
         addToast('info', 'Gallery Item Archived', `"${itemToDelete.title}" archived.`);
       }
-      await refreshAll();
+      await refreshAll(true);
     } finally {
       setDeletingItem(null);
       loadData();

@@ -158,7 +158,7 @@ export const AdminServicesView: React.FC = () => {
       const orderedIds = newOrder.map((s) => s.id);
       await cmsService.reorder('services', orderedIds);
       addToast('info', 'Service Order Updated', 'New service display order saved and updated on website.');
-      await refreshAll();
+      await refreshAll(true);
     } catch (err: any) {
       console.error('[AdminServices] Reorder error:', err);
       addToast('error', 'Reorder Failed', err.message || 'Failed to persist services order.');
@@ -425,7 +425,7 @@ export const AdminServicesView: React.FC = () => {
       setIsEditorOpen(false);
       loadServices();
       if (typeof refreshAll === 'function') {
-        refreshAll().catch((rErr) => console.warn('[AdminServices] refresh notice:', rErr));
+        refreshAll(true).catch((rErr) => console.warn('[AdminServices] refresh notice:', rErr));
       }
     } catch (err: any) {
       console.error('[AdminServices] Save error:', err);
@@ -445,7 +445,7 @@ export const AdminServicesView: React.FC = () => {
         await cmsService.softDelete('services', deletingService.id);
         addToast('info', 'Service Archived', `"${deletingService.title}" was archived.`);
       }
-      await refreshAll();
+      await refreshAll(true);
     } catch (err: any) {
       console.error('[AdminServices] Delete error:', err);
       addToast('error', 'Delete Error', err.message || 'Failed to delete service.');

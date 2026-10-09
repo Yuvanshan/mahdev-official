@@ -27,9 +27,10 @@ import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 export const AdminMilestonesView: React.FC = () => {
-  const { refreshAll } = useFirestoreDataContext();
+  const { refreshAll, divisions } = useFirestoreDataContext();
   const [milestones, setMilestones] = useState<FirestoreMilestone[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'archived'>('all');
   const [divisionFilter, setDivisionFilter] = useState<string>('all');
@@ -70,17 +71,20 @@ export const AdminMilestonesView: React.FC = () => {
     }, 4000);
   };
 
-  // Real-time Firestore sync
+  // Live Turso updates are polled by the shared database adapter.
   useEffect(() => {
     setIsLoading(true);
+    setLoadError(null);
     const unsubscribe = firestoreMilestonesService.subscribeMilestones(
       (data) => {
         setMilestones(data);
+        setLoadError(null);
         setIsLoading(false);
       },
       (err) => {
-        console.error('[AdminMilestonesView] Firestore subscribe error:', err);
-        addToast('error', 'Sync Warning', 'Failed to receive real-time milestone updates from Firestore.');
+        console.error('[AdminMilestonesView] Turso subscription error:', err);
+        setLoadError(err.message);
+        addToast('error', 'Database Sync Error', err.message);
         setIsLoading(false);
       }
     );
@@ -174,7 +178,7 @@ export const AdminMilestonesView: React.FC = () => {
       setIsDirty(false);
       setIsEditorOpen(false);
       if (typeof refreshAll === 'function') {
-        refreshAll().catch((rErr) => console.warn('[AdminMilestonesView] refresh notice:', rErr));
+        refreshAll(true).catch((rErr) => console.warn('[AdminMilestonesView] refresh notice:', rErr));
       }
     } catch (err: any) {
       console.error('[AdminMilestonesView] Save error:', err);
@@ -193,7 +197,7 @@ export const AdminMilestonesView: React.FC = () => {
         nextState ? 'Milestone Published' : 'Milestone Un-published (Draft)',
         `"${m.title}" is now ${nextState ? 'visible publicly on the website' : 'saved as a draft'}.`
       );
-      await refreshAll();
+      await refreshAll(true);
     } catch (err: any) {
       addToast('error', 'Toggle Error', err.message || 'Could not update publication status.');
     }
@@ -210,10 +214,10 @@ export const AdminMilestonesView: React.FC = () => {
     try {
       const orderedIds = newOrder.map((item) => item.id);
       await firestoreMilestonesService.reorderMilestones(orderedIds);
-      addToast('info', 'Timeline Reordered', 'New chronological display order saved to Firestore.');
-      await refreshAll();
+      addToast('info', 'Timeline Reordered', 'New chronological display order saved to Turso.');
+      await refreshAll(true);
     } catch (err: any) {
-      addToast('error', 'Reorder Error', err.message || 'Failed to reorder milestones in Firestore.');
+      addToast('error', 'Reorder Error', err.message || 'Failed to reorder milestones in Turso.');
     }
   };
 
@@ -223,7 +227,7 @@ export const AdminMilestonesView: React.FC = () => {
     try {
       if (permanent) {
         await firestoreMilestonesService.deleteMilestone(deletingMilestone.id);
-        addToast('warning', 'Permanent Deletion', `"${deletingMilestone.title}" removed from Firestore.`);
+        addToast('warning', 'Permanent Deletion', `"${deletingMilestone.title}" removed from Turso.`);
       } else {
         await firestoreMilestonesService.saveMilestone(deletingMilestone.id, {
           status: 'archived',
@@ -231,7 +235,7 @@ export const AdminMilestonesView: React.FC = () => {
         });
         addToast('info', 'Milestone Archived', `"${deletingMilestone.title}" archived.`);
       }
-      await refreshAll();
+      await refreshAll(true);
     } catch (err: any) {
       addToast('error', 'Deletion Error', err.message || 'Failed to delete milestone.');
     } finally {
@@ -246,7 +250,7 @@ export const AdminMilestonesView: React.FC = () => {
         isPublished: true,
       });
       addToast('success', 'Milestone Restored', `"${m.title}" restored to active timeline.`);
-      await refreshAll();
+      await refreshAll(true);
     } catch (err: any) {
       addToast('error', 'Restore Error', err.message || 'Failed to restore milestone.');
     }
@@ -297,14 +301,14 @@ export const AdminMilestonesView: React.FC = () => {
           <div className="flex items-center gap-2.5 flex-wrap">
             <h2 className="font-display text-lg font-bold text-slate-900">Corporate Milestones & History</h2>
             <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-200">
-              <Radio className="w-3 h-3 text-emerald-500 animate-pulse" /> Live Firestore Sync
+              <Radio className="w-3 h-3 text-emerald-500 animate-pulse" /> Live Turso Sync
             </span>
             <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
               {milestones.length} Total ({publishedCount} Published)
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Real-time synchronization with Cloud Firestore <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-[11px]">milestones</code> collection. Any modifications immediately reflect on the public website.
+            Live data from the Turso <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-[11px]">milestones</code> table. Saved changes appear on the public website.
           </p>
         </div>
 
@@ -346,11 +350,11 @@ export const AdminMilestonesView: React.FC = () => {
           className="px-3 py-2.5 rounded-xl border border-slate-200 bg-white font-semibold cursor-pointer text-xs"
         >
           <option value="all">All Divisions</option>
-          <option value="sws">SWS Event Management</option>
-          <option value="u1">U1 Studio Cinema</option>
-          <option value="it">Mahdev IT & Tech</option>
-          <option value="travels">Mahdev Travels</option>
-          <option value="mart">Mahdev Online Mart</option>
+          {divisions.map((division) => (
+            <option key={division.id} value={division.id}>
+              {division.name}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -374,8 +378,15 @@ export const AdminMilestonesView: React.FC = () => {
                   <td colSpan={6} className="py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                      <span>Loading milestones from Cloud Firestore...</span>
+                      <span>Loading milestones from Turso...</span>
                     </div>
+                  </td>
+                </tr>
+              ) : loadError && milestones.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-rose-600">
+                    <p className="font-semibold">Could not load milestones from Turso.</p>
+                    <p className="mt-1 text-xs">{loadError}</p>
                   </td>
                 </tr>
               ) : filteredMilestones.length === 0 ? (
@@ -385,7 +396,7 @@ export const AdminMilestonesView: React.FC = () => {
                       <Layers className="w-8 h-8 text-slate-300" />
                       <p className="font-semibold text-slate-700">No milestones found</p>
                       <p className="text-slate-400 text-xs">
-                        {searchQuery ? 'Try adjusting your search query or status filter.' : 'Click "Add Milestone" to create your first Firestore milestone document.'}
+                        {searchQuery ? 'Try adjusting your search query or status filter.' : 'Click "Add Milestone" to create your first milestone.'}
                       </p>
                     </div>
                   </td>
@@ -448,7 +459,7 @@ export const AdminMilestonesView: React.FC = () => {
                       <td className="py-3.5 px-4">
                         <div className="flex flex-col gap-1 items-start">
                           <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
-                            {m.divisionId ? m.divisionId.toUpperCase() : 'GROUP'}
+                            {divisions.find((division) => division.id === m.divisionId)?.name || 'Parent Group'}
                           </span>
                           {m.badge && (
                             <span className="text-[11px] font-semibold text-blue-600">
@@ -544,7 +555,7 @@ export const AdminMilestonesView: React.FC = () => {
         isOpen={isEditorOpen}
         onClose={() => setIsEditorOpen(false)}
         title={editingMilestone ? `Edit Milestone: ${editingMilestone.title}` : 'Add New Corporate Milestone'}
-        subtitle="Saved directly to Cloud Firestore `milestones` collection and visible on public website."
+        subtitle="Saved directly to the Turso milestones table and visible on the public website."
         isDirty={isDirty}
         maxWidth="lg"
       >
@@ -589,12 +600,12 @@ export const AdminMilestonesView: React.FC = () => {
                 }}
                 className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               >
-                <option value="all">Parent Group (All Divisions)</option>
-                <option value="sws">SWS Event Management</option>
-                <option value="u1">U1 Studio Cinema</option>
-                <option value="it">Mahdev IT & Tech</option>
-                <option value="travels">Mahdev Travels</option>
-                <option value="mart">Mahdev Online Mart</option>
+                <option value="all">Parent Group</option>
+                {divisions.map((division) => (
+                  <option key={division.id} value={division.id}>
+                    {division.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -720,7 +731,7 @@ export const AdminMilestonesView: React.FC = () => {
                 Cancel
               </Button>
               <Button variant="primary" size="sm" type="submit" disabled={isSaving}>
-                {isSaving ? 'Saving to Firestore...' : editingMilestone ? 'Update Firestore Milestone' : 'Create Firestore Milestone'}
+                {isSaving ? 'Saving to Turso...' : editingMilestone ? 'Update Milestone' : 'Create Milestone'}
               </Button>
             </div>
           </div>

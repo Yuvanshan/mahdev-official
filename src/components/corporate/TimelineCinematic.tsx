@@ -69,7 +69,7 @@ export const TimelineCinematic: React.FC<TimelineCinematicProps> = ({ initialDiv
   const { milestones, homepageConfig } = useFirestoreDataContext();
   const [activeMilestoneId, setActiveMilestoneId] = useState<string>('ms-2026');
 
-  // Filter ONLY published, non-archived milestones directly from Firestore, or fallback to official
+  // Show published, non-archived Turso milestones, or fall back to the official timeline.
   const sortedMilestones = React.useMemo(() => {
     const published = milestones.filter(
       (m) => m.isPublished !== false && m.status !== 'draft' && m.status !== 'archived' && m.year

@@ -297,50 +297,16 @@ export const AdminProductsView: React.FC = () => {
 
       if (editingProduct) {
         await cmsService.update<CmsProduct>('products', editingProduct.id, payload as any);
-        try {
-          await firestoreProductsService.saveProduct(editingProduct.id, {
-            ...payload,
-            id: editingProduct.id,
-            imageUrl: primaryImg,
-            images: allImgs,
-            galleryImages: allImgs,
-            division: formData.divisionId,
-            divisionId: formData.divisionId,
-            stock: formData.stockQuantity,
-            stockQuantity: formData.stockQuantity,
-            isPublished: formData.isActive,
-            status: formData.isActive ? 'active' : 'draft',
-          } as any);
-        } catch (fErr) {
-          console.warn('[AdminProducts] Firestore save notice:', fErr);
-        }
         addToast('success', 'Product Updated', `SKU ${payload.sku} "${payload.name}" saved.`);
       } else {
-        const created = await cmsService.create<CmsProduct>('products', payload as any);
-        try {
-          await firestoreProductsService.saveProduct(created.id, {
-            ...payload,
-            id: created.id,
-            imageUrl: primaryImg,
-            images: allImgs,
-            galleryImages: allImgs,
-            division: formData.divisionId,
-            divisionId: formData.divisionId,
-            stock: formData.stockQuantity,
-            stockQuantity: formData.stockQuantity,
-            isPublished: formData.isActive,
-            status: formData.isActive ? 'active' : 'draft',
-          } as any);
-        } catch (fErr) {
-          console.warn('[AdminProducts] Firestore create notice:', fErr);
-        }
+        await cmsService.create<CmsProduct>('products', payload as any);
         addToast('success', 'Product Created', `"${payload.name}" added to catalog.`);
       }
       setIsDirty(false);
       setIsEditorOpen(false);
       loadData();
       try {
-        await refreshAll();
+        await refreshAll(true);
       } catch (rErr) {
         console.warn('refreshAll notice:', rErr);
       }

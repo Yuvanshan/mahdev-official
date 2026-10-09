@@ -71,6 +71,7 @@ export const firestoreCategoriesService = {
   async saveCategory(id: string, data: Partial<FirestoreCategory>): Promise<void> {
     const docRef = doc(db, 'categories', id);
     const payload = sanitizeForFirestore({ ...data, id });
+    await setDoc(docRef, payload, { merge: true });
     if (cachedCategories) {
       const idx = cachedCategories.data.findIndex((c) => c.id === id);
       if (idx >= 0) {
@@ -78,14 +79,7 @@ export const firestoreCategoriesService = {
       } else {
         cachedCategories.data.push(payload as FirestoreCategory);
       }
-    }
-    try {
-      await Promise.race([
-        setDoc(docRef, payload, { merge: true }),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
-    } catch (err) {
-      console.warn('[Firestore Categories] save warning:', err);
+      cachedCategories.timestamp = Date.now();
     }
   },
 
@@ -94,16 +88,10 @@ export const firestoreCategoriesService = {
    */
   async deleteCategory(id: string): Promise<void> {
     const docRef = doc(db, 'categories', id);
+    await deleteDoc(docRef);
     if (cachedCategories) {
       cachedCategories.data = cachedCategories.data.filter((c) => c.id !== id);
-    }
-    try {
-      await Promise.race([
-        deleteDoc(docRef),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
-    } catch (err) {
-      console.warn('[Firestore Categories] delete warning:', err);
+      cachedCategories.timestamp = Date.now();
     }
   },
 

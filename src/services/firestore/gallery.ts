@@ -216,6 +216,7 @@ export const firestoreGalleryService = {
   async saveGallery(id: string, data: Partial<FirestoreGallery>): Promise<void> {
     const docRef = doc(db, 'gallery', id);
     const payload = sanitizeForFirestore({ ...data, id });
+    await setDoc(docRef, payload, { merge: true });
     if (cachedGallery) {
       const idx = cachedGallery.data.findIndex((g) => g.id === id);
       if (idx >= 0) {
@@ -223,29 +224,16 @@ export const firestoreGalleryService = {
       } else {
         cachedGallery.data.unshift(payload as FirestoreGallery);
       }
-    }
-    try {
-      await Promise.race([
-        setDoc(docRef, payload, { merge: true }),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
-    } catch (err) {
-      console.warn('[Firestore Gallery] save warning:', err);
+      cachedGallery.timestamp = Date.now();
     }
   },
 
   async deleteGallery(id: string): Promise<void> {
     const docRef = doc(db, 'gallery', id);
+    await deleteDoc(docRef);
     if (cachedGallery) {
       cachedGallery.data = cachedGallery.data.filter((g) => g.id !== id);
-    }
-    try {
-      await Promise.race([
-        deleteDoc(docRef),
-        new Promise((resolve) => setTimeout(resolve, 3500)),
-      ]);
-    } catch (err) {
-      console.warn('[Firestore Gallery] delete warning:', err);
+      cachedGallery.timestamp = Date.now();
     }
   },
 

@@ -29,7 +29,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         loop
         muted
         playsInline
-        preload="metadata"
+        preload="auto"
         aria-hidden="true"
         className="absolute inset-0 h-full w-full object-cover"
       />

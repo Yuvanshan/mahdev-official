@@ -439,7 +439,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
         </div>
       </section>
 
-      {/* 2. BELOW HERO SECTION: SHOW SHIMMER UNTIL DATA LOADS FROM FIRESTORE */}
+      {/* 2. Below-hero sections */}
       {isDivisionDataLoading ? (
         <DivisionBelowHeroShimmer divisionName={division.name} />
       ) : (
@@ -482,7 +482,6 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
       <SectionContainer id="services-grid" background="subtle" paddingY="xl" hasBorderBottom>
         <ScrollReveal direction="up">
           <div className="max-w-2xl mb-8">
-            <Caption className="text-[#0052FF] mb-1.5 block font-semibold">Specialized Offerings</Caption>
             <H2 className="text-slate-900 font-bold">Core Capabilities & Solutions</H2>
           </div>
         </ScrollReveal>
@@ -503,7 +502,6 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
               </div>
 
               <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-[#0052FF]">
-                <span className="text-slate-400 font-medium">Enterprise Tier</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -526,22 +524,15 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
       <SectionContainer id="division-inquiry" background="white" paddingY="xl" hasBorderBottom>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
           <div className="lg:col-span-5 space-y-6">
-            <Caption className="text-[#0052FF] font-semibold">Direct Engagement</Caption>
             <H2 className="text-slate-900 font-bold">
               Consult with the {division.shortName} Team
             </H2>
-            <Body className="text-slate-600 leading-relaxed">
-              Submit your project scope, schedule dates, or procurement inquiry directly to our lead production and technical team.
-            </Body>
 
             <div className="p-5 rounded-2xl bg-blue-50/60 border border-blue-100 text-xs text-slate-700 space-y-3">
               <div className="font-bold text-[#0052FF] flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-[#0052FF]" />
                 <span>Mahdev Quality SLA Guarantee</span>
               </div>
-              <p className="text-slate-600 leading-relaxed">
-                All inquiries are dispatched immediately to the administrative desk and reviewed within 24 business hours.
-              </p>
               <div className="pt-2 border-t border-blue-100/70 flex items-center justify-between">
                 <span className="text-slate-500">Official Hotline:</span>
                 <a
@@ -558,9 +549,6 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
             <h3 className="font-display text-xl font-bold text-slate-900 mb-1">
               {division.name} — Project Inquiry
             </h3>
-            <p className="text-xs text-slate-500 mb-6">
-              Complete the brief below to receive a formal consultation proposal.
-            </p>
 
             {inquirySubmitted ? (
               <div className="p-6 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-center space-y-3">
