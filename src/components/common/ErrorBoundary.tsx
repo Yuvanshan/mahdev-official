@@ -13,6 +13,9 @@ interface ErrorBoundaryState {
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  private static readonly CHUNK_RECOVERY_KEY = 'mahdev:chunk-load-recovery';
+  private static readonly CHUNK_RECOVERY_WINDOW_MS = 2 * 60 * 1000;
+
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
@@ -29,6 +32,36 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   public override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('[ErrorBoundary] Caught runtime exception:', error, errorInfo);
     this.setState({ errorInfo });
+
+    if (!/failed to fetch dynamically imported module|importing a module script failed|failed to load module script|loading chunk .* failed/i.test(error.message)) {
+      return;
+    }
+
+    try {
+      const fingerprint = error.message;
+      const previousRecovery = sessionStorage.getItem(ErrorBoundary.CHUNK_RECOVERY_KEY);
+      if (previousRecovery) {
+        const { fingerprint: previousFingerprint, timestamp } = JSON.parse(previousRecovery) as {
+          fingerprint?: string;
+          timestamp?: number;
+        };
+        if (
+          previousFingerprint === fingerprint &&
+          typeof timestamp === 'number' &&
+          Date.now() - timestamp < ErrorBoundary.CHUNK_RECOVERY_WINDOW_MS
+        ) {
+          return;
+        }
+      }
+
+      sessionStorage.setItem(
+        ErrorBoundary.CHUNK_RECOVERY_KEY,
+        JSON.stringify({ fingerprint, timestamp: Date.now() })
+      );
+      window.location.reload();
+    } catch (recoveryError) {
+      console.error('[ErrorBoundary] Could not recover from the failed page module:', recoveryError);
+    }
   }
 
   private handleReload = () => {
@@ -53,11 +86,11 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             </div>
 
             <h1 className="text-2xl font-bold font-display text-slate-900 tracking-tight mb-2">
-              Application Recovered
+              Unable to Load Page
             </h1>
 
             <p className="text-sm text-slate-600 leading-relaxed mb-6">
-              The application encountered an unexpected state, but your session remains protected. You can reload the page or return to the homepage.
+              An unexpected error interrupted the application, but your session remains protected. Reload the page or return to the homepage.
             </p>
 
             {this.state.error && (

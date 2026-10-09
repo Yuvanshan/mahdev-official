@@ -227,15 +227,24 @@ export async function optimizeImage(
       };
     }
 
-    // Generate output file extension matching mimeType
-    const ext = mimeType === 'image/webp' ? '.webp' : mimeType === 'image/png' ? '.png' : '.jpg';
+    const outputMimeType = blob.type || mimeType;
+    const ext = outputMimeType === 'image/webp' ? '.webp' : outputMimeType === 'image/png' ? '.png' : '.jpg';
     const baseName = file.name.replace(/\.[^/.]+$/, '');
     const newFileName = `${baseName}${ext}`;
 
     const optimizedFile = new File([blob], newFileName, {
-      type: mimeType,
+      type: outputMimeType,
       lastModified: Date.now(),
     });
+
+    if (optimizedFile.size >= originalSize) {
+      return {
+        optimizedFile: file,
+        originalSize,
+        optimizedSize: originalSize,
+        dimensions: { width: img.width, height: img.height },
+      };
+    }
 
     return {
       optimizedFile,

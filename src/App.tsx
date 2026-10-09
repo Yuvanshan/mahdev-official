@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useState, useEffect } from 'react';
+import React, { lazy as reactLazy, Suspense, useState, useEffect } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { Navigation } from './components/layout/Navigation';
 import { Footer } from './components/layout/Footer';
@@ -17,6 +17,80 @@ import { testTursoConnection, initAppCheck } from './lib/firebase';
 import { analyticsService } from './services/analyticsService';
 import { catalogService } from './services/catalogService';
 import { motion, AnimatePresence } from 'motion/react';
+
+const CHUNK_RECOVERY_KEY = 'mahdev:chunk-load-recovery';
+
+function lazy<T extends React.ComponentType<any>>(
+  load: () => Promise<{ default: T }>
+): React.LazyExoticComponent<T> {
+  return reactLazy(() =>
+    load().then((module) => {
+      try {
+        sessionStorage.removeItem(CHUNK_RECOVERY_KEY);
+      } catch {
+        // Session storage may be unavailable in restricted browser contexts.
+      }
+      return module;
+    })
+  );
+}
+
+type DivisionHeroLoadingFallbackProps = {
+  division?: 'sws' | 'u1';
+};
+
+const DivisionHeroLoadingFallback: React.FC<DivisionHeroLoadingFallbackProps> = ({ division }) => {
+  if (!division) {
+    return (
+      <div
+        role="status"
+        aria-busy="true"
+        className="flex min-h-96 items-center justify-center bg-slate-50 text-sm font-medium text-slate-500"
+      >
+        Loading page content…
+      </div>
+    );
+  }
+
+  const title = division === 'sws'
+    ? 'We Create Moments. You Make Memories.'
+    : 'Every Frame Tells a Story.';
+  const description = division === 'sws'
+    ? 'Beautifully designed celebrations, thoughtfully crafted around your special moments.'
+    : 'Professional photography and creative experiences that preserve your most precious memories.';
+
+  return (
+    <section
+      role="status"
+      aria-busy="true"
+      aria-label={`Loading ${division === 'sws' ? 'SWS Event Management' : 'U1 Studio'}`}
+      className="relative flex min-h-[85vh] w-full items-center overflow-hidden bg-[#061033] text-white lg:min-h-[90vh]"
+    >
+      <video
+        aria-hidden="true"
+        className="absolute inset-0 h-full w-full object-cover"
+        src="/assets/hero_main.mp4?v=2"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#061033]/90 via-[#061033]/60 to-[#061033]/30" />
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
+        <div className="max-w-3xl space-y-6">
+          <h1 className="text-3xl font-black leading-tight tracking-tight drop-shadow-md sm:text-5xl lg:text-6xl">
+            {title}
+          </h1>
+          <p className="max-w-xl text-sm font-medium tracking-wide text-white/85 drop-shadow-md sm:text-base">
+            {description}
+          </p>
+          <p className="text-sm font-semibold text-white/75">Loading page content…</p>
+        </div>
+      </div>
+    </section>
+  );
+};
 
 const HomeView = lazy(() => import('./views/HomeView').then((module) => ({ default: module.HomeView })));
 const DivisionView = lazy(() => import('./views/DivisionView').then((module) => ({ default: module.DivisionView })));
@@ -1089,6 +1163,10 @@ function AppContent() {
   // Keep the primary navigation visible across the site, including coming-soon
   // division routes, while the division-specific notice still remains in place.
   const isStandaloneComingSoon = Boolean(divisionKey && isDivisionComingSoon(divisionKey));
+  const heroLoadingDivision =
+    (divisionKey === 'sws' || divisionKey === 'u1') && !isDivisionComingSoon(divisionKey)
+      ? divisionKey
+      : undefined;
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-blue-600 selection:text-white w-full max-w-full overflow-x-hidden">
@@ -1120,7 +1198,7 @@ function AppContent() {
             transition={{ duration: 0.24, ease: 'easeInOut' }}
             className="w-full max-w-full min-w-0"
           >
-            <Suspense fallback={<div className="min-h-96" aria-busy="true" />}>
+            <Suspense fallback={<DivisionHeroLoadingFallback division={heroLoadingDivision} />}>
               {renderCurrentView()}
             </Suspense>
           </motion.div>

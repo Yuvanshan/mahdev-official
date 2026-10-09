@@ -72,7 +72,8 @@ export interface WriteBatch {
 }
 
 const database: TursoDatabase = { type: 'turso' };
-const SNAPSHOT_POLL_INTERVAL_MS = 8000;
+// These HTTP-backed subscriptions each issue Turso reads, so avoid tight polling.
+const SNAPSHOT_POLL_INTERVAL_MS = 30000;
 const inFlightReads = new Map<string, Promise<ApiResponse<unknown>>>();
 
 function normalizeSegments(segments: string[]): string[] {
