@@ -1337,9 +1337,11 @@ async function startServer() {
           channels: channels || ['email', 'whatsapp'],
         });
 
+        const { success: dispatchSuccess, ...dispatchResult } = result || {};
+
         res.json({
-          success: true,
-          ...result,
+          success: dispatchSuccess ?? true,
+          ...dispatchResult,
         });
       } catch (err: any) {
         res.status(500).json({

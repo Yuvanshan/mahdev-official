@@ -3,7 +3,11 @@ import {
   AdminSessionAuthError,
   getAdminSessionFromCookie,
 } from '../../../auth/adminCredentialAuth.js';
-import { createAdminMediaUpload } from '../../../services/adminMediaUpload.js';
+import {
+  ADMIN_MEDIA_CHUNK_BYTES,
+  createAdminMediaUpload,
+  forwardAdminMediaUploadChunk,
+} from '../../../services/adminMediaUpload.js';
 
 export const config = {
   api: {
@@ -30,9 +34,53 @@ async function readJsonBody(
   };
 }
 
+async function readChunkBody(req: IncomingMessage): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  let size = 0;
+  for await (const chunk of req) {
+    const data = typeof chunk === 'string' ? Buffer.from(chunk) : chunk;
+    size += data.length;
+    if (size > ADMIN_MEDIA_CHUNK_BYTES) {
+      throw new Error('Media upload chunk exceeds the server limit.');
+    }
+    chunks.push(data);
+  }
+  return Buffer.concat(chunks);
+}
+
 export default async function handler(req: IncomingMessage & { method?: string }, res: ServerResponse) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Content-Type', 'application/json');
+
+  if (req.method === 'PUT') {
+    try {
+      getAdminSessionFromCookie(req.headers.cookie);
+      const body = await readChunkBody(req);
+      const result = await forwardAdminMediaUploadChunk({
+        uploadUrl: req.headers['x-upload-session'],
+        contentRange: req.headers['content-range'],
+        contentType: req.headers['content-type'],
+        body,
+      });
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, ...result }));
+    } catch (error) {
+      const statusCode = error instanceof AdminSessionAuthError
+        ? error.statusCode
+        : error instanceof Error && /Invalid|exceeds the server limit/.test(error.message)
+          ? 400
+          : 502;
+      if (statusCode === 502) {
+        console.error('[AdminMediaUpload] Could not forward upload chunk:', error);
+      }
+      res.statusCode = statusCode;
+      res.end(JSON.stringify({
+        success: false,
+        error: error instanceof Error ? error.message : 'Could not upload media chunk.',
+      }));
+    }
+    return;
+  }
 
   if (req.method !== 'POST') {
     res.statusCode = req.method === 'GET' ? 200 : 405;

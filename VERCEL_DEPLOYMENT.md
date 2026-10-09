@@ -126,7 +126,7 @@ Admin sign-in uses server-configured credentials, an scrypt password hash, and a
 4. Admin database writes, audit reads, admin customer queries, and uploads require the server-issued session cookie. The session expires after eight hours.
 5. Keep an environment allowlist entry for at least one bootstrap super administrator. Admin content writes and destructive database actions reject unverified or unauthorized requests; public reads remain available.
 6. Admin media uploads use the server session and Firebase Admin SDK; Firebase Anonymous Authentication is not used. Add a Firebase service account with Firebase Storage object create permission as `FIREBASE_SERVICE_ACCOUNT_JSON` in Vercel, then redeploy.
-7. Apply the repository's `storage.rules` in Firebase Storage. For browser resumable uploads, configure the bucket's CORS policy with `gcloud storage buckets update gs://for-her-33ea9.firebasestorage.app --cors-file=storage.cors.json`. The CORS file permits browser PUT requests only; it does not grant bucket write access.
+7. Apply the repository's `storage.rules` in Firebase Storage. Website media remains publicly readable, while media writes are restricted to administrators. Admin uploads are sent in bounded chunks through the same-origin, admin-session-protected API, so this upload flow does not depend on bucket CORS.
 
 Admin portal access uses `ADMIN_LOGIN_EMAIL`, `ADMIN_LOGIN_PASSWORD_HASH`, and `ADMIN_SESSION_SECRET` on the server. Do not add these values with a `VITE_` prefix.
 

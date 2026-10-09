@@ -1,5 +1,5 @@
 /**
- * Creates an admin-authorized resumable upload to Firebase Storage.
+ * Uploads media to Firebase Storage through the admin-session-protected API.
  */
 
 import { adminService } from './adminService';
@@ -55,33 +55,68 @@ export async function uploadMediaAsset(
     throw new Error(result.error || `Could not initialize media upload (HTTP ${response.status}).`);
   }
 
-  return new Promise<string>((resolve, reject) => {
-    const uploadRequest = new XMLHttpRequest();
-    uploadRequest.open('PUT', result.uploadUrl!);
-    uploadRequest.setRequestHeader('Content-Type', file.type || (isVideo ? 'video/mp4' : 'image/jpeg'));
-    uploadRequest.upload.onprogress = (event) => {
-      if (event.lengthComputable && event.total > 0) {
-        onProgress?.(Math.min(99, Math.round((event.loaded / event.total) * 100)));
-      }
-    };
-    uploadRequest.onerror = () => reject(new Error(
-      'The browser could not reach Firebase Storage. Apply the bucket CORS policy with ' +
-      '`gcloud storage buckets update gs://for-her-33ea9.firebasestorage.app --cors-file=storage.cors.json`, ' +
-      'then retry the upload.'
-    ));
-    uploadRequest.onabort = () => reject(new Error('Media upload was cancelled.'));
-    uploadRequest.onload = () => {
-      if (uploadRequest.status >= 200 && uploadRequest.status < 300) {
-        try {
-          onProgress?.(100);
-          resolve(result.downloadUrl!);
-        } catch (error) {
-          reject(error);
+  const chunkSize = 3 * 1024 * 1024;
+  let receivedBytes = 0;
+  while (receivedBytes < file.size) {
+    const start = receivedBytes;
+    const end = Math.min(start + chunkSize, file.size) - 1;
+    const chunk = file.slice(start, end + 1);
+    const chunkResult = await new Promise<{ receivedBytes: number; complete: boolean }>((resolve, reject) => {
+      const uploadRequest = new XMLHttpRequest();
+      uploadRequest.open('PUT', '/api/upload/media');
+      uploadRequest.withCredentials = true;
+      uploadRequest.setRequestHeader('Content-Type', file.type || (isVideo ? 'video/mp4' : 'image/jpeg'));
+      uploadRequest.setRequestHeader('Content-Range', `bytes ${start}-${end}/${file.size}`);
+      uploadRequest.setRequestHeader('X-Upload-Session', result.uploadUrl!);
+      uploadRequest.upload.onprogress = (event) => {
+        if (event.lengthComputable && event.total > 0) {
+          const transferred = start + Math.min(event.loaded, event.total);
+          onProgress?.(Math.min(99, Math.round((transferred / file.size) * 100)));
         }
-      } else {
-        reject(new Error(`Firebase Storage rejected the upload (HTTP ${uploadRequest.status}).`));
-      }
+      };
+      uploadRequest.onerror = () => reject(new Error('Network error while sending a media chunk to the admin upload service.'));
+      uploadRequest.onabort = () => reject(new Error('Media upload was cancelled.'));
+      uploadRequest.onload = () => {
+        let responseBody: { success?: boolean; receivedBytes?: number; complete?: boolean; error?: string };
+        try {
+          responseBody = JSON.parse(uploadRequest.responseText);
+        } catch {
+          reject(new Error(`Admin upload service returned an invalid response (HTTP ${uploadRequest.status}).`));
+          return;
+        }
+        if (uploadRequest.status < 200 || uploadRequest.status >= 300 || !responseBody.success) {
+          reject(new Error(responseBody.error || `Media chunk upload failed (HTTP ${uploadRequest.status}).`));
+          return;
+        }
+        if (typeof responseBody.receivedBytes !== 'number' || typeof responseBody.complete !== 'boolean') {
+          reject(new Error('Admin upload service returned an incomplete chunk acknowledgment.'));
+          return;
+        }
+        resolve({
+          receivedBytes: responseBody.receivedBytes,
+          complete: responseBody.complete,
+        });
+      };
+      uploadRequest.send(chunk);
+    });
+    if (chunkResult.receivedBytes <= receivedBytes || chunkResult.receivedBytes > file.size) {
+      throw new Error('Firebase Storage returned an invalid upload offset.');
     }
-    uploadRequest.send(file);
-  });
+    receivedBytes = chunkResult.receivedBytes;
+    if (chunkResult.complete) {
+      if (receivedBytes !== file.size) {
+        throw new Error('Firebase Storage completed the upload at an unexpected file size.');
+      }
+      break;
+    }
+    if (receivedBytes <= end) {
+      throw new Error('Firebase Storage did not acknowledge the full uploaded chunk.');
+    }
+  }
+
+  if (receivedBytes !== file.size) {
+    throw new Error('Media upload ended before the full file was received.');
+  }
+  onProgress?.(100);
+  return result.downloadUrl;
 }
