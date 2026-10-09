@@ -82,7 +82,7 @@ Open the Vite URL shown in the frontend terminal. Its `/api` proxy forwards requ
 | `npm run build` | Builds frontend assets and compiles the backend server to `dist/backend.cjs` |
 | `npm run start` | Starts the compiled backend server |
 | `npm run db:migrate` | Connects to Turso, provisions the application schema, and verifies the connection |
-| `npm run migrate:turso` | Imports a Firestore JSON backup into Turso using non-destructive upserts |
+| `npm run migrate:turso` | Imports a selected legacy JSON backup into Turso without overwriting existing IDs by default |
 | `npm run lint` | Runs TypeScript static analysis and linter (`tsc --noEmit`) |
 
 ---
@@ -112,9 +112,9 @@ Open the Vite URL shown in the frontend terminal. Its `/api` proxy forwards requ
 1. Create/select a database in the Turso dashboard and copy its database URL from the database connection details. Generate an auth token for the database.
 2. Put `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in the server environment (root `.env` locally; deployment secrets in production). Never use a `VITE_` prefix for the auth token.
 3. Run `npm run db:migrate` to provision/verify the Turso schema. The backend provisions one physical SQL table per application collection, plus `turso_collections` and `turso_migrations`; new collections are provisioned on first access.
-4. If historical Firestore records still need importing, run `npm run migrate:turso` or `npm run migrate:turso -- path/to/backup.json`. This explicitly imports the selected JSON backup using upserts and does not clear existing Turso rows. The backend does not seed demo users or products.
+4. If historical records still need importing, run `npm run migrate:turso` or `npm run migrate:turso -- path/to/backup.json`. Existing document IDs are skipped by default, and inserted/overwritten/skipped totals are reported. Only pass `--overwrite` after verifying a backup and intentionally approving replacement of matching IDs. The backend does not seed demo users or products.
 
-Firebase remains in use for Authentication, Storage, and App Check; application records are stored in Turso. App Check initializes in `src/App.tsx` with environment-sensitive debug attestation in development and reCAPTCHA v3 in production.
+Firebase remains in use for Authentication, Storage, and App Check; no Firebase Firestore SDK is used for application records, which are stored in Turso. App Check initializes in `src/App.tsx` with environment-sensitive debug attestation in development and reCAPTCHA v3 in production.
 
 ---
 

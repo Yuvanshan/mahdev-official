@@ -9,6 +9,8 @@ import { generateSecureFiscalInvoice } from '../backend/services/secureInvoiceSe
 import { runSecurityRulesSimulation } from './test-security-rules';
 import { validateFile } from '../src/utils/imageOptimizer';
 import { runBackupRecoveryDrill } from './test-backup-recovery-drill';
+import { buildWhatsAppOrderMessage } from '../src/utils/whatsapp';
+import { notificationService } from '../src/services/notificationService';
 
 interface TestStep {
   category: string;
@@ -134,6 +136,47 @@ async function runTestSuite() {
           transactionId: 'TXN-CI-999',
         });
         return !!inv.digitalSignature && inv.invoiceNumber.startsWith('INV-');
+      },
+    },
+    {
+      category: 'Customer Experience',
+      name: 'WhatsApp order includes the direct product page',
+      fn: () => {
+        const message = buildWhatsAppOrderMessage({
+          orderId: 'ORD-CI-100',
+          customerName: 'CI Test Customer',
+          customerPhone: '0750000000',
+          items: [{
+            name: 'Test Product',
+            sku: 'TEST-001',
+            quantity: 1,
+            price: 100,
+            slug: 'test-product',
+          }],
+          subtotal: 100,
+          grandTotal: 100,
+        });
+        return message.includes('https://mahdev.lk/products/test-product');
+      },
+    },
+    {
+      category: 'Admin Operations',
+      name: 'New inquiry creates an unread admin notification',
+      fn: () => {
+        const inquiryId = `CI-${Date.now()}`;
+        notificationService.notifyAdminInquiryReceived({
+          id: inquiryId,
+          name: 'CI Test Customer',
+          email: 'customer@example.com',
+          subject: 'Live inquiry test',
+        });
+        return notificationService.getNotifications(undefined, 'admin').some(
+          (notification) =>
+            notification.id === `admin-inquiry-${inquiryId}` &&
+            notification.type === 'admin_contact_inquiry' &&
+            notification.readAt === null &&
+            notification.data?.inquiryId === inquiryId
+        );
       },
     },
 

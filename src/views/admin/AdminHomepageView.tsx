@@ -101,6 +101,7 @@ export const AdminHomepageView: React.FC = () => {
     : DEFAULT_HOMEPAGE_SECTIONS;
   const sectionsList: DynamicSectionItem[] = rawSections.filter(
     (s) =>
+      !['divisions', 'statistics', 'hero', 'welcomeAnimation', 'contact'].includes(s.sectionKey) &&
       s.sectionKey !== 'about' &&
       s.id !== 'sec-about' &&
       s.sectionKey !== 'whyMahdev' &&
@@ -357,15 +358,14 @@ export const AdminHomepageView: React.FC = () => {
       <div className="flex gap-2 overflow-x-auto pb-1">
         {[
           { id: 'sections', label: '0. Sections & Widgets', icon: SlidersHorizontal },
-          { id: 'hero', label: '1. Hero & Media', icon: Sparkles },
-          { id: 'services', label: '2. Featured Services', icon: Layers },
-          { id: 'products', label: '3. Featured Hardware', icon: Tag },
-          { id: 'portfolio', label: '4. Portfolio & Cases', icon: Star },
-          { id: 'showcase', label: '5. Event Showcase', icon: Video },
-          { id: 'milestones', label: '6. Milestones & Achievements', icon: TrendingUp },
-          { id: 'companies', label: '7. Corporate Partners', icon: Globe },
-          { id: 'cta', label: '8. Global CTA Bar', icon: Phone },
-          { id: 'seo', label: '9. Homepage SEO', icon: Globe },
+          { id: 'services', label: '1. Featured Services', icon: Layers },
+          { id: 'products', label: '2. Featured Products', icon: Tag },
+          { id: 'portfolio', label: '3. Portfolio', icon: Star },
+          { id: 'showcase', label: '4. Video Showcase', icon: Video },
+          { id: 'milestones', label: '5. Milestones', icon: TrendingUp },
+          { id: 'companies', label: '6. Trusted Partners', icon: Globe },
+          { id: 'cta', label: '7. Contact & Enquiries', icon: Phone },
+          { id: 'seo', label: '8. Homepage SEO', icon: Globe },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -415,7 +415,7 @@ export const AdminHomepageView: React.FC = () => {
                 // Mapping section key to tab
                 const getTabTarget = (key: string) => {
                   if (key === 'welcomeAnimation') return null;
-                  if (key === 'hero') return 'hero';
+                  if (key === 'hero') return null;
                   if (key === 'services') return 'services';
                   if (key === 'gallery' || key === 'portfolio') return 'portfolio';
                   if (key === 'decorationShowcase') return 'showcase';

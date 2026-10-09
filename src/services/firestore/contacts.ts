@@ -8,16 +8,47 @@ import {
   deleteDoc,
   query,
   orderBy,
+  limit,
   onSnapshot,
   Unsubscribe,
 } from '../../lib/tursoFirestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreContactSubmission } from '../../types/firestore';
 
+const ADMIN_INBOX_POLL_INTERVAL_MS = 2500;
+type ContactSubscriber = {
+  onData: (items: FirestoreContactSubmission[]) => void;
+  onError?: (error: Error) => void;
+};
+const contactSubscribers = new Set<ContactSubscriber>();
+let stopContactFeed: Unsubscribe | null = null;
+
+function startContactFeed(): void {
+  if (stopContactFeed) return;
+  let errorNotified = false;
+  const q = query(collection(db, 'contactSubmissions'), orderBy('createdAt', 'desc'), limit(250));
+  stopContactFeed = onSnapshot(
+    q,
+    (snap) => {
+      errorNotified = false;
+      const contacts = snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreContactSubmission[];
+      contactSubscribers.forEach(({ onData }) => onData(contacts));
+    },
+    (err) => {
+      if (!errorNotified) {
+        errorNotified = true;
+        console.warn('[Firestore Contacts] subscribeContacts error:', err);
+        contactSubscribers.forEach(({ onError }) => onError?.(err));
+      }
+    },
+    ADMIN_INBOX_POLL_INTERVAL_MS
+  );
+}
+
 export const firestoreContactsService = {
   async getContacts(): Promise<FirestoreContactSubmission[]> {
     try {
-      const q = query(collection(db, 'contactSubmissions'), orderBy('createdAt', 'desc'));
+      const q = query(collection(db, 'contactSubmissions'), orderBy('createdAt', 'desc'), limit(250));
       const snap = await getDocs(q);
       return snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreContactSubmission[];
     } catch (err) {
@@ -27,18 +58,16 @@ export const firestoreContactsService = {
   },
 
   subscribeContacts(onData: (items: FirestoreContactSubmission[]) => void, onError?: (err: Error) => void): Unsubscribe {
-    const q = query(collection(db, 'contactSubmissions'), orderBy('createdAt', 'desc'));
-    return onSnapshot(
-      q,
-      (snap) => {
-        onData(snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreContactSubmission[]);
-      },
-      (err) => {
-        console.warn('[Firestore Contacts] subscribeContacts error:', err);
-        if (onError) onError(err);
-        else onData([]);
+    const subscriber = { onData, onError };
+    contactSubscribers.add(subscriber);
+    startContactFeed();
+    return () => {
+      contactSubscribers.delete(subscriber);
+      if (contactSubscribers.size === 0 && stopContactFeed) {
+        stopContactFeed();
+        stopContactFeed = null;
       }
-    );
+    };
   },
 
   async submitContact(data: Omit<FirestoreContactSubmission, 'id' | 'createdAt' | 'status'>): Promise<string> {
@@ -51,12 +80,7 @@ export const firestoreContactsService = {
       createdAt: new Date().toISOString(),
     });
     
-    // Save to Firestore
-    try {
-      await setDoc(docRef, payload);
-    } catch (err) {
-      console.warn('[Firestore Contacts] setDoc notice:', err);
-    }
+    await setDoc(docRef, payload);
 
     // Trigger backend notification and email routing to info.mahdev.lk@gmail.com
     try {

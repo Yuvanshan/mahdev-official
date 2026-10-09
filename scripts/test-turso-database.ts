@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createSign, generateKeyPairSync } from 'node:crypto';
 import { unlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -7,7 +8,12 @@ const databasePath = path.join(tmpdir(), `mahdev-turso-test-${process.pid}.db`);
 process.env.TURSO_DATABASE_URL = `file:${databasePath}`;
 process.env.TURSO_AUTH_TOKEN = 'local-test-token';
 
-const { getTursoClient, initializeTursoDatabase } = await import('../backend/db/tursoDatabase');
+const {
+  ensureCollectionTable,
+  getTursoClient,
+  importMigratedDocuments,
+  initializeTursoDatabase,
+} = await import('../backend/db/tursoDatabase');
 const {
   authenticateAdminCredentials,
   getAdminSessionFromCookie,
@@ -19,6 +25,7 @@ const {
   requiresAdminForDatabaseAction,
   requiresSuperAdminForDatabaseAction,
 } = await import('../backend/api/tursoRoutes');
+const { FirebaseTokenError, verifyFirebaseIdToken } = await import('../backend/auth/firebaseIdToken');
 const {
   getDatabaseStatus,
   listPublicCollection,
@@ -41,6 +48,71 @@ async function removeIfPresent(filePath: string): Promise<void> {
 
 async function run(): Promise<void> {
   try {
+    const originalFetch = globalThis.fetch;
+    const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+    const publicKeyPem = publicKey.export({ type: 'spki', format: 'pem' }).toString();
+    globalThis.fetch = async () => new Response(
+      JSON.stringify({ 'local-test-key': publicKeyPem }),
+      { status: 200, headers: { 'cache-control': 'public, max-age=60' } }
+    );
+    const now = Math.floor(Date.now() / 1000);
+    const tokenHeader = Buffer.from(JSON.stringify({ alg: 'RS256', kid: 'local-test-key' })).toString('base64url');
+    const tokenClaims = Buffer.from(JSON.stringify({
+      aud: 'for-her-33ea9',
+      auth_time: now,
+      exp: now + 3600,
+      iat: now,
+      iss: 'https://securetoken.google.com/for-her-33ea9',
+      sub: 'test-customer-1',
+      email: 'customer@example.com',
+      email_verified: true,
+    })).toString('base64url');
+    const signer = createSign('RSA-SHA256');
+    signer.update(`${tokenHeader}.${tokenClaims}`);
+    signer.end();
+    const token = `${tokenHeader}.${tokenClaims}.${signer.sign(privateKey).toString('base64url')}`;
+    const identity = await verifyFirebaseIdToken(`Bearer ${token}`);
+    assert.deepEqual(identity, { uid: 'test-customer-1', email: 'customer@example.com' });
+    const unverifiedClaims = Buffer.from(JSON.stringify({
+      aud: 'for-her-33ea9',
+      auth_time: now,
+      exp: now + 3600,
+      iat: now,
+      iss: 'https://securetoken.google.com/for-her-33ea9',
+      sub: 'unverified-customer',
+      email: 'customer@example.com',
+      email_verified: false,
+    })).toString('base64url');
+    const unverifiedSigner = createSign('RSA-SHA256');
+    unverifiedSigner.update(`${tokenHeader}.${unverifiedClaims}`);
+    unverifiedSigner.end();
+    const unverifiedToken = `${tokenHeader}.${unverifiedClaims}.${unverifiedSigner.sign(privateKey).toString('base64url')}`;
+    const unverifiedIdentity = await verifyFirebaseIdToken(`Bearer ${unverifiedToken}`);
+    assert.deepEqual(unverifiedIdentity, { uid: 'unverified-customer' });
+    await assert.rejects(
+      () => verifyFirebaseIdToken(undefined),
+      FirebaseTokenError
+    );
+    const customerAccess = await authorizeDatabaseAction(
+      { action: 'list', collection: 'orders' },
+      undefined,
+      `Bearer ${token}`
+    );
+    assert.equal(customerAccess.role, 'customer');
+    await assert.rejects(
+      () => authorizeDatabaseAction({ action: 'list', collection: 'orders' }, undefined),
+      FirebaseTokenError
+    );
+    assert.equal(
+      (await authorizeDatabaseAction({ action: 'list', collection: 'products' }, undefined)).role,
+      'public'
+    );
+    await assert.rejects(
+      () => authorizeDatabaseAction({ action: 'list', collection: 'users' }, undefined),
+      FirebaseTokenError
+    );
+    globalThis.fetch = originalFetch;
+
     process.env.ADMIN_LOGIN_EMAIL = 'test-admin@example.com';
     process.env.ADMIN_SESSION_SECRET = 'test-only-session-signing-secret-with-at-least-32-bytes';
     process.env.ADMIN_LOGIN_PASSWORD_HASH = hashAdminPassword('local-test-admin-password');
@@ -84,7 +156,7 @@ async function run(): Promise<void> {
         action: 'write',
         write: { type: 'set', collection: 'services', id: 'svc-1' },
       }, undefined),
-      /An admin session is required/
+      /An administrator session is required/
     );
     await authorizeDatabaseAction({
       action: 'write',
@@ -145,6 +217,165 @@ async function run(): Promise<void> {
     assert.deepEqual(product.data.deletedIds, ['first', 'second']);
     const publicProducts = await listPublicCollection('products');
     assert.ok(publicProducts.some((document) => document.id === 'turso-test-product'));
+    const skippedExisting = await importMigratedDocuments('products', [{
+      id: 'turso-test-product',
+      data: { division: 'overwritten-value' },
+    }]);
+    assert.deepEqual(skippedExisting, { inserted: 0, overwritten: 0, skipped: 1 });
+    const productTable = await ensureCollectionTable('products');
+    const preservedProduct = await getTursoClient().execute({
+      sql: `SELECT data FROM "${productTable}" WHERE id = ?`,
+      args: ['turso-test-product'],
+    });
+    assert.equal(
+      (JSON.parse(String(preservedProduct.rows[0].data)) as Record<string, unknown>).division,
+      'it'
+    );
+    const explicitOverwrite = await importMigratedDocuments('products', [{
+      id: 'turso-test-product',
+      data: { division: 'explicit-overwrite' },
+    }], true);
+    assert.deepEqual(explicitOverwrite, { inserted: 0, overwritten: 1, skipped: 0 });
+    const overwrittenProduct = await getTursoClient().execute({
+      sql: `SELECT data FROM "${productTable}" WHERE id = ?`,
+      args: ['turso-test-product'],
+    });
+    assert.equal(
+      (JSON.parse(String(overwrittenProduct.rows[0].data)) as Record<string, unknown>).division,
+      'explicit-overwrite'
+    );
+
+    await call({
+      action: 'write',
+      write: {
+        type: 'set',
+        collection: 'orders',
+        id: 'owned-order',
+        data: { customerId: 'test-customer-1', total: 10 },
+      },
+    });
+    await call({
+      action: 'write',
+      write: {
+        type: 'set',
+        collection: 'orders',
+        id: 'other-order',
+        data: { customerId: 'different-customer', total: 20 },
+      },
+    });
+    const customerOrders = await handleTursoAction({
+      action: 'list',
+      collection: 'orders',
+      parentPath: '',
+    }, customerAccess);
+    assert.deepEqual(
+      (customerOrders.body.documents as Array<{ id: string }>).map(({ id }) => id),
+      ['owned-order']
+    );
+    const forgedOrder = await handleTursoAction({
+      action: 'write',
+      write: {
+        type: 'set',
+        collection: 'orders',
+        id: 'customer-created-order',
+        data: {
+          customerId: 'other-customer',
+          paymentStatus: 'paid',
+          status: 'completed',
+          total: 40,
+        },
+      },
+    }, customerAccess);
+    assert.equal(forgedOrder.status, 200);
+    const persistedOrder = await getTursoClient().execute({
+      sql: `SELECT data FROM "${await ensureCollectionTable('orders')}" WHERE id = ?`,
+      args: ['customer-created-order'],
+    });
+    const persistedOrderData = JSON.parse(String(persistedOrder.rows[0].data)) as Record<string, unknown>;
+    assert.equal(persistedOrderData.customerId, 'test-customer-1');
+    assert.equal(persistedOrderData.paymentStatus, 'unpaid');
+    assert.equal(persistedOrderData.status, 'pending_payment');
+    const publicBookingAccess = await authorizeDatabaseAction({
+      action: 'write',
+      write: {
+        type: 'set',
+        collection: 'bookings',
+        id: 'public-booking',
+        data: {
+          customerId: 'spoofed-user',
+          customerEmail: 'customer@example.com',
+          email: 'customer@example.com',
+          customer: { name: 'Impersonator', email: 'customer@example.com' },
+          status: 'completed',
+          paymentStatus: 'paid',
+        },
+      },
+    }, undefined);
+    assert.equal(publicBookingAccess.role, 'public');
+    const publicBooking = await handleTursoAction({
+      action: 'write',
+      write: {
+        type: 'set',
+        collection: 'bookings',
+        id: 'public-booking',
+        data: {
+          customerId: 'spoofed-user',
+          customerEmail: 'customer@example.com',
+          email: 'customer@example.com',
+          customer: { name: 'Impersonator', email: 'customer@example.com' },
+          status: 'completed',
+          paymentStatus: 'paid',
+        },
+      },
+    }, publicBookingAccess);
+    assert.equal(publicBooking.status, 200);
+    const storedBooking = await getTursoClient().execute({
+      sql: `SELECT data FROM "${await ensureCollectionTable('bookings')}" WHERE id = ?`,
+      args: ['public-booking'],
+    });
+    const storedBookingData = JSON.parse(String(storedBooking.rows[0].data)) as Record<string, unknown>;
+    assert.equal(storedBookingData.customerId, undefined);
+    assert.equal(storedBookingData.customerEmail, undefined);
+    assert.equal(storedBookingData.email, undefined);
+    assert.equal((storedBookingData.customer as Record<string, unknown>).email, undefined);
+    assert.equal(storedBookingData.paymentStatus, 'unpaid');
+    assert.equal(storedBookingData.status, 'pending');
+    const customerBookings = await handleTursoAction({
+      action: 'list',
+      collection: 'bookings',
+      parentPath: '',
+    }, customerAccess);
+    assert.deepEqual(customerBookings.body.documents, []);
+
+    const publicInquiryWrite = {
+      action: 'write',
+      write: {
+        type: 'set',
+        collection: 'inquiries',
+        id: 'website-live-inquiry',
+        data: {
+          name: 'Website Customer',
+          email: 'customer@example.com',
+          subject: 'Realtime inbox check',
+          message: 'A test enquiry persisted through the public submission path.',
+          status: 'new',
+        },
+      },
+    };
+    const publicInquiryAccess = await authorizeDatabaseAction(publicInquiryWrite, undefined);
+    assert.equal(publicInquiryAccess.role, 'public');
+    const inquiryWriteResult = await handleTursoAction(publicInquiryWrite, publicInquiryAccess);
+    assert.equal(inquiryWriteResult.status, 200);
+    const savedInquiry = await handleTursoAction({
+      action: 'get',
+      collection: 'inquiries',
+      parentPath: '',
+      id: 'website-live-inquiry',
+    });
+    assert.deepEqual(
+      (savedInquiry.body.document as { data: Record<string, unknown> }).data.subject,
+      'Realtime inbox check'
+    );
 
     await call({
       action: 'write',

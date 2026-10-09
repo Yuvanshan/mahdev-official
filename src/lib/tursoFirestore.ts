@@ -73,6 +73,13 @@ export interface WriteBatch {
 
 const database: TursoDatabase = { type: 'turso' };
 const SNAPSHOT_POLL_INTERVAL_MS = 8000;
+let snapshotReadQueue: Promise<void> = Promise.resolve();
+
+function enqueueSnapshotRead<T>(read: () => Promise<T>): Promise<T> {
+  const result = snapshotReadQueue.then(read, read);
+  snapshotReadQueue = result.then(() => undefined, () => undefined);
+  return result;
+}
 
 function normalizeSegments(segments: string[]): string[] {
   if (!segments.length || segments.some((segment) => !segment || segment.includes('/'))) {
@@ -183,7 +190,24 @@ async function request<T>(
   if (currentUser) {
     headers.Authorization = `Bearer ${await currentUser.getIdToken()}`;
   }
-  const response = await fetch('/api/database', {
+  const collections = action === 'batch' && Array.isArray(payload.writes)
+    ? [...new Set(payload.writes
+      .filter((write): write is Record<string, unknown> => Boolean(write && typeof write === 'object'))
+      .map((write) => write.collection)
+      .filter((collection): collection is string => typeof collection === 'string'))]
+    : [typeof payload.collection === 'string'
+      ? payload.collection
+      : typeof payload.write === 'object' && payload.write !== null &&
+          typeof (payload.write as Record<string, unknown>).collection === 'string'
+        ? (payload.write as Record<string, unknown>).collection as string
+        : ''];
+  const resource = collections.length === 1 && !collections[0].includes('/')
+    ? collections[0]
+    : '';
+  const endpoint = action !== 'health' && action !== 'batch' && resource
+    ? `/api/data/${encodeURIComponent(resource)}`
+    : '/api/database';
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers,
     body: JSON.stringify({ action, ...payload }),
@@ -330,17 +354,20 @@ export function arrayUnion(...values: unknown[]): DocumentData {
 export function onSnapshot<T extends DocumentData = DocumentData>(
   reference: DocumentReference,
   onNext: (snapshot: DocumentSnapshot<T>) => void,
-  onError?: (error: Error) => void
+  onError?: (error: Error) => void,
+  pollIntervalMs?: number
 ): Unsubscribe;
 export function onSnapshot<T extends DocumentData = DocumentData>(
   reference: CollectionReference | QueryReference,
   onNext: (snapshot: QuerySnapshot<T>) => void,
-  onError?: (error: Error) => void
+  onError?: (error: Error) => void,
+  pollIntervalMs?: number
 ): Unsubscribe;
 export function onSnapshot<T extends DocumentData = DocumentData>(
   reference: DocumentReference | CollectionReference | QueryReference,
   onNext: ((snapshot: DocumentSnapshot<T>) => void) | ((snapshot: QuerySnapshot<T>) => void),
-  onError?: (error: Error) => void
+  onError?: (error: Error) => void,
+  pollIntervalMs = SNAPSHOT_POLL_INTERVAL_MS
 ): Unsubscribe {
   let stopped = false;
   let hasEmitted = false;
@@ -351,23 +378,29 @@ export function onSnapshot<T extends DocumentData = DocumentData>(
     if (stopped || polling || document.hidden) return;
     polling = true;
     try {
-      let snapshot: DocumentSnapshot<T> | QuerySnapshot<T>;
-      let serialized: string;
-      if (isDocumentReference(reference)) {
-        const documentSnapshot = await getDoc<T>(reference);
-        snapshot = documentSnapshot;
-        serialized = JSON.stringify({
-          exists: documentSnapshot.exists(),
-          data: documentSnapshot.data(),
-        });
-      } else {
+      const readSnapshot = async () => {
+        if (isDocumentReference(reference)) {
+          const documentSnapshot = await getDoc<T>(reference);
+          return {
+            snapshot: documentSnapshot as DocumentSnapshot<T> | QuerySnapshot<T>,
+            serialized: JSON.stringify({
+              exists: documentSnapshot.exists(),
+              data: documentSnapshot.data(),
+            }),
+          };
+        }
         const querySnapshot = await readQuery<T>(reference);
-        snapshot = querySnapshot;
-        serialized = JSON.stringify(querySnapshot.docs.map((document) => ({
+        return {
+          snapshot: querySnapshot as DocumentSnapshot<T> | QuerySnapshot<T>,
+          serialized: JSON.stringify(querySnapshot.docs.map((document) => ({
             id: document.id,
             data: document.data(),
-          })));
-      }
+          }))),
+        };
+      };
+      const { snapshot, serialized } = pollIntervalMs < SNAPSHOT_POLL_INTERVAL_MS
+        ? await readSnapshot()
+        : await enqueueSnapshotRead(readSnapshot);
       if (stopped) return;
       if (!hasEmitted || serialized !== lastSnapshot) {
         hasEmitted = true;
@@ -387,7 +420,7 @@ export function onSnapshot<T extends DocumentData = DocumentData>(
   };
 
   void poll();
-  const timer = window.setInterval(() => void poll(), SNAPSHOT_POLL_INTERVAL_MS);
+  const timer = window.setInterval(() => void poll(), pollIntervalMs);
   document.addEventListener('visibilitychange', handleVisibilityChange);
   return () => {
     stopped = true;

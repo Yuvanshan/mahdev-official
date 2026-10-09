@@ -258,7 +258,7 @@ class OrderService {
         bookingInfo: newOrder.bookingInfo,
         createdAt: newOrder.createdAt,
         updatedAt: newOrder.updatedAt,
-      }), { merge: true }).catch((err) => console.warn('[Firestore] Order write error:', err));
+      })).catch((err) => console.warn('[Turso] Order write error:', err));
     } catch (e) {
       console.warn('[Firestore] Order sync error:', e);
     }

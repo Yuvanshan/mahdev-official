@@ -5,6 +5,8 @@ import {
   setDoc,
   deleteDoc,
   query,
+  orderBy,
+  limit,
   onSnapshot,
   serverTimestamp,
 } from '../../lib/tursoFirestore';
@@ -48,6 +50,35 @@ export interface FirestoreInquiry {
 }
 
 const COLLECTION_NAME = 'inquiries';
+const ADMIN_INBOX_POLL_INTERVAL_MS = 2500;
+type InquirySubscriber = {
+  callback: (inquiries: FirestoreInquiry[]) => void;
+  onError?: (error: Error) => void;
+};
+const inquirySubscribers = new Set<InquirySubscriber>();
+let stopInquiryFeed: (() => void) | null = null;
+
+function startInquiryFeed(): void {
+  if (stopInquiryFeed) return;
+  let errorNotified = false;
+  const q = query(collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc'), limit(250));
+  stopInquiryFeed = onSnapshot(
+    q,
+    (snapshot) => {
+      errorNotified = false;
+      const inquiries = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreInquiry));
+      inquirySubscribers.forEach(({ callback }) => callback(inquiries));
+    },
+    (err) => {
+      if (!errorNotified) {
+        errorNotified = true;
+        console.warn('[FirestoreInquiries] Snapshot listener error:', err);
+        inquirySubscribers.forEach(({ onError }) => onError?.(err));
+      }
+    },
+    ADMIN_INBOX_POLL_INTERVAL_MS
+  );
+}
 
 export const firestoreInquiriesService = {
   async getInquiries(): Promise<FirestoreInquiry[]> {
@@ -113,17 +144,19 @@ export const firestoreInquiriesService = {
     await deleteDoc(doc(db, COLLECTION_NAME, id));
   },
 
-  subscribeInquiries(callback: (inquiries: FirestoreInquiry[]) => void): () => void {
-    const q = query(collection(db, COLLECTION_NAME));
-    return onSnapshot(
-      q,
-      (snapshot) => {
-        const inquiries = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreInquiry));
-        callback(inquiries);
-      },
-      (err) => {
-        console.warn(`[FirestoreInquiries] Snapshot listener error:`, err);
+  subscribeInquiries(
+    callback: (inquiries: FirestoreInquiry[]) => void,
+    onError?: (error: Error) => void
+  ): () => void {
+    const subscriber = { callback, onError };
+    inquirySubscribers.add(subscriber);
+    startInquiryFeed();
+    return () => {
+      inquirySubscribers.delete(subscriber);
+      if (inquirySubscribers.size === 0 && stopInquiryFeed) {
+        stopInquiryFeed();
+        stopInquiryFeed = null;
       }
-    );
+    };
   },
 };

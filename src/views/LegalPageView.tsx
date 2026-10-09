@@ -229,9 +229,6 @@ export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavi
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="electric" size="sm">
-                    Official Legal Disclosure
-                  </Badge>
                   <span className="text-xs font-mono text-slate-500">{meta.refCode}</span>
                   {legalDoc?.version && (
                     <span className="text-xs font-mono text-slate-500">

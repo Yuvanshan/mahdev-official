@@ -37,6 +37,8 @@ export interface WhatsAppOrderItem {
   selectedVariant?: string;
   imageUrl?: string;
   itemUrl?: string;
+  productId?: string;
+  slug?: string;
 }
 
 export interface WhatsAppOrderPayload {
@@ -291,7 +293,12 @@ export function buildWhatsAppOrderMessage(payload: WhatsAppOrderPayload): string
     });
     const itemSku = item.sku || deriveLookupSku(item.name);
     const skuTag = `[SKU: \`${itemSku}\`]`;
-    const itemDirectUrl = item.itemUrl || `${origin}/catalog?sku=${encodeURIComponent(itemSku)}`;
+    const productPath = item.slug || item.productId;
+    const itemDirectUrl = item.itemUrl || (
+      productPath
+        ? `${origin}/products/${encodeURIComponent(productPath)}`
+        : `${origin}/catalog?sku=${encodeURIComponent(itemSku)}`
+    );
 
     let line = `${index + 1}. ${skuTag} *${item.name}*` +
       (item.selectedVariant ? ` (${item.selectedVariant})` : '') +

@@ -477,12 +477,7 @@ class AuthService {
   }
 
   public async getAllCustomers(): Promise<CustomerUser[]> {
-    const currentUser = auth.currentUser;
-    if (!currentUser) throw new Error('Sign in to the admin portal to load customer records.');
-
-    const response = await fetch('/api/admin/customers', {
-      headers: { Authorization: `Bearer ${await currentUser.getIdToken()}` },
-    });
+    const response = await fetch('/api/admin/customers', { cache: 'no-store' });
     const result = await response.json() as {
       success: boolean;
       customers?: Array<FirestoreUser & Record<string, any> & { id: string }>;

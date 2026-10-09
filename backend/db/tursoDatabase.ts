@@ -1,5 +1,6 @@
 import { createClient, type Client, type InStatement } from '@libsql/client';
 import crypto from 'crypto';
+import type { FirebaseIdentity } from '../auth/firebaseIdToken.js';
 
 const CORE_COLLECTIONS = [
   'admins',
@@ -54,6 +55,9 @@ const CORE_COLLECTIONS = [
 type SqlValue = string | number | bigint | ArrayBuffer | null;
 
 let client: Client | undefined;
+let databaseInitialization: Promise<void> | undefined;
+const collectionTables = new Map<string, string>();
+const collectionTableInitializations = new Map<string, Promise<string>>();
 
 export interface TursoDocument {
   id: string;
@@ -112,8 +116,14 @@ function tableNameFor(collection: string): string {
 
 export async function ensureCollectionTable(collectionPath: string): Promise<string> {
   const collection = validateCollection(collectionPath);
+  const existingTable = collectionTables.get(collection);
+  if (existingTable) return existingTable;
+
+  const pendingInitialization = collectionTableInitializations.get(collection);
+  if (pendingInitialization) return pendingInitialization;
+
   const tableName = tableNameFor(collection);
-  await getTursoClient().batch([
+  const initialization = getTursoClient().batch([
     {
       sql: `CREATE TABLE IF NOT EXISTS "${tableName}" (
         parent_path TEXT NOT NULL DEFAULT '',
@@ -128,11 +138,19 @@ export async function ensureCollectionTable(collectionPath: string): Promise<str
       sql: 'INSERT OR IGNORE INTO turso_collections (collection_path, table_name) VALUES (?, ?)',
       args: [collection, tableName],
     },
-  ], 'write');
-  return tableName;
+  ], 'write').then(() => {
+    collectionTables.set(collection, tableName);
+    return tableName;
+  }).finally(() => {
+    collectionTableInitializations.delete(collection);
+  });
+  collectionTableInitializations.set(collection, initialization);
+  return initialization;
 }
 
-export async function initializeTursoDatabase(): Promise<void> {
+export function initializeTursoDatabase(): Promise<void> {
+  if (databaseInitialization) return databaseInitialization;
+
   const db = getTursoClient();
   const statements: InStatement[] = [
     {
@@ -169,7 +187,15 @@ export async function initializeTursoDatabase(): Promise<void> {
       args: [collection, tableName],
     });
   }
-  await db.batch(statements, 'write');
+  databaseInitialization = db.batch(statements, 'write').then(() => {
+    for (const collection of CORE_COLLECTIONS) {
+      collectionTables.set(collection, tableNameFor(collection));
+    }
+  }).catch((error: unknown) => {
+    databaseInitialization = undefined;
+    throw error;
+  });
+  return databaseInitialization;
 }
 
 function jsonPath(field: string): string {
@@ -248,7 +274,8 @@ export async function listTursoDocuments(
   filters: TursoFilter[] = [],
   order?: TursoOrder,
   maxRows?: number,
-  afterId?: string
+  afterId?: string,
+  owner?: FirebaseIdentity
 ): Promise<TursoDocument[]> {
   const table = await ensureCollectionTable(collection);
   const conditions = ['parent_path = ?'];
@@ -262,6 +289,31 @@ export async function listTursoDocuments(
   if (afterId) {
     conditions.push('id > ?');
     args.push(afterId);
+  }
+  if (owner) {
+    if (collection === 'users') {
+      const ownership = ['id = ?', "json_extract(data, '$.uid') = ?"];
+      args.push(owner.uid, owner.uid);
+      if (owner.email) {
+        ownership.push("lower(json_extract(data, '$.email')) = ?");
+        args.push(owner.email);
+      }
+      conditions.push(`(${ownership.join(' OR ')})`);
+    } else {
+      const ownership = [
+        "json_extract(data, '$.customerId') = ?",
+        "json_extract(data, '$.userId') = ?",
+        "json_extract(data, '$.uid') = ?",
+      ];
+      args.push(owner.uid, owner.uid, owner.uid);
+      if (owner.email) {
+        ownership.push("lower(json_extract(data, '$.customerEmail')) = ?");
+        ownership.push("lower(json_extract(data, '$.email')) = ?");
+        ownership.push("lower(json_extract(data, '$.customer.email')) = ?");
+        args.push(owner.email, owner.email, owner.email);
+      }
+      conditions.push(`(${ownership.join(' OR ')})`);
+    }
   }
 
   let sql = `SELECT id, data FROM "${table}" WHERE ${conditions.join(' AND ')}`;
@@ -360,9 +412,16 @@ export async function writeTursoDocument(write: TursoWrite): Promise<void> {
 
 export async function writeTursoBatch(writes: TursoWrite[]): Promise<void> {
   if (writes.length > 500) throw new Error('A Turso write batch cannot exceed 500 operations.');
+  const collections = [...new Set(writes.map((write) => validateCollection(write.collection)))];
+  const tables = new Map(
+    await Promise.all(collections.map(async (collection) => [
+      collection,
+      await ensureCollectionTable(collection),
+    ] as const))
+  );
   const statements: InStatement[] = [];
   for (const write of writes) {
-    const table = await ensureCollectionTable(write.collection);
+    const table = tables.get(write.collection)!;
     if (!write.id || write.id.includes('/')) throw new Error('Invalid document ID.');
     if (write.type === 'delete') {
       statements.push({
@@ -407,18 +466,53 @@ export async function checkTursoConnection(): Promise<void> {
   await getTursoClient().execute('SELECT 1');
 }
 
-export async function upsertMigratedDocuments(
+export async function importMigratedDocuments(
   collection: string,
-  documents: TursoDocument[]
-): Promise<void> {
+  documents: TursoDocument[],
+  overwriteExisting = false
+): Promise<{ inserted: number; overwritten: number; skipped: number }> {
   const table = await ensureCollectionTable(collection);
-  const statements: InStatement[] = documents.map(({ id, data }) => ({
-    sql: `INSERT INTO "${table}" (parent_path, id, data, updated_at)
-      VALUES ('', ?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(parent_path, id) DO UPDATE SET data = excluded.data, updated_at = CURRENT_TIMESTAMP`,
-    args: [id, JSON.stringify(data)],
-  }));
-  if (statements.length) await getTursoClient().batch(statements, 'write');
+  const uniqueDocuments = new Map<string, TursoDocument>();
+  for (const document of documents) {
+    if (overwriteExisting || !uniqueDocuments.has(document.id)) {
+      uniqueDocuments.set(document.id, document);
+    }
+  }
+
+  let inserted = 0;
+  let overwritten = 0;
+  let skipped = documents.length - uniqueDocuments.size;
+  const distinctDocuments = [...uniqueDocuments.values()];
+  for (let offset = 0; offset < distinctDocuments.length; offset += 200) {
+    const batchDocuments = distinctDocuments.slice(offset, offset + 200);
+    let existingIds = new Set<string>();
+    if (overwriteExisting) {
+      const existing = await getTursoClient().execute({
+        sql: `SELECT id FROM "${table}" WHERE parent_path = '' AND id IN (${batchDocuments.map(() => '?').join(', ')})`,
+        args: batchDocuments.map(({ id }) => id),
+      });
+      existingIds = new Set(existing.rows.map((row) => String(row.id)));
+    }
+    const statements: InStatement[] = batchDocuments.map(({ id, data }) => ({
+      sql: overwriteExisting
+        ? `INSERT INTO "${table}" (parent_path, id, data, updated_at)
+          VALUES ('', ?, ?, CURRENT_TIMESTAMP)
+          ON CONFLICT(parent_path, id) DO UPDATE SET data = excluded.data, updated_at = CURRENT_TIMESTAMP`
+        : `INSERT OR IGNORE INTO "${table}" (parent_path, id, data)
+          VALUES ('', ?, ?)`,
+      args: [id, JSON.stringify(data)],
+    }));
+    const results = await getTursoClient().batch(statements, 'write');
+    if (overwriteExisting) {
+      overwritten += existingIds.size;
+      inserted += batchDocuments.length - existingIds.size;
+    } else {
+      const batchInserted = results.reduce((count, result) => count + Number(result.rowsAffected), 0);
+      inserted += batchInserted;
+      skipped += batchDocuments.length - batchInserted;
+    }
+  }
+  return { inserted, overwritten, skipped };
 }
 
 export async function provisionTursoCollections(collections: string[]): Promise<void> {

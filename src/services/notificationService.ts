@@ -346,6 +346,35 @@ class NotificationService {
     );
   }
 
+  public notifyAdminInquiryReceived(inquiry: {
+    id: string;
+    name: string;
+    email: string;
+    subject: string;
+  }): void {
+    const id = `admin-inquiry-${inquiry.id}`;
+    if (this.notifications.some((notification) => notification.id === id)) return;
+    this.notifications.unshift({
+      id,
+      type: 'admin_contact_inquiry',
+      recipient: { name: 'Mahdev Administration', role: 'admin' },
+      title: `New enquiry: ${inquiry.subject || 'Website enquiry'}`,
+      message: `${inquiry.name || 'A customer'} submitted an enquiry${inquiry.email ? ` (${inquiry.email})` : ''}.`,
+      status: 'sent',
+      readAt: null,
+      createdAt: new Date().toISOString(),
+      data: {
+        inquiryId: inquiry.id,
+        name: inquiry.name,
+        email: inquiry.email,
+      },
+      channels: ['in_app'],
+      actionUrl: '/admin/enquiries',
+    });
+    this.notifications.splice(100);
+    this.notifyStateChanged();
+  }
+
   /**
    * 7. Admin Alert: Quote Request (RFP)
    */

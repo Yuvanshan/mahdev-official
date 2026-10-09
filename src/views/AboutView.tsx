@@ -158,25 +158,10 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <ScrollReveal direction="up">
                 <div className="max-w-3xl">
-                  {/* Category Chip */}
-                  <div className="flex items-center gap-2 mb-4">
-                    <Badge variant="electric" size="sm">
-                      About MAHDEV Pvt Ltd
-                    </Badge>
-                    <span className="text-xs font-semibold text-slate-500">
-                      Colombo & Trincomalee, Sri Lanka
-                    </span>
-                  </div>
-
                   {/* Main Title */}
                   <H1 className="text-slate-900 text-3xl sm:text-4xl lg:text-5xl font-display font-bold tracking-tight mb-3">
                     {content.hero.title}
                   </H1>
-
-                  {/* Tagline */}
-                  <p className="text-lg sm:text-xl font-semibold text-blue-600 mb-4 tracking-tight">
-                    {content.hero.subtitle}
-                  </p>
 
                   {/* Short Introductory Text */}
                   <Body className="text-slate-600 text-base sm:text-lg leading-relaxed mb-8">

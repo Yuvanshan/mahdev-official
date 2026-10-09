@@ -298,7 +298,9 @@ export const CatalogProductModal: React.FC<CatalogProductModalProps> = ({
                   <button
                     type="button"
                     onClick={() => {
-                      const itemUrl = typeof window !== 'undefined' ? `${window.location.origin}/catalog?sku=${encodeURIComponent(product.sku || product.id)}` : undefined;
+                      const itemUrl = typeof window !== 'undefined'
+                        ? `${window.location.origin}/products/${encodeURIComponent(product.slug || product.id)}`
+                        : undefined;
                       openWhatsAppInquiry({
                         title: product.name,
                         sku: product.sku || product.id,

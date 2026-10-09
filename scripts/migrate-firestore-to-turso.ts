@@ -4,7 +4,7 @@ import {
   initializeTursoDatabase,
   provisionTursoCollections,
   TursoDocument,
-  upsertMigratedDocuments,
+  importMigratedDocuments,
 } from '../backend/db/tursoDatabase';
 
 interface FirestoreBackup {
@@ -19,7 +19,7 @@ function getDocumentId(collection: string, document: Record<string, unknown>): s
   throw new Error(`A document in "${collection}" has no valid _id, id, or uid; refusing to skip it.`);
 }
 
-async function migrateBackup(filePath: string): Promise<void> {
+async function migrateBackup(filePath: string, overwriteExisting: boolean): Promise<void> {
   const input = JSON.parse(await readFile(filePath, 'utf8')) as FirestoreBackup;
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     throw new Error('The Firestore backup must be an object keyed by collection name.');
@@ -29,7 +29,9 @@ async function migrateBackup(filePath: string): Promise<void> {
   await initializeTursoDatabase();
   await provisionTursoCollections(collections.map(([name]) => name));
 
-  let totalMigrated = 0;
+  let totalImported = 0;
+  let totalOverwritten = 0;
+  let totalSkipped = 0;
   for (const [collection, entries] of collections) {
     const documents: TursoDocument[] = (entries as unknown[]).map((entry) => {
       if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
@@ -40,17 +42,28 @@ async function migrateBackup(filePath: string): Promise<void> {
     });
 
     for (let offset = 0; offset < documents.length; offset += 200) {
-      await upsertMigratedDocuments(collection, documents.slice(offset, offset + 200));
+      const result = await importMigratedDocuments(
+        collection,
+        documents.slice(offset, offset + 200),
+        overwriteExisting
+      );
+      totalImported += result.inserted;
+      totalOverwritten += result.overwritten;
+      totalSkipped += result.skipped;
     }
-    totalMigrated += documents.length;
-    console.info(`[Turso migration] ${collection}: ${documents.length} documents imported.`);
+    console.info(`[Turso migration] ${collection}: ${documents.length} source documents processed.`);
   }
 
-  console.info(`[Turso migration] Complete. Imported ${totalMigrated} documents from ${collections.length} collections.`);
+  console.info(
+    `[Turso migration] Complete. Inserted ${totalImported}, overwritten ${totalOverwritten}, ` +
+      `skipped existing IDs ${totalSkipped}, across ${collections.length} collections.`
+  );
 }
 
-const backupPath = process.argv[2] || 'firestore-dump.json';
-migrateBackup(backupPath).catch((error: unknown) => {
+const argumentsList = process.argv.slice(2);
+const overwriteExisting = argumentsList.includes('--overwrite');
+const backupPath = argumentsList.find((argument) => argument !== '--overwrite') || 'firestore-dump.json';
+migrateBackup(backupPath, overwriteExisting).catch((error: unknown) => {
   console.error('[Turso migration] Failed:', error);
   process.exitCode = 1;
 });

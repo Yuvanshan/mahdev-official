@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { notificationService } from '../../services/notificationService';
 import { AppNotification } from '../../types/notification';
+import { firestoreInquiriesService } from '../../services/firestore/inquiries';
+import { firestoreContactsService } from '../../services/firestore/contacts';
 
 interface AdminNotificationCenterProps {
   onNavigate?: (path: string) => void;
@@ -40,7 +42,61 @@ export const AdminNotificationCenter: React.FC<AdminNotificationCenterProps> = (
   useEffect(() => {
     refresh();
     const unsub = notificationService.subscribe(refresh);
-    return unsub;
+    const seenInquiryIds = new Set<string>();
+    let inquiriesLoaded = false;
+    let contactsLoaded = false;
+
+    const processIncomingInquiries = () => {
+      if (!inquiriesLoaded || !contactsLoaded) return;
+      const combined = [...latestInquiries, ...latestContacts];
+      for (const inquiry of combined) {
+        if (!seenInquiryIds.has(inquiry.id)) {
+          if (baselineLoaded) {
+            notificationService.notifyAdminInquiryReceived(inquiry);
+          }
+          seenInquiryIds.add(inquiry.id);
+        }
+      }
+      baselineLoaded = true;
+    };
+
+    let latestInquiries: Array<{ id: string; name: string; email: string; subject: string }> = [];
+    let latestContacts: Array<{ id: string; name: string; email: string; subject: string }> = [];
+    let baselineLoaded = false;
+    const unsubInquiries = firestoreInquiriesService.subscribeInquiries((items) => {
+      latestInquiries = items.map((item) => ({
+        id: item.id,
+        name: item.name || item.fullName || 'A customer',
+        email: item.email || '',
+        subject: item.subject || item.service || item.serviceName || 'Website enquiry',
+      }));
+      inquiriesLoaded = true;
+      processIncomingInquiries();
+    }, (error) => {
+      console.error('[Admin Notifications] Inquiry feed failed:', error);
+      inquiriesLoaded = true;
+      processIncomingInquiries();
+    });
+    const unsubContacts = firestoreContactsService.subscribeContacts((items) => {
+      latestContacts = items.map((item) => ({
+        id: item.id,
+        name: item.fullName || 'A customer',
+        email: item.email || '',
+        subject: item.subject || 'Website enquiry',
+      }));
+      contactsLoaded = true;
+      processIncomingInquiries();
+    }, (error) => {
+      console.error('[Admin Notifications] Contact feed failed:', error);
+      contactsLoaded = true;
+      processIncomingInquiries();
+    });
+
+    return () => {
+      unsub();
+      unsubInquiries();
+      unsubContacts();
+    };
   }, []);
 
   const handleMarkAllRead = () => {

@@ -13,8 +13,7 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
   const { divisions, homepageConfig, companySettings } = useFirestoreDataContext();
   const items = useMemo(() => getDivisionCardItems(divisions), [divisions]);
   const section = homepageConfig?.divisionsSection;
-  const title = section?.title || '';
-  const description = section?.subtitle || '';
+  const title = section?.title || 'Our Divisions';
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -24,22 +23,14 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
     <main className="bg-white">
       <SEOHead
         title={title ? `${title} | ${companySettings?.name || ''}` : companySettings?.name || ''}
-        description={description}
+        description={`Explore the business divisions of ${companySettings?.name || 'Mahdev Group'}.`}
         canonicalUrl="https://mahdev.lk/divisions"
       />
-      {(section?.badge || title || description) && (
+      {title && (
         <SectionContainer background="subtle" paddingY="sm">
-          {section?.badge && (
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
-              {section.badge}
-            </p>
-          )}
-          {title && (
-            <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-              {title}
-            </h1>
-          )}
-          {description && <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">{description}</p>}
+          <h1 className="font-display text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+            {title}
+          </h1>
         </SectionContainer>
       )}
       {items.length > 0 && (

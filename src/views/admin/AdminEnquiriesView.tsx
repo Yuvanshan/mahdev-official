@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Mail,
   Phone,
@@ -50,14 +50,17 @@ export const AdminEnquiriesView: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const knownInquiryIds = useRef(new Set<string>());
+  const initialInquiryFeedsLoaded = useRef(false);
 
-  // Fetch inquiries from Firestore real-time listener (both inquiries and contactSubmissions)
+  // Keep both Turso enquiry feeds live in the admin inbox.
   useEffect(() => {
     setLoading(true);
-    let latestInquiries: FirestoreInquiry[] = [];
-    let latestContacts: any[] = [];
+    let latestInquiries: FirestoreInquiry[] | null = null;
+    let latestContacts: any[] | null = null;
 
     const mergeAndSet = () => {
+      if (!latestInquiries || !latestContacts) return;
       // Map contacts into uniform inquiry format
       const mappedContacts: FirestoreInquiry[] = latestContacts.map((c) => ({
         id: c.id,
@@ -93,19 +96,45 @@ export const AdminEnquiriesView: React.FC = () => {
         return timeB - timeA;
       });
 
+      if (initialInquiryFeedsLoaded.current) {
+        const arriving = combined.filter((inquiry) => !knownInquiryIds.current.has(inquiry.id));
+        if (arriving.length) {
+          const newest = arriving[0];
+          addToast(
+            'info',
+            arriving.length === 1 ? 'New enquiry received' : `${arriving.length} new enquiries received`,
+            arriving.length === 1
+              ? `${newest.name || 'A customer'} sent a new enquiry.`
+              : 'New customer enquiries are now available in the inbox.'
+          );
+        }
+      }
+      combined.forEach((inquiry) => knownInquiryIds.current.add(inquiry.id));
       setInquiries(combined);
       setLoading(false);
+      initialInquiryFeedsLoaded.current = true;
     };
 
     const unsubInquiries = firestoreInquiriesService.subscribeInquiries((inqList) => {
       latestInquiries = inqList || [];
       mergeAndSet();
+    }, (error) => {
+      if (latestInquiries === null) latestInquiries = [];
+      mergeAndSet();
+      addToast('error', 'Inquiry updates unavailable', error.message);
     });
 
-    const unsubContacts = firestoreContactsService.subscribeContacts((contactList) => {
-      latestContacts = contactList || [];
-      mergeAndSet();
-    });
+    const unsubContacts = firestoreContactsService.subscribeContacts(
+      (contactList) => {
+        latestContacts = contactList || [];
+        mergeAndSet();
+      },
+      (error) => {
+        if (latestContacts === null) latestContacts = [];
+        mergeAndSet();
+        addToast('error', 'Contact updates unavailable', error.message);
+      }
+    );
 
     return () => {
       unsubInquiries();
@@ -561,7 +590,7 @@ export const AdminEnquiriesView: React.FC = () => {
         {loading ? (
           <div className="p-12 text-center">
             <RefreshCw className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
-            <p className="text-sm font-semibold text-slate-600">Loading enquiries from Cloud Firestore...</p>
+            <p className="text-sm font-semibold text-slate-600">Loading enquiries from the database...</p>
           </div>
         ) : filteredInquiries.length === 0 ? (
           <div className="p-16 text-center">

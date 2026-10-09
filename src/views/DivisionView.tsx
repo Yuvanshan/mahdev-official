@@ -378,7 +378,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
               </button>
             </div>
 
-            {/* Division Badge & Optional Brand Logo */}
+            {/* Division identity */}
             <div className="flex items-center gap-3">
               {divisionLogo && (
                 <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-white/10 p-2 backdrop-blur-md border border-white/20 flex items-center justify-center shrink-0 shadow-lg">
@@ -392,12 +392,6 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
                   />
                 </div>
               )}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0052FF]/20 border border-[#0052FF]/40 text-xs font-bold text-blue-300 backdrop-blur-md shadow-lg">
-                <span className="w-2 h-2 rounded-full bg-[#0052FF] animate-pulse" />
-                <span className="tracking-wide">{division.badge}</span>
-                <span className="text-white/40">•</span>
-                <span className="text-slate-300 uppercase tracking-wider text-[10px]">Mahdev Group</span>
-              </div>
             </div>
 
             {/* Bold Headline Over Video */}
@@ -454,7 +448,6 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
           <SectionContainer background="white" paddingY="lg" hasBorderBottom>
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="text-center space-y-2">
-            <Caption className="text-[#0052FF] font-semibold">Division Overview</Caption>
             <H2 className="text-slate-900 font-bold">
               {division.aboutHeading || 'The Art of Extraordinary Craftsmanship'}
             </H2>

@@ -329,14 +329,6 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
       <SectionContainer background="subtle" paddingY="lg" hasBorderBottom>
         <ScrollReveal direction="up">
           <div className="max-w-3xl">
-            <div className="flex items-center gap-2 mb-3">
-              <Badge variant="electric" size="sm">
-                Integrated Solutions Catalog
-              </Badge>
-              <span className="text-xs font-semibold text-slate-500">
-                5 Autonomous Divisions • Unified SLAs
-              </span>
-            </div>
             <H1 className="text-slate-900 text-3xl sm:text-4xl lg:text-5xl font-display font-bold tracking-tight mb-4">
               Enterprise Services & Solutions
             </H1>

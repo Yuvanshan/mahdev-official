@@ -40,18 +40,14 @@ let cachedSiteSettings: { data: FirestoreSiteSettings; timestamp: number } | nul
 let cachedHomepageSettings: { data: HomepageCmsConfig; timestamp: number } | null = null;
 
 export const DEFAULT_HOMEPAGE_SECTIONS = [
-  { id: 'sec-welcome', name: 'Welcome Preloader', sectionKey: 'welcomeAnimation', enabled: true, order: 1 },
-  { id: 'sec-hero', name: 'Hero Section', sectionKey: 'hero', enabled: true, order: 2 },
-  { id: 'sec-divisions', name: 'Business Divisions', sectionKey: 'divisions', enabled: true, order: 3 },
-  { id: 'sec-services', name: 'Featured Services', sectionKey: 'services', enabled: true, order: 4 },
-  { id: 'sec-stats', name: 'Corporate Statistics', sectionKey: 'statistics', enabled: true, order: 5 },
-  { id: 'sec-gallery', name: 'Projects & Portfolios', sectionKey: 'gallery', enabled: true, order: 6 },
-  { id: 'sec-videos', name: 'Cinematic Video Showcase', sectionKey: 'decorationShowcase', enabled: true, order: 7 },
-  { id: 'sec-testimonials', name: 'Client Testimonials', sectionKey: 'testimonials', enabled: true, order: 8 },
-  { id: 'sec-milestones', name: 'Company Milestones', sectionKey: 'milestones', enabled: true, order: 9 },
-  { id: 'sec-partners', name: 'Trusted Partners', sectionKey: 'trustedCompanies', enabled: true, order: 10 },
-  { id: 'sec-cta', name: 'Call to Action', sectionKey: 'cta', enabled: true, order: 11 },
-  { id: 'sec-contact', name: 'Corporate Contact', sectionKey: 'contact', enabled: true, order: 12 },
+  { id: 'sec-services', name: 'Featured Services', sectionKey: 'services', enabled: true, order: 1 },
+  { id: 'sec-gallery', name: 'Gallery', sectionKey: 'gallery', enabled: true, order: 2 },
+  { id: 'sec-portfolio', name: 'Portfolio', sectionKey: 'portfolio', enabled: true, order: 3 },
+  { id: 'sec-videos', name: 'Video Showcase', sectionKey: 'decorationShowcase', enabled: true, order: 4 },
+  { id: 'sec-testimonials', name: 'Testimonials', sectionKey: 'testimonials', enabled: true, order: 5 },
+  { id: 'sec-milestones', name: 'Milestones', sectionKey: 'milestones', enabled: true, order: 6 },
+  { id: 'sec-partners', name: 'Trusted Partners', sectionKey: 'trustedCompanies', enabled: true, order: 7 },
+  { id: 'sec-cta', name: 'Contact & Enquiries', sectionKey: 'cta', enabled: true, order: 8 },
 ];
 
 export function getDefaultHomepageSettings(): HomepageCmsConfig {
@@ -359,19 +355,6 @@ function broadcastUpdate(type: 'company' | 'site' | 'homepage', data: any) {
   }
 }
 
-async function syncToServerApi(endpoint: string, payload: any): Promise<void> {
-  try {
-    await fetch(`/api/settings/${endpoint}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-  } catch (err) {
-    // Non-blocking server sync
-    console.warn(`[Firestore Settings] Server API sync notice (${endpoint}):`, err);
-  }
-}
-
 export const firestoreSettingsService = {
   /**
    * Fetch company settings with in-memory caching and offline fallback
@@ -433,29 +416,17 @@ export const firestoreSettingsService = {
       updatedAt: new Date().toISOString(),
     };
     const payload = sanitizeForFirestore(merged);
-
-    // 1. Instant local and in-memory cache update
+    await setDoc(docRef, sanitizeForFirestore({
+      ...data,
+      updatedAt: merged.updatedAt,
+    }), { merge: true });
     cachedCompanySettings = { data: payload, timestamp: Date.now() };
     if (typeof window !== 'undefined') {
       try {
         sessionStorage.setItem('mahdev_cached_company_settings', JSON.stringify(payload));
       } catch {}
     }
-
-    // 2. Broadcast across tabs and window context immediately
     broadcastUpdate('company', payload);
-
-    // 3. Sync to authoritative server endpoint
-    syncToServerApi('company', payload);
-
-    // 4. Commit to Firestore with a 5000ms safety race to prevent UI freeze
-    try {
-      const writePromise = setDoc(docRef, payload, { merge: true });
-      const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, 5000));
-      await Promise.race([writePromise, timeoutPromise]);
-    } catch (err) {
-      console.warn('[Firestore Settings] updateCompanySettings remote write notice:', err);
-    }
   },
 
   /**
@@ -584,29 +555,17 @@ export const firestoreSettingsService = {
       updatedAt: new Date().toISOString(),
     };
     const payload = sanitizeForFirestore(merged);
-
-    // 1. Local cache update
+    await setDoc(docRef, sanitizeForFirestore({
+      ...data,
+      updatedAt: merged.updatedAt,
+    }), { merge: true });
     cachedSiteSettings = { data: payload, timestamp: Date.now() };
     if (typeof window !== 'undefined') {
       try {
         sessionStorage.setItem('mahdev_cached_site_settings', JSON.stringify(payload));
       } catch {}
     }
-
-    // 2. Broadcast across all active tabs
     broadcastUpdate('site', payload);
-
-    // 3. Sync to authoritative server endpoint
-    syncToServerApi('site', payload);
-
-    // 4. Commit to Firestore with a 5000ms safety race to prevent UI freeze
-    try {
-      const writePromise = setDoc(docRef, payload, { merge: true });
-      const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, 5000));
-      await Promise.race([writePromise, timeoutPromise]);
-    } catch (err) {
-      console.warn('[Firestore Settings] updateSiteSettings remote write notice:', err);
-    }
   },
 
   /**
@@ -793,9 +752,14 @@ export const firestoreSettingsService = {
     }
 
     const payload = sanitizeForFirestore(merged);
-
+    const writePayload = sanitizeForFirestore({
+      ...data,
+      ...(heroUpdates ? { hero: heroUpdates } : {}),
+      ...(data.milestones ? { milestones: merged.milestones } : {}),
+      updatedAt: merged.updatedAt,
+    });
     try {
-      await setDoc(docRef, payload);
+      await setDoc(docRef, writePayload, { merge: true });
     } catch (err) {
       console.error('[Turso Settings] Homepage update failed:', err);
       throw err;
@@ -808,7 +772,6 @@ export const firestoreSettingsService = {
       } catch {}
     }
     broadcastUpdate('homepage', payload);
-    syncToServerApi('homepage', payload);
   },
 
   /**
