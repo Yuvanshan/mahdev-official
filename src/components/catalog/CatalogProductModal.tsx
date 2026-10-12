@@ -42,6 +42,19 @@ export const CatalogProductModal: React.FC<CatalogProductModalProps> = ({
 }) => {
   if (!product) return null;
 
+  return (
+    <CatalogProductModalContent
+      key={product.id}
+      product={product}
+      onClose={onClose}
+      onSelectRelated={onSelectRelated}
+    />
+  );
+};
+
+const CatalogProductModalContent: React.FC<
+  Omit<CatalogProductModalProps, 'product'> & { product: CatalogProduct }
+> = ({ product, onClose, onSelectRelated }) => {
   const { addToCart, openCart } = useCart();
   const [selectedImage, setSelectedImage] = useState(product.imageUrl);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariantOption | undefined>(

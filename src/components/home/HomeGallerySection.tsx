@@ -5,6 +5,7 @@ import { SectionContainer } from '../ui/SectionContainer';
 import { Caption, H2, Body } from '../ui/Heading';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { GallerySectionShimmer } from '../common/GallerySectionShimmer';
+import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 
 /** A premium gallery that mirrors the polished presentation used in the division pages. */
 export const HomeGallerySection: React.FC = () => {
@@ -92,13 +93,14 @@ export const HomeGallerySection: React.FC = () => {
                   isFeatured ? 'col-span-2 sm:col-span-2 xl:col-span-2' : ''
                 }`}
               >
-                <div className={`relative overflow-hidden bg-slate-100 ${isFeatured ? 'aspect-[16/10]' : 'aspect-[4/5]'}`}>
-                  <img
+                <div className="relative">
+                  <ImageWithShimmer
                     src={item.url}
                     alt={item.title}
+                    className={`bg-slate-100 ${isFeatured ? 'aspect-[16/10]' : 'aspect-[4/5]'}`}
                     loading={index < 4 ? 'eager' : 'lazy'}
-                    decoding="async"
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    imageClassName="transition duration-500 group-hover:scale-105"
+                    fallbackText={item.title}
                   />
                   <button
                     type="button"

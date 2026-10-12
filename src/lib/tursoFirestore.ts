@@ -71,6 +71,13 @@ export interface WriteBatch {
   commit(): Promise<void>;
 }
 
+export class TursoApiError extends Error {
+  constructor(message: string, public readonly statusCode: number) {
+    super(message);
+    this.name = 'TursoApiError';
+  }
+}
+
 const database: TursoDatabase = { type: 'turso' };
 // These HTTP-backed subscriptions each issue Turso reads, so avoid tight polling.
 const SNAPSHOT_POLL_INTERVAL_MS = 30000;
@@ -220,7 +227,12 @@ async function request<T>(
         `Turso API returned a non-JSON response (HTTP ${response.status}). Check the Vercel API route configuration.`
       );
     }
-    if (!response.ok) throw new Error(result.error || `Turso request failed (${response.status}).`);
+    if (!response.ok) {
+      throw new TursoApiError(
+        result.error || `Turso request failed (${response.status}).`,
+        response.status
+      );
+    }
     return result;
   })();
 

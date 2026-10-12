@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Star, ChevronRight, MessageSquare, CheckCircle2, Quote } from 'lucide-react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { Star, ChevronRight, ChevronLeft, MessageSquare, CheckCircle2, Quote } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
@@ -17,10 +17,18 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
 }) => {
   const [selectedDivision, setSelectedDivision] = useState<DivisionId | 'all'>(initialDivision);
   const { homepageConfig, testimonials: firestoreTestimonials, isTestimonialsLoading } = useFirestoreDataContext();
+  const testimonialsTrackRef = useRef<HTMLDivElement>(null);
 
-  if (homepageConfig?.testimonials && homepageConfig.testimonials.enabled === false) {
-    return null;
-  }
+  useEffect(() => {
+    testimonialsTrackRef.current?.scrollTo({ left: 0 });
+  }, [selectedDivision]);
+
+  const scrollTestimonials = (direction: -1 | 1) => {
+    const track = testimonialsTrackRef.current;
+    if (!track) return;
+    const cardWidth = track.firstElementChild?.getBoundingClientRect().width ?? track.clientWidth;
+    track.scrollBy({ left: direction * (cardWidth + 24), behavior: 'smooth' });
+  };
 
   // Strictly show testimonials saved in Firestore by the admin
   const activeTestimonials = useMemo(() => {
@@ -39,6 +47,31 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
       }))
       .filter((t) => t.text.trim().length > 0);
   }, [firestoreTestimonials]);
+
+  // Unique divisions with testimonials to show filter pills
+  const availableDivisions = useMemo(() => {
+    const divs = new Set<string>();
+    activeTestimonials.forEach((t) => {
+      if (t.divisionId && t.divisionId !== 'all') {
+        divs.add(t.divisionId);
+      }
+    });
+    return Array.from(divs);
+  }, [activeTestimonials]);
+
+  // Filter by selected division
+  const filteredReviews = useMemo(() => {
+    if (selectedDivision === 'all') return activeTestimonials;
+    return activeTestimonials.filter(
+      (r) =>
+        r.divisionId === selectedDivision ||
+        (r.divisionName && r.divisionName.toLowerCase().includes(selectedDivision.toLowerCase()))
+    );
+  }, [activeTestimonials, selectedDivision]);
+
+  if (homepageConfig?.testimonials && homepageConfig.testimonials.enabled === false) {
+    return null;
+  }
 
   // Show shimmer while testimonials are fetching from Firestore
   if (isTestimonialsLoading && activeTestimonials.length === 0) {
@@ -82,27 +115,6 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
     return null;
   }
 
-  // Unique divisions with testimonials to show filter pills
-  const availableDivisions = useMemo(() => {
-    const divs = new Set<string>();
-    activeTestimonials.forEach((t) => {
-      if (t.divisionId && t.divisionId !== 'all') {
-        divs.add(t.divisionId);
-      }
-    });
-    return Array.from(divs);
-  }, [activeTestimonials]);
-
-  // Filter by selected division
-  const filteredReviews = useMemo(() => {
-    if (selectedDivision === 'all') return activeTestimonials;
-    return activeTestimonials.filter(
-      (r) =>
-        r.divisionId === selectedDivision ||
-        (r.divisionName && r.divisionName.toLowerCase().includes(selectedDivision.toLowerCase()))
-    );
-  }, [activeTestimonials, selectedDivision]);
-
   const meta = homepageConfig?.testimonials || {
     badge: 'CLIENT TESTIMONIALS',
     title: 'What Our Clients Say',
@@ -143,34 +155,56 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
           </Body>
         </div>
 
-        {/* Division Filter Pills (only show if multiple divisions have reviews) */}
-        {availableDivisions.length > 1 && (
-          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-xl border border-slate-200 shrink-0">
-            <button
-              onClick={() => setSelectedDivision('all')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                selectedDivision === 'all'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              All
-            </button>
-            {availableDivisions.map((divId) => (
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Division Filter Pills (only show if multiple divisions have reviews) */}
+          {availableDivisions.length > 1 && (
+            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 rounded-xl border border-slate-200 shrink-0">
               <button
-                key={divId}
-                onClick={() => setSelectedDivision(divId as DivisionId)}
+                onClick={() => setSelectedDivision('all')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                  selectedDivision === divId
+                  selectedDivision === 'all'
                     ? 'bg-blue-600 text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
-                {getDivisionLabel(divId)}
+                All
               </button>
-            ))}
-          </div>
-        )}
+              {availableDivisions.map((divId) => (
+                <button
+                  key={divId}
+                  onClick={() => setSelectedDivision(divId as DivisionId)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                    selectedDivision === divId
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  {getDivisionLabel(divId)}
+                </button>
+              ))}
+            </div>
+          )}
+          {filteredReviews.length > 1 && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                aria-label="Show previous testimonials"
+                onClick={() => scrollTestimonials(-1)}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-blue-500 hover:text-blue-600"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                aria-label="Show next testimonials"
+                onClick={() => scrollTestimonials(1)}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-blue-500 hover:text-blue-600"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Testimonials Grid */}
@@ -179,11 +213,14 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
           <p className="text-xs text-slate-500">No testimonials found for this category.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          ref={testimonialsTrackRef}
+          className="flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-4"
+        >
           {filteredReviews.map((review) => (
             <div
               key={review.id}
-              className="p-6 sm:p-7 rounded-2xl bg-slate-50/80 border border-slate-200/90 hover:border-blue-400 hover:bg-white hover:shadow-lg transition-all duration-300 flex flex-col justify-between group"
+              className="w-[85%] shrink-0 snap-start p-6 sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)] sm:p-7 rounded-2xl bg-slate-50/80 border border-slate-200/90 hover:border-blue-400 hover:bg-white hover:shadow-lg transition-all duration-300 flex flex-col justify-between group"
             >
               <div>
                 {/* Header: Stars and Division Tag */}

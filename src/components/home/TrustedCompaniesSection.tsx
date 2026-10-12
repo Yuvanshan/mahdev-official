@@ -11,16 +11,16 @@ interface TrustedCompaniesSectionProps {
 export const TrustedCompaniesSection: React.FC<TrustedCompaniesSectionProps> = ({ onExplorePartners }) => {
   const { trustedCompanies, homepageConfig } = useFirestoreDataContext();
 
-  if (homepageConfig?.companies && homepageConfig.companies.enabled === false) {
-    return null;
-  }
-
   // Strictly display trusted enterprise companies saved in Firestore by the admin
   const activeCompanies = React.useMemo(() => {
     return (trustedCompanies || [])
       .filter((c) => c.status !== 'inactive' && c.isPublished !== false && !(c as any).isDeleted)
       .sort((a, b) => (a.order || 0) - (b.order || 0));
   }, [trustedCompanies]);
+
+  if (homepageConfig?.companies && homepageConfig.companies.enabled === false) {
+    return null;
+  }
 
   // If no companies exist in Firestore, do not show the section
   if (activeCompanies.length === 0) {

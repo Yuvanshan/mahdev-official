@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useMemo } from 'react';
 import {
   Calendar,
   CheckCircle2,
@@ -27,7 +27,6 @@ interface MilestonesSectionProps {
 
 export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate }) => {
   const { milestones, homepageConfig, isMilestonesLoading } = useFirestoreDataContext();
-  const [activeMilestoneId, setActiveMilestoneId] = useState<string>('');
 
   const milestonesCms = homepageConfig?.milestones;
 
@@ -105,28 +104,6 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
 
   const totalPoints = displayMilestones.length;
 
-  const currentMilestone = useMemo(() => {
-    if (displayMilestones.length === 0) return null;
-    const found = displayMilestones.find(
-      (m) => m.id === activeMilestoneId || m.year === activeMilestoneId
-    );
-    return found || displayMilestones[displayMilestones.length - 1];
-  }, [displayMilestones, activeMilestoneId]);
-
-  const activeMilestoneIndex = useMemo(() => {
-    if (displayMilestones.length === 0) return 0;
-    const idx = displayMilestones.findIndex(
-      (m) => m.id === activeMilestoneId || m.year === activeMilestoneId
-    );
-    return idx >= 0 ? idx : displayMilestones.length - 1;
-  }, [displayMilestones, activeMilestoneId]);
-
-  const handleSelectMilestone = useCallback((ms: FirestoreMilestone) => {
-    setActiveMilestoneId(ms.id || ms.year);
-  }, []);
-
-  const CurrentIcon = getMilestoneIcon(currentMilestone?.year, currentMilestone?.title);
-
   const gridClass = useMemo(() => {
     const count = displayMilestones.length;
     if (count === 1) return 'grid grid-cols-1 max-w-md mx-auto gap-4 relative z-10';
@@ -188,49 +165,26 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
           </Body>
         </div>
 
-        {/* Milestone Cards Grid (Clean, Static, Responsive) */}
+        {/* Milestone summaries; full descriptions are available on the company journey page. */}
         <div className="max-w-6xl mx-auto mb-10">
           <div className={gridClass}>
             {displayMilestones.map((ms, index) => {
               const milestoneKey = ms.id ? `ms-card-${ms.id}` : `ms-card-${ms.year}-${index}`;
-              const isSelected = activeMilestoneIndex === index;
               const Icon = getMilestoneIcon(ms.year, ms.title);
 
               return (
                 <div
                   key={milestoneKey}
-                  onClick={() => handleSelectMilestone(ms)}
-                  className={`relative rounded-2xl p-4 sm:p-5 cursor-pointer transition-all duration-200 flex flex-col justify-between h-full border text-left group overflow-hidden ${
-                    isSelected
-                      ? 'bg-gradient-to-b from-white via-blue-50/70 to-blue-100/40 border-blue-600 ring-2 ring-blue-500/40 shadow-lg'
-                      : 'bg-white border-slate-200/90 hover:border-blue-400 hover:bg-slate-50/90 shadow-2xs hover:shadow-sm'
-                  }`}
+                  className="relative rounded-2xl p-4 sm:p-5 transition-all duration-200 flex flex-col justify-between h-full border text-left group overflow-hidden bg-white border-slate-200/90 hover:border-blue-400 hover:bg-slate-50/90 shadow-2xs hover:shadow-sm"
                 >
-                  {/* Active Indicator Top Edge */}
-                  {isSelected && (
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-cyan-400 to-indigo-600" />
-                  )}
-
                   {/* Card Top Row: Year Pill & Icon */}
                   <div className="flex items-center justify-between mb-3">
-                    <div
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
-                        isSelected
-                          ? 'bg-blue-600 text-white shadow-xs'
-                          : 'bg-slate-100 text-slate-700'
-                      }`}
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-blue-600'}`} />
+                    <div className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold transition-all flex items-center gap-1.5 bg-slate-100 text-slate-700">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
                       <span>{ms.year}</span>
                     </div>
 
-                    <div
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
-                        isSelected
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-600'
-                      }`}
-                    >
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-600">
                       <Icon className="w-3.5 h-3.5" />
                     </div>
                   </div>
@@ -238,9 +192,7 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
                   {/* Card Content: Title & Subtitle */}
                   <div className="mb-2">
                     <h4
-                      className={`font-display text-sm sm:text-base font-bold leading-tight mb-1 transition-colors ${
-                        isSelected ? 'text-blue-950 font-extrabold' : 'text-slate-900 group-hover:text-blue-600'
-                      }`}
+                      className="font-display text-sm sm:text-base font-bold leading-tight mb-1 transition-colors text-slate-900 group-hover:text-blue-600"
                     >
                       {ms.title}
                     </h4>
@@ -267,85 +219,11 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
                       {ms.metric}
                     </div>
                   )}
-
-                  {/* Active Milestone Status Pin */}
-                  {isSelected && (
-                    <div className="mt-2 flex items-center gap-1 text-[10px] font-mono font-semibold text-blue-600">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                      <span>Selected Milestone</span>
-                    </div>
-                  )}
                 </div>
               );
             })}
           </div>
         </div>
-
-        {/* Active Milestone Full Spotlight Card */}
-        {currentMilestone && (
-          <div className="max-w-6xl mx-auto mb-14">
-            <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white border border-slate-800 shadow-xl relative overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 pb-5 border-b border-slate-800 relative z-10">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-xl bg-blue-600/30 border border-blue-400/30 text-blue-400 flex items-center justify-center shadow-xs">
-                    <CurrentIcon className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono font-semibold text-blue-400 uppercase tracking-wider">
-                        {currentMilestone.year} {currentMilestone.date ? `• ${currentMilestone.date}` : ''} Milestone
-                      </span>
-                      <span className="text-slate-500">•</span>
-                      <span className="text-xs font-mono text-cyan-300">
-                        {activeMilestoneIndex + 1} of {totalPoints}
-                      </span>
-                    </div>
-                    <h3 className="font-display text-xl sm:text-2xl font-bold text-white mt-0.5">
-                      {currentMilestone.title}
-                    </h3>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  {currentMilestone.badge && (
-                    <Badge variant="secondary" className="bg-blue-900/80 text-blue-200 border-blue-700">
-                      {currentMilestone.badge}
-                    </Badge>
-                  )}
-                  {currentMilestone.metric && (
-                    <div className="px-2.5 py-1 rounded-lg bg-cyan-950/80 border border-cyan-700/80 text-[11px] font-mono font-bold text-cyan-300">
-                      {currentMilestone.metric}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-4 relative z-10">
-                <p className="text-base sm:text-lg text-slate-200 leading-relaxed font-normal">
-                  {currentMilestone.description}
-                </p>
-
-                {currentMilestone.keyOutcome && (
-                  <div className="flex items-start gap-2.5 pt-2 text-sm sm:text-base text-cyan-300 font-medium bg-slate-900/60 p-4 rounded-xl border border-slate-800/80">
-                    <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
-                    <span><strong>Key Outcome:</strong> {currentMilestone.keyOutcome}</span>
-                  </div>
-                )}
-
-                {Array.isArray(currentMilestone.details) && currentMilestone.details.length > 0 && (
-                  <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-slate-300">
-                    {currentMilestone.details.map((detail: string, dIdx: number) => (
-                      <div key={dIdx} className="flex items-start gap-2 bg-slate-900/50 p-3 rounded-xl border border-slate-800/60">
-                        <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                        <span>{detail}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Integrated Key Achievements / By The Numbers Grid */}
         {displayAchievements && displayAchievements.length > 0 && (
@@ -389,7 +267,7 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
                         {item.label}
                       </div>
                     </div>
-                    <p className="text-[11px] text-slate-600 leading-snug mt-2 pt-2 border-t border-slate-200/60">
+                    <p className="text-[11px] text-slate-600 leading-snug mt-2 pt-2 border-t border-slate-200/60 line-clamp-2">
                       {item.description}
                     </p>
                   </div>

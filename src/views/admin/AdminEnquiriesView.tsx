@@ -35,9 +35,13 @@ import {
 } from '../../services/firestore/inquiries';
 import { firestoreContactsService } from '../../services/firestore/contacts';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { useAdminAuth } from '../../context/AdminAuthContext';
+import { TursoApiError } from '../../lib/tursoFirestore';
+import { FirestoreContactSubmission } from '../../types/firestore';
 
 export const AdminEnquiriesView: React.FC = () => {
   const { divisions } = useFirestoreDataContext();
+  const { logout } = useAdminAuth();
   const [inquiries, setInquiries] = useState<FirestoreInquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [feedError, setFeedError] = useState<string | null>(null);
@@ -54,13 +58,14 @@ export const AdminEnquiriesView: React.FC = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const knownInquiryIds = useRef(new Set<string>());
   const initialInquiryFeedsLoaded = useRef(false);
+  const sessionExpired = useRef(false);
 
   // Keep both Turso enquiry feeds live in the admin inbox.
   useEffect(() => {
     setLoading(true);
     setFeedError(null);
     let latestInquiries: FirestoreInquiry[] | null = null;
-    let latestContacts: any[] | null = null;
+    let latestContacts: FirestoreContactSubmission[] | null = null;
     let inquiryFeedFailed = false;
     let contactFeedFailed = false;
 
@@ -128,6 +133,22 @@ export const AdminEnquiriesView: React.FC = () => {
       }
     }, 15000);
 
+    const handleFeedError = (source: string, error: Error) => {
+      if (error instanceof TursoApiError && error.statusCode === 401) {
+        if (!sessionExpired.current) {
+          sessionExpired.current = true;
+          setFeedError('Your administrator session has expired. Please sign in again.');
+          void logout().catch((logoutError) => {
+            console.error('[AdminEnquiriesView] Could not clear the expired administrator session:', logoutError);
+          });
+        }
+        return;
+      }
+      if (sessionExpired.current) return;
+      setFeedError(`Could not load ${source}: ${error.message}`);
+      addToast('error', `${source} unavailable`, error.message);
+    };
+
     const unsubInquiries = firestoreInquiriesService.subscribeInquiries((inqList) => {
       inquiryFeedFailed = false;
       latestInquiries = inqList || [];
@@ -135,9 +156,8 @@ export const AdminEnquiriesView: React.FC = () => {
     }, (error) => {
       inquiryFeedFailed = true;
       if (latestInquiries === null) latestInquiries = [];
-      setFeedError(`Could not load enquiries: ${error.message}`);
       mergeAndSet();
-      addToast('error', 'Inquiry updates unavailable', error.message);
+      handleFeedError('enquiries', error);
     });
 
     const unsubContacts = firestoreContactsService.subscribeContacts(
@@ -149,9 +169,8 @@ export const AdminEnquiriesView: React.FC = () => {
       (error) => {
         contactFeedFailed = true;
         if (latestContacts === null) latestContacts = [];
-        setFeedError(`Could not load contact submissions: ${error.message}`);
         mergeAndSet();
-        addToast('error', 'Contact updates unavailable', error.message);
+        handleFeedError('contact submissions', error);
       }
     );
 
@@ -160,7 +179,7 @@ export const AdminEnquiriesView: React.FC = () => {
       unsubInquiries();
       unsubContacts();
     };
-  }, [feedRetry]);
+  }, [feedRetry, logout]);
 
   // Auto-open target inquiry if redirected from admin notification
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { AdminUser, AdminSession } from '../types/admin';
 import { adminService } from '../services/adminService';
 
@@ -48,16 +48,16 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return { success: false, error: result.error || 'Authentication failed.' };
   };
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     setIsLoading(true);
     try {
       await adminService.logout();
+    } finally {
       setSession(null);
       setAdmin(null);
-    } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const logAuditAction = async (
     action: string,
