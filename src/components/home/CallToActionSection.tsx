@@ -6,7 +6,7 @@ import { H2, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { Input, Textarea, Select } from '../ui/Input';
 import { BRAND_CONFIG } from '../../config/brand';
-import { COMPANY_INFO, getTelLink, getMailtoLink, getMapSearchUrl } from '../../config/company';
+import { COMPANY_INFO, getTelLink, getMailtoLink, getOfficeMapUrl } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { DIVISION_LIST } from '../../config/divisions';
 import { firestoreContactsService } from '../../services/firestore/contacts';
@@ -161,7 +161,7 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
 
                 <div className="space-y-2 pt-1 border-t border-slate-800/80">
                   <a
-                    href={getMapSearchUrl(company.offices?.colombo?.mapQuery || COMPANY_INFO.offices.colombo.mapQuery)}
+                    href={getOfficeMapUrl('colombo')}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-start gap-3 text-sm text-slate-300 hover:text-blue-400 transition-colors group"
@@ -180,7 +180,7 @@ export const CallToActionSection: React.FC<CallToActionSectionProps> = ({
                   </a>
 
                   <a
-                    href={getMapSearchUrl(company.offices?.trincomalee?.mapQuery || COMPANY_INFO.offices.trincomalee.mapQuery)}
+                    href={getOfficeMapUrl('trincomalee')}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-start gap-3 text-sm text-slate-300 hover:text-blue-400 transition-colors group"

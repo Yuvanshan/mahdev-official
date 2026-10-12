@@ -73,9 +73,6 @@ const FeaturedWorkSectionContent: React.FC<
             <H2 className="text-slate-950 text-3xl sm:text-4xl lg:text-5xl font-display font-bold tracking-tight">
               SELECTED WORK
             </H2>
-            <Body className="text-slate-600 text-base mt-2 max-w-xl">
-              Curated productions, digital solutions, studio media, and bespoke operations engineered across our divisions.
-            </Body>
           </div>
 
           <div className="mt-4 md:mt-0">

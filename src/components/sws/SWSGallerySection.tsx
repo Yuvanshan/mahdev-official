@@ -111,9 +111,6 @@ export const SWSGallerySection: React.FC = () => {
           <ScrollReveal direction="up">
             <Caption className="text-[#0052FF] mb-2 block">Visual Showcase</Caption>
             <H2 className="text-slate-900">Cinematic Gallery of Live Productions</H2>
-            <Body className="text-slate-600 mt-2 max-w-2xl">
-              Immerse yourself in our curated visual archives—capturing the emotion, scale, and bespoke craftsmanship of Sri Lanka’s most extraordinary events.
-            </Body>
           </ScrollReveal>
         </div>
 

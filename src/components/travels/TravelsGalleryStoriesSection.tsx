@@ -76,9 +76,6 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
           <H2 className="text-slate-900">
             Capturing the Untamed Soul of Sri Lanka
           </H2>
-          <Body className="text-slate-600 mt-2">
-            A photographic tapestry of sacred monoliths, mist-blanketed tea estates, wild predator encounters, and sun-drenched coastlines.
-          </Body>
         </ScrollReveal>
       </div>
 
@@ -138,9 +135,6 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
               <H2 className="text-slate-900">
                 Real Stories from Discerning Global Travelers
               </H2>
-              <Body className="text-slate-600 mt-2">
-                Read firsthand accounts of private expeditions planned and executed by Mahdev Travels.
-              </Body>
             </ScrollReveal>
           </div>
 

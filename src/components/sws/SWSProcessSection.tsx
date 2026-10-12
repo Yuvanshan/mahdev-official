@@ -52,9 +52,6 @@ export const SWSProcessSection: React.FC = () => {
         <ScrollReveal direction="up">
           <Caption className="text-[#0052FF] mb-2 block">Methodical Event Craftsmanship</Caption>
           <H2 className="text-slate-900">How We Orchestrate Unforgettable Milestones</H2>
-          <Body className="text-slate-600 mt-2">
-            A seamless four-phase production lifecycle ensuring complete creative integrity, financial transparency, and stress-free execution.
-          </Body>
         </ScrollReveal>
       </div>
 

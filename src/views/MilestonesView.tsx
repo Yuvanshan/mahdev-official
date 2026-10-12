@@ -69,9 +69,6 @@ export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) =>
             <H1 className="text-slate-900 text-3xl sm:text-4xl lg:text-5xl font-display font-bold tracking-tight mb-4">
               Our Journey of Growth & Innovation
             </H1>
-            <Body className="text-slate-600 text-base sm:text-lg">
-              From our humble beginnings in 2022 as SWS Event Management to a registered multi-division enterprise, explore key milestones that have shaped {companySettings?.name || 'Mahdev Pvt Ltd'}.
-            </Body>
           </div>
         </ScrollReveal>
       </SectionContainer>

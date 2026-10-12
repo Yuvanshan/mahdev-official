@@ -87,9 +87,6 @@ export const U1StudioExperienceSection: React.FC = () => {
           <H2 className="text-slate-900">
             A Master Space Engineered for Creative Excellence
           </H2>
-          <Body className="text-slate-600 mt-2">
-            Located in Colombo, U1 Studio is a sanctuary for visual artists, commercial brands, and discerning couples seeking an unhurried, luxurious production environment.
-          </Body>
         </ScrollReveal>
       </div>
 

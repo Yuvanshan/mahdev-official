@@ -13,6 +13,7 @@ import { buildWhatsAppMessage, buildWhatsAppOrderMessage } from '../src/utils/wh
 import { getMediaAssetShareUrl } from '../src/utils/mediaShare';
 import { DisplayGalleryItem, matchGalleryItem, matchGalleryItemByTitle } from '../src/utils/itemLookup';
 import { notificationService } from '../src/services/notificationService';
+import { getOfficeMapUrl, getMapSearchUrl } from '../src/config/company';
 
 interface TestStep {
   category: string;
@@ -258,6 +259,14 @@ async function runTestSuite() {
         return galleryUrl === 'https://mahdev.lk/gallery?id=gallery-record-02' &&
           u1Url === 'https://mahdev.lk/u1?sku=portfolio-record-03';
       },
+    },
+    {
+      category: 'Customer Experience',
+      name: 'Branch map links use the supplied Google Maps locations',
+      fn: () =>
+        getOfficeMapUrl('trincomalee') === 'https://maps.app.goo.gl/WwWZBcPNtZjB1KWn9' &&
+        getOfficeMapUrl('colombo') === 'https://maps.app.goo.gl/aS8i2snTchk5jDX98' &&
+        getMapSearchUrl(getOfficeMapUrl('colombo')) === 'https://maps.app.goo.gl/aS8i2snTchk5jDX98',
     },
     {
       category: 'Admin Operations',

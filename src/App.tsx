@@ -35,60 +35,129 @@ function lazy<T extends React.ComponentType<any>>(
   );
 }
 
-type DivisionHeroLoadingFallbackProps = {
+type RouteLoadingFallbackProps = {
   division?: 'sws' | 'u1';
+  path: string;
 };
 
-const DivisionHeroLoadingFallback: React.FC<DivisionHeroLoadingFallbackProps> = ({ division }) => {
-  if (!division) {
-    return (
-      <div
-        role="status"
-        aria-busy="true"
-        className="flex min-h-96 items-center justify-center bg-slate-50 text-sm font-medium text-slate-500"
-      >
-        Loading page content…
-      </div>
-    );
-  }
-
-  const title = division === 'sws'
-    ? 'We Create Moments. You Make Memories.'
-    : 'Every Frame Tells a Story.';
+const RouteLoadingFallback: React.FC<RouteLoadingFallbackProps> = ({ division, path }) => {
   const description = division === 'sws'
     ? 'Beautifully designed celebrations, thoughtfully crafted around your special moments.'
     : 'Professional photography and creative experiences that preserve your most precious memories.';
 
+  if (division) {
+    const lines = division === 'sws'
+      ? ['We Create Moments.', 'You Make Memories.']
+      : ['Every Frame', 'Tells a Story.'];
+
+    return (
+      <section
+        aria-busy="true"
+        aria-label={division === 'sws' ? 'SWS Event Management' : 'U1 Studio'}
+        className="relative flex min-h-[85vh] w-full items-center overflow-hidden bg-[#061033] text-white lg:min-h-[90vh]"
+      >
+        <video
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover"
+          src="/assets/hero_main.mp4?v=2"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#061033]/90 via-[#061033]/60 to-[#061033]/30" />
+        <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
+          <div className="max-w-3xl space-y-6">
+            <motion.h1
+              initial={{ opacity: 0.85, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+              className="font-display text-3xl font-black leading-[1.08] tracking-tight text-white drop-shadow-md sm:text-5xl lg:text-6xl xl:text-7xl"
+            >
+              {lines.map((line) => (
+                <span className="block" key={line}>
+                  {line}
+                </span>
+              ))}
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0.8, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+              className="max-w-xl text-sm font-medium tracking-wide text-white/85 drop-shadow-md sm:text-base"
+            >
+              {description}
+            </motion.p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const isAbout = path === '/about' || path === '/about-us';
+  const isLegal = [
+    '/terms-and-conditions',
+    '/privacy-policy',
+    '/refund-policy',
+    '/shipping-policy',
+    '/cookie-policy',
+  ].includes(path);
+
   return (
-    <section
+    <div
       role="status"
       aria-busy="true"
-      aria-label={`Loading ${division === 'sws' ? 'SWS Event Management' : 'U1 Studio'}`}
-      className="relative flex min-h-[85vh] w-full items-center overflow-hidden bg-[#061033] text-white lg:min-h-[90vh]"
+      aria-label="Loading page"
+      className="min-h-screen bg-slate-50 pt-20 sm:pt-24"
     >
-      <video
-        aria-hidden="true"
-        className="absolute inset-0 h-full w-full object-cover"
-        src="/assets/hero_main.mp4?v=2"
-        autoPlay
-        loop
-        muted
-        playsInline
-        preload="metadata"
-      />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#061033]/90 via-[#061033]/60 to-[#061033]/30" />
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
-        <div className="max-w-3xl space-y-6">
-          <h1 className="text-3xl font-black leading-tight tracking-tight drop-shadow-md sm:text-5xl lg:text-6xl">
-            {title}
-          </h1>
-          <p className="max-w-xl text-sm font-medium tracking-wide text-white/85 drop-shadow-md sm:text-base">
-            {description}
-          </p>
-          <p className="text-sm font-semibold text-white/75">Loading page content…</p>
+      <section className="border-b border-slate-200 bg-white py-10 sm:py-14">
+        <div className="mx-auto max-w-7xl animate-pulse px-4 sm:px-6 lg:px-8">
+          <div className="mb-6 h-4 w-40 rounded bg-slate-200" />
+          <div className="h-10 w-3/4 max-w-2xl rounded-xl bg-slate-200" />
+          <div className="mt-4 h-5 w-full max-w-3xl rounded bg-slate-100" />
+          <div className="mt-2 h-5 w-2/3 max-w-2xl rounded bg-slate-100" />
         </div>
-      </div>
-    </section>
+      </section>
+      <main className="mx-auto w-full max-w-7xl animate-pulse px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+        {isAbout ? (
+          <div className="space-y-10">
+            <div className="h-56 rounded-3xl bg-white" />
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="h-48 rounded-2xl bg-white" />
+              <div className="h-48 rounded-2xl bg-white" />
+            </div>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {[0, 1, 2, 3].map((item) => (
+                <div className="h-40 rounded-2xl bg-white" key={item} />
+              ))}
+            </div>
+          </div>
+        ) : isLegal ? (
+          <div className="grid gap-8 lg:grid-cols-12">
+            <div className="hidden h-96 rounded-2xl bg-white lg:col-span-4 lg:block" />
+            <div className="space-y-5 lg:col-span-8">
+              {[0, 1, 2, 3, 4].map((item) => (
+                <div className="space-y-4 rounded-2xl bg-white p-6" key={item}>
+                  <div className="h-6 w-1/3 rounded bg-slate-200" />
+                  <div className="h-4 rounded bg-slate-100" />
+                  <div className="h-4 w-5/6 rounded bg-slate-100" />
+                  <div className="h-4 w-2/3 rounded bg-slate-100" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            <div className="h-48 rounded-3xl bg-white" />
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="h-48 rounded-2xl bg-white" />
+              <div className="h-48 rounded-2xl bg-white" />
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
   );
 };
 
@@ -1201,7 +1270,11 @@ function AppContent() {
             transition={{ duration: 0.24, ease: 'easeInOut' }}
             className="w-full max-w-full min-w-0"
           >
-            <Suspense fallback={<DivisionHeroLoadingFallback division={heroLoadingDivision} />}>
+            <Suspense
+              fallback={
+                <RouteLoadingFallback division={heroLoadingDivision} path={normalizedPath} />
+              }
+            >
               {renderCurrentView()}
             </Suspense>
           </motion.div>

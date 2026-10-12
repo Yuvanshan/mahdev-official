@@ -46,9 +46,6 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ onNavigate }) => {
             <H1 className="text-slate-900 text-3xl sm:text-4xl lg:text-5xl font-display font-bold tracking-tight mb-4">
               Enterprise Partners & Clients
             </H1>
-            <Body className="text-slate-600 text-base sm:text-lg">
-              We partner with industry pioneers, national brands, and creative leaders across Sri Lanka and South Asia to deliver landmark productions, reliable digital architectures, and world-class experiences.
-            </Body>
           </div>
         </ScrollReveal>
       </SectionContainer>

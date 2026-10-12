@@ -123,9 +123,6 @@ export const U1PackagesSection: React.FC<U1PackagesSectionProps> = ({ onBookPack
           <H2 className="text-slate-900">
             Curated Packages for Every Milestone
           </H2>
-          <Body className="text-slate-600 mt-2">
-            Transparent packages combining lead photographers, cinema filmmakers, aerial drones, and handcrafted flush-mount legacy albums.
-          </Body>
         </ScrollReveal>
       </div>
 

@@ -228,9 +228,6 @@ export const U1PortfolioSection: React.FC = () => {
             <H2 className="text-slate-900">
               The U1 Visual Portfolio
             </H2>
-            <Body className="text-slate-600 mt-2 max-w-2xl">
-              An image-first exhibition of our hallmark stills and cinema productions. Tap any frame to inspect full-screen composition and camera optics.
-            </Body>
           </ScrollReveal>
         </div>
 

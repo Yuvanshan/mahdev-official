@@ -77,9 +77,6 @@ export const ITCaseStudiesSection: React.FC<ITCaseStudiesSectionProps> = ({
           <H2 className="text-slate-900">
             Case Studies: High-Impact ROI Delivered Across Asia
           </H2>
-          <Body className="text-slate-600 mt-2">
-            Explore how our custom software, ERPs, and cloud modernization projects have transformed high-volume logistics, garment manufacturing, and digital insurance.
-          </Body>
         </ScrollReveal>
       </div>
 

@@ -63,9 +63,6 @@ export const TravelsFleetSection: React.FC<TravelsFleetSectionProps> = ({
           <H2 className="text-slate-900">
             Premium Transport, VIP Vans & 4x4 Safari Expeditions
           </H2>
-          <Body className="text-slate-600 mt-2">
-            Travel across Sri Lanka in total comfort with our private fleet of meticulously maintained, fully insured luxury vehicles operated by seasoned English-speaking tourist chauffeurs.
-          </Body>
         </ScrollReveal>
       </div>
 

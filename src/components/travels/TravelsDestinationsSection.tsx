@@ -65,9 +65,6 @@ export const TravelsDestinationsSection: React.FC<TravelsDestinationsSectionProp
           <H2 className="text-slate-900">
             Destinations Imbued with Heritage, Wildlife & Natural Wonder
           </H2>
-          <Body className="text-slate-600 mt-2">
-            From mist-shrouded cloud forests and ancient UNESCO rock citadels to untamed leopard savannahs and golden surf beaches.
-          </Body>
         </ScrollReveal>
       </div>
 

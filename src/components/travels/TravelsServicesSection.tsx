@@ -86,9 +86,6 @@ export const TravelsServicesSection: React.FC = () => {
           <H2 className="text-slate-900">
             Comprehensive On-Ground Tourism & Travel Services
           </H2>
-          <Body className="text-slate-600 mt-2">
-            Every detail of your journey is coordinated by local specialists, ensuring seamless transitions, authentic local connections, and absolute peace of mind.
-          </Body>
         </ScrollReveal>
       </div>
 

@@ -62,9 +62,6 @@ export const TravelsDayToursSection: React.FC<TravelsDayToursSectionProps> = ({
           <H2 className="text-slate-900">
             Day Tours & Immersive Micro-Adventures
           </H2>
-          <Body className="text-slate-600 mt-2">
-            Perfect for cruise passengers, transit layovers, or hotel guests wanting private round-trip excursions with private chauffeur and entrance tickets included.
-          </Body>
         </ScrollReveal>
       </div>
 

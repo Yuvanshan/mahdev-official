@@ -63,7 +63,7 @@ export const COMPANY_INFO: CompanyInformation = {
       area: 'Kotahena, Colombo 13',
       country: 'Sri Lanka',
       isHeadquarters: true,
-      mapQuery: '41/22 Pickerings Road, Kotahena, Colombo 13, Sri Lanka',
+      mapQuery: 'https://maps.app.goo.gl/aS8i2snTchk5jDX98',
     },
     trincomalee: {
       id: 'trincomalee',
@@ -75,7 +75,7 @@ export const COMPANY_INFO: CompanyInformation = {
       area: 'Kanniya Road',
       country: 'Sri Lanka',
       isHeadquarters: false,
-      mapQuery: '95/15 Iluppaikkulam, Kanniya Road, Trincomalee, Sri Lanka',
+      mapQuery: 'https://maps.app.goo.gl/WwWZBcPNtZjB1KWn9',
     },
   },
   socials: {
@@ -120,7 +120,12 @@ export function getMailtoLink(email: string = COMPANY_INFO.email, subject?: stri
 
 // Helper to format Google Maps search query link
 export function getMapSearchUrl(query: string): string {
+  if (/^https?:\/\//i.test(query)) return query;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+export function getOfficeMapUrl(office: OfficeLocation['id']): string {
+  return COMPANY_INFO.offices[office].mapQuery;
 }
 
 // Helper to format clean WhatsApp click-to-chat link

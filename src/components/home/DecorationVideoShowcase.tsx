@@ -142,9 +142,6 @@ const DecorationVideoShowcaseContent: React.FC<
               <span>{showcaseConfig?.badge || 'Real Event Productions'}</span>
             </div>
             <H2 className="text-white">{showcaseConfig?.title || 'Cinematic Event & Decoration Showcase'}</H2>
-            <Body className="text-slate-400 mt-2 max-w-2xl">
-              {showcaseConfig?.subtitle || 'Experience the scale, floral artistry, and stage lighting behind Mahdev event productions.'}
-            </Body>
           </div>
 
           {/* Category Selector Pills */}

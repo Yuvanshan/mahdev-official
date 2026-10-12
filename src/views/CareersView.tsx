@@ -98,9 +98,6 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
             <H1 className="text-slate-900 text-3xl sm:text-4xl lg:text-5xl font-display font-bold tracking-tight mb-4">
               Build the Future of Experiences & Technology
             </H1>
-            <Body className="text-slate-600 text-base sm:text-lg">
-              Join a dynamic team passionate about event production, cinematic storytelling, and digital software engineering. Work across five autonomous divisions with unmatched growth opportunities.
-            </Body>
           </div>
         </ScrollReveal>
       </SectionContainer>

@@ -25,7 +25,7 @@ import {
   Floating3DObject,
 } from '../motion/MotionWrappers';
 import { CORPORATE_CONTACT_DETAILS } from '../../data/corporateData';
-import { COMPANY_INFO, getTelLink, getMailtoLink, getMapSearchUrl } from '../../config/company';
+import { COMPANY_INFO, getTelLink, getMailtoLink, getOfficeMapUrl } from '../../config/company';
 import { useCompanySettings } from '../../hooks/useFirestoreData';
 import { DIVISION_LIST } from '../../config/divisions';
 import { evaluateBotRisk, checkActionThrottle } from '../../utils/securityProtection';
@@ -492,7 +492,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                     </div>
                   </div>
                   <a
-                    href={getMapSearchUrl(company.offices?.colombo?.mapQuery || COMPANY_INFO.offices.colombo.mapQuery)}
+                    href={getOfficeMapUrl('colombo')}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
@@ -526,7 +526,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                     </div>
                   </div>
                   <a
-                    href={getMapSearchUrl(company.offices?.trincomalee?.mapQuery || COMPANY_INFO.offices.trincomalee.mapQuery)}
+                    href={getOfficeMapUrl('trincomalee')}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"

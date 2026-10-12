@@ -30,7 +30,6 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
               {section.title}
             </h2>
           )}
-          {section?.subtitle && <p className="mt-2 text-sm text-slate-600">{section.subtitle}</p>}
         </div>
         <button
           type="button"

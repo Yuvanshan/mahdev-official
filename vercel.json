@@ -17,24 +17,26 @@
     {
       "source": "/assets/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
       ]
     }
   ],
-  "rewrites": [
-    { "source": "/api/data/(.*)", "destination": "/api/database" },
-    { "source": "/admin", "destination": "/index.html" },
-    { "source": "/admin/(.*)", "destination": "/index.html" },
-    { "source": "/sws", "destination": "/index.html" },
-    { "source": "/sws/(.*)", "destination": "/index.html" },
-    { "source": "/u1", "destination": "/index.html" },
-    { "source": "/u1/(.*)", "destination": "/index.html" },
-    { "source": "/it", "destination": "/index.html" },
-    { "source": "/it/(.*)", "destination": "/index.html" },
-    { "source": "/travels", "destination": "/index.html" },
-    { "source": "/travels/(.*)", "destination": "/index.html" },
-    { "source": "/mart", "destination": "/index.html" },
-    { "source": "/mart/(.*)", "destination": "/index.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
+  "routes": [
+    { "src": "/api/data/(.*)", "dest": "/api/database" },
+    { "handle": "filesystem" },
+    { "src": "/assets/(.*)", "status": 404 },
+    { "src": "/admin", "dest": "/index.html" },
+    { "src": "/admin/(.*)", "dest": "/index.html" },
+    { "src": "/sws", "dest": "/index.html" },
+    { "src": "/sws/(.*)", "dest": "/index.html" },
+    { "src": "/u1", "dest": "/index.html" },
+    { "src": "/u1/(.*)", "dest": "/index.html" },
+    { "src": "/it", "dest": "/index.html" },
+    { "src": "/it/(.*)", "dest": "/index.html" },
+    { "src": "/travels", "dest": "/index.html" },
+    { "src": "/travels/(.*)", "dest": "/index.html" },
+    { "src": "/mart", "dest": "/index.html" },
+    { "src": "/mart/(.*)", "dest": "/index.html" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

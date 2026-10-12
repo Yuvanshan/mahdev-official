@@ -68,9 +68,9 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
           
           {/* High-Impact Headline */}
           <motion.h1
-            initial={{ opacity: 0, y: 18 }}
+            initial={{ opacity: 0.85, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
             className="font-display text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-white leading-[1.08] drop-shadow-md"
           >
             <span className="block">Every Frame</span>
@@ -78,9 +78,9 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0.8, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay: 0.18 }}
+            transition={{ duration: 0.65, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
             className="max-w-xl text-sm sm:text-base font-medium tracking-wide text-white/85 drop-shadow-md"
           >
             Professional photography and creative experiences that preserve your most precious memories.

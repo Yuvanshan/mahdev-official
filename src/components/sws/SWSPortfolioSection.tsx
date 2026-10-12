@@ -74,9 +74,6 @@ export const SWSPortfolioSection: React.FC<SWSPortfolioSectionProps> = ({
         <ScrollReveal direction="up">
           <Caption className="text-[#0052FF] mb-2 block">Proven Execution & Case Studies</Caption>
           <H2 className="text-slate-900">Hallmark Event Portfolio</H2>
-          <Body className="text-slate-600 mt-2">
-            Explore how SWS transformed high-stakes client briefs into celebrated productions across Sri Lanka’s most prestigious ballrooms and outdoor sanctuaries.
-          </Body>
         </ScrollReveal>
       </div>
 

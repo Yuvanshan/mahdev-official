@@ -38,9 +38,6 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({ onNavigate }) => {
             <H1 className="text-slate-900 text-3xl sm:text-4xl lg:text-5xl font-display font-bold tracking-tight mb-4">
               Integrated Portfolio & Work
             </H1>
-            <Body className="text-slate-600 text-base sm:text-lg">
-              Explore landmark engagements across all five Mahdev divisions—from large-scale summits and 8K docuseries to mission-critical cloud software and curated VIP expeditions.
-            </Body>
           </div>
         </ScrollReveal>
       </SectionContainer>

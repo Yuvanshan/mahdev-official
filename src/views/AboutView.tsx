@@ -28,6 +28,7 @@ import {
   websiteContentService,
   DEFAULT_ABOUT_US_CONTENT,
 } from '../services/firestore/websiteContent';
+import { getOfficeMapUrl } from '../config/company';
 
 interface AboutViewProps {
   onNavigate: (route: string) => void;
@@ -494,7 +495,13 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
                       {loc.mapUrl && (
                         <div className="pt-6 border-t border-slate-100 mt-6">
                           <a
-                            href={loc.mapUrl}
+                            href={
+                              loc.id === 'loc-colombo'
+                                ? getOfficeMapUrl('colombo')
+                                : loc.id === 'loc-trincomalee'
+                                ? getOfficeMapUrl('trincomalee')
+                                : loc.mapUrl
+                            }
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs font-bold text-blue-600 hover:text-blue-700 inline-flex items-center gap-1.5"

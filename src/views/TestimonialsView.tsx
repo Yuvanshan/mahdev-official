@@ -112,9 +112,6 @@ export const TestimonialsView: React.FC<TestimonialsViewProps> = ({ onNavigate }
               <H1 className="text-slate-900 text-3xl sm:text-4xl lg:text-5xl font-display font-bold tracking-tight mb-3">
                 Verified Customer Reviews
               </H1>
-              <Body className="text-slate-600 text-base sm:text-lg">
-                Direct testimonials and ratings published on Google Maps by wedding couples, business leaders, cinema clients, and tech partners of {companySettings?.name || 'Mahdev Pvt Ltd'}.
-              </Body>
 
               {/* Direct Branch Google Maps Review Links */}
               <div className="flex flex-wrap items-center gap-3 mt-4">

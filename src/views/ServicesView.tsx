@@ -333,9 +333,6 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
             <H1 className="text-slate-900 text-3xl sm:text-4xl lg:text-5xl font-display font-bold tracking-tight mb-4">
               Enterprise Services & Solutions
             </H1>
-            <Body className="text-slate-600 text-base sm:text-lg">
-              From landmark event productions and high-end cinematography to enterprise cloud architectures, bespoke luxury travel, and certified hardware procurement.
-            </Body>
           </div>
         </ScrollReveal>
       </SectionContainer>

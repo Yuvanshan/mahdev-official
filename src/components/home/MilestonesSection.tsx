@@ -87,9 +87,6 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
           <H2 className="text-slate-900 mb-2 font-display text-3xl sm:text-4xl font-bold tracking-tight">
             {milestonesCms?.title || 'Our Milestones & Trajectory'}
           </H2>
-          <Body className="text-slate-600 text-sm sm:text-base max-w-2xl">
-            {milestonesCms?.subtitle || 'Follow our evolution through verified milestone cards as Mahdev progresses from creative event staging to islandwide scale, enterprise technology, and private corporate governance.'}
-          </Body>
         </div>
 
         {/* Swipe horizontally to browse milestone titles and years. */}

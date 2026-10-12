@@ -50,9 +50,6 @@ export const HomeGallerySection: React.FC = () => {
         <div className="max-w-2xl">
           <Caption className="mb-2 block text-[#0052FF]">Visual Showcase</Caption>
           <H2 className="text-slate-900">Selected Work Across Every Division</H2>
-          <Body className="mt-2 text-slate-600">
-            A curated look at the craftsmanship, excitement, and production quality we deliver across events, media, technology, and lifestyle experiences.
-          </Body>
         </div>
 
         <div className="flex flex-wrap gap-2">
