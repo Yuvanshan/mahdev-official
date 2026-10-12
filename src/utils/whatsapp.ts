@@ -148,7 +148,7 @@ export function resolveItemDirectUrl(options: WhatsAppInquiryOptions, effectiveS
 }
 
 /**
- * Builds a formatted WhatsApp text message with SKU, clickable direct link, and direct JPEG image URL
+ * Builds a formatted WhatsApp message with an item link and optional image preview.
  */
 export function buildWhatsAppMessage(options: WhatsAppInquiryOptions): string {
   const lines: string[] = [];
@@ -249,7 +249,7 @@ export function buildWhatsAppMessage(options: WhatsAppInquiryOptions): string {
   }
 
   // Direct JPEG Image Link (WhatsApp generates a rich media card preview)
-  const jpegUrl = formatToJpegUrl(options.imageUrl);
+  const jpegUrl = options.type === 'product' ? '' : formatToJpegUrl(options.imageUrl);
   if (jpegUrl) {
     lines.push(`🖼️ *Image Preview (JPEG):* ${jpegUrl}`);
   }
@@ -293,10 +293,11 @@ export function buildWhatsAppOrderMessage(payload: WhatsAppOrderPayload): string
     });
     const itemSku = item.sku || deriveLookupSku(item.name);
     const skuTag = `[SKU: \`${itemSku}\`]`;
-    const productPath = item.slug || item.productId;
     const itemDirectUrl = item.itemUrl || (
-      productPath
-        ? `${origin}/products/${encodeURIComponent(productPath)}`
+      item.productId
+        ? `${origin}/catalog?id=${encodeURIComponent(item.productId)}`
+        : item.slug
+        ? `${origin}/catalog?product=${encodeURIComponent(item.slug)}`
         : `${origin}/catalog?sku=${encodeURIComponent(itemSku)}`
     );
 
@@ -305,10 +306,6 @@ export function buildWhatsAppOrderMessage(payload: WhatsAppOrderPayload): string
       `\n   • Qty: ${item.quantity} × Rs. ${item.price.toLocaleString()} = *Rs. ${itemTotal}*` +
       `\n   • Link: ${itemDirectUrl}`;
 
-    const itemImg = formatToJpegUrl(item.imageUrl);
-    if (itemImg) {
-      line += `\n   • Photo: ${itemImg}`;
-    }
     lines.push(line);
   });
 

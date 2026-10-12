@@ -9,7 +9,7 @@ import { generateSecureFiscalInvoice } from '../backend/services/secureInvoiceSe
 import { runSecurityRulesSimulation } from './test-security-rules';
 import { validateFile } from '../src/utils/imageOptimizer';
 import { runBackupRecoveryDrill } from './test-backup-recovery-drill';
-import { buildWhatsAppOrderMessage } from '../src/utils/whatsapp';
+import { buildWhatsAppMessage, buildWhatsAppOrderMessage } from '../src/utils/whatsapp';
 import { notificationService } from '../src/services/notificationService';
 
 interface TestStep {
@@ -140,7 +140,7 @@ async function runTestSuite() {
     },
     {
       category: 'Customer Experience',
-      name: 'WhatsApp order includes the direct product page',
+      name: 'WhatsApp order links to the catalog product without an image URL',
       fn: () => {
         const message = buildWhatsAppOrderMessage({
           orderId: 'ORD-CI-100',
@@ -151,12 +151,32 @@ async function runTestSuite() {
             sku: 'TEST-001',
             quantity: 1,
             price: 100,
+            productId: 'prod-test-001',
             slug: 'test-product',
+            imageUrl: 'https://images.example.com/test-product.jpg',
           }],
           subtotal: 100,
           grandTotal: 100,
         });
-        return message.includes('https://mahdev.lk/products/test-product');
+        return message.includes('https://mahdev.lk/catalog?id=prod-test-001') &&
+          !message.includes('images.example.com') &&
+          !message.includes('Photo:');
+      },
+    },
+    {
+      category: 'Customer Experience',
+      name: 'WhatsApp product inquiry includes only its detail link, not an image URL',
+      fn: () => {
+        const message = buildWhatsAppMessage({
+          title: 'Test Product',
+          sku: 'TEST-001',
+          productUrl: 'https://mahdev.lk/catalog?id=prod-test-001',
+          imageUrl: 'https://images.example.com/test-product.jpg',
+          type: 'product',
+        });
+        return message.includes('https://mahdev.lk/catalog?id=prod-test-001') &&
+          !message.includes('images.example.com') &&
+          !message.includes('Image Preview');
       },
     },
     {

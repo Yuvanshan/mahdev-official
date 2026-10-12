@@ -38,6 +38,7 @@ export const SWSGallerySection: React.FC = () => {
       if (swsGal.length > 0) {
         return swsGal.map((g) => {
           const cat = (g as any).category || (g as any).tag || 'Weddings';
+          const galleryYear = (g as any).year;
           const images = (g as any).images && (g as any).images.length > 0
             ? (g as any).images.slice(0, 3)
             : ((g as any).imageUrl || (g as any).url || (g as any).image ? [(g as any).imageUrl || (g as any).url || (g as any).image] : []);
@@ -48,7 +49,7 @@ export const SWSGallerySection: React.FC = () => {
             imageUrl: images[0] || (g as any).imageUrl || (g as any).url || '',
             images: images,
             location: (g as any).location || 'Colombo, Sri Lanka',
-            year: (g as any).year || '2024',
+            year: !galleryYear || String(galleryYear) === '2024' ? '2026' : String(galleryYear),
             description: (g as any).description || (g as any).caption || '',
             tags: (g as any).tags || [cat],
           };
