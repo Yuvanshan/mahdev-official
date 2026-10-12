@@ -11,6 +11,7 @@ export interface WhatsAppInquiryOptions {
   category?: string;
   divisionName?: string;
   sku?: string;
+  productId?: string;
   imageUrl?: string;
   itemUrl?: string;
   productUrl?: string;
@@ -95,6 +96,9 @@ export function formatToJpegUrl(rawUrl?: string): string {
 export function resolveItemDirectUrl(options: WhatsAppInquiryOptions, effectiveSku: string): string {
   const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://mahdev.lk';
 
+  if (options.type === 'product' && options.productId) {
+    return `${origin}/catalog?id=${encodeURIComponent(options.productId)}`;
+  }
   if (options.itemUrl) {
     if (options.itemUrl.startsWith('http')) return options.itemUrl;
     return `${origin}${options.itemUrl.startsWith('/') ? '' : '/'}${options.itemUrl}`;
@@ -103,7 +107,6 @@ export function resolveItemDirectUrl(options: WhatsAppInquiryOptions, effectiveS
     if (options.productUrl.startsWith('http')) return options.productUrl;
     return `${origin}${options.productUrl.startsWith('/') ? '' : '/'}${options.productUrl}`;
   }
-
   if (options.type === 'product') {
     return `${origin}/catalog?sku=${encodeURIComponent(effectiveSku)}`;
   }
@@ -293,13 +296,13 @@ export function buildWhatsAppOrderMessage(payload: WhatsAppOrderPayload): string
     });
     const itemSku = item.sku || deriveLookupSku(item.name);
     const skuTag = `[SKU: \`${itemSku}\`]`;
-    const itemDirectUrl = item.itemUrl || (
-      item.productId
-        ? `${origin}/catalog?id=${encodeURIComponent(item.productId)}`
-        : item.slug
-        ? `${origin}/catalog?product=${encodeURIComponent(item.slug)}`
-        : `${origin}/catalog?sku=${encodeURIComponent(itemSku)}`
-    );
+    const itemDirectUrl = item.productId
+      ? `${origin}/catalog?id=${encodeURIComponent(item.productId)}`
+      : item.itemUrl || (
+        item.slug
+          ? `${origin}/catalog?product=${encodeURIComponent(item.slug)}`
+          : `${origin}/catalog?sku=${encodeURIComponent(itemSku)}`
+      );
 
     let line = `${index + 1}. ${skuTag} *${item.name}*` +
       (item.selectedVariant ? ` (${item.selectedVariant})` : '') +

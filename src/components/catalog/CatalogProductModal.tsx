@@ -311,16 +311,13 @@ const CatalogProductModalContent: React.FC<
                   <button
                     type="button"
                     onClick={() => {
-                      const productUrl = typeof window !== 'undefined'
-                        ? `${window.location.origin}/catalog?id=${encodeURIComponent(product.id)}`
-                        : undefined;
                       openWhatsAppInquiry({
                         title: product.name,
                         sku: product.sku || product.id,
+                        productId: product.id,
                         category: product.categoryName,
                         divisionName: product.divisionId === 'sws' ? 'SWS Event Management' : product.divisionId === 'u1' ? 'U1 Studio' : 'Mahdev Online Mart',
                         price: currentPrice,
-                        productUrl,
                         description: product.shortDescription || product.description,
                         type: 'product',
                       });

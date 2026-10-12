@@ -34,6 +34,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     categories: firestoreCategories,
     isInitialLoading,
     isFetching,
+    isProductsLoading,
   } = useFirestoreDataContext();
 
   const [filters, setFilters] = useState<CatalogFilterOptions>({
@@ -144,7 +145,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   // If customer is navigating to a specific product query from a link:
   if (targetSkuOrId && !showFullCatalog) {
     // 1. Shimmer state while Firestore data is actively loading
-    if (isInitialLoading || (firestoreProducts.length === 0 && isFetching)) {
+    if (isProductsLoading || isInitialLoading || isFetching) {
       return (
         <div className="min-h-screen bg-neutral-50 flex flex-col pt-16">
           <InquiredItemShimmer />

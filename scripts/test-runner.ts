@@ -170,11 +170,15 @@ async function runTestSuite() {
         const message = buildWhatsAppMessage({
           title: 'Test Product',
           sku: 'TEST-001',
-          productUrl: 'https://mahdev.lk/catalog?id=prod-test-001',
+          productId: 'prod-test-001',
+          itemUrl: 'https://mahdev.lk/products/wrong-product',
+          productUrl: 'https://mahdev.lk/catalog?sku=wrong-sku',
           imageUrl: 'https://images.example.com/test-product.jpg',
           type: 'product',
         });
         return message.includes('https://mahdev.lk/catalog?id=prod-test-001') &&
+          !message.includes('wrong-product') &&
+          !message.includes('wrong-sku') &&
           !message.includes('images.example.com') &&
           !message.includes('Image Preview');
       },
