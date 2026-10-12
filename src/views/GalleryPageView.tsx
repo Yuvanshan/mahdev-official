@@ -10,6 +10,7 @@ import { shareMediaAsset, inquireMediaAssetOnWhatsApp } from '../utils/mediaShar
 import {
   DisplayGalleryItem,
   matchGalleryItem,
+  normalizeCode,
   resolveMediaAssetSku,
 } from '../utils/itemLookup';
 import { InquiredItemSpotlight } from '../components/common/InquiredItemSpotlight';
@@ -22,24 +23,26 @@ interface GalleryPageViewProps {
 }
 
 export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, initialSku }) => {
-  const { gallery, mediaAssets, isInitialLoading, isFetching, isReady } = useFirestoreDataContext();
+  const { gallery, mediaAssets, isInitialLoading, isFetching, isGalleryLoading } = useFirestoreDataContext();
   const [activeItem, setActiveItem] = useState<DisplayGalleryItem | null>(null);
-  const [inquiredItem, setInquiredItem] = useState<DisplayGalleryItem | null>(null);
   const [showFullGallery, setShowFullGallery] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
 
+  const search = typeof window !== 'undefined' ? window.location.search : '';
   // Read target query from prop or URL
   const targetQuery = useMemo(() => {
     if (initialSku) return initialSku.trim();
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const q = params.get('sku') || params.get('id') || params.get('item');
-      if (q && q.trim()) return q.trim();
-    }
+    const params = new URLSearchParams(search);
+    const q = params.get('id') || params.get('sku') || params.get('item');
+    if (q && q.trim()) return q.trim();
     return null;
-  }, [initialSku]);
+  }, [initialSku, search]);
+  const targetTitle = useMemo(
+    () => new URLSearchParams(search).get('title')?.trim() || '',
+    [search]
+  );
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -105,18 +108,20 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
     return items;
   }, [gallery, mediaAssets]);
 
-  // Check URL or prop for targetQuery to resolve customer-inquired item
+  const inquiredItem = useMemo(() => {
+    if (!targetQuery) return null;
+    const match = matchGalleryItem(allItems, targetQuery);
+    if (match) return match;
+    if (!targetTitle) return null;
+    const normalizedTitle = normalizeCode(targetTitle);
+    return allItems.find((item) => normalizeCode(item.title) === normalizedTitle) || null;
+  }, [targetQuery, targetTitle, allItems]);
+
   useEffect(() => {
-    if (!targetQuery) return;
-    if (allItems.length > 0) {
-      const match = matchGalleryItem(allItems, targetQuery);
-      if (match) {
-        setInquiredItem(match);
-        setActiveItem(match);
-        setShowFullGallery(false);
-      }
-    }
-  }, [targetQuery, allItems]);
+    if (!inquiredItem) return;
+    setActiveItem(inquiredItem);
+    setShowFullGallery(false);
+  }, [inquiredItem]);
 
   const categories = useMemo<string[]>(() => {
     const set = new Set<string>();
@@ -156,7 +161,7 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
   // If customer is navigating to a specific inquired item from a link:
   if (targetQuery && !showFullGallery) {
     // 1. Display shimmer while Firestore data is actively loading
-    if (isInitialLoading || (allItems.length === 0 && isFetching)) {
+    if (isInitialLoading || isGalleryLoading || isFetching) {
       return (
         <div className="min-h-screen bg-slate-50 pt-20">
           <InquiredItemShimmer />

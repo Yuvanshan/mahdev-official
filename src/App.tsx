@@ -132,6 +132,9 @@ function AppContent() {
     siteSettings,
     companySettings,
     isInitialLoading,
+    isFetching,
+    isProductsLoading,
+    isServicesLoading,
     isReady,
     syncProgress,
     syncStatus,
@@ -844,7 +847,7 @@ function AppContent() {
         catalogService.getProductById(slug);
 
       if (!foundProduct) {
-        if (isInitialLoading) {
+        if (isInitialLoading || isProductsLoading || isFetching) {
           return (
             <div className="min-h-screen bg-slate-50 py-24 flex items-center justify-center">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
@@ -886,7 +889,7 @@ function AppContent() {
       );
 
       if (!foundService) {
-        if (isInitialLoading) {
+        if (isInitialLoading || isServicesLoading || isFetching) {
           return (
             <div className="min-h-screen bg-slate-50 py-24 flex items-center justify-center">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
@@ -999,7 +1002,7 @@ function AppContent() {
           catalogService.getProductById(prodId) ||
           catalogService.getProductBySlug(prodId);
 
-        if (!found) {
+        if (!found && !(isProductsLoading || isInitialLoading || isFetching)) {
           return (
             <NotFoundView
               onNavigate={navigate}
@@ -1008,7 +1011,7 @@ function AppContent() {
             />
           );
         }
-        initialProductId = found.id;
+        initialProductId = found?.id || prodId;
       } else if (parts[1] === 'category' && parts[2]) {
         initialCategory = parts[2];
       } else if (parts[1] === 'division' && parts[2]) {

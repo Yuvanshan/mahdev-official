@@ -10,6 +10,8 @@ import { runSecurityRulesSimulation } from './test-security-rules';
 import { validateFile } from '../src/utils/imageOptimizer';
 import { runBackupRecoveryDrill } from './test-backup-recovery-drill';
 import { buildWhatsAppMessage, buildWhatsAppOrderMessage } from '../src/utils/whatsapp';
+import { getMediaAssetShareUrl } from '../src/utils/mediaShare';
+import { DisplayGalleryItem, matchGalleryItem } from '../src/utils/itemLookup';
 import { notificationService } from '../src/services/notificationService';
 
 interface TestStep {
@@ -181,6 +183,64 @@ async function runTestSuite() {
           !message.includes('wrong-sku') &&
           !message.includes('images.example.com') &&
           !message.includes('Image Preview');
+      },
+    },
+    {
+      category: 'Customer Experience',
+      name: 'WhatsApp service inquiry uses its real service route and omits image URLs',
+      fn: () => {
+        const message = buildWhatsAppMessage({
+          title: 'Wedding Decorations',
+          serviceId: 'wedding-decorations',
+          sku: 'SWS-DEC-001',
+          imageUrl: 'https://images.example.com/wedding-decorations.jpg',
+          type: 'service',
+        });
+        return message.includes('https://mahdev.lk/services/wedding-decorations') &&
+          !message.includes('images.example.com') &&
+          !message.includes('Image Preview');
+      },
+    },
+    {
+      category: 'Customer Experience',
+      name: 'WhatsApp media inquiry links by gallery record ID without an image URL',
+      fn: () => {
+        const message = buildWhatsAppMessage({
+          title: 'Gallery Test Item',
+          itemId: 'gallery-record-01',
+          imageUrl: 'https://images.example.com/gallery-test.jpg',
+          type: 'gallery',
+        });
+        const items: DisplayGalleryItem[] = [{
+          id: 'gallery-record-01-0',
+          sku: 'GAL-SWS-001',
+          url: 'https://images.example.com/gallery-test.jpg',
+          title: 'Gallery Test Item',
+          category: 'Events',
+        }];
+        return message.includes('https://mahdev.lk/gallery?id=gallery-record-01') &&
+          !message.includes('images.example.com') &&
+          matchGalleryItem(items, 'gallery-record-01') === items[0];
+      },
+    },
+    {
+      category: 'Customer Experience',
+      name: 'Media shares use stable IDs and resolve U1 assets on the U1 portfolio page',
+      fn: () => {
+        const galleryUrl = getMediaAssetShareUrl({
+          id: 'gallery-record-02',
+          title: 'Gallery Item',
+          url: 'https://images.example.com/gallery-item.jpg',
+          division: 'sws',
+        });
+        const u1Url = getMediaAssetShareUrl({
+          id: 'portfolio-record-03',
+          title: 'U1 Portfolio Item',
+          url: 'https://images.example.com/u1-item.jpg',
+          division: 'u1',
+        });
+        return galleryUrl === 'https://mahdev.lk/gallery?id=gallery-record-02' &&
+          u1Url === 'https://mahdev.lk/u1?sku=portfolio-record-03';
       },
     },
     {

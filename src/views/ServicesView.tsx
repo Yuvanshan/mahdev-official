@@ -137,6 +137,7 @@ const ServiceCardItem: React.FC<{
                     title: service.title || service.name,
                     category: service.category,
                     divisionName: divisionBadgeText,
+                    serviceId: service.id,
                     imageUrl: serviceImage,
                     price: service.startingPrice || service.price,
                     description: service.description,

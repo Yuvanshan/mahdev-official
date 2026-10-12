@@ -41,6 +41,7 @@ export const InquiredItemSpotlight: React.FC<InquiredItemSpotlightProps> = ({
       sku: item.sku,
       category: item.category,
       divisionName: item.divisionName || item.divisionId || 'Mahdev Group',
+      itemId: item.id,
       imageUrl: item.url,
       location: item.location,
       description: item.description,

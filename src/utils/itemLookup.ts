@@ -70,6 +70,10 @@ export function matchGalleryItem(
   const exactId = items.find((i) => i.id && i.id.toLowerCase() === rawClean);
   if (exactId) return exactId;
 
+  // Gallery rows can expand one database record into multiple image IDs.
+  const parentIdMatch = items.find((i) => i.id?.toLowerCase().startsWith(`${rawClean}-`));
+  if (parentIdMatch) return parentIdMatch;
+
   // 3. Normalized SKU match (ignoring dashes and spacing)
   const normSku = items.find((i) => normalizeCode(i.sku) === normalizedQuery);
   if (normSku) return normSku;

@@ -110,6 +110,7 @@ export const HomeGallerySection: React.FC = () => {
                         title: item.title,
                         category: item.category,
                         divisionName: 'Mahdev Group',
+                        itemId: item.id,
                         imageUrl: item.url,
                         location: item.location,
                         type: 'gallery',

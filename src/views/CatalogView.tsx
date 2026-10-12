@@ -47,19 +47,17 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
 
   const [sortBy, setSortBy] = useState<CatalogSortOption>('featured');
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [inquiredProduct, setInquiredProduct] = useState<CatalogProduct | null>(null);
   const [showFullCatalog, setShowFullCatalog] = useState<boolean>(false);
   const pageSize = 8;
 
+  const search = typeof window !== 'undefined' ? window.location.search : '';
   const targetSkuOrId = useMemo(() => {
     if (initialProductId) return initialProductId;
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const q = params.get('sku') || params.get('id') || params.get('product');
-      if (q && q.trim()) return q.trim();
-    }
+    const params = new URLSearchParams(search);
+    const q = params.get('id') || params.get('product') || params.get('sku');
+    if (q && q.trim()) return q.trim();
     return null;
-  }, [initialProductId]);
+  }, [initialProductId, search]);
 
   // Selected product for modal inspection
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(() => {
@@ -73,14 +71,12 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     return null;
   });
 
-  // Sync selected product when query params (e.g. ?sku=...) or initialProductId change
-  useEffect(() => {
-    if (!targetSkuOrId) return;
-
+  const inquiredProduct = useMemo(() => {
+    if (!targetSkuOrId) return null;
     const clean = targetSkuOrId.trim().toLowerCase();
     const cleanNorm = normalizeCode(clean);
     const all = catalogService.queryProducts();
-    const found =
+    return (
       all.find(
         (p) =>
           p.id.toLowerCase() === clean ||
@@ -93,14 +89,16 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
           p.name.toLowerCase().includes(clean)
       ) ||
       catalogService.getProductById(targetSkuOrId) ||
-      catalogService.getProductBySlug(targetSkuOrId);
-
-    if (found) {
-      setSelectedProduct(found);
-      setInquiredProduct(found);
-      setShowFullCatalog(false);
-    }
+      catalogService.getProductBySlug(targetSkuOrId) ||
+      null
+    );
   }, [targetSkuOrId, firestoreProducts]);
+
+  useEffect(() => {
+    if (!inquiredProduct) return;
+    setSelectedProduct(inquiredProduct);
+    setShowFullCatalog(false);
+  }, [inquiredProduct]);
 
   // Query categories for active filters
   const categories = useMemo(() => {

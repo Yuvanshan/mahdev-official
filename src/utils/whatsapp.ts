@@ -12,6 +12,8 @@ export interface WhatsAppInquiryOptions {
   divisionName?: string;
   sku?: string;
   productId?: string;
+  serviceId?: string;
+  itemId?: string;
   imageUrl?: string;
   itemUrl?: string;
   productUrl?: string;
@@ -70,27 +72,6 @@ export function deriveLookupSku(title?: string, divisionName?: string): string {
 }
 
 /**
- * Ensures an image URL is formatted as a direct JPEG link so WhatsApp unfurls the image preview
- */
-export function formatToJpegUrl(rawUrl?: string): string {
-  if (!rawUrl) return '';
-  const trimmed = rawUrl.trim();
-  if (!trimmed || trimmed.startsWith('data:')) return '';
-  try {
-    const url = new URL(trimmed);
-    if (url.hostname.includes('unsplash.com')) {
-      url.searchParams.set('fm', 'jpg');
-      url.searchParams.set('q', '85');
-      url.searchParams.set('auto', 'format');
-      return url.toString();
-    }
-    return trimmed;
-  } catch {
-    return trimmed;
-  }
-}
-
-/**
  * Resolves a direct canonical link for the item so the recipient can click and view it directly
  */
 export function resolveItemDirectUrl(options: WhatsAppInquiryOptions, effectiveSku: string): string {
@@ -98,6 +79,12 @@ export function resolveItemDirectUrl(options: WhatsAppInquiryOptions, effectiveS
 
   if (options.type === 'product' && options.productId) {
     return `${origin}/catalog?id=${encodeURIComponent(options.productId)}`;
+  }
+  if (options.type === 'service' && options.serviceId) {
+    return `${origin}/services/${encodeURIComponent(options.serviceId)}`;
+  }
+  if ((options.type === 'gallery' || options.type === 'media') && options.itemId) {
+    return `${origin}/gallery?id=${encodeURIComponent(options.itemId)}`;
   }
   if (options.itemUrl) {
     if (options.itemUrl.startsWith('http')) return options.itemUrl;
@@ -111,10 +98,10 @@ export function resolveItemDirectUrl(options: WhatsAppInquiryOptions, effectiveS
     return `${origin}/catalog?sku=${encodeURIComponent(effectiveSku)}`;
   }
   if (options.type === 'service') {
-    return `${origin}/services?sku=${encodeURIComponent(effectiveSku)}`;
+    return `${origin}/services?q=${encodeURIComponent(options.title)}`;
   }
   if (options.type === 'package') {
-    return `${origin}/services?packageSku=${encodeURIComponent(effectiveSku)}`;
+    return `${origin}/services?q=${encodeURIComponent(options.title)}`;
   }
   if (options.type === 'portfolio') {
     return `${origin}/gallery?sku=${encodeURIComponent(effectiveSku)}&title=${encodeURIComponent(options.title || '')}`;
@@ -249,12 +236,6 @@ export function buildWhatsAppMessage(options: WhatsAppInquiryOptions): string {
   if (directLink) {
     lines.push('');
     lines.push(`🔗 *View on Website:* ${directLink}`);
-  }
-
-  // Direct JPEG Image Link (WhatsApp generates a rich media card preview)
-  const jpegUrl = options.type === 'product' ? '' : formatToJpegUrl(options.imageUrl);
-  if (jpegUrl) {
-    lines.push(`🖼️ *Image Preview (JPEG):* ${jpegUrl}`);
   }
 
   if (options.customerNotes) {

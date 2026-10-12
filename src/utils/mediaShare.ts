@@ -1,4 +1,4 @@
-import { openWhatsAppInquiry, formatToJpegUrl, deriveLookupSku } from './whatsapp';
+import { openWhatsAppInquiry, deriveLookupSku } from './whatsapp';
 
 export interface MediaAssetSharePayload {
   id?: string;
@@ -26,8 +26,13 @@ export interface ShareResult {
  */
 export function getMediaAssetShareUrl(asset: MediaAssetSharePayload): string {
   const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://mahdev.lk';
-  const effectiveSku = asset.sku || (asset.id ? `MED-${(asset.division || 'U1').toUpperCase()}-${asset.id.slice(-6).toUpperCase()}` : deriveLookupSku(asset.title, asset.division));
-  
+  if (asset.id && asset.division?.toLowerCase().includes('u1')) {
+    return `${origin}/u1?sku=${encodeURIComponent(asset.id)}`;
+  }
+  if (asset.id) {
+    return `${origin}/gallery?id=${encodeURIComponent(asset.id)}`;
+  }
+  const effectiveSku = asset.sku || deriveLookupSku(asset.title, asset.division);
   return `${origin}/gallery?sku=${encodeURIComponent(effectiveSku)}&title=${encodeURIComponent(asset.title)}`;
 }
 
@@ -128,7 +133,6 @@ export function inquireMediaAssetOnWhatsApp(asset: MediaAssetSharePayload): void
     sku: effectiveSku,
     category: asset.category || 'Studio Media Asset',
     divisionName,
-    imageUrl: formatToJpegUrl(asset.url),
     itemUrl: getMediaAssetShareUrl(asset),
     description: asset.description || (asset.dimensions ? `Master Format: ${asset.dimensions}` : undefined),
     location: asset.dimensions ? `Resolution: ${asset.dimensions}` : undefined,
