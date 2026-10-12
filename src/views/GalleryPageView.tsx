@@ -10,12 +10,13 @@ import { shareMediaAsset, inquireMediaAssetOnWhatsApp } from '../utils/mediaShar
 import {
   DisplayGalleryItem,
   matchGalleryItem,
-  normalizeCode,
+  matchGalleryItemByTitle,
   resolveMediaAssetSku,
 } from '../utils/itemLookup';
 import { InquiredItemSpotlight } from '../components/common/InquiredItemSpotlight';
 import { InquiredItemShimmer } from '../components/common/InquiredItemShimmer';
 import { InquiryItemNotFound } from '../components/common/InquiryItemNotFound';
+import { getDefaultGallery } from '../services/firestore/gallery';
 
 interface GalleryPageViewProps {
   onNavigate: (route: string) => void;
@@ -113,8 +114,41 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
     const match = matchGalleryItem(allItems, targetQuery);
     if (match) return match;
     if (!targetTitle) return null;
-    const normalizedTitle = normalizeCode(targetTitle);
-    return allItems.find((item) => normalizeCode(item.title) === normalizedTitle) || null;
+    const titleMatch = matchGalleryItemByTitle(allItems, targetTitle);
+    if (titleMatch) return titleMatch;
+
+    // Older inquiry links used generated SKUs and can outlive a missing gallery cache.
+    const bundledRecord = getDefaultGallery().find(
+      (record) => matchGalleryItemByTitle(
+        [{
+          id: record.id,
+          sku: record.sku || '',
+          url: record.url || record.mediaUrl || record.images?.[0] || '',
+          title: record.title || '',
+          category: record.category || record.tag || 'Mahdev Group',
+          divisionId: (record as any).divisionId || record.division,
+          divisionName: (record as any).divisionName || record.division,
+          location: (record as any).location,
+          description: (record as any).description || record.caption,
+        }],
+        targetTitle
+      )
+    );
+    if (!bundledRecord) return null;
+
+    const url = bundledRecord.url || bundledRecord.mediaUrl || bundledRecord.images?.[0];
+    if (!url) return null;
+    return {
+      id: `${bundledRecord.id}-0`,
+      sku: bundledRecord.sku || targetQuery,
+      url,
+      title: bundledRecord.title || targetTitle,
+      category: bundledRecord.category || bundledRecord.tag || 'Mahdev Group',
+      divisionId: (bundledRecord as any).divisionId || bundledRecord.division,
+      divisionName: (bundledRecord as any).divisionName || bundledRecord.division,
+      location: (bundledRecord as any).location || 'Sri Lanka',
+      description: (bundledRecord as any).description || bundledRecord.caption,
+    };
   }, [targetQuery, targetTitle, allItems]);
 
   useEffect(() => {

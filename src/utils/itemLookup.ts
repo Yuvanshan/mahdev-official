@@ -117,6 +117,15 @@ export function matchGalleryItem(
   return undefined;
 }
 
+export function matchGalleryItemByTitle(
+  items: DisplayGalleryItem[],
+  title: string
+): DisplayGalleryItem | undefined {
+  const normalizedTitle = normalizeCode(title);
+  if (!normalizedTitle) return undefined;
+  return items.find((item) => normalizeCode(item.title) === normalizedTitle);
+}
+
 /**
  * Builds a fallback synthesized item if the URL contained title/image params directly
  */

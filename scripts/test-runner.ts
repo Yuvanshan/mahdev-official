@@ -11,7 +11,7 @@ import { validateFile } from '../src/utils/imageOptimizer';
 import { runBackupRecoveryDrill } from './test-backup-recovery-drill';
 import { buildWhatsAppMessage, buildWhatsAppOrderMessage } from '../src/utils/whatsapp';
 import { getMediaAssetShareUrl } from '../src/utils/mediaShare';
-import { DisplayGalleryItem, matchGalleryItem } from '../src/utils/itemLookup';
+import { DisplayGalleryItem, matchGalleryItem, matchGalleryItemByTitle } from '../src/utils/itemLookup';
 import { notificationService } from '../src/services/notificationService';
 
 interface TestStep {
@@ -221,6 +221,22 @@ async function runTestSuite() {
         return message.includes('https://mahdev.lk/gallery?id=gallery-record-01') &&
           !message.includes('images.example.com') &&
           matchGalleryItem(items, 'gallery-record-01') === items[0];
+      },
+    },
+    {
+      category: 'Customer Experience',
+      name: 'Legacy generated gallery inquiry SKU resolves by its title',
+      fn: () => {
+        const legacyLinkItem: DisplayGalleryItem = {
+          id: 'gal-mu0tr4nz-2kyt-0',
+          sku: 'GAL-SWS-GAL-222',
+          url: '/uploads/images/gallery_gal-mu0tr4nz-2kyt_url_munpwpd7.webp',
+          title: 'Big Girl Ceremony Decoration ',
+          category: 'Big Girl Ceremony',
+          divisionId: 'sws',
+        };
+        return matchGalleryItem([legacyLinkItem], 'MAH-BIGGIR') === undefined &&
+          matchGalleryItemByTitle([legacyLinkItem], 'Big Girl Ceremony Decoration') === legacyLinkItem;
       },
     },
     {
