@@ -48,8 +48,8 @@ export const SWSServicesSection: React.FC<SWSServicesSectionProps> = ({
             ? formatCurrency(s.price || (s as any).startingPrice || 0, 'LKR')
             : String(s.price || 'Rs. 75,000'),
           priceNote: (s as any).priceNote || 'Customized to event scale',
-          imageUrl: s.images && s.images.length > 0 ? s.images[0] : (s as any).imageUrl || '',
-          gallery: s.images || [],
+          imageUrl: s.images?.filter(Boolean).slice(0, 5)[0] || (s as any).imageUrl || '',
+          gallery: s.images?.filter(Boolean).slice(0, 5) || [],
           features: s.features || ['Professional Consultation', 'Dedicated Stage Crew'],
           specs: (s as any).specs || [],
           badge: s.badge || 'Featured Service',

@@ -14,6 +14,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { IconRenderer } from '../ui/IconRenderer';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
+import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
 
 interface SWSServiceCardProps {
   service: SWSService;
@@ -28,21 +29,34 @@ export const SWSServiceCard: React.FC<SWSServiceCardProps> = ({
   onBookNow,
   onRequestQuote,
 }) => {
+  const images = (service.gallery?.length ? service.gallery : [service.imageUrl])
+    .filter(Boolean)
+    .slice(0, 5);
+  const { activeIndex, containerRef } = useAutoSlideImage(images.length);
+
   return (
     <div className="group rounded-2xl bg-white border border-slate-200/90 hover:border-blue-500/80 shadow-sm hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 flex flex-col justify-between overflow-hidden">
       {/* Image & Badges */}
       <div>
-        <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+        <div ref={containerRef} className="relative aspect-[16/10] overflow-hidden bg-slate-100">
           <img
-            src={
-              service.imageUrl && service.imageUrl.trim() !== ''
-                ? service.imageUrl.trim()
-                : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
-            }
+            src={images[activeIndex] || service.imageUrl || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'}
             alt={service.name}
             loading="lazy"
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
+          {images.length > 1 && (
+            <div className="absolute inset-x-0 bottom-2 flex items-center justify-center gap-1" aria-hidden="true">
+              {images.map((_, imageIndex) => (
+                <span
+                  key={imageIndex}
+                  className={`h-1.5 rounded-full transition-all ${
+                    activeIndex === imageIndex ? 'w-3.5 bg-white' : 'w-1.5 bg-white/60'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Card Content */}

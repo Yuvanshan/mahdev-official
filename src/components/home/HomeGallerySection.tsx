@@ -6,6 +6,100 @@ import { Caption, H2, Body } from '../ui/Heading';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { GallerySectionShimmer } from '../common/GallerySectionShimmer';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
+import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
+
+interface HomeGalleryItem {
+  id: string;
+  images: string[];
+  url: string;
+  title: string;
+  category: string;
+  location: string;
+}
+
+const HomeGalleryCard: React.FC<{
+  item: HomeGalleryItem;
+  index: number;
+  isFeatured: boolean;
+  onOpen: (image: { url: string; title: string; category: string; location: string }) => void;
+}> = ({ item, index, isFeatured, onOpen }) => {
+  const { activeIndex, containerRef } = useAutoSlideImage(item.images.length);
+  const imageUrl = item.images[activeIndex] || item.url;
+
+  return (
+    <div
+      ref={containerRef}
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen({ ...item, url: imageUrl })}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onOpen({ ...item, url: imageUrl });
+        }
+      }}
+      className={`group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${
+        isFeatured ? 'col-span-2 sm:col-span-2 xl:col-span-2' : ''
+      }`}
+    >
+      <div className="relative">
+        <ImageWithShimmer
+          src={imageUrl}
+          alt={item.title}
+          className={`bg-slate-100 ${isFeatured ? 'aspect-[16/10]' : 'aspect-[4/5]'}`}
+          loading={index < 4 ? 'eager' : 'lazy'}
+          imageClassName="transition duration-500 group-hover:scale-105"
+          fallbackText={item.title}
+        />
+        {item.images.length > 1 && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-2 flex items-center justify-center gap-1">
+            {item.images.map((_, imageIndex) => (
+              <span
+                key={imageIndex}
+                className={`h-1.5 rounded-full transition-all ${
+                  activeIndex === imageIndex ? 'w-3.5 bg-white' : 'w-1.5 bg-white/60'
+                }`}
+              />
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            openWhatsAppInquiry({
+              title: item.title,
+              category: item.category,
+              divisionName: 'Mahdev Group',
+              itemId: item.id,
+              imageUrl,
+              location: item.location,
+              type: 'gallery',
+            });
+          }}
+          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-emerald-500 text-white shadow-lg transition hover:bg-emerald-600"
+          title="Ask on WhatsApp"
+          aria-label={`Ask about ${item.title} on WhatsApp`}
+        >
+          <MessageCircle className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="flex flex-1 flex-col gap-2 p-3 sm:p-4">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900 sm:text-base">{item.title}</h3>
+          <span className="shrink-0 rounded-full bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-700">
+            {item.category}
+          </span>
+        </div>
+        <p className="flex items-center gap-1.5 text-xs text-slate-500">
+          <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-600" />
+          <span className="truncate">{item.location}</span>
+        </p>
+      </div>
+    </div>
+  );
+};
 
 /** A premium gallery that mirrors the polished presentation used in the division pages. */
 export const HomeGallerySection: React.FC = () => {
@@ -13,17 +107,20 @@ export const HomeGallerySection: React.FC = () => {
   const [activeImage, setActiveImage] = useState<{ url: string; title: string; category: string; location?: string } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
-  const items = useMemo(() => gallery
+  const items = useMemo<HomeGalleryItem[]>(() => gallery
     .filter((item) => item.status !== 'hidden')
-    .flatMap((item) => {
-      const media = item.images?.length ? item.images : [item.mediaUrl || item.url || item.thumbnailUrl || ''];
-      return media.filter(Boolean).map((url, index) => ({
-        id: `${item.id}-${index}`,
-        url,
+    .map((item) => {
+      const images = (item.images?.length ? item.images : [item.mediaUrl || item.url || item.thumbnailUrl || ''])
+        .filter(Boolean)
+        .slice(0, 3);
+      return {
+        id: item.id,
+        images,
+        url: images[0] || '',
         title: item.title || 'Mahdev Gallery',
         category: item.category || item.tag || 'Mahdev Group',
         location: (item as any).location || item.caption || 'Sri Lanka',
-      }));
+      };
     })
     .slice(0, 9), [gallery]);
 
@@ -75,65 +172,13 @@ export const HomeGallerySection: React.FC = () => {
           const isFeatured = index === 0;
 
           return (
-            <div
+            <HomeGalleryCard
               key={item.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => setActiveImage(item)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setActiveImage(item);
-                }
-              }}
-                className={`group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer ${
-                  isFeatured ? 'col-span-2 sm:col-span-2 xl:col-span-2' : ''
-                }`}
-              >
-                <div className="relative">
-                  <ImageWithShimmer
-                    src={item.url}
-                    alt={item.title}
-                    className={`bg-slate-100 ${isFeatured ? 'aspect-[16/10]' : 'aspect-[4/5]'}`}
-                    loading={index < 4 ? 'eager' : 'lazy'}
-                    imageClassName="transition duration-500 group-hover:scale-105"
-                    fallbackText={item.title}
-                  />
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      openWhatsAppInquiry({
-                        title: item.title,
-                        category: item.category,
-                        divisionName: 'Mahdev Group',
-                        itemId: item.id,
-                        imageUrl: item.url,
-                        location: item.location,
-                        type: 'gallery',
-                      });
-                    }}
-                    className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-emerald-500 text-white shadow-lg transition hover:bg-emerald-600"
-                    title="Ask on WhatsApp"
-                    aria-label={`Ask about ${item.title} on WhatsApp`}
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                  </button>
-                </div>
-
-                <div className="flex flex-1 flex-col gap-2 p-3 sm:p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="line-clamp-2 text-sm font-semibold text-slate-900 sm:text-base">{item.title}</h3>
-                    <span className="shrink-0 rounded-full bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-700">
-                      {item.category}
-                    </span>
-                  </div>
-                  <p className="flex items-center gap-1.5 text-xs text-slate-500">
-                    <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-600" />
-                    <span className="truncate">{item.location}</span>
-                  </p>
-                </div>
-              </div>
+              item={item}
+              index={index}
+              isFeatured={isFeatured}
+              onOpen={setActiveImage}
+            />
           );
         })}
       </div>

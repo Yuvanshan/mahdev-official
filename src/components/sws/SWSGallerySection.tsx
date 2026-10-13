@@ -22,6 +22,39 @@ import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { shareMediaAsset } from '../../utils/mediaShare';
+import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
+
+const SWSGalleryCardImage: React.FC<{ images: string[]; alt: string }> = ({ images, alt }) => {
+  const { activeIndex, containerRef } = useAutoSlideImage(images.length);
+
+  return (
+    <div ref={containerRef} className="absolute inset-0">
+      <img
+        src={
+          images[activeIndex] ||
+          images[0] ||
+          'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
+        }
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+      />
+      {images.length > 1 && (
+        <div className="absolute inset-x-0 bottom-2 flex items-center justify-center gap-1" aria-hidden="true">
+          {images.map((_, imageIndex) => (
+            <span
+              key={imageIndex}
+              className={`h-1.5 rounded-full transition-all ${
+                activeIndex === imageIndex ? 'w-3.5 bg-white' : 'w-1.5 bg-white/60'
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const SWSGallerySection: React.FC = () => {
   const { gallery: rawGallery, isDivisionGalleryLoaded } = useFirestoreDataContext();
@@ -39,9 +72,11 @@ export const SWSGallerySection: React.FC = () => {
         return swsGal.map((g) => {
           const cat = (g as any).category || (g as any).tag || 'Weddings';
           const galleryYear = (g as any).year;
-          const images = (g as any).images && (g as any).images.length > 0
-            ? (g as any).images.slice(0, 3)
-            : ((g as any).imageUrl || (g as any).url || (g as any).image ? [(g as any).imageUrl || (g as any).url || (g as any).image] : []);
+          const images = Array.isArray((g as any).images) && (g as any).images.length > 0
+            ? (g as any).images.filter(Boolean).slice(0, 3)
+            : ((g as any).imageUrl || (g as any).mediaUrl || (g as any).url || (g as any).image
+              ? [(g as any).imageUrl || (g as any).mediaUrl || (g as any).url || (g as any).image]
+              : []);
           return {
             id: g.id,
             title: g.title,
@@ -153,16 +188,9 @@ export const SWSGallerySection: React.FC = () => {
             className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg"
           >
             <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
-              <img
-                src={
-                  item.imageUrl && item.imageUrl.trim() !== ''
-                    ? item.imageUrl.trim()
-                    : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
-                }
+              <SWSGalleryCardImage
+                images={(item.images?.length ? item.images : [item.imageUrl]).filter(Boolean).slice(0, 3)}
                 alt={item.title}
-                loading="lazy"
-                decoding="async"
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
               />
 
               <div className="absolute right-3 top-3 flex items-center gap-2">

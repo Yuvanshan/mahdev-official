@@ -13,6 +13,7 @@ import { useDeviceMotion } from '../motion/MotionWrappers';
 import { DataLoadingOverlay } from '../common/DataLoadingOverlay';
 import { ServicesSectionShimmer } from '../common/ServicesSectionShimmer';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
+import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
 
 interface FeaturedServicesSectionProps {
   onNavigate: (route: string) => void;
@@ -49,8 +50,6 @@ const FeaturedServiceCard: React.FC<{
   onNavigate: (route: string) => void;
   divisions?: any[];
 }> = ({ service, idx, colTransform, reducedMotion, isTouch, onNavigate, divisions }) => {
-  const [activeImgIdx, setActiveImgIdx] = useState(0);
-
   const serviceImages: string[] = useMemo(() => {
     if (Array.isArray(service.images) && service.images.length > 0) {
       return service.images.filter(Boolean).slice(0, 5);
@@ -58,6 +57,8 @@ const FeaturedServiceCard: React.FC<{
     const single = (service as any).imageUrl || (service as any).image;
     return single ? [single] : [];
   }, [service]);
+  const { activeIndex: activeImgIdx, setActiveIndex: setActiveImgIdx, containerRef } =
+    useAutoSlideImage(serviceImages.length);
 
   const divId = (service.divisionId || service.division || 'sws') as string;
   const liveDiv = divisions?.find((d) => d.id === divId || d.slug === divId);
@@ -79,7 +80,7 @@ const FeaturedServiceCard: React.FC<{
     >
       <div>
         {serviceImages.length > 0 && (
-          <div className="relative mb-4">
+          <div ref={containerRef} className="relative mb-4">
             <ImageWithShimmer
               src={serviceImages[activeImgIdx] || serviceImages[0]}
               alt={service.title || service.name}
