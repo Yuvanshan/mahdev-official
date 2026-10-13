@@ -204,6 +204,13 @@
   animation: shimmer 1.6s infinite;
 }
 
+.image-shimmer {
+  overflow: hidden;
+  background: linear-gradient(110deg, #e9eef5 8%, #f6f8fb 18%, #e9eef5 33%);
+  background-size: 220% 100%;
+  animation: shimmer-sweep 1.35s ease-in-out infinite;
+}
+
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,

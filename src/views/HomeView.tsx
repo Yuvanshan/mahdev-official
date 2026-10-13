@@ -4,6 +4,7 @@ import { HeroSection } from '../components/home/HeroSection';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { DEFAULT_HOMEPAGE_SECTIONS } from '../services/firestore/settings';
 import { DynamicSectionItem } from '../types/cms';
+import { motion, useReducedMotion } from 'motion/react';
 
 const FeaturedServicesSection = lazy(() =>
   import('../components/home/FeaturedServicesSection').then((module) => ({ default: module.FeaturedServicesSection }))
@@ -36,6 +37,7 @@ interface HomeViewProps {
 
 export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
   const { companySettings, siteSettings, homepageConfig } = useFirestoreDataContext();
+  const reducedMotion = useReducedMotion();
 
   const scrollToSection = (sectionId: string) => {
     const el = document.getElementById(sectionId);
@@ -118,9 +120,17 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
           const content = renderSectionByKey(section.sectionKey, section.id);
           if (!content) return null;
           return (
-            <Suspense key={section.id} fallback={<div className="min-h-48 animate-pulse bg-slate-50" />}>
-              {content}
-            </Suspense>
+            <motion.div
+              key={section.id}
+              initial={reducedMotion ? false : { opacity: 0, y: 28 }}
+              whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+              viewport={reducedMotion ? undefined : { once: true, amount: 0.08 }}
+              transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <Suspense fallback={<div className="min-h-48 animate-pulse bg-slate-50" />}>
+                {content}
+              </Suspense>
+            </motion.div>
           );
         })}
       </div>

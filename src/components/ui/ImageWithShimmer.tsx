@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { CrossfadeImage } from '../common/CrossfadeImage';
 
 interface ImageWithShimmerProps {
   src: string;
@@ -25,17 +26,18 @@ export const ImageWithShimmer: React.FC<ImageWithShimmerProps> = ({
   return (
     <div className={`relative overflow-hidden ${className}`}>
       {!isLoaded && !hasFailed && (
-        <div aria-hidden="true" className="absolute inset-0 animate-pulse bg-slate-200" />
+        <div aria-hidden="true" className="image-shimmer absolute inset-0" />
       )}
       {!hasFailed ? (
-        <img
+        <CrossfadeImage
           src={src}
           alt={alt}
           loading={loading}
           decoding="async"
+          className="absolute inset-0"
+          imageClassName={imageClassName}
           onLoad={() => setLoadedSrc(src)}
           onError={() => setFailedSrc(src)}
-          className={`absolute inset-0 h-full w-full object-cover ${imageClassName}`}
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200 p-4">

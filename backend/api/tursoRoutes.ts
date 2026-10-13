@@ -30,6 +30,7 @@ const PUBLIC_READ_COLLECTIONS = new Set([
   'announcements',
   'banners',
   'categories',
+  'careerOpenings',
   'divisions',
   'faqs',
   'gallery',
@@ -53,11 +54,13 @@ const PUBLIC_READ_COLLECTIONS = new Set([
 ]);
 const CUSTOMER_OWNED_COLLECTIONS = new Set(['users', 'orders', 'bookings', 'payments']);
 const ADMIN_ONLY_READ_COLLECTIONS = new Set([
+  'careerApplications',
   'contactSubmissions',
   'inquiries',
   'quoteRequests',
 ]);
 const PUBLIC_CREATE_COLLECTIONS = new Set([
+  'careerApplications',
   'contactSubmissions',
   'inquiries',
   'orders',
@@ -89,6 +92,8 @@ const ADMIN_MANAGED_COLLECTIONS = new Set([
   'auditLogs',
   'banners',
   'blog',
+  'careerApplications',
+  'careerOpenings',
   'categories',
   'companySettings',
   'coupons',
@@ -123,6 +128,11 @@ function requiresAdminForWrite(write: unknown): boolean {
   if (!write || typeof write !== 'object') return false;
   const item = write as Record<string, unknown>;
   const collection = typeof item.collection === 'string' ? item.collection.split('/')[0] : '';
+  if (
+    collection === 'careerApplications' &&
+    item.type === 'set' &&
+    item.merge !== true
+  ) return false;
   if (ADMIN_MANAGED_COLLECTIONS.has(collection)) return true;
 
   if (['orders', 'bookings', 'payments'].includes(collection)) {
@@ -324,6 +334,79 @@ async function preparePublicWrite(write: TursoWrite): Promise<TursoWrite> {
   if (await getTursoDocument(write.collection, '', write.id)) {
     throw new Error('A record with this ID already exists.');
   }
+  if (write.collection === 'careerApplications') {
+    const allowedFields = new Set([
+      'openingId',
+      'candidateName',
+      'email',
+      'phone',
+      'portfolioUrl',
+      'coverLetter',
+      'cvStoragePath',
+      'cvFileName',
+    ]);
+    const invalidFields = Object.keys(write.data).filter((field) => !allowedFields.has(field));
+    if (invalidFields.length) {
+      throw new Error(`Unsupported career application fields: ${invalidFields.join(', ')}.`);
+    }
+
+    const text = (field: string, maxLength: number, required = true) => {
+      const value = write.data?.[field];
+      if (!required && value === undefined) return '';
+      if (typeof value !== 'string' || (required && !value.trim()) || value.length > maxLength) {
+        throw new Error(`Career application ${field} is invalid.`);
+      }
+      return value.trim();
+    };
+    const openingId = text('openingId', 100);
+    const opening = await getTursoDocument('careerOpenings', '', openingId);
+    if (!opening || opening.data.status !== 'published') {
+      throw new Error('This career opportunity is no longer accepting applications.');
+    }
+
+    const email = text('email', 254);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new Error('Enter a valid email address.');
+    }
+    const cvStoragePath = text('cvStoragePath', 160);
+    if (!/^career-cvs\/[0-9a-f-]{36}_[a-zA-Z0-9._-]{1,100}$/.test(cvStoragePath)) {
+      throw new Error('The uploaded CV reference is invalid.');
+    }
+    const submittedPortfolioUrl = text('portfolioUrl', 2048, false);
+    let portfolioUrl = '';
+    if (submittedPortfolioUrl) {
+      let parsedPortfolioUrl: URL;
+      try {
+        parsedPortfolioUrl = new URL(submittedPortfolioUrl);
+      } catch {
+        throw new Error('Career application portfolioUrl is invalid.');
+      }
+      if (
+        !['http:', 'https:'].includes(parsedPortfolioUrl.protocol) ||
+        parsedPortfolioUrl.username ||
+        parsedPortfolioUrl.password
+      ) {
+        throw new Error('Career application portfolioUrl is invalid.');
+      }
+      portfolioUrl = parsedPortfolioUrl.toString();
+    }
+
+    return {
+      ...write,
+      data: {
+        openingId,
+        candidateName: text('candidateName', 160),
+        email: email.toLowerCase(),
+        phone: text('phone', 40),
+        portfolioUrl,
+        coverLetter: text('coverLetter', 5000, false),
+        cvStoragePath,
+        cvFileName: text('cvFileName', 120),
+        status: 'new',
+        createdAt: new Date().toISOString(),
+      },
+    };
+  }
   if (write.collection === 'orders' || write.collection === 'bookings') {
     const {
       uid: _uid,
@@ -440,7 +523,12 @@ export async function handleTursoAction(
     const parentPath = typeof body.parentPath === 'string' ? body.parentPath : '';
     if (action === 'get') {
       const id = requiredString(body.id, 'Document ID');
-      const document = await getTursoDocument(collection, parentPath, id);
+      let document = await getTursoDocument(collection, parentPath, id);
+      if (
+        access.role === 'public' &&
+        collection === 'careerOpenings' &&
+        document?.data.status !== 'published'
+      ) document = null;
       const visibleDocument = document && (
         access.role !== 'customer' ||
         (access.identity && customerOwnsDocument(document, access.identity, collection))
@@ -453,13 +541,17 @@ export async function handleTursoAction(
     if (action === 'list') {
       const maxRows = body.limit === undefined ? undefined : Number(body.limit);
       const afterId = typeof body.afterId === 'string' ? body.afterId : undefined;
+      const filters = parseFilters(body.filters);
+      if (access.role === 'public' && collection === 'careerOpenings') {
+        filters.push({ field: 'status', operator: '==', value: 'published' });
+      }
       return {
         status: 200,
         body: {
           documents: await listTursoDocuments(
             collection,
             parentPath,
-            parseFilters(body.filters),
+            filters,
             parseOrder(body.order),
             maxRows,
             afterId,
@@ -481,7 +573,10 @@ export async function handleTursoAction(
     const clientError =
       message.startsWith('Invalid ') ||
       message.startsWith('Unsupported ') ||
+      message.startsWith('Enter ') ||
       message.includes(' is required.') ||
+      message.includes(' is invalid.') ||
+      message.includes('no longer accepting applications') ||
       message.startsWith('A Turso write batch') ||
       message.includes('cannot be changed:') ||
       message.endsWith('already exists.');

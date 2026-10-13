@@ -137,14 +137,14 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
           onRequestQuote={handleRequestQuote}
         />
 
+        <SWSGallerySection />
+
         <SWSRentalsSection
           onBookRental={handleBookRental}
           onRequestQuote={handleRequestRentalQuote}
         />
 
         <SWSPackagesSection onBookPackage={handleBookPackage} />
-
-        <SWSGallerySection />
 
         <SWSPortfolioSection onConsultationClick={() => handleBookNow()} />
       </>

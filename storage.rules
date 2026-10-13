@@ -157,5 +157,10 @@ service firebase.storage {
       allow read: if isOwner(userId) || isStaff();
       allow write: if isAdmin() && isValidDoc() && request.resource.size < 20 * 1024 * 1024;
     }
+
+    // CVs are served only through the admin-session-protected API endpoint.
+    match /career-cvs/{allPaths=**} {
+      allow read, write: if false;
+    }
   }
 }

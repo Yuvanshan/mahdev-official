@@ -23,6 +23,36 @@ import { H2, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { shareMediaAsset, inquireMediaAssetOnWhatsApp } from '../../utils/mediaShare';
+import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
+import { CrossfadeImage } from '../common/CrossfadeImage';
+
+const U1PortfolioCardImage: React.FC<{ item: U1PortfolioItem }> = ({ item }) => {
+  const images = (item.images?.length ? item.images : [item.imageUrl]).filter(Boolean);
+  const { activeIndex, containerRef } = useAutoSlideImage(images.length);
+
+  return (
+    <div ref={containerRef} className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+      <CrossfadeImage
+        src={images[activeIndex] || item.imageUrl}
+        alt={item.title}
+        className="absolute inset-0"
+        imageClassName="transition-transform duration-500 group-hover:scale-[1.03]"
+      />
+      {images.length > 1 && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-2 flex items-center justify-center gap-1">
+          {images.map((_, imageIndex) => (
+            <span
+              key={imageIndex}
+              className={`h-1.5 rounded-full transition-all ${
+                activeIndex === imageIndex ? 'w-3.5 bg-white' : 'w-1.5 bg-white/60'
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 type PortfolioCategory = string;
 
@@ -54,6 +84,7 @@ export const U1PortfolioSection: React.FC = () => {
           title: p.title,
           category: (((p as any).category && (p as any).category !== 'All' ? (p as any).category : 'Portraits') as any),
           imageUrl: p.imageUrl || (p.images && p.images.length > 0 ? p.images[0] : ''),
+          images: (p.images || [p.imageUrl]).filter(Boolean).slice(0, 3),
           location: p.location || 'Colombo, Sri Lanka',
           year: p.year || (p.date ? p.date.slice(-4) : '2024'),
           description: p.description || p.summary || '',
@@ -76,6 +107,7 @@ export const U1PortfolioSection: React.FC = () => {
             title: g.title,
             category: ((g.category || 'Portraits') as any),
             imageUrl: galUrl,
+            images: ((g as any).images || [galUrl]).filter(Boolean).slice(0, 3),
             location: 'Colombo Studio',
             year: g.createdAt ? new Date(g.createdAt).getFullYear().toString() : '2024',
             description: g.caption || (g as any).description || '',
@@ -123,6 +155,7 @@ export const U1PortfolioSection: React.FC = () => {
             title: m.title,
             category: detectedCategory as any,
             imageUrl: m.url,
+            images: [m.url],
             location: m.dimensions ? `Master Format • ${m.dimensions}` : 'U1 Media Asset',
             year: m.createdAt ? new Date(m.createdAt).getFullYear().toString() : '2024',
             description: (m as any).description || (m.tags?.length ? `Tags: ${m.tags.join(', ')}` : 'Fine Art Studio Production'),
@@ -262,17 +295,11 @@ export const U1PortfolioSection: React.FC = () => {
             }}
             className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg"
           >
-            <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
-              <img
-                src={item.imageUrl}
-                alt={item.title}
-                loading="lazy"
-                decoding="async"
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-              />
+            <div className="relative">
+              <U1PortfolioCardImage item={item} />
 
-            {/* Top Action Icons: Inquire on WhatsApp, Share, Zoom */}
-            <div className="absolute right-3 top-3 flex items-center gap-1.5">
+              {/* Top Action Icons: Inquire on WhatsApp, Share, Zoom */}
+              <div className="absolute right-3 top-3 flex items-center gap-1.5">
               {/* WhatsApp Quick Incur / Inquire */}
               <button
                 type="button"
@@ -324,7 +351,7 @@ export const U1PortfolioSection: React.FC = () => {
               {/* Full-Screen Zoom Icon */}
               <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md text-white flex items-center justify-center">
                 <Maximize2 className="w-3.5 h-3.5" />
-              </div>
+                </div>
             </div>
             </div>
 

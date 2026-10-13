@@ -24,22 +24,22 @@ import { ScrollReveal } from '../motion/MotionWrappers';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { shareMediaAsset } from '../../utils/mediaShare';
 import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
+import { CrossfadeImage } from '../common/CrossfadeImage';
 
 const SWSGalleryCardImage: React.FC<{ images: string[]; alt: string }> = ({ images, alt }) => {
   const { activeIndex, containerRef } = useAutoSlideImage(images.length);
 
   return (
     <div ref={containerRef} className="absolute inset-0">
-      <img
+      <CrossfadeImage
         src={
           images[activeIndex] ||
           images[0] ||
           'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
         }
         alt={alt}
-        loading="lazy"
-        decoding="async"
-        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+        className="h-full w-full"
+        imageClassName="transition-transform duration-500 group-hover:scale-[1.03]"
       />
       {images.length > 1 && (
         <div className="absolute inset-x-0 bottom-2 flex items-center justify-center gap-1" aria-hidden="true">

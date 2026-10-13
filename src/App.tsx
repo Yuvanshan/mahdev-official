@@ -1,4 +1,4 @@
-import React, { lazy as reactLazy, Suspense, useState, useEffect, useRef } from 'react';
+import React, { lazy as reactLazy, Suspense, useState, useEffect } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { Navigation } from './components/layout/Navigation';
 import { Footer } from './components/layout/Footer';
@@ -17,7 +17,6 @@ import { testTursoConnection, initAppCheck } from './lib/firebase';
 import { analyticsService } from './services/analyticsService';
 import { catalogService } from './services/catalogService';
 import { motion, AnimatePresence } from 'motion/react';
-import { HeroVideoControls } from './components/common/HeroVideoControls';
 
 const CHUNK_RECOVERY_KEY = 'mahdev:chunk-load-recovery';
 
@@ -37,73 +36,10 @@ function lazy<T extends React.ComponentType<any>>(
 }
 
 type RouteLoadingFallbackProps = {
-  division?: 'sws' | 'u1';
   path: string;
 };
 
-const RouteLoadingFallback: React.FC<RouteLoadingFallbackProps> = ({ division, path }) => {
-  const heroRef = useRef<HTMLElement | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const description = division === 'sws'
-    ? 'Beautifully designed celebrations, thoughtfully crafted around your special moments.'
-    : 'Professional photography and creative experiences that preserve your most precious memories.';
-
-  if (division) {
-    const lines = division === 'sws'
-      ? ['We Create Moments.', 'You Make Memories.']
-      : ['Every Frame', 'Tells a Story.'];
-
-    return (
-      <section
-        ref={heroRef}
-        aria-busy="true"
-        aria-label={division === 'sws' ? 'SWS Event Management' : 'U1 Studio'}
-        className="relative flex min-h-[85vh] w-full items-center overflow-hidden bg-[#061033] text-white lg:min-h-[90vh]"
-      >
-        <video
-          ref={videoRef}
-          aria-hidden="true"
-          className="absolute inset-0 h-full w-full object-cover"
-          src="/assets/hero_main.mp4?v=2"
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-        />
-        <HeroVideoControls
-          heroRef={heroRef}
-          videoRef={videoRef}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#061033]/90 via-[#061033]/60 to-[#061033]/30" />
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
-          <div className="max-w-3xl space-y-6">
-            <motion.h1
-              initial={{ opacity: 0.85, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-              className="font-display text-3xl font-black leading-[1.08] tracking-tight text-white drop-shadow-md sm:text-5xl lg:text-6xl xl:text-7xl"
-            >
-              {lines.map((line) => (
-                <span className="block" key={line}>
-                  {line}
-                </span>
-              ))}
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0.8, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.65, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
-              className="max-w-xl text-sm font-medium tracking-wide text-white/85 drop-shadow-md sm:text-base"
-            >
-              {description}
-            </motion.p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
+const RouteLoadingFallback: React.FC<RouteLoadingFallbackProps> = ({ path }) => {
   const isAbout = path === '/about' || path === '/about-us';
   const isLegal = [
     '/terms-and-conditions',
@@ -662,6 +598,16 @@ function AppContent() {
 
     if (normalizedPath === '/orders' && orderQueryId) {
       return <OrderConfirmationView orderId={orderQueryId} onNavigate={navigate} />;
+    }
+
+    const categoryRoute = normalizedPath.match(/^\/(?:services|gallery)%([a-z0-9-]+)$/);
+    if (categoryRoute) {
+      return (
+        <ExploreAllView
+          onNavigate={navigate}
+          initialCategorySlug={categoryRoute[1]}
+        />
+      );
     }
 
     // Gallery Route (/gallery, /gallery/*, /media, /media/*)
@@ -1236,11 +1182,6 @@ function AppContent() {
   // Keep the primary navigation visible across the site, including coming-soon
   // division routes, while the division-specific notice still remains in place.
   const isStandaloneComingSoon = Boolean(divisionKey && isDivisionComingSoon(divisionKey));
-  const heroLoadingDivision =
-    (divisionKey === 'sws' || divisionKey === 'u1') && !isDivisionComingSoon(divisionKey)
-      ? divisionKey
-      : undefined;
-
   return (
     <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-blue-600 selection:text-white w-full max-w-full overflow-x-hidden">
       {/* Top Document Scroll Progress Bar */}
@@ -1273,7 +1214,7 @@ function AppContent() {
           >
             <Suspense
               fallback={
-                <RouteLoadingFallback division={heroLoadingDivision} path={normalizedPath} />
+                <RouteLoadingFallback path={normalizedPath} />
               }
             >
               {renderCurrentView()}

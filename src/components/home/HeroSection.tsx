@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
 import { HeroVideoControls } from '../common/HeroVideoControls';
 import { ScrollParallax } from '../motion/ParallelScroll';
 
@@ -19,6 +20,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 }) => {
   const heroRef = useRef<HTMLElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const reducedMotion = useReducedMotion();
 
   const explore = () => {
     if (onExploreServices) onExploreServices();
@@ -39,7 +41,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           playsInline
           preload="auto"
           aria-hidden="true"
-          className="absolute inset-0 h-full w-full object-cover brightness-[1.15] saturate-[1.08]"
+          className="absolute inset-0 h-full w-full object-cover object-center brightness-[1.05] contrast-[1.08] saturate-[1.08]"
         />
       </ScrollParallax>
       <HeroVideoControls
@@ -48,31 +50,40 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-r from-slate-950/60 via-slate-950/28 to-transparent"
+        className="absolute inset-0 bg-gradient-to-r from-slate-950/65 via-slate-950/30 to-transparent"
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-t from-slate-950/30 via-transparent to-slate-950/5"
+        className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-slate-950/10"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-40 top-1/4 h-96 w-96 rounded-full bg-blue-500/15 blur-[100px]"
       />
 
       <div className="relative mx-auto flex min-h-[680px] max-w-7xl items-center px-5 py-20 sm:min-h-[740px] sm:px-8 lg:min-h-[min(820px,calc(100svh-5rem))] lg:px-10">
-        <div className="max-w-3xl">
+        <motion.div
+          className="max-w-3xl"
+          initial={reducedMotion ? false : { opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+        >
           <h1 className="font-editorial text-4xl font-medium leading-[1.04] tracking-[-0.035em] text-white sm:text-6xl lg:text-7xl">
-            <span className="block">Creating Moments...</span>
+            <span className="block">Creating moments.</span>
             <span className="block bg-gradient-to-r from-sky-300 via-blue-200 to-white bg-clip-text text-transparent">
-              Capturing Memories...
+              Capturing memories.
             </span>
-            <span className="block">Delivering Innovations...</span>
+            <span className="block">Delivering innovation.</span>
           </h1>
           <button
             type="button"
             onClick={explore}
-            className="mt-8 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-6 text-sm font-semibold text-slate-950 transition-colors hover:bg-blue-50"
+            className="group mt-9 inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 text-sm font-semibold text-slate-950 shadow-lg shadow-slate-950/20 transition duration-300 hover:-translate-y-0.5 hover:bg-sky-50 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
           >
-            Explore Now...
-            <ArrowRight className="h-4 w-4" />
+            Explore services
+            <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
           </button>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

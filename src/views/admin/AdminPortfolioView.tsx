@@ -290,7 +290,7 @@ export const AdminPortfolioView: React.FC = () => {
       <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="font-display text-lg font-bold text-slate-900">Portfolio & Case Studies CMS</h2>
+            <h2 className="font-display text-lg font-bold text-slate-900">Projects & Case Studies</h2>
             <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
               {portfolioItems.length} Projects
             </span>
@@ -313,7 +313,7 @@ export const AdminPortfolioView: React.FC = () => {
           </Button>
           <Button variant="electric" size="sm" onClick={handleOpenCreate}>
             <Plus className="w-3.5 h-3.5 mr-1.5" />
-            Add Case Study
+            Add Project
           </Button>
         </div>
       </div>

@@ -54,6 +54,16 @@ export const MAIN_NAV_ITEMS: NavigationLink[] = [
     ],
   },
   {
+    id: 'services',
+    label: 'Services',
+    href: '/services',
+  },
+  {
+    id: 'careers',
+    label: 'Careers',
+    href: '/careers',
+  },
+  {
     id: 'projects',
     label: 'Projects',
     href: '/projects',
@@ -77,6 +87,7 @@ export const FOOTER_SECTIONS: FooterSection[] = [
       { label: 'About Mahdev', href: '/about' },
       { label: 'Our Divisions', href: '/#divisions' },
       { label: 'Projects & Portfolio', href: '/portfolio' },
+      { label: 'Careers', href: '/careers' },
       { label: 'Contact Us', href: '/contact' },
     ],
   },

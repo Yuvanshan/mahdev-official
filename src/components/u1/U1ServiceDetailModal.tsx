@@ -18,6 +18,7 @@ import { U1Service } from '../../data/u1Data';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
+import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 
 interface U1ServiceDetailModalProps {
   service: U1Service | null;
@@ -93,10 +94,11 @@ export const U1ServiceDetailModal: React.FC<U1ServiceDetailModalProps> = ({
         <div className="overflow-y-auto flex-1 p-6 space-y-6">
           {/* Main Gallery Carousel */}
           <div className="relative rounded-2xl overflow-hidden aspect-[16/9] max-h-[380px] bg-slate-950 group">
-            <img
+            <ImageWithShimmer
               src={currentImage}
               alt={service.name}
-              className="w-full h-full object-cover transition-transform duration-500"
+              className="absolute inset-0"
+              imageClassName="transition-transform duration-500"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
 

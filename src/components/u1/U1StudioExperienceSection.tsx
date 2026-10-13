@@ -15,6 +15,7 @@ import { H2, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 
 export const U1StudioExperienceSection: React.FC = () => {
   const { divisions, mediaAssets } = useFirestoreDataContext();
@@ -98,11 +99,11 @@ export const U1StudioExperienceSection: React.FC = () => {
           >
             <div>
               <div className="relative aspect-[4/3] overflow-hidden bg-slate-950">
-                <img
+                <ImageWithShimmer
                   src={f.image}
                   alt={f.title}
-                  loading="lazy"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108"
+                  className="absolute inset-0"
+                  imageClassName="transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
                 <div className="absolute bottom-3 left-3 w-9 h-9 rounded-xl bg-white/90 backdrop-blur-md flex items-center justify-center shadow-md">

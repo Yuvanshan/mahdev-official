@@ -114,6 +114,7 @@ export type AdminSectionId =
   | 'categories'
   | 'packages'
   | 'portfolio'
+  | 'careers'
   | 'gallery'
   | 'milestones'
   | 'companies'

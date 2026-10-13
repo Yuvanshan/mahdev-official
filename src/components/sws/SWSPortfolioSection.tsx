@@ -18,6 +18,7 @@ import { H2, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { ScrollReveal } from '../motion/MotionWrappers';
+import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 
 interface SWSPortfolioSectionProps {
   onConsultationClick: () => void;
@@ -94,14 +95,14 @@ export const SWSPortfolioSection: React.FC<SWSPortfolioSectionProps> = ({
               }`}
             >
               <div className="flex items-center gap-3">
-                <img
+                <ImageWithShimmer
                   src={
                     item.imageUrl && item.imageUrl.trim() !== ''
                       ? item.imageUrl.trim()
                       : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=400&q=80'
                   }
                   alt={item.title}
-                  className="w-14 h-14 rounded-lg object-cover shrink-0"
+                  className="h-14 w-14 shrink-0 rounded-lg"
                 />
                 <div className="min-w-0 flex-1">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-[#0052FF]">
@@ -125,14 +126,14 @@ export const SWSPortfolioSection: React.FC<SWSPortfolioSectionProps> = ({
         <div className="lg:col-span-8 bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
           {/* Main Visual Header */}
           <div className="relative rounded-xl overflow-hidden aspect-[16/9] max-h-[360px] bg-slate-950">
-            <img
+            <ImageWithShimmer
               src={
                 activeCase.imageUrl && activeCase.imageUrl.trim() !== ''
                   ? activeCase.imageUrl.trim()
                   : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80'
               }
               alt={activeCase.title}
-              className="w-full h-full object-cover"
+              className="absolute inset-0"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
 

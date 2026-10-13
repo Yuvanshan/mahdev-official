@@ -49,6 +49,7 @@ const AdminProductsView = React.lazy(() => import('./AdminProductsView').then((m
 const AdminCategoriesView = React.lazy(() => import('./AdminCategoriesView').then((module) => ({ default: module.AdminCategoriesView })));
 const AdminPackagesView = React.lazy(() => import('./AdminPackagesView').then((module) => ({ default: module.AdminPackagesView })));
 const AdminPortfolioView = React.lazy(() => import('./AdminPortfolioView').then((module) => ({ default: module.AdminPortfolioView })));
+const AdminCareersView = React.lazy(() => import('./AdminCareersView').then((module) => ({ default: module.AdminCareersView })));
 const AdminGalleryView = React.lazy(() => import('./AdminGalleryView').then((module) => ({ default: module.AdminGalleryView })));
 const AdminMilestonesView = React.lazy(() => import('./AdminMilestonesView').then((module) => ({ default: module.AdminMilestonesView })));
 const AdminCompaniesView = React.lazy(() => import('./AdminCompaniesView').then((module) => ({ default: module.AdminCompaniesView })));
@@ -111,6 +112,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { id: 'categories', label: 'Categories', icon: FolderTree },
   { id: 'packages', label: 'Packages', icon: Layers },
   { id: 'portfolio', label: 'Portfolio', icon: Layers },
+  { id: 'careers', label: 'Careers', icon: Briefcase, badge: 'Hiring' },
   { id: 'gallery', label: 'Gallery', icon: Layers },
   { id: 'milestones', label: 'Milestones', icon: Flag },
   { id: 'companies', label: 'Companies', icon: Building },
@@ -233,6 +235,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
         return <AdminPackagesView />;
       case 'portfolio':
         return <AdminPortfolioView />;
+      case 'careers':
+        return <AdminCareersView />;
       case 'gallery':
         return <AdminGalleryView />;
       case 'milestones':

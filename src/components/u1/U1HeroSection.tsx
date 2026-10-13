@@ -5,13 +5,10 @@ import { HeroVideoBackground } from '../common/HeroVideoBackground';
 import { ScrollParallax } from '../motion/ParallelScroll';
 
 interface U1HeroSectionProps {
-  onBookSession: () => void;
-  onExplorePortfolio: () => void;
   onExploreServices: () => void;
 }
 
 export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
-  onExplorePortfolio,
   onExploreServices,
 }) => {
   const heroRef = React.useRef<HTMLElement | null>(null);
@@ -47,7 +44,7 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.25 }}
-            onClick={onExplorePortfolio || onExploreServices}
+            onClick={onExploreServices}
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-6 text-sm font-semibold text-slate-950 transition-colors hover:bg-blue-50"
           >
             Explore Our Studio

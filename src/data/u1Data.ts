@@ -23,6 +23,7 @@ export interface U1PortfolioItem {
   year: string;
   location: string;
   imageUrl: string;
+  images?: string[];
   aspectRatio?: 'portrait' | 'landscape' | 'square';
   cameraMetadata?: {
     camera: string;

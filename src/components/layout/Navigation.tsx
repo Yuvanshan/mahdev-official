@@ -193,10 +193,10 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
   return (
     <>
       <header
-        className={`sticky top-0 z-[60] w-full transition-all duration-200 ${
+        className={`sticky top-0 z-[60] w-full transition-all duration-300 ${
           isScrolled
-            ? 'bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs'
-            : 'bg-white border-b border-slate-200'
+            ? 'bg-white/90 backdrop-blur-2xl border-b border-slate-200/80 shadow-[0_8px_32px_-18px_rgba(15,23,42,0.24)]'
+            : 'bg-white/95 backdrop-blur-xl border-b border-slate-200/80'
         }`}
       >
         {/* Division Context Notice (when inside a child division) */}
@@ -231,7 +231,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
             {/* Middle: Desktop Navigation Links */}
             <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
               {MAIN_NAV_ITEMS.map((item) => {
-                if (item.id === 'services' || item.id === 'divisions' || item.children) {
+                if (item.id === 'divisions' || item.children) {
                   return (
                     <div
                       key={item.id}
@@ -244,10 +244,10 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                       <button
                         type="button"
                         onClick={() => setIsServicesOpen(!isServicesOpen)}
-                        className={`inline-flex items-center gap-1 px-3.5 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                        className={`inline-flex items-center gap-1 px-3.5 py-2 text-sm font-medium rounded-full transition-all duration-200 cursor-pointer ${
                           isServicesOpen || currentDivision
-                            ? 'text-[#0052FF] bg-blue-50 font-semibold'
-                            : 'text-slate-700 hover:text-[#0052FF] hover:bg-blue-50/50'
+                            ? 'text-[#0052FF] bg-blue-50 font-semibold shadow-sm shadow-blue-900/5'
+                            : 'text-slate-700 hover:text-[#0052FF] hover:bg-blue-50/70'
                         }`}
                         aria-expanded={isServicesOpen}
                         aria-haspopup="true"
@@ -308,10 +308,10 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                   <button
                     key={item.id}
                     onClick={() => handleLinkClick(item.href)}
-                    className={`px-3.5 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                    className={`px-3.5 py-2 text-sm font-medium rounded-full transition-all duration-200 cursor-pointer ${
                       currentPath === item.href
-                        ? 'text-[#0052FF] font-semibold bg-blue-50'
-                        : 'text-slate-700 hover:text-[#0052FF] hover:bg-blue-50/50'
+                        ? 'text-[#0052FF] font-semibold bg-blue-50 shadow-sm shadow-blue-900/5'
+                        : 'text-slate-700 hover:text-[#0052FF] hover:bg-blue-50/70'
                     }`}
                   >
                     {item.label}

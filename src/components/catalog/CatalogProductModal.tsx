@@ -29,6 +29,7 @@ import { catalogService } from '../../services/catalogService';
 import { useCart } from '../../context/CartContext';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { formatCurrency } from '../../utils/currency';
+import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 
 interface CatalogProductModalProps {
   product: CatalogProduct | null;
@@ -122,10 +123,10 @@ const CatalogProductModalContent: React.FC<
               {/* Left Column: Gallery */}
               <div className="space-y-4">
                 <div className="relative aspect-4/3 rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200">
-                  <img
+                  <ImageWithShimmer
                     src={selectedImage}
                     alt={product.name}
-                    className="w-full h-full object-cover"
+                    className="absolute inset-0"
                   />
                   {product.discountPercent && (
                     <span className="absolute top-3 right-3 px-2.5 py-1 text-xs font-bold bg-red-600 text-white rounded-md">
@@ -147,7 +148,7 @@ const CatalogProductModalContent: React.FC<
                             : 'border-neutral-200 opacity-70 hover:opacity-100'
                         }`}
                       >
-                        <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+                        <ImageWithShimmer src={imgUrl} alt="" className="absolute inset-0" />
                       </button>
                     ))}
                   </div>
@@ -378,8 +379,8 @@ const CatalogProductModalContent: React.FC<
                       onClick={() => onSelectRelated(rel)}
                       className="group p-3 rounded-xl border border-neutral-200 hover:border-neutral-300 hover:shadow-xs transition-all cursor-pointer bg-neutral-50/50 flex flex-col justify-between"
                     >
-                      <div className="aspect-16/10 rounded-lg overflow-hidden mb-2 bg-neutral-200">
-                        <img src={rel.imageUrl} alt={rel.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <div className="relative aspect-16/10 rounded-lg overflow-hidden mb-2 bg-neutral-200">
+                        <ImageWithShimmer src={rel.imageUrl} alt={rel.name} className="absolute inset-0" imageClassName="transition-transform duration-300 group-hover:scale-105" />
                       </div>
                       <div>
                         <span className="text-[10px] uppercase font-bold text-amber-700 tracking-wider">

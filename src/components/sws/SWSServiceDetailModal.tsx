@@ -18,6 +18,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { IconRenderer } from '../ui/IconRenderer';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
+import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 
 interface SWSServiceDetailModalProps {
   service: SWSService | null;
@@ -92,10 +93,11 @@ export const SWSServiceDetailModal: React.FC<SWSServiceDetailModalProps> = ({
         <div className="overflow-y-auto flex-1 p-6 space-y-6">
           {/* Main Gallery Display with Controls */}
           <div className="relative rounded-xl overflow-hidden bg-slate-950 aspect-video max-h-[380px] group">
-            <img
+            <ImageWithShimmer
               src={images[activeImageIndex]}
               alt={`${service.name} preview ${activeImageIndex + 1}`}
-              className="w-full h-full object-cover transition-all duration-500"
+              className="absolute inset-0"
+              imageClassName="transition-all duration-500"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none" />
 
@@ -136,7 +138,7 @@ export const SWSServiceDetailModal: React.FC<SWSServiceDetailModalProps> = ({
                       : 'border-transparent opacity-60 hover:opacity-100'
                   }`}
                 >
-                  <img src={img} alt="thumb" className="w-full h-full object-cover" />
+                  <ImageWithShimmer src={img} alt="thumb" className="absolute inset-0" />
                 </button>
               ))}
             </div>

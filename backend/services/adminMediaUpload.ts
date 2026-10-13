@@ -196,3 +196,54 @@ export async function forwardAdminMediaUploadChunk(input: {
     request.end(input.body);
   });
 }
+
+export async function storeCareerCv(input: {
+  filename: string;
+  contentType: string;
+  body: Buffer;
+}): Promise<string> {
+  const extension = input.filename.split('.').pop()?.toLowerCase() || '';
+  const maxBytes = 10 * 1024 * 1024;
+  if (
+    extension !== 'pdf' ||
+    !['application/pdf', 'application/octet-stream'].includes(input.contentType.toLowerCase()) ||
+    input.body.length < 8 ||
+    input.body.length > maxBytes
+  ) {
+    throw new Error('Upload a PDF CV no larger than 10 MB.');
+  }
+
+  const isPdf = input.body.subarray(0, 5).toString('ascii') === '%PDF-';
+  if (!isPdf) {
+    throw new Error('The uploaded CV must be a valid PDF file.');
+  }
+
+  const safeFilename = input.filename.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-100) || `cv.${extension}`;
+  const storagePath = `career-cvs/${randomUUID()}_${safeFilename}`;
+  await getStorageBucket().file(storagePath).save(input.body, {
+    resumable: false,
+    metadata: {
+      contentType: 'application/pdf',
+      cacheControl: 'private, no-store',
+      contentDisposition: 'attachment',
+    },
+  });
+  return storagePath;
+}
+
+export async function readCareerCv(storagePath: string): Promise<{
+  body: Buffer;
+  contentType: string;
+}> {
+  if (!/^career-cvs\/[0-9a-f-]{36}_[a-zA-Z0-9._-]{1,100}$/.test(storagePath)) {
+    throw new Error('Invalid CV storage reference.');
+  }
+  const [body] = await getStorageBucket().file(storagePath).download();
+  const extension = storagePath.split('.').pop()?.toLowerCase();
+  const contentType = extension === 'pdf'
+    ? 'application/pdf'
+    : extension === 'doc'
+      ? 'application/msword'
+      : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  return { body, contentType };
+}

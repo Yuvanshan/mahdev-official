@@ -22,6 +22,7 @@ import { ScrollReveal } from '../motion/MotionWrappers';
 import { CmsPackage } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
 import { formatCurrency } from '../../utils/currency';
+import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 
 interface U1PackagesSectionProps {
   onBookPackage: (pkg: U1Package) => void;
@@ -152,10 +153,11 @@ export const U1PackagesSection: React.FC<U1PackagesSectionProps> = ({ onBookPack
               <div>
                 {/* Image Carousel */}
                 <div className="relative aspect-[16/10] overflow-hidden bg-slate-950 group">
-                  <img
+                  <ImageWithShimmer
                     src={currentImage}
                     alt={pkg.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="absolute inset-0"
+                    imageClassName="transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
 

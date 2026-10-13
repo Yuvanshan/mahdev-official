@@ -15,8 +15,20 @@ import {
   createAdminMediaUpload,
   forwardAdminMediaUploadChunk,
 } from '../services/adminMediaUpload.js';
+import careerCvHandler from './handlers/careers/cv.js';
 
 const apiRouter = Router();
+
+apiRouter.post(
+  '/careers/cv',
+  express.raw({ limit: '10mb', type: () => true }),
+  async (req: Request, res: Response) => {
+    await careerCvHandler(req, res);
+  }
+);
+apiRouter.get('/careers/cv', async (req: Request, res: Response) => {
+  await careerCvHandler(req, res);
+});
 
 apiRouter.get('/health', async (_req, res) => {
   try {

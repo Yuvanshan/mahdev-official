@@ -30,6 +30,7 @@ import { CallToActionSection } from '../components/home/CallToActionSection';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
 import { ServicesSectionShimmer } from '../components/common/ServicesSectionShimmer';
+import { ImageWithShimmer } from '../components/ui/ImageWithShimmer';
 import { DIVISIONS, DIVISION_LIST } from '../config/divisions';
 import { DivisionId } from '../types';
 import { normalizeDivisionId } from '../services/firestore/divisions';
@@ -67,10 +68,11 @@ const ServiceCardItem: React.FC<{
         {/* Service Photo - Clean, without overlay badges or clutter */}
         {serviceImage && (
           <div className="w-full md:w-64 lg:w-72 h-48 rounded-xl overflow-hidden bg-slate-100 border border-slate-200/80 shrink-0">
-            <img
+            <ImageWithShimmer
               src={serviceImage}
               alt={service.title || service.name}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-102"
+              className="h-full w-full"
+              imageClassName="transition-transform duration-300 group-hover:scale-105"
               loading="lazy"
             />
           </div>

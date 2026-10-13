@@ -15,6 +15,8 @@ const CORE_COLLECTIONS = [
   'contactMessages',
   'contactSubmissions',
   'coupons',
+  'careerApplications',
+  'careerOpenings',
   'divisions',
   'faqs',
   'gallery',

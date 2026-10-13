@@ -17,6 +17,7 @@ import { InquiredItemSpotlight } from '../components/common/InquiredItemSpotligh
 import { InquiredItemShimmer } from '../components/common/InquiredItemShimmer';
 import { InquiryItemNotFound } from '../components/common/InquiryItemNotFound';
 import { getDefaultGallery } from '../services/firestore/gallery';
+import { ImageWithShimmer } from '../components/ui/ImageWithShimmer';
 
 interface GalleryPageViewProps {
   onNavigate: (route: string) => void;
@@ -303,12 +304,12 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
                 className="group relative cursor-pointer overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm hover:shadow-md transition-all duration-300"
               >
                 <div className="aspect-[4/3] w-full overflow-hidden bg-slate-100 relative">
-                  <img
+                  <ImageWithShimmer
                     src={item.url}
                     alt={item.title}
+                    className="absolute inset-0"
+                    imageClassName="transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
-                    decoding="async"
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute right-2 top-2 flex items-center gap-1.5 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
                     {/* Top right quick actions */}
@@ -385,11 +386,12 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
             </button>
 
             {/* Image Section */}
-            <div className="md:w-3/5 bg-black flex items-center justify-center overflow-hidden max-h-[60vh] md:max-h-[80vh]">
-              <img
+            <div className="relative min-h-56 md:min-h-[60vh] md:w-3/5 bg-black flex items-center justify-center overflow-hidden max-h-[60vh] md:max-h-[80vh]">
+              <ImageWithShimmer
                 src={activeItem.url}
                 alt={activeItem.title}
-                className="max-h-full max-w-full object-contain"
+                className="absolute inset-0"
+                imageClassName="!object-contain"
               />
             </div>
 

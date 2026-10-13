@@ -37,6 +37,7 @@ import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal, FadeIn, ScaleIn } from '../motion/MotionWrappers';
+import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 
 interface SWSRentalsSectionProps {
   onBookRental: (rentalItem?: SWSRentalItem) => void;
@@ -245,14 +246,15 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
               <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full overflow-hidden group">
                 {/* Image Container */}
                 <div className="relative h-52 w-full overflow-hidden bg-slate-100">
-                  <img
+                  <ImageWithShimmer
                     src={
                       item.imageUrl && item.imageUrl.trim() !== ''
                         ? item.imageUrl.trim()
                         : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
                     }
                     alt={item.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="absolute inset-0"
+                    imageClassName="transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-black/20" />
 
@@ -403,14 +405,14 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
           <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
             {/* Modal Header Image */}
             <div className="relative h-60 w-full bg-slate-900 shrink-0">
-              <img
+              <ImageWithShimmer
                 src={
                   activeDetailItem.imageUrl && activeDetailItem.imageUrl.trim() !== ''
                     ? activeDetailItem.imageUrl.trim()
                     : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
                 }
                 alt={activeDetailItem.name}
-                className="w-full h-full object-cover"
+                className="absolute inset-0"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-black/30 to-transparent" />
               <button

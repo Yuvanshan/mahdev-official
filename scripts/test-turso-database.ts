@@ -11,6 +11,7 @@ process.env.TURSO_AUTH_TOKEN = 'local-test-token';
 const {
   ensureCollectionTable,
   getTursoClient,
+  getTursoDocument,
   importMigratedDocuments,
   initializeTursoDatabase,
 } = await import('../backend/db/tursoDatabase');
@@ -143,6 +144,17 @@ async function run(): Promise<void> {
       action: 'write',
       write: { type: 'set', collection: 'contactSubmissions', id: 'msg-1' },
     }), false);
+    assert.equal(requiresAdminForDatabaseAction({ action: 'list', collection: 'careerApplications' }), true);
+    assert.equal(requiresAdminForDatabaseAction({ action: 'get', collection: 'careerApplications' }), true);
+    assert.equal(requiresAdminForDatabaseAction({
+      action: 'write',
+      write: { type: 'set', collection: 'careerApplications', id: 'application-1' },
+    }), false);
+    assert.equal(requiresAdminForDatabaseAction({
+      action: 'write',
+      write: { type: 'set', collection: 'careerOpenings', id: 'opening-1' },
+    }), true);
+    assert.equal(requiresAdminForDatabaseAction({ action: 'list', collection: 'careerOpenings' }), false);
     for (const collection of ['contactSubmissions', 'inquiries', 'quoteRequests']) {
       assert.equal(requiresAdminForDatabaseAction({ action: 'list', collection }), true);
       assert.equal(requiresAdminForDatabaseAction({ action: 'get', collection }), true);
@@ -170,6 +182,159 @@ async function run(): Promise<void> {
       action: 'write',
       write: { type: 'set', collection: 'admins', id: 'admin-1' },
     }, adminCookie);
+    await assert.rejects(
+      () => authorizeDatabaseAction({ action: 'list', collection: 'careerApplications' }, undefined),
+      /An administrator session is required/
+    );
+    await assert.rejects(
+      () => authorizeDatabaseAction({
+        action: 'write',
+        write: { type: 'set', collection: 'careerApplications', id: 'application-1', merge: true },
+      }, undefined),
+      /An administrator session is required/
+    );
+
+    const openingRecords = [
+      { id: 'career-opening-published', data: { title: 'Producer', status: 'published' } },
+      { id: 'career-opening-draft', data: { title: 'Editor', status: 'draft' } },
+    ];
+    for (const opening of openingRecords) {
+      await call({
+        action: 'write',
+        write: { type: 'set', collection: 'careerOpenings', id: opening.id, data: opening.data },
+      });
+    }
+    const publicOpenings = await handleTursoAction(
+      { action: 'list', collection: 'careerOpenings' },
+      { role: 'public' }
+    );
+    assert.equal(publicOpenings.status, 200);
+    assert.deepEqual(
+      (publicOpenings.body.documents as Array<{ id: string }>).map(({ id }) => id),
+      ['career-opening-published']
+    );
+
+    const applicationId = '123e4567-e89b-12d3-a456-426614174001';
+    const publicApplicationWrite = {
+      action: 'write',
+      write: {
+        type: 'set',
+        collection: 'careerApplications',
+        id: applicationId,
+        data: {
+          openingId: 'career-opening-published',
+          candidateName: 'Taylor Candidate',
+          email: 'taylor@example.com',
+          phone: '+94771234567',
+          coverLetter: 'Experienced producer.',
+          cvStoragePath: 'career-cvs/123e4567-e89b-12d3-a456-426614174000_taylor-cv.pdf',
+          cvFileName: 'taylor-cv.pdf',
+        },
+      },
+    };
+    const publicApplicationAccess = await authorizeDatabaseAction(publicApplicationWrite, undefined);
+    assert.equal(publicApplicationAccess.role, 'public');
+    const publicApplicationResult = await handleTursoAction(publicApplicationWrite, publicApplicationAccess);
+    assert.equal(publicApplicationResult.status, 200);
+    assert.equal(
+      (await getTursoDocument('careerApplications', '', applicationId))?.data.status,
+      'new'
+    );
+    assert.equal(
+      (await getTursoDocument('careerApplications', '', applicationId))?.data.portfolioUrl,
+      ''
+    );
+    const extraFieldResult = await handleTursoAction({
+      ...publicApplicationWrite,
+      write: {
+        ...(publicApplicationWrite.write as Record<string, unknown>),
+        id: '123e4567-e89b-12d3-a456-426614174002',
+        data: {
+          ...((publicApplicationWrite.write as { data: Record<string, unknown> }).data),
+          extraField: 'not permitted',
+        },
+      },
+    }, publicApplicationAccess);
+    assert.equal(extraFieldResult.status, 400);
+    const draftOpeningResult = await handleTursoAction({
+        ...publicApplicationWrite,
+        write: {
+          ...(publicApplicationWrite.write as Record<string, unknown>),
+          id: '123e4567-e89b-12d3-a456-426614174003',
+          data: {
+            ...((publicApplicationWrite.write as { data: Record<string, unknown> }).data),
+            openingId: 'career-opening-draft',
+          },
+        },
+      }, publicApplicationAccess);
+    assert.equal(draftOpeningResult.status, 400);
+    const invalidEmailResult = await handleTursoAction({
+      ...publicApplicationWrite,
+      write: {
+        ...(publicApplicationWrite.write as Record<string, unknown>),
+        id: '123e4567-e89b-12d3-a456-426614174004',
+        data: {
+          ...((publicApplicationWrite.write as { data: Record<string, unknown> }).data),
+          email: 'not-an-email',
+        },
+      },
+    }, publicApplicationAccess);
+    assert.equal(invalidEmailResult.status, 400);
+    const invalidPortfolioUrlResult = await handleTursoAction({
+      ...publicApplicationWrite,
+      write: {
+        ...(publicApplicationWrite.write as Record<string, unknown>),
+        id: '123e4567-e89b-12d3-a456-426614174005',
+        data: {
+          ...((publicApplicationWrite.write as { data: Record<string, unknown> }).data),
+          portfolioUrl: 'javascript:alert(1)',
+        },
+      },
+    }, publicApplicationAccess);
+    assert.equal(invalidPortfolioUrlResult.status, 400);
+    const validPortfolioUrlResult = await handleTursoAction({
+      ...publicApplicationWrite,
+      write: {
+        ...(publicApplicationWrite.write as Record<string, unknown>),
+        id: '123e4567-e89b-12d3-a456-426614174006',
+        data: {
+          ...((publicApplicationWrite.write as { data: Record<string, unknown> }).data),
+          portfolioUrl: 'https://example.com/portfolio',
+        },
+      },
+    }, publicApplicationAccess);
+    assert.equal(validPortfolioUrlResult.status, 200);
+    const adminApplicationRead = await authorizeDatabaseAction(
+      { action: 'list', collection: 'careerApplications' },
+      adminCookie
+    );
+    assert.equal(adminApplicationRead.role, 'admin');
+    const adminApplicationUpdate = {
+      action: 'write',
+      write: {
+        type: 'set',
+        collection: 'careerApplications',
+        id: applicationId,
+        merge: true,
+        data: { status: 'reviewing' },
+      },
+    };
+    const adminApplicationAccess = await authorizeDatabaseAction(adminApplicationUpdate, adminCookie);
+    const adminApplicationUpdateResult = await handleTursoAction(
+      adminApplicationUpdate,
+      adminApplicationAccess
+    );
+    assert.equal(adminApplicationUpdateResult.status, 200);
+    assert.equal(
+      (await getTursoDocument('careerApplications', '', applicationId))?.data.status,
+      'reviewing'
+    );
+    const privateApplications = await handleTursoAction(
+      { action: 'list', collection: 'careerApplications' },
+      { role: 'admin' }
+    );
+    assert.equal(privateApplications.status, 200);
+    assert.equal((privateApplications.body.documents as Array<{ id: string }>).length, 2);
     const metadata = await getTursoClient().execute(
       'SELECT COUNT(*) AS count FROM turso_collections'
     );

@@ -58,12 +58,6 @@ export const U1View: React.FC<U1ViewProps> = ({ onNavigate }) => {
     setBookingModalOpen(true);
   };
 
-  const handleOpenGeneralBooking = () => {
-    setActiveServiceForBooking(null);
-    setActivePackageForBooking(null);
-    setBookingModalOpen(true);
-  };
-
   const scrollToAnchor = (id: string) => {
     const el = document.getElementById(id);
     if (el) {
@@ -81,14 +75,14 @@ export const U1View: React.FC<U1ViewProps> = ({ onNavigate }) => {
 
       {/* 1. U1 CINEMATIC IMAGE-FIRST HERO */}
       <U1HeroSection
-        onBookSession={handleOpenGeneralBooking}
-        onExplorePortfolio={() => scrollToAnchor('portfolio')}
         onExploreServices={() => scrollToAnchor('services')}
       />
 
       {/* Render content progressively as each Turso-backed collection arrives. */}
       <>
-        <U1ServicesSection onBookService={handleBookService} />
+        <div id="services">
+          <U1ServicesSection onBookService={handleBookService} />
+        </div>
 
         <U1PortfolioSection />
 

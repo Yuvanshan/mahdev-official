@@ -24,12 +24,45 @@ import { H2, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
+import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
+import { CrossfadeImage } from '../common/CrossfadeImage';
 
 interface U1ServicesSectionProps {
   onBookService: (service: U1Service) => void;
 }
 
 type U1FilterCategory = 'all' | 'media' | 'portrait' | 'commercial' | 'print';
+
+const U1ServiceCardImage: React.FC<{ service: U1Service }> = ({ service }) => {
+  const images = (service.gallery?.length ? service.gallery : [service.imageUrl]).filter(Boolean);
+  const { activeIndex, containerRef } = useAutoSlideImage(images.length);
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative aspect-[16/10] cursor-pointer overflow-hidden bg-slate-950"
+    >
+      <CrossfadeImage
+        src={images[activeIndex] || service.imageUrl}
+        alt={service.name}
+        className="absolute inset-0"
+        imageClassName="transition-transform duration-700 group-hover:scale-105"
+      />
+      {images.length > 1 && (
+        <div className="absolute inset-x-0 bottom-2 flex items-center justify-center gap-1" aria-hidden="true">
+          {images.map((_, index) => (
+            <span
+              key={index}
+              className={`h-1.5 rounded-full transition-all ${
+                activeIndex === index ? 'w-3.5 bg-white' : 'w-1.5 bg-white/60'
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
   onBookService,
@@ -92,7 +125,7 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
   });
 
   return (
-    <SectionContainer id="services" background="white" paddingY="xl" hasBorderBottom>
+    <SectionContainer background="white" paddingY="xl" hasBorderBottom>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
         <div>
@@ -150,16 +183,8 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
           >
             <div>
               {/* Image Banner */}
-              <div
-                className="relative aspect-[16/10] overflow-hidden bg-slate-950 cursor-pointer"
-                onClick={() => setActiveModalService(service)}
-              >
-                <img
-                  src={service.imageUrl}
-                  alt={service.name}
-                  loading="lazy"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108"
-                />
+              <div onClick={() => setActiveModalService(service)}>
+                <U1ServiceCardImage service={service} />
                 {/* Quick Expand Icon */}
                 <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <Eye className="w-3.5 h-3.5" />

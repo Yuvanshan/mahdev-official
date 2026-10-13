@@ -4,6 +4,7 @@ import { SEOHead } from '../components/layout/SEOHead';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { CatalogProductModal } from '../components/catalog/CatalogProductModal';
 import { GallerySectionShimmer } from '../components/common/GallerySectionShimmer';
+import { ImageWithShimmer } from '../components/ui/ImageWithShimmer';
 import { SectionContainer } from '../components/ui/SectionContainer';
 import { mapFirestoreProductToCatalog } from '../services/catalogService';
 import { CatalogProduct } from '../types/catalog';
@@ -22,6 +23,15 @@ const KIND_LABELS: Record<BrowseType, string> = {
   gallery: 'Gallery',
   product: 'Products',
 };
+
+const toCategorySlug = (value: string) =>
+  value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 
 const BrowseCard: React.FC<{
   item: BrowseItem;
@@ -42,12 +52,12 @@ const BrowseCard: React.FC<{
         aria-label={`View ${item.title}`}
       >
         {item.image ? (
-          <img
+          <ImageWithShimmer
             src={item.image}
             alt={item.title}
+            className="absolute inset-0"
+            imageClassName="transition duration-500 group-hover:scale-105"
             loading="lazy"
-            decoding="async"
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-slate-300">
@@ -79,16 +89,23 @@ const BrowseCard: React.FC<{
                 ? `${item.type === 'service' ? 'From ' : ''}${formatCurrency(price, 'LKR')}`
                 : 'Contact for details'}
           </span>
-          <span className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 transition group-hover:gap-2">
-            View <ArrowRight className="h-3.5 w-3.5" />
-          </span>
+          <button
+            type="button"
+            onClick={() => onSelect(item)}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 transition hover:gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+          >
+            View details <ArrowRight className="h-3.5 w-3.5" />
+          </button>
         </div>
       </div>
     </article>
   );
 };
 
-export const ExploreAllView: React.FC<{ onNavigate: (route: string) => void }> = ({ onNavigate }) => {
+export const ExploreAllView: React.FC<{
+  onNavigate: (route: string) => void;
+  initialCategorySlug?: string;
+}> = ({ onNavigate, initialCategorySlug }) => {
   const {
     services,
     products,
@@ -202,6 +219,26 @@ export const ExploreAllView: React.FC<{ onNavigate: (route: string) => void }> =
     return [...counts.entries()].sort(([a], [b]) => a.localeCompare(b));
   }, [allItems]);
 
+  useEffect(() => {
+    if (!initialCategorySlug || !allItems.length) return;
+
+    const typeSlugs: Record<string, BrowseType> = {
+      'type-services': 'service',
+      'type-gallery': 'gallery',
+      'type-products': 'product',
+    };
+    const type = typeSlugs[initialCategorySlug];
+    if (type) {
+      setSelectedFilter(`type:${type}`);
+      return;
+    }
+
+    const matchedCategory = categories.find(
+      ([category]) => toCategorySlug(category) === initialCategorySlug
+    );
+    setSelectedFilter(matchedCategory ? `category:${matchedCategory[0]}` : 'all');
+  }, [initialCategorySlug, categories, allItems.length]);
+
   const filteredItems = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return allItems.filter((item) => {
@@ -232,16 +269,33 @@ export const ExploreAllView: React.FC<{ onNavigate: (route: string) => void }> =
     : selectedFilter.startsWith('type:')
       ? KIND_LABELS[selectedFilter.slice('type:'.length) as BrowseType]
       : 'All items';
+  const updateFilter = (filter: string) => {
+    setSelectedFilter(filter);
+    setIsCategoryDrawerOpen(false);
+    if (filter === 'all') {
+      onNavigate('/services');
+      return;
+    }
+
+    const pathSlug = filter.startsWith('category:')
+      ? toCategorySlug(filter.slice('category:'.length))
+      : {
+          service: 'type-services',
+          gallery: 'type-gallery',
+          product: 'type-products',
+        }[filter.slice('type:'.length) as BrowseType];
+    onNavigate(`/services%${pathSlug}`);
+  };
   const categoryOptions = (
     <>
       <nav aria-label="Catalog categories" className="space-y-1">
-        <button type="button" className={filterButtonClass('all')} onClick={() => { setSelectedFilter('all'); setIsCategoryDrawerOpen(false); }}>
+        <button type="button" className={filterButtonClass('all')} onClick={() => updateFilter('all')}>
           <span>All items</span><span className="text-xs text-slate-400">{allItems.length}</span>
         </button>
         {(['service', 'gallery', 'product'] as BrowseType[]).map((type) => {
           const count = allItems.filter((item) => item.type === type).length;
           return (
-            <button key={type} type="button" className={filterButtonClass(`type:${type}`)} onClick={() => { setSelectedFilter(`type:${type}`); setIsCategoryDrawerOpen(false); }}>
+            <button key={type} type="button" className={filterButtonClass(`type:${type}`)} onClick={() => updateFilter(`type:${type}`)}>
               <span>{KIND_LABELS[type]}</span><span className="text-xs text-slate-400">{count}</span>
             </button>
           );
@@ -254,7 +308,7 @@ export const ExploreAllView: React.FC<{ onNavigate: (route: string) => void }> =
             {categories.map(([category, count]) => {
               const filter = `category:${category}`;
               return (
-                <button key={category} type="button" className={filterButtonClass(filter)} onClick={() => { setSelectedFilter(filter); setIsCategoryDrawerOpen(false); }}>
+                <button key={category} type="button" className={filterButtonClass(filter)} onClick={() => updateFilter(filter)}>
                   <span className="truncate">{category}</span><span className="text-xs text-slate-400">{count}</span>
                 </button>
               );
@@ -323,7 +377,7 @@ export const ExploreAllView: React.FC<{ onNavigate: (route: string) => void }> =
                 </button>
               </div>
               {(query || selectedFilter !== 'all') && (
-                <button type="button" onClick={() => { setQuery(''); setSelectedFilter('all'); }} className="text-xs font-semibold text-blue-700 hover:text-blue-900">
+                <button type="button" onClick={() => { setQuery(''); updateFilter('all'); }} className="text-xs font-semibold text-blue-700 hover:text-blue-900">
                   Clear filters
                 </button>
               )}
@@ -337,7 +391,7 @@ export const ExploreAllView: React.FC<{ onNavigate: (route: string) => void }> =
                 <Search className="mx-auto mb-3 h-7 w-7 text-slate-300" />
                 <h2 className="font-semibold text-slate-900">No matching items</h2>
                 <p className="mt-1 text-sm text-slate-500">Try a different keyword or clear the selected category.</p>
-                <button type="button" onClick={() => { setQuery(''); setSelectedFilter('all'); }} className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+                <button type="button" onClick={() => { setQuery(''); updateFilter('all'); }} className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
                   Show all items
                 </button>
               </div>
@@ -379,7 +433,7 @@ export const ExploreAllView: React.FC<{ onNavigate: (route: string) => void }> =
           <div className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
             <div className="relative aspect-[16/9] bg-slate-100">
               {((selectedService.images || []).filter(Boolean)[0] || selectedService.imageUrl) && (
-                <img src={(selectedService.images || []).filter(Boolean)[0] || selectedService.imageUrl} alt={selectedService.title || selectedService.name} className="h-full w-full object-cover" />
+                <ImageWithShimmer src={(selectedService.images || []).filter(Boolean)[0] || selectedService.imageUrl} alt={selectedService.title || selectedService.name} className="absolute inset-0" />
               )}
               <button type="button" onClick={() => setSelectedService(null)} className="absolute right-3 top-3 rounded-full bg-black/60 p-2 text-white" aria-label="Close service details"><X className="h-4 w-4" /></button>
             </div>
@@ -408,7 +462,9 @@ export const ExploreAllView: React.FC<{ onNavigate: (route: string) => void }> =
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/85 p-4" role="dialog" aria-modal="true" aria-label={selectedGalleryItem.title} onClick={() => setSelectedGalleryItem(null)}>
           <div className="relative max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
             <button type="button" onClick={() => setSelectedGalleryItem(null)} className="absolute right-3 top-3 z-10 rounded-full bg-black/60 p-2 text-white" aria-label="Close gallery details"><X className="h-4 w-4" /></button>
-            <img src={selectedGalleryItem.images?.[0] || selectedGalleryItem.mediaUrl || selectedGalleryItem.url} alt={selectedGalleryItem.title} className="max-h-[65vh] w-full bg-slate-950 object-contain" />
+            <div className="relative max-h-[65vh] min-h-48 w-full bg-slate-950">
+              <ImageWithShimmer src={selectedGalleryItem.images?.[0] || selectedGalleryItem.mediaUrl || selectedGalleryItem.url} alt={selectedGalleryItem.title} className="absolute inset-0" imageClassName="!object-contain" />
+            </div>
             <div className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5">
               <div><p className="text-xs font-semibold uppercase tracking-wide text-blue-700">{selectedGalleryItem.category || selectedGalleryItem.tag}</p><h2 className="mt-1 font-semibold text-slate-900">{selectedGalleryItem.title}</h2><p className="mt-1 text-xs text-slate-500">{selectedGalleryItem.caption}</p></div>
               <button type="button" onClick={() => openWhatsAppInquiry({ title: selectedGalleryItem.title, category: selectedGalleryItem.category || selectedGalleryItem.tag, itemId: selectedGalleryItem.id, divisionName: String(selectedGalleryItem.division), description: selectedGalleryItem.caption, type: 'gallery' })} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-700"><MessageCircle className="h-3.5 w-3.5" />Ask on WhatsApp</button>
