@@ -193,8 +193,17 @@ export const ExploreAllView: React.FC<{
     const galleryItems: BrowseItem[] = gallery
       .filter((item) => item.status !== 'hidden')
       .map((item) => {
-        const images = (item.images || []).filter(Boolean).slice(0, 3);
-        const image = images[0] || item.mediaUrl || item.url || item.thumbnailUrl || '';
+        const raw = item as FirestoreGallery & Record<string, unknown>;
+        const images = getImageSourceCandidates(
+          item.images,
+          item.mediaUrl,
+          item.url,
+          item.thumbnailUrl,
+          raw.image,
+          raw.galleryImages,
+          raw.media
+        ).slice(0, 5);
+        const image = images[0] || '';
         const category = item.category || item.tag || 'Gallery';
         const searchableText = [
           item.title, item.caption, item.sku, category,

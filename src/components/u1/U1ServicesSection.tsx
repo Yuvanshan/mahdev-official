@@ -26,6 +26,7 @@ import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
 import { CrossfadeImage } from '../common/CrossfadeImage';
+import { getImageSourceCandidates } from '../../utils/imageSources';
 
 interface U1ServicesSectionProps {
   onBookService: (service: U1Service) => void;
@@ -78,23 +79,35 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
         .filter((s) => isSameDivision(s.division, 'u1') || isSameDivision((s as any).divisionId, 'u1'))
         .sort((a, b) => (a.order ?? (a as any).sortOrder ?? 0) - (b.order ?? (b as any).sortOrder ?? 0));
       if (u1Services.length > 0) {
-        return u1Services.map((s) => ({
-          id: s.id,
-          name: s.name,
-          category: (((s as any).category && (s as any).category !== 'all' ? (s as any).category : 'media') as 'media' | 'portrait' | 'commercial' | 'print'),
-          tagline: (s as any).tagline || s.description?.slice(0, 60) || '',
-          description: s.description || '',
-          detailedDescription: (s as any).detailedDescription || s.description || '',
-          startingPrice: typeof s.price === 'number' || typeof (s as any).startingPrice === 'number'
-            ? formatCurrency(s.price || (s as any).startingPrice || 0, 'LKR')
-            : String(s.price || 'Rs. 50,000'),
-          turnaround: (s as any).turnaround || (s as any).leadTime || '7-10 Days',
-          deliverables: (s as any).deliverables || s.features || ['High-Res Digital Master Gallery'],
-          imageUrl: s.images && s.images.length > 0 ? s.images[0] : (s as any).imageUrl || '',
-          gallery: s.images || [],
-          badge: s.badge || 'Popular Studio Package',
-          popular: (s as any).popular ?? true,
-        }));
+        return u1Services.map((s) => {
+          const raw = s as typeof s & Record<string, unknown>;
+          const images = getImageSourceCandidates(
+            s.images,
+            s.imageUrl,
+            raw.image,
+            raw.galleryImages,
+            raw.media,
+            raw.thumbnailUrl,
+            raw.url
+          );
+          return {
+            id: s.id,
+            name: s.name,
+            category: (((s as any).category && (s as any).category !== 'all' ? (s as any).category : 'media') as 'media' | 'portrait' | 'commercial' | 'print'),
+            tagline: (s as any).tagline || s.description?.slice(0, 60) || '',
+            description: s.description || '',
+            detailedDescription: (s as any).detailedDescription || s.description || '',
+            startingPrice: typeof s.price === 'number' || typeof (s as any).startingPrice === 'number'
+              ? formatCurrency(s.price || (s as any).startingPrice || 0, 'LKR')
+              : String(s.price || 'Rs. 50,000'),
+            turnaround: (s as any).turnaround || (s as any).leadTime || '7-10 Days',
+            deliverables: (s as any).deliverables || s.features || ['High-Res Digital Master Gallery'],
+            imageUrl: images[0] || '',
+            gallery: images,
+            badge: s.badge || 'Popular Studio Package',
+            popular: (s as any).popular ?? true,
+          };
+        });
       }
     }
     return [];

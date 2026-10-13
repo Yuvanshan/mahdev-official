@@ -23,6 +23,7 @@ import { CmsPackage } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
 import { formatCurrency } from '../../utils/currency';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
+import { getImageSourceCandidates } from '../../utils/imageSources';
 
 interface U1PackagesSectionProps {
   onBookPackage: (pkg: U1Package) => void;
@@ -72,25 +73,37 @@ export const U1PackagesSection: React.FC<U1PackagesSectionProps> = ({ onBookPack
           ((s as any).category === 'packages' || (s as any).type === 'package')
       );
       if (u1Packages.length > 0) {
-        return u1Packages.map((s) => ({
-          id: s.id,
-          name: s.name,
-          tier: (s as any).tier || 'Studio Package',
-          tagline: (s as any).tagline || s.description?.slice(0, 60) || '',
-          description: s.description || '',
-          duration: (s as any).duration || (s as any).coverageHours || '8-10 Hours Coverage',
-          price: typeof s.price === 'number'
-            ? formatCurrency(s.price, 'LKR')
-            : String(s.price || '').replace(/\bUSD\b|\$/gi, 'Rs.'),
-          priceNote: (s as any).priceNote || 'Package rate',
-          deliverables: (s as any).deliverables || s.features || [],
-          imageUrl: s.images && s.images.length > 0 ? s.images[0] : (s as any).imageUrl || '',
-          gallery: s.images || [],
-          popular: !!(s as any).popular,
-          badge: s.badge || 'Studio Package',
-          idealFor: (s as any).idealFor || 'Weddings & Cinema Productions',
-          locationType: (s as any).locationType || 'Studio & On-Location',
-        }));
+        return u1Packages.map((s) => {
+          const raw = s as unknown as Record<string, unknown>;
+          const gallery = getImageSourceCandidates(
+            s.images,
+            s.imageUrl,
+            raw.image,
+            raw.galleryImages,
+            raw.media,
+            raw.thumbnailUrl,
+            raw.url
+          );
+          return {
+            id: s.id,
+            name: s.name,
+            tier: (s as any).tier || 'Studio Package',
+            tagline: (s as any).tagline || s.description?.slice(0, 60) || '',
+            description: s.description || '',
+            duration: (s as any).duration || (s as any).coverageHours || '8-10 Hours Coverage',
+            price: typeof s.price === 'number'
+              ? formatCurrency(s.price, 'LKR')
+              : String(s.price || '').replace(/\bUSD\b|\$/gi, 'Rs.'),
+            priceNote: (s as any).priceNote || 'Package rate',
+            deliverables: (s as any).deliverables || s.features || [],
+            imageUrl: gallery[0] || '',
+            gallery,
+            popular: !!(s as any).popular,
+            badge: s.badge || 'Studio Package',
+            idealFor: (s as any).idealFor || 'Weddings & Cinema Productions',
+            locationType: (s as any).locationType || 'Studio & On-Location',
+          };
+        });
       }
     }
     return [];

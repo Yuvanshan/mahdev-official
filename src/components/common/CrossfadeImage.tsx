@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
 
 interface CrossfadeImageProps {
   src: string;
@@ -52,7 +51,7 @@ const CrossfadeSlide: React.FC<{
           className="image-shimmer absolute inset-0 z-10"
         />
       )}
-      <motion.img
+      <img
         ref={imageRef}
         src={src}
         alt={alt}
@@ -60,10 +59,6 @@ const CrossfadeSlide: React.FC<{
         decoding={decoding}
         onLoad={handleLoad}
         onError={handleError}
-        initial={false}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         className={`absolute inset-0 h-full w-full object-cover ${className}`}
       />
     </>
@@ -81,17 +76,15 @@ export const CrossfadeImage: React.FC<CrossfadeImageProps> = ({
   onError,
 }) => (
   <div className={`overflow-hidden ${className}`}>
-    <AnimatePresence initial={false} mode="sync">
-      <CrossfadeSlide
-        key={src}
-        src={src}
-        alt={alt}
-        loading={loading}
-        decoding={decoding}
-        onLoad={onLoad}
-        onError={onError}
-        className={imageClassName}
-      />
-    </AnimatePresence>
+    <CrossfadeSlide
+      key={src}
+      src={src}
+      alt={alt}
+      loading={loading}
+      decoding={decoding}
+      onLoad={onLoad}
+      onError={onError}
+      className={imageClassName}
+    />
   </div>
 );
