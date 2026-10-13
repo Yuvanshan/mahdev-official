@@ -82,6 +82,7 @@ export class TursoApiError extends Error {
 const database: TursoDatabase = { type: 'turso' };
 // These HTTP-backed subscriptions each issue Turso reads, so avoid tight polling.
 const SNAPSHOT_POLL_INTERVAL_MS = 30000;
+const DATABASE_REQUEST_TIMEOUT_MS = 12000;
 const inFlightReads = new Map<string, Promise<ApiResponse<unknown>>>();
 
 function normalizeSegments(segments: string[]): string[] {
@@ -201,40 +202,60 @@ async function request<T>(
     if (currentUser) {
       headers.Authorization = `Bearer ${await currentUser.getIdToken()}`;
     }
-    let response: Response;
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(
+      () => controller.abort(),
+      DATABASE_REQUEST_TIMEOUT_MS
+    );
     try {
-      response = await fetch('/api/database', {
+      const response = await fetch('/api/database', {
         method: 'POST',
         headers,
         body: JSON.stringify({ action, ...payload }),
+        signal: controller.signal,
       });
+      if (response.status === 413) {
+        throw new Error(
+          'The database request is too large for the hosting platform. Upload media to storage first and save its URL instead of embedding image data.'
+        );
+      }
+      const responseText = await response.text();
+      let result: ApiResponse<T>;
+      try {
+        result = JSON.parse(responseText) as ApiResponse<T>;
+      } catch {
+        throw new Error(
+          `Turso API returned a non-JSON response (HTTP ${response.status}). Check the Vercel API route configuration.`
+        );
+      }
+      if (!response.ok) {
+        throw new TursoApiError(
+          result.error || `Turso request failed (${response.status}).`,
+          response.status
+        );
+      }
+      return result;
     } catch (error) {
+      if (error instanceof TursoApiError) throw error;
+      if (controller.signal.aborted) {
+        throw new Error(
+          `The database API request timed out after ${DATABASE_REQUEST_TIMEOUT_MS / 1000} seconds. Check the database service and retry.`
+        );
+      }
+      if (
+        error instanceof Error &&
+        (error.message.startsWith('The database request is too large') ||
+          error.message.startsWith('Turso API returned a non-JSON response'))
+      ) {
+        throw error;
+      }
       const detail = error instanceof Error ? ` ${error.message}` : '';
       throw new Error(
         `Cannot reach the database API at /api/database. Check that the backend/API is deployed and reachable, then verify its Turso configuration.${detail}`
       );
+    } finally {
+      window.clearTimeout(timeoutId);
     }
-    if (response.status === 413) {
-      throw new Error(
-        'The database request is too large for the hosting platform. Upload media to storage first and save its URL instead of embedding image data.'
-      );
-    }
-    const responseText = await response.text();
-    let result: ApiResponse<T>;
-    try {
-      result = JSON.parse(responseText) as ApiResponse<T>;
-    } catch {
-      throw new Error(
-        `Turso API returned a non-JSON response (HTTP ${response.status}). Check the Vercel API route configuration.`
-      );
-    }
-    if (!response.ok) {
-      throw new TursoApiError(
-        result.error || `Turso request failed (${response.status}).`,
-        response.status
-      );
-    }
-    return result;
   })();
 
   if (readKey) {

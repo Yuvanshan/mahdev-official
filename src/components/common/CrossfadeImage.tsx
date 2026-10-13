@@ -66,8 +66,12 @@ const CrossfadeSlide: React.FC<{
         onError={handleError}
         initial={{ opacity: 0 }}
         animate={{ opacity: isLoaded ? 1 : 0 }}
+        whileHover={{ scale: 1.035 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.45, ease: 'easeInOut' }}
+        transition={{
+          opacity: { duration: 0.45, ease: 'easeInOut' },
+          scale: { duration: 0.5, ease: 'easeOut' },
+        }}
         className={`absolute inset-0 h-full w-full object-cover ${className}`}
       />
     </>

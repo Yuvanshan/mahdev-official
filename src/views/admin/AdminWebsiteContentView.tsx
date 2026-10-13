@@ -137,6 +137,27 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
     }
   };
 
+  const handleSaveTeam = async () => {
+    const hasIncompleteMember = aboutContent.team.some(
+      (member) => !member.name.trim() || !member.title.trim() || !member.imageUrl.trim()
+    );
+    if (hasIncompleteMember) {
+      addToast('Each team member needs a name, designation, and picture before saving.', 'error');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await websiteContentService.saveAboutUsContent({ team: aboutContent.team });
+      addToast('Team members saved and published to the About Us page.', 'success');
+    } catch (err: any) {
+      console.error('Failed to save About Us team:', err);
+      addToast(err?.message || 'Failed to save team members', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Save Legal Draft
   const handleSaveLegalDraft = async (type: 'terms' | 'privacy') => {
     setIsSaving(true);
@@ -1027,26 +1048,37 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
                   <div className="flex items-center justify-between border-b pb-2">
                     <div>
                       <h3 className="text-base font-bold text-slate-900">Meet Our Team</h3>
-                      <p className="mt-1 text-xs text-slate-500">Manage the team shown on the About Us page.</p>
+                      <p className="mt-1 text-xs text-slate-500">Manage and publish team members to the About Us page.</p>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        const member: AboutTeamMember = {
-                          id: `team-${Date.now()}`,
-                          name: '',
-                          title: '',
-                          imageUrl: '',
-                          order: aboutContent.team.length + 1,
-                          enabled: true,
-                        };
-                        setAboutContent({ ...aboutContent, team: [...aboutContent.team, member] });
-                      }}
-                      leftIcon={<Plus className="w-3.5 h-3.5" />}
-                    >
-                      Add Team Member
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const member: AboutTeamMember = {
+                            id: `team-${Date.now()}`,
+                            name: '',
+                            title: '',
+                            imageUrl: '',
+                            order: aboutContent.team.length + 1,
+                            enabled: true,
+                          };
+                          setAboutContent({ ...aboutContent, team: [...aboutContent.team, member] });
+                        }}
+                        leftIcon={<Plus className="w-3.5 h-3.5" />}
+                      >
+                        Add Team Member
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={handleSaveTeam}
+                        isLoading={isSaving}
+                        leftIcon={<Save className="h-3.5 w-3.5" />}
+                      >
+                        Save Team
+                      </Button>
+                    </div>
                   </div>
 
                   {aboutContent.team.length === 0 ? (
@@ -1063,7 +1095,7 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
                           <div className="flex items-start gap-3">
                             <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
                               {member.imageUrl ? (
-                                <img src={member.imageUrl} alt="" className="h-full w-full object-cover" />
+                                <img src={member.imageUrl} alt="" className="h-full w-full object-contain" />
                               ) : (
                                 <div className="flex h-full items-center justify-center text-slate-400">
                                   <ImageIcon className="h-6 w-6" />

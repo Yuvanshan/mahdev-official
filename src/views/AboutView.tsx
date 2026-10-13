@@ -418,16 +418,25 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
                   </div>
                 </ScrollReveal>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+                <div
+                  aria-label="Meet the MAHDEV team"
+                  className="flex snap-x snap-mandatory gap-5 overflow-x-auto overscroll-x-contain scroll-smooth pb-4"
+                  tabIndex={0}
+                >
                   {sortedTeam.map((member, idx) => (
-                    <ScrollReveal key={member.id} direction="up" delay={idx * 0.1}>
-                      <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs">
-                        <div className="aspect-[4/3] bg-slate-100">
+                    <ScrollReveal
+                      key={member.id}
+                      direction="up"
+                      delay={idx * 0.1}
+                      className="!w-[min(82vw,340px)] !max-w-none !min-w-0 shrink-0 snap-start"
+                    >
+                      <article className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs">
+                        <div className="aspect-[4/3] overflow-hidden bg-slate-100">
                           <img
                             src={member.imageUrl}
                             alt={`${member.name}, ${member.title}`}
                             loading="lazy"
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.035] motion-reduce:transition-none"
                           />
                         </div>
                         <div className="p-5 sm:p-6">
