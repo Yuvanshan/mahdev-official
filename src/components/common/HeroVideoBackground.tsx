@@ -11,7 +11,7 @@ interface HeroVideoBackgroundProps {
   overlayGradient?: 'default' | 'electric' | 'subtle';
   className?: string;
   onVideoReady?: () => void;
-  enableSoundControl?: boolean;
+  enableAutomaticAudio?: boolean;
 }
 
 // Global safety guard ensuring onVideoReady identifier is never undefined across browser contexts or iframe messages
@@ -45,7 +45,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
   overlayGradient = 'default',
   className = '',
   onVideoReady,
-  enableSoundControl = false,
+  enableAutomaticAudio = false,
 }) => {
   const [videoFailed, setVideoFailed] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
@@ -137,7 +137,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
 
   // Force HTML5 video autoplay reliably across all browser policies
   useEffect(() => {
-    if (!hasVideo || isEmbedVideo) return;
+    if (!hasVideo || isEmbedVideo || enableAutomaticAudio) return;
 
     const videoEl = videoRef.current;
     if (!videoEl) return;
@@ -152,7 +152,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
         console.debug('Autoplay deferred until playback is allowed:', error);
       }
     );
-  }, [hasVideo, isEmbedVideo, resolvedSrc, handleVideoReady]);
+  }, [hasVideo, isEmbedVideo, resolvedSrc, handleVideoReady, enableAutomaticAudio]);
 
   // YouTube embed URL with required parameters for autoplay & loop
   const youTubeEmbedSrc = getYouTubeEmbedUrl(trimmedVideo, {
@@ -256,11 +256,10 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
       {/* 4. Electric Blue & High Contrast Shading Overlay (Always on top of media, under content) */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#061033] via-[#061033]/85 sm:via-[#061033]/70 md:via-[#061033]/45 to-transparent pointer-events-none z-10" />
       <div className="absolute inset-0 bg-gradient-to-t from-[#061033] via-transparent to-[#0052FF]/10 pointer-events-none z-10" />
-      {enableSoundControl && (
+      {enableAutomaticAudio && (
         <HeroVideoControls
           heroRef={backgroundRef}
           videoRef={videoRef}
-          label={title}
         />
       )}
     </div>

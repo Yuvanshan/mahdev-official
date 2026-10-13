@@ -44,7 +44,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       <HeroVideoControls
         heroRef={heroRef}
         videoRef={videoRef}
-        label="Mahdev landing"
       />
       <div
         aria-hidden="true"

@@ -21,7 +21,7 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
       <HeroVideoBackground
         videoUrl="/assets/hero_main.mp4?v=2"
         title="SWS Luxury Event Decor & Rentals"
-        enableSoundControl
+        enableAutomaticAudio
       />
 
       {/* ================= HERO CONTENT OVER VIDEO ON LEFT SIDE ================= */}
