@@ -1140,8 +1140,8 @@ export const AdminServicesView: React.FC = () => {
               <Button variant="outline" size="sm" type="button" onClick={() => setIsEditorOpen(false)}>
                 Cancel
               </Button>
-              <Button variant="primary" size="sm" type="submit" disabled={isSaving}>
-                {isSaving ? 'Saving...' : editingService ? 'Update Service' : 'Create Service'}
+              <Button variant="primary" size="sm" type="submit" disabled={isSaving || uploadProgress !== null}>
+                {uploadProgress !== null ? 'Finish Uploading...' : isSaving ? 'Saving...' : editingService ? 'Update Service' : 'Create Service'}
               </Button>
             </div>
           </div>

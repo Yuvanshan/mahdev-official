@@ -1026,8 +1026,8 @@ export const AdminGalleryView: React.FC = () => {
               <Button variant="outline" size="sm" type="button" onClick={() => setIsEditorOpen(false)}>
                 Cancel
               </Button>
-              <Button variant="primary" size="sm" type="submit" disabled={isSaving}>
-                {isSaving ? 'Saving...' : editingItem ? 'Update Asset' : 'Add Asset'}
+              <Button variant="primary" size="sm" type="submit" disabled={isSaving || uploadProgress !== null}>
+                {uploadProgress !== null ? 'Finish Uploading...' : isSaving ? 'Saving...' : editingItem ? 'Update Asset' : 'Add Asset'}
               </Button>
             </div>
           </div>

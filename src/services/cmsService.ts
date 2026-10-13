@@ -328,6 +328,12 @@ class CmsService {
     } else if (entity === 'services') {
       mapped = rawItems.map((s) => {
         const divId = s.divisionId || s.division || 'sws';
+        const serviceImages = (Array.isArray(s.images) ? s.images : [])
+          .filter((image: unknown): image is string => typeof image === 'string' && Boolean(image.trim()))
+          .slice(0, 5);
+        const resolvedImages = serviceImages.length > 0
+          ? serviceImages
+          : (s.imageUrl ? [s.imageUrl] : []);
         const divName =
           s.divisionName ||
           (divId === 'u1' || divId === 'u1-studio'
@@ -347,8 +353,8 @@ class CmsService {
           title: s.title || s.name,
           name: s.name || s.title,
           description: s.description || '',
-          imageUrl: s.imageUrl || (s.images && s.images[0]) || '',
-          images: s.images || (s.imageUrl ? [s.imageUrl] : []),
+          imageUrl: s.imageUrl || resolvedImages[0] || '',
+          images: resolvedImages,
           features: s.features || [],
           iconName: s.iconName || 'Sparkles',
           popular: Boolean(s.popular),
@@ -454,27 +460,33 @@ class CmsService {
         updatedAt: p.updatedAt || now,
       }));
     } else if (entity === 'gallery') {
-      mapped = rawItems.map((g) => ({
-        id: g.id,
-        sku: g.sku || (g as any).code || undefined,
-        divisionId: g.division || (g as any).divisionId || 'sws',
-        title: g.title || 'Gallery Media',
-        category: (g as any).category || g.tag || 'General',
-        type: g.type || 'image',
-        mediaType: g.type || 'image',
-        mediaUrl: g.url || (g as any).mediaUrl || (g as any).imageUrl || '',
-        url: g.url || (g as any).mediaUrl || (g as any).imageUrl || '',
-        thumbnailUrl: g.thumbnailUrl || g.url || (g as any).mediaUrl || (g as any).imageUrl || '',
-        caption: g.caption || '',
-        aspectRatio: (g as any).aspectRatio || '16:9',
-        tags: (g as any).tags || (g.tag ? [g.tag] : []),
-        sortOrder: g.order || (g as any).sortOrder || 1,
-        isFeatured: Boolean(g.featured || (g as any).isFeatured),
-        isActive: (g as any).isActive !== false && g.status !== 'inactive',
-        isDeleted: g.status === 'inactive' && (g as any).isActive === false,
-        createdAt: g.createdAt || now,
-        updatedAt: g.updatedAt || now,
-      }));
+      mapped = rawItems.map((g) => {
+        const images = (Array.isArray(g.images) ? g.images : []).filter(Boolean).slice(0, 3);
+        const primaryImage = images[0] || g.url || (g as any).mediaUrl || (g as any).imageUrl || '';
+        const resolvedImages = images.length > 0 ? images : (primaryImage ? [primaryImage] : []);
+        return {
+          id: g.id,
+          sku: g.sku || (g as any).code || undefined,
+          divisionId: g.division || (g as any).divisionId || 'sws',
+          title: g.title || 'Gallery Media',
+          category: (g as any).category || g.tag || 'General',
+          type: g.type || 'image',
+          mediaType: g.type || 'image',
+          mediaUrl: primaryImage,
+          url: primaryImage,
+          images: resolvedImages,
+          thumbnailUrl: g.thumbnailUrl || primaryImage,
+          caption: g.caption || '',
+          aspectRatio: (g as any).aspectRatio || '16:9',
+          tags: (g as any).tags || (g.tag ? [g.tag] : []),
+          sortOrder: g.order || (g as any).sortOrder || 1,
+          isFeatured: Boolean(g.featured || (g as any).isFeatured),
+          isActive: (g as any).isActive !== false && g.status !== 'inactive',
+          isDeleted: g.status === 'inactive' && (g as any).isActive === false,
+          createdAt: g.createdAt || now,
+          updatedAt: g.updatedAt || now,
+        };
+      });
     } else if (entity === 'milestones') {
       mapped = rawItems.map((m) => ({
         id: m.id,
@@ -1081,6 +1093,13 @@ class CmsService {
           seo: item.seo,
         });
       } else if (entity === 'services') {
+        const serviceImages = (Array.isArray(item.images) ? item.images : [])
+          .filter((image: unknown): image is string => typeof image === 'string' && Boolean(image.trim()))
+          .slice(0, 5);
+        const primaryImage = item.imageUrl || serviceImages[0] || '';
+        const orderedServiceImages = primaryImage
+          ? [primaryImage, ...serviceImages.filter((image: string) => image !== primaryImage)]
+          : serviceImages;
         await firestoreServicesService.saveService(item.id, {
           id: item.id,
           divisionId: item.divisionId || item.division || 'sws',
@@ -1090,8 +1109,8 @@ class CmsService {
           title: item.title || item.name,
           slug: item.slug || item.id,
           description: item.description || item.shortDescription || '',
-          imageUrl: item.imageUrl || (item.images && item.images[0]) || '',
-          images: item.imageUrl ? [item.imageUrl] : item.images || [],
+          imageUrl: primaryImage,
+          images: orderedServiceImages,
           price: item.startingPrice || item.price || 0,
           startingPrice: item.startingPrice || item.price || 0,
           currency: item.currency || 'USD',
@@ -1167,14 +1186,20 @@ class CmsService {
           status: item.isDeleted ? 'draft' : (item.isActive === false ? 'draft' : 'published'),
         });
       } else if (entity === 'gallery') {
+        const galleryImages = (Array.isArray(item.images) ? item.images : [])
+          .filter((image: unknown): image is string => typeof image === 'string' && Boolean(image.trim()))
+          .slice(0, 3);
+        const primaryImage = galleryImages[0] || item.mediaUrl || item.url || item.imageUrl || '';
         await firestoreGalleryService.saveGallery(item.id, {
           id: item.id,
           sku: item.sku || undefined,
           title: item.title,
           division: item.divisionId || item.division || 'sws',
           type: item.type || item.mediaType || 'image',
-          url: item.url || item.mediaUrl || item.imageUrl || '',
-          thumbnailUrl: item.thumbnailUrl || item.url || item.mediaUrl || '',
+          url: primaryImage,
+          mediaUrl: primaryImage,
+          images: galleryImages.length > 0 ? galleryImages : (primaryImage ? [primaryImage] : []),
+          thumbnailUrl: item.thumbnailUrl || primaryImage,
           caption: item.caption || '',
           aspectRatio: item.aspectRatio || '16:9',
           tag: item.category || (Array.isArray(item.tags) ? item.tags[0] : (item.tag || 'General')),
