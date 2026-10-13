@@ -48,6 +48,15 @@ export interface CompanyLocationItem {
   enabled: boolean;
 }
 
+export interface AboutTeamMember {
+  id: string;
+  name: string;
+  title: string;
+  imageUrl: string;
+  order: number;
+  enabled: boolean;
+}
+
 export interface AboutUsContent {
   id: string;
   hero: {
@@ -73,6 +82,7 @@ export interface AboutUsContent {
   values: CoreValueItem[];
   divisions: AboutDivisionItem[];
   timeline: TimelineMilestoneItem[];
+  team: AboutTeamMember[];
   locations: CompanyLocationItem[];
   cta: {
     title: string;

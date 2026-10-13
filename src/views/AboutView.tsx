@@ -98,6 +98,10 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
     .filter((t) => t.enabled)
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
+  const sortedTeam = [...(content.team || [])]
+    .filter((member) => member.enabled && member.name && member.title && member.imageUrl)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+
   const sortedLocations = [...(content.locations || [])]
     .filter((l) => l.enabled)
     .sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -399,7 +403,48 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
             </div>
           </section>
 
-          {/* 7. OUR LOCATIONS */}
+          {/* 7. MEET OUR TEAM */}
+          {sortedTeam.length > 0 && (
+            <section className="py-16 sm:py-20 bg-white border-t border-slate-200">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <ScrollReveal direction="up">
+                  <div className="max-w-3xl mb-12">
+                    <H2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-slate-900 tracking-tight">
+                      Meet Our Team
+                    </H2>
+                    <p className="mt-3 text-sm sm:text-base text-slate-600">
+                      Meet the leadership behind MAHDEV.
+                    </p>
+                  </div>
+                </ScrollReveal>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+                  {sortedTeam.map((member, idx) => (
+                    <ScrollReveal key={member.id} direction="up" delay={idx * 0.1}>
+                      <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs">
+                        <div className="aspect-[4/3] bg-slate-100">
+                          <img
+                            src={member.imageUrl}
+                            alt={`${member.name}, ${member.title}`}
+                            loading="lazy"
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        <div className="p-5 sm:p-6">
+                          <h3 className="text-lg font-display font-bold text-slate-900">
+                            {member.name}
+                          </h3>
+                          <p className="mt-1 text-sm font-semibold text-blue-600">{member.title}</p>
+                        </div>
+                      </article>
+                    </ScrollReveal>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* 8. OUR LOCATIONS */}
           <section className="py-16 sm:py-20 bg-slate-50 border-t border-slate-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <ScrollReveal direction="up">

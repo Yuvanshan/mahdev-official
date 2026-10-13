@@ -458,7 +458,7 @@ class FirestoreServiceRepository {
         slug: 'sws',
         route: '/sws',
         description: 'Elite corporate summits, theatrical galas, luxury weddings, and 360° technical staging.',
-        logo: '/assets/images/sws_logo.png',
+        logo: '/assets/images/sws_logo.jpeg',
         hero: {
           title: 'Orchestrating Extraordinary Experiences',
           subtitle: 'Comprehensive Event Planning, Sound, Lighting & Stage Architecture',
@@ -481,7 +481,7 @@ class FirestoreServiceRepository {
         slug: 'u1',
         route: '/u1',
         description: 'Cinema-grade cinematography, high-fashion photography, aerial drone capture, and post-production.',
-        logo: '/assets/images/u1_logo.png',
+        logo: '/assets/images/u1_logo.jpeg',
         hero: {
           title: 'Visual Storytelling at Cinematic Scale',
           subtitle: 'RED & ARRI Capture, Studio Portraits, Commercial Ads & Color Grading',

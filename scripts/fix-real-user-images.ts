@@ -44,35 +44,35 @@ async function main() {
     }
   }
 
-  console.log('\n=== Step 2: Restore Division Logos to Official Vector SVGs ===');
+  console.log('\n=== Step 2: Assign SWS and U1 Division Logos ===');
   const swsRef = doc(db, 'divisions', 'sws');
   const swsMgmtRef = doc(db, 'divisions', 'sws-event-management');
   const u1Ref = doc(db, 'divisions', 'u1');
   const u1StudioRef = doc(db, 'divisions', 'u1-studio');
 
   await updateDoc(swsRef, {
-    logo: '/assets/images/sws_logo.svg',
-    logoUrl: '/assets/images/sws_logo.svg',
+    logo: '/assets/images/sws_logo.jpeg',
+    logoUrl: '/assets/images/sws_logo.jpeg',
   });
-  console.log('Updated sws logo in Firestore to /assets/images/sws_logo.svg');
+  console.log('Updated sws logo in Firestore to /assets/images/sws_logo.jpeg');
 
   await updateDoc(swsMgmtRef, {
-    logo: '/assets/images/sws_logo.svg',
-    logoUrl: '/assets/images/sws_logo.svg',
+    logo: '/assets/images/sws_logo.jpeg',
+    logoUrl: '/assets/images/sws_logo.jpeg',
   });
-  console.log('Updated sws-event-management logo in Firestore to /assets/images/sws_logo.svg');
+  console.log('Updated sws-event-management logo in Firestore to /assets/images/sws_logo.jpeg');
 
   await updateDoc(u1Ref, {
-    logo: '/assets/images/u1_logo.svg',
-    logoUrl: '/assets/images/u1_logo.svg',
+    logo: '/assets/images/u1_logo.jpeg',
+    logoUrl: '/assets/images/u1_logo.jpeg',
   });
-  console.log('Updated u1 logo in Firestore to /assets/images/u1_logo.svg');
+  console.log('Updated u1 logo in Firestore to /assets/images/u1_logo.jpeg');
 
   await updateDoc(u1StudioRef, {
-    logo: '/assets/images/u1_logo.svg',
-    logoUrl: '/assets/images/u1_logo.svg',
+    logo: '/assets/images/u1_logo.jpeg',
+    logoUrl: '/assets/images/u1_logo.jpeg',
   });
-  console.log('Updated u1-studio logo in Firestore to /assets/images/u1_logo.svg');
+  console.log('Updated u1-studio logo in Firestore to /assets/images/u1_logo.jpeg');
 
   console.log('\n=== Step 3: Copy Real Event Photos to Overwrite Duplicate Unsplash Files ===');
   // Birthday real photo:

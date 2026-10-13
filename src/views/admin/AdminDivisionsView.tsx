@@ -38,7 +38,7 @@ import { getRentalAssetCount } from '../../utils/assetMetrics';
 import { compressDataUrl } from '../../utils/imageOptimizer';
 import { uploadMediaAsset } from '../../services/mediaUploadService';
 import { resolveMediaUrl } from '../../services/firestoreMediaService';
-import { normalizeDivisionId } from '../../services/firestore/divisions';
+import { getDefaultDivisionLogo, normalizeDivisionId } from '../../services/firestore/divisions';
 
 export const AdminDivisionsView: React.FC = () => {
   const { saveDivision, refreshAll, divisions: firestoreDivisions, companySettings, products } = useFirestoreDataContext();
@@ -267,7 +267,8 @@ export const AdminDivisionsView: React.FC = () => {
         const resolvedImg = fsImg || dImg || '';
         const dLogo = d.logoUrl || (d as any).logo || '';
         const fsLogo = fsMatch.logoUrl || (fsMatch as any).logo || '';
-        const resolvedLogo = fsLogo || dLogo || `/assets/images/${normalizeDivisionId(d.divisionKey || d.id || '').shortId}_logo.svg`;
+        const resolvedLogo =
+          fsLogo || dLogo || getDefaultDivisionLogo(d.divisionKey || d.id || '');
 
         return {
           ...d,

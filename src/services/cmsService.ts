@@ -32,7 +32,12 @@ import {
   firestoreTrustedCompaniesService,
   firestoreTestimonialsService,
 } from './firestore';
-import { sortDivisions, normalizeDivisionId, getDefaultDivisions } from './firestore/divisions';
+import {
+  sortDivisions,
+  normalizeDivisionId,
+  getDefaultDivisionLogo,
+  getDefaultDivisions,
+} from './firestore/divisions';
 import { safeStorage } from '../utils/safeStorage';
 import { db } from '../lib/firebase';
 import { collection, deleteDoc, doc, onSnapshot, setDoc } from '../lib/tursoFirestore';
@@ -269,7 +274,7 @@ class CmsService {
         const resolvedLogo =
           d.logoUrl ||
           d.logo ||
-          `/assets/images/${divKey}_logo.svg`;
+          getDefaultDivisionLogo(divKey);
 
         return {
           id: shortId || d.id,
@@ -658,7 +663,7 @@ class CmsService {
           heroVideoUrl: d.heroVideoUrl || '',
           videoUrl: d.videoUrl || '',
           heroMediaType: d.heroMediaType || 'image',
-          logoUrl: d.logoUrl || `/assets/images/${d.id}_logo.svg`,
+          logoUrl: d.logoUrl || getDefaultDivisionLogo(d.id),
           contactEmail: d.contactEmail || 'info.mahdev.lk@gmail.com',
           iconName: d.iconName || 'Sparkles',
           stats: d.stats || [],

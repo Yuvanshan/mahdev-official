@@ -38,8 +38,8 @@ async function fix() {
 
   // Ensure the 5 canonical divisions have their clean routes & logos
   const canonicalFixes = [
-    { id: 'sws', logoUrl: '/assets/images/sws_logo.svg', logo: '/assets/images/sws_logo.svg', route: '/sws', slug: 'sws' },
-    { id: 'u1', logoUrl: '/assets/images/u1_logo.svg', logo: '/assets/images/u1_logo.svg', route: '/u1', slug: 'u1' },
+    { id: 'sws', logoUrl: '/assets/images/sws_logo.jpeg', logo: '/assets/images/sws_logo.jpeg', route: '/sws', slug: 'sws' },
+    { id: 'u1', logoUrl: '/assets/images/u1_logo.jpeg', logo: '/assets/images/u1_logo.jpeg', route: '/u1', slug: 'u1' },
     { id: 'it', logoUrl: '/assets/images/it_logo.svg', logo: '/assets/images/it_logo.svg', route: '/it', slug: 'it' },
     { id: 'travels', logoUrl: '/assets/images/travels_logo.svg', logo: '/assets/images/travels_logo.svg', route: '/travels', slug: 'travels' },
     { id: 'mart', logoUrl: '/assets/images/mart_logo.svg', logo: '/assets/images/mart_logo.svg', route: '/mart', slug: 'mart' },

@@ -239,6 +239,24 @@ export const DEFAULT_ABOUT_US_CONTENT: AboutUsContent = {
       enabled: true,
     },
   ],
+  team: [
+    {
+      id: 'ceo-yuvanshan-prabakaran',
+      name: 'Yuvanshan Prabakaran',
+      title: 'CEO 1',
+      imageUrl: '/assets/images/ceo1.jpeg',
+      order: 1,
+      enabled: true,
+    },
+    {
+      id: 'ceo-divaincy-fernando',
+      name: 'Divaincy Fernando',
+      title: 'CEO 2',
+      imageUrl: '/assets/images/ceo2.jpeg',
+      order: 2,
+      enabled: true,
+    },
+  ],
   cta: {
     title: "Let's Create Something Meaningful",
     description:
@@ -780,6 +798,7 @@ export const websiteContentService = {
           values: Array.isArray(data.values) && data.values.length > 0 ? data.values : DEFAULT_ABOUT_US_CONTENT.values,
           divisions: Array.isArray(data.divisions) && data.divisions.length > 0 ? data.divisions : DEFAULT_ABOUT_US_CONTENT.divisions,
           timeline: Array.isArray(data.timeline) && data.timeline.length > 0 ? data.timeline : DEFAULT_ABOUT_US_CONTENT.timeline,
+          team: Array.isArray(data.team) ? data.team : DEFAULT_ABOUT_US_CONTENT.team,
           locations: Array.isArray(data.locations) && data.locations.length > 0 ? data.locations : DEFAULT_ABOUT_US_CONTENT.locations,
         };
       }
@@ -835,6 +854,7 @@ export const websiteContentService = {
             values: Array.isArray(data.values) && data.values.length > 0 ? data.values : DEFAULT_ABOUT_US_CONTENT.values,
             divisions: Array.isArray(data.divisions) && data.divisions.length > 0 ? data.divisions : DEFAULT_ABOUT_US_CONTENT.divisions,
             timeline: Array.isArray(data.timeline) && data.timeline.length > 0 ? data.timeline : DEFAULT_ABOUT_US_CONTENT.timeline,
+            team: Array.isArray(data.team) ? data.team : DEFAULT_ABOUT_US_CONTENT.team,
             locations: Array.isArray(data.locations) && data.locations.length > 0 ? data.locations : DEFAULT_ABOUT_US_CONTENT.locations,
           });
         } else {

@@ -44,7 +44,7 @@ export const DIVISION_DOCUMENT_MAP: Record<string, {
     shortDescription: 'Premier luxury wedding and stage decorations, audio-visual production, mandap architecture, and concert staging.',
     description: DIVISIONS.sws.description,
     imageUrl: '',
-    logoUrl: '/assets/images/sws_logo.svg',
+    logoUrl: '/assets/images/sws_logo.jpeg',
     route: '/sws',
     order: 1,
   },
@@ -55,7 +55,7 @@ export const DIVISION_DOCUMENT_MAP: Record<string, {
     shortDescription: 'State-of-the-art photography, 8K cinematic films, wedding photojournalism, and studio fashion productions.',
     description: DIVISIONS.u1.description,
     imageUrl: '',
-    logoUrl: '/assets/images/u1_logo.svg',
+    logoUrl: '/assets/images/u1_logo.jpeg',
     route: '/u1',
     order: 2,
   },
@@ -119,6 +119,13 @@ export function getCanonicalDivisionId(id: string): string {
   return shortId;
 }
 
+export function getDefaultDivisionLogo(id: string): string {
+  const shortId = normalizeDivisionId(id).shortId;
+  return Object.values(DIVISION_DOCUMENT_MAP).find(
+    (division) => normalizeDivisionId(division.docId).shortId === shortId
+  )?.logoUrl || '';
+}
+
 /**
  * Check if two division IDs represent the exact same division
  * e.g., matches 'sws' and 'sws-event-management' and 'div-sws'
@@ -146,12 +153,24 @@ export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
     if (!item) continue;
     const { canonicalDocId, shortId } = normalizeDivisionId(item.id || item.slug || '');
     if (!shortId) continue;
+    const defaultLogo = getDefaultDivisionLogo(shortId);
+    const currentLogo = item.logoUrl || item.logo || '';
+    const localLogoPath = currentLogo.split(/[?#]/, 1)[0];
+    const usesLegacySwsLogo = shortId === 'sws' &&
+      ['/assets/images/sws_logo.svg', '/assets/images/sws_logo.png'].some((path) => localLogoPath.endsWith(path));
+    const usesLegacyU1Logo = shortId === 'u1' &&
+      ['/assets/images/u1_logo.svg', '/assets/images/u1_logo.png'].some((path) => localLogoPath.endsWith(path));
+    const logoUrl = usesLegacySwsLogo || usesLegacyU1Logo || !currentLogo
+      ? defaultLogo
+      : currentLogo;
     const normalized: FirestoreDivision = {
       ...item,
       id: shortId,
       slug: item.slug || shortId,
       canonicalDocId,
       divisionKey: item.divisionKey || shortId,
+      logoUrl,
+      logo: logoUrl,
     };
     const existing = mapByCanonical.get(shortId);
     if (!existing || new Date(normalized.updatedAt || 0) >= new Date(existing.updatedAt || 0)) {

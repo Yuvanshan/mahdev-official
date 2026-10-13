@@ -15,6 +15,7 @@ import { DisplayGalleryItem, matchGalleryItem, matchGalleryItemByTitle } from '.
 import { notificationService } from '../src/services/notificationService';
 import { getOfficeMapUrl, getMapSearchUrl } from '../src/config/company';
 import { getImageSourceCandidates } from '../src/utils/imageSources';
+import { sortDivisions } from '../src/services/firestore/divisions';
 
 interface TestStep {
   category: string;
@@ -45,6 +46,47 @@ async function runTestSuite() {
           'https://cdn.example.com/second.webp',
           'https://cdn.example.com/third.webp',
         ].join('|');
+      },
+    },
+    {
+      category: 'Customer Experience',
+      name: 'SWS and U1 divisions use their supplied logos',
+      fn: () => {
+        const divisions = sortDivisions([
+          {
+            id: 'sws',
+            name: 'SWS Event Management',
+            slug: 'sws',
+            description: '',
+            logoUrl: '/assets/images/sws_logo.svg',
+            createdAt: '',
+            updatedAt: '',
+          },
+          {
+            id: 'u1',
+            name: 'U1 Studio',
+            slug: 'u1',
+            description: '',
+            logo: '/assets/images/u1_logo.png',
+            createdAt: '',
+            updatedAt: '',
+          },
+          {
+            id: 'it',
+            name: 'Mahdev IT Solutions',
+            slug: 'it',
+            description: '',
+            logoUrl: 'https://cdn.example.com/it-custom.svg',
+            createdAt: '',
+            updatedAt: '',
+          },
+        ]);
+        const sws = divisions.find((division) => division.id === 'sws');
+        const u1 = divisions.find((division) => division.id === 'u1');
+        const it = divisions.find((division) => division.id === 'it');
+        return sws?.logoUrl === '/assets/images/sws_logo.jpeg' &&
+          u1?.logoUrl === '/assets/images/u1_logo.jpeg' &&
+          it?.logoUrl === 'https://cdn.example.com/it-custom.svg';
       },
     },
     // 1. ENVIRONMENT & CONFIGURATION INTEGRITY

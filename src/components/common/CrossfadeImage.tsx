@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 
 interface CrossfadeImageProps {
   src: string;
@@ -7,6 +8,7 @@ interface CrossfadeImageProps {
   imageClassName?: string;
   loading?: 'eager' | 'lazy';
   decoding?: 'async' | 'auto' | 'sync';
+  showShimmer?: boolean;
   onLoad?: () => void;
   onError?: () => void;
 }
@@ -17,16 +19,19 @@ const CrossfadeSlide: React.FC<{
   className: string;
   loading: 'eager' | 'lazy';
   decoding: 'async' | 'auto' | 'sync';
+  showShimmer: boolean;
   onLoad?: () => void;
   onError?: () => void;
-}> = ({ src, alt, className, loading, decoding, onLoad, onError }) => {
+}> = ({ src, alt, className, loading, decoding, showShimmer, onLoad, onError }) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [hasLoadedImage, setHasLoadedImage] = useState(false);
   const imageRef = useRef<HTMLImageElement>(null);
   const finishedRef = useRef(false);
 
   const handleLoad = () => {
     if (finishedRef.current) return;
     finishedRef.current = true;
+    setHasLoadedImage(true);
     setIsLoaded(true);
     onLoad?.();
   };
@@ -45,13 +50,13 @@ const CrossfadeSlide: React.FC<{
 
   return (
     <>
-      {!isLoaded && (
+      {showShimmer && !hasLoadedImage && !isLoaded && (
         <div
           aria-hidden="true"
           className="image-shimmer absolute inset-0 z-10"
         />
       )}
-      <img
+      <motion.img
         ref={imageRef}
         src={src}
         alt={alt}
@@ -59,6 +64,10 @@ const CrossfadeSlide: React.FC<{
         decoding={decoding}
         onLoad={handleLoad}
         onError={handleError}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isLoaded ? 1 : 0 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.45, ease: 'easeInOut' }}
         className={`absolute inset-0 h-full w-full object-cover ${className}`}
       />
     </>
@@ -72,19 +81,72 @@ export const CrossfadeImage: React.FC<CrossfadeImageProps> = ({
   imageClassName = '',
   loading = 'lazy',
   decoding = 'async',
+  showShimmer = true,
   onLoad,
   onError,
-}) => (
-  <div className={`overflow-hidden ${className}`}>
-    <CrossfadeSlide
-      key={src}
-      src={src}
-      alt={alt}
-      loading={loading}
-      decoding={decoding}
-      onLoad={onLoad}
-      onError={onError}
-      className={imageClassName}
-    />
-  </div>
-);
+}) => {
+  const [hasLoadedImage, setHasLoadedImage] = useState(false);
+  const [displayedSrc, setDisplayedSrc] = useState(src);
+  const onErrorRef = useRef(onError);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
+
+  useEffect(() => {
+    if (!src || src === displayedSrc) return;
+
+    let isCurrentRequest = true;
+    const preloader = new Image();
+    preloader.onload = () => {
+      if (isCurrentRequest) setDisplayedSrc(src);
+    };
+    preloader.onerror = () => {
+      if (isCurrentRequest) onErrorRef.current?.();
+    };
+    preloader.src = src;
+
+    if (preloader.complete && preloader.naturalWidth > 0) {
+      setDisplayedSrc(src);
+    }
+
+    return () => {
+      isCurrentRequest = false;
+      preloader.onload = null;
+      preloader.onerror = null;
+    };
+  }, [src, displayedSrc]);
+
+  const handleLoad = () => {
+    setHasLoadedImage(true);
+    onLoad?.();
+  };
+
+  return (
+    <div className={`overflow-hidden ${className}`}>
+      <AnimatePresence initial={false} mode="sync">
+        <motion.div
+          key={displayedSrc}
+          className="absolute inset-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.45, ease: 'easeInOut' }}
+        >
+          <CrossfadeSlide
+            src={displayedSrc}
+            alt={alt}
+            loading={loading}
+            decoding={decoding}
+            showShimmer={showShimmer && !hasLoadedImage}
+            onLoad={handleLoad}
+            onError={() => {
+              if (displayedSrc === src) onErrorRef.current?.();
+            }}
+            className={imageClassName}
+          />
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+};

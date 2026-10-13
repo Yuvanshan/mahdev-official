@@ -26,6 +26,7 @@ import {
   ChevronRight,
   Upload,
   RefreshCw,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -38,6 +39,7 @@ import {
   AboutDivisionItem,
   TimelineMilestoneItem,
   CompanyLocationItem,
+  AboutTeamMember,
 } from '../../types/websiteContent';
 import {
   websiteContentService,
@@ -45,6 +47,7 @@ import {
   DEFAULT_TERMS_CONTENT,
   DEFAULT_PRIVACY_CONTENT,
 } from '../../services/firestore/websiteContent';
+import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
 
 interface AdminWebsiteContentViewProps {
   initialTab?: 'about' | 'terms' | 'privacy';
@@ -63,8 +66,9 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
   // About Us State
   const [aboutContent, setAboutContent] = useState<AboutUsContent>(DEFAULT_ABOUT_US_CONTENT);
   const [aboutSubTab, setAboutSubTab] = useState<
-    'hero' | 'intro' | 'vision_mission' | 'values' | 'divisions' | 'timeline' | 'locations' | 'cta'
+    'hero' | 'intro' | 'vision_mission' | 'values' | 'divisions' | 'timeline' | 'team' | 'locations' | 'cta'
   >('hero');
+  const [teamImageMemberId, setTeamImageMemberId] = useState<string | null>(null);
 
   // Terms State
   const [termsDoc, setTermsDoc] = useState<LegalDocument>(DEFAULT_TERMS_CONTENT);
@@ -329,6 +333,7 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
                   { id: 'values', label: 'Core Values (4)' },
                   { id: 'divisions', label: 'Our Divisions (5)' },
                   { id: 'timeline', label: 'Company Journey' },
+                  { id: 'team', label: 'Meet Our Team' },
                   { id: 'locations', label: 'Our Locations (2)' },
                   { id: 'cta', label: 'Call to Action' },
                 ].map((sub) => (
@@ -1016,6 +1021,130 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
                 </div>
               )}
 
+              {/* Sub-tab: Team */}
+              {aboutSubTab === 'team' && (
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-4">
+                  <div className="flex items-center justify-between border-b pb-2">
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900">Meet Our Team</h3>
+                      <p className="mt-1 text-xs text-slate-500">Manage the team shown on the About Us page.</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const member: AboutTeamMember = {
+                          id: `team-${Date.now()}`,
+                          name: '',
+                          title: '',
+                          imageUrl: '',
+                          order: aboutContent.team.length + 1,
+                          enabled: true,
+                        };
+                        setAboutContent({ ...aboutContent, team: [...aboutContent.team, member] });
+                      }}
+                      leftIcon={<Plus className="w-3.5 h-3.5" />}
+                    >
+                      Add Team Member
+                    </Button>
+                  </div>
+
+                  {aboutContent.team.length === 0 ? (
+                    <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">
+                      No team members added yet.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {aboutContent.team.map((member) => (
+                        <div
+                          key={member.id}
+                          className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-3"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                              {member.imageUrl ? (
+                                <img src={member.imageUrl} alt="" className="h-full w-full object-cover" />
+                              ) : (
+                                <div className="flex h-full items-center justify-center text-slate-400">
+                                  <ImageIcon className="h-6 w-6" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <input
+                                type="text"
+                                aria-label="Team member name"
+                                placeholder="Full name"
+                                value={member.name}
+                                onChange={(event) => {
+                                  const team = aboutContent.team.map((item) =>
+                                    item.id === member.id ? { ...item, name: event.target.value } : item
+                                  );
+                                  setAboutContent({ ...aboutContent, team });
+                                }}
+                                className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm"
+                              />
+                              <input
+                                type="text"
+                                aria-label="Team member designation"
+                                placeholder="Designation / title"
+                                value={member.title}
+                                onChange={(event) => {
+                                  const team = aboutContent.team.map((item) =>
+                                    item.id === member.id ? { ...item, title: event.target.value } : item
+                                  );
+                                  setAboutContent({ ...aboutContent, team });
+                                }}
+                                className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setTeamImageMemberId(member.id)}
+                              leftIcon={<ImageIcon className="h-3.5 w-3.5" />}
+                            >
+                              {member.imageUrl ? 'Change Picture' : 'Add Picture'}
+                            </Button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const team = aboutContent.team.map((item) =>
+                                    item.id === member.id ? { ...item, enabled: !item.enabled } : item
+                                  );
+                                  setAboutContent({ ...aboutContent, team });
+                                }}
+                                className={`rounded px-2 py-1 text-xs font-bold ${
+                                  member.enabled
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : 'bg-slate-200 text-slate-500'
+                                }`}
+                              >
+                                {member.enabled ? 'Enabled' : 'Disabled'}
+                              </button>
+                              <button
+                                type="button"
+                                aria-label={`Delete ${member.name || 'team member'}`}
+                                onClick={() => {
+                                  const team = aboutContent.team.filter((item) => item.id !== member.id);
+                                  setAboutContent({ ...aboutContent, team });
+                                }}
+                                className="p-1 text-rose-500 hover:text-rose-700"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Sub-tab: Locations */}
               {aboutSubTab === 'locations' && (
                 <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-4">
@@ -1504,6 +1633,22 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
       )}
 
       {/* MULTI-DEVICE LIVE PREVIEW MODAL */}
+      {teamImageMemberId !== null && (
+        <MediaPickerModal
+          isOpen
+          onClose={() => setTeamImageMemberId(null)}
+          onSelect={(url) => {
+            const team = aboutContent.team.map((member) =>
+              member.id === teamImageMemberId ? { ...member, imageUrl: url } : member
+            );
+            setAboutContent({ ...aboutContent, team });
+          }}
+          currentUrl={aboutContent.team.find((member) => member.id === teamImageMemberId)?.imageUrl || ''}
+          title="Select Team Member Picture"
+          storageCategory="company"
+        />
+      )}
+
       {previewModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center p-2 sm:p-4 animate-in fade-in">
           {/* Modal Header Bar */}

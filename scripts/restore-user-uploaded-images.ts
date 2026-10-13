@@ -80,10 +80,10 @@ async function main() {
   console.log('\n=== Step 2: Restoring Real Division Vector Logos ===');
   // SWS and U1 division logos should be their official SVGs, not Unsplash photos
   const divUpdates = [
-    { id: 'sws', logo: '/assets/images/sws_logo.svg', logoUrl: '/assets/images/sws_logo.svg' },
-    { id: 'sws-event-management', logo: '/assets/images/sws_logo.svg', logoUrl: '/assets/images/sws_logo.svg' },
-    { id: 'u1', logo: '/assets/images/u1_logo.svg', logoUrl: '/assets/images/u1_logo.svg' },
-    { id: 'u1-studio', logo: '/assets/images/u1_logo.svg', logoUrl: '/assets/images/u1_logo.svg' },
+    { id: 'sws', logo: '/assets/images/sws_logo.jpeg', logoUrl: '/assets/images/sws_logo.jpeg' },
+    { id: 'sws-event-management', logo: '/assets/images/sws_logo.jpeg', logoUrl: '/assets/images/sws_logo.jpeg' },
+    { id: 'u1', logo: '/assets/images/u1_logo.jpeg', logoUrl: '/assets/images/u1_logo.jpeg' },
+    { id: 'u1-studio', logo: '/assets/images/u1_logo.jpeg', logoUrl: '/assets/images/u1_logo.jpeg' },
     { id: 'it', logo: '/assets/images/it_logo.svg', logoUrl: '/assets/images/it_logo.svg' },
     { id: 'it-solutions', logo: '/assets/images/it_logo.svg', logoUrl: '/assets/images/it_logo.svg' },
     { id: 'mahdev-travels', logo: '/assets/images/travels_logo.svg', logoUrl: '/assets/images/travels_logo.svg' },
