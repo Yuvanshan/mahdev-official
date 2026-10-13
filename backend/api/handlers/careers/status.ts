@@ -1,5 +1,9 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { initializeTursoDatabase, getTursoDocument } from '../../../db/tursoDatabase.js';
+import {
+  initializeTursoDatabase,
+  getTursoDocument,
+  listTursoDocuments,
+} from '../../../db/tursoDatabase.js';
 
 const LOOKUP_WINDOW_MS = 10 * 60 * 1000;
 const LOOKUP_MAX_PER_WINDOW = 10;
@@ -60,11 +64,11 @@ export default async function handler(
 
   const url = new URL(request.url || '/', 'http://localhost');
   const email = (url.searchParams.get('email') || '').trim().toLowerCase();
-  const applicationId = (url.searchParams.get('reference') || '').trim();
+  const reference = (url.searchParams.get('reference') || '').trim();
   if (
     email.length > 254 ||
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
-    !/^[0-9a-f-]{36}$/i.test(applicationId)
+    !(/^[0-9a-f-]{36}$/i.test(reference) || /^mahdev-app-\d{3,}$/i.test(reference))
   ) {
     sendJson(response, 400, { success: false, error: 'Enter the email address and application reference used when applying.' });
     return;
@@ -72,7 +76,15 @@ export default async function handler(
 
   try {
     await ensureDatabaseInitialized();
-    const application = await getTursoDocument('careerApplications', '', applicationId);
+    const application = /^[0-9a-f-]{36}$/i.test(reference)
+      ? await getTursoDocument('careerApplications', '', reference)
+      : (await listTursoDocuments(
+        'careerApplications',
+        '',
+        [{ field: 'reference', operator: '==', value: reference }],
+        undefined,
+        1
+      ))[0] || null;
     if (
       !application ||
       typeof application.data.email !== 'string' ||
@@ -89,6 +101,7 @@ export default async function handler(
     sendJson(response, 200, {
       success: true,
       application: {
+        reference: typeof application.data.reference === 'string' ? application.data.reference : reference,
         status: application.data.status,
         createdAt: application.data.createdAt,
         openingTitle: typeof opening?.data.title === 'string' ? opening.data.title : 'Career application',

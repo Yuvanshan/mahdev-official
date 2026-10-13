@@ -309,6 +309,7 @@ export const AdminCareersView: React.FC = () => {
                     <tr key={application.id} className="align-top hover:bg-slate-50/70">
                       <td className="px-4 py-4">
                         <p className="font-semibold text-slate-900">{application.candidateName}</p>
+                        {application.reference && <p className="mt-1 font-mono text-[10px] text-slate-500">{application.reference}</p>}
                         <a href={`mailto:${application.email}`} className="mt-1 block text-xs text-blue-700 hover:underline">{application.email}</a>
                         <p className="mt-1 text-xs text-slate-500">{application.phone}</p>
                       </td>

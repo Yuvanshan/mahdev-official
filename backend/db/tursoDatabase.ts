@@ -270,6 +270,27 @@ export async function getTursoDocument(
   return { id: String(row.id), data: JSON.parse(String(row.data)) as Record<string, unknown> };
 }
 
+export async function nextCareerApplicationReference(): Promise<string> {
+  const table = await ensureCollectionTable('system_metadata');
+  const result = await getTursoClient().execute({
+    sql: `INSERT INTO "${table}" (parent_path, id, data, updated_at)
+      VALUES ('', 'career_application_sequence', json_object('sequence', 1), CURRENT_TIMESTAMP)
+      ON CONFLICT(parent_path, id) DO UPDATE SET
+        data = json_set(
+          data,
+          '$.sequence',
+          CAST(COALESCE(json_extract(data, '$.sequence'), 0) AS INTEGER) + 1
+        ),
+        updated_at = CURRENT_TIMESTAMP
+      RETURNING json_extract(data, '$.sequence') AS sequence`,
+  });
+  const sequence = Number(result.rows[0]?.sequence);
+  if (!Number.isSafeInteger(sequence) || sequence < 1) {
+    throw new Error('Could not allocate a career application reference.');
+  }
+  return `mahdev-app-${String(sequence).padStart(3, '0')}`;
+}
+
 export async function listTursoDocuments(
   collection: string,
   parentPath: string,

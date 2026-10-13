@@ -62,6 +62,7 @@ interface ApiResponse<T> {
   document?: ApiDocument | null;
   documents?: ApiDocument[];
   deletedCount?: number;
+  reference?: string;
 }
 
 export interface WriteBatch {
@@ -333,7 +334,15 @@ export async function setDoc(
   data: DocumentData,
   options: { merge?: boolean } = {}
 ): Promise<void> {
-  await request('write', {
+  await setDocWithResult(reference, data, options);
+}
+
+export async function setDocWithResult(
+  reference: DocumentReference,
+  data: DocumentData,
+  options: { merge?: boolean } = {}
+): Promise<{ reference?: string }> {
+  return request('write', {
     write: {
       type: 'set',
       collection: reference.collection,

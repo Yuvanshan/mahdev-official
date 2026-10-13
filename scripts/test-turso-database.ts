@@ -14,6 +14,7 @@ const {
   getTursoDocument,
   importMigratedDocuments,
   initializeTursoDatabase,
+  listTursoDocuments,
 } = await import('../backend/db/tursoDatabase');
 const {
   authenticateAdminCredentials,
@@ -281,6 +282,21 @@ async function run(): Promise<void> {
     assert.equal(publicApplicationAccess.role, 'public');
     const publicApplicationResult = await handleTursoAction(publicApplicationWrite, publicApplicationAccess);
     assert.equal(publicApplicationResult.status, 200);
+    assert.equal(publicApplicationResult.body.reference, 'mahdev-app-001');
+    assert.equal(
+      (await getTursoDocument('careerApplications', '', applicationId))?.data.reference,
+      'mahdev-app-001'
+    );
+    assert.equal(
+      (await listTursoDocuments(
+        'careerApplications',
+        '',
+        [{ field: 'reference', operator: '==', value: 'mahdev-app-001' }],
+        undefined,
+        1
+      ))[0]?.id,
+      applicationId
+    );
     assert.equal(
       (await getTursoDocument('careerApplications', '', applicationId))?.data.status,
       'new'
@@ -288,6 +304,20 @@ async function run(): Promise<void> {
     assert.equal(
       (await getTursoDocument('careerApplications', '', applicationId))?.data.portfolioUrl,
       ''
+    );
+    const concurrentApplicationResults = await Promise.all(
+      ['123e4567-e89b-12d3-a456-426614174007', '123e4567-e89b-12d3-a456-426614174008']
+        .map((id) => handleTursoAction({
+          ...publicApplicationWrite,
+          write: {
+            ...(publicApplicationWrite.write as Record<string, unknown>),
+            id,
+          },
+        }, publicApplicationAccess))
+    );
+    assert.deepEqual(
+      concurrentApplicationResults.map((result) => result.body.reference).sort(),
+      ['mahdev-app-002', 'mahdev-app-003']
     );
     const extraFieldResult = await handleTursoAction({
       ...publicApplicationWrite,
@@ -379,7 +409,7 @@ async function run(): Promise<void> {
       { role: 'admin' }
     );
     assert.equal(privateApplications.status, 200);
-    assert.equal((privateApplications.body.documents as Array<{ id: string }>).length, 2);
+    assert.equal((privateApplications.body.documents as Array<{ id: string }>).length, 4);
     const metadata = await getTursoClient().execute(
       'SELECT COUNT(*) AS count FROM turso_collections'
     );

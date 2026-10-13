@@ -236,10 +236,10 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
                 Application reference
                 <input
                   required
-                  maxLength={36}
+                  maxLength={64}
                   value={statusReference}
                   onChange={(event) => setStatusReference(event.target.value)}
-                  placeholder="Reference number"
+                  placeholder="mahdev-app-001"
                   className="mt-1.5 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-normal outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 />
               </label>
@@ -256,6 +256,7 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
               <div role="status" className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
                 <div>
                   <p className="font-semibold text-slate-900">{statusResult.openingTitle}</p>
+                  <p className="mt-1 text-xs font-mono text-slate-600">Reference: {statusResult.reference}</p>
                   <p className="mt-1 text-xs text-slate-600">Submitted {new Date(statusResult.createdAt).toLocaleDateString()}</p>
                 </div>
                 <span className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold capitalize text-emerald-800 ring-1 ring-emerald-200">

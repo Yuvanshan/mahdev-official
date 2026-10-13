@@ -7,6 +7,7 @@ import {
   orderBy,
   query,
   setDoc,
+  setDocWithResult,
   updateDoc,
   where,
 } from '../lib/tursoFirestore';
@@ -31,6 +32,7 @@ export interface CareerOpening {
 
 export interface CareerApplication {
   id: string;
+  reference?: string;
   openingId: string;
   candidateName: string;
   email: string;
@@ -131,7 +133,7 @@ export async function submitCareerApplication(
   }
 ): Promise<string> {
   const id = crypto.randomUUID();
-  await setDoc(doc(db, APPLICATIONS, id), sanitizeForFirestore({
+  const result = await setDocWithResult(doc(db, APPLICATIONS, id), sanitizeForFirestore({
     openingId: opening.id,
     candidateName: application.candidateName,
     email: application.email,
@@ -141,10 +143,14 @@ export async function submitCareerApplication(
     cvStoragePath: application.cvStoragePath,
     cvFileName: application.cvFileName,
   }));
-  return id;
+  if (!result.reference) {
+    throw new Error('Your application was submitted, but its reference number could not be confirmed. Please contact the hiring team.');
+  }
+  return result.reference;
 }
 
 export interface CareerApplicationStatusResult {
+  reference: string;
   status: CareerApplicationStatus;
   createdAt: string;
   openingTitle: string;

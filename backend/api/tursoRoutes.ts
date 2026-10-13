@@ -3,6 +3,7 @@ import {
   checkTursoConnection,
   clearTursoCollection,
   getTursoDocument,
+  nextCareerApplicationReference,
   listTursoDocuments,
   TursoDocument,
   TursoFilter,
@@ -466,9 +467,11 @@ async function preparePublicWrite(write: TursoWrite): Promise<TursoWrite> {
       portfolioUrl = parsedPortfolioUrl.toString();
     }
 
+    const reference = await nextCareerApplicationReference();
     return {
       ...write,
       data: {
+        reference,
         openingId,
         candidateName: text('candidateName', 160),
         email: email.toLowerCase(),
@@ -586,7 +589,15 @@ export async function handleTursoAction(
         write = await preparePublicWrite(write);
       }
       await writeTursoDocument(write);
-      return { status: 200, body: { success: true } };
+      return {
+        status: 200,
+        body: {
+          success: true,
+          ...(write.collection === 'careerApplications' && typeof write.data?.reference === 'string'
+            ? { reference: write.data.reference }
+            : {}),
+        },
+      };
     }
     if (action === 'batch') {
       if (!Array.isArray(body.writes)) throw new Error('Batch writes must be an array.');

@@ -41,9 +41,7 @@ const CrossfadeSlide: React.FC<{
 
   useEffect(() => {
     const image = imageRef.current;
-    if (!image?.complete) return;
-    if (image.naturalWidth > 0) handleLoad();
-    else handleError();
+    if (image?.complete && image.naturalWidth > 0) handleLoad();
   }, [src]);
 
   return (
@@ -51,7 +49,7 @@ const CrossfadeSlide: React.FC<{
       {!isLoaded && (
         <div
           aria-hidden="true"
-          className="image-shimmer absolute inset-0"
+          className="image-shimmer absolute inset-0 z-10"
         />
       )}
       <motion.img
@@ -62,8 +60,8 @@ const CrossfadeSlide: React.FC<{
         decoding={decoding}
         onLoad={handleLoad}
         onError={handleError}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isLoaded ? 1 : 0 }}
+        initial={false}
+        animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         className={`absolute inset-0 h-full w-full object-cover ${className}`}
