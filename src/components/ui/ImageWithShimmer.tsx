@@ -25,13 +25,16 @@ export const ImageWithShimmer: React.FC<ImageWithShimmerProps> = ({
 }) => {
   const sourceCandidates = getImageSourceCandidates(src, fallbackSources);
   const candidateKey = sourceCandidates.join('\n');
+  const hasPositionClass = className
+    .split(/\s+/)
+    .some((className) => ['static', 'fixed', 'absolute', 'relative', 'sticky'].includes(className));
 
   return (
     <ImageSourceSequence
       key={candidateKey}
       sourceCandidates={sourceCandidates}
       alt={alt}
-      className={className}
+      className={`${hasPositionClass ? '' : 'relative'} overflow-hidden ${className}`}
       imageClassName={imageClassName}
       loading={loading}
       fallbackText={fallbackText}
@@ -51,7 +54,7 @@ const ImageSourceSequence: React.FC<{
   const currentSrc = sourceCandidates[sourceIndex] || '';
 
   return (
-    <div className={`relative overflow-hidden ${className}`}>
+    <div className={className}>
       {currentSrc ? (
         <CrossfadeImage
           key={currentSrc}
