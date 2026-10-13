@@ -80,8 +80,6 @@ export class TursoApiError extends Error {
 }
 
 const database: TursoDatabase = { type: 'turso' };
-// These HTTP-backed subscriptions each issue Turso reads, so avoid tight polling.
-const SNAPSHOT_POLL_INTERVAL_MS = 30000;
 const DATABASE_REQUEST_TIMEOUT_MS = 12000;
 const inFlightReads = new Map<string, Promise<ApiResponse<unknown>>>();
 
@@ -419,75 +417,38 @@ export function onSnapshot<T extends DocumentData = DocumentData>(
   reference: DocumentReference,
   onNext: (snapshot: DocumentSnapshot<T>) => void,
   onError?: (error: Error) => void,
-  pollIntervalMs?: number
+  _pollIntervalMs?: number
 ): Unsubscribe;
 export function onSnapshot<T extends DocumentData = DocumentData>(
   reference: CollectionReference | QueryReference,
   onNext: (snapshot: QuerySnapshot<T>) => void,
   onError?: (error: Error) => void,
-  pollIntervalMs?: number
+  _pollIntervalMs?: number
 ): Unsubscribe;
 export function onSnapshot<T extends DocumentData = DocumentData>(
   reference: DocumentReference | CollectionReference | QueryReference,
   onNext: ((snapshot: DocumentSnapshot<T>) => void) | ((snapshot: QuerySnapshot<T>) => void),
   onError?: (error: Error) => void,
-  pollIntervalMs = SNAPSHOT_POLL_INTERVAL_MS
+  _pollIntervalMs?: number
 ): Unsubscribe {
   let stopped = false;
-  let hasEmitted = false;
-  let lastSnapshot = '';
-  let polling = false;
 
-  const poll = async () => {
-    if (stopped || polling || document.hidden) return;
-    polling = true;
+  const loadInitialSnapshot = async () => {
     try {
-      const readSnapshot = async () => {
-        if (isDocumentReference(reference)) {
-          const documentSnapshot = await getDoc<T>(reference);
-          return {
-            snapshot: documentSnapshot as DocumentSnapshot<T> | QuerySnapshot<T>,
-            serialized: JSON.stringify({
-              exists: documentSnapshot.exists(),
-              data: documentSnapshot.data(),
-            }),
-          };
-        }
-        const querySnapshot = await readQuery<T>(reference);
-        return {
-          snapshot: querySnapshot as DocumentSnapshot<T> | QuerySnapshot<T>,
-          serialized: JSON.stringify(querySnapshot.docs.map((document) => ({
-            id: document.id,
-            data: document.data(),
-          }))),
-        };
-      };
-      const { snapshot, serialized } = await readSnapshot();
+      const snapshot = isDocumentReference(reference)
+        ? await getDoc<T>(reference)
+        : await readQuery<T>(reference);
       if (stopped) return;
-      if (!hasEmitted || serialized !== lastSnapshot) {
-        hasEmitted = true;
-        lastSnapshot = serialized;
-        (onNext as (value: DocumentSnapshot<T> | QuerySnapshot<T>) => void)(snapshot);
-      }
+      (onNext as (value: DocumentSnapshot<T> | QuerySnapshot<T>) => void)(snapshot);
     } catch (error) {
       if (onError) onError(error instanceof Error ? error : new Error(String(error)));
       else console.error('[Turso] Database subscription failed:', error);
-    } finally {
-      polling = false;
     }
   };
 
-  const handleVisibilityChange = () => {
-    if (!document.hidden) void poll();
-  };
-
-  void poll();
-  const timer = window.setInterval(() => void poll(), pollIntervalMs);
-  document.addEventListener('visibilitychange', handleVisibilityChange);
+  void loadInitialSnapshot();
   return () => {
     stopped = true;
-    window.clearInterval(timer);
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
   };
 }
 

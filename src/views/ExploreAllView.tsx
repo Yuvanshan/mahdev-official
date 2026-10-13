@@ -264,7 +264,9 @@ export const ExploreAllView: React.FC<{
     const matchedCategory = categories.find(
       ([category]) => toCategorySlug(category) === initialCategorySlug
     );
-    setSelectedFilter(matchedCategory ? `category:${matchedCategory[0]}` : 'all');
+    if (matchedCategory) {
+      setSelectedFilter(`category:${toCategorySlug(matchedCategory[0])}`);
+    }
   }, [initialCategorySlug, categories, allItems.length]);
 
   const filteredItems = useMemo(() => {
@@ -273,7 +275,7 @@ export const ExploreAllView: React.FC<{
       const matchesType = !selectedFilter.startsWith('type:')
         || item.type === selectedFilter.slice(5);
       const matchesCategory = !selectedFilter.startsWith('category:')
-        || item.category.toLowerCase() === selectedFilter.slice(9).toLowerCase();
+        || toCategorySlug(item.category) === selectedFilter.slice(9);
       return matchesType && matchesCategory && (!normalizedQuery || item.searchableText.includes(normalizedQuery));
     });
   }, [allItems, query, selectedFilter]);
@@ -293,7 +295,8 @@ export const ExploreAllView: React.FC<{
     selectedFilter === value ? 'bg-blue-50 font-semibold text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
   }`;
   const selectedFilterLabel = selectedFilter.startsWith('category:')
-    ? selectedFilter.slice('category:'.length)
+    ? categories.find(([category]) => toCategorySlug(category) === selectedFilter.slice('category:'.length))?.[0]
+      || selectedFilter.slice('category:'.length)
     : selectedFilter.startsWith('type:')
       ? KIND_LABELS[selectedFilter.slice('type:'.length) as BrowseType]
       : 'All items';
@@ -334,7 +337,7 @@ export const ExploreAllView: React.FC<{
           <h3 className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Categories</h3>
           <nav aria-label="Item category filters" className="max-h-[55vh] space-y-1 overflow-y-auto">
             {categories.map(([category, count]) => {
-              const filter = `category:${category}`;
+              const filter = `category:${toCategorySlug(category)}`;
               return (
                 <button key={category} type="button" className={filterButtonClass(filter)} onClick={() => updateFilter(filter)}>
                   <span className="truncate">{category}</span><span className="text-xs text-slate-400">{count}</span>

@@ -877,8 +877,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     // Immediately mark app shell ready so page structure and per-section shimmers render instantly.
-    // Realtime snapshot listeners stream data one-by-one from Firestore (or IndexedDB persistent cache)
-    // and dismiss individual section shimmers the millisecond each snapshot arrives.
+    // Initial snapshots load each resource once and dismiss section shimmers as data arrives.
     markReady();
 
     // Emergency fail-safe timeout only in case network drops completely
@@ -886,7 +885,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       markReady();
     }, 15000);
 
-    // 1. Core Realtime Centralized Listeners (Single Source of Truth, zero duplicate listeners)
+    // 1. Core initial data loads (single centralized read per resource)
     const unsubCompany = firestoreSettingsService.subscribeCompanySettings((data) => {
       if (isMounted) {
         setCompanySettings((prev) => {
