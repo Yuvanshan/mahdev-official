@@ -21,6 +21,7 @@ import { Booking } from '../../types/booking';
 import { PaymentTransaction } from '../../types/payment';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { formatCurrency } from '../../utils/currency';
 
 interface AccountOverviewTabProps {
   user: CustomerUser;
@@ -155,7 +156,7 @@ export const AccountOverviewTab: React.FC<AccountOverviewTabProps> = ({
               <CreditCard className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-bold font-mono text-slate-900">${totalSpent.toFixed(2)}</div>
+          <div className="text-2xl font-bold font-mono text-slate-900">{formatCurrency(totalSpent, 'LKR')}</div>
           <div className="text-[11px] text-slate-500 mt-1">
             <span className="text-slate-600">Across {orders.length} transaction orders</span>
           </div>
@@ -240,7 +241,7 @@ export const AccountOverviewTab: React.FC<AccountOverviewTabProps> = ({
 
                   <div className="text-right">
                     <div className="font-mono font-bold text-xs text-slate-900">
-                      ${order.total.toFixed(2)}
+                      {formatCurrency(order.total, 'LKR')}
                     </div>
                     <span className="text-[10px] text-blue-600 font-semibold group-hover:underline">
                       View Receipt →
@@ -305,7 +306,7 @@ export const AccountOverviewTab: React.FC<AccountOverviewTabProps> = ({
 
                   <div className="text-right">
                     <div className="font-mono font-bold text-xs text-slate-900">
-                      ${b.price.toFixed(2)}
+                      {formatCurrency(b.price, 'LKR')}
                     </div>
                     <span className="text-[10px] font-mono text-slate-400">{b.id}</span>
                   </div>

@@ -148,7 +148,7 @@ export function validateAndCreateAuthoritativeOrder(input: OrderValidationInput)
   } else if (input.deliveryMethod === 'freight') {
     shippingFee = 95.0;
   } else {
-    // Standard shipping: Free if discountedSubtotal >= $150, else $15
+    // Standard shipping: Free if discountedSubtotal >= Rs. 150, else Rs. 15
     shippingFee = discountedSubtotal >= 150.0 ? 0.0 : 15.0;
   }
 
@@ -170,7 +170,7 @@ export function validateAndCreateAuthoritativeOrder(input: OrderValidationInput)
     shippingFee: parseFloat(shippingFee.toFixed(2)),
     taxAmount,
     totalAmount,
-    currency: input.currency || 'USD',
+    currency: input.currency || 'LKR',
     status: 'pending_payment',
     paymentStatus: 'unpaid',
     orderSignature,

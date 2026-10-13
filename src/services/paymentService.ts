@@ -98,7 +98,7 @@ export const paymentService = {
           transactionId: data.transactionId,
           orderId: data.orderId,
           amount: 0,
-          currency: 'USD',
+          currency: 'LKR',
           gateway: payload.gateway,
           gatewayName: payload.gateway,
           paymentStatus: 'paid',

@@ -21,6 +21,7 @@ import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { CmsPackage } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
+import { formatCurrency } from '../../utils/currency';
 
 interface U1PackagesSectionProps {
   onBookPackage: (pkg: U1Package) => void;
@@ -51,7 +52,7 @@ export const U1PackagesSection: React.FC<U1PackagesSectionProps> = ({ onBookPack
         tagline: pkg.tagline || pkg.name,
         description: pkg.tagline || pkg.name,
         duration: pkg.duration || 'Available on request',
-        price: `${pkg.currency} ${pkg.price.toLocaleString()}`,
+        price: formatCurrency(pkg.price, 'LKR'),
         priceNote: pkg.billingCycle || 'Package rate',
         deliverables: pkg.features,
         imageUrl: '',
@@ -77,7 +78,9 @@ export const U1PackagesSection: React.FC<U1PackagesSectionProps> = ({ onBookPack
           tagline: (s as any).tagline || s.description?.slice(0, 60) || '',
           description: s.description || '',
           duration: (s as any).duration || (s as any).coverageHours || '8-10 Hours Coverage',
-          price: typeof s.price === 'number' ? `$${s.price.toLocaleString()}` : String(s.price || ''),
+          price: typeof s.price === 'number'
+            ? formatCurrency(s.price, 'LKR')
+            : String(s.price || '').replace(/\bUSD\b|\$/gi, 'Rs.'),
           priceNote: (s as any).priceNote || 'Package rate',
           deliverables: (s as any).deliverables || s.features || [],
           imageUrl: s.images && s.images.length > 0 ? s.images[0] : (s as any).imageUrl || '',

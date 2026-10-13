@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Booking } from '../../types/booking';
 import { Button } from '../../components/ui/Button';
+import { formatCurrency } from '../../utils/currency';
 
 interface AccountBookingsTabProps {
   bookings: Booking[];
@@ -223,7 +224,7 @@ export const AccountBookingsTab: React.FC<AccountBookingsTabProps> = ({
                   <div className="text-left md:text-right">
                     <span className="text-[10px] text-slate-400 block">Reservation Fee:</span>
                     <span className="font-mono text-lg font-bold text-slate-900">
-                      ${b.price.toFixed(2)} {b.currency}
+                      {formatCurrency(b.price, 'LKR')}
                     </span>
                   </div>
 

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Booking, BookingStatus } from '../../types/booking';
 import { bookingService } from '../../services/bookingService';
+import { formatCurrency } from '../../utils/currency';
 
 interface BookingLookupModalProps {
   onClose: () => void;
@@ -365,7 +366,7 @@ export const BookingLookupModal: React.FC<BookingLookupModalProps> = ({
                     <div className="flex justify-between pt-1 border-t border-neutral-200">
                       <span className="text-neutral-500">Total Price & Status:</span>
                       <span className="font-mono font-bold text-neutral-900">
-                        ${selectedBooking.price.toFixed(2)} ({selectedBooking.paymentStatus.toUpperCase()})
+                        {formatCurrency(selectedBooking.price, 'LKR')} ({selectedBooking.paymentStatus.toUpperCase()})
                       </span>
                     </div>
                   </div>

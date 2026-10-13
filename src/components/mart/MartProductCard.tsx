@@ -8,6 +8,7 @@ import {
   Check,
 } from 'lucide-react';
 import { Product } from '../../data/martData';
+import { formatCurrency } from '../../utils/currency';
 
 interface MartProductCardProps {
   product: Product;
@@ -136,11 +137,11 @@ export const MartProductCard: React.FC<MartProductCardProps> = ({
         <div className="flex items-baseline justify-between gap-2 flex-wrap">
           <div className="flex items-baseline gap-2 flex-wrap">
             <span className="font-mono text-lg font-bold text-slate-900">
-              ${product.price.toFixed(2)}
+              {formatCurrency(product.price, 'LKR')}
             </span>
             {product.originalPrice && (
               <span className="font-mono text-xs text-slate-400 line-through">
-                ${product.originalPrice.toFixed(2)}
+                {formatCurrency(product.originalPrice, 'LKR')}
               </span>
             )}
           </div>

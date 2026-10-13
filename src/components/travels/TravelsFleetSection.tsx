@@ -14,6 +14,7 @@ import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { ScrollReveal } from '../motion/MotionWrappers';
+import { formatCurrency } from '../../utils/currency';
 
 interface TravelsFleetSectionProps {
   onBookTransport: (vehicle: Vehicle) => void;
@@ -39,7 +40,9 @@ export const TravelsFleetSection: React.FC<TravelsFleetSectionProps> = ({
           category: ((s as any).category || 'Luxury Sedan') as any,
           capacity: (s as any).capacity || (s as any).passengers || '1-3 Passengers',
           luggage: (s as any).luggage || '2 Large + 2 Small Bags',
-          dailyRate: typeof s.price === 'number' ? `$${s.price}/day` : String(s.price || '$75/day'),
+          dailyRate: typeof s.price === 'number'
+            ? `${formatCurrency(s.price, 'LKR')}/day`
+            : String(s.price || 'Rs. 75/day').replace(/\bUSD\b|\$/gi, 'Rs.'),
           features: s.features || ['Air-conditioned', 'English-speaking driver'],
           imageUrl: s.images && s.images.length > 0 ? s.images[0] : (s as any).imageUrl || '',
         });

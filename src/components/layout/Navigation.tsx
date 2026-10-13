@@ -237,8 +237,6 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                       key={item.id}
                       ref={servicesDropdownRef}
                       className="relative"
-                      onMouseEnter={() => setIsServicesOpen(true)}
-                      onMouseLeave={() => setIsServicesOpen(false)}
                       onKeyDown={(event) => {
                         if (event.key === 'Escape') setIsServicesOpen(false);
                       }}

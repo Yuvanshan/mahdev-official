@@ -50,7 +50,7 @@ export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) =>
       country: user.address?.country || 'Sri Lanka',
     },
     preferences: {
-      currency: user.preferences?.currency || 'USD',
+      currency: 'LKR' as const,
       preferredContactMethod: user.preferences?.preferredContactMethod || 'whatsapp',
       orderNotifications: user.preferences?.orderNotifications ?? true,
       promotionalUpdates: user.preferences?.promotionalUpdates ?? true,
@@ -323,7 +323,6 @@ export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) =>
               }
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >
-              <option value="USD">USD ($) — International Settlement</option>
               <option value="LKR">LKR (Rs) — Sri Lankan Rupees</option>
             </select>
           </div>

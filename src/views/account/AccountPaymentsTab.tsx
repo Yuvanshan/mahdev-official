@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { PaymentTransaction } from '../../types/payment';
 import { Button } from '../../components/ui/Button';
+import { formatCurrency } from '../../utils/currency';
 
 interface AccountPaymentsTabProps {
   transactions: PaymentTransaction[];
@@ -111,7 +112,7 @@ export const AccountPaymentsTab: React.FC<AccountPaymentsTabProps> = ({
                     </td>
                     <td className="py-3 px-4 font-sans text-slate-700">{txn.gatewayName}</td>
                     <td className="py-3 px-4 font-bold text-slate-900">
-                      ${txn.amount.toFixed(2)} {txn.currency}
+                      {formatCurrency(txn.amount, 'LKR')}
                     </td>
                     <td className="py-3 px-4">
                       <span

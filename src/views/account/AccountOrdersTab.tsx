@@ -18,6 +18,7 @@ import {
 import { Order } from '../../types/order';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { formatCurrency } from '../../utils/currency';
 
 interface AccountOrdersTabProps {
   orders: Order[];
@@ -196,7 +197,7 @@ export const AccountOrdersTab: React.FC<AccountOrdersTabProps> = ({ orders, onNa
                             {item.name}
                           </div>
                           <div className="text-[10px] text-slate-500 font-mono">
-                            Qty: {item.quantity} • ${item.unitPrice.toFixed(2)}
+                            Qty: {item.quantity} • {formatCurrency(item.unitPrice, 'LKR')}
                           </div>
                         </div>
                       </div>
@@ -220,7 +221,7 @@ export const AccountOrdersTab: React.FC<AccountOrdersTabProps> = ({ orders, onNa
                   <div className="text-right">
                     <span className="text-[10px] text-slate-400 block">Order Total:</span>
                     <span className="font-mono text-base font-bold text-slate-900">
-                      ${order.total.toFixed(2)} {order.currency}
+                      {formatCurrency(order.total, 'LKR')}
                     </span>
                   </div>
 

@@ -31,6 +31,7 @@ import {
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { getRentalAssetCount } from '../../utils/assetMetrics';
+import { formatCurrency } from '../../utils/currency';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
@@ -83,7 +84,9 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
           categoryLabel: (p as any).categoryLabel || 'Equipment & Rentals',
           tagline: p.shortDescription || p.description?.slice(0, 60) || '',
           description: p.description || '',
-          dailyRate: typeof p.price === 'number' ? `$${p.price}/day` : String(p.price || '$50/day'),
+          dailyRate: typeof p.price === 'number'
+            ? `${formatCurrency(p.price, 'LKR')}/day`
+            : String(p.price || 'Rs. 50/day').replace(/\bUSD\b|\$/gi, 'Rs.'),
           unit: 'Day',
           availableStock: typeof p.stock === 'number' ? p.stock : 10,
           minOrderQuantity: 1,

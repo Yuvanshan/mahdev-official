@@ -28,6 +28,7 @@ import { CatalogProduct, ProductVariantOption } from '../../types/catalog';
 import { catalogService } from '../../services/catalogService';
 import { useCart } from '../../context/CartContext';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
+import { formatCurrency } from '../../utils/currency';
 
 interface CatalogProductModalProps {
   product: CatalogProduct | null;
@@ -201,15 +202,15 @@ const CatalogProductModalContent: React.FC<
                   {/* Pricing */}
                   <div className="flex items-baseline gap-3 mb-4 p-3.5 bg-neutral-50 rounded-xl border border-neutral-200/80">
                     <span className="text-3xl font-bold text-neutral-900">
-                      ${currentPrice.toFixed(2)}
+                      {formatCurrency(currentPrice, 'LKR')}
                     </span>
                     {product.originalPrice && (
                       <span className="text-sm text-neutral-400 line-through">
-                        ${(product.originalPrice * quantity).toFixed(2)}
+                        {formatCurrency(product.originalPrice * quantity, 'LKR')}
                       </span>
                     )}
                     <span className="text-xs text-neutral-500 font-mono ml-auto">
-                      Currency: {product.currency}
+                      Currency: LKR
                     </span>
                   </div>
 
@@ -239,7 +240,7 @@ const CatalogProductModalContent: React.FC<
                             >
                               <span>{opt.name}</span>
                               {opt.priceModifier ? (
-                                <span className="ml-1 opacity-80">(+${opt.priceModifier})</span>
+                                <span className="ml-1 opacity-80">(+{formatCurrency(opt.priceModifier, 'LKR')})</span>
                               ) : null}
                             </button>
                           );
@@ -293,7 +294,7 @@ const CatalogProductModalContent: React.FC<
                       ) : (
                         <>
                           <ShoppingBag className="w-4 h-4 shrink-0" />
-                          <span>Add to Cart (${currentPrice.toFixed(2)})</span>
+                          <span>Add to Cart ({formatCurrency(currentPrice, 'LKR')})</span>
                         </>
                       )}
                     </button>
@@ -388,7 +389,7 @@ const CatalogProductModalContent: React.FC<
                           {rel.name}
                         </h4>
                         <p className="text-xs font-bold text-neutral-900 mt-1">
-                          ${rel.price.toFixed(2)}
+                          {formatCurrency(rel.price, 'LKR')}
                         </p>
                       </div>
                     </div>

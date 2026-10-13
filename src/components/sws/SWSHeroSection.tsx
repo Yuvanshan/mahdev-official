@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
-import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { HeroVideoBackground } from '../common/HeroVideoBackground';
 
 interface SWSHeroSectionProps {
@@ -16,40 +15,12 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
   onExploreServices,
   onExploreRentals,
 }) => {
-  const { divisions } = useFirestoreDataContext();
-
-  const swsDiv = divisions?.find(
-    (d) =>
-      d.id === 'sws' ||
-      d.id === 'sws-event-management' ||
-      d.id === 'div-sws' ||
-      d.id === 'div-sws-event-management' ||
-      (d as any).divisionKey === 'sws' ||
-      d.slug === 'sws' ||
-      d.slug === 'sws-event-management'
-  );
-
-  const rawHeroImage =
-    (swsDiv as any)?.defaultImageUrl ||
-    (swsDiv as any)?.heroImageUrl ||
-    (swsDiv as any)?.imageUrl ||
-    (swsDiv?.hero as any)?.defaultImageUrl ||
-    (swsDiv?.hero as any)?.imageUrl ||
-    (swsDiv as any)?.hero?.bgImage;
-
-  const heroImage =
-    typeof rawHeroImage === 'string' && rawHeroImage.trim() !== ''
-      ? rawHeroImage.trim()
-      : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
-
   return (
     <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-[#061033] text-white">
       {/* Reliable Full-Width Video Background with guaranteed autoplay */}
       <HeroVideoBackground
         videoUrl="/assets/hero_main.mp4?v=2"
-        imageUrl={heroImage}
-        posterImageUrl={heroImage}
-        title={swsDiv?.name || 'SWS Luxury Event Decor & Rentals'}
+        title="SWS Luxury Event Decor & Rentals"
       />
 
       {/* ================= HERO CONTENT OVER VIDEO ON LEFT SIDE ================= */}

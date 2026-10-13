@@ -19,6 +19,7 @@ import {
 import { CatalogProduct, ProductType, StockStatus } from '../../types/catalog';
 import { useCart } from '../../context/CartContext';
 import { Image } from '../ui/Image';
+import { formatCurrency } from '../../utils/currency';
 
 interface CatalogProductCardProps {
   product: CatalogProduct;
@@ -192,16 +193,16 @@ export const CatalogProductCard: React.FC<CatalogProductCardProps> = ({
         <div className="flex items-baseline justify-between gap-2 flex-wrap">
           <div className="flex items-baseline gap-1.5 flex-wrap">
             <span className="text-base sm:text-lg font-bold text-neutral-900 font-mono">
-              ${product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              {formatCurrency(product.price, 'LKR')}
             </span>
             {product.originalPrice && product.originalPrice > product.price && (
               <span className="text-xs text-neutral-400 line-through font-mono">
-                ${product.originalPrice.toFixed(2)}
+                {formatCurrency(product.originalPrice, 'LKR')}
               </span>
             )}
           </div>
           <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-mono">
-            {product.currency} • {product.brand}
+            LKR • {product.brand}
           </span>
         </div>
 

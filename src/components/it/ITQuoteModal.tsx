@@ -46,7 +46,7 @@ export const ITQuoteModal: React.FC<ITQuoteModalProps> = ({
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [company, setCompany] = useState('');
-  const [budget, setBudget] = useState('$5k - $15k (Medium Enterprise / Core System)');
+  const [budget, setBudget] = useState('Rs. 5k - Rs. 15k (Medium Enterprise / Core System)');
   const [timeline, setTimeline] = useState('1 - 2 Months (Standard Delivery)');
   const [requirements, setRequirements] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<{ name: string; size: string }[]>([]);
@@ -354,20 +354,20 @@ export const ITQuoteModal: React.FC<ITQuoteModalProps> = ({
                     onChange={(e) => setBudget(e.target.value)}
                     className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
                   >
-                    <option value="<$2,000 (Sprint Prototype / MVP)">
-                      &lt; $2,000 (Sprint Prototype / MVP)
+                    <option value="<Rs. 2,000 (Sprint Prototype / MVP)">
+                      &lt; Rs. 2,000 (Sprint Prototype / MVP)
                     </option>
-                    <option value="$2,000 - $5,000 (Small Business Solution)">
-                      $2,000 - $5,000 (Small Business Solution)
+                    <option value="Rs. 2,000 - Rs. 5,000 (Small Business Solution)">
+                      Rs. 2,000 - Rs. 5,000 (Small Business Solution)
                     </option>
-                    <option value="$5k - $15k (Medium Enterprise / Core System)">
-                      $5,000 - $15,000 (Medium Enterprise / Core System)
+                    <option value="Rs. 5k - Rs. 15k (Medium Enterprise / Core System)">
+                      Rs. 5,000 - Rs. 15,000 (Medium Enterprise / Core System)
                     </option>
-                    <option value="$15k - $50k (High-Concurrency / Full ERP Suite)">
-                      $15,000 - $50,000 (High-Concurrency / Full ERP Suite)
+                    <option value="Rs. 15k - Rs. 50k (High-Concurrency / Full ERP Suite)">
+                      Rs. 15,000 - Rs. 50,000 (High-Concurrency / Full ERP Suite)
                     </option>
-                    <option value="$50k+ (Multi-Region / Custom Enterprise Transformation)">
-                      $50,000+ (Multi-Region / Custom Enterprise Transformation)
+                    <option value="Rs. 50k+ (Multi-Region / Custom Enterprise Transformation)">
+                      Rs. 50,000+ (Multi-Region / Custom Enterprise Transformation)
                     </option>
                   </select>
                 </div>

@@ -21,6 +21,7 @@ import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { CmsPackage } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
+import { formatCurrency } from '../../utils/currency';
 
 interface SWSPackagesSectionProps {
   onBookPackage: (pkg: SWSPackage) => void;
@@ -51,7 +52,7 @@ export const SWSPackagesSection: React.FC<SWSPackagesSectionProps> = ({ onBookPa
         tagline: pkg.tagline || pkg.name,
         description: pkg.tagline || pkg.name,
         includedServices: pkg.features,
-        price: `${pkg.currency} ${pkg.price.toLocaleString()}`,
+        price: formatCurrency(pkg.price, 'LKR'),
         priceSubtext: pkg.billingCycle || 'Turnkey rate',
         images: [],
         availability: 'Available on request',
@@ -74,7 +75,9 @@ export const SWSPackagesSection: React.FC<SWSPackagesSectionProps> = ({ onBookPa
           name: s.name,
           tier: (s as any).tier || 'Premium Suite',
           tagline: (s as any).tagline || s.description?.slice(0, 60) || '',
-          price: typeof s.price === 'number' ? `$${s.price.toLocaleString()}` : String(s.price || ''),
+          price: typeof s.price === 'number'
+            ? formatCurrency(s.price, 'LKR')
+            : String(s.price || '').replace(/\bUSD\b|\$/gi, 'Rs.'),
           priceSubtext: (s as any).priceNote || (s as any).priceSubtext || 'Turnkey rate',
           guestEstimate: (s as any).guestRange || (s as any).guestEstimate || 'All scales',
           idealFor: (s as any).idealFor || 'Executive & Social Events',

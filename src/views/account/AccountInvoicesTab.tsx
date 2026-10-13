@@ -16,6 +16,7 @@ import { CustomerUser } from '../../types/customer';
 import { Button } from '../../components/ui/Button';
 import { COMPANY_INFO } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { formatCurrency } from '../../utils/currency';
 
 interface AccountInvoicesTabProps {
   user: CustomerUser;
@@ -127,7 +128,7 @@ export const AccountInvoicesTab: React.FC<AccountInvoicesTabProps> = ({
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                   <span className="text-[11px] text-slate-500">Amount Billed:</span>
                   <span className="font-mono font-bold text-sm text-slate-900">
-                    ${order.total.toFixed(2)} {order.currency}
+                    {formatCurrency(order.total, 'LKR')}
                   </span>
                 </div>
               </div>
@@ -255,9 +256,9 @@ export const AccountInvoicesTab: React.FC<AccountInvoicesTabProps> = ({
                         <div className="text-[10px] text-slate-400 font-mono">SKU: {item.sku}</div>
                       </td>
                       <td className="py-2.5 px-3 text-center font-mono">{item.quantity}</td>
-                      <td className="py-2.5 px-3 text-right font-mono">${item.unitPrice.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right font-mono">{formatCurrency(item.unitPrice, 'LKR')}</td>
                       <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
-                        ${item.lineTotal.toFixed(2)}
+                        {formatCurrency(item.lineTotal, 'LKR')}
                       </td>
                     </tr>
                   ))}
@@ -270,22 +271,22 @@ export const AccountInvoicesTab: React.FC<AccountInvoicesTabProps> = ({
               <div className="w-64 space-y-1.5 text-xs">
                 <div className="flex justify-between text-slate-600">
                   <span>Subtotal:</span>
-                  <span className="font-mono font-bold">${selectedInvoice.subtotal.toFixed(2)}</span>
+                  <span className="font-mono font-bold">{formatCurrency(selectedInvoice.subtotal, 'LKR')}</span>
                 </div>
                 {selectedInvoice.productDiscounts > 0 && (
                   <div className="flex justify-between text-emerald-600 text-[11px]">
                     <span>Discount:</span>
-                    <span className="font-mono">-${selectedInvoice.productDiscounts.toFixed(2)}</span>
+                    <span className="font-mono">-{formatCurrency(selectedInvoice.productDiscounts, 'LKR')}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-slate-600">
                   <span>Delivery & Handling:</span>
-                  <span className="font-mono">${selectedInvoice.shippingFee.toFixed(2)}</span>
+                  <span className="font-mono">{formatCurrency(selectedInvoice.shippingFee, 'LKR')}</span>
                 </div>
                 <div className="flex justify-between text-base font-bold text-slate-900 pt-2 border-t border-slate-200">
                   <span>Total Due / Paid:</span>
                   <span className="font-mono text-[#0052FF]">
-                    ${selectedInvoice.total.toFixed(2)} {selectedInvoice.currency}
+                    {formatCurrency(selectedInvoice.total, 'LKR')}
                   </span>
                 </div>
               </div>

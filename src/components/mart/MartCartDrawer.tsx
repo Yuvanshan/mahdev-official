@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { CartItem } from '../../data/martData';
 import { Button } from '../ui/Button';
+import { formatCurrency } from '../../utils/currency';
 
 interface MartCartDrawerProps {
   isOpen: boolean;
@@ -45,14 +46,12 @@ export const MartCartDrawer: React.FC<MartCartDrawerProps> = ({
         (i, idx) =>
           `${idx + 1}. *${i.product.name}* ${
             i.selectedVariant ? `(${i.selectedVariant.name})` : ''
-          } x ${i.quantity} = $${i.itemTotal.toFixed(2)}`
+          } x ${i.quantity} = ${formatCurrency(i.itemTotal, 'LKR')}`
       )
       .join('\n');
 
     const text = encodeURIComponent(
-      `Hello Mahdev Online Mart,\n\nI would like to place an order for the following cart items:\n\n${itemLines}\n\n*Subtotal:* $${subtotal.toFixed(
-        2
-      )}\n*Shipping:* ${isFreeShipping ? 'FREE' : '$5.00'}\n\nPlease confirm availability and dispatch schedule.`
+      `Hello Mahdev Online Mart,\n\nI would like to place an order for the following cart items:\n\n${itemLines}\n\n*Subtotal:* ${formatCurrency(subtotal, 'LKR')}\n*Shipping:* ${isFreeShipping ? 'FREE' : formatCurrency(5, 'LKR')}\n\nPlease confirm availability and dispatch schedule.`
     );
     return `https://wa.me/94750928078?text=${text}`;
   };
@@ -95,7 +94,7 @@ export const MartCartDrawer: React.FC<MartCartDrawerProps> = ({
                 <strong className="text-emerald-700 font-bold">You qualify for FREE Island-Wide Delivery!</strong>
               ) : (
                 <span>
-                  Add <strong>${(freeShippingThreshold - subtotal).toFixed(2)}</strong> more for FREE delivery
+                  Add <strong>{formatCurrency(freeShippingThreshold - subtotal, 'LKR')}</strong> more for FREE delivery
                 </span>
               )}
             </span>
@@ -179,7 +178,7 @@ export const MartCartDrawer: React.FC<MartCartDrawerProps> = ({
 
                     {/* Line Total */}
                     <span className="font-mono text-xs font-bold text-slate-900">
-                      ${item.itemTotal.toFixed(2)}
+                      {formatCurrency(item.itemTotal, 'LKR')}
                     </span>
                   </div>
                 </div>
@@ -194,18 +193,18 @@ export const MartCartDrawer: React.FC<MartCartDrawerProps> = ({
             <div className="space-y-1 text-xs">
               <div className="flex justify-between text-slate-600">
                 <span>Subtotal</span>
-                <span className="font-mono font-bold text-slate-900">${subtotal.toFixed(2)}</span>
+                <span className="font-mono font-bold text-slate-900">{formatCurrency(subtotal, 'LKR')}</span>
               </div>
               <div className="flex justify-between text-slate-600">
                 <span>Estimated Shipping</span>
                 <span className="font-mono text-slate-900">
-                  {isFreeShipping ? <span className="text-emerald-600 font-bold">FREE</span> : '$5.00'}
+                  {isFreeShipping ? <span className="text-emerald-600 font-bold">FREE</span> : formatCurrency(5, 'LKR')}
                 </span>
               </div>
               <div className="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-slate-200">
                 <span>Total</span>
                 <span className="font-mono text-base text-[#0052FF]">
-                  ${(subtotal + (isFreeShipping ? 0 : 5)).toFixed(2)}
+                  {formatCurrency(subtotal + (isFreeShipping ? 0 : 5), 'LKR')}
                 </span>
               </div>
             </div>

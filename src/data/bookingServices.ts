@@ -28,7 +28,7 @@ export const MASTER_BOOKABLE_SERVICES: BookableServiceItem[] = [
         description: 'Traditional 24ft carved stage with fresh jasmine & marigold floral accents.',
         duration: '1 Day Event',
         price: 1800,
-        currency: 'USD',
+        currency: 'LKR',
         features: [
           '24ft Traditional Carved Mandap Stage',
           'Fresh Botanical Floral Accents',
@@ -43,7 +43,7 @@ export const MASTER_BOOKABLE_SERVICES: BookableServiceItem[] = [
         description: 'Expansive 40ft thematic floral stage with moving head lights and low fog dry-ice effects.',
         duration: 'Full Day & Evening',
         price: 3200,
-        currency: 'USD',
+        currency: 'LKR',
         features: [
           '40ft Custom Thematic Palace Mandap',
           'Imported Dutch Orchid & White Lily Installations',
@@ -78,7 +78,7 @@ export const MASTER_BOOKABLE_SERVICES: BookableServiceItem[] = [
         description: 'P3 Ultra HD LED Wall, podium, line array audio, and live streaming switchers.',
         duration: 'Single Day',
         price: 2400,
-        currency: 'USD',
+        currency: 'LKR',
         features: [
           '20ft x 10ft P3 Ultra HD Seamless LED Wall',
           'Yamaha Digital Audio & Wireless Shure Mic System',
@@ -116,7 +116,7 @@ export const MASTER_BOOKABLE_SERVICES: BookableServiceItem[] = [
         description: 'Single day shoot covering mountain vistas or coastline with 4K teaser output.',
         duration: '8 Hours',
         price: 850,
-        currency: 'USD',
+        currency: 'LKR',
         features: [
           'Lead Film Director + Drone Cinematographer',
           '3-Minute 4K Master Teaser Video',
@@ -130,7 +130,7 @@ export const MASTER_BOOKABLE_SERVICES: BookableServiceItem[] = [
         description: 'Comprehensive 2-day expedition across Nuwara Eliya tea hills and southern beaches.',
         duration: '2 Full Days',
         price: 1450,
-        currency: 'USD',
+        currency: 'LKR',
         features: [
           'Full Cinema Crew + MUA Stylist Assistant',
           '5-Minute 4K Mini-Feature Cinema Film',
@@ -164,7 +164,7 @@ export const MASTER_BOOKABLE_SERVICES: BookableServiceItem[] = [
         description: '4 hours studio time with Profoto light setups, cyclorama wall, and 20 retouched masters.',
         duration: '4 Hours',
         price: 450,
-        currency: 'USD',
+        currency: 'LKR',
         features: [
           'Infinite White Cyclorama & Color Backdrops',
           'Profoto AirTTL Strobes & Softboxes',
@@ -202,7 +202,7 @@ export const MASTER_BOOKABLE_SERVICES: BookableServiceItem[] = [
         description: 'Morning private 4x4 drive during prime leopard and sloth bear roaming hours.',
         duration: '6 Hours',
         price: 195,
-        currency: 'USD',
+        currency: 'LKR',
         features: [
           'Custom Modified Toyota Hilux 4x4 Safari Jeep',
           'Licensed Wildlife Naturalist Tracker',
@@ -216,7 +216,7 @@ export const MASTER_BOOKABLE_SERVICES: BookableServiceItem[] = [
         description: 'All-day access to Block 1 & 5 with riverside lunch at Kumbukkan Oya.',
         duration: '12 Hours',
         price: 305,
-        currency: 'USD',
+        currency: 'LKR',
         features: [
           'All-Day Deep Sector Jeep Access',
           'Gourmet Bush Lunch & Chilled Beverages',
@@ -249,7 +249,7 @@ export const MASTER_BOOKABLE_SERVICES: BookableServiceItem[] = [
         description: '7 nights accommodation in luxury boutique hotels, daily dining, private transport, and monument passes.',
         duration: '8 Days / 7 Nights',
         price: 1850,
-        currency: 'USD',
+        currency: 'LKR',
         features: [
           '7 Nights 5-Star Boutique & Bungalow Stays',
           'Dedicated Private Luxury Mercedes V-Class with Chauffeur',
@@ -287,7 +287,7 @@ export const MASTER_BOOKABLE_SERVICES: BookableServiceItem[] = [
         description: 'Hardware configuration, barcode database import, and employee training session.',
         duration: '1 Full Day',
         price: 350,
-        currency: 'USD',
+        currency: 'LKR',
         features: [
           'Up to 3 Cashier / Kitchen Terminal Configs',
           'Epson / Sunmi Printer & Barcode Scanner Integration',
@@ -321,7 +321,7 @@ export const MASTER_BOOKABLE_SERVICES: BookableServiceItem[] = [
         description: '2.5-hour live review session followed by full written architecture diagram and security report.',
         duration: '2.5 Hours + Report',
         price: 600,
-        currency: 'USD',
+        currency: 'LKR',
         features: [
           'Live Video Workshop with Principal Cloud Architect',
           'Database Query & Indexing Performance Optimization Report',
@@ -359,7 +359,7 @@ export const MASTER_BOOKABLE_SERVICES: BookableServiceItem[] = [
         description: '90-minute strategic briefing with Senior Trade Specialist and market report.',
         duration: '90 Minutes',
         price: 300,
-        currency: 'USD',
+        currency: 'LKR',
         features: [
           'One-on-One Session with Senior Export Director',
           'Ceylon Sapphire Verification & GIA Certification Guidance',

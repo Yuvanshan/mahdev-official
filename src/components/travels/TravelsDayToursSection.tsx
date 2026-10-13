@@ -12,6 +12,7 @@ import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { ScrollReveal } from '../motion/MotionWrappers';
+import { formatCurrency } from '../../utils/currency';
 
 interface TravelsDayToursSectionProps {
   onBookDayTour: (tour: DayTour) => void;
@@ -36,7 +37,9 @@ export const TravelsDayToursSection: React.FC<TravelsDayToursSectionProps> = ({
           title: s.name,
           duration: (s as any).duration || (s as any).leadTime || 'Full Day (8-10 Hours)',
           location: (s as any).location || (s as any).startLocation || 'Colombo / Negombo',
-          price: typeof s.price === 'number' ? `$${s.price}` : String(s.price || '$95'),
+          price: typeof s.price === 'number'
+            ? formatCurrency(s.price, 'LKR')
+            : String(s.price || 'Rs. 95').replace(/\bUSD\b|\$/gi, 'Rs.'),
           description: s.description || '',
           imageUrl: s.images && s.images.length > 0 ? s.images[0] : (s as any).imageUrl || '',
           highlights: s.features || [],

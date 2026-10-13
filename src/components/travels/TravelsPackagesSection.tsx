@@ -21,6 +21,7 @@ import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { CmsPackage } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
+import { formatCurrency } from '../../utils/currency';
 
 interface TravelsPackagesSectionProps {
   onSelectPackage: (pkg: TravelPackage) => void;
@@ -57,7 +58,7 @@ export const TravelsPackagesSection: React.FC<TravelsPackagesSectionProps> = ({
         heroImage: '',
         gallery: [],
         highlights: pkg.features,
-        price: `${pkg.currency} ${pkg.price.toLocaleString()}`,
+        price: formatCurrency(pkg.price, 'LKR'),
         pricePerPerson: pkg.price,
         priceNote: pkg.billingCycle || 'Per package',
         availability: 'Available on request',
@@ -88,7 +89,9 @@ export const TravelsPackagesSection: React.FC<TravelsPackagesSectionProps> = ({
           heroImage: s.images && s.images.length > 0 ? s.images[0] : (s as any).imageUrl || '',
           gallery: s.images || [],
           highlights: s.features || ['Private Air-Conditioned Vehicle', 'Chauffeur Guide', 'Daily Breakfast'],
-          price: typeof s.price === 'number' ? `$${s.price.toLocaleString()}` : String(s.price || '$850'),
+          price: typeof s.price === 'number'
+            ? formatCurrency(s.price, 'LKR')
+            : String(s.price || 'Rs. 850').replace(/\bUSD\b|\$/gi, 'Rs.'),
           pricePerPerson: typeof s.price === 'number' ? s.price : 850,
           priceNote: (s as any).priceNote || 'Per Person Sharing',
           availability: (s as any).availability || 'Year-round daily departures',
@@ -102,7 +105,7 @@ export const TravelsPackagesSection: React.FC<TravelsPackagesSectionProps> = ({
           ],
           included: s.features || ['Air-conditioned vehicle with fuel and tolls', 'English-speaking tourist driver guide'],
           excluded: (s as any).excluded || ['International flights and visa fees', 'Entrance tickets to historical monuments'],
-          pricingTiers: (s as any).pricingTiers || [{ tier: 'Standard (3-4 Star)', price: '$850 / person', description: 'Comfortable hotels' }],
+          pricingTiers: (s as any).pricingTiers || [{ tier: 'Standard (3-4 Star)', price: 'Rs. 850 / person', description: 'Comfortable hotels' }],
           faqs: (s as any).faqs || [{ question: 'Can this itinerary be customized?', answer: 'Yes, all itineraries can be personalized.' }],
         }));
       }

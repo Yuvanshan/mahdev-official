@@ -17,6 +17,7 @@ import { Order } from '../types/order';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { SEOHead } from '../components/layout/SEOHead';
+import { formatCurrency } from '../utils/currency';
 
 interface OrderLookupViewProps {
   onNavigate: (path: string) => void;
@@ -190,7 +191,7 @@ export const OrderLookupView: React.FC<OrderLookupViewProps> = ({ onNavigate }) 
                       <div>
                         <span className="text-[10px] text-slate-400">Total Amount:</span>
                         <div className="font-mono text-sm font-bold text-[#0052FF]">
-                          ${order.total.toFixed(2)} {order.currency}
+                          {formatCurrency(order.total, 'LKR')}
                         </div>
                       </div>
 
@@ -252,7 +253,7 @@ export const OrderLookupView: React.FC<OrderLookupViewProps> = ({ onNavigate }) 
                   <div className="flex items-center justify-between sm:justify-end gap-3">
                     <div className="text-right">
                       <span className="font-mono text-xs font-bold text-slate-900 block">
-                        ${order.total.toFixed(2)}
+                        {formatCurrency(order.total, 'LKR')}
                       </span>
                       <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
                         {order.status}

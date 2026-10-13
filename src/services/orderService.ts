@@ -223,7 +223,7 @@ class OrderService {
           (input.deliveryInfo?.cost !== undefined ? input.deliveryInfo.cost : cartSummary.shippingFee) +
           cartSummary.tax
       ),
-      currency: 'USD',
+      currency: 'LKR',
       status: 'pending_payment',
       paymentStatus: 'payment_pending',
       paymentMethod: input.paymentMethod || 'credit_card',

@@ -4,6 +4,7 @@ import { CatalogProduct, ProductVariantOption } from '../types/catalog';
 import { analyticsService } from '../services/analyticsService';
 import { cmsService } from '../services/cmsService';
 import { CmsCoupon } from '../types/cms';
+import { formatCurrency } from '../utils/currency';
 
 interface CartContextType {
   cartItems: CartItem[];
@@ -287,7 +288,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (found.minOrderAmount && cartSummary.subtotal < found.minOrderAmount) {
       return {
         success: false,
-        message: `Coupon "${trimmed}" requires a minimum subtotal of $${found.minOrderAmount.toFixed(2)}.`,
+        message: `Coupon "${trimmed}" requires a minimum subtotal of ${formatCurrency(found.minOrderAmount, 'LKR')}.`,
       };
     }
 

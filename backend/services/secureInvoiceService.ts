@@ -123,7 +123,7 @@ export function generateSecureFiscalInvoice(input: GenerateInvoiceInput): Genera
       taxRatePercentage: 8.0, // Standard 8% SSCL / VAT
       shipping: input.shipping,
       total: input.total,
-      currency: input.currency || 'USD',
+      currency: input.currency || 'LKR',
       isPaid: true,
       paymentMethod: input.paymentMethod,
       transactionId: input.transactionId,

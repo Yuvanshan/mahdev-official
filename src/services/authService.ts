@@ -112,7 +112,7 @@ class AuthService {
                   country: 'Sri Lanka',
                 },
                 preferences: {
-                  currency: 'USD',
+                  currency: 'LKR',
                   preferredContactMethod: 'whatsapp',
                   orderNotifications: true,
                   promotionalUpdates: true,
@@ -210,7 +210,7 @@ class AuthService {
               country: 'Sri Lanka',
             },
             preferences: {
-              currency: 'USD',
+              currency: 'LKR',
               preferredContactMethod: 'whatsapp',
               orderNotifications: true,
               promotionalUpdates: true,
@@ -356,7 +356,7 @@ class AuthService {
           country: 'Sri Lanka',
         },
         preferences: {
-          currency: 'USD',
+          currency: 'LKR',
           preferredContactMethod: 'whatsapp',
           orderNotifications: true,
           promotionalUpdates: true,

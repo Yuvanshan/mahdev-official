@@ -16,6 +16,7 @@ import {
 import { Booking } from '../../types/booking';
 import { COMPANY_INFO } from '../../config/company';
 import { buildWhatsAppMessage, MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
+import { formatCurrency } from '../../utils/currency';
 
 interface BookingSuccessModalProps {
   booking: Booking;
@@ -119,9 +120,9 @@ END:VCALENDAR`;
             </div>
             <div className="text-right">
               <span className="text-lg font-bold font-mono text-neutral-900">
-                ${booking.price.toFixed(2)}
+                {formatCurrency(booking.price, 'LKR')}
               </span>
-              <span className="block text-[10px] text-neutral-400 uppercase">{booking.currency}</span>
+              <span className="block text-[10px] text-neutral-400 uppercase">LKR</span>
             </div>
           </div>
 

@@ -17,6 +17,7 @@ import {
 import { Product, ProductVariant, MART_PRODUCTS } from '../../data/martData';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
+import { formatCurrency } from '../../utils/currency';
 
 interface MartProductDetailModalProps {
   product: Product | null;
@@ -174,11 +175,11 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                   </span>
                   <div className="flex items-baseline gap-3">
                     <span className="font-mono text-3xl font-extrabold text-slate-900">
-                      ${unitPrice.toFixed(2)}
+                      {formatCurrency(unitPrice, 'LKR')}
                     </span>
                     {originalUnitPrice && (
                       <span className="font-mono text-sm text-slate-400 line-through">
-                        ${originalUnitPrice.toFixed(2)}
+                        {formatCurrency(originalUnitPrice, 'LKR')}
                       </span>
                     )}
                   </div>
@@ -226,7 +227,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                           <span>{opt.name}</span>
                           {opt.priceModifier ? (
                             <span className="ml-1 text-[10px] text-slate-500 font-mono">
-                              (+${opt.priceModifier})
+                              (+{formatCurrency(opt.priceModifier, 'LKR')})
                             </span>
                           ) : null}
                         </button>
@@ -271,7 +272,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                     leftIcon={<ShoppingCart className="w-4 h-4 shrink-0" />}
                     className="flex-1 w-full text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 py-3 min-h-[44px]"
                   >
-                    Add {quantity} to Cart • ${(unitPrice * quantity).toFixed(2)}
+                    Add {quantity} to Cart • {formatCurrency(unitPrice * quantity, 'LKR')}
                   </Button>
                 </div>
 
@@ -426,7 +427,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                         {rel.name}
                       </h4>
                       <div className="font-mono text-xs font-bold text-[#0052FF] mt-0.5">
-                        ${rel.price.toFixed(2)}
+                        {formatCurrency(rel.price, 'LKR')}
                       </div>
                     </div>
                   </div>

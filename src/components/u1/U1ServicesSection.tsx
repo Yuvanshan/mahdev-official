@@ -53,7 +53,7 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
           description: s.description || '',
           detailedDescription: (s as any).detailedDescription || s.description || '',
           startingPrice: typeof s.price === 'number' || typeof (s as any).startingPrice === 'number'
-            ? formatCurrency(s.price || (s as any).startingPrice || 0, s.currency || 'LKR')
+            ? formatCurrency(s.price || (s as any).startingPrice || 0, 'LKR')
             : String(s.price || 'Rs. 50,000'),
           turnaround: (s as any).turnaround || (s as any).leadTime || '7-10 Days',
           deliverables: (s as any).deliverables || s.features || ['High-Res Digital Master Gallery'],

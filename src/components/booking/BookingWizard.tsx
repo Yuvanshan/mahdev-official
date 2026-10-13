@@ -36,6 +36,7 @@ import { bookingService } from '../../services/bookingService';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { evaluateBotRisk, checkActionThrottle } from '../../utils/securityProtection';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
+import { formatCurrency } from '../../utils/currency';
 
 interface BookingWizardProps {
   initialDivision?: string;
@@ -422,7 +423,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
                         <div className="pt-2 border-t border-neutral-100 flex items-center justify-between text-[11px] text-neutral-400 font-mono">
                           <span>Lead Time: {service.leadTimeDays}d</span>
                           <span className="text-amber-700 font-bold font-sans">
-                            From ${service.packages[0]?.price || 0}
+                            From {formatCurrency(service.packages[0]?.price || 0, 'LKR')}
                           </span>
                         </div>
                       </div>
@@ -470,9 +471,9 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
                           </div>
                           <div className="text-right">
                             <span className="text-2xl font-bold font-mono">
-                              ${pkg.price}
+                              {formatCurrency(pkg.price, 'LKR')}
                             </span>
-                            <p className="text-[10px] opacity-70 uppercase">{pkg.currency}</p>
+                            <p className="text-[10px] opacity-70 uppercase">LKR</p>
                           </div>
                         </div>
 
@@ -530,7 +531,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
                 </h4>
               </div>
               <span className="text-base font-bold text-neutral-900 font-mono">
-                ${selectedPackage.price} {selectedPackage.currency}
+                {formatCurrency(selectedPackage.price, 'LKR')}
               </span>
             </div>
 
@@ -687,9 +688,9 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
                 </div>
                 <div className="text-right">
                   <span className="text-2xl font-bold font-mono text-amber-400">
-                    ${selectedPackage.price.toFixed(2)}
+                    {formatCurrency(selectedPackage.price, 'LKR')}
                   </span>
-                  <p className="text-[10px] text-neutral-400">{selectedPackage.currency}</p>
+                  <p className="text-[10px] text-neutral-400">LKR</p>
                 </div>
               </div>
 
@@ -880,7 +881,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
               ) : (
                 <>
                   <ShieldCheck className="w-4 h-4 text-neutral-950" />
-                  <span>Confirm & Submit Booking (${selectedPackage.price})</span>
+                  <span>Confirm & Submit Booking ({formatCurrency(selectedPackage.price, 'LKR')})</span>
                 </>
               )}
             </button>

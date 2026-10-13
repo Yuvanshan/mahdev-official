@@ -31,6 +31,7 @@ import {
 import { paymentService } from '../../services/paymentService';
 import { orderService } from '../../services/orderService';
 import { Button } from '../ui/Button';
+import { formatCurrency } from '../../utils/currency';
 import { Badge } from '../ui/Badge';
 
 interface PaymentGatewayModalProps {
@@ -209,7 +210,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
               <p className="text-[11px] text-slate-400">
                 Order Reference: <span className="font-mono text-slate-200">{order.id}</span> • Total Payable:{' '}
                 <span className="font-mono text-emerald-400 font-bold">
-                  ${order.total.toFixed(2)} {order.currency}
+                  {formatCurrency(order.total, 'LKR')}
                 </span>
               </p>
             </div>
@@ -626,7 +627,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
                 rightIcon={<ChevronRight className="w-4 h-4" />}
                 className="text-xs px-6 py-2.5 font-bold"
               >
-                Initialize Secure Session (${order.total.toFixed(2)})
+                Initialize Secure Session ({formatCurrency(order.total, 'LKR')})
               </Button>
             </>
           )}
@@ -648,7 +649,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
                 rightIcon={<ArrowRight className="w-4 h-4" />}
                 className="text-xs px-6 py-2.5 font-bold cursor-pointer"
               >
-                Confirm & Authorize Payment (${order.total.toFixed(2)})
+                Confirm & Authorize Payment ({formatCurrency(order.total, 'LKR')})
               </Button>
             </>
           )}

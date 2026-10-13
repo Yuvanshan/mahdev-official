@@ -354,7 +354,7 @@ class FirestoreServiceRepository {
     return {
       siteName: 'Mahdev Pvt Ltd',
       maintenanceMode: false,
-      currency: 'USD',
+      currency: 'LKR',
       taxRate: 0,
       announcement: {
         enabled: true,

@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
-import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { HeroVideoBackground } from '../common/HeroVideoBackground';
 
 interface U1HeroSectionProps {
@@ -14,52 +13,12 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
   onExplorePortfolio,
   onExploreServices,
 }) => {
-  const { divisions, mediaAssets } = useFirestoreDataContext();
-
-  const u1Div = divisions?.find(
-    (d) =>
-      d.id === 'u1' ||
-      d.id === 'u1-studio' ||
-      d.id === 'div-u1' ||
-      d.id === 'div-u1-studio' ||
-      (d as any).divisionKey === 'u1' ||
-      d.slug === 'u1' ||
-      d.slug === 'u1-studio'
-  );
-
-  const rawHeroImage =
-    (u1Div as any)?.defaultImageUrl ||
-    (u1Div as any)?.heroImageUrl ||
-    (u1Div as any)?.imageUrl ||
-    (u1Div?.hero as any)?.defaultImageUrl ||
-    (u1Div?.hero as any)?.imageUrl ||
-    (u1Div as any)?.hero?.bgImage;
-
-  const fallbackMediaImage = React.useMemo(() => {
-    const divMedia = (mediaAssets || []).find(
-      (m) =>
-        m.division === 'u1' ||
-        (m as any).divisionId === 'u1' ||
-        m.category === 'divisions' ||
-        (m.tags || []).includes('hero') ||
-        (m.tags || []).includes('u1')
-    );
-    return divMedia?.url || '';
-  }, [mediaAssets]);
-
-  const heroImage =
-    typeof rawHeroImage === 'string' && rawHeroImage.trim() !== ''
-      ? rawHeroImage.trim()
-      : fallbackMediaImage;
-
   return (
     <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-[#061033] text-white">
       {/* Reliable Full-Width Video Background with guaranteed autoplay */}
       <HeroVideoBackground
         videoUrl="/assets/hero_main.mp4?v=2"
-        imageUrl={heroImage}
-        posterImageUrl={heroImage}
-        title={u1Div?.name || 'U1 Studio Photography & Cinema'}
+        title="U1 Studio Photography & Cinema"
       />
 
       {/* ================= HERO CONTENT OVER VIDEO ON LEFT SIDE ================= */}

@@ -45,7 +45,7 @@ export const SWSServicesSection: React.FC<SWSServicesSectionProps> = ({
           description: s.description || '',
           detailedDescription: (s as any).detailedDescription || s.description || '',
           startingPrice: typeof s.price === 'number' || typeof (s as any).startingPrice === 'number'
-            ? formatCurrency(s.price || (s as any).startingPrice || 0, s.currency || 'LKR')
+            ? formatCurrency(s.price || (s as any).startingPrice || 0, 'LKR')
             : String(s.price || 'Rs. 75,000'),
           priceNote: (s as any).priceNote || 'Customized to event scale',
           imageUrl: s.images && s.images.length > 0 ? s.images[0] : (s as any).imageUrl || '',

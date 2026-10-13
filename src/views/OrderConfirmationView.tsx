@@ -35,6 +35,7 @@ import { SEOHead } from '../components/layout/SEOHead';
 import { PaymentGatewayModal } from '../components/payment/PaymentGatewayModal';
 import { COMPANY_INFO } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
+import { formatCurrency } from '../utils/currency';
 
 interface OrderConfirmationViewProps {
   orderId?: string;
@@ -133,8 +134,9 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
   const getWhatsAppConciergeLink = () => {
     if (!order) return '#';
     const text = encodeURIComponent(
-      `Hello Mahdev Concierge,\n\nI have placed an order with ID: *${order.id}* for $${order.total.toFixed(
-        2
+      `Hello Mahdev Concierge,\n\nI have placed an order with ID: *${order.id}* for ${formatCurrency(
+        order.total,
+        'LKR'
       )}.\n\nCustomer: ${order.customer.fullName} (${order.customer.email})\nPayment Status: ${order.paymentStatus.toUpperCase()}\n\nPlease verify receipt and transition details.`
     );
     return `https://wa.me/94750928078?text=${text}`;
@@ -303,7 +305,7 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
                     <span className="text-[11px] text-slate-400">
                       Amount Payable:{' '}
                       <strong className="text-emerald-400 font-mono">
-                        ${order.total.toFixed(2)} {order.currency}
+                        {formatCurrency(order.total, 'LKR')}
                       </strong>{' '}
                       • Server-side HMAC verified
                     </span>
@@ -522,10 +524,10 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
                         {item.quantity}
                       </td>
                       <td className="py-3 text-right font-mono text-slate-700">
-                        ${item.unitPrice.toFixed(2)}
+                        {formatCurrency(item.unitPrice, 'LKR')}
                       </td>
                       <td className="py-3 text-right font-mono font-bold text-slate-900">
-                        ${item.lineTotal.toFixed(2)}
+                        {formatCurrency(item.lineTotal, 'LKR')}
                       </td>
                     </tr>
                   ))}
@@ -538,30 +540,30 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
               <div className="w-full sm:w-72 space-y-1.5 text-xs">
                 <div className="flex justify-between text-slate-600">
                   <span>Subtotal ({order.totalQuantity} items):</span>
-                  <span className="font-mono font-bold text-slate-900">${order.subtotal.toFixed(2)}</span>
+                  <span className="font-mono font-bold text-slate-900">{formatCurrency(order.subtotal, 'LKR')}</span>
                 </div>
                 {order.productDiscounts > 0 && (
                   <div className="flex justify-between text-emerald-600 text-[11px]">
                     <span>Product Savings:</span>
-                    <span className="font-mono font-bold">-${order.productDiscounts.toFixed(2)}</span>
+                    <span className="font-mono font-bold">-{formatCurrency(order.productDiscounts, 'LKR')}</span>
                   </div>
                 )}
                 {order.couponDiscount > 0 && (
                   <div className="flex justify-between text-emerald-600 text-[11px]">
                     <span>Promo Code ({order.appliedCouponCode}):</span>
-                    <span className="font-mono font-bold">-${order.couponDiscount.toFixed(2)}</span>
+                    <span className="font-mono font-bold">-{formatCurrency(order.couponDiscount, 'LKR')}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-slate-600">
                   <span>Delivery & Courier:</span>
                   <span className="font-mono text-slate-900">
-                    {order.shippingFee === 0 ? <span className="text-emerald-600 font-bold">FREE</span> : `$${order.shippingFee.toFixed(2)}`}
+                    {order.shippingFee === 0 ? <span className="text-emerald-600 font-bold">FREE</span> : formatCurrency(order.shippingFee, 'LKR')}
                   </span>
                 </div>
                 <div className="flex justify-between text-base font-bold text-slate-900 pt-2 border-t border-slate-200">
                   <span>Grand Total:</span>
                   <span className="font-mono text-lg text-[#0052FF]">
-                    ${order.total.toFixed(2)} {order.currency}
+                    {formatCurrency(order.total, 'LKR')}
                   </span>
                 </div>
               </div>
@@ -638,7 +640,7 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
                     <tr key={txn.transactionId} className="py-2">
                       <td className="py-2.5 font-bold text-slate-900">{txn.transactionId}</td>
                       <td className="py-2.5 text-slate-600 font-sans">{txn.gatewayName}</td>
-                      <td className="py-2.5 font-bold text-slate-900">${txn.amount.toFixed(2)}</td>
+                      <td className="py-2.5 font-bold text-slate-900">{formatCurrency(txn.amount, 'LKR')}</td>
                       <td className="py-2.5">
                         <span
                           className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
