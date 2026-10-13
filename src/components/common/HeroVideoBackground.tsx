@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { resolveMediaUrl } from '../../services/firestoreMediaService';
 import { getYouTubeEmbedUrl, extractYouTubeId } from '../../utils/youtube';
+import { HeroVideoControls } from './HeroVideoControls';
 
 interface HeroVideoBackgroundProps {
   videoUrl?: string;
@@ -10,6 +11,7 @@ interface HeroVideoBackgroundProps {
   overlayGradient?: 'default' | 'electric' | 'subtle';
   className?: string;
   onVideoReady?: () => void;
+  enableSoundControl?: boolean;
 }
 
 // Global safety guard ensuring onVideoReady identifier is never undefined across browser contexts or iframe messages
@@ -43,6 +45,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
   overlayGradient = 'default',
   className = '',
   onVideoReady,
+  enableSoundControl = false,
 }) => {
   const [videoFailed, setVideoFailed] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
@@ -51,6 +54,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
   // particular, a division's Firestore video must always win when one exists.
   const [currentVideoCandidate, setCurrentVideoCandidate] = useState<string>(videoUrl?.trim() || '');
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const backgroundRef = useRef<HTMLDivElement | null>(null);
 
   // Synchronize incoming videoUrl changes
   useEffect(() => {
@@ -142,40 +146,12 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
     videoEl.muted = true;
     videoEl.playsInline = true;
 
-    const attemptPlay = () => {
-      if (!videoEl) return;
-      videoEl.muted = true;
-      const playPromise = videoEl.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            handleVideoReady();
-          })
-          .catch((error) => {
-            console.debug('Autoplay deferred pending user interaction:', error);
-          });
+    videoEl.play().then(
+      () => handleVideoReady(),
+      (error: unknown) => {
+        console.debug('Autoplay deferred until playback is allowed:', error);
       }
-    };
-
-    attemptPlay();
-
-    // Secondary safety: start playing on first user window touch/scroll/click
-    const onUserInteraction = () => {
-      attemptPlay();
-      window.removeEventListener('click', onUserInteraction);
-      window.removeEventListener('touchstart', onUserInteraction);
-      window.removeEventListener('scroll', onUserInteraction);
-    };
-
-    window.addEventListener('click', onUserInteraction, { once: true, passive: true });
-    window.addEventListener('touchstart', onUserInteraction, { once: true, passive: true });
-    window.addEventListener('scroll', onUserInteraction, { once: true, passive: true });
-
-    return () => {
-      window.removeEventListener('click', onUserInteraction);
-      window.removeEventListener('touchstart', onUserInteraction);
-      window.removeEventListener('scroll', onUserInteraction);
-    };
+    );
   }, [hasVideo, isEmbedVideo, resolvedSrc, handleVideoReady]);
 
   // YouTube embed URL with required parameters for autoplay & loop
@@ -196,7 +172,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
   const fallbackImage = imageUrl?.trim() || posterImageUrl?.trim() || '';
 
   return (
-    <div className={`absolute inset-0 z-0 overflow-hidden select-none pointer-events-none bg-[#061033] ${className}`}>
+    <div ref={backgroundRef} className={`absolute inset-0 z-0 overflow-hidden select-none pointer-events-none bg-[#061033] ${className}`}>
       {/* A poster is present from first paint, so a slow or unavailable video
           never exposes a black box, loader, or recovery panel on the landing page. */}
       {fallbackImage && (
@@ -247,11 +223,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
           playsInline
           preload="metadata"
           onCanPlay={() => {
-            const v = videoRef.current;
-            if (v) {
-              v.muted = true;
-              v.play().catch(() => {});
-            }
+            videoRef.current?.play().catch(() => {});
             handleVideoReady();
           }}
           onCanPlayThrough={() => {
@@ -261,11 +233,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
             handleVideoReady();
           }}
           onLoadedData={() => {
-            const v = videoRef.current;
-            if (v) {
-              v.muted = true;
-              v.play().catch(() => {});
-            }
+            videoRef.current?.play().catch(() => {});
             handleVideoReady();
           }}
           onTimeUpdate={(e) => {
@@ -288,6 +256,13 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
       {/* 4. Electric Blue & High Contrast Shading Overlay (Always on top of media, under content) */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#061033] via-[#061033]/85 sm:via-[#061033]/70 md:via-[#061033]/45 to-transparent pointer-events-none z-10" />
       <div className="absolute inset-0 bg-gradient-to-t from-[#061033] via-transparent to-[#0052FF]/10 pointer-events-none z-10" />
+      {enableSoundControl && (
+        <HeroVideoControls
+          heroRef={backgroundRef}
+          videoRef={videoRef}
+          label={title}
+        />
+      )}
     </div>
   );
 };

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
+import { HeroVideoControls } from '../common/HeroVideoControls';
 
 interface HeroSectionProps {
   onNavigate: (route: string) => void;
@@ -15,6 +16,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onExploreMahdev,
   onExploreServices,
 }) => {
+  const heroRef = useRef<HTMLElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
   const explore = () => {
     if (onExploreServices) onExploreServices();
     else if (onExploreMahdev) onExploreMahdev();
@@ -22,8 +26,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   };
 
   return (
-    <section className="relative isolate min-h-[680px] overflow-hidden bg-slate-950 sm:min-h-[740px] lg:min-h-[min(820px,calc(100svh-5rem))]">
+    <section
+      ref={heroRef}
+      className="relative isolate min-h-[680px] overflow-hidden bg-slate-950 sm:min-h-[740px] lg:min-h-[min(820px,calc(100svh-5rem))]"
+    >
       <video
+        ref={videoRef}
         src={HERO_VIDEO}
         autoPlay
         loop
@@ -32,6 +40,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         preload="auto"
         aria-hidden="true"
         className="absolute inset-0 h-full w-full object-cover"
+      />
+      <HeroVideoControls
+        heroRef={heroRef}
+        videoRef={videoRef}
+        label="Mahdev landing"
       />
       <div
         aria-hidden="true"

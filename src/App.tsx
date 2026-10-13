@@ -1,4 +1,4 @@
-import React, { lazy as reactLazy, Suspense, useState, useEffect } from 'react';
+import React, { lazy as reactLazy, Suspense, useState, useEffect, useRef } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { Navigation } from './components/layout/Navigation';
 import { Footer } from './components/layout/Footer';
@@ -17,6 +17,7 @@ import { testTursoConnection, initAppCheck } from './lib/firebase';
 import { analyticsService } from './services/analyticsService';
 import { catalogService } from './services/catalogService';
 import { motion, AnimatePresence } from 'motion/react';
+import { HeroVideoControls } from './components/common/HeroVideoControls';
 
 const CHUNK_RECOVERY_KEY = 'mahdev:chunk-load-recovery';
 
@@ -41,6 +42,8 @@ type RouteLoadingFallbackProps = {
 };
 
 const RouteLoadingFallback: React.FC<RouteLoadingFallbackProps> = ({ division, path }) => {
+  const heroRef = useRef<HTMLElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const description = division === 'sws'
     ? 'Beautifully designed celebrations, thoughtfully crafted around your special moments.'
     : 'Professional photography and creative experiences that preserve your most precious memories.';
@@ -52,11 +55,13 @@ const RouteLoadingFallback: React.FC<RouteLoadingFallbackProps> = ({ division, p
 
     return (
       <section
+        ref={heroRef}
         aria-busy="true"
         aria-label={division === 'sws' ? 'SWS Event Management' : 'U1 Studio'}
         className="relative flex min-h-[85vh] w-full items-center overflow-hidden bg-[#061033] text-white lg:min-h-[90vh]"
       >
         <video
+          ref={videoRef}
           aria-hidden="true"
           className="absolute inset-0 h-full w-full object-cover"
           src="/assets/hero_main.mp4?v=2"
@@ -65,6 +70,11 @@ const RouteLoadingFallback: React.FC<RouteLoadingFallbackProps> = ({ division, p
           muted
           playsInline
           preload="auto"
+        />
+        <HeroVideoControls
+          heroRef={heroRef}
+          videoRef={videoRef}
+          label={division === 'sws' ? 'SWS' : 'U1'}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[#061033]/90 via-[#061033]/60 to-[#061033]/30" />
         <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">

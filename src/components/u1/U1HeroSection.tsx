@@ -19,6 +19,7 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
       <HeroVideoBackground
         videoUrl="/assets/hero_main.mp4?v=2"
         title="U1 Studio Photography & Cinema"
+        enableSoundControl
       />
 
       {/* ================= HERO CONTENT OVER VIDEO ON LEFT SIDE ================= */}
