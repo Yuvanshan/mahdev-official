@@ -14,7 +14,7 @@ import { SWS_PORTFOLIO_ITEMS, SWSPortfolioItem } from '../../data/swsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';
-import { H2, Caption, Body } from '../ui/Heading';
+import { H2, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { ScrollReveal } from '../motion/MotionWrappers';
@@ -72,7 +72,6 @@ export const SWSPortfolioSection: React.FC<SWSPortfolioSectionProps> = ({
       {/* Section Header */}
       <div className="max-w-3xl mb-12">
         <ScrollReveal direction="up">
-          <Caption className="text-[#0052FF] mb-2 block">Proven Execution & Case Studies</Caption>
           <H2 className="text-slate-900">Hallmark Event Portfolio</H2>
         </ScrollReveal>
       </div>

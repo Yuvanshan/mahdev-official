@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { Layers, ShieldCheck, Sparkles, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import { SectionContainer } from '../ui/SectionContainer';
-import { H2, Body, Caption } from '../ui/Heading';
+import { H2, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { BRAND_CONFIG } from '../../config/brand';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
@@ -79,11 +79,6 @@ export const IntroSection: React.FC<IntroSectionProps> = () => {
             <H2 className="text-slate-900 mt-2 mb-4">
               {headline}
             </H2>
-            {intro.subheadline && (
-              <Body className="text-slate-700 text-base font-medium leading-relaxed mb-3">
-                {intro.subheadline}
-              </Body>
-            )}
             <Body className="text-slate-600 text-base leading-relaxed">
               {intro.description ||
                 `${companyName} acts as the strategic and operational holding foundation behind five distinguished business divisions. While each division functions with autonomous creative and technical mastery, they share a collective standard of precision, financial resilience, and client devotion.`}

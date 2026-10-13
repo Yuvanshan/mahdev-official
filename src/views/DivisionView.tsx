@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   ArrowRight,
   Sparkles,
@@ -24,6 +24,7 @@ import { Textarea } from '../components/ui/Textarea';
 import { IconRenderer } from '../components/ui/IconRenderer';
 import { SEOHead } from '../components/layout/SEOHead';
 import { SlideIn, ScrollReveal } from '../components/motion/MotionWrappers';
+import { ScrollParallax } from '../components/motion/ParallelScroll';
 import { DIVISIONS, DIVISION_LIST } from '../config/divisions';
 import { DivisionId } from '../types';
 import { DivisionComingSoonView } from './DivisionComingSoonView';
@@ -247,6 +248,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
   const [inquirySubmitted, setInquirySubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
+  const divisionHeroRef = useRef<HTMLElement | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -317,7 +319,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
       />
 
       {/* 1. DIVISION HERO SECTION: FULL SCREEN WIDTH VIDEO/PICTURE COVER */}
-      <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-slate-950 text-white">
+      <section ref={divisionHeroRef} className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-slate-950 text-white">
         {/* Full-bleed Video or Image Background */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           {(() => {
@@ -353,12 +355,14 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
             const effectiveVideo = hasFirestoreVideo ? divVideo : '/assets/hero_main.mp4?v=2';
 
             return (
-              <HeroVideoBackground
-                videoUrl={effectiveVideo}
-                imageUrl={divImg}
-                posterImageUrl={divImg}
-                title={`${division.name} Showcase`}
-              />
+              <ScrollParallax targetRef={divisionHeroRef} distance={34} className="absolute -inset-y-10 inset-x-0 overflow-hidden">
+                <HeroVideoBackground
+                  videoUrl={effectiveVideo}
+                  imageUrl={divImg}
+                  posterImageUrl={divImg}
+                  title={`${division.name} Showcase`}
+                />
+              </ScrollParallax>
             );
           })()}
         </div>

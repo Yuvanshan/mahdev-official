@@ -72,7 +72,6 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate
       <div className="flex items-start justify-between gap-4 p-4 sm:p-5">
         <div className="min-w-0">
           <h2 className="font-display text-lg font-semibold text-slate-950">{division.name}</h2>
-          <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-600">{division.description}</p>
         </div>
         <ArrowUpRight className="mt-1 h-5 w-5 shrink-0 text-slate-400 transition group-hover:text-blue-700" />
       </div>

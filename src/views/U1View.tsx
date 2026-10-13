@@ -72,7 +72,7 @@ export const U1View: React.FC<U1ViewProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="w-full flex flex-col">
+    <div className="division-experience min-h-screen w-full flex flex-col bg-[#FAF9F6]">
       <SEOHead
         title="U1 Studio | Luxury Photography, 4K Cinema & Creative Studio"
         description="U1 Studio by Mahdev Pvt Ltd. High-end editorial photography, 4K cinema wedding films, fashion portraits, commercial product imaging, and heirloom flush-mount albums in Sri Lanka."

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { ExternalLink, Handshake, Building2, CheckCircle2, Globe, Shield, Sparkles } from 'lucide-react';
+import { ExternalLink, Building2, CheckCircle2, Globe, Shield, Sparkles } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
-import { H2, Body, Caption } from '../ui/Heading';
+import { H2 } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
@@ -52,15 +52,7 @@ export const TrustedCompaniesMatrix: React.FC<TrustedCompaniesMatrixProps> = ({ 
     <SectionContainer id="companies" background="white" paddingY="xl" hasBorderBottom>
       <ScrollReveal direction="up">
         <div className="text-center max-w-2xl mx-auto mb-14">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#0052FF] text-xs font-semibold mb-2 shadow-2xs">
-            <Handshake className="w-3.5 h-3.5" />
-            <span>{meta.badge || 'Institutional Collaborations'}</span>
-          </div>
           <H2 className="text-slate-900 mb-3">{meta.title || 'Trusted Enterprise Partners'}</H2>
-          <Body className="text-slate-600 text-base">
-            {meta.subtitle ||
-              'Powering hallmark productions, software architectures, luxury travel expeditions, and equipment deployments for industry leaders across Sri Lanka.'}
-          </Body>
         </div>
       </ScrollReveal>
 

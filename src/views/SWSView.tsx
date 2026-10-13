@@ -115,7 +115,7 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="w-full flex flex-col">
+    <div className="division-experience min-h-screen w-full flex flex-col bg-[#FAF9F6]">
       <SEOHead
         title="SWS Event Management | Luxury Weddings, Decor, Stage Productions & Equipment Rentals"
         description={`SWS Event Management by Mahdev Pvt Ltd (Est. 2022). Comprehensive event design, wedding decorations, grand summits, stage engineering, ${rentalCount} rental inventory units, photography, catering, and complete packages in Sri Lanka.`}

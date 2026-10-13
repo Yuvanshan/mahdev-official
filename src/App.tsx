@@ -187,7 +187,7 @@ const AboutView = lazy(() => import('./views/AboutView').then((module) => ({ def
 const PortfolioView = lazy(() => import('./views/PortfolioView').then((module) => ({ default: module.PortfolioView })));
 const ProjectDetailView = lazy(() => import('./views/ProjectDetailView').then((module) => ({ default: module.ProjectDetailView })));
 const ContactView = lazy(() => import('./views/ContactView').then((module) => ({ default: module.ContactView })));
-const ServicesView = lazy(() => import('./views/ServicesView').then((module) => ({ default: module.ServicesView })));
+const ExploreAllView = lazy(() => import('./views/ExploreAllView').then((module) => ({ default: module.ExploreAllView })));
 const ClientsView = lazy(() => import('./views/ClientsView').then((module) => ({ default: module.ClientsView })));
 const MilestonesView = lazy(() => import('./views/MilestonesView').then((module) => ({ default: module.MilestonesView })));
 const DivisionsPageView = lazy(() => import('./views/DivisionsPageView').then((module) => ({ default: module.DivisionsPageView })));
@@ -676,8 +676,11 @@ function AppContent() {
         searchParams.get('mediaSku') ||
         searchParams.get('id') ||
         searchParams.get('item') ||
+        searchParams.get('title') ||
         undefined;
-      return <GalleryPageView onNavigate={navigate} initialSku={gallerySku} />;
+      return gallerySku
+        ? <GalleryPageView onNavigate={navigate} initialSku={gallerySku} />
+        : <ExploreAllView onNavigate={navigate} />;
     }
 
     // Protected Direct /orders and /bookings shortcuts
@@ -1190,25 +1193,14 @@ function AppContent() {
         return <DivisionsPageView onNavigate={navigate} />;
       case '/services':
       case '/featured-services':
-        return <ServicesView onNavigate={navigate} />;
+        return <ExploreAllView onNavigate={navigate} />;
       case '/about':
       case '/about-us':
       case '/company':
         return <AboutView onNavigate={navigate} />;
       case '/gallery':
       case '/media':
-        return (
-          <GalleryPageView
-            onNavigate={navigate}
-            initialSku={
-              searchParams.get('sku') ||
-              searchParams.get('mediaSku') ||
-              searchParams.get('id') ||
-              searchParams.get('item') ||
-              undefined
-            }
-          />
-        );
+        return <ExploreAllView onNavigate={navigate} />;
       case '/projects':
       case '/portfolio':
       case '/work':
@@ -1277,7 +1269,7 @@ function AppContent() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.24, ease: 'easeInOut' }}
-            className="w-full max-w-full min-w-0"
+            className={`w-full max-w-full min-w-0 ${normalizedPath.startsWith('/admin') ? '' : 'public-editorial'}`}
           >
             <Suspense
               fallback={

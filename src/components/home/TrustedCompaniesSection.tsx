@@ -1,5 +1,4 @@
 import React from 'react';
-import { Handshake } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { FirestoreTrustedCompany } from '../../types/firestore';
@@ -41,16 +40,9 @@ export const TrustedCompaniesSection: React.FC<TrustedCompaniesSectionProps> = (
       hasBorderBottom
     >
       <div className="text-center max-w-2xl mx-auto mb-8">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-mono font-semibold text-slate-700 mb-2.5 shadow-2xs">
-          <Handshake className="w-3.5 h-3.5 text-blue-600" />
-          <span>{meta.badge || 'OUR TRUSTED CLIENTS'}</span>
-        </div>
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold font-display text-slate-900 mb-2">
           {meta.title || 'Trusted by Industry Leaders'}
         </h2>
-        <p className="text-xs sm:text-sm text-slate-600">
-          {meta.subtitle || 'Collaborating with national institutions, luxury hotel chains, and enterprise leaders across Sri Lanka.'}
-        </p>
       </div>
 
       {/* Partner Logos Matrix - Responsive Grid */}

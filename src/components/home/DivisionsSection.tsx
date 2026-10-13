@@ -20,13 +20,8 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
     <SectionContainer id="divisions" background="white" paddingY="lg">
       <div className="mb-8 flex items-end justify-between gap-4 sm:mb-10">
         <div>
-          {section?.badge && (
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
-              {section.badge}
-            </p>
-          )}
           {section?.title && (
-            <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+            <h2 className="font-display text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
               {section.title}
             </h2>
           )}

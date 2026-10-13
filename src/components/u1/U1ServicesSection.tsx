@@ -20,7 +20,7 @@ import { isSameDivision } from '../../services/firestore/divisions';
 import { formatCurrency } from '../../utils/currency';
 import { U1ServiceDetailModal } from './U1ServiceDetailModal';
 import { SectionContainer } from '../ui/SectionContainer';
-import { H2, Caption, Body } from '../ui/Heading';
+import { H2, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
@@ -97,9 +97,6 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
         <div>
           <ScrollReveal direction="up">
-            <Caption className="text-[#0052FF] mb-2 block">
-              11 Specialized Photography & Creative Studio Disciplines
-            </Caption>
             <H2 className="text-slate-900">
               Visual Craftsmanship & Creative Production
             </H2>

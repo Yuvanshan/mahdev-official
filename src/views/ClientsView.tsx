@@ -2,8 +2,7 @@ import React, { useEffect } from 'react';
 import { Handshake, Building2, ShieldCheck, Sparkles, ArrowRight } from 'lucide-react';
 import { SEOHead } from '../components/layout/SEOHead';
 import { SectionContainer } from '../components/ui/SectionContainer';
-import { H1, H2, Body, Caption } from '../components/ui/Heading';
-import { Badge } from '../components/ui/Badge';
+import { H1, H2, Caption } from '../components/ui/Heading';
 import { Button } from '../components/ui/Button';
 import { ScrollReveal, Magnetic } from '../components/motion/MotionWrappers';
 import { TrustedCompaniesMatrix } from '../components/corporate/TrustedCompaniesMatrix';
@@ -36,9 +35,6 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ onNavigate }) => {
         <ScrollReveal direction="up">
           <div className="max-w-3xl">
             <div className="flex items-center gap-2 mb-3">
-              <Badge variant="electric" size="sm">
-                Institutional Collaborations
-              </Badge>
               <span className="text-xs font-semibold text-slate-500">
                 Commercial • Government • Private Sector
               </span>
@@ -62,15 +58,9 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ onNavigate }) => {
           <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
           
           <div className="relative z-10 space-y-6">
-            <Badge variant="electric" size="sm" className="bg-blue-600 text-white border-transparent">
-              B2B Strategic Alliances
-            </Badge>
             <H2 className="text-white text-2xl sm:text-3xl lg:text-4xl font-display font-bold">
               Become a Strategic Partner with {companyName}
             </H2>
-            <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl">
-              Gain access to integrated cross-division capabilities, preferred enterprise SLAs, dedicated account directors, and volume procurement pricing across all five business divisions.
-            </p>
 
             <div className="pt-4 flex flex-col sm:flex-row gap-4">
               <Magnetic strength={0.2}>

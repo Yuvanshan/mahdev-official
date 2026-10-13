@@ -112,11 +112,7 @@ const WhyMahdevSectionContent: React.FC<{
   const yEven = useTransform(smoothProgress, [0, 1], ['-12px', '12px']);
   const yOdd = useTransform(smoothProgress, [0, 1], ['12px', '-12px']);
 
-  const badge = whyConfig?.badge || 'Operational Standards';
   const title = whyConfig?.title || 'The Enterprise Standard';
-  const subtitle =
-    whyConfig?.subtitle ||
-    'Rigorous quality control, in-house technical mastery, and clear accountability across every project.';
   const guarantees = (
     whyConfig?.guarantees && whyConfig.guarantees.length > 0
       ? whyConfig.guarantees
@@ -142,9 +138,6 @@ const WhyMahdevSectionContent: React.FC<{
       <ParallelWatermark text="05 // STANDARDS" />
       <SectionContainer id="why-mahdev" background="white" paddingY="xl" hasBorderBottom>
         <div className="relative z-10 max-w-2xl mb-8">
-          <span className="text-[11px] font-mono uppercase tracking-wider text-blue-600 block mb-1 font-semibold">
-            {badge}
-          </span>
           <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900">
             {title}
           </h2>

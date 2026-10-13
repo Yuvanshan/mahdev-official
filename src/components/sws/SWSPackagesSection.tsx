@@ -15,7 +15,7 @@ import { SWSPackage, SWS_PACKAGES } from '../../data/swsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';
-import { H2, Caption, Body } from '../ui/Heading';
+import { H2, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
@@ -118,7 +118,6 @@ export const SWSPackagesSection: React.FC<SWSPackagesSectionProps> = ({ onBookPa
       {/* Section Heading */}
       <div className="text-center max-w-3xl mx-auto mb-14">
         <ScrollReveal direction="up">
-          <Caption className="text-[#0052FF] mb-2 block">Curated Turnkey Packages</Caption>
           <H2 className="text-slate-900">
             All-Inclusive Event Suites Crafted for Perfection
           </H2>

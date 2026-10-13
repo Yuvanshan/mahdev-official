@@ -11,7 +11,7 @@ import {
   Tv,
 } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
-import { H2, Caption, Body } from '../ui/Heading';
+import { H2, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
@@ -83,7 +83,6 @@ export const U1StudioExperienceSection: React.FC = () => {
       {/* Header */}
       <div className="max-w-3xl mb-12">
         <ScrollReveal direction="up">
-          <Caption className="text-[#0052FF] mb-2 block">The U1 Studio Space & Bindery</Caption>
           <H2 className="text-slate-900">
             A Master Space Engineered for Creative Excellence
           </H2>

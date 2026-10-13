@@ -16,6 +16,7 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
   const isVisibleRef = useRef(false);
   const soundAllowedRef = useRef(false);
   const autoSoundAttemptedRef = useRef(false);
+  const playbackRequestRef = useRef<'audible' | 'muted' | null>(null);
   const recoveryCountRef = useRef(0);
   const lastRecoveryAtRef = useRef(0);
   const lastProgressAtRef = useRef(Date.now());
@@ -45,12 +46,18 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
 
     function playMuted() {
       if (!isVisibleRef.current || document.visibilityState !== 'visible') return;
+      if (playbackRequestRef.current) return;
+      playbackRequestRef.current = 'muted';
       video.muted = !soundAllowedRef.current;
       if (soundAllowedRef.current) video.volume = HERO_VIDEO_VOLUME;
       video.playsInline = true;
       video.play().then(
-        () => attemptInitialSound(),
+        () => {
+          playbackRequestRef.current = null;
+          if (!soundAllowedRef.current) attemptInitialSound();
+        },
         (error: unknown) => {
+          playbackRequestRef.current = null;
           console.debug('[HeroVideoControls] Muted playback deferred:', error);
         }
       );
@@ -58,14 +65,22 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
 
     function playWithSound() {
       if (!isVisibleRef.current || document.visibilityState !== 'visible') return;
+      if (playbackRequestRef.current === 'audible') return;
+      if (playbackRequestRef.current === 'muted') {
+        video.muted = false;
+        video.volume = HERO_VIDEO_VOLUME;
+      }
+      playbackRequestRef.current = 'audible';
       autoSoundAttemptedRef.current = true;
       video.volume = HERO_VIDEO_VOLUME;
       video.muted = false;
       video.play().then(
         () => {
+          playbackRequestRef.current = null;
           soundAllowedRef.current = true;
         },
         (error: unknown) => {
+          playbackRequestRef.current = null;
           video.muted = true;
           console.debug('[HeroVideoControls] Audible autoplay blocked; continuing muted:', error);
           playMuted();
@@ -96,6 +111,7 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
       if (!isVisible || document.visibilityState !== 'visible') {
         video.pause();
         video.muted = true;
+        playbackRequestRef.current = null;
         return;
       }
 
@@ -139,7 +155,8 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
     const handleCanPlay = () => {
       window.clearTimeout(recoveryTimer);
       lastProgressAtRef.current = Date.now();
-      playMuted();
+      if (soundAllowedRef.current) playMuted();
+      else attemptInitialSound();
     };
 
     const handleVideoError = () => {

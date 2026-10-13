@@ -85,6 +85,19 @@
     font-family: 'Playfair Display', Georgia, serif;
   }
 
+  .public-editorial h1,
+  .public-editorial h2 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 500;
+    letter-spacing: -0.035em;
+  }
+
+  .division-experience section h2 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 500;
+    letter-spacing: -0.035em;
+  }
+
   /* Accessibility: Respect user reduced motion preferences */
   @media (prefers-reduced-motion: reduce) {
     html {

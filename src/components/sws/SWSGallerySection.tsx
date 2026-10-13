@@ -18,7 +18,7 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';
 import { GallerySectionShimmer } from '../common/GallerySectionShimmer';
-import { H2, Caption, Body } from '../ui/Heading';
+import { H2, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
@@ -157,7 +157,6 @@ export const SWSGallerySection: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
         <div>
           <ScrollReveal direction="up">
-            <Caption className="text-[#0052FF] mb-2 block">Visual Showcase</Caption>
             <H2 className="font-editorial text-slate-900">Cinematic Gallery of Live Productions</H2>
           </ScrollReveal>
         </div>

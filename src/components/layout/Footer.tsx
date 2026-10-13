@@ -105,10 +105,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath }) => {
                 onClick={() => onNavigate('/')}
               />
 
-              <p className="text-xs text-blue-200/70 leading-relaxed">
-                Operating high-performance divisions across Sri Lanka and international partner networks.
-              </p>
-
               {/* Direct Contact Anchors */}
               <div className="space-y-3 pt-2 text-xs text-blue-200/80">
                 <a

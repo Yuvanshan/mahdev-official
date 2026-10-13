@@ -27,11 +27,6 @@ export const CompanyStorySection: React.FC<CompanyStorySectionProps> = ({ onExpl
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mb-20">
         <div className="lg:col-span-7 space-y-6">
           <ScrollReveal direction="up">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#0052FF] text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>The {companyName} Story</span>
-            </div>
-
             <H2 className="text-slate-900 mt-2 mb-4 font-display text-3xl sm:text-4xl lg:text-5xl tracking-tight">
               {companySettings?.tagline ? `${companySettings.name} — ${companySettings.tagline}` : COMPANY_STORY.headline}
             </H2>

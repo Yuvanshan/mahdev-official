@@ -10,7 +10,7 @@ import {
   Award,
 } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
-import { H2, Caption, Body } from '../ui/Heading';
+import { H2, Body } from '../ui/Heading';
 import { ScrollReveal } from '../motion/MotionWrappers';
 
 export const SWSProcessSection: React.FC = () => {
@@ -50,7 +50,6 @@ export const SWSProcessSection: React.FC = () => {
       {/* Section Header */}
       <div className="text-center max-w-3xl mx-auto mb-14">
         <ScrollReveal direction="up">
-          <Caption className="text-[#0052FF] mb-2 block">Methodical Event Craftsmanship</Caption>
           <H2 className="text-slate-900">How We Orchestrate Unforgettable Milestones</H2>
         </ScrollReveal>
       </div>

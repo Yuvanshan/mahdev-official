@@ -15,7 +15,7 @@ import {
 import { U1Package } from '../../data/u1Data';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
-import { H2, Caption, Body } from '../ui/Heading';
+import { H2, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
@@ -120,9 +120,6 @@ export const U1PackagesSection: React.FC<U1PackagesSectionProps> = ({ onBookPack
       {/* Section Heading */}
       <div className="text-center max-w-3xl mx-auto mb-14">
         <ScrollReveal direction="up">
-          <Caption className="text-[#0052FF] mb-2 block">
-            Tailored Photography & Cinema Suites
-          </Caption>
           <H2 className="text-slate-900">
             Curated Packages for Every Milestone
           </H2>

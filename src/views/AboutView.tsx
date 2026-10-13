@@ -165,10 +165,6 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
                   </H1>
 
                   {/* Short Introductory Text */}
-                  <Body className="text-slate-600 text-base sm:text-lg leading-relaxed mb-8">
-                    {content.hero.description}
-                  </Body>
-
                   {/* Hero CTA button */}
                   <div>
                     <Button
@@ -266,18 +262,9 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <ScrollReveal direction="up">
                 <div className="max-w-3xl mb-12">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="w-2 h-2 rounded-full bg-blue-600" />
-                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-blue-600">
-                      Our Guiding Principles
-                    </span>
-                  </div>
                   <H2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-slate-900 tracking-tight">
                     Core Values
                   </H2>
-                  <p className="text-sm sm:text-base text-slate-500 mt-2">
-                    The fundamental standards that govern our culture, craftsmanship, and client relationships across Sri Lanka.
-                  </p>
                 </div>
               </ScrollReveal>
 
@@ -312,18 +299,9 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <ScrollReveal direction="up">
                 <div className="max-w-3xl mb-12">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="w-2 h-2 rounded-full bg-blue-600" />
-                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-blue-600">
-                      Multi-Sector Portfolio
-                    </span>
-                  </div>
                   <H2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-slate-900 tracking-tight">
                     Our Business Divisions
                   </H2>
-                  <p className="text-sm sm:text-base text-slate-500 mt-2">
-                    Bringing together event management, creative studio services, technology, travel, and online commerce under one trusted brand.
-                  </p>
                 </div>
               </ScrollReveal>
 
@@ -389,18 +367,9 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <ScrollReveal direction="up">
                 <div className="max-w-3xl mb-12">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="w-2 h-2 rounded-full bg-blue-600" />
-                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-blue-600">
-                      Our Evolution
-                    </span>
-                  </div>
                   <H2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-slate-900 tracking-tight">
                     Company Journey
                   </H2>
-                  <p className="text-sm sm:text-base text-slate-500 mt-2">
-                    A story of consistent growth, expanding divisions, and continuous innovation from Trincomalee to nationwide operations.
-                  </p>
                 </div>
               </ScrollReveal>
 
@@ -435,18 +404,9 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <ScrollReveal direction="up">
                 <div className="max-w-3xl mb-12">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="w-2 h-2 rounded-full bg-blue-600" />
-                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-blue-600">
-                      Physical Presence
-                    </span>
-                  </div>
                   <H2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-slate-900 tracking-tight">
                     Our Locations
                   </H2>
-                  <p className="text-sm sm:text-base text-slate-500 mt-2">
-                    Operating dedicated corporate branches and service hubs in both Colombo and Trincomalee.
-                  </p>
                 </div>
               </ScrollReveal>
 

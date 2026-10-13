@@ -19,7 +19,7 @@ import { U1PortfolioItem } from '../../data/u1Data';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { GallerySectionShimmer } from '../common/GallerySectionShimmer';
 import { SectionContainer } from '../ui/SectionContainer';
-import { H2, Caption, Body } from '../ui/Heading';
+import { H2, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { shareMediaAsset, inquireMediaAssetOnWhatsApp } from '../../utils/mediaShare';
@@ -222,9 +222,6 @@ export const U1PortfolioSection: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
         <div>
           <ScrollReveal direction="up">
-            <Caption className="text-[#0052FF] mb-2 block">
-              Curated Visual Archives
-            </Caption>
             <H2 className="text-slate-900">
               The U1 Visual Portfolio
             </H2>

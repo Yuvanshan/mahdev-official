@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
 import { HeroVideoBackground } from '../common/HeroVideoBackground';
+import { ScrollParallax } from '../motion/ParallelScroll';
 
 interface SWSHeroSectionProps {
   onOpenBooking?: () => void;
@@ -15,14 +16,18 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
   onExploreServices,
   onExploreRentals,
 }) => {
+  const heroRef = React.useRef<HTMLElement | null>(null);
+
   return (
-    <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-[#061033] text-white">
+    <section ref={heroRef} className="relative flex min-h-[680px] w-full items-center overflow-hidden bg-[#061033] text-white sm:min-h-[740px] lg:min-h-[min(820px,calc(100svh-5rem))]">
       {/* Reliable Full-Width Video Background with guaranteed autoplay */}
-      <HeroVideoBackground
-        videoUrl="/assets/hero_main.mp4?v=2"
-        title="SWS Luxury Event Decor & Rentals"
-        enableAutomaticAudio
-      />
+      <ScrollParallax targetRef={heroRef} distance={34} className="absolute -inset-y-10 inset-x-0 overflow-hidden">
+        <HeroVideoBackground
+          videoUrl="/assets/hero_main.mp4?v=2"
+          title="SWS Luxury Event Decor & Rentals"
+          enableAutomaticAudio
+        />
+      </ScrollParallax>
 
       {/* ================= HERO CONTENT OVER VIDEO ON LEFT SIDE ================= */}
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-28 z-20 w-full">
@@ -33,20 +38,11 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
             initial={{ opacity: 0.85, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            className="font-display text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-white leading-[1.08] drop-shadow-md"
+            className="font-editorial text-4xl font-medium leading-[1.04] tracking-[-0.035em] text-white drop-shadow-md sm:text-6xl lg:text-7xl"
           >
             <span className="block">We Create Moments.</span>
-            <span className="block">You Make Memories.</span>
+            <span className="block bg-gradient-to-r from-sky-300 via-blue-200 to-white bg-clip-text text-transparent">You Make Memories.</span>
           </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0.8, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.65, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
-            className="max-w-xl text-sm sm:text-base font-medium tracking-wide text-white/85 drop-shadow-md"
-          >
-            Beautifully designed celebrations, thoughtfully crafted around your special moments.
-          </motion.p>
 
           <motion.button
             type="button"

@@ -9,6 +9,52 @@ interface ParallelSectionProps {
   offset?: [string, string];
 }
 
+interface ScrollParallaxProps {
+  targetRef: React.RefObject<HTMLElement | null>;
+  children: React.ReactNode;
+  className?: string;
+  distance?: number;
+}
+
+export const ScrollParallax: React.FC<ScrollParallaxProps> = ({
+  targetRef,
+  children,
+  className = '',
+  distance = 28,
+}) => {
+  const { reducedMotion, isTouch } = useDeviceMotion();
+
+  if (reducedMotion || isTouch) {
+    return <div className={className}>{children}</div>;
+  }
+
+  return (
+    <ScrollParallaxMotion targetRef={targetRef} distance={distance} className={className}>
+      {children}
+    </ScrollParallaxMotion>
+  );
+};
+
+const ScrollParallaxMotion: React.FC<ScrollParallaxProps> = ({
+  targetRef,
+  children,
+  className = '',
+  distance = 28,
+}) => {
+  const { scrollYProgress } = useScroll({
+    target: targetRef,
+    offset: ['start start', 'end start'],
+  });
+  const rawY = useTransform(scrollYProgress, [0, 1], [0, distance]);
+  const smoothY = useSpring(rawY, { stiffness: 75, damping: 24, mass: 0.2 });
+
+  return (
+    <motion.div style={{ y: smoothY }} className={className}>
+      {children}
+    </motion.div>
+  );
+};
+
 /**
  * ParallelSection creates a scroll-bound coordinate space for child parallel layers.
  */

@@ -241,9 +241,6 @@ const FeaturedServicesSectionContent: React.FC<
       >
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between mb-8 gap-6">
           <div className="max-w-2xl">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-blue-600 mb-2 block font-semibold">
-              {sectionMeta.badge || 'Enterprise Solutions'}
-            </span>
             <H2 className="text-slate-900">{sectionMeta.title || 'Featured Services & Capabilities'}</H2>
           </div>
 

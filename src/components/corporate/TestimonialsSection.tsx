@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Star, ChevronRight, ChevronLeft, MessageSquare, CheckCircle2, Quote } from 'lucide-react';
+import { Star, ChevronRight, ChevronLeft, CheckCircle2, Quote } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
-import { H2, Body } from '../ui/Heading';
+import { H2 } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { DivisionId } from '../../types/firestore';
@@ -142,17 +142,9 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
     <SectionContainer id="testimonials" background="white" paddingY="xl" hasBorderBottom>
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
         <div className="max-w-2xl">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-mono font-semibold mb-3 shadow-2xs">
-            <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
-            <span>{meta.badge || 'CLIENT TESTIMONIALS'}</span>
-          </div>
-
           <H2 className="text-slate-900 mb-2">
             {meta.title || 'What Our Clients Say'}
           </H2>
-          <Body className="text-slate-600 text-sm sm:text-base">
-            {meta.subtitle || 'Verified customer feedback and testimonials across our service divisions.'}
-          </Body>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">

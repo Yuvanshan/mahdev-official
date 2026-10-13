@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { X, MapPin, Sparkles, MessageCircle, ArrowLeft, Filter, Camera, Share2, Check } from 'lucide-react';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { SectionContainer } from '../components/ui/SectionContainer';
-import { H1, H2, Body, Caption } from '../components/ui/Heading';
+import { H1, H2 } from '../components/ui/Heading';
 import { Badge } from '../components/ui/Badge';
 import { openWhatsAppInquiry, deriveLookupSku } from '../utils/whatsapp';
 import { CallToActionSection } from '../components/home/CallToActionSection';
@@ -247,17 +247,10 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
                   <ArrowLeft className="w-3.5 h-3.5" />
                   Back to Home
                 </button>
-                <span className="text-slate-300">•</span>
-                <Badge variant="electric" size="sm">
-                  Media & Portfolio Archive
-                </Badge>
               </div>
               <H1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-slate-900 tracking-tight mb-3">
                 Visual Gallery & Live Archives
               </H1>
-              <Body className="text-slate-600 text-sm sm:text-base">
-                Explore real project snapshots, backstage captures, and high-resolution media across all five Mahdev divisions. Click any photo to inquire or request tailored production packages.
-              </Body>
             </div>
 
             {/* Filter Pill List */}

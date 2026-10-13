@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { HeroVideoControls } from '../common/HeroVideoControls';
+import { ScrollParallax } from '../motion/ParallelScroll';
 
 interface HeroSectionProps {
   onNavigate: (route: string) => void;
@@ -30,15 +31,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       ref={heroRef}
       className="relative isolate min-h-[680px] overflow-hidden bg-slate-950 sm:min-h-[740px] lg:min-h-[min(820px,calc(100svh-5rem))]"
     >
-      <video
-        ref={videoRef}
-        src={HERO_VIDEO}
-        loop
-        playsInline
-        preload="auto"
-        aria-hidden="true"
-        className="absolute inset-0 h-full w-full object-cover brightness-[1.15] saturate-[1.08]"
-      />
+      <ScrollParallax targetRef={heroRef} distance={34} className="absolute -inset-y-10 inset-x-0 overflow-hidden">
+        <video
+          ref={videoRef}
+          src={HERO_VIDEO}
+          loop
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover brightness-[1.15] saturate-[1.08]"
+        />
+      </ScrollParallax>
       <HeroVideoControls
         heroRef={heroRef}
         videoRef={videoRef}
