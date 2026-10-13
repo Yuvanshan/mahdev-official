@@ -32,6 +32,7 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
 
     let recoveryTimer = 0;
     let watchTimer = 0;
+    let routeIsActive = true;
 
     function attemptInitialSound() {
       if (
@@ -39,6 +40,7 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
         soundBlockedUntilInteractionRef.current ||
         soundAllowedRef.current ||
         !isVisibleRef.current ||
+        !routeIsActive ||
         document.visibilityState !== 'visible'
       ) {
         return;
@@ -48,7 +50,7 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
     }
 
     function playMuted() {
-      if (!isVisibleRef.current || document.visibilityState !== 'visible') return;
+      if (!routeIsActive || !isVisibleRef.current || document.visibilityState !== 'visible') return;
       if (playbackRequestRef.current) return;
       playbackRequestRef.current = 'muted';
       video.muted = !soundAllowedRef.current;
@@ -77,7 +79,7 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
     }
 
     function playWithSound() {
-      if (!isVisibleRef.current || document.visibilityState !== 'visible') return;
+      if (!routeIsActive || !isVisibleRef.current || document.visibilityState !== 'visible') return;
       if (playbackRequestRef.current === 'audible') return;
       if (playbackRequestRef.current === 'muted') {
         pendingAudiblePlaybackRef.current = true;
@@ -106,7 +108,7 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
     }
 
     const recoverStalledVideo = () => {
-      if (!isVisibleRef.current || document.visibilityState !== 'visible') return;
+      if (!routeIsActive || !isVisibleRef.current || document.visibilityState !== 'visible') return;
       if (Date.now() - lastProgressAtRef.current < STALL_RECOVERY_MS) return;
       if (Date.now() - lastRecoveryAtRef.current < 5000) return;
       if (recoveryCountRef.current >= 3) {
@@ -187,6 +189,15 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
       updateVisibility(isVisibleRef.current);
     };
 
+    const stopForRouteChange = () => {
+      routeIsActive = false;
+      isVisibleRef.current = false;
+      pendingAudiblePlaybackRef.current = false;
+      playbackRequestRef.current = null;
+      video.pause();
+      video.muted = true;
+    };
+
     const interactionEvents: Array<keyof WindowEventMap> = [
       'pointerdown',
       'touchstart',
@@ -196,6 +207,7 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
       window.addEventListener(eventName, handleUserInteraction, { passive: true })
     );
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('mahdev:routechange', stopForRouteChange);
     video.addEventListener('playing', handlePlaying);
     video.addEventListener('timeupdate', handleProgress);
     video.addEventListener('waiting', handleWaiting);
@@ -233,6 +245,7 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
         window.removeEventListener(eventName, handleUserInteraction)
       );
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('mahdev:routechange', stopForRouteChange);
       video.removeEventListener('playing', handlePlaying);
       video.removeEventListener('timeupdate', handleProgress);
       video.removeEventListener('waiting', handleWaiting);

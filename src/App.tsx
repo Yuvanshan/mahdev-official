@@ -241,6 +241,7 @@ function AppContent() {
       const hash = window.location.hash || '';
       const search = window.location.search || '';
       if (hash.startsWith('#/') && hash.length > 2) {
+        window.dispatchEvent(new Event('mahdev:routechange'));
         setCurrentPath(hash.substring(1));
         return;
       }
@@ -252,15 +253,18 @@ function AppContent() {
         'about', 'about-us', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'catalog', 'track-order', 'order', 'orders', 'terms-and-conditions', 'privacy-policy'
       ];
       if (directHashRoutes.includes(cleanHash) || cleanHash.startsWith('admin/')) {
+        window.dispatchEvent(new Event('mahdev:routechange'));
         setCurrentPath(`/${cleanHash}${search}`);
         return;
       }
       const searchParams = new URLSearchParams(window.location.search);
       const queryRoute = searchParams.get('route') || searchParams.get('p') || searchParams.get('path');
       if (queryRoute) {
+        window.dispatchEvent(new Event('mahdev:routechange'));
         setCurrentPath((queryRoute.startsWith('/') ? queryRoute : `/${queryRoute}`) + search);
         return;
       }
+      window.dispatchEvent(new Event('mahdev:routechange'));
       setCurrentPath((window.location.pathname || '/') + search);
     };
     window.addEventListener('popstate', handleLocationChange);
@@ -301,6 +305,7 @@ function AppContent() {
     }
 
     if (targetPath !== currentPath) {
+      window.dispatchEvent(new Event('mahdev:routechange'));
       window.history.pushState({}, '', targetPath);
       setCurrentPath(targetPath);
     }
