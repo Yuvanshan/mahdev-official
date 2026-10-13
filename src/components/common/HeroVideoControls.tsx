@@ -1,4 +1,5 @@
-import React, { RefObject, useEffect, useRef } from 'react';
+import React, { RefObject, useEffect, useRef, useState } from 'react';
+import { Volume2, VolumeX } from 'lucide-react';
 
 interface HeroVideoControlsProps {
   heroRef: RefObject<HTMLElement | null>;
@@ -13,6 +14,7 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
   heroRef,
   videoRef,
 }) => {
+  const [audioEnabled, setAudioEnabled] = useState(false);
   const isVisibleRef = useRef(false);
   const soundAllowedRef = useRef(false);
   const autoSoundAttemptedRef = useRef(false);
@@ -23,6 +25,27 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
   const lastRecoveryAtRef = useRef(0);
   const lastProgressAtRef = useRef(Date.now());
   const lastPlaybackTimeRef = useRef(0);
+
+  const enableAudio = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    soundBlockedUntilInteractionRef.current = false;
+    autoSoundAttemptedRef.current = true;
+    video.volume = HERO_VIDEO_VOLUME;
+    video.muted = false;
+    video.play().then(
+      () => {
+        soundAllowedRef.current = true;
+        setAudioEnabled(true);
+      },
+      (error: unknown) => {
+        video.muted = true;
+        soundAllowedRef.current = false;
+        setAudioEnabled(false);
+        console.warn('[HeroVideoControls] Audio could not be enabled:', error);
+      }
+    );
+  };
 
   useEffect(() => {
     const hero = heroRef.current;
@@ -143,7 +166,7 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
         video.muted = false;
         playMuted();
       } else {
-        playWithSound();
+        playMuted();
       }
     };
 
@@ -156,8 +179,11 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
 
     const handlePlaying = () => {
       lastProgressAtRef.current = Date.now();
+      setAudioEnabled(!video.muted);
       if (!soundAllowedRef.current) attemptInitialSound();
     };
+
+    const handleVolumeChange = () => setAudioEnabled(!video.muted);
 
     const handleProgress = () => {
       if (video.currentTime !== lastPlaybackTimeRef.current) {
@@ -197,6 +223,7 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
     );
     document.addEventListener('visibilitychange', handleVisibilityChange);
     video.addEventListener('playing', handlePlaying);
+    video.addEventListener('volumechange', handleVolumeChange);
     video.addEventListener('timeupdate', handleProgress);
     video.addEventListener('waiting', handleWaiting);
     video.addEventListener('stalled', handleWaiting);
@@ -234,6 +261,7 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
       );
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       video.removeEventListener('playing', handlePlaying);
+      video.removeEventListener('volumechange', handleVolumeChange);
       video.removeEventListener('timeupdate', handleProgress);
       video.removeEventListener('waiting', handleWaiting);
       video.removeEventListener('stalled', handleWaiting);
@@ -246,5 +274,24 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
     return cleanup;
   }, [heroRef, videoRef]);
 
-  return null;
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        if (audioEnabled) {
+          const video = videoRef.current;
+          if (video) video.muted = true;
+          soundAllowedRef.current = false;
+          setAudioEnabled(false);
+        } else {
+          enableAudio();
+        }
+      }}
+      aria-label={audioEnabled ? 'Mute hero video' : 'Enable hero video sound'}
+      className="absolute bottom-5 right-5 z-30 inline-flex min-h-10 items-center gap-2 rounded-full border border-white/35 bg-slate-950/55 px-3.5 text-xs font-semibold text-white shadow-lg backdrop-blur-md transition hover:bg-slate-950/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+    >
+      {audioEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+      {audioEnabled ? 'Sound on' : 'Tap for sound'}
+    </button>
+  );
 };

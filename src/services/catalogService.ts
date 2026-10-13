@@ -28,10 +28,11 @@ export function mapFirestoreProductToCatalog(
       ? 'Mahdev Travels'
       : 'Mahdev Group';
 
-  const img = (fp as any).imageUrl || (fp.images && fp.images.length > 0 ? fp.images[0] : '');
-  const gallery = Array.isArray(fp.images) && fp.images.length > 0
-    ? fp.images
-    : ((fp as any).imageUrl ? [(fp as any).imageUrl] : []);
+  const gallery = [fp.imageUrl, ...(Array.isArray(fp.images) ? fp.images : []), ...(Array.isArray(fp.galleryImages) ? fp.galleryImages : []), (fp as any).image]
+    .filter((image): image is string => typeof image === 'string' && Boolean(image.trim()))
+    .map((image) => image.trim())
+    .filter((image, index, images) => images.indexOf(image) === index);
+  const img = gallery[0] || '';
   const price = Number(fp.price) || 0;
   const origPrice = fp.compareAtPrice !== undefined ? Number(fp.compareAtPrice) : price;
   const discountPercent =

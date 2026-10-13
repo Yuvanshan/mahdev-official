@@ -247,3 +247,10 @@ export async function readCareerCv(storagePath: string): Promise<{
       : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
   return { body, contentType };
 }
+
+export async function deleteCareerCv(storagePath: string): Promise<void> {
+  if (!/^career-cvs\/[0-9a-f-]{36}_[a-zA-Z0-9._-]{1,100}\.pdf$/i.test(storagePath)) {
+    throw new Error('Invalid CV storage reference.');
+  }
+  await getStorageBucket().file(storagePath).delete({ ignoreNotFound: true });
+}

@@ -16,6 +16,8 @@ import {
   forwardAdminMediaUploadChunk,
 } from '../services/adminMediaUpload.js';
 import careerCvHandler from './handlers/careers/cv.js';
+import careerStatusHandler from './handlers/careers/status.js';
+import careerApplicationHandler from './handlers/careers/application.js';
 
 const apiRouter = Router();
 
@@ -28,6 +30,12 @@ apiRouter.post(
 );
 apiRouter.get('/careers/cv', async (req: Request, res: Response) => {
   await careerCvHandler(req, res);
+});
+apiRouter.get('/careers/status', async (req: Request, res: Response) => {
+  await careerStatusHandler(req, res);
+});
+apiRouter.delete('/careers/application', async (req: Request, res: Response) => {
+  await careerApplicationHandler(req, res);
 });
 
 apiRouter.get('/health', async (_req, res) => {

@@ -18,16 +18,11 @@ export const ImageWithShimmer: React.FC<ImageWithShimmerProps> = ({
   loading = 'lazy',
   fallbackText,
 }) => {
-  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
-  const isLoaded = loadedSrc === src;
   const hasFailed = failedSrc === src;
 
   return (
     <div className={`relative overflow-hidden ${className}`}>
-      {!isLoaded && !hasFailed && (
-        <div aria-hidden="true" className="image-shimmer absolute inset-0" />
-      )}
       {!hasFailed ? (
         <CrossfadeImage
           src={src}
@@ -36,7 +31,6 @@ export const ImageWithShimmer: React.FC<ImageWithShimmerProps> = ({
           decoding="async"
           className="absolute inset-0"
           imageClassName={imageClassName}
-          onLoad={() => setLoadedSrc(src)}
           onError={() => setFailedSrc(src)}
         />
       ) : (

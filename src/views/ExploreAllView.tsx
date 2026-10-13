@@ -151,12 +151,15 @@ export const ExploreAllView: React.FC<{
     const serviceItems: BrowseItem[] = services
       .filter((service) => service.isPublished !== false && service.status !== 'draft' && service.status !== 'inactive')
       .map((service) => {
-        const images = (service.images || []).filter(Boolean).slice(0, 5);
+        const images = (Array.isArray(service.images) ? service.images : [])
+          .filter((image): image is string => typeof image === 'string' && Boolean(image.trim()))
+          .map((image) => image.trim())
+          .slice(0, 5);
         const title = service.title || service.name || 'Service';
         const category = service.category || service.categoryId || 'Services';
         const searchableText = [
           title, service.description, service.sku, category, service.divisionName,
-          service.divisionId, ...(service.features || []), ...(images),
+          service.divisionId, ...(Array.isArray(service.features) ? service.features : []), ...(images),
         ].filter(Boolean).join(' ').toLowerCase();
         return {
           type: 'service',
@@ -165,8 +168,11 @@ export const ExploreAllView: React.FC<{
           description: service.description || '',
           category,
           division: service.divisionName || String(service.divisionId || 'Mahdev'),
-          image: images[0] || service.imageUrl || '',
-          images: images.length ? images : service.imageUrl ? [service.imageUrl] : [],
+          image: images[0] || service.imageUrl || (service as FirestoreService & { image?: string }).image || '',
+          images: images.length
+            ? images
+            : [service.imageUrl, (service as FirestoreService & { image?: string }).image]
+              .filter((image): image is string => typeof image === 'string' && Boolean(image.trim())),
           searchableText,
           data: service,
         };

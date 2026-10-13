@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Briefcase, Download, Pencil, Plus, Search, Users, X } from 'lucide-react';
+import { Briefcase, Download, Pencil, Plus, Search, Trash2, Users, X } from 'lucide-react';
 import {
   CareerApplication,
   CareerApplicationStatus,
   CareerOpening,
   CareerOpeningStatus,
+  deleteCareerApplication,
   getCareerApplications,
   getCareerCvUrl,
   getCareerOpeningsForAdmin,
@@ -161,6 +162,19 @@ export const AdminCareersView: React.FC = () => {
     }
   };
 
+  const removeApplication = async (application: CareerApplication) => {
+    if (!window.confirm(`Permanently delete ${application.candidateName}'s application and private CV?`)) return;
+    setError('');
+    setNotice('');
+    try {
+      const cleanupWarning = await deleteCareerApplication(application.id);
+      setApplications((items) => items.filter((item) => item.id !== application.id));
+      setNotice(cleanupWarning || 'Application and private CV deleted.');
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'Could not delete this application.');
+    }
+  };
+
   const statusClass = (status: CareerOpeningStatus | CareerApplicationStatus) => {
     if (status === 'published' || status === 'hired') return 'bg-emerald-50 text-emerald-700';
     if (status === 'closed' || status === 'rejected') return 'bg-slate-100 text-slate-600';
@@ -255,9 +269,9 @@ export const AdminCareersView: React.FC = () => {
       ) : filteredApplications.length ? (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left text-sm">
+            <table className="w-full min-w-[840px] text-left text-sm">
               <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
-                <tr><th className="px-4 py-3">Candidate</th><th className="px-4 py-3">Opportunity</th><th className="px-4 py-3">Applied</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">CV</th></tr>
+                <tr><th className="px-4 py-3">Candidate</th><th className="px-4 py-3">Opportunity</th><th className="px-4 py-3">Applied</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">CV</th><th className="px-4 py-3">Actions</th></tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredApplications.map((application) => {
@@ -287,6 +301,16 @@ export const AdminCareersView: React.FC = () => {
                           <Download className="h-3.5 w-3.5" /> Download
                         </a>
                         <p className="mt-1 max-w-36 truncate text-[10px] text-slate-400">{application.cvFileName}</p>
+                      </td>
+                      <td className="px-4 py-4">
+                        <button
+                          type="button"
+                          onClick={() => void removeApplication(application)}
+                          aria-label={`Delete ${application.candidateName}'s application`}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 text-red-600 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </td>
                     </tr>
                   );

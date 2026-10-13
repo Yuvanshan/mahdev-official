@@ -37,10 +37,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         <video
           ref={videoRef}
           src={HERO_VIDEO}
+          autoPlay
           loop
           playsInline
+          muted
           preload="auto"
           aria-hidden="true"
+          disablePictureInPicture
           className="absolute inset-0 h-full w-full object-cover object-center brightness-[1.05] contrast-[1.08] saturate-[1.08]"
         />
       </ScrollParallax>

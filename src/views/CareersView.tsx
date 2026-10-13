@@ -1,8 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowRight, Briefcase, CheckCircle2, Clock3, MapPin, UploadCloud } from 'lucide-react';
+import { ArrowRight, Briefcase, CheckCircle2, Clock3, MapPin, Search, UploadCloud } from 'lucide-react';
 import { SEOHead } from '../components/layout/SEOHead';
 import { SectionContainer } from '../components/ui/SectionContainer';
-import { CareerOpening, getPublishedCareerOpenings, submitCareerApplication, uploadCareerCv } from '../services/careerService';
+import {
+  CareerApplicationStatusResult,
+  CareerOpening,
+  getPublishedCareerOpenings,
+  lookupCareerApplicationStatus,
+  submitCareerApplication,
+  uploadCareerCv,
+} from '../services/careerService';
 import { DIVISIONS } from '../config/divisions';
 
 interface CareersViewProps {
@@ -38,6 +45,12 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
   const [submitError, setSubmitError] = useState('');
   const [loadError, setLoadError] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [applicationReference, setApplicationReference] = useState('');
+  const [statusEmail, setStatusEmail] = useState('');
+  const [statusReference, setStatusReference] = useState('');
+  const [statusResult, setStatusResult] = useState<CareerApplicationStatusResult | null>(null);
+  const [statusError, setStatusError] = useState('');
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -79,7 +92,7 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
     setSubmitError('');
     try {
       const cvStoragePath = await uploadCareerCv(cvFile);
-      await submitCareerApplication(selectedOpening, {
+      const reference = await submitCareerApplication(selectedOpening, {
         ...application,
         candidateName: application.candidateName.trim(),
         email: application.email.trim(),
@@ -89,6 +102,7 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
         cvStoragePath,
         cvFileName: cvFile.name,
       });
+      setApplicationReference(reference);
       setIsSubmitted(true);
       setApplication(INITIAL_FORM);
       setCvFile(null);
@@ -101,6 +115,20 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
 
   const updateApplication = (field: keyof ApplicationForm, value: string) =>
     setApplication((current) => ({ ...current, [field]: value }));
+
+  const checkApplicationStatus = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsCheckingStatus(true);
+    setStatusError('');
+    setStatusResult(null);
+    try {
+      setStatusResult(await lookupCareerApplicationStatus(statusEmail, statusReference));
+    } catch (error) {
+      setStatusError(error instanceof Error ? error.message : 'Application status could not be checked.');
+    } finally {
+      setIsCheckingStatus(false);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-white pt-16 sm:pt-[72px]">
@@ -180,6 +208,62 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
               <p className="mt-1 text-sm text-slate-500">Please check back soon for new opportunities.</p>
             </div>
           )}
+
+          <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                <Search className="h-5 w-5" />
+              </span>
+              <div>
+                <h3 className="font-semibold text-slate-950">Check your application status</h3>
+                <p className="mt-1 text-sm leading-5 text-slate-500">Use the email address and reference number shown after you applied.</p>
+              </div>
+            </div>
+            <form onSubmit={checkApplicationStatus} className="mt-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+              <label className="text-xs font-semibold text-slate-600">
+                Application email
+                <input
+                  required
+                  type="email"
+                  maxLength={254}
+                  autoComplete="email"
+                  value={statusEmail}
+                  onChange={(event) => setStatusEmail(event.target.value)}
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-normal outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                />
+              </label>
+              <label className="text-xs font-semibold text-slate-600">
+                Application reference
+                <input
+                  required
+                  maxLength={36}
+                  value={statusReference}
+                  onChange={(event) => setStatusReference(event.target.value)}
+                  placeholder="Reference number"
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-normal outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={isCheckingStatus}
+                className="mt-auto inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60"
+              >
+                {isCheckingStatus ? 'Checking…' : 'Check status'} <ArrowRight className="h-4 w-4" />
+              </button>
+            </form>
+            {statusError && <p role="alert" className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-sm text-rose-800">{statusError}</p>}
+            {statusResult && (
+              <div role="status" className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                <div>
+                  <p className="font-semibold text-slate-900">{statusResult.openingTitle}</p>
+                  <p className="mt-1 text-xs text-slate-600">Submitted {new Date(statusResult.createdAt).toLocaleDateString()}</p>
+                </div>
+                <span className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold capitalize text-emerald-800 ring-1 ring-emerald-200">
+                  {statusResult.status}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </SectionContainer>
 
@@ -197,6 +281,10 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
                   <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600"><CheckCircle2 className="h-8 w-8" /></span>
                   <h3 className="mt-4 text-xl font-semibold text-slate-950">Application received</h3>
                   <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">Thank you for applying. Our team will review your details and contact you if there’s a match.</p>
+                  <p className="mx-auto mt-4 max-w-md rounded-xl bg-blue-50 px-4 py-3 text-sm text-blue-900">
+                    Save your application reference to check your status later:
+                    <strong className="mt-1 block break-all font-mono text-xs">{applicationReference}</strong>
+                  </p>
                   <button type="button" onClick={() => { setSelectedOpening(null); setIsSubmitted(false); }} className="mt-5 text-sm font-semibold text-blue-700 hover:underline">Back to open roles</button>
                 </div>
               ) : (

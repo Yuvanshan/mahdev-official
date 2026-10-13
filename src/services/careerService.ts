@@ -129,7 +129,7 @@ export async function submitCareerApplication(
     cvStoragePath: string;
     cvFileName: string;
   }
-): Promise<void> {
+): Promise<string> {
   const id = crypto.randomUUID();
   await setDoc(doc(db, APPLICATIONS, id), sanitizeForFirestore({
     openingId: opening.id,
@@ -141,6 +141,50 @@ export async function submitCareerApplication(
     cvStoragePath: application.cvStoragePath,
     cvFileName: application.cvFileName,
   }));
+  return id;
+}
+
+export interface CareerApplicationStatusResult {
+  status: CareerApplicationStatus;
+  createdAt: string;
+  openingTitle: string;
+}
+
+export async function lookupCareerApplicationStatus(
+  email: string,
+  reference: string
+): Promise<CareerApplicationStatusResult> {
+  const params = new URLSearchParams({ email: email.trim(), reference: reference.trim() });
+  const response = await fetch(`/api/careers/status?${params}`, {
+    credentials: 'same-origin',
+    cache: 'no-store',
+  });
+  const result = await response.json() as {
+    success?: boolean;
+    application?: CareerApplicationStatusResult;
+    error?: string;
+  };
+  if (!response.ok || !result.success || !result.application) {
+    throw new Error(result.error || `Application status lookup failed (HTTP ${response.status}).`);
+  }
+  return result.application;
+}
+
+export async function deleteCareerApplication(id: string): Promise<string | null> {
+  const response = await fetch(`/api/careers/application?id=${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    credentials: 'same-origin',
+    cache: 'no-store',
+  });
+  const result = await response.json() as {
+    success?: boolean;
+    cleanupWarning?: string;
+    error?: string;
+  };
+  if (!response.ok || !result.success) {
+    throw new Error(result.error || `Application deletion failed (HTTP ${response.status}).`);
+  }
+  return result.cleanupWarning || null;
 }
 
 export function getCareerCvUrl(applicationId: string): string {

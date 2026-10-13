@@ -111,7 +111,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { id: 'products', label: 'Products', icon: Package },
   { id: 'categories', label: 'Categories', icon: FolderTree },
   { id: 'packages', label: 'Packages', icon: Layers },
-  { id: 'portfolio', label: 'Portfolio', icon: Layers },
+  { id: 'portfolio', label: 'Projects', icon: Layers },
   { id: 'careers', label: 'Careers', icon: Briefcase, badge: 'Hiring' },
   { id: 'gallery', label: 'Gallery', icon: Layers },
   { id: 'milestones', label: 'Milestones', icon: Flag },
@@ -139,6 +139,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
       const match = currentPath.match(/^\/admin\/([a-z0-9-]+)/i);
       if (match && match[1]) {
         const slug = match[1].toLowerCase();
+        if (slug === 'projects') return 'portfolio';
         if (slug === 'about-us' || slug === 'legal-pages' || slug === 'website-content') {
           return slug as AdminSectionId;
         }
@@ -155,7 +156,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
     if (currentPath) {
       const match = currentPath.match(/^\/admin\/([a-z0-9-]+)/i);
       if (match && match[1]) {
-        const sec = match[1].toLowerCase() as AdminSectionId;
+        const slug = match[1].toLowerCase();
+        const sec = (slug === 'projects' ? 'portfolio' : slug) as AdminSectionId;
         const exists = SIDEBAR_ITEMS.some((item) => item.id === sec);
         if (exists) {
           setActiveSection(sec);

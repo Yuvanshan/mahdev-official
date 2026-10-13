@@ -18,8 +18,8 @@ export const Image: React.FC<ImageProps> = ({
   priority = false,
   ...props
 }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [hasError, setHasError] = useState(false);
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
   const aspectStyles = {
     '16/9': 'aspect-video',
@@ -31,7 +31,9 @@ export const Image: React.FC<ImageProps> = ({
 
   const validSrc = src && typeof src === 'string' && src.trim() !== '' ? src.trim() : null;
   const validFallback = fallbackSrc && typeof fallbackSrc === 'string' && fallbackSrc.trim() !== '' ? fallbackSrc.trim() : null;
+  const hasError = Boolean(validSrc && failedSrc === validSrc);
   const imageSrc = hasError ? validFallback : (validSrc || validFallback);
+  const isLoaded = Boolean(imageSrc && loadedSrc === imageSrc);
 
   return (
     <div
@@ -44,7 +46,7 @@ export const Image: React.FC<ImageProps> = ({
         </div>
       )}
 
-      {!imageSrc || (hasError && !validFallback) ? (
+      {!imageSrc || (hasError && (!validFallback || failedSrc === validFallback)) ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100 text-slate-400 text-xs p-4 text-center select-none">
           <div className="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center font-display font-bold text-slate-400 mb-1">
             M
@@ -59,8 +61,8 @@ export const Image: React.FC<ImageProps> = ({
           decoding="async"
           {...(priority ? { fetchPriority: 'high' as any } : { fetchPriority: 'auto' as any })}
           
-          onLoad={() => setIsLoaded(true)}
-          onError={() => setHasError(true)}
+          onLoad={() => setLoadedSrc(imageSrc)}
+          onError={() => setFailedSrc(imageSrc)}
           className={`w-full h-full object-cover transition-all duration-500 ease-out transform-gpu will-change-transform ${
             isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.98]'
           }`}
@@ -70,4 +72,3 @@ export const Image: React.FC<ImageProps> = ({
     </div>
   );
 };
-
