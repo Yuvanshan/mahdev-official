@@ -8,6 +8,7 @@ import {
   StockStatus,
 } from '../types/catalog';
 import { FirestoreProduct, FirestoreCategory } from '../types/firestore';
+import { getImageSourceCandidates } from '../utils/imageSources';
 
 export function mapFirestoreProductToCatalog(
   fp: FirestoreProduct,
@@ -28,10 +29,17 @@ export function mapFirestoreProductToCatalog(
       ? 'Mahdev Travels'
       : 'Mahdev Group';
 
-  const gallery = [fp.imageUrl, ...(Array.isArray(fp.images) ? fp.images : []), ...(Array.isArray(fp.galleryImages) ? fp.galleryImages : []), (fp as any).image]
-    .filter((image): image is string => typeof image === 'string' && Boolean(image.trim()))
-    .map((image) => image.trim())
-    .filter((image, index, images) => images.indexOf(image) === index);
+  const rawProduct = fp as unknown as Record<string, unknown>;
+  const gallery = getImageSourceCandidates(
+    fp.imageUrl,
+    fp.images,
+    fp.galleryImages,
+    rawProduct.imageUrls,
+    rawProduct.image,
+    rawProduct.media,
+    rawProduct.thumbnailUrl,
+    rawProduct.url
+  );
   const img = gallery[0] || '';
   const price = Number(fp.price) || 0;
   const origPrice = fp.compareAtPrice !== undefined ? Number(fp.compareAtPrice) : price;

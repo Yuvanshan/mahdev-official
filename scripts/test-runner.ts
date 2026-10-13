@@ -14,6 +14,7 @@ import { getMediaAssetShareUrl } from '../src/utils/mediaShare';
 import { DisplayGalleryItem, matchGalleryItem, matchGalleryItemByTitle } from '../src/utils/itemLookup';
 import { notificationService } from '../src/services/notificationService';
 import { getOfficeMapUrl, getMapSearchUrl } from '../src/config/company';
+import { getImageSourceCandidates } from '../src/utils/imageSources';
 
 interface TestStep {
   category: string;
@@ -30,6 +31,22 @@ async function runTestSuite() {
   let failed = 0;
 
   const testSteps: TestStep[] = [
+    {
+      category: 'Customer Experience',
+      name: 'Image candidate normalization preserves fallback URLs',
+      fn: () => {
+        const candidates = getImageSourceCandidates(
+          { url: '  /uploads/first.webp  ' },
+          ['https://cdn.example.com/second.webp', { downloadURL: 'https://cdn.example.com/third.webp' }],
+          '/uploads/first.webp'
+        );
+        return candidates.join('|') === [
+          '/uploads/first.webp',
+          'https://cdn.example.com/second.webp',
+          'https://cdn.example.com/third.webp',
+        ].join('|');
+      },
+    },
     // 1. ENVIRONMENT & CONFIGURATION INTEGRITY
     {
       category: 'Environment & Config',

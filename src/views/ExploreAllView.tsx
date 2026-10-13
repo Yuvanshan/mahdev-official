@@ -10,6 +10,7 @@ import { mapFirestoreProductToCatalog } from '../services/catalogService';
 import { CatalogProduct } from '../types/catalog';
 import { FirestoreGallery, FirestoreService } from '../types/firestore';
 import { formatCurrency } from '../utils/currency';
+import { getImageSourceCandidates } from '../utils/imageSources';
 import { openWhatsAppInquiry } from '../utils/whatsapp';
 
 type BrowseType = 'service' | 'gallery' | 'product';
@@ -54,6 +55,7 @@ const BrowseCard: React.FC<{
         {item.image ? (
           <ImageWithShimmer
             src={item.image}
+            fallbackSources={item.images}
             alt={item.title}
             className="absolute inset-0"
             imageClassName="transition duration-500 group-hover:scale-105"
@@ -151,10 +153,22 @@ export const ExploreAllView: React.FC<{
     const serviceItems: BrowseItem[] = services
       .filter((service) => service.isPublished !== false && service.status !== 'draft' && service.status !== 'inactive')
       .map((service) => {
-        const images = (Array.isArray(service.images) ? service.images : [])
-          .filter((image): image is string => typeof image === 'string' && Boolean(image.trim()))
-          .map((image) => image.trim())
-          .slice(0, 5);
+        const legacyService = service as FirestoreService & {
+          image?: unknown;
+          galleryImages?: unknown;
+          media?: unknown;
+          thumbnailUrl?: unknown;
+          url?: unknown;
+        };
+        const images = getImageSourceCandidates(
+          service.images,
+          service.imageUrl,
+          legacyService.image,
+          legacyService.galleryImages,
+          legacyService.media,
+          legacyService.thumbnailUrl,
+          legacyService.url
+        ).slice(0, 5);
         const title = service.title || service.name || 'Service';
         const category = service.category || service.categoryId || 'Services';
         const searchableText = [
@@ -168,11 +182,8 @@ export const ExploreAllView: React.FC<{
           description: service.description || '',
           category,
           division: service.divisionName || String(service.divisionId || 'Mahdev'),
-          image: images[0] || service.imageUrl || (service as FirestoreService & { image?: string }).image || '',
-          images: images.length
-            ? images
-            : [service.imageUrl, (service as FirestoreService & { image?: string }).image]
-              .filter((image): image is string => typeof image === 'string' && Boolean(image.trim())),
+          image: images[0] || '',
+          images,
           searchableText,
           data: service,
         };
@@ -208,7 +219,7 @@ export const ExploreAllView: React.FC<{
       category: product.categoryName,
       division: product.divisionName,
       image: product.imageUrl,
-      images: product.gallery || [],
+      images: getImageSourceCandidates(product.gallery, product.imageUrl),
       searchableText: [
         product.name, product.sku, product.slug, product.shortDescription, product.description,
         product.categoryName, product.divisionName, product.brand, ...product.tags,
