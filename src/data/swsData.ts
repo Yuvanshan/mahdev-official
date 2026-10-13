@@ -40,6 +40,7 @@ export interface SWSRentalItem {
   minOrderQuantity: number;
   availableStock: number;
   imageUrl: string;
+  gallery?: string[];
   specs: { label: string; value: string }[];
   features: string[];
   popular?: boolean;

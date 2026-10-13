@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 
 interface CrossfadeImageProps {
@@ -22,6 +22,29 @@ const CrossfadeSlide: React.FC<{
   onError?: () => void;
 }> = ({ src, alt, className, loading, decoding, onLoad, onError }) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const finishedRef = useRef(false);
+
+  const handleLoad = () => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    setIsLoaded(true);
+    onLoad?.();
+  };
+
+  const handleError = () => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    setIsLoaded(true);
+    onError?.();
+  };
+
+  useEffect(() => {
+    const image = imageRef.current;
+    if (!image?.complete) return;
+    if (image.naturalWidth > 0) handleLoad();
+    else handleError();
+  }, [src]);
 
   return (
     <>
@@ -32,18 +55,13 @@ const CrossfadeSlide: React.FC<{
         />
       )}
       <motion.img
+        ref={imageRef}
         src={src}
         alt={alt}
         loading={loading}
         decoding={decoding}
-        onLoad={() => {
-          setIsLoaded(true);
-          onLoad?.();
-        }}
-        onError={() => {
-          setIsLoaded(true);
-          onError?.();
-        }}
+        onLoad={handleLoad}
+        onError={handleError}
         initial={{ opacity: 0 }}
         animate={{ opacity: isLoaded ? 1 : 0 }}
         exit={{ opacity: 0 }}

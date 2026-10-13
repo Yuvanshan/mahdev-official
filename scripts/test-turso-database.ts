@@ -146,6 +146,11 @@ async function run(): Promise<void> {
     }), false);
     assert.equal(requiresAdminForDatabaseAction({ action: 'list', collection: 'careerApplications' }), true);
     assert.equal(requiresAdminForDatabaseAction({ action: 'get', collection: 'careerApplications' }), true);
+    assert.equal(requiresAdminForDatabaseAction({ action: 'list', collection: 'analyticsEvents' }), true);
+    assert.equal(requiresAdminForDatabaseAction({
+      action: 'write',
+      write: { type: 'set', collection: 'analyticsEvents', id: 'event_session01_view01' },
+    }), false);
     assert.equal(requiresAdminForDatabaseAction({
       action: 'write',
       write: { type: 'set', collection: 'careerApplications', id: 'application-1' },
@@ -186,6 +191,46 @@ async function run(): Promise<void> {
       () => authorizeDatabaseAction({ action: 'list', collection: 'careerApplications' }, undefined),
       /An administrator session is required/
     );
+    await assert.rejects(
+      () => authorizeDatabaseAction({ action: 'list', collection: 'analyticsEvents' }, undefined),
+      /An administrator session is required/
+    );
+    const publicAnalyticsWrite = {
+      action: 'write',
+      write: {
+        type: 'set',
+        collection: 'analyticsEvents',
+        id: 'event_session01_view01',
+        data: {
+          type: 'page_view',
+          path: '/services',
+          title: 'Services',
+          sessionId: 'session_test_0001',
+          divisionId: 'sws',
+          metadata: { referrerHost: 'Direct', deviceType: 'desktop' },
+        },
+      },
+    };
+    const publicAnalyticsAccess = await authorizeDatabaseAction(publicAnalyticsWrite, undefined);
+    assert.equal(publicAnalyticsAccess.role, 'public');
+    const savedAnalyticsEvent = await handleTursoAction(publicAnalyticsWrite, publicAnalyticsAccess);
+    assert.equal(savedAnalyticsEvent.status, 200);
+    assert.equal(
+      (await getTursoDocument('analyticsEvents', '', 'event_session01_view01'))?.data.type,
+      'page_view'
+    );
+    const invalidAnalyticsEvent = await handleTursoAction({
+      ...publicAnalyticsWrite,
+      write: {
+        ...(publicAnalyticsWrite.write as Record<string, unknown>),
+        id: 'event_session01_view02',
+        data: {
+          ...(publicAnalyticsWrite.write as { data: Record<string, unknown> }).data,
+          path: '/services?email=private@example.com',
+        },
+      },
+    }, publicAnalyticsAccess);
+    assert.equal(invalidAnalyticsEvent.status, 400);
     await assert.rejects(
       () => authorizeDatabaseAction({
         action: 'write',

@@ -54,12 +54,14 @@ const PUBLIC_READ_COLLECTIONS = new Set([
 ]);
 const CUSTOMER_OWNED_COLLECTIONS = new Set(['users', 'orders', 'bookings', 'payments']);
 const ADMIN_ONLY_READ_COLLECTIONS = new Set([
+  'analyticsEvents',
   'careerApplications',
   'contactSubmissions',
   'inquiries',
   'quoteRequests',
 ]);
 const PUBLIC_CREATE_COLLECTIONS = new Set([
+  'analyticsEvents',
   'careerApplications',
   'contactSubmissions',
   'inquiries',
@@ -67,6 +69,7 @@ const PUBLIC_CREATE_COLLECTIONS = new Set([
   'bookings',
   'quoteRequests',
 ]);
+const analyticsWriteAttempts = new Map<string, { count: number; resetAt: number }>();
 const CUSTOMER_PROFILE_FIELDS = new Set([
   'uid',
   'email',
@@ -333,6 +336,78 @@ async function preparePublicWrite(write: TursoWrite): Promise<TursoWrite> {
   }
   if (await getTursoDocument(write.collection, '', write.id)) {
     throw new Error('A record with this ID already exists.');
+  }
+  if (write.collection === 'analyticsEvents') {
+    const data = write.data;
+    const allowedEventTypes = new Set([
+      'page_view',
+      'division_view',
+      'product_view',
+      'service_view',
+      'add_to_cart',
+      'remove_from_cart',
+      'checkout_started',
+      'purchase_completed',
+      'booking_started',
+      'booking_completed',
+      'contact_submitted',
+      'quote_requested',
+      'search_performed',
+      'download_brochure',
+      'custom',
+    ]);
+    const path = typeof data.path === 'string' ? data.path : '';
+    const sessionId = typeof data.sessionId === 'string' ? data.sessionId : '';
+    if (
+      !/^[a-zA-Z0-9_-]{8,80}$/.test(write.id) ||
+      !allowedEventTypes.has(String(data.type)) ||
+      !path.startsWith('/') ||
+      path.length > 300 ||
+      path.includes('?') ||
+      path.includes('#') ||
+      !/^[a-zA-Z0-9_-]{8,80}$/.test(sessionId)
+    ) {
+      throw new Error('Analytics event data is invalid.');
+    }
+    const nowMs = Date.now();
+    for (const [key, attempt] of analyticsWriteAttempts) {
+      if (attempt.resetAt <= nowMs) analyticsWriteAttempts.delete(key);
+    }
+    const attempt = analyticsWriteAttempts.get(sessionId);
+    if (attempt && attempt.count >= 120) {
+      throw new Error('Analytics event rate limit exceeded.');
+    }
+    analyticsWriteAttempts.set(sessionId, attempt
+      ? { ...attempt, count: attempt.count + 1 }
+      : { count: 1, resetAt: nowMs + 60_000 });
+    const now = new Date(nowMs).toISOString();
+    const title = typeof data.title === 'string' ? data.title.slice(0, 160) : '';
+    const divisionId = typeof data.divisionId === 'string' && /^[a-z0-9_-]{1,40}$/i.test(data.divisionId)
+      ? data.divisionId
+      : undefined;
+    const metadata = data.metadata && typeof data.metadata === 'object' && !Array.isArray(data.metadata)
+      ? data.metadata as Record<string, unknown>
+      : {};
+    const referrerHost = typeof metadata.referrerHost === 'string' &&
+      /^[a-z0-9.-]{1,253}$/i.test(metadata.referrerHost)
+      ? metadata.referrerHost
+      : 'Direct';
+    const deviceType = ['mobile', 'tablet', 'desktop'].includes(String(metadata.deviceType))
+      ? String(metadata.deviceType)
+      : 'unknown';
+    return {
+      ...write,
+      data: {
+        id: write.id,
+        type: data.type,
+        timestamp: now,
+        path,
+        title,
+        sessionId,
+        ...(divisionId ? { divisionId } : {}),
+        metadata: { referrerHost, deviceType },
+      },
+    };
   }
   if (write.collection === 'careerApplications') {
     const allowedFields = new Set([

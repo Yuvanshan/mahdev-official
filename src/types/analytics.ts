@@ -95,6 +95,11 @@ export interface FunnelStage {
   overallConversion: number;
 }
 
+export interface TrafficMetric {
+  label: string;
+  views: number;
+}
+
 export interface ExecutiveReportData {
   timeRange: TimeRangeFilter;
   currency: string;
@@ -119,6 +124,11 @@ export interface ExecutiveReportData {
     LKR: number;
   };
   dailyTrends: DailyDataPoint[];
+  traffic: {
+    topPages: TrafficMetric[];
+    topReferrers: TrafficMetric[];
+    deviceBreakdown: TrafficMetric[];
+  };
   divisionPerformance: DivisionAnalyticsSummary[];
   topProducts: TopProductMetric[];
   topServices: TopServiceMetric[];

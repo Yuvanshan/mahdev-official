@@ -6,6 +6,7 @@ import {
   CareerOpening,
   CareerOpeningStatus,
   deleteCareerApplication,
+  deleteCareerOpening,
   getCareerApplications,
   getCareerCvUrl,
   getCareerOpeningsForAdmin,
@@ -175,6 +176,23 @@ export const AdminCareersView: React.FC = () => {
     }
   };
 
+  const removeOpening = async (opening: CareerOpening) => {
+    const applicationCount = applications.filter((application) => application.openingId === opening.id).length;
+    const consequence = applicationCount
+      ? ` Its ${applicationCount} existing application${applicationCount === 1 ? '' : 's'} will remain in the admin records.`
+      : '';
+    if (!window.confirm(`Permanently delete the "${opening.title}" opportunity?${consequence}`)) return;
+    setError('');
+    setNotice('');
+    try {
+      await deleteCareerOpening(opening.id);
+      setOpenings((items) => items.filter((item) => item.id !== opening.id));
+      setNotice('Career opportunity deleted.');
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'Could not delete this opportunity.');
+    }
+  };
+
   const statusClass = (status: CareerOpeningStatus | CareerApplicationStatus) => {
     if (status === 'published' || status === 'hired') return 'bg-emerald-50 text-emerald-700';
     if (status === 'closed' || status === 'rejected') return 'bg-slate-100 text-slate-600';
@@ -246,9 +264,19 @@ export const AdminCareersView: React.FC = () => {
                     <h3 className="mt-3 font-semibold text-slate-900">{opening.title}</h3>
                     <p className="mt-1 text-xs text-slate-500">{divisionLabel(opening.divisionId)} · {opening.location} · {opening.employmentType}</p>
                   </div>
-                  <button type="button" onClick={() => startEdit(opening)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-600 hover:border-blue-300 hover:text-blue-700">
-                    <Pencil className="h-3.5 w-3.5" /> Edit
-                  </button>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button type="button" onClick={() => startEdit(opening)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-600 hover:border-blue-300 hover:text-blue-700">
+                      <Pencil className="h-3.5 w-3.5" /> Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void removeOpening(opening)}
+                      aria-label={`Delete ${opening.title} opportunity`}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 text-red-600 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
                 <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">{opening.description}</p>
                 <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">

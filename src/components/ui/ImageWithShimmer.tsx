@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { CrossfadeImage } from '../common/CrossfadeImage';
 import { getImageSourceCandidates } from '../../utils/imageSources';
 
@@ -25,12 +25,30 @@ export const ImageWithShimmer: React.FC<ImageWithShimmerProps> = ({
 }) => {
   const sourceCandidates = getImageSourceCandidates(src, fallbackSources);
   const candidateKey = sourceCandidates.join('\n');
+
+  return (
+    <ImageSourceSequence
+      key={candidateKey}
+      sourceCandidates={sourceCandidates}
+      alt={alt}
+      className={className}
+      imageClassName={imageClassName}
+      loading={loading}
+      fallbackText={fallbackText}
+    />
+  );
+};
+
+const ImageSourceSequence: React.FC<{
+  sourceCandidates: string[];
+  alt: string;
+  className: string;
+  imageClassName: string;
+  loading: 'eager' | 'lazy';
+  fallbackText?: string;
+}> = ({ sourceCandidates, alt, className, imageClassName, loading, fallbackText }) => {
   const [sourceIndex, setSourceIndex] = useState(0);
   const currentSrc = sourceCandidates[sourceIndex] || '';
-
-  useEffect(() => {
-    setSourceIndex(0);
-  }, [candidateKey]);
 
   return (
     <div className={`relative overflow-hidden ${className}`}>

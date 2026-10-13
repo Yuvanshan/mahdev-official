@@ -15,6 +15,7 @@ import { SWSServiceDetailModal } from './SWSServiceDetailModal';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { ScrollReveal } from '../motion/MotionWrappers';
+import { getImageSourceCandidates } from '../../utils/imageSources';
 
 interface SWSServicesSectionProps {
   onBookNow: (service?: SWSService) => void;
@@ -48,8 +49,20 @@ export const SWSServicesSection: React.FC<SWSServicesSectionProps> = ({
             ? formatCurrency(s.price || (s as any).startingPrice || 0, 'LKR')
             : String(s.price || 'Rs. 75,000'),
           priceNote: (s as any).priceNote || 'Customized to event scale',
-          imageUrl: s.images?.filter(Boolean).slice(0, 5)[0] || (s as any).imageUrl || '',
-          gallery: s.images?.filter(Boolean).slice(0, 5) || [],
+          imageUrl: getImageSourceCandidates(
+            s.images,
+            s.imageUrl,
+            (s as unknown as Record<string, unknown>).image,
+            (s as unknown as Record<string, unknown>).galleryImages,
+            (s as unknown as Record<string, unknown>).media
+          )[0] || '',
+          gallery: getImageSourceCandidates(
+            s.images,
+            s.imageUrl,
+            (s as unknown as Record<string, unknown>).image,
+            (s as unknown as Record<string, unknown>).galleryImages,
+            (s as unknown as Record<string, unknown>).media
+          ).slice(0, 5),
           features: s.features || ['Professional Consultation', 'Dedicated Stage Crew'],
           specs: (s as any).specs || [],
           badge: s.badge || 'Featured Service',

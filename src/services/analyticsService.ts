@@ -30,9 +30,26 @@ import { DIVISION_LIST } from '../config/divisions';
 
 const MAX_SESSION_EVENTS = 600;
 
+function aggregateTraffic(
+  events: AnalyticsEvent[],
+  getLabel: (event: AnalyticsEvent) => string,
+  maxItems: number
+): Array<{ label: string; views: number }> {
+  const counts = new Map<string, number>();
+  events.forEach((event) => {
+    const label = getLabel(event).trim() || 'Unknown';
+    counts.set(label, (counts.get(label) || 0) + 1);
+  });
+  return [...counts.entries()]
+    .map(([label, views]) => ({ label, views }))
+    .sort((a, b) => b.views - a.views)
+    .slice(0, maxItems);
+}
+
 class AnalyticsService {
   private sessionId: string = '';
   private sessionEvents: AnalyticsEvent[] = [];
+  private persistedEvents: AnalyticsEvent[] | null = null;
   private isDntEnabled: boolean = false;
 
   constructor() {
@@ -44,7 +61,19 @@ class AnalyticsService {
       const dnt = navigator.doNotTrack || (window as any).doNotTrack || (navigator as any).msDoNotTrack;
       this.isDntEnabled = dnt === '1' || dnt === 'yes';
     }
-    this.sessionId = `s_${Math.random().toString(36).substring(2, 9)}_${Date.now()}`;
+    if (typeof window !== 'undefined') {
+      try {
+        const storedSessionId = window.sessionStorage.getItem('mahdev_analytics_session');
+        this.sessionId = storedSessionId && /^[a-zA-Z0-9_-]{8,80}$/.test(storedSessionId)
+          ? storedSessionId
+          : `s_${Math.random().toString(36).substring(2, 9)}_${Date.now()}`;
+        window.sessionStorage.setItem('mahdev_analytics_session', this.sessionId);
+      } catch {
+        this.sessionId = `s_${Math.random().toString(36).substring(2, 9)}_${Date.now()}`;
+      }
+    } else {
+      this.sessionId = `s_${Math.random().toString(36).substring(2, 9)}_${Date.now()}`;
+    }
   }
 
   // =========================================================================
@@ -74,6 +103,60 @@ class AnalyticsService {
     };
 
     this.sessionEvents = [event, ...this.sessionEvents].slice(0, MAX_SESSION_EVENTS);
+    this.persistEvent(event);
+  }
+
+  private persistEvent(event: AnalyticsEvent): void {
+    if (this.isDntEnabled || typeof window === 'undefined' || window.location.pathname.startsWith('/admin')) return;
+
+    const metadata: Record<string, unknown> = { ...(event.metadata || {}) };
+    if (event.type === 'page_view') {
+      try {
+        const referrer = document.referrer ? new URL(document.referrer) : null;
+        if (referrer && referrer.origin !== window.location.origin) {
+          metadata.referrerHost = referrer.hostname;
+        } else {
+          metadata.referrerHost = 'Direct';
+        }
+      } catch {
+        metadata.referrerHost = 'Direct';
+      }
+      const userAgent = navigator.userAgent;
+      metadata.deviceType = /ipad|tablet/i.test(userAgent)
+        ? 'tablet'
+        : /mobile|iphone|android/i.test(userAgent)
+          ? 'mobile'
+          : 'desktop';
+    }
+
+    void fetch('/api/database', {
+      method: 'POST',
+      credentials: 'same-origin',
+      keepalive: true,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'write',
+        write: {
+          type: 'set',
+          collection: 'analyticsEvents',
+          id: event.id,
+          data: {
+            type: event.type,
+            path: event.path.split(/[?#]/, 1)[0].slice(0, 300) || '/',
+            title: event.title || '',
+            sessionId: event.sessionId,
+            divisionId: event.divisionId,
+            metadata,
+          },
+        },
+      }),
+    }).then((response) => {
+      if (!response.ok) {
+        console.warn(`[Analytics] Event was not stored (HTTP ${response.status}).`);
+      }
+    }).catch((error: unknown) => {
+      console.warn('[Analytics] Could not store event:', error);
+    });
   }
 
   private sanitizeMetadata(data: Record<string, any>): Record<string, any> {
@@ -232,7 +315,11 @@ class AnalyticsService {
   // =========================================================================
 
   public getRawEvents(): AnalyticsEvent[] {
-    return [...this.sessionEvents];
+    return [...(this.persistedEvents ?? this.sessionEvents)];
+  }
+
+  public setPersistedEvents(events: AnalyticsEvent[]): void {
+    this.persistedEvents = events;
   }
 
   public clearAnalyticsEvents(): void {
@@ -330,8 +417,9 @@ class AnalyticsService {
     const aov = completedOrdersCount > 0 ? Math.round(orderRevenueTarget / completedOrdersCount) : 0;
 
     // 3. Unique sessions & pageviews
-    const uniqueSessions = new Set(filteredEvents.map((e) => e.sessionId));
-    const totalPageViews = filteredEvents.filter((e) => e.type === 'page_view' || e.type === 'division_view').length;
+    const pageViewEvents = filteredEvents.filter((event) => event.type === 'page_view');
+    const uniqueSessions = new Set(pageViewEvents.map((event) => event.sessionId));
+    const totalPageViews = pageViewEvents.length;
 
     // Customer breakdown from genuine orders and bookings
     const customerEmailMap: Record<string, { orders: number; bookings: number; isCorporate: boolean }> = {};
@@ -368,6 +456,7 @@ class AnalyticsService {
 
     // 4. Daily Trends
     const dailyMap: Record<string, { label: string; revenue: number; orders: number; bookings: number; visitors: number }> = {};
+    const dailyVisitors = new Map<string, Set<string>>();
     const daysToShow = timeRange === 'today' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 14 : 30;
 
     for (let i = daysToShow - 1; i >= 0; i--) {
@@ -403,10 +492,16 @@ class AnalyticsService {
     });
 
     filteredEvents.forEach((e) => {
+      if (e.type !== 'page_view') return;
       const dateKey = e.timestamp.split('T')[0];
       if (dailyMap[dateKey]) {
-        dailyMap[dateKey].visitors += 1;
+        const visitors = dailyVisitors.get(dateKey) || new Set<string>();
+        visitors.add(e.sessionId);
+        dailyVisitors.set(dateKey, visitors);
       }
+    });
+    dailyVisitors.forEach((visitors, date) => {
+      if (dailyMap[date]) dailyMap[date].visitors = visitors.size;
     });
 
     const dailyTrends: DailyDataPoint[] = Object.entries(dailyMap).map(([date, val]) => ({
@@ -445,7 +540,7 @@ class AnalyticsService {
         }, 0);
       }
 
-      const pViews = filteredEvents.filter((e) => e.divisionId === div.id && (e.type === 'division_view' || e.type === 'page_view')).length;
+      const pViews = pageViewEvents.filter((e) => e.divisionId === div.id).length;
       const inq = filteredEvents.filter((e) => e.divisionId === div.id && e.type === 'contact_submitted').length;
       const rfp = filteredEvents.filter((e) => e.divisionId === div.id && e.type === 'quote_requested').length;
 
@@ -593,7 +688,7 @@ class AnalyticsService {
       },
     ];
 
-    const serviceViewsCount = filteredEvents.filter((e) => e.type === 'service_view' || e.type === 'page_view').length;
+    const serviceViewsCount = filteredEvents.filter((e) => e.type === 'service_view').length;
     const bookingStartsCount = filteredEvents.filter((e) => e.type === 'booking_started').length;
     const confirmedBookingsCount = filteredBookings.filter((b) => b.status === 'confirmed' || b.status === 'completed' || b.status === 'scheduled').length;
 
@@ -684,6 +779,17 @@ class AnalyticsService {
         LKR: orderRevenueLKR + bookingRevenueLKR,
       },
       dailyTrends,
+      traffic: {
+        topPages: aggregateTraffic(pageViewEvents, (event) => event.path, 10),
+        topReferrers: aggregateTraffic(pageViewEvents, (event) =>
+          typeof event.metadata?.referrerHost === 'string' ? event.metadata.referrerHost : 'Unknown',
+          8
+        ),
+        deviceBreakdown: aggregateTraffic(pageViewEvents, (event) =>
+          typeof event.metadata?.deviceType === 'string' ? event.metadata.deviceType : 'Unknown',
+          3
+        ),
+      },
       divisionPerformance,
       topProducts: topProducts.slice(0, 10),
       topServices: topServices.slice(0, 10),

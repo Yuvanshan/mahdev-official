@@ -38,6 +38,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal, FadeIn, ScaleIn } from '../motion/MotionWrappers';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
+import { getImageSourceCandidates } from '../../utils/imageSources';
 
 interface SWSRentalsSectionProps {
   onBookRental: (rentalItem?: SWSRentalItem) => void;
@@ -91,7 +92,20 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
           unit: 'Day',
           availableStock: typeof p.stock === 'number' ? p.stock : 10,
           minOrderQuantity: 1,
-          imageUrl: p.images && p.images.length > 0 ? p.images[0] : (p as any).imageUrl || '',
+          imageUrl: getImageSourceCandidates(
+            p.imageUrl,
+            p.images,
+            p.galleryImages,
+            (p as unknown as Record<string, unknown>).image,
+            (p as unknown as Record<string, unknown>).media
+          )[0] || '',
+          gallery: getImageSourceCandidates(
+            p.imageUrl,
+            p.images,
+            p.galleryImages,
+            (p as unknown as Record<string, unknown>).image,
+            (p as unknown as Record<string, unknown>).media
+          ),
           features: (() => {
             const rawSpecs = (p as any).specifications;
             if (Array.isArray(rawSpecs)) {
@@ -253,6 +267,7 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
                         : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
                     }
                     alt={item.name}
+                    fallbackSources={item.gallery}
                     className="absolute inset-0"
                     imageClassName="transition-transform duration-500 group-hover:scale-105"
                   />

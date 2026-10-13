@@ -35,6 +35,9 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { formatCurrency, getCurrencySymbol } from '../../utils/currency';
 import { firestoreOrdersService } from '../../services/firestore/orders';
 import { firestoreBookingsService } from '../../services/firestore/bookings';
+import { collection, getDocs, limit, orderBy, query } from '../../lib/tursoFirestore';
+import { db } from '../../lib/firebase';
+import { AnalyticsEvent } from '../../types/analytics';
 
 interface AdminAnalyticsViewProps {
   onNavigateSection: (sectionId: string) => void;
@@ -53,6 +56,8 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
 
   const [orders, setOrders] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
+  const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
+  const [analyticsLoadError, setAnalyticsLoadError] = useState('');
   const [loadingRecords, setLoadingRecords] = useState<boolean>(true);
   const [timeRange, setTimeRange] = useState<TimeRangeFilter>('30d');
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -65,17 +70,44 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
   useEffect(() => {
     let isMounted = true;
     setLoadingRecords(true);
-    Promise.all([
+    Promise.allSettled([
       firestoreOrdersService.getOrders({ limit: 500 }),
       firestoreBookingsService.getBookings({ limit: 500 }),
+      getDocs(query(
+        collection(db, 'analyticsEvents'),
+        orderBy('timestamp', 'desc'),
+        limit(10000)
+      )),
     ])
-      .then(([ordersRes, bookingsRes]) => {
+      .then(([ordersResult, bookingsResult, eventsResult]) => {
         if (!isMounted) return;
-        setOrders(Array.isArray(ordersRes) ? ordersRes : (ordersRes as any).orders || []);
-        setBookings(Array.isArray(bookingsRes) ? bookingsRes : (bookingsRes as any).bookings || []);
-      })
-      .catch((err) => {
-        console.error('Failed to load live analytics records:', err);
+        if (ordersResult.status === 'fulfilled') {
+          const ordersRes = ordersResult.value;
+          setOrders(Array.isArray(ordersRes) ? ordersRes : (ordersRes as any).orders || []);
+        } else {
+          console.error('Failed to load analytics orders:', ordersResult.reason);
+        }
+        if (bookingsResult.status === 'fulfilled') {
+          const bookingsRes = bookingsResult.value;
+          setBookings(Array.isArray(bookingsRes) ? bookingsRes : (bookingsRes as any).bookings || []);
+        } else {
+          console.error('Failed to load analytics bookings:', bookingsResult.reason);
+        }
+        if (eventsResult.status === 'rejected') {
+          console.error('Failed to load live analytics records:', eventsResult.reason);
+          setAnalyticsLoadError(
+            eventsResult.reason instanceof Error
+              ? eventsResult.reason.message
+              : 'Could not load persisted visitor analytics.'
+          );
+          return;
+        }
+        const eventsRes = eventsResult.value;
+        const events = eventsRes.docs
+          .map((entry) => ({ ...entry.data(), id: entry.id } as AnalyticsEvent))
+          .filter((event) => event.type && event.timestamp && event.sessionId);
+        setAnalyticsEvents(events);
+        analyticsService.setPersistedEvents(events);
       })
       .finally(() => {
         if (isMounted) setLoadingRecords(false);
@@ -89,6 +121,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
   const fetchReport = useCallback(() => {
     setIsLoading(true);
     try {
+      analyticsService.setPersistedEvents(analyticsEvents);
       const data = analyticsService.getExecutiveReport(
         timeRange,
         currentCurrency,
@@ -98,6 +131,36 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
         services
       );
       setReport(data);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [timeRange, currentCurrency, orders, bookings, products, services, analyticsEvents]);
+
+  const refreshAnalytics = useCallback(async () => {
+    setIsLoading(true);
+    setAnalyticsLoadError('');
+    try {
+      const snapshot = await getDocs(query(
+        collection(db, 'analyticsEvents'),
+        orderBy('timestamp', 'desc'),
+        limit(10000)
+      ));
+      const events = snapshot.docs
+        .map((entry) => ({ ...entry.data(), id: entry.id } as AnalyticsEvent))
+        .filter((event) => event.type && event.timestamp && event.sessionId);
+      setAnalyticsEvents(events);
+      analyticsService.setPersistedEvents(events);
+      setReport(analyticsService.getExecutiveReport(
+        timeRange,
+        currentCurrency,
+        orders,
+        bookings,
+        products,
+        services
+      ));
+    } catch (err) {
+      console.error('Failed to refresh visitor analytics:', err);
+      setAnalyticsLoadError(err instanceof Error ? err.message : 'Could not refresh visitor analytics.');
     } finally {
       setIsLoading(false);
     }
@@ -157,18 +220,25 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
 
   if (!hasRealAnalytics) {
     return (
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-10 shadow-sm">
-        <div className="mx-auto max-w-xl text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
-            <BarChart2 className="h-6 w-6" />
+      <div className="space-y-4">
+        {analyticsLoadError && (
+          <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Visitor analytics could not be loaded: {analyticsLoadError}
           </div>
-          <h3 className="text-xl font-bold text-slate-900">No analytics data yet</h3>
-          <p className="mt-2 text-sm text-slate-600">
-            Orders, bookings, and customer activity will appear here once the business starts generating real engagement.
-          </p>
-          <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-600">
-            <Activity className="h-3.5 w-3.5 text-[#0052FF]" />
-            Waiting for live operational data
+        )}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-10 shadow-sm">
+          <div className="mx-auto max-w-xl text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
+              <BarChart2 className="h-6 w-6" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900">No analytics data yet</h3>
+            <p className="mt-2 text-sm text-slate-600">
+              Orders, bookings, and customer activity will appear here once the business starts generating real engagement.
+            </p>
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-600">
+              <Activity className="h-3.5 w-3.5 text-[#0052FF]" />
+              Waiting for live operational data
+            </div>
           </div>
         </div>
       </div>
@@ -230,7 +300,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
 
           {/* Refresh Button */}
           <button
-            onClick={fetchReport}
+            onClick={() => void refreshAnalytics()}
             className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors cursor-pointer"
             title="Refresh Metrics"
           >
@@ -422,13 +492,64 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
             {report.kpis.totalPageViews.toLocaleString()}
           </div>
           <div className="flex items-center gap-1.5 mt-2 text-xs">
-            <span className="font-semibold text-slate-700">{report.kpis.uniqueSessionsCount} Unique</span>
+            <span className="font-semibold text-slate-700">{report.kpis.uniqueSessionsCount.toLocaleString()} Visitors</span>
           </div>
           <div className="text-[11px] text-slate-400 mt-1">
-            Zero third-party trackers
+            Anonymous browser sessions
           </div>
         </div>
       </div>
+
+      {/* Navigation Sub-Tabs */}
+      {analyticsLoadError && (
+        <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Visitor analytics could not be loaded: {analyticsLoadError}
+        </div>
+      )}
+
+      <section className="grid gap-4 lg:grid-cols-3" aria-label="Website traffic details">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+          <h2 className="text-sm font-bold text-slate-900">Most viewed pages</h2>
+          <p className="mt-1 text-xs text-slate-500">Page views during the selected period</p>
+          <div className="mt-4 space-y-3">
+            {report.traffic.topPages.length ? report.traffic.topPages.map((page) => (
+              <div key={page.label} className="flex items-center justify-between gap-3 text-xs">
+                <span className="min-w-0 truncate font-medium text-slate-700">{page.label}</span>
+                <span className="shrink-0 font-bold tabular-nums text-slate-900">{page.views.toLocaleString()}</span>
+              </div>
+            )) : <p className="text-xs text-slate-400">No tracked page views yet.</p>}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+          <h2 className="text-sm font-bold text-slate-900">Visitor sources</h2>
+          <p className="mt-1 text-xs text-slate-500">Referring sites and direct visits</p>
+          <div className="mt-4 space-y-3">
+            {report.traffic.topReferrers.length ? report.traffic.topReferrers.map((source) => (
+              <div key={source.label} className="flex items-center justify-between gap-3 text-xs">
+                <span className="min-w-0 truncate font-medium text-slate-700">{source.label}</span>
+                <span className="shrink-0 font-bold tabular-nums text-slate-900">{source.views.toLocaleString()}</span>
+              </div>
+            )) : <p className="text-xs text-slate-400">No source data yet.</p>}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+          <h2 className="text-sm font-bold text-slate-900">Devices</h2>
+          <p className="mt-1 text-xs text-slate-500">Device type by page view</p>
+          <div className="mt-4 space-y-3">
+            {report.traffic.deviceBreakdown.length ? report.traffic.deviceBreakdown.map((device) => (
+              <div key={device.label} className="flex items-center justify-between gap-3 text-xs">
+                <span className="min-w-0 truncate font-medium capitalize text-slate-700">{device.label}</span>
+                <span className="shrink-0 font-bold tabular-nums text-slate-900">{device.views.toLocaleString()}</span>
+              </div>
+            )) : <p className="text-xs text-slate-400">No device data yet.</p>}
+          </div>
+        </div>
+      </section>
+      {analyticsEvents.length === 10000 && (
+        <p className="text-xs text-slate-500">
+          Traffic details use the latest 10,000 events. Visitor counts represent anonymous browser sessions, not verified individuals.
+        </p>
+      )}
 
       {/* Navigation Sub-Tabs */}
       <div className="flex overflow-x-auto border-b border-slate-200 pb-px gap-2">

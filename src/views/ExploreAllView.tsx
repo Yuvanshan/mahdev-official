@@ -37,7 +37,9 @@ const toCategorySlug = (value: string) =>
 const BrowseCard: React.FC<{
   item: BrowseItem;
   onSelect: (item: BrowseItem) => void;
-}> = ({ item, onSelect }) => {
+  imageLoading: 'eager' | 'lazy';
+}> = ({ item, onSelect, imageLoading }) => {
+  const imageSources = getImageSourceCandidates(item.image, item.images);
   const price = item.type === 'service'
     ? Number(item.data.startingPrice || item.data.price || 0)
     : item.type === 'product'
@@ -52,14 +54,14 @@ const BrowseCard: React.FC<{
         className="relative block aspect-[4/3] w-full overflow-hidden bg-slate-100 text-left"
         aria-label={`View ${item.title}`}
       >
-        {item.image ? (
+        {imageSources.length ? (
           <ImageWithShimmer
-            src={item.image}
-            fallbackSources={item.images}
+            src={imageSources[0]}
+            fallbackSources={imageSources.slice(1)}
             alt={item.title}
             className="absolute inset-0"
             imageClassName="transition duration-500 group-hover:scale-105"
-            loading="lazy"
+            loading={imageLoading}
           />
         ) : (
           <div className="flex h-full items-center justify-center text-slate-300">
@@ -401,7 +403,14 @@ export const ExploreAllView: React.FC<{
             </div>
             {filteredItems.length ? (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-                {filteredItems.map((item) => <BrowseCard key={`${item.type}:${item.id}`} item={item} onSelect={handleSelect} />)}
+                {filteredItems.map((item, index) => (
+                  <BrowseCard
+                    key={`${item.type}:${item.id}`}
+                    item={item}
+                    onSelect={handleSelect}
+                    imageLoading={index < 4 ? 'eager' : 'lazy'}
+                  />
+                ))}
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-16 text-center">
