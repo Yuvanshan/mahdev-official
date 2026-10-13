@@ -45,7 +45,6 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
 
     function playMuted() {
       if (!isVisibleRef.current || document.visibilityState !== 'visible') return;
-      video.defaultMuted = true;
       video.muted = !soundAllowedRef.current;
       if (soundAllowedRef.current) video.volume = HERO_VIDEO_VOLUME;
       video.playsInline = true;
@@ -109,10 +108,10 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
       if (soundAllowedRef.current) {
         video.volume = HERO_VIDEO_VOLUME;
         video.muted = false;
+        playMuted();
       } else {
-        video.muted = true;
+        playWithSound();
       }
-      playMuted();
     };
 
     const handleUserInteraction = () => {

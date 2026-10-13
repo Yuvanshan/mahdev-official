@@ -81,6 +81,10 @@
     letter-spacing: -0.025em;
   }
 
+  .font-editorial {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
   /* Accessibility: Respect user reduced motion preferences */
   @media (prefers-reduced-motion: reduce) {
     html {

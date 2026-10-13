@@ -33,13 +33,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       <video
         ref={videoRef}
         src={HERO_VIDEO}
-        autoPlay
         loop
-        muted
         playsInline
         preload="auto"
         aria-hidden="true"
-        className="absolute inset-0 h-full w-full object-cover"
+        className="absolute inset-0 h-full w-full object-cover brightness-[1.15] saturate-[1.08]"
       />
       <HeroVideoControls
         heroRef={heroRef}
@@ -47,16 +45,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/55 to-transparent"
+        className="absolute inset-0 bg-gradient-to-r from-slate-950/60 via-slate-950/28 to-transparent"
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-slate-950/10"
+        className="absolute inset-0 bg-gradient-to-t from-slate-950/30 via-transparent to-slate-950/5"
       />
 
       <div className="relative mx-auto flex min-h-[680px] max-w-7xl items-center px-5 py-20 sm:min-h-[740px] sm:px-8 lg:min-h-[min(820px,calc(100svh-5rem))] lg:px-10">
         <div className="max-w-3xl">
-          <h1 className="font-display text-4xl font-semibold leading-[1.06] tracking-tight text-white sm:text-6xl lg:text-7xl">
+          <h1 className="font-editorial text-4xl font-medium leading-[1.04] tracking-[-0.035em] text-white sm:text-6xl lg:text-7xl">
             <span className="block">Creating Moments...</span>
             <span className="block bg-gradient-to-r from-sky-300 via-blue-200 to-white bg-clip-text text-transparent">
               Capturing Memories...

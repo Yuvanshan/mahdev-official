@@ -99,15 +99,6 @@ export const SWSServiceDetailModal: React.FC<SWSServiceDetailModalProps> = ({
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none" />
 
-            {/* Price Badge Overlay */}
-            <div className="absolute bottom-4 left-4 bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-xl border border-white/15 text-white">
-              <div className="text-[10px] uppercase font-bold text-blue-300">Starting Price</div>
-              <div className="font-display text-lg font-bold text-white">{service.startingPrice}</div>
-              {service.priceNote && (
-                <div className="text-[10px] text-slate-300">{service.priceNote}</div>
-              )}
-            </div>
-
             {/* Navigation Arrows */}
             {images.length > 1 && (
               <>

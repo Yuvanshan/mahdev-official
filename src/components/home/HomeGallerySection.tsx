@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Expand, X, MapPin, MessageCircle } from 'lucide-react';
+import { Expand, X, MapPin, MessageCircle, Search } from 'lucide-react';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { Caption, H2, Body } from '../ui/Heading';
@@ -106,6 +106,7 @@ export const HomeGallerySection: React.FC = () => {
   const { gallery, isGalleryLoading, isInitialLoading, isFetching } = useFirestoreDataContext();
   const [activeImage, setActiveImage] = useState<{ url: string; title: string; category: string; location?: string } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const items = useMemo<HomeGalleryItem[]>(() => gallery
     .filter((item) => item.status !== 'hidden')
@@ -121,8 +122,7 @@ export const HomeGallerySection: React.FC = () => {
         category: item.category || item.tag || 'Mahdev Group',
         location: (item as any).location || item.caption || 'Sri Lanka',
       };
-    })
-    .slice(0, 9), [gallery]);
+    }), [gallery]);
 
   const categories = useMemo<string[]>(() => {
     const set = new Set<string>();
@@ -133,6 +133,12 @@ export const HomeGallerySection: React.FC = () => {
   const filteredItems = selectedCategory === 'All'
     ? items
     : items.filter((item) => item.category === selectedCategory);
+  const searchedItems = filteredItems.filter((item) =>
+    `${item.title} ${item.category} ${item.location}`.toLowerCase().includes(searchQuery.trim().toLowerCase())
+  );
+  const displayedItems = searchQuery.trim() || selectedCategory !== 'All'
+    ? searchedItems
+    : searchedItems.slice(0, 9);
 
   if (!items.length) {
     if (isGalleryLoading) {
@@ -146,29 +152,42 @@ export const HomeGallerySection: React.FC = () => {
       <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div className="max-w-2xl">
           <Caption className="mb-2 block text-[#0052FF]">Visual Showcase</Caption>
-          <H2 className="text-slate-900">Selected Work Across Every Division</H2>
+          <H2 className="font-editorial text-slate-900">Selected Work Across Every Division</H2>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {categories.map((category) => (
-            <button
-              key={category}
-              type="button"
-              onClick={() => setSelectedCategory(category)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                selectedCategory === category
-                  ? 'border-[#0052FF] bg-[#0052FF] text-white'
-                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
-              }`}
-            >
-              {category}
-            </button>
-          ))}
+        <div className="flex w-full flex-col gap-3 md:w-auto md:items-end">
+          <label className="relative block w-full md:w-72">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search gallery..."
+              aria-label="Search gallery"
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            />
+          </label>
+          <div className="flex max-w-full gap-2 overflow-x-auto pb-1">
+            {categories.map((category) => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => setSelectedCategory(category)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  selectedCategory === category
+                    ? 'border-[#0052FF] bg-[#0052FF] text-white'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4 xl:grid-cols-4">
-        {filteredItems.map((item, index) => {
+        {displayedItems.map((item, index) => {
           const isFeatured = index === 0;
 
           return (
@@ -182,6 +201,11 @@ export const HomeGallerySection: React.FC = () => {
           );
         })}
       </div>
+      {displayedItems.length === 0 && (
+        <p className="mt-8 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm text-slate-600" role="status">
+          No gallery items match “{searchQuery}”.
+        </p>
+      )}
 
       {activeImage && (
         <div

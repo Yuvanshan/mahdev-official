@@ -11,6 +11,7 @@ import {
   MessageCircle,
   Share2,
   Check,
+  Search,
 } from 'lucide-react';
 import { SWSGalleryItem } from '../../data/swsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
@@ -62,6 +63,7 @@ export const SWSGallerySection: React.FC = () => {
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
   const [activeSubImageIdx, setActiveSubImageIdx] = useState<number>(0);
   const [shareToast, setShareToast] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const galleryItems = useMemo<SWSGalleryItem[]>(() => {
     if (rawGallery && rawGallery.length > 0) {
@@ -113,9 +115,20 @@ export const SWSGallerySection: React.FC = () => {
   }
 
   const filteredItems = galleryItems.filter((item) => {
-    if (selectedCategory === 'All') return true;
-    if (selectedCategory === 'Conferences') return item.category === 'Conferences' || item.category === 'Corporate';
-    return item.category === selectedCategory;
+    const matchesCategory = selectedCategory === 'All'
+      || (selectedCategory === 'Conferences'
+        ? item.category === 'Conferences' || item.category === 'Corporate'
+        : item.category === selectedCategory);
+    const query = searchQuery.trim().toLowerCase();
+    const matchesSearch = !query || [
+      item.title,
+      item.category,
+      item.location,
+      item.year,
+      item.description,
+      ...item.tags,
+    ].some((value) => value.toLowerCase().includes(query));
+    return matchesCategory && matchesSearch;
   });
 
   const activeItem = activeLightboxIndex !== null ? filteredItems[activeLightboxIndex] : null;
@@ -145,25 +158,38 @@ export const SWSGallerySection: React.FC = () => {
         <div>
           <ScrollReveal direction="up">
             <Caption className="text-[#0052FF] mb-2 block">Visual Showcase</Caption>
-            <H2 className="text-slate-900">Cinematic Gallery of Live Productions</H2>
+            <H2 className="font-editorial text-slate-900">Cinematic Gallery of Live Productions</H2>
           </ScrollReveal>
         </div>
 
         {/* Category Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                selectedCategory === cat
-                  ? 'bg-[#0052FF] text-white shadow-md shadow-blue-500/20'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+        <div className="flex w-full flex-col gap-3 md:w-auto md:items-end">
+          <label className="relative block w-full md:w-72">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search events, places, years..."
+              aria-label="Search the SWS gallery"
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            />
+          </label>
+          <div className="flex max-w-full items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                  selectedCategory === cat
+                    ? 'bg-[#0052FF] text-white shadow-md shadow-blue-500/20'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -261,6 +287,11 @@ export const SWSGallerySection: React.FC = () => {
           </div>
         ))}
       </div>
+      {filteredItems.length === 0 && (
+        <p className="mt-8 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm text-slate-600" role="status">
+          No events match “{searchQuery}”.
+        </p>
+      )}
 
       {/* Lightbox Modal */}
       {activeItem && (
