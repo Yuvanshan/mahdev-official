@@ -4,7 +4,9 @@ import { CmsBanner } from '../types/cms';
 import { getAvailableCmsBanners, getNextCmsBannerBoundary } from '../utils/cmsBanners';
 
 export function useAvailableCmsBanners(): CmsBanner[] {
-  const [banners, setBanners] = useState<CmsBanner[]>([]);
+  const [banners, setBanners] = useState<CmsBanner[]>(() =>
+    cmsService.getAll<CmsBanner>('banners', { status: 'active' })
+  );
 
   useEffect(() => {
     const refresh = () => setBanners(cmsService.getAll<CmsBanner>('banners', { status: 'active' }));

@@ -217,25 +217,19 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
         <video
           ref={videoRef}
           src={effectiveVideoSrc}
-          autoPlay
+          autoPlay={!enableAutomaticAudio}
           loop
           muted
           playsInline
           preload="metadata"
-          onCanPlay={() => {
-            videoRef.current?.play().catch(() => {});
-            handleVideoReady();
-          }}
+          onCanPlay={handleVideoReady}
           onCanPlayThrough={() => {
             handleVideoReady();
           }}
           onPlaying={() => {
             handleVideoReady();
           }}
-          onLoadedData={() => {
-            videoRef.current?.play().catch(() => {});
-            handleVideoReady();
-          }}
+          onLoadedData={handleVideoReady}
           onTimeUpdate={(e) => {
             if (e.currentTarget.currentTime > 0) {
               handleVideoReady();

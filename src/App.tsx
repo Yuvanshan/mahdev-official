@@ -1174,7 +1174,12 @@ function AppContent() {
         return <CareersView onNavigate={navigate} />;
       case '/promotion':
       case '/promotions':
-        return <PromotionsView onNavigate={navigate} />;
+        return (
+          <PromotionsView
+            onNavigate={navigate}
+            selectedOfferId={searchParams.get('offer') || undefined}
+          />
+        );
       case '/clients':
       case '/partners':
       case '/companies':
