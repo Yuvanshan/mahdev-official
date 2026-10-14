@@ -48,10 +48,10 @@ export const AdminBannersView: React.FC = () => {
   const [formData, setFormData] = useState({
     title: '',
     subtitle: '',
-    placement: 'home_hero' as CmsBanner['placement'],
+    placement: 'announcement_bar' as CmsBanner['placement'],
     divisionId: 'all' as DivisionId | 'all',
-    targetUrl: '',
-    buttonText: 'Explore Now',
+    targetUrl: '/promotion',
+    buttonText: 'View Offers',
     imageUrl: '',
     bgGradient: 'from-blue-900/90 via-slate-900 to-indigo-950',
     badgeText: 'SPECIAL OFFER',
@@ -97,10 +97,10 @@ export const AdminBannersView: React.FC = () => {
     setFormData({
       title: '',
       subtitle: '',
-      placement: 'home_hero',
+      placement: 'announcement_bar',
       divisionId: 'all',
-      targetUrl: '/booking',
-      buttonText: 'Book Consultation',
+      targetUrl: '/promotion',
+      buttonText: 'View Offers',
       imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
       bgGradient: 'from-blue-900/90 via-slate-900 to-indigo-950',
       badgeText: 'ENTERPRISE SPOTLIGHT',
@@ -140,6 +140,13 @@ export const AdminBannersView: React.FC = () => {
     const errors: Record<string, string> = {};
     if (!formData.title.trim()) errors.title = 'Banner headline is required';
     if (!formData.targetUrl.trim()) errors.targetUrl = 'Target URL or route is required';
+    if (
+      formData.startDate &&
+      formData.endDate &&
+      formData.endDate < formData.startDate
+    ) {
+      errors.endDate = 'End date must be on or after the start date';
+    }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -631,8 +638,11 @@ export const AdminBannersView: React.FC = () => {
                   setFormData({ ...formData, endDate: e.target.value });
                   setIsDirty(true);
                 }}
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none"
+                className={`w-full px-3.5 py-2 bg-slate-50 border rounded-xl text-xs focus:bg-white focus:outline-none ${
+                  formErrors.endDate ? 'border-red-500' : 'border-slate-200'
+                }`}
               />
+              {formErrors.endDate && <p className="mt-1 text-[11px] text-red-500">{formErrors.endDate}</p>}
             </div>
           </div>
 

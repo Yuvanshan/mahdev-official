@@ -40,7 +40,7 @@ import {
 } from './firestore/divisions';
 import { safeStorage } from '../utils/safeStorage';
 import { db } from '../lib/firebase';
-import { collection, deleteDoc, doc, onSnapshot, setDoc } from '../lib/tursoFirestore';
+import { collection, deleteDoc, doc, getDocs, setDoc } from '../lib/tursoFirestore';
 
 const CMS_STORAGE_PREFIX = 'mahdev_cms_session_v2_';
 const LEGACY_CMS_STORAGE_PREFIX = 'mahdev_cms_v1_';
@@ -68,27 +68,6 @@ class CmsService {
 
   constructor() {
     this.initializeAllEntities();
-    (['packages', 'pages', 'banners'] as const).forEach((entity) => {
-      if (this.readPublicCache(entity) !== null) return;
-      onSnapshot(
-        collection(db, entity),
-        (snapshot) => {
-          const items = snapshot.docs.map((document) => ({
-            ...document.data(),
-            id: document.id,
-          }));
-          this.cache[entity] = items;
-          safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(items));
-          this.writePublicCache(entity, items);
-          this.notify(entity);
-        },
-        (error) => {
-          console.error(`[CmsService] Could not subscribe to ${entity} in Turso:`, error);
-        }
-      );
-    });
-    // Centralized hydration in FirestoreDataContext syncs to CmsService via syncEntityFromFirestore
-    // to avoid duplicate active subscriptions that exhaust network sockets.
     this.attachCrossTabSync();
   }
 
@@ -590,12 +569,42 @@ class CmsService {
     };
   }
 
+  public async loadPublicCollections(forceRefresh = false): Promise<void> {
+    for (const entity of ['packages', 'pages', 'banners'] as const) {
+      if (!forceRefresh && this.readPublicCache(entity) !== null) continue;
+
+      try {
+        const snapshot = await getDocs(collection(db, entity));
+        const items = snapshot.docs.map((document) => ({
+          ...document.data(),
+          id: document.id,
+        }));
+        this.syncEntityFromFirestore(entity, items);
+      } catch (error) {
+        console.error(`[CmsService] Could not load public ${entity} from Turso:`, error);
+        throw error;
+      }
+    }
+  }
+
+  public clearPublicCollectionCache(): void {
+    for (const entity of ['packages', 'pages', 'banners'] as const) {
+      this.cache[entity] = [];
+      if (typeof window === 'undefined') continue;
+      try {
+        window.localStorage.removeItem(`${PUBLIC_CMS_CACHE_PREFIX}${entity}`);
+      } catch (error) {
+        console.warn(`[CmsService] Could not clear persistent ${entity} cache:`, error);
+      }
+      safeStorage.removeItem(this.getStorageKey(entity));
+    }
+  }
+
   public ensureCouponsLoaded(): void {
     if (this.couponsLoadStarted) return;
     this.couponsLoadStarted = true;
-    onSnapshot(
-      collection(db, 'coupons'),
-      (snapshot) => {
+    void getDocs(collection(db, 'coupons'))
+      .then((snapshot) => {
         const items = snapshot.docs.map((document) => ({
           ...document.data(),
           id: document.id,
@@ -603,12 +612,11 @@ class CmsService {
         this.cache.coupons = items;
         safeStorage.setItem(this.getStorageKey('coupons'), JSON.stringify(items));
         this.notify('coupons');
-      },
-      (error) => {
+      })
+      .catch((error: unknown) => {
         this.couponsLoadStarted = false;
         console.error('[CmsService] Could not load coupons from Turso:', error);
-      }
-    );
+      });
   }
 
   private readPublicCache(entity: CmsEntityType): any[] | null {

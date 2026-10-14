@@ -1,9 +1,9 @@
 /**
- * Central Turso data context and live UI hydration.
+ * Central Turso data context and client-side public content cache.
  * 
  * Rules:
  * 1. Turso is the source of truth for business and dynamic content.
- * 2. Live subscriptions keep the UI synchronized with Turso.
+ * 2. Public content is fetched once on boot and reused until a full page reload.
  */
 
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
@@ -50,6 +50,7 @@ import { catalogService } from '../services/catalogService';
 import { bookingService } from '../services/bookingService';
 import { resolveMediaUrl, preloadVideo } from '../services/firestoreMediaService';
 import { mediaService, StoredMediaItem } from '../services/firestore/media';
+import { getPublishedCareerOpenings } from '../services/careerService';
 
 const DEVICE_CACHE_REQUIRED_KEYS = [
   'mahdev_cached_company_settings',
@@ -68,7 +69,7 @@ const DEVICE_CACHE_REQUIRED_KEYS = [
   'mahdev_cached_gallery',
 ];
 const DEVICE_CACHE_VERSION_KEY = 'mahdev_public_data_cache_version';
-const DEVICE_CACHE_VERSION = '2';
+const DEVICE_CACHE_VERSION = '3';
 const DEVICE_CACHE_NONEMPTY_ARRAY_KEYS = new Set([
   'mahdev_cached_divisions',
   'mahdev_cached_services',
@@ -151,6 +152,29 @@ function ensureDeviceCacheVersion(): void {
   } catch (error) {
     console.warn('[FirestoreDataContext] Could not invalidate legacy device cache:', error);
   }
+}
+
+function prepareDeviceCache(): boolean {
+  ensureDeviceCacheVersion();
+  try {
+    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    if (navigation?.type === 'reload') {
+      for (const storage of [localStorage, sessionStorage]) {
+        for (let index = storage.length - 1; index >= 0; index -= 1) {
+          const key = storage.key(index);
+          if (
+            key?.startsWith('mahdev_cached_') ||
+            key?.startsWith('mahdev_cms_public_v1_')
+          ) {
+            storage.removeItem(key);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('[FirestoreDataContext] Could not clear public cache on reload:', error);
+  }
+  return hasCompleteDeviceCache();
 }
 
 function sanitizeCachedSettings(value: unknown): unknown {
@@ -241,7 +265,7 @@ export interface FirestoreDataContextValue {
 const FirestoreDataContext = createContext<FirestoreDataContextValue | null>(null);
 
 export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const hasCachedData = useMemo(() => hasCompleteDeviceCache(), []);
+  const hasCachedData = useMemo(prepareDeviceCache, []);
 
   // Check per-entity cache status
   const getCache = (key: string) => {
@@ -417,6 +441,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   // Track active fetching state to prevent premature shimmer disappearance on mobile networks
   const [fetchingDivisions, setFetchingDivisions] = useState<Record<string, boolean>>({});
   const inFlightDivisionLoadsRef = React.useRef<Record<string, Promise<void> | undefined>>({});
+  const publicDataLoadedRef = React.useRef(hasCachedData);
+  const refreshRequestRef = React.useRef<Promise<void> | null>(null);
+  const bootLoadStartedRef = React.useRef(false);
 
   const divisionsRef = React.useRef<FirestoreDivision[]>([]);
   divisionsRef.current = divisions;
@@ -456,7 +483,11 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   const loadDivisionData = useCallback(async (rawDivId: string) => {
     const canonicalId = getCanonicalDivisionId(rawDivId) || rawDivId;
     if (!canonicalId) return;
-    if (hasCachedData) return;
+    if (publicDataLoadedRef.current || hasCachedData) return;
+    if (refreshRequestRef.current) {
+      await refreshRequestRef.current;
+      return;
+    }
 
     // Deduplicate in-flight requests for the exact same division
     if (inFlightDivisionLoadsRef.current[canonicalId]) {
@@ -687,14 +718,18 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   // Progressive One-by-One Data Hydration:
   // Each Firestore resource executes its own independent API call and immediately reflects in the UI
   // the moment it resolves. Eliminates blocking Promise.all so mobile connections stream data one-by-one!
-  const refreshAll = useCallback(async (forceRefresh = false) => {
-    setIsFetching(true);
-    const reportRefreshError = (resource: string, cause: unknown) => {
+  const refreshAll = useCallback((forceRefresh = false): Promise<void> => {
+    if (refreshRequestRef.current) return refreshRequestRef.current;
+
+    publicDataLoadedRef.current = false;
+    const refreshRequest = (async () => {
+      setIsFetching(true);
+      const reportRefreshError = (resource: string, cause: unknown) => {
       const refreshError = cause instanceof Error ? cause : new Error(String(cause));
       console.error(`[TursoDataContext] Failed to refresh ${resource}:`, refreshError);
       setError((currentError) => currentError || refreshError);
-    };
-    try {
+      };
+      try {
       setError(null);
       setSyncProgress(20);
       setSyncStatus('Streaming data one-by-one...');
@@ -728,6 +763,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('divisions', err);
           setIsDivisionsLoading(false);
         });
+      await fetchDivisionsTask;
 
       // 2. One-by-one API Call: Milestones
       const fetchMilestonesTask = firestoreMilestonesService
@@ -743,6 +779,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('milestones', err);
           setIsMilestonesLoading(false);
         });
+      await fetchMilestonesTask;
 
       // 3. One-by-one API Call: Company Settings
       const fetchCompanySettingsTask = firestoreSettingsService
@@ -758,6 +795,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('company settings', err);
           setIsSettingsLoading(false);
         });
+      await fetchCompanySettingsTask;
 
       // 4. One-by-one API Call: Site Settings
       const fetchSiteSettingsTask = firestoreSettingsService
@@ -773,6 +811,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('site settings', err);
           setIsSettingsLoading(false);
         });
+      await fetchSiteSettingsTask;
 
       // 5. One-by-one API Call: Homepage CMS Config
       const fetchHomepageSettingsTask = firestoreSettingsService
@@ -788,6 +827,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('homepage settings', err);
           setIsHomepageConfigLoading(false);
         });
+      await fetchHomepageSettingsTask;
 
       // 6. One-by-one API Call: Services
       const fetchServicesTask = firestoreServicesService
@@ -815,6 +855,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('services', err);
           setIsServicesLoading(false);
         });
+      await fetchServicesTask;
 
       // 7. One-by-one API Call: Products
       const fetchProductsTask = firestoreProductsService
@@ -833,6 +874,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('products', err);
           setIsProductsLoading(false);
         });
+      await fetchProductsTask;
 
       // 8. One-by-one API Call: Categories
       const fetchCategoriesTask = firestoreCategoriesService
@@ -847,6 +889,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         .catch((err) => {
           reportRefreshError('categories', err);
         });
+      await fetchCategoriesTask;
 
       // 9. One-by-one API Call: Portfolio
       const fetchPortfolioTask = firestorePortfolioService
@@ -863,6 +906,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('portfolio', err);
           setIsPortfolioLoading(false);
         });
+      await fetchPortfolioTask;
 
       // 10. One-by-one API Call: Gallery
       const fetchGalleryTask = firestoreGalleryService
@@ -888,6 +932,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('gallery', err);
           setIsGalleryLoading(false);
         });
+      await fetchGalleryTask;
 
       // 11. One-by-one API Call: Trusted Corporate Partners
       const fetchTrustedCompaniesTask = firestoreTrustedCompaniesService
@@ -902,11 +947,14 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('trusted companies', err);
           setIsCompaniesLoading(false);
         });
+      await fetchTrustedCompaniesTask;
 
       // 12. One-by-one API Call: Testimonials
+      let googleReviewSourceDocuments: Array<Record<string, any>> | undefined;
       const fetchTestimonialsTask = firestoreTestimonialsService
         .getTestimonials(undefined, forceRefresh)
         .then((allReviews) => {
+          googleReviewSourceDocuments = allReviews.map((review) => ({ ...review }));
           setTestimonials(allReviews);
           setIsTestimonialsLoading(false);
           cmsService.syncEntityFromFirestore('testimonials', allReviews);
@@ -916,33 +964,32 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('testimonials', err);
           setIsTestimonialsLoading(false);
         });
+      await fetchTestimonialsTask;
 
       // 13. One-by-one API Call: Google Reviews & Config
-      const fetchGoogleReviewsTask = Promise.all([
-        firestoreGoogleReviewsService.getConfig(forceRefresh).catch((err) => {
+      const fetchGoogleReviewsTask = (async () => {
+        const gConfig = await firestoreGoogleReviewsService.getConfig(forceRefresh).catch((err) => {
           reportRefreshError('Google review settings', err);
           return null;
-        }),
-        firestoreGoogleReviewsService.getReviews().catch((err) => {
+        });
+        const gReviews = await firestoreGoogleReviewsService
+          .getReviews(undefined, googleReviewSourceDocuments)
+          .catch((err) => {
           reportRefreshError('Google reviews', err);
           return [];
-        }),
-      ])
-        .then(([gConfig, gReviews]) => {
-          if (gConfig) {
-            setGoogleReviewsConfig(gConfig);
-            try { setDeviceCacheItem('mahdev_cached_google_reviews_config', JSON.stringify(gConfig)); } catch {}
-          }
-          setGoogleReviews(gReviews);
-          try { setDeviceCacheItem('mahdev_cached_google_reviews', JSON.stringify(gReviews)); } catch {}
-        })
-        .catch((err) => {
-          reportRefreshError('Google reviews', err);
-        });
+          });
+        if (gConfig) {
+          setGoogleReviewsConfig(gConfig);
+          try { setDeviceCacheItem('mahdev_cached_google_reviews_config', JSON.stringify(gConfig)); } catch {}
+        }
+        setGoogleReviews(gReviews);
+        try { setDeviceCacheItem('mahdev_cached_google_reviews', JSON.stringify(gReviews)); } catch {}
+      })();
+      await fetchGoogleReviewsTask;
 
-      // 14. One-by-one API Call: Media Assets
+      // 14. One-by-One API Call: Media Assets
       const fetchMediaAssetsTask = mediaService
-        .getMediaAssets()
+        .getMediaAssets(forceRefresh)
         .then((allMediaAssets) => {
           setMediaAssets(allMediaAssets);
           setMediaAssetsLoaded(true);
@@ -951,24 +998,18 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         .catch((err) => {
           reportRefreshError('media assets', err);
         });
+      await fetchMediaAssetsTask;
 
-      // Await all one-by-one tasks settling to finalize sync flags
-      await Promise.allSettled([
-        fetchDivisionsTask,
-        fetchMilestonesTask,
-        fetchCompanySettingsTask,
-        fetchSiteSettingsTask,
-        fetchHomepageSettingsTask,
-        fetchServicesTask,
-        fetchProductsTask,
-        fetchCategoriesTask,
-        fetchPortfolioTask,
-        fetchGalleryTask,
-        fetchTrustedCompaniesTask,
-        fetchTestimonialsTask,
-        fetchGoogleReviewsTask,
-        fetchMediaAssetsTask,
-      ]);
+      try {
+        await cmsService.loadPublicCollections(forceRefresh);
+      } catch (err) {
+        reportRefreshError('public CMS content', err);
+      }
+      try {
+        await getPublishedCareerOpenings(forceRefresh);
+      } catch (err) {
+        reportRefreshError('published career openings', err);
+      }
 
       const allLoadedFlags: Record<string, boolean> = { ...FULLY_LOADED_DIVISION_FLAGS };
       setLoadedDivisions(allLoadedFlags);
@@ -993,273 +1034,43 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsLiveHydrated(true);
       setIsInitialLoading(false);
       setIsReady(true);
-    } finally {
-      setIsFetching(false);
-    }
+      } finally {
+        publicDataLoadedRef.current = true;
+        setIsFetching(false);
+      }
+    })();
+    refreshRequestRef.current = refreshRequest;
+    void refreshRequest.then(
+      () => {
+        if (refreshRequestRef.current === refreshRequest) refreshRequestRef.current = null;
+      },
+      () => {
+        if (refreshRequestRef.current === refreshRequest) refreshRequestRef.current = null;
+      }
+    );
+    return refreshRequest;
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
-
-    // If cached data is available, instantly synchronize catalog & booking services from cache
     if (hasCachedData) {
       if (products.length > 0) catalogService.syncWithFirestore(products);
       if (services.length > 0) bookingService.syncWithFirestore(services);
       if (divisions.length > 0) cmsService.syncEntityFromFirestore('divisions', divisions);
       if (homepageConfig) cmsService.syncHomepageConfig(homepageConfig);
+      void cmsService.loadPublicCollections(false).catch((error: unknown) => {
+        console.error('[FirestoreDataContext] Could not restore cached CMS content:', error);
+      });
+      void getPublishedCareerOpenings(false).catch((error: unknown) => {
+        console.error('[FirestoreDataContext] Could not restore cached career openings:', error);
+      });
+      return;
     }
 
-    const markReady = () => {
-      if (isMounted) {
-        setSyncProgress(100);
-        setSyncStatus('Welcome');
-        setIsLiveHydrated(true);
-        setIsInitialLoading(false);
-        setIsReady(true);
-        try {
-          setDeviceCacheItem('mahdev_cache_hydrated', 'true');
-        } catch {}
-      }
-    };
-
-    // Immediately mark app shell ready so page structure and per-section shimmers render instantly.
-    // Initial snapshots load each resource once and dismiss section shimmers as data arrives.
-    markReady();
-
-    const isAdminRoute = typeof window !== 'undefined' && /^\/(?:admin|admin-login|adminlogin|adminportal|admin-portal)(?:\/|$)/.test(window.location.pathname);
-    if (hasCachedData && !isAdminRoute) {
-      return () => {
-        isMounted = false;
-      };
+    if (!bootLoadStartedRef.current) {
+      bootLoadStartedRef.current = true;
+      cmsService.clearPublicCollectionCache();
+      void refreshAll(true);
     }
-
-    // Emergency fail-safe timeout only in case network drops completely
-    const failsafeTimer = setTimeout(() => {
-      markReady();
-    }, 15000);
-
-    // 1. Core initial data loads (single centralized read per resource)
-    const unsubCompany = firestoreSettingsService.subscribeCompanySettings((data) => {
-      if (isMounted) {
-        setCompanySettings((prev) => {
-          const logo = data.logoUrl !== undefined ? (data.logoUrl || prev.logoUrl) : prev.logoUrl;
-          const darkLogo = data.darkLogoUrl !== undefined ? (data.darkLogoUrl || prev.darkLogoUrl) : prev.darkLogoUrl;
-          const merged = {
-            ...prev,
-            ...data,
-            logoUrl: logo,
-            darkLogoUrl: darkLogo,
-          };
-          try {
-            setDeviceCacheItem('mahdev_cached_company_settings', JSON.stringify(merged));
-          } catch {}
-          return merged;
-        });
-      }
-    });
-
-    const unsubSite = firestoreSettingsService.subscribeSiteSettings((data) => {
-      if (isMounted) {
-        setSiteSettings((prev) => {
-          const logo = data.logoUrl !== undefined ? (data.logoUrl || prev.logoUrl) : prev.logoUrl;
-          const darkLogo = data.darkLogoUrl !== undefined ? (data.darkLogoUrl || prev.darkLogoUrl) : prev.darkLogoUrl;
-          const merged = {
-            ...prev,
-            ...data,
-            logoUrl: logo,
-            darkLogoUrl: darkLogo,
-          };
-          try {
-            setDeviceCacheItem('mahdev_cached_site_settings', JSON.stringify(merged));
-          } catch {}
-          return merged;
-        });
-      }
-    });
-
-    const unsubHome = firestoreSettingsService.subscribeHomepageSettings((data) => {
-      if (isMounted) {
-        setHomepageConfig(data);
-        setIsHomepageConfigLoading(false);
-        try {
-          setDeviceCacheItem('mahdev_cached_homepage_config', JSON.stringify(data));
-        } catch {}
-        cmsService.syncHomepageConfig(data);
-      }
-    });
-
-    const unsubDivs = firestoreDivisionsService.subscribeDivisions((data) => {
-      if (isMounted) {
-        const sorted = sortDivisions(data);
-        divisionsRef.current = sorted;
-        setDivisions(sorted);
-        setIsDivisionsLoading(false);
-        setLoadedDivisions((prev) => {
-          const next = { ...prev };
-          sorted.forEach((d) => {
-            next[d.id] = true;
-            if (d.slug) next[d.slug] = true;
-          });
-          try { setDeviceCacheItem('mahdev_cached_loaded_divisions', JSON.stringify(next)); } catch {}
-          return next;
-        });
-        try {
-          setDeviceCacheItem('mahdev_cached_divisions', JSON.stringify(sorted));
-        } catch {}
-        cmsService.syncEntityFromFirestore('divisions', sorted);
-      }
-    });
-
-    const unsubCats = firestoreCategoriesService.subscribeCategories((data) => {
-      if (isMounted) {
-        setCategories(data);
-        try {
-          setDeviceCacheItem('mahdev_cached_categories', JSON.stringify(data));
-        } catch {}
-        cmsService.syncEntityFromFirestore('categories', data);
-      }
-    });
-
-    const unsubSrvs = firestoreServicesService.subscribeServices((data) => {
-      if (isMounted) {
-        const seen = new Set<string>();
-        const deduped = data.filter((s) => s && s.id && !seen.has(s.id) && seen.add(s.id));
-        setServices(deduped);
-        setIsServicesLoading(false);
-        setLoadedServices((prev) => {
-          const next = { ...prev };
-          deduped.forEach((s) => {
-            if (s.division) next[s.division] = true;
-            if ((s as any).divisionId) next[(s as any).divisionId] = true;
-          });
-          try { setDeviceCacheItem('mahdev_cached_loaded_services', JSON.stringify(next)); } catch {}
-          return next;
-        });
-        try {
-          setDeviceCacheItem('mahdev_cached_services', JSON.stringify(deduped));
-        } catch {}
-        bookingService.syncWithFirestore(deduped);
-        cmsService.syncEntityFromFirestore('services', deduped);
-      }
-    });
-
-    const unsubProds = firestoreProductsService.subscribeProducts((data) => {
-      if (isMounted) {
-        const seen = new Set<string>();
-        const deduped = data.filter((p) => p && p.id && !seen.has(p.id) && seen.add(p.id));
-        setProducts(deduped);
-        setIsProductsLoading(false);
-        try {
-          setDeviceCacheItem('mahdev_cached_products', JSON.stringify(deduped));
-        } catch {}
-        catalogService.syncWithFirestore(deduped, categories);
-        cmsService.syncEntityFromFirestore('products', deduped);
-      }
-    });
-
-    // 2. Secondary Collections (Streamlined Snapshot Listeners)
-    const unsubMs = firestoreMilestonesService.subscribeMilestones((data) => {
-      if (isMounted) {
-        setMilestones(data);
-        setIsMilestonesLoading(false);
-        try {
-          setDeviceCacheItem('mahdev_cached_milestones', JSON.stringify(data));
-        } catch {}
-        cmsService.syncEntityFromFirestore('milestones', data);
-      }
-    });
-
-    const unsubPartners = firestoreTrustedCompaniesService.subscribeTrustedCompanies((data) => {
-      if (isMounted) {
-        setTrustedCompanies(data);
-        setIsCompaniesLoading(false);
-        try {
-          setDeviceCacheItem('mahdev_cached_companies', JSON.stringify(data));
-        } catch {}
-        cmsService.syncEntityFromFirestore('companies', data);
-      }
-    });
-
-    const unsubReviews = firestoreTestimonialsService.subscribeTestimonials((data) => {
-      if (isMounted) {
-        setTestimonials(data);
-        setIsTestimonialsLoading(false);
-        try {
-          setDeviceCacheItem('mahdev_cached_testimonials', JSON.stringify(data));
-        } catch {}
-        cmsService.syncEntityFromFirestore('testimonials', data);
-      }
-    });
-
-    const unsubGoogleConfig = firestoreGoogleReviewsService.subscribeConfig((data) => {
-      if (isMounted) {
-        setGoogleReviewsConfig(data);
-        try {
-          setDeviceCacheItem('mahdev_cached_google_reviews_config', JSON.stringify(data));
-        } catch {}
-      }
-    });
-
-    const unsubGoogleReviews = firestoreGoogleReviewsService.subscribeReviews((data) => {
-      if (isMounted) {
-        setGoogleReviews(data);
-        try {
-          setDeviceCacheItem('mahdev_cached_google_reviews', JSON.stringify(data));
-        } catch {}
-      }
-    });
-
-    const unsubPort = firestorePortfolioService.subscribePortfolio((data) => {
-      if (isMounted) {
-        setPortfolio(data);
-        setIsPortfolioLoading(false);
-        try {
-          setDeviceCacheItem('mahdev_cached_portfolio', JSON.stringify(data));
-        } catch {}
-        cmsService.syncEntityFromFirestore('portfolio', data);
-      }
-    });
-
-    const unsubGal = firestoreGalleryService.subscribeGallery(undefined, (data) => {
-      if (isMounted) {
-        const seen = new Set<string>();
-        const deduped = data.filter((g) => g && g.id && !seen.has(g.id) && seen.add(g.id));
-        setGallery(deduped);
-        setIsGalleryLoading(false);
-        setLoadedGallery((prev) => {
-          const next = { ...prev };
-          deduped.forEach((g) => {
-            if (g.division) next[g.division] = true;
-            if ((g as any).divisionId) next[(g as any).divisionId] = true;
-          });
-          try { setDeviceCacheItem('mahdev_cached_loaded_gallery', JSON.stringify(next)); } catch {}
-          return next;
-        });
-        try {
-          setDeviceCacheItem('mahdev_cached_gallery', JSON.stringify(deduped));
-        } catch {}
-        cmsService.syncEntityFromFirestore('gallery', deduped);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-      clearTimeout(failsafeTimer);
-      unsubCompany();
-      unsubSite();
-      unsubHome();
-      unsubDivs();
-      unsubCats();
-      unsubSrvs();
-      unsubProds();
-      unsubMs();
-      unsubPartners();
-      unsubReviews();
-      unsubGoogleConfig();
-      unsubGoogleReviews();
-      unsubPort();
-      unsubGal();
-    };
   }, []);
 
   const activeDivisions = useMemo(() => {

@@ -14,7 +14,7 @@ import { FirestoreDataProvider, useFirestoreDataContext } from './context/Firest
 import { CartDrawer } from './components/cart/CartDrawer';
 import { AnnouncementBanner } from './components/layout/AnnouncementBanner';
 import { BottomNavigation } from './components/layout/BottomNavigation';
-import { testTursoConnection, initAppCheck } from './lib/firebase';
+import { initAppCheck } from './lib/firebase';
 import { analyticsService } from './services/analyticsService';
 import { catalogService } from './services/catalogService';
 import { motion, AnimatePresence } from 'motion/react';
@@ -130,6 +130,7 @@ const MilestonesView = lazy(() => import('./views/MilestonesView').then((module)
 const DivisionsPageView = lazy(() => import('./views/DivisionsPageView').then((module) => ({ default: module.DivisionsPageView })));
 const TestimonialsView = lazy(() => import('./views/TestimonialsView').then((module) => ({ default: module.TestimonialsView })));
 const CareersView = lazy(() => import('./views/CareersView').then((module) => ({ default: module.CareersView })));
+const PromotionsView = lazy(() => import('./views/PromotionsView').then((module) => ({ default: module.PromotionsView })));
 const LegalPageView = lazy(() => import('./views/LegalPageView').then((module) => ({ default: module.LegalPageView })));
 const NotFoundView = lazy(() => import('./views/NotFoundView').then((module) => ({ default: module.NotFoundView })));
 const CmsPageView = lazy(() => import('./views/CmsPageView').then((module) => ({ default: module.CmsPageView })));
@@ -228,12 +229,9 @@ function AppContent() {
     companySettings?.name,
   ]);
 
-  // Verify Cloud Firestore connectivity and App Check on boot
+  // Initialize App Check once; database health is checked only from diagnostics.
   useEffect(() => {
     initAppCheck();
-    testTursoConnection().then((res) => {
-      console.info('[Turso] Database Status:', res.message);
-    });
   }, []);
 
   // Handle browser back/forward and hash navigation
@@ -251,7 +249,7 @@ function AppContent() {
         'admin', 'admin-login', 'adminportal', 'admin-portal',
         'sws', 'u1', 'it', 'travels', 'mart',
         'sws-events', 'sws-event-management', 'u1-studio', 'it-solutions', 'mahdev-travels', 'online-mart',
-        'about', 'about-us', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'catalog', 'track-order', 'order', 'orders', 'terms-and-conditions', 'privacy-policy'
+        'about', 'about-us', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'catalog', 'track-order', 'order', 'orders', 'promotion', 'promotions', 'terms-and-conditions', 'privacy-policy'
       ];
       if (directHashRoutes.includes(cleanHash) || cleanHash.startsWith('admin/')) {
         window.dispatchEvent(new Event('mahdev:routechange'));
@@ -1174,6 +1172,9 @@ function AppContent() {
       case '/careers':
       case '/jobs':
         return <CareersView onNavigate={navigate} />;
+      case '/promotion':
+      case '/promotions':
+        return <PromotionsView onNavigate={navigate} />;
       case '/clients':
       case '/partners':
       case '/companies':
@@ -1200,6 +1201,7 @@ function AppContent() {
       {!isStandaloneComingSoon && <CartDrawer onNavigate={navigate} />}
 
       {/* Sticky Top Navigation */}
+      <AnnouncementBanner onNavigate={navigate} />
       <Navigation currentPath={normalizedPath} onNavigate={navigate} />
 
       {/* Main Content Area with Smooth View Transitions */}

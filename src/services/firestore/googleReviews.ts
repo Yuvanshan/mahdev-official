@@ -46,6 +46,52 @@ const CACHE_TTL_MS = 1000 * 60 * 15; // 15 minutes cache
 let cachedReviews: { data: GoogleReview[]; timestamp: number } | null = null;
 let cachedConfig: { data: GoogleReviewsConfig; timestamp: number } | null = null;
 
+function normalizeGoogleReviews(documents: Array<Record<string, any>>): GoogleReview[] {
+  return documents
+    .filter((document) => document.source === 'google' || document.googleReviewId || document.placeId)
+    .map((document) => {
+      const branch = document.branch || (
+        document.placeId?.toLowerCase().includes('colombo') ||
+        document.authorName?.includes('Senanayake') ||
+        document.authorName?.includes('Sanduni')
+          ? 'colombo'
+          : 'trincomalee'
+      );
+      return {
+        id: document.id,
+        googleReviewId: document.googleReviewId || document.id,
+        placeId: document.placeId || (
+          branch === 'colombo'
+            ? 'ChIJ-8_Y291Z4joR-8H76543210'
+            : DEFAULT_GOOGLE_REVIEWS_CONFIG.placeId
+        ),
+        authorName: document.authorName || document.author || document.customerName || 'Google Customer',
+        authorPhotoUrl: document.authorPhotoUrl || document.photoUrl || document.avatarUrl,
+        authorUrl: document.authorUrl || (
+          branch === 'colombo'
+            ? DEFAULT_GOOGLE_REVIEWS_CONFIG.colomboMapsUrl
+            : DEFAULT_GOOGLE_REVIEWS_CONFIG.trincomaleeMapsUrl
+        ),
+        rating: Number(document.rating) || 5,
+        text: document.text || document.quote || document.message || '',
+        relativePublishTimeDescription: document.relativePublishTimeDescription || 'Verified Google Review',
+        publishTime: document.publishTime || document.createdAt,
+        date: document.date || '2026',
+        source: 'google' as const,
+        sourceBadge: 'Google Verified Review' as const,
+        branch: branch as 'trincomalee' | 'colombo',
+        branchName: branch === 'colombo' ? 'Colombo Branch' : 'Trincomalee Branch',
+        isFeatured: document.isFeatured !== false,
+        isHidden: !!document.isHidden,
+        divisionId: document.divisionId || document.division || 'all',
+        divisionName: document.divisionName,
+        order: document.order || 0,
+        createdAt: document.createdAt || new Date().toISOString(),
+        updatedAt: document.updatedAt || new Date().toISOString(),
+      };
+    });
+}
+
 export const firestoreGoogleReviewsService = {
   /**
    * Get Google Reviews Configuration from Firestore (or default if unconfigured)
@@ -94,52 +140,25 @@ export const firestoreGoogleReviewsService = {
     includeHidden?: boolean;
     minRating?: number;
     branch?: 'trincomalee' | 'colombo' | 'all';
-  }): Promise<GoogleReview[]> {
+  }, sourceDocuments?: Array<Record<string, any>>): Promise<GoogleReview[]> {
     const now = Date.now();
     let allReviews: GoogleReview[] = [];
 
-    if (cachedReviews && now - cachedReviews.timestamp < CACHE_TTL_MS) {
+    if (sourceDocuments) {
+      allReviews = normalizeGoogleReviews(sourceDocuments);
+      cachedReviews = { data: allReviews, timestamp: now };
+    } else if (cachedReviews && now - cachedReviews.timestamp < CACHE_TTL_MS) {
       allReviews = cachedReviews.data;
     } else {
       try {
         const colRef = collection(db, 'testimonials');
         const snap = await getDocs(colRef);
-        if (!snap.empty) {
-          allReviews = snap.docs
-            .map((d) => ({ ...d.data(), id: d.id }))
-            .filter((d: any) => d.source === 'google' || d.googleReviewId || d.placeId)
-            .map((d: any) => {
-              const branch = d.branch || (d.placeId?.toLowerCase().includes('colombo') || d.authorName?.includes('Senanayake') || d.authorName?.includes('Sanduni') ? 'colombo' : 'trincomalee');
-              return {
-                id: d.id,
-                googleReviewId: d.googleReviewId || d.id,
-                placeId: d.placeId || (branch === 'colombo' ? 'ChIJ-8_Y291Z4joR-8H76543210' : DEFAULT_GOOGLE_REVIEWS_CONFIG.placeId),
-                authorName: d.authorName || d.author || d.customerName || 'Google Customer',
-                authorPhotoUrl: d.authorPhotoUrl || d.photoUrl || d.avatarUrl,
-                authorUrl: d.authorUrl || (branch === 'colombo' ? DEFAULT_GOOGLE_REVIEWS_CONFIG.colomboMapsUrl : DEFAULT_GOOGLE_REVIEWS_CONFIG.trincomaleeMapsUrl),
-                rating: Number(d.rating) || 5,
-                text: d.text || d.quote || d.message || '',
-                relativePublishTimeDescription: d.relativePublishTimeDescription || 'Verified Google Review',
-                publishTime: d.publishTime || d.createdAt,
-                date: d.date || '2026',
-                source: 'google' as const,
-                sourceBadge: 'Google Verified Review' as const,
-                branch: branch as 'trincomalee' | 'colombo',
-                branchName: branch === 'colombo' ? 'Colombo Branch' : 'Trincomalee Branch',
-                isFeatured: d.isFeatured !== false,
-                isHidden: !!d.isHidden,
-                divisionId: d.divisionId || d.division || 'all',
-                divisionName: d.divisionName,
-                order: d.order || 0,
-                createdAt: d.createdAt || new Date().toISOString(),
-                updatedAt: d.updatedAt || new Date().toISOString(),
-              };
-            });
-          cachedReviews = { data: allReviews, timestamp: now };
-        } else {
-          allReviews = [];
-          cachedReviews = { data: [], timestamp: now };
-        }
+        const documents = snap.docs.map((document) => ({
+          ...document.data(),
+          id: document.id,
+        }));
+        allReviews = normalizeGoogleReviews(documents);
+        cachedReviews = { data: allReviews, timestamp: now };
       } catch (err) {
         console.warn('[Firestore GoogleReviews] getReviews error:', err);
         allReviews = cachedReviews?.data || [];

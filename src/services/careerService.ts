@@ -57,12 +57,14 @@ function clearPublicCareerOpeningsCache(): void {
   }
 }
 
-export async function getPublishedCareerOpenings(): Promise<CareerOpening[]> {
+export async function getPublishedCareerOpenings(forceRefresh = false): Promise<CareerOpening[]> {
   try {
-    const cached = localStorage.getItem(PUBLIC_OPENINGS_CACHE_KEY);
-    if (cached !== null) {
-      const parsed: unknown = JSON.parse(cached);
-      if (Array.isArray(parsed)) return parsed as CareerOpening[];
+    if (!forceRefresh) {
+      const cached = localStorage.getItem(PUBLIC_OPENINGS_CACHE_KEY);
+      if (cached !== null) {
+        const parsed: unknown = JSON.parse(cached);
+        if (Array.isArray(parsed)) return parsed as CareerOpening[];
+      }
     }
   } catch (error) {
     console.warn('[Careers] Could not read cached public openings:', error);
