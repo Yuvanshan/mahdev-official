@@ -451,9 +451,8 @@ class UniversalBookingService {
       .createBooking(newBooking as any)
       .catch((err) => console.warn('[BookingService] Firestore booking create error:', err));
 
-    // Trigger non-blocking customer confirmation email and admin alert
+    // Trigger the non-blocking customer confirmation notification.
     notificationService.notifyBookingConfirmation(newBooking).catch(() => {});
-    notificationService.notifyAdminNewBooking(newBooking).catch(() => {});
 
     return { success: true, booking: newBooking };
   }

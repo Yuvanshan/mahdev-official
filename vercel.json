@@ -28,7 +28,6 @@
     }
   ],
   "routes": [
-    { "src": "/api/data/(.*)", "dest": "/api/database" },
     {
       "src": "/assets/(.*)",
       "headers": {

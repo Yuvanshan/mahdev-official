@@ -17,13 +17,6 @@ const NOTIFICATION_TYPES = new Set<NotificationPayload['type']>([
   'booking_update',
   'booking_cancellation',
   'quote_request_received',
-  'admin_new_order',
-  'admin_new_booking',
-  'admin_payment_received',
-  'admin_new_customer',
-  'admin_low_inventory',
-  'admin_contact_inquiry',
-  'admin_quote_request',
 ]);
 
 function sendJson(response: ServerResponse, status: number, body: Record<string, unknown>): void {
@@ -57,6 +50,10 @@ export default async function handler(
   }
 
   const body = request.body;
+  if (typeof body.type === 'string' && body.type.startsWith('admin_')) {
+    sendJson(response, 403, { success: false, error: 'Admin notifications are only sent from verified server-side events.' });
+    return;
+  }
   if (typeof body.type !== 'string' || !NOTIFICATION_TYPES.has(body.type as NotificationPayload['type'])) {
     sendJson(response, 400, { success: false, error: 'Unsupported notification type.' });
     return;

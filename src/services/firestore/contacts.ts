@@ -15,7 +15,6 @@ import {
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreContactSubmission } from '../../types/firestore';
 
-const ADMIN_INBOX_POLL_INTERVAL_MS = 10000;
 type ContactSubscriber = {
   onData: (items: FirestoreContactSubmission[]) => void;
   onError?: (error: Error) => void;
@@ -40,8 +39,7 @@ function startContactFeed(): void {
         console.warn('[Firestore Contacts] subscribeContacts error:', err);
         contactSubscribers.forEach(({ onError }) => onError?.(err));
       }
-    },
-    ADMIN_INBOX_POLL_INTERVAL_MS
+    }
   );
 }
 

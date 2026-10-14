@@ -9,7 +9,6 @@
  */
 
 import { AppNotification, NotificationType, NotificationRecipient } from '../types/notification';
-import { backendApiService } from './backendApiService';
 import { Order } from '../types/order';
 import { Booking } from '../types/booking';
 import { PaymentTransaction } from '../types/payment';
@@ -54,41 +53,13 @@ class NotificationService {
       readAt: null,
       createdAt: new Date().toISOString(),
       data,
-      channels: ['email', 'in_app'],
+      channels,
       actionUrl,
     };
 
     // 1. Immediately store in client in-app store
     this.notifications.unshift(notification);
     this.notifyStateChanged();
-
-    // 2. Asynchronously fire server email/SMS dispatcher without blocking caller
-    (async () => {
-      try {
-        const result = await backendApiService.dispatchNotification({
-          type,
-          recipient: {
-            name: recipient.name,
-            email: recipient.email,
-            phone: recipient.phone,
-          },
-          data: {
-            title,
-            message,
-            ...data,
-          },
-          channels,
-        });
-        if (!result.success) {
-          console.warn(
-            `[NotificationService] Server did not dispatch ${type}:`,
-            result.error || 'Notification delivery failed.'
-          );
-        }
-      } catch (err) {
-        console.warn(`[NotificationService] Server dispatch deferred for ${type}:`, err);
-      }
-    })().catch(() => {});
 
     return notification;
   }

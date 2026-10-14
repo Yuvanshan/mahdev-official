@@ -106,8 +106,7 @@ export async function dispatchServerNotification(payload: NotificationPayload): 
           }
         } else if (
           payload.type === 'admin_contact_inquiry' ||
-          payload.type === 'admin_quote_request' ||
-          payload.recipient.email.includes('info.mahdev.lk@gmail.com')
+          payload.type === 'admin_quote_request'
         ) {
           try {
             await sendEnquiryEmail({

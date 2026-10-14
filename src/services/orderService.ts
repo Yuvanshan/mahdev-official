@@ -263,9 +263,8 @@ class OrderService {
       console.warn('[Firestore] Order sync error:', e);
     }
 
-    // Trigger non-blocking customer confirmation email and admin alert
+    // Trigger the non-blocking customer confirmation notification.
     notificationService.notifyOrderConfirmation(newOrder).catch(() => {});
-    notificationService.notifyAdminNewOrder(newOrder).catch(() => {});
 
     return newOrder;
   }

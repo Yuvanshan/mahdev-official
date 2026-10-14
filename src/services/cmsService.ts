@@ -44,6 +44,8 @@ import { collection, deleteDoc, doc, onSnapshot, setDoc } from '../lib/tursoFire
 
 const CMS_STORAGE_PREFIX = 'mahdev_cms_session_v2_';
 const LEGACY_CMS_STORAGE_PREFIX = 'mahdev_cms_v1_';
+const PUBLIC_CMS_CACHE_PREFIX = 'mahdev_cms_public_v1_';
+const PERSISTED_PUBLIC_ENTITIES = new Set<CmsEntityType>(['packages', 'pages', 'banners']);
 
 export interface CmsFilterOptions {
   search?: string;
@@ -58,6 +60,7 @@ export interface CmsFilterOptions {
 class CmsService {
   private cache: Partial<Record<CmsEntityType, any[]>> = {};
   private listeners: Map<CmsEntityType, Set<() => void>> = new Map();
+  private couponsLoadStarted = false;
   private broadcastChannel: BroadcastChannel | null =
     typeof window !== 'undefined' && 'BroadcastChannel' in window
       ? new BroadcastChannel('mahdev_cms_sync_channel')
@@ -65,7 +68,8 @@ class CmsService {
 
   constructor() {
     this.initializeAllEntities();
-    (['packages', 'pages', 'banners', 'coupons'] as const).forEach((entity) => {
+    (['packages', 'pages', 'banners'] as const).forEach((entity) => {
+      if (this.readPublicCache(entity) !== null) return;
       onSnapshot(
         collection(db, entity),
         (snapshot) => {
@@ -75,6 +79,7 @@ class CmsService {
           }));
           this.cache[entity] = items;
           safeStorage.setItem(this.getStorageKey(entity), JSON.stringify(items));
+          this.writePublicCache(entity, items);
           this.notify(entity);
         },
         (error) => {
@@ -109,6 +114,20 @@ class CmsService {
 
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', (e) => {
+        if (e.key?.startsWith(PUBLIC_CMS_CACHE_PREFIX) && e.newValue) {
+          const entity = e.key.slice(PUBLIC_CMS_CACHE_PREFIX.length) as CmsEntityType;
+          if (!PERSISTED_PUBLIC_ENTITIES.has(entity)) return;
+          try {
+            const parsed: unknown = JSON.parse(e.newValue);
+            if (Array.isArray(parsed)) {
+              this.cache[entity] = parsed;
+              this.listeners.get(entity)?.forEach((cb) => cb());
+            }
+          } catch (error) {
+            console.warn(`[CmsService] Could not sync persistent ${entity} cache:`, error);
+          }
+          return;
+        }
         if (e.key && e.key.startsWith(CMS_STORAGE_PREFIX)) {
           const entity = e.key.replace(CMS_STORAGE_PREFIX, '') as CmsEntityType;
           if (this.cache[entity] && e.newValue) {
@@ -571,7 +590,52 @@ class CmsService {
     };
   }
 
+  public ensureCouponsLoaded(): void {
+    if (this.couponsLoadStarted) return;
+    this.couponsLoadStarted = true;
+    onSnapshot(
+      collection(db, 'coupons'),
+      (snapshot) => {
+        const items = snapshot.docs.map((document) => ({
+          ...document.data(),
+          id: document.id,
+        }));
+        this.cache.coupons = items;
+        safeStorage.setItem(this.getStorageKey('coupons'), JSON.stringify(items));
+        this.notify('coupons');
+      },
+      (error) => {
+        this.couponsLoadStarted = false;
+        console.error('[CmsService] Could not load coupons from Turso:', error);
+      }
+    );
+  }
+
+  private readPublicCache(entity: CmsEntityType): any[] | null {
+    if (!PERSISTED_PUBLIC_ENTITIES.has(entity) || typeof window === 'undefined') return null;
+    try {
+      const cached = window.localStorage.getItem(`${PUBLIC_CMS_CACHE_PREFIX}${entity}`);
+      if (cached === null) return null;
+      const parsed: unknown = JSON.parse(cached);
+      return Array.isArray(parsed) ? parsed : null;
+    } catch (error) {
+      console.warn(`[CmsService] Could not read persistent ${entity} cache:`, error);
+      return null;
+    }
+  }
+
+  private writePublicCache(entity: CmsEntityType, items: any[]): void {
+    if (!PERSISTED_PUBLIC_ENTITIES.has(entity) || typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(`${PUBLIC_CMS_CACHE_PREFIX}${entity}`, JSON.stringify(items));
+    } catch (error) {
+      console.warn(`[CmsService] Could not persist public ${entity} cache:`, error);
+    }
+  }
+
   private notify(entity: CmsEntityType): void {
+    const items = this.cache[entity];
+    if (items) this.writePublicCache(entity, items);
     const subs = this.listeners.get(entity);
     if (subs && subs.size > 0) {
       const callbacks = Array.from(subs);
@@ -635,7 +699,7 @@ class CmsService {
 
     entities.forEach((entity) => {
       safeStorage.removeItem(`${LEGACY_CMS_STORAGE_PREFIX}${entity}`);
-      this.cache[entity] = [];
+      this.cache[entity] = this.readPublicCache(entity) ?? [];
     });
     safeStorage.removeItem(`${LEGACY_CMS_STORAGE_PREFIX}homepage_config`);
   }

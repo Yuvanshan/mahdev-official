@@ -77,6 +77,7 @@ export const AdminCouponsView: React.FC = () => {
   };
 
   useEffect(() => {
+    cmsService.ensureCouponsLoaded();
     loadCoupons();
     const unsub = cmsService.subscribe('coupons', loadCoupons);
     return () => unsub();

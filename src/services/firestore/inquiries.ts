@@ -50,7 +50,6 @@ export interface FirestoreInquiry {
 }
 
 const COLLECTION_NAME = 'inquiries';
-const ADMIN_INBOX_POLL_INTERVAL_MS = 10000;
 type InquirySubscriber = {
   callback: (inquiries: FirestoreInquiry[]) => void;
   onError?: (error: Error) => void;
@@ -75,8 +74,7 @@ function startInquiryFeed(): void {
         console.warn('[FirestoreInquiries] Snapshot listener error:', err);
         inquirySubscribers.forEach(({ onError }) => onError?.(err));
       }
-    },
-    ADMIN_INBOX_POLL_INTERVAL_MS
+    }
   );
 }
 
