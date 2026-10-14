@@ -1,6 +1,19 @@
-# Robots.txt for Mahdev Pvt Ltd (https://mahdev.lk)
+# Robots.txt for Mahdev Pvt Ltd (https://mahdev-official.vercel.app)
 User-agent: *
 Allow: /
+Allow: /divisions/
+Allow: /services/
+Allow: /insights
+Allow: /featured-services
+Allow: /gallery/
+Allow: /media/
+Allow: /projects/
+Allow: /portfolio/
+Allow: /work/
+Allow: /posts/
+Allow: /post/
+Allow: /blog/
+Allow: /articles/
 Allow: /sws
 Allow: /u1
 Allow: /it
@@ -23,7 +36,15 @@ Disallow: /admin/
 Disallow: /account
 Disallow: /account/
 Disallow: /checkout
+Disallow: /cart
+Disallow: /bookings
+Disallow: /order
 Disallow: /order/
+Disallow: /orders
+Disallow: /track-order
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
 Disallow: /api/
 
-Sitemap: https://mahdev.lk/sitemap.xml
+Sitemap: https://mahdev-official.vercel.app/sitemap.xml

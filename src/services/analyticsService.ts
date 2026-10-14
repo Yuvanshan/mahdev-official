@@ -27,8 +27,17 @@ import { orderService } from './orderService';
 import { bookingService } from './bookingService';
 import { cmsService } from './cmsService';
 import { DIVISION_LIST } from '../config/divisions';
+import { trackMarketingEvent } from './marketingAnalytics';
 
 const MAX_SESSION_EVENTS = 600;
+const CAMPAIGN_ATTRIBUTION_KEY = 'mahdev_utm_attribution';
+const CAMPAIGN_PARAMETER_NAMES = [
+  'utm_source',
+  'utm_medium',
+  'utm_campaign',
+  'utm_term',
+  'utm_content',
+] as const;
 
 function aggregateTraffic(
   events: AnalyticsEvent[],
@@ -59,7 +68,10 @@ class AnalyticsService {
   private initSession(): void {
     if (typeof navigator !== 'undefined') {
       const dnt = navigator.doNotTrack || (window as any).doNotTrack || (navigator as any).msDoNotTrack;
-      this.isDntEnabled = dnt === '1' || dnt === 'yes';
+      this.isDntEnabled =
+        dnt === '1' ||
+        dnt === 'yes' ||
+        (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl === true;
     }
     if (typeof window !== 'undefined') {
       try {
@@ -91,6 +103,40 @@ class AnalyticsService {
       metadata = { dnt: true };
     }
 
+    const eventMetadata = this.sanitizeMetadata(metadata || {});
+    if (typeof window !== 'undefined' && !this.isDntEnabled) {
+      if (type === 'page_view') {
+        const campaignParameters = new URLSearchParams(window.location.search);
+        const attribution = Object.fromEntries(
+          CAMPAIGN_PARAMETER_NAMES.flatMap((key) => {
+            const value = campaignParameters.get(key)?.trim();
+            return value ? [[key, value.slice(0, 200)]] : [];
+          })
+        );
+        if (Object.keys(attribution).length > 0) {
+          try {
+            window.sessionStorage.setItem(CAMPAIGN_ATTRIBUTION_KEY, JSON.stringify(attribution));
+          } catch (error) {
+            console.warn('[Analytics] Could not retain campaign attribution for this session:', error);
+          }
+        }
+      }
+
+      try {
+        const storedAttribution: unknown = JSON.parse(
+          window.sessionStorage.getItem(CAMPAIGN_ATTRIBUTION_KEY) || '{}'
+        );
+        if (storedAttribution && typeof storedAttribution === 'object' && !Array.isArray(storedAttribution)) {
+          for (const key of CAMPAIGN_PARAMETER_NAMES) {
+            const value = (storedAttribution as Record<string, unknown>)[key];
+            if (typeof value === 'string') eventMetadata[key] = value;
+          }
+        }
+      } catch (error) {
+        console.warn('[Analytics] Could not read campaign attribution for this session:', error);
+      }
+    }
+
     const event: AnalyticsEvent = {
       id: `ev_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       type,
@@ -99,11 +145,12 @@ class AnalyticsService {
       title: typeof document !== 'undefined' ? document.title : undefined,
       divisionId,
       sessionId: this.sessionId,
-      metadata: metadata ? this.sanitizeMetadata(metadata) : undefined,
+      metadata: Object.keys(eventMetadata).length > 0 ? eventMetadata : undefined,
     };
 
     this.sessionEvents = [event, ...this.sessionEvents].slice(0, MAX_SESSION_EVENTS);
     this.persistEvent(event);
+    trackMarketingEvent(event.type, event.path, event.metadata);
   }
 
   private persistEvent(event: AnalyticsEvent): void {

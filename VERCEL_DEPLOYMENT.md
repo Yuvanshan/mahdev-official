@@ -90,7 +90,8 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 
 | Variable Name | Environments | Description |
 | :--- | :--- | :--- |
-| `VITE_APP_URL` | Production: `https://mahdev.lk`<br>Preview: `https://$VERCEL_URL`<br>Development: `http://localhost:3000` | Canonical base URL |
+| `VITE_APP_URL` | Production: `https://mahdev-official.vercel.app`<br>Preview: `https://$VERCEL_URL`<br>Development: `http://localhost:3000` | Public canonical base URL used by SEO and production analytics |
+| `PUBLIC_SITE_URL` | Production: `https://mahdev-official.vercel.app` | Server-only public canonical origin for generated sitemap URLs; update alongside `VITE_APP_URL` when the primary domain changes |
 | `VITE_FIREBASE_API_KEY` | Production, Preview, Development | Public Firebase Web SDK API Key |
 | `VITE_FIREBASE_AUTH_DOMAIN` | Production, Preview, Development | `for-her-33ea9.firebaseapp.com` |
 | `VITE_FIREBASE_PROJECT_ID` | Production, Preview, Development | `for-her-33ea9` |
@@ -100,6 +101,10 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | Production, Preview, Development | `1062826041810` |
 | `VITE_FIREBASE_APP_ID` | Production, Preview, Development | `1:1062826041810:web:2905a8e9f7bc3243dfa80b` |
 | `VITE_FIREBASE_MEASUREMENT_ID` | Production, Preview, Development | `G-MWNCCXGY4F` |
+| `VITE_GA_MEASUREMENT_ID` | Production | Optional Google Analytics 4 Measurement ID (`G-...`); unset disables GA4 |
+| `VITE_META_PIXEL_ID` | Production | Optional numeric Meta Pixel ID; unset disables Meta Pixel |
+| `VITE_GOOGLE_SITE_VERIFICATION` | Production | Optional HTML-tag verification token from Google Search Console |
+| `VITE_BING_SITE_VERIFICATION` | Production | Optional HTML-tag verification token from Bing Webmaster Tools |
 | `TURSO_DATABASE_URL` | Production, Preview, Development | Server-side Turso connection URL (`libsql://...`) |
 | `TURSO_DATABASE_URL_ACTIVE` | Production, Preview, Development | Optional server-side URL override; when set, it takes precedence over `TURSO_DATABASE_URL` |
 | `TURSO_AUTH_TOKEN` | Production, Preview, Development | Server-side Turso auth token; store as a secret |
@@ -134,7 +139,23 @@ Admin portal access uses `ADMIN_LOGIN_EMAIL`, `ADMIN_LOGIN_PASSWORD_HASH`, and `
 
 ---
 
-## 5. Custom Domain Configuration (`mahdev.lk`)
+## 5. Search indexing and analytics
+
+The public sitemap is generated at request time from published CMS pages, active divisions, and published portfolio projects, in addition to the main public routes. It is served from `https://mahdev-official.vercel.app/sitemap.xml` and declared in `robots.txt`. Public marketing pages are indexable; account, admin, and transaction routes are excluded. Page titles, descriptions, canonical URLs, social metadata, and Organization/WebSite structured data are maintained in the app.
+
+After deploying SEO changes:
+
+1. Verify `https://mahdev-official.vercel.app/robots.txt` and `https://mahdev-official.vercel.app/sitemap.xml` return successfully.
+2. Add `mahdev-official.vercel.app` as a URL-prefix property in Google Search Console and Bing Webmaster Tools. Add each HTML verification token to the Vercel Production variables `VITE_GOOGLE_SITE_VERIFICATION` and `VITE_BING_SITE_VERIFICATION`, respectively, then redeploy and complete verification in each console. DNS TXT verification is also available if you control the domain.
+3. Submit `https://mahdev-official.vercel.app/sitemap.xml` in both webmaster consoles, then inspect the homepage and key service/career URLs and request indexing where offered. Indexing and ranking are decided by each search engine and cannot be guaranteed.
+4. In **Admin > Settings > Company**, enter the full public profile URLs for Facebook, Instagram, LinkedIn, YouTube, and Pinterest. Saved links appear in the global footer and About page; blank or invalid URLs are omitted.
+5. If using external analytics, create the GA4 web data stream and/or Meta Pixel, set `VITE_GA_MEASUREMENT_ID` and/or `VITE_META_PIXEL_ID` in the Production Vercel environment, then redeploy. Both are optional and remain disabled when unset; page views, leads, quotes, bookings, checkout starts, purchases, and cart additions are tracked without sending contact details. Tracking respects DNT and GPC.
+6. Use real case studies and service information in the CMS. Published custom pages and projects are added to the sitemap automatically. Blog drafts are not included; do not publish placeholder pages or keyword-only articles.
+7. For paid campaigns, add Google Ads and Meta campaign links with `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, and `utm_content` values. First-party page-view records retain these campaign labels so enquiries and sales can be compared by channel.
+
+---
+
+## 6. Custom Domain Configuration (`mahdev.lk`)
 
 1. In the Vercel Dashboard, go to **Settings > Domains**.
 2. Enter `mahdev.lk` and `www.mahdev.lk`.
@@ -145,7 +166,7 @@ Admin portal access uses `ADMIN_LOGIN_EMAIL`, `ADMIN_LOGIN_PASSWORD_HASH`, and `
 
 ---
 
-## 6. Pre-Flight Deployment Checklist & Quality Gates
+## 7. Pre-Flight Deployment Checklist & Quality Gates
 
 The production pipeline enforces mandatory CI checks before any build is promoted to `main`:
 

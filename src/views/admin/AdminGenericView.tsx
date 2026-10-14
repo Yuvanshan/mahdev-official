@@ -367,15 +367,15 @@ export const AdminGenericView: React.FC<AdminGenericViewProps> = ({
           <div className="grid grid-cols-2 gap-4 font-mono">
             <div className="p-3 bg-slate-50 rounded-xl space-y-1">
               <span className="text-[10px] text-slate-400 font-bold uppercase block">Canonical Root:</span>
-              <strong className="text-slate-900">https://mahdev.lk</strong>
+              <strong className="text-slate-900">https://mahdev-official.vercel.app</strong>
             </div>
             <div className="p-3 bg-slate-50 rounded-xl space-y-1">
               <span className="text-[10px] text-slate-400 font-bold uppercase block">Index Status:</span>
-              <strong className="text-emerald-700">INDEX, FOLLOW (All Routes Verified)</strong>
+              <strong className="text-emerald-700">Public pages indexable (verify status in Search Console)</strong>
             </div>
           </div>
           <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 text-blue-900 font-mono text-xs">
-            sitemap.xml dynamic generation: <strong>ACTIVE</strong> (28 endpoints crawled)
+            sitemap.xml is generated from published CMS pages, active divisions, and published portfolio projects.
           </div>
         </div>
       </div>

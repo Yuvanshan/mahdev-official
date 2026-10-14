@@ -1,11 +1,38 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig} from 'vite';
+import {defineConfig, loadEnv} from 'vite';
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  const siteOrigin = new URL(
+    env.VITE_APP_URL || 'https://mahdev-official.vercel.app'
+  ).origin;
+  const verificationTags = [
+    ['google-site-verification', env.VITE_GOOGLE_SITE_VERIFICATION],
+    ['msvalidate.01', env.VITE_BING_SITE_VERIFICATION],
+  ]
+    .filter(([, value]) => Boolean(value))
+    .map(([name, value]) => `<meta name="${name}" content="${String(value).replace(/[&<>"]/g, '')}" />`)
+    .join('\n    ');
+
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      {
+        name: 'search-engine-verification-tags',
+        transformIndexHtml(html) {
+          const htmlWithCurrentOrigin = html.replaceAll(
+            'https://mahdev-official.vercel.app',
+            siteOrigin
+          );
+          return verificationTags
+            ? htmlWithCurrentOrigin.replace('</head>', `${verificationTags}\n  </head>`)
+            : htmlWithCurrentOrigin;
+        },
+      },
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
@@ -34,6 +61,11 @@ export default defineConfig(() => {
     server: {
       port: 5173,
       proxy: {
+        '/sitemap.xml': {
+          target: 'http://localhost:4000',
+          changeOrigin: true,
+          secure: false,
+        },
         '/api': {
           target: 'http://localhost:4000',
           changeOrigin: true,

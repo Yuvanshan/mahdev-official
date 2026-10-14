@@ -3,12 +3,16 @@ import express from 'express';
 import apiRouter from './api/index.js';
 import { runMigrations } from './db/index.js';
 import { createTursoRouter } from './api/tursoRoutes.js';
+import sitemapHandler from './api/handlers/sitemap.js';
 
 const app = express();
 const port = Number(process.env.BACKEND_PORT || process.env.PORT || 4000);
 
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+app.get('/sitemap.xml', (req, res) => {
+  void sitemapHandler(req, res);
+});
 app.use('/api/database', createTursoRouter());
 app.use('/api', apiRouter);
 

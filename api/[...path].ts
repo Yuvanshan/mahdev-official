@@ -11,6 +11,7 @@ import adminVerifyHandler from '../backend/api/handlers/admin/auth/verify.js';
 import adminCustomersHandler from '../backend/api/handlers/admin/customers.js';
 import notificationHandler from '../backend/api/handlers/notifications.js';
 import publicEmailHandler from '../backend/api/handlers/publicEmail.js';
+import sitemapHandler from '../backend/api/handlers/sitemap.js';
 
 interface ApiRequest extends IncomingMessage {
   method?: string;
@@ -72,6 +73,10 @@ export default async function handler(req: ApiRequest, res: ServerResponse): Pro
   const pathname = new URL(req.url || '/', 'http://localhost').pathname;
   if (!(await parseJsonBody(req, res, pathname))) return;
 
+  if (pathname === '/api/sitemap') {
+    await sitemapHandler(req, res);
+    return;
+  }
   if (pathname === '/api/notifications/dispatch') {
     await notificationHandler(req, res);
     return;

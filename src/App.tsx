@@ -134,6 +134,7 @@ const PromotionsView = lazy(() => import('./views/PromotionsView').then((module)
 const LegalPageView = lazy(() => import('./views/LegalPageView').then((module) => ({ default: module.LegalPageView })));
 const NotFoundView = lazy(() => import('./views/NotFoundView').then((module) => ({ default: module.NotFoundView })));
 const CmsPageView = lazy(() => import('./views/CmsPageView').then((module) => ({ default: module.CmsPageView })));
+const InsightsView = lazy(() => import('./views/InsightsView').then((module) => ({ default: module.InsightsView })));
 const GalleryPageView = lazy(() => import('./views/GalleryPageView').then((module) => ({ default: module.GalleryPageView })));
 const LoginView = lazy(() => import('./views/auth/LoginView').then((module) => ({ default: module.LoginView })));
 const RegisterView = lazy(() => import('./views/auth/RegisterView').then((module) => ({ default: module.RegisterView })));
@@ -1144,6 +1145,8 @@ function AppContent() {
       case '/services':
       case '/featured-services':
         return <ExploreAllView onNavigate={navigate} />;
+      case '/insights':
+        return <InsightsView onNavigate={navigate} />;
       case '/about':
       case '/about-us':
       case '/company':

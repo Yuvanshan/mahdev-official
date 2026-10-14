@@ -250,7 +250,7 @@ export interface CmsTestimonial extends BaseCmsEntity {
 export interface CmsPage extends BaseCmsEntity {
   slug: string;
   title: string;
-  category: 'legal' | 'corporate' | 'landing' | 'custom';
+  category: 'legal' | 'corporate' | 'landing' | 'custom' | 'insights';
   metaDescription: string;
   heroHeading: string;
   heroSubheading?: string;

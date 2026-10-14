@@ -323,9 +323,16 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
   return (
     <div className="w-full flex flex-col pt-20 sm:pt-24 pb-12 bg-white">
       <SEOHead
-        title="Enterprise Services & Solutions"
-        description="Explore comprehensive services and turn-key packages across all five Mahdev business divisions: SWS Events, U1 Studio, IT Solutions, Travels, and Online Mart."
-        canonicalUrl="https://mahdev.lk/services"
+        title="Event, Photography, IT, Travel & Production Services in Sri Lanka"
+        description="Compare Mahdev services across event management, photography and cinema production, IT solutions, travel, and professional production equipment in Sri Lanka."
+        canonicalUrl="https://mahdev-official.vercel.app/services"
+        keywords={[
+          'event management services Sri Lanka',
+          'photography and cinema production Sri Lanka',
+          'IT solutions Sri Lanka',
+          'travel services Sri Lanka',
+          'professional production equipment Sri Lanka',
+        ]}
       />
 
       {/* 1. Header Banner */}

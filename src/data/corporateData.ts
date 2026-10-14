@@ -582,7 +582,7 @@ export const LEGAL_POLICIES_CONTENT: Record<
       {
         heading: '6. Privacy-Preserving Analytics & Telemetry (Phase 36 Standard)',
         content: [
-          'First-Party Processing: Mahdev operates a strictly in-house, privacy-safe analytics engine. We do not load external third-party tracking scripts, advertising beacons, or cross-site fingerprinting services.',
+          'Analytics Providers: Mahdev uses first-party analytics. If configured, Google Analytics 4 and Meta Pixel may also receive page-view events to measure site traffic and marketing performance. These optional services are not loaded when the browser enables Do-Not-Track (DNT) or Global Privacy Control (GPC).',
           'PII Sanitization: All client telemetry data is automatically sanitized before transmission. Passwords, credit card numbers, personal phone numbers, and physical residential addresses are stripped from telemetry payloads.',
           'Do-Not-Track (DNT) Respect: Our analytics architecture automatically honors browser Do-Not-Track (DNT: 1) signals and Global Privacy Control (GPC) headers, suppressing session recording when requested.',
           'Non-Blocking Performance: Telemetry events use asynchronous browser idle scheduling (requestIdleCallback / navigator.sendBeacon) ensuring 0ms page rendering delay and zero website speed degradation.'

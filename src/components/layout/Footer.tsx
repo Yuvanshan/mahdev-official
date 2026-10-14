@@ -8,6 +8,7 @@ import { FOOTER_SECTIONS } from '../../config/navigation';
 import { getTelLink, getMailtoLink, getMapSearchUrl } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { getDivisionWhatsAppUrl } from '../../utils/whatsapp';
+import { SocialLinks } from '../common/SocialLinks';
 
 interface FooterProps {
   onNavigate: (path: string) => void;
@@ -104,6 +105,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath }) => {
                 size="md"
                 onClick={() => onNavigate('/')}
               />
+              <SocialLinks socials={companySettings?.socials} variant="dark" />
 
               {/* Direct Contact Anchors */}
               <div className="space-y-3 pt-2 text-xs text-blue-200/80">

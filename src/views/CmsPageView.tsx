@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { CmsPage } from '../types/cms';
 import { cmsService } from '../services/cmsService';
 import { NotFoundView } from './NotFoundView';
+import { SEOHead } from '../components/layout/SEOHead';
 
 interface CmsPageViewProps {
   slug: string;
@@ -15,7 +16,12 @@ export const CmsPageView: React.FC<CmsPageViewProps> = ({ slug, onNavigate }) =>
     const loadPage = () => {
       const publishedPage = cmsService
         .getAll<CmsPage>('pages')
-        .find((item) => item.slug === slug && item.isPublished);
+        .find((item) =>
+          item.isPublished &&
+          (item.category === 'insights'
+            ? `insights/${item.slug}` === slug
+            : item.slug === slug)
+        );
       setPage(publishedPage || null);
     };
     const unsubscribe = cmsService.subscribe('pages', loadPage);
@@ -31,8 +37,21 @@ export const CmsPageView: React.FC<CmsPageViewProps> = ({ slug, onNavigate }) =>
     return <NotFoundView onNavigate={onNavigate} resourceType="page" attemptedSlug={slug} />;
   }
 
+  const canonicalPath = (page.category === 'insights' ? `insights/${page.slug}` : page.slug)
+    .split('/')
+    .map(encodeURIComponent)
+    .join('/');
+  const description = page.metaDescription ||
+    page.heroSubheading ||
+    page.content.replace(/[#*_`>\[\]()]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160);
+
   return (
     <main className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+      <SEOHead
+        title={page.title}
+        description={description}
+        canonicalUrl={`https://mahdev-official.vercel.app/${canonicalPath}`}
+      />
       <header className="mb-10 border-b border-slate-200 pb-8">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-700 mb-3">{page.category}</p>
         <h1 className="font-display text-3xl sm:text-5xl font-bold text-slate-950">{page.heroHeading || page.title}</h1>

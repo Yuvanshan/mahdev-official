@@ -29,6 +29,8 @@ import {
   DEFAULT_ABOUT_US_CONTENT,
 } from '../services/firestore/websiteContent';
 import { getOfficeMapUrl } from '../config/company';
+import { useFirestoreDataContext } from '../context/FirestoreDataContext';
+import { SocialLinks } from '../components/common/SocialLinks';
 
 interface AboutViewProps {
   onNavigate: (route: string) => void;
@@ -45,6 +47,7 @@ const VALUE_ICONS: Record<string, React.ElementType> = {
 };
 
 export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
+  const { companySettings } = useFirestoreDataContext();
   const [content, setContent] = useState<AboutUsContent>(DEFAULT_ABOUT_US_CONTENT);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -370,10 +373,13 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
           <section className="py-16 sm:py-20 bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <ScrollReveal direction="up">
-                <div className="max-w-3xl mb-12">
-                  <H2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-slate-900 tracking-tight">
-                    Company Journey
-                  </H2>
+                <div className="mb-12 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="max-w-3xl">
+                    <H2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-slate-900 tracking-tight">
+                      Company Journey
+                    </H2>
+                  </div>
+                  <SocialLinks socials={companySettings?.socials} />
                 </div>
               </ScrollReveal>
 

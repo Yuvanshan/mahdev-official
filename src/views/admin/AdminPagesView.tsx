@@ -42,7 +42,7 @@ export const AdminPagesView: React.FC = () => {
   const [formData, setFormData] = useState({
     slug: '',
     title: '',
-    category: 'legal' as 'legal' | 'corporate' | 'landing' | 'custom',
+    category: 'legal' as 'legal' | 'corporate' | 'landing' | 'custom' | 'insights',
     metaDescription: '',
     heroHeading: '',
     heroSubheading: '',
@@ -281,6 +281,7 @@ export const AdminPagesView: React.FC = () => {
               <option value="corporate">Corporate Governance</option>
               <option value="landing">Landing & Campaign</option>
               <option value="custom">Custom Content</option>
+              <option value="insights">Insights Article</option>
             </select>
           </div>
 
@@ -482,7 +483,7 @@ export const AdminPagesView: React.FC = () => {
               </label>
               <div className="flex items-center">
                 <span className="px-3 py-2 bg-slate-100 border border-r-0 border-slate-200 rounded-l-xl text-xs text-slate-500 font-mono">
-                  mahdev.lk/
+                  mahdev-official.vercel.app/{formData.category === 'insights' ? 'insights/' : ''}
                 </span>
                 <input
                   type="text"

@@ -5,13 +5,19 @@ import { db } from '../../lib/firebase';
 import { doc, getDoc } from '../../lib/tursoFirestore';
 
 const SEO_CACHE_KEY = 'mahdev_cached_seo_configs';
+const SEO_ORIGIN = new URL(
+  import.meta.env.VITE_APP_URL || 'https://mahdev-official.vercel.app'
+).origin;
+const SEO_DOMAIN = new URL(SEO_ORIGIN).hostname;
 
 type SeoConfig = {
   route: string;
   title: string;
   description: string;
+  keywords?: string | string[];
   ogImage: string;
   canonicalUrl: string;
+  allowIndexing?: boolean;
 };
 
 function readCachedSeoConfigs(): SeoConfig[] | null {
@@ -32,6 +38,8 @@ export const SEOHead: React.FC<SEOMetaData> = ({
   ogTitle,
   ogDescription,
   ogType = 'website',
+  keywords = [],
+  noIndex = false,
 }) => {
   const { siteSettings, companySettings } = useFirestoreDataContext();
   const [seoVersion, setSeoVersion] = useState(0);
@@ -128,8 +136,9 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     let effectiveOgTitle = ogTitle || dynamicFullTitle;
     let effectiveOgDesc = ogDescription || effectiveDesc;
     let effectiveCanonical = canonicalUrl;
-    let effectiveOgImage = siteSettings?.ogImageUrl || 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80';
-
+    let effectiveOgImage = siteSettings?.ogImageUrl || `${SEO_ORIGIN}/logo.png`;
+    let effectiveKeywords = keywords;
+    let allowIndexing = true;
     const currentPath = window.location.pathname || '/';
     const matched = seoConfigs.find(
       (config) => config.route === currentPath ||
@@ -141,20 +150,44 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       if (matched.description) effectiveDesc = matched.description;
       if (matched.ogImage) effectiveOgImage = matched.ogImage;
       if (matched.canonicalUrl) effectiveCanonical = matched.canonicalUrl;
+      if (matched.allowIndexing === false) allowIndexing = false;
+      if (matched.keywords) {
+        effectiveKeywords = Array.isArray(matched.keywords)
+          ? matched.keywords
+          : matched.keywords.split(',').map((keyword) => keyword.trim()).filter(Boolean);
+      }
       effectiveOgTitle = matched.title;
       effectiveOgDesc = matched.description;
     }
 
-    // Ensure canonical URL is always fully qualified with production domain https://mahdev.lk
-    const canonicalPath = typeof window !== 'undefined' ? window.location.pathname : '/';
-    if (!effectiveCanonical || !effectiveCanonical.startsWith('http')) {
-      const cleanPath = effectiveCanonical ? (effectiveCanonical.startsWith('/') ? effectiveCanonical : `/${effectiveCanonical}`) : canonicalPath;
-      effectiveCanonical = `https://mahdev.lk${cleanPath === '/' ? '' : cleanPath}`;
-    }
+    const canonicalPath = effectiveCanonical
+      ? new URL(effectiveCanonical, window.location.origin).pathname
+      : currentPath;
+    effectiveCanonical = `${SEO_ORIGIN}${canonicalPath === '/' ? '' : canonicalPath}`;
 
     // Hostname evaluation for environment-aware search engine indexing
     const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-    const isProductionHost = hostname === 'mahdev.lk' || hostname === 'www.mahdev.lk';
+    const isProductionHost = hostname === SEO_DOMAIN;
+    const privateRoutePrefixes = [
+      '/admin',
+      '/admin-login',
+      '/adminlogin',
+      '/adminportal',
+      '/admin-portal',
+      '/account',
+      '/checkout',
+      '/cart',
+      '/order',
+      '/orders',
+      '/track-order',
+      '/login',
+      '/register',
+      '/forgot-password',
+    ];
+    const isPrivateRoute = privateRoutePrefixes.some(
+      (prefix) => currentPath === prefix || currentPath.startsWith(`${prefix}/`)
+    );
+    const canIndexPage = isProductionHost && !noIndex && !isPrivateRoute && allowIndexing;
 
     // Helper to safely update or create meta tags
     const setMetaTag = (attr: string, key: string, content: string) => {
@@ -171,17 +204,32 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     setMetaTag(
       'name',
       'robots',
-      isProductionHost
+      canIndexPage
+        ? 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1'
+        : 'noindex, nofollow'
+    );
+    setMetaTag(
+      'name',
+      'googlebot',
+      canIndexPage
         ? 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1'
         : 'noindex, nofollow'
     );
 
     setMetaTag('name', 'description', effectiveDesc);
+    setMetaTag('name', 'keywords', effectiveKeywords.join(', '));
+    const googleVerification = import.meta.env.VITE_GOOGLE_SITE_VERIFICATION;
+    const bingVerification = import.meta.env.VITE_BING_SITE_VERIFICATION;
+    if (googleVerification) setMetaTag('name', 'google-site-verification', googleVerification);
+    if (bingVerification) setMetaTag('name', 'msvalidate.01', bingVerification);
     setMetaTag('property', 'og:title', effectiveOgTitle);
     setMetaTag('property', 'og:description', effectiveOgDesc);
     setMetaTag('property', 'og:image', effectiveOgImage);
     setMetaTag('property', 'og:type', ogType);
     setMetaTag('property', 'og:url', effectiveCanonical);
+    setMetaTag('property', 'og:site_name', companySettings?.name || siteSettings?.siteName || 'Mahdev Pvt Ltd');
+    setMetaTag('property', 'og:locale', 'en_LK');
+    setMetaTag('property', 'og:image:alt', effectiveOgTitle);
     setMetaTag('name', 'twitter:card', 'summary_large_image');
     setMetaTag('name', 'twitter:title', effectiveOgTitle);
     setMetaTag('name', 'twitter:description', effectiveOgDesc);
@@ -206,15 +254,15 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       document.head.appendChild(scriptTag);
     }
 
-    const domain = companySettings?.domain || 'mahdev.lk';
     const compName = companySettings?.name || siteSettings?.siteName || 'Mahdev Pvt Ltd';
-    const schema = {
+    const organizationSchema = {
       '@context': 'https://schema.org',
-      '@type': 'Organization',
+      '@type': 'Corporation',
+      '@id': `${SEO_ORIGIN}/#organization`,
       name: compName,
       alternateName: compName,
-      url: `https://${domain}`,
-      logo: siteSettings?.logoUrl || companySettings?.logoUrl || `https://${domain}/logo.svg`,
+      url: SEO_ORIGIN,
+      logo: siteSettings?.logoUrl || companySettings?.logoUrl || `${SEO_ORIGIN}/logo.png`,
       description: siteSettings?.metaDescription || companySettings?.description || 'Mahdev Pvt Ltd – Creating. Capturing. Innovating. Multi-division enterprise group.',
       email: companySettings?.email || 'info@mahdev.lk',
       telephone: [companySettings?.primaryPhone || '075 092 8078', companySettings?.secondaryPhone || '075 092 8078'].filter(Boolean),
@@ -223,6 +271,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
         companySettings?.socials?.facebook,
         companySettings?.socials?.instagram,
         companySettings?.socials?.youtube,
+        companySettings?.socials?.pinterest,
       ].filter(Boolean),
       address: [
         {
@@ -242,8 +291,21 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       ],
     };
 
-    scriptTag.textContent = JSON.stringify(schema);
-  }, [title, description, canonicalUrl, ogTitle, ogDescription, ogType, siteSettings, companySettings, seoConfigs]);
+    const websiteSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      '@id': `${SEO_ORIGIN}/#website`,
+      url: `${SEO_ORIGIN}/`,
+      name: compName,
+      publisher: { '@id': `${SEO_ORIGIN}/#organization` },
+      inLanguage: 'en-LK',
+    };
+
+    scriptTag.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@graph': [organizationSchema, websiteSchema],
+    });
+  }, [title, description, canonicalUrl, ogTitle, ogDescription, ogType, keywords, noIndex, siteSettings, companySettings, seoConfigs]);
 
   return null;
 };

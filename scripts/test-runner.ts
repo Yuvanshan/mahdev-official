@@ -16,6 +16,7 @@ import { notificationService } from '../src/services/notificationService';
 import { getOfficeMapUrl, getMapSearchUrl } from '../src/config/company';
 import { getImageSourceCandidates } from '../src/utils/imageSources';
 import { sortDivisions } from '../src/services/firestore/divisions';
+import { buildSitemapXml } from '../backend/api/handlers/sitemap';
 
 interface TestStep {
   category: string;
@@ -87,6 +88,71 @@ async function runTestSuite() {
         return sws?.logoUrl === '/assets/images/sws_logo.jpeg' &&
           u1?.logoUrl === '/assets/images/u1_logo.jpeg' &&
           it?.logoUrl === 'https://cdn.example.com/it-custom.svg';
+      },
+    },
+    {
+      category: 'SEO & Marketing',
+      name: 'Sitemap includes published CMS pages, active divisions, and public projects only',
+      fn: () => {
+        const xml = buildSitemapXml({
+          pages: [
+            { id: 'published', data: { slug: 'event-planning', category: 'insights', isPublished: true, updatedAt: '2026-10-13T12:00:00.000Z' } },
+            { id: 'draft', data: { slug: 'draft-article', isPublished: false } },
+            { id: 'private', data: { slug: 'admin/reports', isPublished: true } },
+          ],
+          divisions: [
+            { id: 'active', data: { slug: 'custom-division', isPublished: true } },
+            { id: 'closed', data: { slug: 'closed-division', status: 'inactive' } },
+          ],
+          portfolio: [
+            { id: 'case-study', data: { slug: 'client-project', status: 'published' } },
+            { id: 'draft-project', data: { slug: 'unpublished-project', status: 'draft' } },
+          ],
+        });
+        return xml.includes('https://mahdev-official.vercel.app/insights/event-planning') &&
+          xml.includes('https://mahdev-official.vercel.app/custom-division') &&
+          xml.includes('https://mahdev-official.vercel.app/projects/client-project') &&
+          !xml.includes('draft-article') &&
+          !xml.includes('admin/reports') &&
+          !xml.includes('closed-division') &&
+          !xml.includes('unpublished-project') &&
+          xml.includes('<lastmod>2026-10-13</lastmod>');
+      },
+    },
+    {
+      category: 'SEO & Marketing',
+      name: 'Sitemap excludes routes disabled in admin SEO settings',
+      fn: () => {
+        const xml = buildSitemapXml({
+          pages: [],
+          divisions: [],
+          portfolio: [],
+          seoConfig: {
+            id: 'seo',
+            data: {
+              configs: [
+                { route: '/services', allowIndexing: false },
+                { route: '/about', allowIndexing: true },
+              ],
+            },
+          },
+        });
+        return !xml.includes('<loc>https://mahdev-official.vercel.app/services</loc>') &&
+          xml.includes('<loc>https://mahdev-official.vercel.app/about</loc>');
+      },
+    },
+    {
+      category: 'SEO & Marketing',
+      name: 'Sitemap omits empty Insights archive and order lookup routes',
+      fn: () => {
+        const xml = buildSitemapXml({
+          pages: [{ id: 'order-lookup', data: { slug: 'order', isPublished: true } }],
+          divisions: [],
+          portfolio: [],
+        });
+        return !xml.includes('<loc>https://mahdev-official.vercel.app/insights</loc>') &&
+          !xml.includes('<loc>https://mahdev-official.vercel.app/order</loc>') &&
+          !xml.includes('<loc>https://mahdev-official.vercel.app/order-lookup</loc>');
       },
     },
     // 1. ENVIRONMENT & CONFIGURATION INTEGRITY
