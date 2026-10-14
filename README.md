@@ -58,7 +58,7 @@ Copy `.env.example` to `.env`:
 ```bash
 cp .env.example .env
 ```
-Fill in the Turso database URL and auth token, plus the Firebase Authentication/Storage, Payments, and Admin settings. In the Turso dashboard, select a database and copy its connection URL; create an auth token for that database. Keep `TURSO_AUTH_TOKEN` server-side and do not expose it as a `VITE_` variable.
+Fill in the Turso database URL and auth token, plus the Firebase Authentication/Storage, Payments, and Admin settings. In the Turso dashboard, select a database and copy its connection URL; create an auth token for that database. Keep Turso tokens server-side and do not expose them as `VITE_` variables. `TURSO_DATABASE_URL_ACTIVE` and `TURSO_AUTH_TOKEN_ACTIVE` are optional server-only overrides and take precedence over the standard Turso settings when set.
 
 ### 4. Start the Frontend and Backend
 Start the backend in one terminal:
@@ -100,7 +100,9 @@ Open the Vite URL shown in the frontend terminal. Its `/api` proxy forwards requ
 | `INVOICE_SIGNING_SALT` | Server | Salt for signing fiscal enterprise invoices |
 | `NOTIFICATION_SECRET_SALT`| Server | Salt for securing multi-channel notifications |
 | `TURSO_DATABASE_URL` | Server | Turso database connection URL (`libsql://...` or `https://...`) |
+| `TURSO_DATABASE_URL_ACTIVE` | Server | Optional private override for the active Turso URL; takes precedence when set |
 | `TURSO_AUTH_TOKEN` | Server | Private Turso database authentication token |
+| `TURSO_AUTH_TOKEN_ACTIVE` | Server | Optional private override for the active Turso token; takes precedence when set |
 | `VITE_TURSO_DATABASE_NAME` | Client | Optional public display label for admin diagnostics |
 | `VITE_FIREBASE_*` | Client | Public Firebase project keys (`apiKey`, `projectId`, `appId`, etc.) |
 | `VITE_FIREBASE_RECAPTCHA_SITE_KEY` | Client | reCAPTCHA v3 / Enterprise site key for App Check |
@@ -110,7 +112,7 @@ Open the Vite URL shown in the frontend terminal. Its `/api` proxy forwards requ
 ## 🗄️ Turso Database Setup
 
 1. Create/select a database in the Turso dashboard and copy its database URL from the database connection details. Generate an auth token for the database.
-2. Put `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in the server environment (root `.env` locally; deployment secrets in production). Never use a `VITE_` prefix for the auth token.
+2. Put `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in the server environment (root `.env` locally; deployment secrets in production). Set the corresponding `*_ACTIVE` override only when intentionally overriding the standard value. Never use a `VITE_` prefix for either token.
 3. Run `npm run db:migrate` to provision/verify the Turso schema. The backend provisions one physical SQL table per application collection, plus `turso_collections` and `turso_migrations`; new collections are provisioned on first access.
 4. If historical records still need importing, run `npm run migrate:turso` or `npm run migrate:turso -- path/to/backup.json`. Existing document IDs are skipped by default, and inserted/overwritten/skipped totals are reported. Only pass `--overwrite` after verifying a backup and intentionally approving replacement of matching IDs. The backend does not seed demo users or products.
 

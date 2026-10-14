@@ -54,10 +54,6 @@ class OrderService {
   private listeners: Set<() => void> = new Set();
   private syncInFlight: Set<string> = new Set();
 
-  constructor() {
-    this.initFirestoreSync();
-  }
-
   public mapFirestoreOrder(fo: any): Order {
     return {
       id: fo.id,
@@ -96,35 +92,6 @@ class OrderService {
       createdAt: fo.createdAt || new Date().toISOString(),
       updatedAt: fo.updatedAt || new Date().toISOString(),
     };
-  }
-
-  private initFirestoreSync(): void {
-    try {
-      firestoreOrdersService.subscribeAllOrders((firestoreOrders) => {
-        if (!Array.isArray(firestoreOrders)) return;
-
-        // Map Firestore orders to local Order model
-        const mappedOrders: Order[] = firestoreOrders.map((fo: any) => this.mapFirestoreOrder(fo));
-
-        // Merge Firestore orders with existing orders, giving precedence to Firestore
-        const orderMap = new Map<string, Order>();
-        for (const local of this.orders) {
-          orderMap.set(local.id, local);
-        }
-        for (const remote of mappedOrders) {
-          orderMap.set(remote.id, remote);
-        }
-
-        const merged = Array.from(orderMap.values()).sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-
-        this.orders = merged;
-        this.saveOrders();
-      });
-    } catch (e) {
-      console.warn('[OrderService] Firestore sync initialization error:', e);
-    }
   }
 
   private saveOrders(): void {

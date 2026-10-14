@@ -131,11 +131,6 @@ class UniversalBookingService {
   private services: BookableServiceItem[] = [];
   private bookings: Booking[] = [];
   private subscribers: Set<(bookings: Booking[]) => void> = new Set();
-  private unsubscribeFirestore: (() => void) | null = null;
-
-  constructor() {
-    this.initFirestoreSubscription();
-  }
 
   public subscribe(callback: (bookings: Booking[]) => void): () => void {
     this.subscribers.add(callback);
@@ -153,22 +148,6 @@ class UniversalBookingService {
         console.warn('[BookingService] Subscriber callback error:', err);
       }
     });
-  }
-
-  private initFirestoreSubscription(): void {
-    if (typeof window === 'undefined') return;
-    try {
-      this.unsubscribeFirestore = firestoreBookingsService.subscribeAllBookings(
-        (remoteDocs) => {
-          this.syncRemoteBookings(remoteDocs);
-        },
-        (err) => {
-          console.warn('[BookingService] Live Firestore subscription warning:', err);
-        }
-      );
-    } catch (err) {
-      console.warn('[BookingService] Failed to establish live Firestore listener:', err);
-    }
   }
 
   public syncRemoteBookings(remoteDocs: any[]): void {

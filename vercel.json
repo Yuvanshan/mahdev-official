@@ -4,6 +4,12 @@
   "framework": "vite",
   "buildCommand": "vite build",
   "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/api/:first/:path*",
+      "destination": "/api/[...path]"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
@@ -26,36 +32,5 @@
         { "key": "Cache-Control", "value": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400" }
       ]
     }
-  ],
-  "routes": [
-    {
-      "src": "/assets/(.*)",
-      "headers": {
-        "Cache-Control": "public, max-age=86400, s-maxage=31536000, stale-while-revalidate=604800"
-      },
-      "continue": true
-    },
-    {
-      "src": "/uploads/(.*)",
-      "headers": {
-        "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400"
-      },
-      "continue": true
-    },
-    { "handle": "filesystem" },
-    { "src": "/assets/(.*)", "status": 404 },
-    { "src": "/admin", "dest": "/index.html" },
-    { "src": "/admin/(.*)", "dest": "/index.html" },
-    { "src": "/sws", "dest": "/index.html" },
-    { "src": "/sws/(.*)", "dest": "/index.html" },
-    { "src": "/u1", "dest": "/index.html" },
-    { "src": "/u1/(.*)", "dest": "/index.html" },
-    { "src": "/it", "dest": "/index.html" },
-    { "src": "/it/(.*)", "dest": "/index.html" },
-    { "src": "/travels", "dest": "/index.html" },
-    { "src": "/travels/(.*)", "dest": "/index.html" },
-    { "src": "/mart", "dest": "/index.html" },
-    { "src": "/mart/(.*)", "dest": "/index.html" },
-    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

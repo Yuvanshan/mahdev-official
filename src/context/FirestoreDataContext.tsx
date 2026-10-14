@@ -67,6 +67,13 @@ const DEVICE_CACHE_REQUIRED_KEYS = [
   'mahdev_cached_portfolio',
   'mahdev_cached_gallery',
 ];
+const DEVICE_CACHE_VERSION_KEY = 'mahdev_public_data_cache_version';
+const DEVICE_CACHE_VERSION = '2';
+const DEVICE_CACHE_NONEMPTY_ARRAY_KEYS = new Set([
+  'mahdev_cached_divisions',
+  'mahdev_cached_services',
+  'mahdev_cached_gallery',
+]);
 const REQUIRED_CACHED_DIVISION_IDS = [
   'sws',
   'sws-event-management',
@@ -130,6 +137,22 @@ function setDeviceCacheItem(key: string, value: string): void {
   }
 }
 
+function ensureDeviceCacheVersion(): void {
+  try {
+    if (localStorage.getItem(DEVICE_CACHE_VERSION_KEY) === DEVICE_CACHE_VERSION) return;
+
+    for (const storage of [localStorage, sessionStorage]) {
+      for (let index = storage.length - 1; index >= 0; index -= 1) {
+        const key = storage.key(index);
+        if (key?.startsWith('mahdev_cached_')) storage.removeItem(key);
+      }
+    }
+    localStorage.setItem(DEVICE_CACHE_VERSION_KEY, DEVICE_CACHE_VERSION);
+  } catch (error) {
+    console.warn('[FirestoreDataContext] Could not invalidate legacy device cache:', error);
+  }
+}
+
 function sanitizeCachedSettings(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sanitizeCachedSettings);
   if (!value || typeof value !== 'object') return value;
@@ -141,6 +164,7 @@ function sanitizeCachedSettings(value: unknown): unknown {
 }
 
 function hasCompleteDeviceCache(): boolean {
+  ensureDeviceCacheVersion();
   return DEVICE_CACHE_REQUIRED_KEYS.every((key) => {
     const cached = getDeviceCacheItem(key);
     if (cached === null) return false;
@@ -148,6 +172,7 @@ function hasCompleteDeviceCache(): boolean {
       const parsed: unknown = JSON.parse(cached);
       if (DEVICE_CACHE_ARRAY_KEYS.has(key)) {
         if (!Array.isArray(parsed)) return false;
+        if (DEVICE_CACHE_NONEMPTY_ARRAY_KEYS.has(key) && parsed.length === 0) return false;
       } else if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
         return false;
       }

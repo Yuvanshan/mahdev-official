@@ -101,7 +101,9 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 | `VITE_FIREBASE_APP_ID` | Production, Preview, Development | `1:1062826041810:web:2905a8e9f7bc3243dfa80b` |
 | `VITE_FIREBASE_MEASUREMENT_ID` | Production, Preview, Development | `G-MWNCCXGY4F` |
 | `TURSO_DATABASE_URL` | Production, Preview, Development | Server-side Turso connection URL (`libsql://...`) |
+| `TURSO_DATABASE_URL_ACTIVE` | Production, Preview, Development | Optional server-side URL override; when set, it takes precedence over `TURSO_DATABASE_URL` |
 | `TURSO_AUTH_TOKEN` | Production, Preview, Development | Server-side Turso auth token; store as a secret |
+| `TURSO_AUTH_TOKEN_ACTIVE` | Production, Preview, Development | Optional server-side token override; when set, it takes precedence over `TURSO_AUTH_TOKEN` |
 | `ADMIN_LOGIN_EMAIL` | Production, Preview, Development | Server-side administrator email |
 | `ADMIN_LOGIN_PASSWORD_HASH` | Production, Preview, Development | scrypt password hash; generate locally with `npm run admin:hash-password` |
 | `ADMIN_SESSION_SECRET` | Production, Preview, Development | Random server-only session signing secret; generate with `openssl rand -base64 48` |
