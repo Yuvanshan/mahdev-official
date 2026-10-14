@@ -616,7 +616,10 @@ export async function handleTursoAction(
       let write = parseWrite(body.write);
       if (access.role === 'customer' && access.identity) {
         write = await prepareCustomerWrite(write, access.identity);
-      } else if (access.role === 'public') {
+      } else if (
+        access.role === 'public' ||
+        (write.collection === 'careerApplications' && write.type === 'set' && !write.merge)
+      ) {
         write = await preparePublicWrite(write);
       }
       await writeTursoDocument(write);

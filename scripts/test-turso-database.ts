@@ -447,6 +447,20 @@ async function run(): Promise<void> {
       },
     }, publicApplicationAccess);
     assert.equal(validPortfolioUrlResult.status, 200);
+    const adminSessionApplicationId = '123e4567-e89b-12d3-a456-426614174009';
+    const adminSessionApplicationResult = await handleTursoAction({
+      ...publicApplicationWrite,
+      write: {
+        ...(publicApplicationWrite.write as Record<string, unknown>),
+        id: adminSessionApplicationId,
+      },
+    }, { role: 'admin' });
+    assert.equal(adminSessionApplicationResult.status, 200);
+    assert.match(String(adminSessionApplicationResult.body.reference), /^mahdev-app-\d{3,}$/);
+    assert.equal(
+      (await getTursoDocument('careerApplications', '', adminSessionApplicationId))?.data.reference,
+      adminSessionApplicationResult.body.reference
+    );
     const adminApplicationRead = await authorizeDatabaseAction(
       { action: 'list', collection: 'careerApplications' },
       adminCookie
@@ -477,7 +491,7 @@ async function run(): Promise<void> {
       { role: 'admin' }
     );
     assert.equal(privateApplications.status, 200);
-    assert.equal((privateApplications.body.documents as Array<{ id: string }>).length, 4);
+    assert.equal((privateApplications.body.documents as Array<{ id: string }>).length, 5);
     const metadata = await getTursoClient().execute(
       'SELECT COUNT(*) AS count FROM turso_collections'
     );
