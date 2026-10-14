@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   Sparkles,
   Camera,
@@ -18,7 +18,13 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 
 export const U1StudioExperienceSection: React.FC = () => {
-  const { divisions, mediaAssets } = useFirestoreDataContext();
+  const { divisions, mediaAssets, loadMediaAssets } = useFirestoreDataContext();
+
+  useEffect(() => {
+    loadMediaAssets().catch((error) => {
+      console.error('[U1StudioExperienceSection] Could not load media assets:', error);
+    });
+  }, [loadMediaAssets]);
 
   const u1Div = useMemo(() => {
     return divisions.find(

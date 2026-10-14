@@ -20,6 +20,105 @@ import { db } from '../lib/firebase';
 const CHUNK_SIZE_BYTES = 450 * 1024; // 450KB per chunk (~600KB in base64, safe under 1MB limit)
 const memoryBlobUrlCache = new Map<string, string>();
 const inFlightResolutions = new Map<string, Promise<string>>();
+const MEDIA_CACHE_DATABASE = 'mahdev-media-cache';
+const MEDIA_CACHE_STORE = 'blobs';
+const MEDIA_CACHE_MAX_BYTES = 64 * 1024 * 1024;
+let mediaCacheDatabase: Promise<IDBDatabase> | null = null;
+
+interface CachedMediaBlob {
+  blob: Blob;
+  cachedAt: number;
+}
+
+function openMediaCacheDatabase(): Promise<IDBDatabase> {
+  if (typeof indexedDB === 'undefined') {
+    return Promise.reject(new Error('IndexedDB is unavailable.'));
+  }
+  if (!mediaCacheDatabase) {
+    mediaCacheDatabase = new Promise((resolve, reject) => {
+      const request = indexedDB.open(MEDIA_CACHE_DATABASE, 1);
+      request.onupgradeneeded = () => {
+        request.result.createObjectStore(MEDIA_CACHE_STORE);
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error('Could not open the media cache.'));
+    });
+  }
+  return mediaCacheDatabase;
+}
+
+async function readCachedMediaBlob(blobId: string): Promise<Blob | null> {
+  try {
+    const database = await openMediaCacheDatabase();
+    return await new Promise((resolve, reject) => {
+      const request = database.transaction(MEDIA_CACHE_STORE, 'readonly')
+        .objectStore(MEDIA_CACHE_STORE)
+        .get(blobId);
+      request.onsuccess = () => {
+        const cached = request.result as CachedMediaBlob | undefined;
+        resolve(cached?.blob instanceof Blob ? cached.blob : null);
+      };
+      request.onerror = () => reject(request.error || new Error('Could not read the media cache.'));
+    });
+  } catch (error) {
+    mediaCacheDatabase = null;
+    console.warn('[FirestoreMedia] Persistent cache unavailable; downloading media:', error);
+    return null;
+  }
+}
+
+async function writeCachedMediaBlob(blobId: string, blob: Blob): Promise<void> {
+  if (blob.size > MEDIA_CACHE_MAX_BYTES) return;
+  try {
+    const database = await openMediaCacheDatabase();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction(MEDIA_CACHE_STORE, 'readwrite');
+      const store = transaction.objectStore(MEDIA_CACHE_STORE);
+      store.put({ blob, cachedAt: Date.now() } satisfies CachedMediaBlob, blobId);
+      const entriesRequest = store.getAll();
+      const keysRequest = store.getAllKeys();
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error || new Error('Could not write the media cache.'));
+      entriesRequest.onerror = () => reject(entriesRequest.error || new Error('Could not inspect the media cache.'));
+      keysRequest.onerror = () => reject(keysRequest.error || new Error('Could not inspect the media cache.'));
+      const prune = () => {
+        if (!entriesRequest.result || !keysRequest.result) return;
+        const entries = entriesRequest.result as CachedMediaBlob[];
+        const keys = keysRequest.result;
+        let totalBytes = entries.reduce((total, entry) => total + (entry.blob?.size || 0), 0);
+        const oldestFirst = entries
+          .map((entry, index) => ({ key: keys[index], size: entry.blob?.size || 0, cachedAt: entry.cachedAt || 0 }))
+          .sort((left, right) => left.cachedAt - right.cachedAt);
+        for (const entry of oldestFirst) {
+          if (totalBytes <= MEDIA_CACHE_MAX_BYTES) break;
+          store.delete(entry.key);
+          totalBytes -= entry.size;
+        }
+      };
+      entriesRequest.onsuccess = prune;
+      keysRequest.onsuccess = prune;
+    });
+  } catch (error) {
+    mediaCacheDatabase = null;
+    console.warn('[FirestoreMedia] Could not persist media for the next visit:', error);
+  }
+}
+
+async function deleteCachedMediaBlob(blobId: string): Promise<void> {
+  try {
+    const database = await openMediaCacheDatabase();
+    await new Promise<void>((resolve, reject) => {
+      const request = database.transaction(MEDIA_CACHE_STORE, 'readwrite')
+        .objectStore(MEDIA_CACHE_STORE)
+        .delete(blobId);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error || new Error('Could not delete the cached media.'));
+    });
+  } catch (error) {
+    mediaCacheDatabase = null;
+    console.warn('[FirestoreMedia] Could not remove media from the persistent cache:', error);
+  }
+}
 
 export interface FirestoreMediaMetadata {
   id: string;
@@ -148,6 +247,13 @@ export async function resolveMediaUrl(rawUrl: string | undefined): Promise<strin
 
   const resolutionPromise = (async () => {
     try {
+      const cachedBlob = await readCachedMediaBlob(blobId);
+      if (cachedBlob) {
+        const objectUrl = URL.createObjectURL(cachedBlob);
+        memoryBlobUrlCache.set(blobId, objectUrl);
+        return objectUrl;
+      }
+
       const metaDocRef = doc(db, 'media_blobs', blobId);
       const metaSnap = await getDoc(metaDocRef);
       if (!metaSnap.exists()) {
@@ -186,6 +292,10 @@ export async function resolveMediaUrl(rawUrl: string | undefined): Promise<strin
       }
 
       const reconstructedBlob = new Blob(chunkDataParts, { type: meta.mimeType || 'video/mp4' });
+      if (typeof meta.size === 'number' && meta.size > 0 && reconstructedBlob.size !== meta.size) {
+        throw new Error(`Media size mismatch for ${blobId}.`);
+      }
+      await writeCachedMediaBlob(blobId, reconstructedBlob);
       const objectUrl = URL.createObjectURL(reconstructedBlob);
       memoryBlobUrlCache.set(blobId, objectUrl);
       return objectUrl;
@@ -272,6 +382,8 @@ export async function deleteMediaBlobFromFirestore(rawUrl: string): Promise<bool
   if (!blobId) return true;
 
   try {
+    await deleteCachedMediaBlob(blobId);
+
     // 1. Delete all chunk documents in subcollection
     const chunksCollRef = collection(db, 'media_blobs', blobId, 'chunks');
     const chunkSnaps = await getDocs(chunksCollRef);

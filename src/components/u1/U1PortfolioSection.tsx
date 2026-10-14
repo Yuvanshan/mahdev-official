@@ -57,11 +57,24 @@ const U1PortfolioCardImage: React.FC<{ item: U1PortfolioItem }> = ({ item }) => 
 type PortfolioCategory = string;
 
 export const U1PortfolioSection: React.FC = () => {
-  const { portfolio: rawPortfolio, gallery: rawGallery, mediaAssets, isInitialLoading, isDivisionGalleryLoaded } = useFirestoreDataContext();
+  const {
+    portfolio: rawPortfolio,
+    gallery: rawGallery,
+    mediaAssets,
+    isInitialLoading,
+    isDivisionGalleryLoaded,
+    loadMediaAssets,
+  } = useFirestoreDataContext();
   const [activeCategory, setActiveCategory] = useState<PortfolioCategory>('All');
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
   const [shareToast, setShareToast] = useState<string | null>(null);
   const [cardCopiedId, setCardCopiedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadMediaAssets().catch((error) => {
+      console.error('[U1PortfolioSection] Could not load media assets:', error);
+    });
+  }, [loadMediaAssets]);
 
   const portfolioItems = useMemo<U1PortfolioItem[]>(() => {
     const items: U1PortfolioItem[] = [];

@@ -4,6 +4,27 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { db } from '../../lib/firebase';
 import { doc, getDoc } from '../../lib/tursoFirestore';
 
+const SEO_CACHE_KEY = 'mahdev_cached_seo_configs';
+
+type SeoConfig = {
+  route: string;
+  title: string;
+  description: string;
+  ogImage: string;
+  canonicalUrl: string;
+};
+
+function readCachedSeoConfigs(): SeoConfig[] | null {
+  try {
+    const cached = localStorage.getItem(SEO_CACHE_KEY);
+    if (!cached) return null;
+    const parsed: unknown = JSON.parse(cached);
+    return Array.isArray(parsed) ? parsed as SeoConfig[] : null;
+  } catch {
+    return null;
+  }
+}
+
 export const SEOHead: React.FC<SEOMetaData> = ({
   title,
   description,
@@ -14,13 +35,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
 }) => {
   const { siteSettings, companySettings } = useFirestoreDataContext();
   const [seoVersion, setSeoVersion] = useState(0);
-  const [seoConfigs, setSeoConfigs] = useState<Array<{
-    route: string;
-    title: string;
-    description: string;
-    ogImage: string;
-    canonicalUrl: string;
-  }>>([]);
+  const [seoConfigs, setSeoConfigs] = useState<SeoConfig[]>(() => readCachedSeoConfigs() || []);
 
   useEffect(() => {
     const handleUpdate = () => setSeoVersion((v) => v + 1);
@@ -44,11 +59,26 @@ export const SEOHead: React.FC<SEOMetaData> = ({
 
   useEffect(() => {
     let active = true;
+    if (seoVersion === 0) {
+      const cachedConfigs = readCachedSeoConfigs();
+      if (cachedConfigs) {
+        setSeoConfigs(cachedConfigs);
+        return () => {
+          active = false;
+        };
+      }
+    }
     getDoc(doc(db, 'settings', 'seo'))
       .then((snapshot) => {
-        if (!active || !snapshot.exists()) return;
-        const configs = snapshot.data().configs;
-        if (Array.isArray(configs)) setSeoConfigs(configs);
+        if (!active) return;
+        const configs = snapshot.exists() ? snapshot.data().configs : [];
+        if (!Array.isArray(configs)) return;
+        setSeoConfigs(configs);
+        try {
+          localStorage.setItem(SEO_CACHE_KEY, JSON.stringify(configs));
+        } catch (error) {
+          console.warn('[SEOHead] Could not persist SEO settings cache:', error);
+        }
       })
       .catch((error) => {
         console.error('[SEOHead] Could not load SEO overrides from Turso:', error);

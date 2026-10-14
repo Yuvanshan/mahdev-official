@@ -25,7 +25,14 @@ interface GalleryPageViewProps {
 }
 
 export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, initialSku }) => {
-  const { gallery, mediaAssets, isInitialLoading, isFetching, isGalleryLoading } = useFirestoreDataContext();
+  const {
+    gallery,
+    mediaAssets,
+    isInitialLoading,
+    isFetching,
+    isGalleryLoading,
+    loadMediaAssets,
+  } = useFirestoreDataContext();
   const [activeItem, setActiveItem] = useState<DisplayGalleryItem | null>(null);
   const [showFullGallery, setShowFullGallery] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -49,6 +56,12 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
+
+  useEffect(() => {
+    loadMediaAssets().catch((error) => {
+      console.error('[GalleryPageView] Could not load media assets:', error);
+    });
+  }, [loadMediaAssets]);
 
   const allItems: DisplayGalleryItem[] = useMemo(() => {
     const items: DisplayGalleryItem[] = [];

@@ -27,6 +27,24 @@ export interface DatabaseAccess {
   identity?: FirebaseIdentity;
 }
 
+function sanitizePublicSettingsValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sanitizePublicSettingsValue);
+  if (!value || typeof value !== 'object') return value;
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .filter(([key]) => !PRIVATE_PUBLIC_SETTINGS_FIELDS.has(key))
+      .map(([key, nestedValue]) => [key, sanitizePublicSettingsValue(nestedValue)])
+  );
+}
+
+export function sanitizePublicSettingsDocument(document: TursoDocument): TursoDocument {
+  return {
+    ...document,
+    data: sanitizePublicSettingsValue(document.data) as Record<string, unknown>,
+  };
+}
+
 const PUBLIC_READ_COLLECTIONS = new Set([
   'announcements',
   'banners',
@@ -88,6 +106,14 @@ const CUSTOMER_PROFILE_FIELDS = new Set([
   'company',
   'accountType',
   'preferences',
+]);
+const PRIVATE_PUBLIC_SETTINGS_FIELDS = new Set([
+  'superAdminEmail',
+  'superAdminName',
+  'testTimestamp',
+  'testWrite',
+  'dailyBackupEnabled',
+  'enableStockAlertEmails',
 ]);
 
 const ADMIN_MANAGED_COLLECTIONS = new Set([
@@ -203,10 +229,15 @@ export async function authorizeDatabaseAction(
     return typeof name === 'string' ? name.split('/')[0] : '';
   });
   const collections = new Set([collection, ...writeCollections].filter(Boolean));
+  const isPublicMediaDirectoryRead =
+    body.action === 'list' &&
+    collection === 'media_blobs' &&
+    (!body.parentPath || body.parentPath === '');
   const isPrivilegedAction =
     requiresAdminForDatabaseAction(input) ||
     body.action === 'clear' ||
     body.action === 'batch' ||
+    isPublicMediaDirectoryRead ||
     (body.action === 'write' && !(
       writeCollections.length === 1 &&
       (CUSTOMER_OWNED_COLLECTIONS.has(writeCollections[0]) ||
@@ -619,9 +650,12 @@ export async function handleTursoAction(
         access.role !== 'customer' ||
         (access.identity && customerOwnsDocument(document, access.identity, collection))
       ) ? document : null;
+      const publicDocument = access.role === 'public' && collection === 'settings' && visibleDocument
+        ? sanitizePublicSettingsDocument(visibleDocument)
+        : visibleDocument;
       return {
         status: 200,
-        body: { document: visibleDocument },
+        body: { document: publicDocument },
       };
     }
     if (action === 'list') {
@@ -631,18 +665,21 @@ export async function handleTursoAction(
       if (access.role === 'public' && collection === 'careerOpenings') {
         filters.push({ field: 'status', operator: '==', value: 'published' });
       }
+      const documents = await listTursoDocuments(
+        collection,
+        parentPath,
+        filters,
+        parseOrder(body.order),
+        maxRows,
+        afterId,
+        access.role === 'customer' ? access.identity : undefined
+      );
       return {
         status: 200,
         body: {
-          documents: await listTursoDocuments(
-            collection,
-            parentPath,
-            filters,
-            parseOrder(body.order),
-            maxRows,
-            afterId,
-            access.role === 'customer' ? access.identity : undefined
-          ),
+          documents: access.role === 'public' && collection === 'settings'
+            ? documents.map(sanitizePublicSettingsDocument)
+            : documents,
         },
       };
     }

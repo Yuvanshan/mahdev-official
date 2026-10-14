@@ -51,7 +51,6 @@ import { bookingService } from '../services/bookingService';
 import { resolveMediaUrl, preloadVideo } from '../services/firestoreMediaService';
 import { mediaService, StoredMediaItem } from '../services/firestore/media';
 
-const DEVICE_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const DEVICE_CACHE_REQUIRED_KEYS = [
   'mahdev_cached_company_settings',
   'mahdev_cached_site_settings',
@@ -67,8 +66,35 @@ const DEVICE_CACHE_REQUIRED_KEYS = [
   'mahdev_cached_google_reviews_config',
   'mahdev_cached_portfolio',
   'mahdev_cached_gallery',
-  'mahdev_cached_media_assets',
 ];
+const REQUIRED_CACHED_DIVISION_IDS = [
+  'sws',
+  'sws-event-management',
+  'u1',
+  'u1-studio',
+  'it',
+  'it-solutions',
+  'travels',
+  'mahdev-travels',
+  'mart',
+  'online-mart',
+];
+const FULLY_LOADED_DIVISION_FLAGS = Object.fromEntries(
+  REQUIRED_CACHED_DIVISION_IDS.map((id) => [id, true])
+);
+const PRIVATE_SETTINGS_CACHE_FIELDS = new Set([
+  'superAdminEmail',
+  'superAdminName',
+  'testTimestamp',
+  'testWrite',
+  'dailyBackupEnabled',
+  'enableStockAlertEmails',
+]);
+const PUBLIC_SETTINGS_CACHE_KEYS = new Set([
+  'mahdev_cached_company_settings',
+  'mahdev_cached_site_settings',
+  'mahdev_cached_homepage_config',
+]);
 const DEVICE_CACHE_ARRAY_KEYS = new Set([
   'mahdev_cached_divisions',
   'mahdev_cached_categories',
@@ -80,7 +106,6 @@ const DEVICE_CACHE_ARRAY_KEYS = new Set([
   'mahdev_cached_google_reviews',
   'mahdev_cached_portfolio',
   'mahdev_cached_gallery',
-  'mahdev_cached_media_assets',
 ]);
 
 function getDeviceCacheItem(key: string): string | null {
@@ -100,15 +125,22 @@ function getDeviceCacheItem(key: string): string | null {
 function setDeviceCacheItem(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);
-    if (key.startsWith('mahdev_cached_')) {
-      localStorage.setItem(`mahdev_device_cache_timestamp:${key}`, String(Date.now()));
-    }
   } catch (error) {
     console.warn(`[FirestoreDataContext] Could not persist device cache "${key}":`, error);
   }
 }
 
-function hasFreshDeviceCache(): boolean {
+function sanitizeCachedSettings(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sanitizeCachedSettings);
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .filter(([key]) => !PRIVATE_SETTINGS_CACHE_FIELDS.has(key))
+      .map(([key, nestedValue]) => [key, sanitizeCachedSettings(nestedValue)])
+  );
+}
+
+function hasCompleteDeviceCache(): boolean {
   return DEVICE_CACHE_REQUIRED_KEYS.every((key) => {
     const cached = getDeviceCacheItem(key);
     if (cached === null) return false;
@@ -122,8 +154,7 @@ function hasFreshDeviceCache(): boolean {
     } catch {
       return false;
     }
-    const cachedAt = Number(getDeviceCacheItem(`mahdev_device_cache_timestamp:${key}`));
-    return Number.isFinite(cachedAt) && cachedAt > 0 && Date.now() - cachedAt < DEVICE_CACHE_MAX_AGE_MS;
+    return true;
   });
 }
 
@@ -178,20 +209,30 @@ export interface FirestoreDataContextValue {
   isDivisionGalleryLoaded: (divisionId: string) => boolean;
   isDivisionFetching: (divisionId: string) => boolean;
   loadDivisionData: (divisionId: string) => Promise<void>;
+  loadMediaAssets: () => Promise<void>;
   isLiveHydrated: boolean;
 }
 
 const FirestoreDataContext = createContext<FirestoreDataContextValue | null>(null);
 
 export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const hasCachedData = useMemo(() => hasFreshDeviceCache(), []);
+  const hasCachedData = useMemo(() => hasCompleteDeviceCache(), []);
 
   // Check per-entity cache status
   const getCache = (key: string) => {
     try {
       if (typeof window !== 'undefined') {
         const item = getDeviceCacheItem(key);
-        if (item) return JSON.parse(item);
+        if (item) {
+          const parsed = JSON.parse(item);
+          if (PUBLIC_SETTINGS_CACHE_KEYS.has(key)) {
+            const sanitized = sanitizeCachedSettings(parsed);
+            const serialized = JSON.stringify(sanitized);
+            if (serialized !== item) setDeviceCacheItem(key, serialized);
+            return sanitized;
+          }
+          return parsed;
+        }
       }
     } catch {}
     return null;
@@ -309,11 +350,14 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch {}
     return [];
   });
+  const [mediaAssetsLoaded, setMediaAssetsLoaded] = useState<boolean>(() => Array.isArray(cachedMedia));
+  const mediaAssetsRequestRef = React.useRef<Promise<void> | null>(null);
 
   const [isLiveHydrated, setIsLiveHydrated] = useState<boolean>(true);
 
   // Track loaded divisions state for seamless transition & shimmers
   const [loadedDivisions, setLoadedDivisions] = useState<Record<string, boolean>>(() => {
+    if (hasCachedData) return { ...FULLY_LOADED_DIVISION_FLAGS };
     try {
       if (typeof window !== 'undefined') {
         const cached = getDeviceCacheItem('mahdev_cached_loaded_divisions');
@@ -324,6 +368,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   });
 
   const [loadedServices, setLoadedServices] = useState<Record<string, boolean>>(() => {
+    if (hasCachedData) return { ...FULLY_LOADED_DIVISION_FLAGS };
     try {
       if (typeof window !== 'undefined') {
         const cached = getDeviceCacheItem('mahdev_cached_loaded_services');
@@ -334,6 +379,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   });
 
   const [loadedGallery, setLoadedGallery] = useState<Record<string, boolean>>(() => {
+    if (hasCachedData) return { ...FULLY_LOADED_DIVISION_FLAGS };
     try {
       if (typeof window !== 'undefined') {
         const cached = getDeviceCacheItem('mahdev_cached_loaded_gallery');
@@ -350,11 +396,42 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   const divisionsRef = React.useRef<FirestoreDivision[]>([]);
   divisionsRef.current = divisions;
 
+  const loadMediaAssets = useCallback(async () => {
+    if (mediaAssetsLoaded) return;
+    if (mediaAssetsRequestRef.current) return mediaAssetsRequestRef.current;
+
+    const request = (async () => {
+      const cached = getDeviceCacheItem('mahdev_cached_media_assets');
+      if (cached !== null) {
+        try {
+          const parsed: unknown = JSON.parse(cached);
+          if (Array.isArray(parsed)) {
+            setMediaAssets(parsed);
+            setMediaAssetsLoaded(true);
+            return;
+          }
+        } catch {}
+      }
+
+      const assets = await mediaService.getMediaAssets();
+      setMediaAssets(assets);
+      setMediaAssetsLoaded(true);
+      setDeviceCacheItem('mahdev_cached_media_assets', JSON.stringify(assets));
+    })();
+    mediaAssetsRequestRef.current = request;
+    try {
+      await request;
+    } finally {
+      mediaAssetsRequestRef.current = null;
+    }
+  }, [mediaAssetsLoaded]);
+
   // Individual Division Data Loader: Fetches services, gallery, media, products, and categories concurrently.
   // CRITICAL: Holds shimmer in place until 100% of division collections have settled from Firestore!
   const loadDivisionData = useCallback(async (rawDivId: string) => {
     const canonicalId = getCanonicalDivisionId(rawDivId) || rawDivId;
     if (!canonicalId) return;
+    if (hasCachedData) return;
 
     // Deduplicate in-flight requests for the exact same division
     if (inFlightDivisionLoadsRef.current[canonicalId]) {
@@ -422,18 +499,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
             console.warn(`[FirestoreDataContext] Gallery notice for ${rawDivId}:`, err);
           });
 
-        // 3. Fetch Media Assets in parallel (critical for U1 Studio visual portfolio & media)
-        const fetchMediaPromise = mediaService
-          .getMediaAssets(false)
-          .then((assets) => {
-            setMediaAssets(assets);
-            try { setDeviceCacheItem('mahdev_cached_media_assets', JSON.stringify(assets)); } catch {}
-          })
-          .catch((err) => {
-            console.warn(`[FirestoreDataContext] MediaAssets notice for ${rawDivId}:`, err);
-          });
-
-        // 4. Fetch products, categories, portfolio
+        // 3. Fetch products, categories, portfolio
         const fetchOthersPromise = Promise.all([
           firestoreProductsService.getProducts({ division: canonicalId as DivisionId }, false),
           firestoreCategoriesService.getCategories(canonicalId as DivisionId, false),
@@ -502,7 +568,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         await Promise.allSettled([
           fetchServicesPromise,
           fetchGalleryPromise,
-          fetchMediaPromise,
           fetchOthersPromise,
         ]);
       } finally {
@@ -537,7 +602,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
     inFlightDivisionLoadsRef.current[canonicalId] = loadPromise;
     await loadPromise;
-  }, []);
+  }, [hasCachedData]);
 
   const isDivisionFetching = useCallback(
     (divisionId: string) => {
@@ -855,6 +920,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         .getMediaAssets()
         .then((allMediaAssets) => {
           setMediaAssets(allMediaAssets);
+          setMediaAssetsLoaded(true);
           try { setDeviceCacheItem('mahdev_cached_media_assets', JSON.stringify(allMediaAssets)); } catch {}
         })
         .catch((err) => {
@@ -879,18 +945,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         fetchMediaAssetsTask,
       ]);
 
-      const allLoadedFlags: Record<string, boolean> = {
-        sws: true,
-        'sws-event-management': true,
-        u1: true,
-        'u1-studio': true,
-        it: true,
-        'it-solutions': true,
-        travels: true,
-        'mahdev-travels': true,
-        mart: true,
-        'online-mart': true,
-      };
+      const allLoadedFlags: Record<string, boolean> = { ...FULLY_LOADED_DIVISION_FLAGS };
       setLoadedDivisions(allLoadedFlags);
       setLoadedServices(allLoadedFlags);
       setLoadedGallery(allLoadedFlags);
@@ -1162,15 +1217,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     });
 
-    const unsubMedia = mediaService.subscribeToMediaAssets((data) => {
-      if (isMounted) {
-        setMediaAssets(data);
-        try {
-          setDeviceCacheItem('mahdev_cached_media_assets', JSON.stringify(data));
-        } catch {}
-      }
-    });
-
     return () => {
       isMounted = false;
       clearTimeout(failsafeTimer);
@@ -1188,7 +1234,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       unsubGoogleReviews();
       unsubPort();
       unsubGal();
-      unsubMedia();
     };
   }, []);
 
@@ -1403,6 +1448,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       isDivisionGalleryLoaded,
       isDivisionFetching,
       loadDivisionData,
+      loadMediaAssets,
       isLiveHydrated,
     }),
     [
@@ -1456,6 +1502,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       isDivisionGalleryLoaded,
       isDivisionFetching,
       loadDivisionData,
+      loadMediaAssets,
       isLiveHydrated,
     ]
   );

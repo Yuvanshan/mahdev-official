@@ -47,15 +47,40 @@ export interface CareerApplication {
 
 const OPENINGS = 'careerOpenings';
 const APPLICATIONS = 'careerApplications';
+const PUBLIC_OPENINGS_CACHE_KEY = 'mahdev_cached_public_career_openings';
+
+function clearPublicCareerOpeningsCache(): void {
+  try {
+    localStorage.removeItem(PUBLIC_OPENINGS_CACHE_KEY);
+  } catch (error) {
+    console.warn('[Careers] Could not invalidate the public openings cache:', error);
+  }
+}
 
 export async function getPublishedCareerOpenings(): Promise<CareerOpening[]> {
+  try {
+    const cached = localStorage.getItem(PUBLIC_OPENINGS_CACHE_KEY);
+    if (cached !== null) {
+      const parsed: unknown = JSON.parse(cached);
+      if (Array.isArray(parsed)) return parsed as CareerOpening[];
+    }
+  } catch (error) {
+    console.warn('[Careers] Could not read cached public openings:', error);
+  }
+
   const snapshot = await getDocs(query(
     collection(db, OPENINGS),
     where('status', '==', 'published'),
     orderBy('createdAt', 'desc'),
     limit(100)
   ));
-  return snapshot.docs.map((entry) => ({ ...entry.data(), id: entry.id } as CareerOpening));
+  const openings = snapshot.docs.map((entry) => ({ ...entry.data(), id: entry.id } as CareerOpening));
+  try {
+    localStorage.setItem(PUBLIC_OPENINGS_CACHE_KEY, JSON.stringify(openings));
+  } catch (error) {
+    console.warn('[Careers] Could not persist public openings cache:', error);
+  }
+  return openings;
 }
 
 export async function getCareerOpeningsForAdmin(): Promise<CareerOpening[]> {
@@ -82,10 +107,12 @@ export async function saveCareerOpening(
     createdAt: existingCreatedAt || now,
     updatedAt: now,
   }), { merge: true });
+  clearPublicCareerOpeningsCache();
 }
 
 export async function deleteCareerOpening(id: string): Promise<void> {
   await deleteDoc(doc(db, OPENINGS, id));
+  clearPublicCareerOpeningsCache();
 }
 
 export async function updateCareerApplicationStatus(

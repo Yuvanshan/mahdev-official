@@ -26,6 +26,7 @@ const {
   handleTursoAction,
   requiresAdminForDatabaseAction,
   requiresSuperAdminForDatabaseAction,
+  sanitizePublicSettingsDocument,
 } = await import('../backend/api/tursoRoutes');
 const { FirebaseTokenError, verifyFirebaseIdToken } = await import('../backend/auth/firebaseIdToken');
 const {
@@ -110,6 +111,10 @@ async function run(): Promise<void> {
       'public'
     );
     await assert.rejects(
+      () => authorizeDatabaseAction({ action: 'list', collection: 'media_blobs' }, undefined),
+      /An administrator session is required/
+    );
+    await assert.rejects(
       () => authorizeDatabaseAction({ action: 'list', collection: 'users' }, undefined),
       FirebaseTokenError
     );
@@ -137,6 +142,69 @@ async function run(): Promise<void> {
     assert.ok(migration.collections >= 35, 'Expected the backend migration to provision core collections.');
     assert.equal(databaseStatus.database, 'turso');
     assert.equal(databaseStatus.status, 'ready');
+    const publicSettingsAccess = await authorizeDatabaseAction(
+      { action: 'list', collection: 'settings' },
+      undefined
+    );
+    await call({
+      action: 'write',
+      write: {
+        type: 'set',
+        collection: 'settings',
+        id: 'public-settings-test',
+        data: {
+          companyName: 'Public Company',
+          superAdminEmail: 'private@example.com',
+          superAdminName: 'Private Administrator',
+          testTimestamp: 'private test timestamp',
+          dailyBackupEnabled: true,
+          enableStockAlertEmails: true,
+          nested: { testWrite: 'private test value', publicLabel: 'Public label' },
+        },
+      },
+    });
+    const publicSettings = await handleTursoAction({
+      action: 'get',
+      collection: 'settings',
+      id: 'public-settings-test',
+    }, publicSettingsAccess);
+    const publicSettingsData = (publicSettings.body.document as {
+      data: Record<string, unknown>;
+    }).data;
+    assert.equal(publicSettingsData.companyName, 'Public Company');
+    assert.equal(publicSettingsData.superAdminEmail, undefined);
+    assert.equal(publicSettingsData.superAdminName, undefined);
+    assert.equal(publicSettingsData.testTimestamp, undefined);
+    assert.equal(publicSettingsData.dailyBackupEnabled, undefined);
+    assert.equal(publicSettingsData.enableStockAlertEmails, undefined);
+    assert.deepEqual(publicSettingsData.nested, { publicLabel: 'Public label' });
+    const privateSettings = await handleTursoAction({
+      action: 'get',
+      collection: 'settings',
+      id: 'public-settings-test',
+    });
+    assert.equal(
+      (privateSettings.body.document as { data: Record<string, unknown> }).data.superAdminEmail,
+      'private@example.com'
+    );
+    const filteredSettingsList = await handleTursoAction({
+      action: 'list',
+      collection: 'settings',
+    }, publicSettingsAccess);
+    assert.ok((filteredSettingsList.body.documents as Array<{ id: string }>).some(
+      ({ id }) => id === 'public-settings-test'
+    ));
+    const filteredListRecord = (filteredSettingsList.body.documents as Array<{
+      id: string;
+      data: Record<string, unknown>;
+    }>).find(({ id }) => id === 'public-settings-test');
+    assert.equal(filteredListRecord?.data.superAdminEmail, undefined);
+    assert.deepEqual(filteredListRecord?.data.nested, { publicLabel: 'Public label' });
+    const filteredNestedRecord = sanitizePublicSettingsDocument({
+      id: 'nested-settings-test',
+      data: { dailyBackupEnabled: true, details: [{ enableStockAlertEmails: true, title: 'Public' }] },
+    });
+    assert.deepEqual(filteredNestedRecord.data, { details: [{ title: 'Public' }] });
     assert.equal(requiresAdminForDatabaseAction({
       action: 'write',
       write: { type: 'set', collection: 'services', id: 'svc-1' },
