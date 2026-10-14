@@ -41,7 +41,8 @@ class NotificationService {
     title: string,
     message: string,
     data: Record<string, any> = {},
-    actionUrl?: string
+    actionUrl?: string,
+    channels: Array<'email' | 'in_app' | 'sms' | 'whatsapp'> = ['email']
   ): Promise<AppNotification> {
     const notification: AppNotification = {
       id: `NOTIF-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -64,7 +65,7 @@ class NotificationService {
     // 2. Asynchronously fire server email/SMS dispatcher without blocking caller
     (async () => {
       try {
-        await backendApiService.dispatchNotification({
+        const result = await backendApiService.dispatchNotification({
           type,
           recipient: {
             name: recipient.name,
@@ -76,8 +77,14 @@ class NotificationService {
             message,
             ...data,
           },
-          channels: ['email'],
+          channels,
         });
+        if (!result.success) {
+          console.warn(
+            `[NotificationService] Server did not dispatch ${type}:`,
+            result.error || 'Notification delivery failed.'
+          );
+        }
       } catch (err) {
         console.warn(`[NotificationService] Server dispatch deferred for ${type}:`, err);
       }
@@ -270,7 +277,31 @@ class NotificationService {
       { name: 'Operations Team', email: 'operations@mahdev.lk', role: 'admin' },
       `🚨 New Order Placed: #${order.id}`,
       `Customer ${order.customer.fullName} placed Order #${order.id} for ${order.currency} ${order.total.toLocaleString()} via ${order.paymentMethod}. Destination: ${order.deliveryInfo?.address?.city || 'Sri Lanka'}.`,
-      { orderId: order.id, total: order.total, customer: order.customer.fullName },
+      {
+        orderId: order.id,
+        status: order.status,
+        paymentStatus: order.paymentStatus,
+        customer: order.customer,
+        items: order.items.map((item) => ({
+          name: item.name,
+          sku: item.sku,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          lineTotal: item.lineTotal,
+          selectedVariant: item.selectedVariant,
+        })),
+        subtotal: order.subtotal,
+        productDiscounts: order.productDiscounts,
+        couponDiscount: order.couponDiscount,
+        shippingFee: order.shippingFee,
+        tax: order.tax,
+        total: order.total,
+        currency: order.currency,
+        paymentMethod: order.paymentMethod,
+        deliveryInfo: order.deliveryInfo,
+        customerNotes: order.customerNotes,
+        createdAt: order.createdAt,
+      },
       '/admin'
     );
   }
@@ -285,7 +316,24 @@ class NotificationService {
       { name: 'Operations Team', email: 'operations@mahdev.lk', role: 'admin' },
       `📅 New Booking: #${booking.id} (${divIdStr})`,
       `${booking.customer.fullName} submitted a new booking for "${booking.serviceName}" on ${booking.date} (${booking.time}). Package: ${booking.packageName} ($${booking.price}).`,
-      { bookingId: booking.id, divisionId: booking.divisionId, customer: booking.customer.fullName },
+      {
+        bookingId: booking.id,
+        divisionId: booking.divisionId,
+        divisionName: booking.divisionName,
+        bookingType: booking.bookingType,
+        serviceName: booking.serviceName,
+        packageName: booking.packageName,
+        date: booking.date,
+        time: booking.time,
+        location: booking.location,
+        customer: booking.customer,
+        notes: booking.notes,
+        price: booking.price,
+        currency: booking.currency,
+        paymentStatus: booking.paymentStatus,
+        status: booking.status,
+        createdAt: booking.createdAt,
+      },
       '/admin'
     );
   }
@@ -341,8 +389,9 @@ class NotificationService {
       { name: 'Corporate Dispatch', email: COMPANY_INFO.email, role: 'admin' },
       `📩 New Inquiry: ${inquiry.subject}`,
       `Message from ${inquiry.name} (${inquiry.email}): "${inquiry.message.slice(0, 140)}..."`,
-      { name: inquiry.name, email: inquiry.email, subject: inquiry.subject },
-      '/admin/enquiries'
+      { name: inquiry.name, email: inquiry.email, subject: inquiry.subject, message: inquiry.message },
+      '/admin/enquiries',
+      ['in_app']
     );
   }
 
@@ -385,7 +434,8 @@ class NotificationService {
       `📋 RFP Quote Request: ${(quote.division || 'GROUP').toUpperCase()}`,
       `Custom proposal requested by ${quote.name} (${quote.email}, ${quote.phone || 'No phone'}). Details: ${quote.details.slice(0, 120)}...`,
       { name: quote.name, email: quote.email, division: quote.division },
-      '/admin/enquiries'
+      '/admin/enquiries',
+      ['in_app']
     );
   }
 

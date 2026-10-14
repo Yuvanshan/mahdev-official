@@ -32,7 +32,19 @@ export interface EmailDispatchResult {
   notice?: string;
 }
 
-const DEFAULT_TARGET_EMAIL = 'info.mahdev.lk@gmail.com';
+const DEFAULT_TARGET_EMAIL = 'yuvanshan875@gmail.com';
+const DEFAULT_ADMIN_NOTIFICATION_EMAIL = 'yuvanshan875@gmail.com';
+const DEFAULT_SENDER_EMAIL = 'info.mahdev.lk@gmail.com';
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[character] || character);
+}
 
 /**
  * Lazily initialize and return the Nodemailer transporter if credentials exist
@@ -97,13 +109,23 @@ function getMailTransporter(): Transporter | null {
  * Formats a clean, high-contrast corporate HTML email template
  */
 function generateEnquiryHtmlEmail(data: WebsiteEnquiryPayload, targetEmail: string): string {
-  const divisionName = (data.division || 'Mahdev Group').toUpperCase();
-  const refId = data.referenceId || `ENQ-${Date.now().toString(36).toUpperCase()}`;
-  const time = data.receivedAt || new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' });
+  const divisionName = escapeHtml((data.division || 'Mahdev Group').toUpperCase());
+  const refId = escapeHtml(data.referenceId || `ENQ-${Date.now().toString(36).toUpperCase()}`);
+  const time = escapeHtml(data.receivedAt || new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' }));
   const cleanPhone = data.senderPhone ? data.senderPhone.replace(/[^0-9+]/g, '') : '';
   const waLink = cleanPhone ? `https://wa.me/${cleanPhone.replace('+', '')}` : null;
   const replySubject = encodeURIComponent(`Re: ${data.subject || 'Website Enquiry'} [${refId}]`);
-  const replyMailto = `mailto:${data.senderEmail}?subject=${replySubject}`;
+  const replyMailto = escapeHtml(`mailto:${data.senderEmail}?subject=${replySubject}`);
+  const targetEmailHtml = escapeHtml(targetEmail);
+  const senderName = escapeHtml(data.senderName);
+  const senderEmail = escapeHtml(data.senderEmail);
+  const senderPhone = escapeHtml(data.senderPhone || '');
+  const division = escapeHtml(data.division || 'General Group');
+  const service = escapeHtml(data.service || '');
+  const preferredDate = escapeHtml(data.preferredDate || '');
+  const budget = escapeHtml(data.budget || '');
+  const subject = escapeHtml(data.subject || 'Website Customer Enquiry');
+  const message = escapeHtml(data.message);
 
   return `
 <!DOCTYPE html>
@@ -127,7 +149,7 @@ function generateEnquiryHtmlEmail(data: WebsiteEnquiryPayload, targetEmail: stri
                   <td>
                     <span style="font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #38bdf8; text-transform: uppercase;">Mahdev Enterprise Ecosystem</span>
                     <h1 style="margin: 4px 0 0 0; font-size: 22px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">New Website Customer Enquiry</h1>
-                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #94a3b8;">Dispatched to ${targetEmail}</p>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #94a3b8;">Dispatched to ${targetEmailHtml}</p>
                   </td>
                   <td align="right" valign="top">
                     <span style="display: inline-block; background-color: #0052FF; color: #ffffff; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.5px;">
@@ -164,35 +186,35 @@ function generateEnquiryHtmlEmail(data: WebsiteEnquiryPayload, targetEmail: stri
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
                 <tr>
                   <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; width: 35%; font-size: 13px; color: #64748b; font-weight: 600;">Full Name</td>
-                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a; font-weight: 600;">${data.senderName}</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a; font-weight: 600;">${senderName}</td>
                 </tr>
                 <tr>
                   <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #64748b; font-weight: 600;">Email Address</td>
                   <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0052FF; font-weight: 600;">
-                    <a href="${replyMailto}" style="color: #0052FF; text-decoration: none;">${data.senderEmail}</a>
+                    <a href="${replyMailto}" style="color: #0052FF; text-decoration: none;">${senderEmail}</a>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #64748b; font-weight: 600;">Phone / WhatsApp</td>
                   <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a;">
-                    ${data.senderPhone ? `<a href="tel:${cleanPhone}" style="color: #0f172a; text-decoration: none;">${data.senderPhone}</a>` : '<span style="color: #94a3b8; font-style: italic;">Not provided</span>'}
+                    ${data.senderPhone ? `<a href="tel:${cleanPhone}" style="color: #0f172a; text-decoration: none;">${senderPhone}</a>` : '<span style="color: #94a3b8; font-style: italic;">Not provided</span>'}
                   </td>
                 </tr>
                 <tr>
                   <td style="padding: 12px 16px; font-size: 13px; color: #64748b; font-weight: 600;">Division & Topic</td>
                   <td style="padding: 12px 16px; font-size: 14px; color: #0f172a; font-weight: 500;">
-                    ${data.division || 'General Group'} ${data.service ? `&bull; ${data.service}` : ''}
+                    ${division} ${data.service ? `&bull; ${service}` : ''}
                   </td>
                 </tr>
                 ${data.preferredDate ? `
                 <tr>
                   <td style="padding: 12px 16px; border-top: 1px solid #e2e8f0; font-size: 13px; color: #64748b; font-weight: 600;">Preferred Date</td>
-                  <td style="padding: 12px 16px; border-top: 1px solid #e2e8f0; font-size: 14px; color: #0f172a;">${data.preferredDate}</td>
+                  <td style="padding: 12px 16px; border-top: 1px solid #e2e8f0; font-size: 14px; color: #0f172a;">${preferredDate}</td>
                 </tr>` : ''}
                 ${data.budget ? `
                 <tr>
                   <td style="padding: 12px 16px; border-top: 1px solid #e2e8f0; font-size: 13px; color: #64748b; font-weight: 600;">Budget / Scope</td>
-                  <td style="padding: 12px 16px; border-top: 1px solid #e2e8f0; font-size: 14px; color: #0f172a;">${data.budget}</td>
+                  <td style="padding: 12px 16px; border-top: 1px solid #e2e8f0; font-size: 14px; color: #0f172a;">${budget}</td>
                 </tr>` : ''}
               </table>
             </td>
@@ -202,9 +224,9 @@ function generateEnquiryHtmlEmail(data: WebsiteEnquiryPayload, targetEmail: stri
           <tr>
             <td style="padding: 8px 32px 24px 32px;">
               <h2 style="margin: 0 0 12px 0; font-size: 15px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; border-left: 3px solid #0052FF; padding-left: 8px;">
-                Subject: ${data.subject || 'Website Customer Enquiry'}
+                Subject: ${subject}
               </h2>
-              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; font-size: 14px; line-height: 1.6; color: #1e293b; white-space: pre-wrap;">${data.message}</div>
+              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; font-size: 14px; line-height: 1.6; color: #1e293b; white-space: pre-wrap;">${message}</div>
             </td>
           </tr>
 
@@ -215,12 +237,12 @@ function generateEnquiryHtmlEmail(data: WebsiteEnquiryPayload, targetEmail: stri
                 <tr>
                   <td style="padding-right: 12px;">
                     <a href="${replyMailto}" style="display: inline-block; background-color: #0052FF; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,82,255,0.2);">
-                      &larr; Reply to ${data.senderName} (${data.senderEmail})
+                      &larr; Reply to ${senderName} (${senderEmail})
                     </a>
                   </td>
                   ${waLink ? `
                   <td>
-                    <a href="${waLink}" style="display: inline-block; background-color: #25D366; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 20px; border-radius: 8px;">
+                    <a href="${escapeHtml(waLink)}" style="display: inline-block; background-color: #25D366; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 20px; border-radius: 8px;">
                       WhatsApp Customer
                     </a>
                   </td>
@@ -234,7 +256,7 @@ function generateEnquiryHtmlEmail(data: WebsiteEnquiryPayload, targetEmail: stri
           <tr>
             <td style="background-color: #0f172a; padding: 20px 32px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #1e293b;">
               <p style="margin: 0 0 4px 0;">This email was automatically generated by the Mahdev Pvt Ltd Website (mahdev.lk).</p>
-              <p style="margin: 0;">Recipient: <strong>${targetEmail}</strong> &bull; Replying will send directly to <strong>${data.senderEmail}</strong></p>
+              <p style="margin: 0;">Recipient: <strong>${targetEmailHtml}</strong> &bull; Replying will send directly to <strong>${senderEmail}</strong></p>
             </td>
           </tr>
 
@@ -285,14 +307,15 @@ To reply directly to this customer, email: ${data.senderEmail}
 }
 
 /**
- * Dispatches the website customer enquiry to info.mahdev.lk@gmail.com
+ * Dispatches website inquiries to the configured admin inbox.
  */
 export async function sendEnquiryEmail(payload: WebsiteEnquiryPayload): Promise<EmailDispatchResult> {
   const targetEmail = process.env.ENQUIRY_TARGET_EMAIL || DEFAULT_TARGET_EMAIL;
   const config = getServerConfig();
-  const smtpFromEmail = process.env.SMTP_FROM_EMAIL || config.notifications.smtpUser || targetEmail;
-  const fromAddress = `"${payload.senderName} via Mahdev" <${smtpFromEmail}>`;
-  const subjectLine = `[Website Enquiry - ${(payload.division || 'General').toUpperCase()}] ${payload.subject || payload.service || 'Customer Inquiry'} - from ${payload.senderName}`;
+  const smtpFromEmail = process.env.SMTP_FROM_EMAIL || config.notifications.smtpUser || DEFAULT_SENDER_EMAIL;
+  const senderDisplayName = payload.senderName.replace(/[\r\n"]/g, ' ').slice(0, 100);
+  const fromAddress = `"${senderDisplayName} via Mahdev" <${smtpFromEmail}>`;
+  const subjectLine = `[Website Enquiry - ${(payload.division || 'General').replace(/[\r\n]+/g, ' ').toUpperCase()}] ${(payload.subject || payload.service || 'Customer Inquiry').replace(/[\r\n]+/g, ' ')} - from ${senderDisplayName}`;
 
   const htmlContent = generateEnquiryHtmlEmail(payload, targetEmail);
   const textContent = generateEnquiryPlainText(payload, targetEmail);
@@ -344,4 +367,78 @@ export async function sendEnquiryEmail(payload: WebsiteEnquiryPayload): Promise<
     timestamp: new Date().toISOString(),
     notice: `Enquiry recorded for dispatch to ${targetEmail}. To enable direct live SMTP inbox delivery, configure SMTP_USER and SMTP_PASS in environment variables.`,
   };
+}
+
+export async function sendAdminAlertEmail(payload: {
+  type: string;
+  subject: string;
+  message: string;
+  data?: Record<string, unknown>;
+}): Promise<EmailDispatchResult> {
+  const targetEmail =
+    process.env.ADMIN_NOTIFICATION_EMAIL ||
+    process.env.ENQUIRY_TARGET_EMAIL ||
+    DEFAULT_ADMIN_NOTIFICATION_EMAIL;
+  const config = getServerConfig();
+  const smtpFromEmail =
+    process.env.SMTP_FROM_EMAIL ||
+    config.notifications.smtpUser ||
+    DEFAULT_SENDER_EMAIL;
+  const subject = payload.subject.replace(/[\r\n]+/g, ' ').slice(0, 180);
+  const details = payload.data ? JSON.stringify(payload.data, null, 2) : '';
+  const text = [
+    `Mahdev website notification: ${payload.type}`,
+    '',
+    payload.message,
+    details ? `\nSubmitted data:\n${details}` : '',
+  ].join('\n');
+  const html = `<h2>${escapeHtml(payload.subject)}</h2><p>${escapeHtml(payload.message).replace(/\n/g, '<br>')}</p>${
+    details
+      ? `<h3>Submitted data</h3><pre style="white-space:pre-wrap">${escapeHtml(details)}</pre>`
+      : ''
+  }`;
+  const transporter = getMailTransporter();
+
+  if (!transporter) {
+    console.warn(`[EmailService] Admin alert email not sent: SMTP credentials are not configured (type: ${payload.type}).`);
+    return {
+      success: false,
+      delivered: false,
+      targetEmail,
+      deliveryMethod: 'sandbox_logged',
+      timestamp: new Date().toISOString(),
+      notice: 'Configure GMAIL_USER and GMAIL_APP_PASSWORD to enable admin email alerts.',
+    };
+  }
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"Mahdev Website" <${smtpFromEmail}>`,
+      to: targetEmail,
+      subject,
+      text,
+      html,
+    });
+    return {
+      success: true,
+      delivered: true,
+      targetEmail,
+      deliveryMethod: 'smtp',
+      messageId: info.messageId,
+      timestamp: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error(
+      `[EmailService] Admin alert email failed for ${payload.type}:`,
+      error instanceof Error ? error.message : error
+    );
+    return {
+      success: false,
+      delivered: false,
+      targetEmail,
+      deliveryMethod: 'sandbox_logged',
+      timestamp: new Date().toISOString(),
+      notice: 'SMTP delivery failed. Check the sender account and its app password.',
+    };
+  }
 }

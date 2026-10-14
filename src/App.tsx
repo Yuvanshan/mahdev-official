@@ -1,5 +1,6 @@
 import React, { lazy as reactLazy, Suspense, useState, useEffect } from 'react';
 import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Navigation } from './components/layout/Navigation';
 import { Footer } from './components/layout/Footer';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
@@ -1245,6 +1246,7 @@ export default function App() {
           <CartProvider>
             <AppContent />
             <Analytics />
+            <SpeedInsights />
           </CartProvider>
         </AdminAuthProvider>
       </AuthProvider>

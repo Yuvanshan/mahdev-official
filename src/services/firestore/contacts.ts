@@ -77,9 +77,9 @@ export const firestoreContactsService = {
     
     await setDoc(docRef, payload);
 
-    // Trigger backend notification and email routing to info.mahdev.lk@gmail.com
+    // Trigger server-side email delivery to the configured admin inbox.
     try {
-      await fetch('/api/contact/submit', {
+      const response = await fetch('/api/contact/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -93,6 +93,10 @@ export const firestoreContactsService = {
           message: data.message,
         }),
       });
+      const result = await response.json() as { success?: boolean; error?: string };
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || `Inquiry email request failed (${response.status}).`);
+      }
     } catch (apiErr) {
       console.warn('[Contact Submit] Backend email dispatch notice:', apiErr);
     }

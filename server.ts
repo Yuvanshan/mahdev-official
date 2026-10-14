@@ -1410,7 +1410,7 @@ async function startServer() {
     // Authoritative email dispatch to info.mahdev.lk@gmail.com
     let emailResult = {
       delivered: false,
-      targetEmail: 'info.mahdev.lk@gmail.com',
+      targetEmail: 'yuvanshan875@gmail.com',
       deliveryMethod: 'sandbox_logged',
     };
 
@@ -1432,7 +1432,7 @@ async function startServer() {
       console.warn('[Contact Gateway] sendEnquiryEmail exception:', mailErr);
     }
 
-    // Also dispatch multi-channel alert
+    // The direct email above delivers the inquiry; this dispatch updates only the in-app feed.
     try {
       await dispatchServerNotification({
         type: 'admin_contact_inquiry',
@@ -1457,7 +1457,7 @@ async function startServer() {
           budget: budgetRange,
           receivedAt: new Date().toISOString(),
         },
-        channels: ['email', 'in_app'],
+        channels: ['in_app'],
       });
     } catch (e) {
       console.warn('[Contact Gateway] Notification dispatch note:', e);
@@ -1466,8 +1466,10 @@ async function startServer() {
     res.json({
       success: true,
       referenceId: refId,
-      message: 'Inquiry received and dispatched to corporate dispatch at info.mahdev.lk@gmail.com.',
-      targetEmail: 'info.mahdev.lk@gmail.com',
+      message: emailResult.delivered
+        ? `Inquiry email delivered to ${emailResult.targetEmail}.`
+        : `Inquiry was recorded, but email delivery is not configured for ${emailResult.targetEmail}.`,
+      targetEmail: emailResult.targetEmail,
       emailResult,
       timestamp: new Date().toISOString(),
     });

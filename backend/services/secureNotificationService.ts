@@ -6,7 +6,7 @@
  * with strict privacy filtering and non-blocking fault tolerance.
  */
 
-import { sendEnquiryEmail } from './emailService.js';
+import { sendAdminAlertEmail, sendEnquiryEmail } from './emailService.js';
 
 export interface NotificationPayload {
   type:
@@ -60,7 +60,13 @@ function sanitizeNotificationData(data: Record<string, any> = {}): Record<string
       continue; // Strip sensitive field
     }
 
-    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    if (Array.isArray(value)) {
+      sanitized[key] = value.map((item) =>
+        item && typeof item === 'object'
+          ? sanitizeNotificationData(item as Record<string, any>)
+          : item
+      );
+    } else if (typeof value === 'object' && value !== null) {
       sanitized[key] = sanitizeNotificationData(value);
     } else {
       sanitized[key] = value;
@@ -78,17 +84,27 @@ export async function dispatchServerNotification(payload: NotificationPayload): 
   const channels = payload.channels || ['email', 'in_app'];
   const dispatched: string[] = [];
   const sanitizedData = sanitizeNotificationData(payload.data);
+  let dispatchFailure: string | undefined;
 
   try {
     for (const ch of channels) {
       if (ch === 'email' && payload.recipient.email) {
         // Formatted transactional email dispatch
-        console.info(
-          `[NotificationServer] Email Sent -> To: ${payload.recipient.email} | Type: ${payload.type} | Subject: "${payload.title || payload.type}"`
-        );
+        console.info(`[NotificationServer] Email notification requested for ${payload.type}.`);
 
-        // If this is an enquiry or quote request destined for corporate dispatch / info.mahdev.lk@gmail.com, dispatch via emailService
-        if (
+        if (payload.type === 'admin_new_order' || payload.type === 'admin_new_booking') {
+          const result = await sendAdminAlertEmail({
+            type: payload.type,
+            subject: payload.title || sanitizedData.title || payload.type,
+            message: payload.message || sanitizedData.message || 'A new order or booking was submitted.',
+            data: sanitizedData,
+          });
+          if (result.delivered) {
+            dispatched.push('email');
+          } else {
+            dispatchFailure = result.notice || 'Admin email alert could not be delivered.';
+          }
+        } else if (
           payload.type === 'admin_contact_inquiry' ||
           payload.type === 'admin_quote_request' ||
           payload.recipient.email.includes('info.mahdev.lk@gmail.com')
@@ -110,9 +126,10 @@ export async function dispatchServerNotification(payload: NotificationPayload): 
           } catch (mailErr) {
             console.warn('[NotificationServer] sendEnquiryEmail notice:', mailErr);
           }
+          dispatched.push('email');
+        } else {
+          dispatched.push('email');
         }
-
-        dispatched.push('email');
       }
 
       if (ch === 'in_app') {
@@ -132,11 +149,12 @@ export async function dispatchServerNotification(payload: NotificationPayload): 
     }
 
     return {
-      success: true,
+      success: !dispatchFailure,
       notificationId,
       dispatchedChannels: dispatched,
       timestamp: new Date().toISOString(),
-      message: `Successfully dispatched notification (${payload.type}) to ${dispatched.join(', ')}.`,
+      message: dispatchFailure ||
+        `Successfully dispatched notification (${payload.type}) to ${dispatched.join(', ')}.`,
     };
   } catch (error) {
     // Non-blocking catch to ensure transaction continuity

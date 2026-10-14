@@ -100,9 +100,9 @@ export const firestoreInquiriesService = {
     });
     await setDoc(docRef, sanitized);
 
-    // Dispatch email to info.mahdev.lk@gmail.com via backend mail gateway
+    // Dispatch the inquiry to the configured admin inbox via the backend mail gateway.
     try {
-      await fetch('/api/inquiries/submit', {
+      const response = await fetch('/api/inquiries/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -120,6 +120,10 @@ export const firestoreInquiriesService = {
           location: data.location,
         }),
       });
+      const result = await response.json() as { success?: boolean; error?: string };
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || `Inquiry email request failed (${response.status}).`);
+      }
     } catch (apiErr) {
       console.warn('[FirestoreInquiries] Backend email dispatch notice:', apiErr);
     }
