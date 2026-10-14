@@ -2007,7 +2007,7 @@ export const AdminSettingsView: React.FC = () => {
               </div>
               <input
                 type="checkbox"
-                checked={systemSettings.announcement?.enabled ?? true}
+                checked={systemSettings.announcement?.enabled ?? false}
                 onChange={(e) =>
                   setSystemSettings({
                     ...systemSettings,
@@ -2033,14 +2033,14 @@ export const AdminSettingsView: React.FC = () => {
                   setSystemSettings({
                     ...systemSettings,
                     announcement: {
-                      enabled: systemSettings.announcement?.enabled ?? true,
+                      enabled: systemSettings.announcement?.enabled ?? false,
                       text: e.target.value,
                       link: systemSettings.announcement?.link || '',
                     },
                   })
                 }
                 className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none"
-                placeholder="Universal Enterprise Ecosystem Active • Colombo & Trincomalee Hotlines Online"
+                placeholder="Enter an announcement title"
               />
             </div>
 
@@ -2055,7 +2055,7 @@ export const AdminSettingsView: React.FC = () => {
                   setSystemSettings({
                     ...systemSettings,
                     announcement: {
-                      enabled: systemSettings.announcement?.enabled ?? true,
+                      enabled: systemSettings.announcement?.enabled ?? false,
                       text: systemSettings.announcement?.text || '',
                       link: e.target.value,
                     },

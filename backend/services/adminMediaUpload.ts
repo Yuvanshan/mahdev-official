@@ -20,6 +20,46 @@ const ALLOWED_TYPES = new Set([
 ]);
 const RESUMABLE_ALIGNMENT_BYTES = 256 * 1024;
 
+function parseServiceAccount(value: string): Record<string, unknown> {
+  const raw = value.trim();
+  let serviceAccount: unknown;
+
+  try {
+    serviceAccount = JSON.parse(raw);
+  } catch {
+    const escapedPrivateKey = raw.replace(
+      /("private_key"\s*:\s*")([\s\S]*?)("\s*[,}])/,
+      (_match, prefix: string, privateKey: string, suffix: string) =>
+        `${prefix}${privateKey.replace(/\r?\n/g, '\\n')}${suffix}`
+    );
+    try {
+      serviceAccount = JSON.parse(escapedPrivateKey);
+    } catch {
+      console.error('[AdminMediaUpload] FIREBASE_SERVICE_ACCOUNT_JSON is not a valid service-account JSON document.');
+      throw new Error('Server Firebase service account configuration is invalid. Provide the complete service-account JSON.');
+    }
+  }
+
+  if (!serviceAccount || typeof serviceAccount !== 'object' || Array.isArray(serviceAccount)) {
+    throw new Error('Server Firebase service account configuration must be a JSON object.');
+  }
+
+  const account = serviceAccount as Record<string, unknown>;
+  if (
+    typeof account.project_id !== 'string' ||
+    !account.project_id.trim() ||
+    typeof account.client_email !== 'string' ||
+    !account.client_email.trim() ||
+    typeof account.private_key !== 'string' ||
+    !account.private_key.includes('PRIVATE KEY')
+  ) {
+    throw new Error('Server Firebase service account JSON must include project_id, client_email, and private_key.');
+  }
+
+  account.private_key = account.private_key.replace(/\\n/g, '\n');
+  return account;
+}
+
 function getStorageBucket() {
   const bucketName =
     process.env.FIREBASE_STORAGE_BUCKET ||
@@ -29,16 +69,7 @@ function getStorageBucket() {
 
   if (!getApps().length) {
     if (serviceAccountJson) {
-      let serviceAccount: Record<string, unknown>;
-      try {
-        serviceAccount = JSON.parse(serviceAccountJson) as Record<string, unknown>;
-      } catch (error) {
-        console.error('[AdminMediaUpload] Invalid FIREBASE_SERVICE_ACCOUNT_JSON:', error);
-        throw new Error('Server Firebase service account configuration is invalid.');
-      }
-      if (typeof serviceAccount.private_key === 'string') {
-        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-      }
+      const serviceAccount = parseServiceAccount(serviceAccountJson);
       initializeApp({ credential: cert(serviceAccount), storageBucket: bucketName });
     } else if (process.env.NODE_ENV === 'production') {
       throw new Error('Server Firebase storage is not configured. Set FIREBASE_SERVICE_ACCOUNT_JSON.');

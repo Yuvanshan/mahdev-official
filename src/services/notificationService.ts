@@ -5,7 +5,7 @@
  * Features:
  * - Non-blocking asynchronous dispatch (never disrupts primary transactions)
  * - Strict customer PII & token sanitization
- * - In-memory In-App Notification Center state
+ * - In-memory notification feed with persisted admin read receipts
  */
 
 import { AppNotification, NotificationType, NotificationRecipient } from '../types/notification';
@@ -17,6 +17,43 @@ import { COMPANY_INFO } from '../config/company';
 class NotificationService {
   private notifications: AppNotification[] = [];
   private listeners: Set<() => void> = new Set();
+  private readonly adminReadReceiptsKey = 'mahdev_admin_notification_reads_v1';
+
+  private getAdminReadReceipts(): Record<string, string> {
+    if (typeof window === 'undefined') return {};
+    try {
+      const raw = window.localStorage.getItem(this.adminReadReceiptsKey);
+      if (!raw) return {};
+      const parsed: unknown = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+      return Object.fromEntries(
+        Object.entries(parsed).filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+      );
+    } catch (error) {
+      console.warn('[Notifications] Could not read persisted admin notification state:', error);
+      return {};
+    }
+  }
+
+  private persistAdminReadReceipts(ids: string[], readAt: string): void {
+    if (typeof window === 'undefined') return;
+    try {
+      const receipts = this.getAdminReadReceipts();
+      ids.forEach((id) => {
+        receipts[id] = readAt;
+      });
+      const recentReceipts = Object.entries(receipts)
+        .sort((left, right) => right[1].localeCompare(left[1]))
+        .slice(0, 500);
+      window.localStorage.setItem(this.adminReadReceiptsKey, JSON.stringify(Object.fromEntries(recentReceipts)));
+    } catch (error) {
+      console.warn('[Notifications] Could not persist admin notification read state:', error);
+    }
+  }
+
+  private isAdminNotification(notification: AppNotification): boolean {
+    return notification.recipient.role === 'admin' || notification.type.startsWith('admin_');
+  }
 
   private notifyStateChanged(): void {
     this.notifyListeners();
@@ -374,14 +411,15 @@ class NotificationService {
   }): void {
     const id = `admin-inquiry-${inquiry.id}`;
     if (this.notifications.some((notification) => notification.id === id)) return;
+    const readAt = this.getAdminReadReceipts()[id] || null;
     this.notifications.unshift({
       id,
       type: 'admin_contact_inquiry',
       recipient: { name: 'Mahdev Administration', role: 'admin' },
       title: `New enquiry: ${inquiry.subject || 'Website enquiry'}`,
       message: `${inquiry.name || 'A customer'} submitted an enquiry${inquiry.email ? ` (${inquiry.email})` : ''}.`,
-      status: 'sent',
-      readAt: null,
+      status: readAt ? 'read' : 'sent',
+      readAt,
       createdAt: new Date().toISOString(),
       data: {
         inquiryId: inquiry.id,
@@ -435,6 +473,9 @@ class NotificationService {
     if (item && !item.readAt) {
       item.readAt = new Date().toISOString();
       item.status = 'read';
+      if (this.isAdminNotification(item)) {
+        this.persistAdminReadReceipts([item.id], item.readAt);
+      }
       this.notifyStateChanged();
     }
   }
@@ -442,10 +483,17 @@ class NotificationService {
   public markAllAsRead(userEmail?: string, role?: 'customer' | 'admin'): void {
     const list = this.getNotifications(userEmail, role);
     const now = new Date().toISOString();
+    const adminNotificationIds: string[] = [];
     list.forEach((n) => {
       n.readAt = now;
       n.status = 'read';
+      if (this.isAdminNotification(n)) {
+        adminNotificationIds.push(n.id);
+      }
     });
+    if (adminNotificationIds.length > 0) {
+      this.persistAdminReadReceipts(adminNotificationIds, now);
+    }
     this.notifyStateChanged();
   }
 

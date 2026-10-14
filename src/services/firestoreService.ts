@@ -357,8 +357,8 @@ class FirestoreServiceRepository {
       currency: 'LKR',
       taxRate: 0,
       announcement: {
-        enabled: true,
-        text: 'Universal Enterprise Ecosystem Active • Colombo & Trincomalee Hotlines Online',
+        enabled: false,
+        text: '',
       },
       updatedAt: new Date().toISOString(),
     };

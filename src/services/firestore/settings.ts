@@ -311,8 +311,8 @@ export function getDefaultSiteSettings(): FirestoreSiteSettings {
       allowedRoles: ['admin', 'superAdmin'],
     },
     announcement: {
-      enabled: true,
-      text: 'Universal Enterprise Ecosystem Active • Colombo & Trincomalee Hotlines Online',
+      enabled: false,
+      text: '',
       link: '/contact',
     },
     currency: 'LKR',

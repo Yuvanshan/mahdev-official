@@ -347,6 +347,52 @@ async function runTestSuite() {
         );
       },
     },
+    {
+      category: 'Admin Operations',
+      name: 'Read admin inquiry remains read after notification reload',
+      fn: () => {
+        const originalWindow = globalThis.window;
+        const storage = new Map<string, string>();
+        Object.defineProperty(globalThis, 'window', {
+          configurable: true,
+          value: {
+            localStorage: {
+              getItem: (key: string) => storage.get(key) || null,
+              setItem: (key: string, value: string) => storage.set(key, value),
+            },
+          },
+        });
+
+        try {
+          const inquiry = {
+            id: `CI-READ-${Date.now()}`,
+            name: 'CI Test Customer',
+            email: 'customer@example.com',
+            subject: 'Read-state persistence test',
+          };
+          notificationService.notifyAdminInquiryReceived(inquiry);
+          notificationService.markAsRead(`admin-inquiry-${inquiry.id}`);
+          notificationService.clearAll();
+          notificationService.notifyAdminInquiryReceived(inquiry);
+          return notificationService.getNotifications(undefined, 'admin').some(
+            (notification) =>
+              notification.id === `admin-inquiry-${inquiry.id}` &&
+              notification.status === 'read' &&
+              notification.readAt !== null
+          );
+        } finally {
+          notificationService.clearAll();
+          if (originalWindow) {
+            Object.defineProperty(globalThis, 'window', {
+              configurable: true,
+              value: originalWindow,
+            });
+          } else {
+            Reflect.deleteProperty(globalThis, 'window');
+          }
+        }
+      },
+    },
 
     // 4. FIRESTORE SECURITY RULES MATRIX
     {

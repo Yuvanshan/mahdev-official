@@ -22,23 +22,6 @@ import { FirestoreAnnouncement } from '../../types/firestore';
 const CACHE_TTL_MS = 1000 * 60 * 15; // 15 min cache
 let cachedAnnouncements: { data: FirestoreAnnouncement[]; timestamp: number } | null = null;
 
-export function getDefaultAnnouncements(): FirestoreAnnouncement[] {
-  const now = new Date().toISOString();
-  return [
-    {
-      id: 'ann-1',
-      title: 'Universal Enterprise Ecosystem Active',
-      message: 'Universal Enterprise Ecosystem Active • Colombo & Trincomalee Hotlines Online',
-      type: 'info',
-      link: '/contact',
-      isPublished: true,
-      order: 1,
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: now,
-    },
-  ];
-}
-
 export const firestoreAnnouncementsService = {
   /**
    * Fetch all announcements
@@ -68,12 +51,11 @@ export const firestoreAnnouncementsService = {
         return data;
       }
 
-      const defaults = getDefaultAnnouncements();
-      cachedAnnouncements = { data: defaults, timestamp: now };
-      return defaults;
+      cachedAnnouncements = { data: [], timestamp: now };
+      return [];
     } catch (err) {
       console.warn('[Firestore Announcements] getAnnouncements fallback:', err);
-      return cachedAnnouncements?.data || getDefaultAnnouncements();
+      return cachedAnnouncements?.data || [];
     }
   },
 
@@ -124,7 +106,7 @@ export const firestoreAnnouncementsService = {
       },
       (err) => {
         console.warn('[Firestore Announcements] Realtime error:', err);
-        onData(cachedAnnouncements?.data || getDefaultAnnouncements());
+        onData(cachedAnnouncements?.data || []);
       }
     );
   },
