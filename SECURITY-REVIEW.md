@@ -5,11 +5,13 @@
 
 ## Security findings
 
-No exploitable data leaks were identified in the reviewed authorization paths.
+One public-data minimization issue was confirmed in the deployed database API and has been fixed in the current source:
 
-- Public reads of private collections such as users, analytics events, and career applications require authorization.
-- Anonymous callers cannot enumerate the top-level `media_blobs` collection. Media chunks remain readable when a caller knows a blob ID; IDs referenced by public site content are intentional public media.
-- Public `settings` responses now remove administrator identity, test, backup, and stock-alert fields while preserving public presentation settings.
+| # | Severity | File | Lines | Finding | Confidence |
+|---|----------|------|-------|---------|------------|
+| 1 | ⚪ LOW | [backend/api/tursoRoutes.ts](./backend/api/tursoRoutes.ts) | 29-44, 110-116, 641-682 | Public `settings` reads previously returned administrator identity and test/operational fields. Public get/list responses now redact those fields recursively while retaining public presentation settings. | 9/10 |
+
+No authentication credentials or tokens were exposed. Public reads of private collections such as users, analytics events, and career applications require authorization. Anonymous callers cannot enumerate the top-level `media_blobs` collection; media chunks remain readable to callers who know a blob ID, which is necessary for public content references.
 
 ## Data-transfer finding
 
