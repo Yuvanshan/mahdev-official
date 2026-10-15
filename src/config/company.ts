@@ -32,6 +32,7 @@ export interface CompanyInformation {
     youtube?: string;
     linkedin?: string;
     pinterest?: string;
+    tiktok?: string;
     whatsapp?: string;
   };
   workingHours: {

@@ -1178,6 +1178,24 @@ export const AdminSettingsView: React.FC = () => {
                   placeholder="https://www.pinterest.com/your-profile"
                 />
               </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  TikTok Profile
+                </label>
+                <input
+                  type="url"
+                  value={companyData.socials?.tiktok || ''}
+                  onChange={(e) =>
+                    setCompanyData({
+                      ...companyData,
+                      socials: { ...companyData.socials, tiktok: e.target.value },
+                    })
+                  }
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none"
+                  placeholder="https://www.tiktok.com/@your-profile"
+                />
+              </div>
             </div>
           </div>
 

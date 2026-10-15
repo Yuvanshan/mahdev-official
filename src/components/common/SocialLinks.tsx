@@ -1,14 +1,26 @@
 import React from 'react';
 import { Facebook, Instagram, Linkedin, Pin, Youtube } from 'lucide-react';
 
-type SocialPlatform = 'facebook' | 'instagram' | 'linkedin' | 'youtube' | 'pinterest';
+type SocialPlatform = 'facebook' | 'instagram' | 'linkedin' | 'youtube' | 'pinterest' | 'tiktok';
 
-const SOCIAL_PLATFORMS: { id: SocialPlatform; label: string; Icon?: React.ElementType }[] = [
+const TikTokIcon: React.FC<{ className: string }> = ({ className }) => (
+  <svg
+    aria-hidden="true"
+    className={className}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+  >
+    <path d="M19.6 7.2a6.8 6.8 0 0 1-4.1-1.4v8.1a6.1 6.1 0 1 1-5.3-6.1v3.4a2.7 2.7 0 1 0 1.9 2.6V2.5h3.4c.2 2.1 1.8 3.8 4.1 4.1v.6Z" />
+  </svg>
+);
+
+const SOCIAL_PLATFORMS: { id: SocialPlatform; label: string; Icon: React.ElementType }[] = [
   { id: 'facebook', label: 'Facebook', Icon: Facebook },
   { id: 'instagram', label: 'Instagram', Icon: Instagram },
   { id: 'linkedin', label: 'LinkedIn', Icon: Linkedin },
   { id: 'youtube', label: 'YouTube', Icon: Youtube },
   { id: 'pinterest', label: 'Pinterest', Icon: Pin },
+  { id: 'tiktok', label: 'TikTok', Icon: TikTokIcon },
 ];
 
 interface SocialLinksProps {
@@ -47,7 +59,7 @@ export const SocialLinks: React.FC<SocialLinksProps> = ({ socials, variant = 'li
           aria-label={`Visit Mahdev on ${label} (opens in a new tab)`}
           className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${linkStyle}`}
         >
-          {Icon && <Icon aria-hidden="true" className="h-5 w-5" />}
+          <Icon aria-hidden="true" className="h-5 w-5" />
         </a>
       ))}
     </nav>
