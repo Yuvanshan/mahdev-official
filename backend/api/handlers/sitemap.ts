@@ -10,13 +10,13 @@ const DEFAULT_SITE_ORIGIN = 'https://mahdev-official.vercel.app';
 const STATIC_PUBLIC_PATHS = [
   '/',
   '/divisions',
-  '/services',
-  '/insights',
   '/sws',
   '/u1',
   '/it',
   '/travels',
   '/mart',
+  '/services',
+  '/insights',
   '/catalog',
   '/book',
   '/about',
@@ -122,7 +122,10 @@ export function buildSitemapXml(
   content: {
     pages: TursoDocument[];
     divisions: TursoDocument[];
+    services: TursoDocument[];
     portfolio: TursoDocument[];
+    gallery?: TursoDocument[];
+    mediaAssets?: TursoDocument[];
     seoConfig?: TursoDocument | null;
   },
   origin = DEFAULT_SITE_ORIGIN,
@@ -131,6 +134,20 @@ export function buildSitemapXml(
     ({ data }) => data.isPublished === true && data.isDeleted !== true
   );
   const hasPublishedInsights = publishedPages.some(({ data }) => data.category === 'insights');
+  const inactiveDivisionPaths = new Set(
+    content.divisions
+      .filter(({ data }) =>
+        data.isPublished === false ||
+        data.status === 'inactive' ||
+        data.status === 'coming_soon' ||
+        data.isComingSoon === true ||
+        data.comingSoon === true
+      )
+      .flatMap(({ data }) => [
+        typeof data.route === 'string' ? data.route : '',
+        typeof data.slug === 'string' ? `/${publicSlug(data.slug) || ''}` : '',
+      ])
+  );
   const excludedPaths = new Set(
     Array.isArray(content.seoConfig?.data.configs)
       ? content.seoConfig.data.configs.flatMap((config) => {
@@ -146,7 +163,8 @@ export function buildSitemapXml(
     STATIC_PUBLIC_PATHS
       .filter((path) =>
         !excludedPaths.has(path) &&
-        isPublicPath(path) &&
+          !inactiveDivisionPaths.has(path) &&
+          isPublicPath(path) &&
         (path !== '/insights' || hasPublishedInsights)
       )
       .map((path) => [path, entry(path, origin)])
@@ -180,6 +198,30 @@ export function buildSitemapXml(
       origin,
     ),
     ...recordsToEntries(
+      content.services.filter(({ data }) =>
+        data.isPublished !== false &&
+        data.status !== 'inactive' &&
+        data.status !== 'draft' &&
+        data.isDeleted !== true
+      ),
+      ({ data, id }) => {
+        const slug = publicSlug(data.slug || id);
+        return slug && !slug.includes('/') ? `/services/${slug}` : null;
+      },
+      origin,
+    ),
+    ...recordsToEntries(
+      [...(content.gallery || []), ...(content.mediaAssets || [])].filter(({ data }) =>
+        data.isPublished !== false &&
+        data.status !== 'hidden' &&
+        data.status !== 'inactive' &&
+        data.status !== 'draft' &&
+        data.status !== 'archived'
+      ),
+      ({ id }) => `/gallery?id=${encodeURIComponent(id)}`,
+      origin,
+    ),
+    ...recordsToEntries(
       content.portfolio.filter(({ data }) =>
         data.isPublished === true || data.status === 'published' || data.status === 'active'
       ),
@@ -192,7 +234,7 @@ export function buildSitemapXml(
   ];
 
   for (const [path, item] of dynamicEntries) {
-    if (!excludedPaths.has(path)) entries.set(path, item);
+    if (!excludedPaths.has(path.split(/[?#]/, 1)[0])) entries.set(path, item);
   }
 
   return [
@@ -209,7 +251,10 @@ let initialization: Promise<void> | undefined;
 async function loadPublicSitemapData(): Promise<{
   pages: TursoDocument[];
   divisions: TursoDocument[];
+  services: TursoDocument[];
   portfolio: TursoDocument[];
+  gallery: TursoDocument[];
+  mediaAssets: TursoDocument[];
   seoConfig: TursoDocument | null;
 }> {
   initialization ??= initializeTursoDatabase().catch((error: unknown) => {
@@ -217,13 +262,16 @@ async function loadPublicSitemapData(): Promise<{
     throw error;
   });
   await initialization;
-  const [pages, divisions, portfolio, seoConfig] = await Promise.all([
+  const [pages, divisions, services, portfolio, gallery, mediaAssets, seoConfig] = await Promise.all([
     listTursoDocuments('pages', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     listTursoDocuments('divisions', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
+    listTursoDocuments('services', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     listTursoDocuments('portfolio', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
+    listTursoDocuments('gallery', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
+    listTursoDocuments('media_assets', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     getTursoDocument('settings', '', 'seo'),
   ]);
-  return { pages, divisions, portfolio, seoConfig };
+  return { pages, divisions, services, portfolio, gallery, mediaAssets, seoConfig };
 }
 
 export default async function sitemapHandler(

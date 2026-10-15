@@ -37,9 +37,12 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate
   }, [division.id, division.mediaUrl]);
 
   return (
-    <button
-      type="button"
-      onClick={() => onNavigate(division.route)}
+    <a
+      href={division.route}
+      onClick={(event) => {
+        event.preventDefault();
+        onNavigate(division.route);
+      }}
       className="group overflow-hidden rounded-xl border border-slate-200 bg-white text-left transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
@@ -75,6 +78,6 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate
         </div>
         <ArrowUpRight className="mt-1 h-5 w-5 shrink-0 text-slate-400 transition group-hover:text-blue-700" />
       </div>
-    </button>
+    </a>
   );
 };

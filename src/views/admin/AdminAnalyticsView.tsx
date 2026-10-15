@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   TrendingUp,
   DollarSign,
@@ -35,7 +35,7 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { formatCurrency, getCurrencySymbol } from '../../utils/currency';
 import { firestoreOrdersService } from '../../services/firestore/orders';
 import { firestoreBookingsService } from '../../services/firestore/bookings';
-import { collection, getDocs, limit, orderBy, query } from '../../lib/tursoFirestore';
+import { collection, getDocs, limit, orderBy, query, startAfter, type DocumentSnapshot } from '../../lib/tursoFirestore';
 import { db } from '../../lib/firebase';
 import { AnalyticsEvent } from '../../types/analytics';
 
@@ -44,7 +44,33 @@ interface AdminAnalyticsViewProps {
   onNavigateSite: (path: string) => void;
 }
 
-type TabType = 'overview' | 'revenue' | 'divisions' | 'products' | 'services' | 'funnels' | 'customers';
+type TabType = 'overview' | 'traffic' | 'revenue' | 'divisions' | 'products' | 'services' | 'funnels' | 'customers';
+
+const ANALYTICS_EVENT_PAGE_SIZE = 10000;
+const TRAFFIC_TABLE_PAGE_SIZE = 50;
+
+function getTrafficRangeStart(timeRange: TimeRangeFilter): number {
+  const now = new Date();
+  if (timeRange === 'today') return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  if (timeRange === '7d') return now.getTime() - 7 * 24 * 60 * 60 * 1000;
+  if (timeRange === '30d') return now.getTime() - 30 * 24 * 60 * 60 * 1000;
+  if (timeRange === '90d') return now.getTime() - 90 * 24 * 60 * 60 * 1000;
+  return 0;
+}
+
+function summarizeTrafficEvents(
+  events: AnalyticsEvent[],
+  getLabel: (event: AnalyticsEvent) => string
+): Array<{ label: string; views: number }> {
+  const counts = new Map<string, number>();
+  events.forEach((event) => {
+    const label = getLabel(event).trim() || 'Unknown';
+    counts.set(label, (counts.get(label) || 0) + 1);
+  });
+  return [...counts.entries()]
+    .map(([label, views]) => ({ label, views }))
+    .sort((left, right) => right.views - left.views || left.label.localeCompare(right.label));
+}
 
 export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
   onNavigateSection,
@@ -57,6 +83,12 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
   const [orders, setOrders] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
+  const [eventCursor, setEventCursor] = useState<DocumentSnapshot | null>(null);
+  const [hasMoreEvents, setHasMoreEvents] = useState(false);
+  const [isLoadingOlderEvents, setIsLoadingOlderEvents] = useState(false);
+  const [olderEventsError, setOlderEventsError] = useState('');
+  const [trafficSearch, setTrafficSearch] = useState('');
+  const [trafficPage, setTrafficPage] = useState(1);
   const [analyticsLoadError, setAnalyticsLoadError] = useState('');
   const [loadingRecords, setLoadingRecords] = useState<boolean>(true);
   const [timeRange, setTimeRange] = useState<TimeRangeFilter>('30d');
@@ -67,6 +99,83 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [hoveredDataPoint, setHoveredDataPoint] = useState<number | null>(null);
 
+  const filteredTrafficEvents = useMemo(() => {
+    const rangeStart = getTrafficRangeStart(timeRange);
+    return analyticsEvents.filter((event) => {
+      const timestamp = Date.parse(event.timestamp);
+      return Number.isFinite(timestamp) && timestamp >= rangeStart;
+    });
+  }, [analyticsEvents, timeRange]);
+
+  const trafficPageViews = useMemo(
+    () => filteredTrafficEvents.filter((event) => event.type === 'page_view'),
+    [filteredTrafficEvents]
+  );
+
+  const trafficEventTypes = useMemo(() => {
+    const counts = new Map<string, number>();
+    filteredTrafficEvents.forEach((event) => counts.set(event.type, (counts.get(event.type) || 0) + 1));
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  }, [filteredTrafficEvents]);
+
+  const trafficTopPages = useMemo(() => {
+    return summarizeTrafficEvents(trafficPageViews, (event) => event.path);
+  }, [trafficPageViews]);
+
+  const trafficSources = useMemo(
+    () => summarizeTrafficEvents(
+      trafficPageViews,
+      (event) => String(event.metadata?.referrerHost || 'Unknown')
+    ),
+    [trafficPageViews]
+  );
+
+  const trafficDevices = useMemo(
+    () => summarizeTrafficEvents(
+      trafficPageViews,
+      (event) => String(event.metadata?.deviceType || 'Unknown')
+    ),
+    [trafficPageViews]
+  );
+
+  const trafficCampaigns = useMemo(
+    () => summarizeTrafficEvents(
+      trafficPageViews.filter((event) =>
+        ['utm_source', 'utm_medium', 'utm_campaign'].some(
+          (key) => typeof event.metadata?.[key] === 'string' && event.metadata[key].trim()
+        )
+      ),
+      (event) => [
+        event.metadata?.utm_source,
+        event.metadata?.utm_medium,
+        event.metadata?.utm_campaign,
+      ].filter(Boolean).join(' / ')
+    ),
+    [trafficPageViews]
+  );
+
+  const filteredTrafficLog = useMemo(() => {
+    const term = trafficSearch.trim().toLowerCase();
+    if (!term) return filteredTrafficEvents;
+    return filteredTrafficEvents.filter((event) => [
+      event.type,
+      event.path,
+      event.title || '',
+      event.metadata?.referrerHost || '',
+      event.metadata?.deviceType || '',
+      event.metadata?.utm_source || '',
+      event.metadata?.utm_medium || '',
+      event.metadata?.utm_campaign || '',
+    ].some((value) => String(value).toLowerCase().includes(term)));
+  }, [filteredTrafficEvents, trafficSearch]);
+
+  const maxTrafficPages = Math.max(1, Math.ceil(filteredTrafficLog.length / TRAFFIC_TABLE_PAGE_SIZE));
+  const currentTrafficPage = Math.min(trafficPage, maxTrafficPages);
+  const pagedTrafficLog = filteredTrafficLog.slice(
+    (currentTrafficPage - 1) * TRAFFIC_TABLE_PAGE_SIZE,
+    currentTrafficPage * TRAFFIC_TABLE_PAGE_SIZE
+  );
+
   useEffect(() => {
     let isMounted = true;
     setLoadingRecords(true);
@@ -76,7 +185,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
       getDocs(query(
         collection(db, 'analyticsEvents'),
         orderBy('timestamp', 'desc'),
-        limit(10000)
+        limit(ANALYTICS_EVENT_PAGE_SIZE)
       )),
     ])
       .then(([ordersResult, bookingsResult, eventsResult]) => {
@@ -107,6 +216,8 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
           .map((entry) => ({ ...entry.data(), id: entry.id } as AnalyticsEvent))
           .filter((event) => event.type && event.timestamp && event.sessionId);
         setAnalyticsEvents(events);
+        setEventCursor(eventsRes.docs.at(-1) || null);
+        setHasMoreEvents(eventsRes.size === ANALYTICS_EVENT_PAGE_SIZE);
         analyticsService.setPersistedEvents(events);
       })
       .finally(() => {
@@ -139,16 +250,19 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
   const refreshAnalytics = useCallback(async () => {
     setIsLoading(true);
     setAnalyticsLoadError('');
+    setOlderEventsError('');
     try {
       const snapshot = await getDocs(query(
         collection(db, 'analyticsEvents'),
         orderBy('timestamp', 'desc'),
-        limit(10000)
+        limit(ANALYTICS_EVENT_PAGE_SIZE)
       ));
       const events = snapshot.docs
         .map((entry) => ({ ...entry.data(), id: entry.id } as AnalyticsEvent))
         .filter((event) => event.type && event.timestamp && event.sessionId);
       setAnalyticsEvents(events);
+      setEventCursor(snapshot.docs.at(-1) || null);
+      setHasMoreEvents(snapshot.size === ANALYTICS_EVENT_PAGE_SIZE);
       analyticsService.setPersistedEvents(events);
       setReport(analyticsService.getExecutiveReport(
         timeRange,
@@ -166,9 +280,75 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
     }
   }, [timeRange, currentCurrency, orders, bookings, products, services]);
 
+  const loadOlderEvents = useCallback(async () => {
+    if (!eventCursor || !hasMoreEvents || isLoadingOlderEvents) return;
+    setIsLoadingOlderEvents(true);
+    setOlderEventsError('');
+    try {
+      const snapshot = await getDocs(query(
+        collection(db, 'analyticsEvents'),
+        orderBy('timestamp', 'desc'),
+        startAfter(eventCursor),
+        limit(ANALYTICS_EVENT_PAGE_SIZE)
+      ));
+      const olderEvents = snapshot.docs
+        .map((entry) => ({ ...entry.data(), id: entry.id } as AnalyticsEvent))
+        .filter((event) => event.type && event.timestamp && event.sessionId);
+      setAnalyticsEvents((current) => {
+        const knownIds = new Set(current.map((event) => event.id));
+        const combined = [
+          ...current,
+          ...olderEvents.filter((event) => !knownIds.has(event.id)),
+        ].sort((left, right) => Date.parse(right.timestamp) - Date.parse(left.timestamp));
+        analyticsService.setPersistedEvents(combined);
+        return combined;
+      });
+      setEventCursor(snapshot.docs.at(-1) || null);
+      setHasMoreEvents(snapshot.size === ANALYTICS_EVENT_PAGE_SIZE);
+    } catch (error) {
+      console.error('Failed to load older visitor analytics:', error);
+      setOlderEventsError(error instanceof Error ? error.message : 'Could not load older analytics events.');
+    } finally {
+      setIsLoadingOlderEvents(false);
+    }
+  }, [eventCursor, hasMoreEvents, isLoadingOlderEvents]);
+
+  const handleTrafficExport = (): void => {
+    const escapeCsv = (value: unknown): string => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const columns = ['Timestamp', 'Event', 'Path', 'Page Title', 'Referrer', 'Device', 'Campaign', 'Anonymous Session'];
+    const rows = filteredTrafficLog.map((event) => [
+      event.timestamp,
+      event.type,
+      event.path,
+      event.title || '',
+      event.metadata?.referrerHost || '',
+      event.metadata?.deviceType || '',
+      [
+        event.metadata?.utm_source,
+        event.metadata?.utm_medium,
+        event.metadata?.utm_campaign,
+      ].filter(Boolean).join(' / '),
+      event.sessionId,
+    ]);
+    const csv = [columns, ...rows].map((row) => row.map(escapeCsv).join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `mahdev_website_traffic_${timeRange}_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   useEffect(() => {
     fetchReport();
   }, [fetchReport]);
+
+  useEffect(() => {
+    setTrafficPage(1);
+  }, [timeRange, trafficSearch]);
 
   const handleExport = (type: 'revenue' | 'orders' | 'bookings' | 'products' | 'services' | 'divisions') => {
     setIsExporting(true);
@@ -216,7 +396,9 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
     report.topServices.some((service) => service.bookingsCount > 0 || service.views > 0) ||
     report.ecommerceFunnel.some((stage) => stage.count > 0) ||
     report.bookingFunnel.some((stage) => stage.count > 0) ||
-    report.paymentGatewayDistribution.some((gateway) => gateway.transactionsCount > 0 || gateway.volume > 0);
+    report.paymentGatewayDistribution.some((gateway) => gateway.transactionsCount > 0 || gateway.volume > 0) ||
+    report.kpis.totalPageViews > 0 ||
+    analyticsEvents.length > 0;
 
   if (!hasRealAnalytics) {
     return (
@@ -507,6 +689,34 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
         </div>
       )}
 
+      <section className="grid gap-4 sm:grid-cols-2" aria-label="Search and campaign performance">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+          <h2 className="text-sm font-bold text-slate-900">Organic search traffic</h2>
+          <p className="mt-1 text-xs text-slate-500">Search-engine referrals in the selected period</p>
+          <div className="mt-4 flex items-end gap-2">
+            <span className="text-2xl font-bold tabular-nums text-slate-950">
+              {report.traffic.organicSearchVisitors.toLocaleString()}
+            </span>
+            <span className="pb-1 text-xs text-slate-500">visitors</span>
+          </div>
+          <p className="mt-1 text-xs text-slate-500">
+            {report.traffic.organicSearchVisits.toLocaleString()} page views from search engines
+          </p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+          <h2 className="text-sm font-bold text-slate-900">Campaign performance</h2>
+          <p className="mt-1 text-xs text-slate-500">Tagged campaign visits (UTM source / medium / campaign)</p>
+          <div className="mt-4 space-y-3">
+            {report.traffic.topCampaigns.length ? report.traffic.topCampaigns.map((campaign) => (
+              <div key={campaign.label} className="flex items-center justify-between gap-3 text-xs">
+                <span className="min-w-0 truncate font-medium text-slate-700">{campaign.label}</span>
+                <span className="shrink-0 font-bold tabular-nums text-slate-900">{campaign.views.toLocaleString()}</span>
+              </div>
+            )) : <p className="text-xs text-slate-400">No tagged campaign visits yet.</p>}
+          </div>
+        </div>
+      </section>
+
       <section className="grid gap-4 lg:grid-cols-3" aria-label="Website traffic details">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
           <h2 className="text-sm font-bold text-slate-900">Most viewed pages</h2>
@@ -545,9 +755,9 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
           </div>
         </div>
       </section>
-      {analyticsEvents.length === 10000 && (
+      {hasMoreEvents && (
         <p className="text-xs text-slate-500">
-          Traffic details use the latest 10,000 events. Visitor counts represent anonymous browser sessions, not verified individuals.
+          Traffic reporting includes the {analyticsEvents.length.toLocaleString()} most recent events currently loaded. Open Website Traffic and load older records to extend the reporting history. Visitor counts represent anonymous browser sessions, not verified individuals.
         </p>
       )}
 
@@ -556,6 +766,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
         {(
           [
             { id: 'overview', label: 'Executive Overview', icon: BarChart2 },
+            { id: 'traffic', label: 'Website Traffic', icon: Globe },
             { id: 'revenue', label: 'Revenue & Finance', icon: DollarSign },
             { id: 'divisions', label: 'Divisions Matrix', icon: Building },
             { id: 'products', label: 'Popular Products', icon: Package },
@@ -582,6 +793,191 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
           );
         })}
       </div>
+
+      {activeTab === 'traffic' && (
+        <div className="space-y-6">
+          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Website traffic summary">
+            {[
+              { label: 'Page views', value: trafficPageViews.length.toLocaleString() },
+              {
+                label: 'Unique visitors',
+                value: new Set(trafficPageViews.map((event) => event.sessionId)).size.toLocaleString(),
+              },
+              { label: 'Tracked events', value: filteredTrafficEvents.length.toLocaleString() },
+              { label: 'Search visits', value: report.traffic.organicSearchVisits.toLocaleString() },
+            ].map((metric) => (
+              <div key={metric.label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{metric.label}</p>
+                <p className="mt-2 text-2xl font-bold tabular-nums text-slate-900">{metric.value}</p>
+              </div>
+            ))}
+          </section>
+
+          {hasMoreEvents && (
+            <p className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-blue-900">
+              {analyticsEvents.length.toLocaleString()} events are loaded so far. Load older records below to include them in these reports and the event log.
+            </p>
+          )}
+
+          <section className="grid gap-4 xl:grid-cols-2" aria-label="Traffic breakdowns">
+            {[
+              { label: 'All pages', rows: trafficTopPages },
+              { label: 'All visitor sources', rows: trafficSources },
+              { label: 'All devices', rows: trafficDevices },
+              { label: 'All tagged campaigns', rows: trafficCampaigns },
+              {
+                label: 'All event types',
+                rows: trafficEventTypes.map(([eventType, views]) => ({
+                  label: eventType.replace(/_/g, ' '),
+                  views,
+                })),
+              },
+            ].map(({ label, rows }) => (
+              <div key={label} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+                <div className="border-b border-slate-100 px-5 py-4">
+                  <h2 className="text-sm font-bold text-slate-900">{label}</h2>
+                  <p className="mt-1 text-xs text-slate-500">Selected period: {timeRange === 'all' ? 'All time loaded' : timeRange}</p>
+                </div>
+                <div className="max-h-72 overflow-auto">
+                  {rows.length ? (
+                    <table className="w-full text-left text-xs">
+                      <thead className="sticky top-0 bg-slate-50 text-[10px] uppercase tracking-wide text-slate-500">
+                        <tr>
+                          <th className="px-5 py-2 font-semibold">Name</th>
+                          <th className="px-5 py-2 text-right font-semibold">Count</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {rows.map((row) => (
+                          <tr key={row.label}>
+                            <td className="max-w-0 truncate px-5 py-2.5 font-medium text-slate-700" title={row.label}>
+                              {row.label}
+                            </td>
+                            <td className="whitespace-nowrap px-5 py-2.5 text-right font-bold tabular-nums text-slate-900">
+                              {row.views.toLocaleString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="px-5 py-8 text-center text-xs text-slate-400">No data for this period.</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </section>
+
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+            <div className="flex flex-col gap-3 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">Website event log</h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  {filteredTrafficLog.length.toLocaleString()} matching events from {filteredTrafficEvents.length.toLocaleString()} loaded in the selected period.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="search"
+                  value={trafficSearch}
+                  onChange={(event) => setTrafficSearch(event.target.value)}
+                  placeholder="Search page, source, event..."
+                  aria-label="Search website traffic events"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs sm:w-64"
+                />
+                <Button type="button" variant="secondary" onClick={handleTrafficExport} disabled={!filteredTrafficLog.length}>
+                  <Download className="mr-2 h-4 w-4" /> Export CSV
+                </Button>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1050px] text-left text-xs">
+                <thead className="bg-slate-50 text-[10px] uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold">Date & time</th>
+                    <th className="px-4 py-3 font-semibold">Event</th>
+                    <th className="px-4 py-3 font-semibold">Page</th>
+                    <th className="px-4 py-3 font-semibold">Source</th>
+                    <th className="px-4 py-3 font-semibold">Device</th>
+                    <th className="px-4 py-3 font-semibold">Campaign</th>
+                    <th className="px-4 py-3 font-semibold">Anonymous session</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {pagedTrafficLog.map((event) => {
+                    const campaign = [
+                      event.metadata?.utm_source,
+                      event.metadata?.utm_medium,
+                      event.metadata?.utm_campaign,
+                    ].filter(Boolean).join(' / ');
+                    return (
+                      <tr key={event.id} className="align-top hover:bg-slate-50/70">
+                        <td className="whitespace-nowrap px-4 py-3 text-slate-600">
+                          {new Date(event.timestamp).toLocaleString()}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 font-semibold capitalize text-slate-800">
+                          {event.type.replace(/_/g, ' ')}
+                        </td>
+                        <td className="max-w-xs px-4 py-3">
+                          <div className="truncate font-medium text-slate-800" title={event.path}>{event.path}</div>
+                          {event.title && <div className="mt-1 truncate text-slate-500" title={event.title}>{event.title}</div>}
+                        </td>
+                        <td className="px-4 py-3 text-slate-600">{event.metadata?.referrerHost || '—'}</td>
+                        <td className="px-4 py-3 capitalize text-slate-600">{event.metadata?.deviceType || '—'}</td>
+                        <td className="max-w-48 px-4 py-3 text-slate-600">{campaign || '—'}</td>
+                        <td className="px-4 py-3 font-mono text-[10px] text-slate-500">{event.sessionId}</td>
+                      </tr>
+                    );
+                  })}
+                  {!pagedTrafficLog.length && (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-12 text-center text-slate-400">
+                        No matching visitor events. Try another date range or search.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex flex-col gap-3 border-t border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-xs text-slate-500">
+                Page {currentTrafficPage} of {maxTrafficPages} · {TRAFFIC_TABLE_PAGE_SIZE} events per page
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setTrafficPage((page) => Math.max(1, page - 1))}
+                  disabled={currentTrafficPage <= 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setTrafficPage((page) => Math.min(maxTrafficPages, page + 1))}
+                  disabled={currentTrafficPage >= maxTrafficPages}
+                >
+                  Next
+                </Button>
+                {hasMoreEvents && (
+                  <Button type="button" onClick={loadOlderEvents} disabled={isLoadingOlderEvents}>
+                    {isLoadingOlderEvents ? 'Loading older records…' : 'Load older records'}
+                  </Button>
+                )}
+              </div>
+            </div>
+            {olderEventsError && (
+              <p role="alert" className="border-t border-rose-100 bg-rose-50 px-4 py-3 text-xs text-rose-800">
+                Could not load older visitor events: {olderEventsError}
+              </p>
+            )}
+          </section>
+          <p className="text-xs text-slate-500">
+            Visitor identifiers are anonymous session IDs, not verified people. Search-engine visits are inferred from referrers; Google Search Console provides its own query and impression totals.
+          </p>
+        </div>
+      )}
 
       {/* TAB 1: EXECUTIVE OVERVIEW */}
       {activeTab === 'overview' && (

@@ -128,6 +128,9 @@ export interface ExecutiveReportData {
     topPages: TrafficMetric[];
     topReferrers: TrafficMetric[];
     deviceBreakdown: TrafficMetric[];
+    organicSearchVisits: number;
+    organicSearchVisitors: number;
+    topCampaigns: TrafficMetric[];
   };
   divisionPerformance: DivisionAnalyticsSummary[];
   topProducts: TopProductMetric[];

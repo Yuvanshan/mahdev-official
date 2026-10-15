@@ -40,8 +40,9 @@ const toCategorySlug = (value: string) =>
 const BrowseCard: React.FC<{
   item: BrowseItem;
   onSelect: (item: BrowseItem) => void;
+  onNavigate: (route: string) => void;
   imageLoading: 'eager' | 'lazy';
-}> = ({ item, onSelect, imageLoading }) => {
+}> = ({ item, onSelect, onNavigate, imageLoading }) => {
   const imageSources = getImageSourceCandidates(item.image, item.images);
   const price = item.type === 'service'
     ? Number(item.data.startingPrice || item.data.price || 0)
@@ -104,6 +105,18 @@ const BrowseCard: React.FC<{
             View details <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
+        {item.type === 'service' && (
+          <a
+            href={`/services/${encodeURIComponent(item.data.slug || item.id)}`}
+            onClick={(event) => {
+              event.preventDefault();
+              onNavigate(`/services/${encodeURIComponent(item.data.slug || item.id)}`);
+            }}
+            className="mt-2 inline-flex text-xs font-medium text-slate-500 underline decoration-slate-300 underline-offset-2 hover:text-blue-700"
+          >
+            Full service details
+          </a>
+        )}
       </div>
     </article>
   );
@@ -464,6 +477,7 @@ export const ExploreAllView: React.FC<{
                     key={`${item.type}:${item.id}`}
                     item={item}
                     onSelect={handleSelect}
+                    onNavigate={onNavigate}
                     imageLoading={index < 4 ? 'eager' : 'lazy'}
                   />
                 ))}

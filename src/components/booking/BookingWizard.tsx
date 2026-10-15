@@ -62,14 +62,14 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
   // Selected Service & Package
   const [selectedService, setSelectedService] = useState<BookableServiceItem | null>(() => {
     if (initialServiceId) {
-      return bookableServices.find((s) => s.id === initialServiceId) || bookableServices[0] || null;
+      return bookableServices.find((s) => s.id === initialServiceId) || null;
     }
     return bookableServices[0] || null;
   });
 
   const [selectedPackage, setSelectedPackage] = useState<BookingPackageOption | null>(() => {
     const s = initialServiceId
-      ? bookableServices.find((s) => s.id === initialServiceId) || bookableServices[0] || null
+      ? bookableServices.find((s) => s.id === initialServiceId) || null
       : bookableServices[0] || null;
     return s?.packages[0] || null;
   });
@@ -78,10 +78,12 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
   useEffect(() => {
     if (!selectedService && bookableServices.length > 0) {
       const found = initialServiceId
-        ? bookableServices.find((s) => s.id === initialServiceId) || bookableServices[0]
+        ? bookableServices.find((s) => s.id === initialServiceId)
         : bookableServices[0];
-      setSelectedService(found);
-      setSelectedPackage(found.packages[0] || null);
+      if (found) {
+        setSelectedService(found);
+        setSelectedPackage(found.packages[0] || null);
+      }
     }
   }, [bookableServices, initialServiceId, selectedService]);
 

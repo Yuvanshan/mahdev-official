@@ -67,7 +67,9 @@ class AnalyticsService {
 
   private initSession(): void {
     if (typeof navigator !== 'undefined') {
-      const dnt = navigator.doNotTrack || (window as any).doNotTrack || (navigator as any).msDoNotTrack;
+      const windowDnt = typeof window !== 'undefined' ? window.doNotTrack : undefined;
+      const navigatorDnt = (navigator as Navigator & { msDoNotTrack?: string }).msDoNotTrack;
+      const dnt = navigator.doNotTrack || windowDnt || navigatorDnt;
       this.isDntEnabled =
         dnt === '1' ||
         dnt === 'yes' ||
@@ -467,6 +469,24 @@ class AnalyticsService {
     const pageViewEvents = filteredEvents.filter((event) => event.type === 'page_view');
     const uniqueSessions = new Set(pageViewEvents.map((event) => event.sessionId));
     const totalPageViews = pageViewEvents.length;
+    const searchEngineHosts = new Set([
+      'google.com', 'google.lk', 'bing.com', 'search.yahoo.com',
+      'duckduckgo.com', 'ecosia.org', 'search.brave.com',
+    ]);
+    const organicSearchEvents = pageViewEvents.filter((event) => {
+      const host = typeof event.metadata?.referrerHost === 'string'
+        ? event.metadata.referrerHost.toLowerCase().replace(/^www\./, '')
+        : '';
+      return [...searchEngineHosts].some((searchHost) =>
+        host === searchHost || host.endsWith(`.${searchHost}`)
+      );
+    });
+    const organicSearchVisitors = new Set(organicSearchEvents.map((event) => event.sessionId)).size;
+    const campaignEvents = pageViewEvents.filter((event) =>
+      ['utm_source', 'utm_medium', 'utm_campaign'].some(
+        (key) => typeof event.metadata?.[key] === 'string' && event.metadata[key].trim()
+      )
+    );
 
     // Customer breakdown from genuine orders and bookings
     const customerEmailMap: Record<string, { orders: number; bookings: number; isCorporate: boolean }> = {};
@@ -836,6 +856,14 @@ class AnalyticsService {
           typeof event.metadata?.deviceType === 'string' ? event.metadata.deviceType : 'Unknown',
           3
         ),
+        organicSearchVisits: organicSearchEvents.length,
+        organicSearchVisitors,
+        topCampaigns: aggregateTraffic(campaignEvents, (event) => {
+          const source = typeof event.metadata?.utm_source === 'string' ? event.metadata.utm_source : '';
+          const medium = typeof event.metadata?.utm_medium === 'string' ? event.metadata.utm_medium : '';
+          const campaign = typeof event.metadata?.utm_campaign === 'string' ? event.metadata.utm_campaign : '';
+          return [source, medium, campaign].filter(Boolean).join(' / ') || 'Tagged campaign';
+        }, 8),
       },
       divisionPerformance,
       topProducts: topProducts.slice(0, 10),

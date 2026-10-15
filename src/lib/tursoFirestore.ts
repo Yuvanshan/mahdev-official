@@ -172,7 +172,12 @@ export function limit(value: number): QueryConstraint {
 }
 
 export function startAfter(snapshot: DocumentSnapshot | string): QueryConstraint {
-  return { type: 'startAfter', value: typeof snapshot === 'string' ? snapshot : snapshot.id };
+  return {
+    type: 'startAfter',
+    value: typeof snapshot === 'string'
+      ? { id: snapshot }
+      : { id: snapshot.id, data: snapshot.data() },
+  };
 }
 
 function isDocumentReference(value: unknown): value is DocumentReference {
@@ -311,13 +316,28 @@ async function readQuery<T extends DocumentData>(
   const orderConstraint = parsed.constraints.find((constraint) => constraint.type === 'orderBy');
   const limitConstraint = parsed.constraints.find((constraint) => constraint.type === 'limit');
   const cursor = parsed.constraints.find((constraint) => constraint.type === 'startAfter');
+  const cursorValue = cursor?.value && typeof cursor.value === 'object'
+    ? cursor.value as { id?: unknown; data?: DocumentData }
+    : undefined;
+  const cursorId = typeof cursorValue?.id === 'string'
+    ? cursorValue.id
+    : typeof cursor?.value === 'string'
+      ? cursor.value
+      : undefined;
+  const cursorData = cursorValue?.data;
+  const afterValue = orderConstraint && cursorData
+    ? cursorData[orderConstraint.field]
+    : undefined;
   const result = await request('list', {
     collection: parsed.collection,
     parentPath: parsed.parentPath,
     filters,
     order: orderConstraint ? { field: orderConstraint.field, direction: orderConstraint.direction } : undefined,
     limit: limitConstraint?.value,
-    afterId: cursor?.value,
+    afterId: cursorId,
+    ...(typeof afterValue === 'string' || typeof afterValue === 'number'
+      ? { afterValue }
+      : {}),
   });
   const collectionRef: CollectionReference = {
     kind: 'collection',

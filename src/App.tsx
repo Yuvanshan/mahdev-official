@@ -125,6 +125,7 @@ const PortfolioView = lazy(() => import('./views/PortfolioView').then((module) =
 const ProjectDetailView = lazy(() => import('./views/ProjectDetailView').then((module) => ({ default: module.ProjectDetailView })));
 const ContactView = lazy(() => import('./views/ContactView').then((module) => ({ default: module.ContactView })));
 const ExploreAllView = lazy(() => import('./views/ExploreAllView').then((module) => ({ default: module.ExploreAllView })));
+const ServiceDetailView = lazy(() => import('./views/ServiceDetailView').then((module) => ({ default: module.ServiceDetailView })));
 const ClientsView = lazy(() => import('./views/ClientsView').then((module) => ({ default: module.ClientsView })));
 const MilestonesView = lazy(() => import('./views/MilestonesView').then((module) => ({ default: module.MilestonesView })));
 const DivisionsPageView = lazy(() => import('./views/DivisionsPageView').then((module) => ({ default: module.DivisionsPageView })));
@@ -912,39 +913,7 @@ function AppContent() {
     // Dynamic Direct Service Routes (/services/{slug} or /service/{slug})
     if (normalizedPath.startsWith('/services/') || normalizedPath.startsWith('/service/')) {
       const slug = normalizedPath.replace(/^\/(services|service)\//, '').trim();
-      const cleanSlug = slug.toLowerCase();
-      const foundService = services.find(
-        (s) =>
-          s.slug?.toLowerCase() === cleanSlug ||
-          s.id?.toLowerCase() === cleanSlug ||
-          (s as any).sku?.toLowerCase() === cleanSlug
-      );
-
-      if (!foundService) {
-        if (isInitialLoading || isServicesLoading || isFetching) {
-          return (
-            <div className="min-h-screen bg-slate-50 py-24 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
-            </div>
-          );
-        }
-        return (
-          <NotFoundView
-            onNavigate={navigate}
-            resourceType="service"
-            attemptedSlug={slug}
-          />
-        );
-      }
-
-      return (
-        <BookingView
-          initialDivision={
-            typeof foundService.division === 'string' ? foundService.division : undefined
-          }
-          initialServiceId={foundService.id}
-        />
-      );
+      return <ServiceDetailView slug={slug} onNavigate={navigate} />;
     }
 
     // Dynamic Project Detail Routes (/project/{slug}, /projects/{slug}, /work/{slug}, /portfolio/{slug})
@@ -1068,17 +1037,12 @@ function AppContent() {
       if (parts[1] === 'service' && parts[2]) {
         const srvId = parts[2];
         const found = services.find((s) => s.id === srvId || s.slug === srvId);
-        if (!found) {
-          return (
-            <NotFoundView
-              onNavigate={navigate}
-              resourceType="service"
-              attemptedSlug={srvId}
-            />
-          );
+        if (found) {
+          initialServiceId = found.id;
+          initialDivision = typeof found.division === 'string' ? found.division : undefined;
+        } else {
+          initialServiceId = srvId;
         }
-        initialServiceId = found.id;
-        initialDivision = typeof found.division === 'string' ? found.division : undefined;
       } else if (parts[1]) {
         initialDivision = parts[1];
       }

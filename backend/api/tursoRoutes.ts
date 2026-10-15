@@ -427,6 +427,15 @@ async function preparePublicWrite(write: TursoWrite): Promise<TursoWrite> {
     const deviceType = ['mobile', 'tablet', 'desktop'].includes(String(metadata.deviceType))
       ? String(metadata.deviceType)
       : 'unknown';
+    const campaignMetadata = Object.fromEntries(
+      ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content']
+        .flatMap((key) => {
+          const value = metadata[key];
+          return typeof value === 'string' && value.trim()
+            ? [[key, value.trim().slice(0, 200)]]
+            : [];
+        })
+    );
     return {
       ...write,
       data: {
@@ -437,7 +446,7 @@ async function preparePublicWrite(write: TursoWrite): Promise<TursoWrite> {
         title,
         sessionId,
         ...(divisionId ? { divisionId } : {}),
-        metadata: { referrerHost, deviceType },
+        metadata: { referrerHost, deviceType, ...campaignMetadata },
       },
     };
   }
@@ -664,6 +673,9 @@ export async function handleTursoAction(
     if (action === 'list') {
       const maxRows = body.limit === undefined ? undefined : Number(body.limit);
       const afterId = typeof body.afterId === 'string' ? body.afterId : undefined;
+      const afterValue = typeof body.afterValue === 'string' || typeof body.afterValue === 'number'
+        ? body.afterValue
+        : undefined;
       const filters = parseFilters(body.filters);
       if (access.role === 'public' && collection === 'careerOpenings') {
         filters.push({ field: 'status', operator: '==', value: 'published' });
@@ -675,7 +687,8 @@ export async function handleTursoAction(
         parseOrder(body.order),
         maxRows,
         afterId,
-        access.role === 'customer' ? access.identity : undefined
+        access.role === 'customer' ? access.identity : undefined,
+        afterValue
       );
       return {
         status: 200,

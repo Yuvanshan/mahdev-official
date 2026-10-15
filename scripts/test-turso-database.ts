@@ -142,6 +142,34 @@ async function run(): Promise<void> {
     assert.ok(migration.collections >= 35, 'Expected the backend migration to provision core collections.');
     assert.equal(databaseStatus.database, 'turso');
     assert.equal(databaseStatus.status, 'ready');
+    await importMigratedDocuments('analyticsEvents', [
+      { id: 'cursor-event-04', data: { timestamp: '2025-04-04T00:00:00.000Z' } },
+      { id: 'cursor-event-03', data: { timestamp: '2025-03-03T00:00:00.000Z' } },
+      { id: 'cursor-event-02', data: { timestamp: '2025-03-03T00:00:00.000Z' } },
+      { id: 'cursor-event-01', data: { timestamp: '2025-01-01T00:00:00.000Z' } },
+    ]);
+    const firstAnalyticsPage = await listTursoDocuments(
+      'analyticsEvents',
+      '',
+      [],
+      { field: 'timestamp', direction: 'desc' },
+      2
+    );
+    const secondAnalyticsPage = await listTursoDocuments(
+      'analyticsEvents',
+      '',
+      [],
+      { field: 'timestamp', direction: 'desc' },
+      2,
+      firstAnalyticsPage.at(-1)?.id,
+      undefined,
+      firstAnalyticsPage.at(-1)?.data.timestamp as string
+    );
+    assert.deepEqual(
+      [...firstAnalyticsPage, ...secondAnalyticsPage].map((event) => event.id),
+      ['cursor-event-04', 'cursor-event-03', 'cursor-event-02', 'cursor-event-01']
+    );
+
     const publicSettingsAccess = await authorizeDatabaseAction(
       { action: 'list', collection: 'settings' },
       undefined

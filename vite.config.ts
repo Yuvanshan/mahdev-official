@@ -13,8 +13,10 @@ export default defineConfig(({ mode }) => {
     ['msvalidate.01', env.VITE_BING_SITE_VERIFICATION],
   ]
     .filter(([, value]) => Boolean(value))
-    .map(([name, value]) => `<meta name="${name}" content="${String(value).replace(/[&<>"]/g, '')}" />`)
-    .join('\n    ');
+    .map(([name, value]) => ({
+      name,
+      tag: `<meta name="${name}" content="${String(value).replace(/[&<>"]/g, '')}" />`,
+    }));
 
   return {
     plugins: [
@@ -27,8 +29,12 @@ export default defineConfig(({ mode }) => {
             'https://mahdev-official.vercel.app',
             siteOrigin
           );
-          return verificationTags
-            ? htmlWithCurrentOrigin.replace('</head>', `${verificationTags}\n  </head>`)
+          const missingVerificationTags = verificationTags
+            .filter(({ name }) => !htmlWithCurrentOrigin.toLowerCase().includes(`name="${name}"`))
+            .map(({ tag }) => tag)
+            .join('\n    ');
+          return missingVerificationTags
+            ? htmlWithCurrentOrigin.replace('</head>', `${missingVerificationTags}\n  </head>`)
             : htmlWithCurrentOrigin;
         },
       },

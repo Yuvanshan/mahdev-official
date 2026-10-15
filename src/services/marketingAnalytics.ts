@@ -26,7 +26,7 @@ let initialized = false;
 let googleMeasurementId = '';
 let metaPixelId = '';
 const MARKETING_SITE_HOST = new URL(
-  import.meta.env.VITE_APP_URL || 'https://mahdev-official.vercel.app'
+  import.meta.env?.VITE_APP_URL || 'https://mahdev-official.vercel.app'
 ).hostname;
 
 function hasTrackingOptOut(): boolean {
@@ -40,8 +40,8 @@ function initializeMarketingAnalytics(): void {
   const hostname = window.location.hostname;
   if (hostname !== MARKETING_SITE_HOST) return;
 
-  googleMeasurementId = import.meta.env.VITE_GA_MEASUREMENT_ID || '';
-  metaPixelId = import.meta.env.VITE_META_PIXEL_ID || '';
+  googleMeasurementId = import.meta.env?.VITE_GA_MEASUREMENT_ID || '';
+  metaPixelId = import.meta.env?.VITE_META_PIXEL_ID || '';
   const validGoogleId = /^G-[A-Z0-9]+$/i.test(googleMeasurementId);
   const validMetaId = /^\d{5,20}$/.test(metaPixelId);
   if (!validGoogleId && !validMetaId) {

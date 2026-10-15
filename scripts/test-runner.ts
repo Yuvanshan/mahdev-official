@@ -17,6 +17,7 @@ import { getOfficeMapUrl, getMapSearchUrl } from '../src/config/company';
 import { getImageSourceCandidates } from '../src/utils/imageSources';
 import { sortDivisions } from '../src/services/firestore/divisions';
 import { buildSitemapXml } from '../backend/api/handlers/sitemap';
+import { analyticsService } from '../src/services/analyticsService';
 
 interface TestStep {
   category: string;
@@ -103,18 +104,37 @@ async function runTestSuite() {
           divisions: [
             { id: 'active', data: { slug: 'custom-division', isPublished: true } },
             { id: 'closed', data: { slug: 'closed-division', status: 'inactive' } },
+            { id: 'inactive-sws', data: { slug: 'sws', route: '/sws', isPublished: false } },
+          ],
+          services: [
+            { id: 'service-wedding', data: { slug: 'wedding-decor', title: 'Wedding Decor', isPublished: true, status: 'active' } },
+            { id: 'service-draft', data: { slug: 'draft-service', isPublished: false, status: 'draft' } },
           ],
           portfolio: [
             { id: 'case-study', data: { slug: 'client-project', status: 'published' } },
             { id: 'draft-project', data: { slug: 'unpublished-project', status: 'draft' } },
           ],
+          gallery: [
+            { id: 'gallery-public', data: { title: 'Public Gallery Item', status: 'published' } },
+            { id: 'gallery-hidden', data: { title: 'Private Gallery Item', status: 'hidden' } },
+          ],
+          mediaAssets: [
+            { id: 'media-public', data: { title: 'Public Media Asset', url: 'https://cdn.example.com/media.jpg' } },
+          ],
         });
         return xml.includes('https://mahdev-official.vercel.app/insights/event-planning') &&
           xml.includes('https://mahdev-official.vercel.app/custom-division') &&
+          xml.includes('https://mahdev-official.vercel.app/services/wedding-decor') &&
           xml.includes('https://mahdev-official.vercel.app/projects/client-project') &&
+          xml.includes('https://mahdev-official.vercel.app/gallery?id=gallery-public') &&
+          xml.includes('https://mahdev-official.vercel.app/gallery?id=media-public') &&
+          xml.includes('https://mahdev-official.vercel.app/u1') &&
           !xml.includes('draft-article') &&
+          !xml.includes('draft-service') &&
           !xml.includes('admin/reports') &&
           !xml.includes('closed-division') &&
+          !xml.includes('<loc>https://mahdev-official.vercel.app/sws</loc>') &&
+          !xml.includes('gallery-hidden') &&
           !xml.includes('unpublished-project') &&
           xml.includes('<lastmod>2026-10-13</lastmod>');
       },
@@ -126,6 +146,7 @@ async function runTestSuite() {
         const xml = buildSitemapXml({
           pages: [],
           divisions: [],
+          services: [],
           portfolio: [],
           seoConfig: {
             id: 'seo',
@@ -148,11 +169,54 @@ async function runTestSuite() {
         const xml = buildSitemapXml({
           pages: [{ id: 'order-lookup', data: { slug: 'order', isPublished: true } }],
           divisions: [],
+          services: [],
           portfolio: [],
         });
         return !xml.includes('<loc>https://mahdev-official.vercel.app/insights</loc>') &&
           !xml.includes('<loc>https://mahdev-official.vercel.app/order</loc>') &&
           !xml.includes('<loc>https://mahdev-official.vercel.app/order-lookup</loc>');
+      },
+    },
+    {
+      category: 'SEO & Marketing',
+      name: 'Analytics reports organic search visitors and tagged campaign traffic',
+      fn: () => {
+        const previousEvents = analyticsService.getRawEvents();
+        const timestamp = new Date().toISOString();
+        try {
+          analyticsService.setPersistedEvents([
+            {
+              id: 'event-search-0001',
+              type: 'page_view',
+              timestamp,
+              path: '/services',
+              sessionId: 'session-search-001',
+              metadata: { referrerHost: 'www.google.lk', deviceType: 'desktop' },
+            },
+            {
+              id: 'event-campaign-001',
+              type: 'page_view',
+              timestamp,
+              path: '/sws',
+              sessionId: 'session-campaign-01',
+              metadata: {
+                referrerHost: 'Direct',
+                deviceType: 'mobile',
+                utm_source: 'newsletter',
+                utm_medium: 'email',
+                utm_campaign: 'wedding-season',
+              },
+            },
+          ]);
+          const report = analyticsService.getExecutiveReport('30d', 'LKR', [], [], [], []);
+          return report.traffic.organicSearchVisits === 1 &&
+            report.traffic.organicSearchVisitors === 1 &&
+            report.traffic.topCampaigns.some(
+              (campaign) => campaign.label === 'newsletter / email / wedding-season' && campaign.views === 1
+            );
+        } finally {
+          analyticsService.setPersistedEvents(previousEvents);
+        }
       },
     },
     // 1. ENVIRONMENT & CONFIGURATION INTEGRITY
