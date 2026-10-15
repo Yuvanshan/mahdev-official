@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { HeroVideoControls } from '../common/HeroVideoControls';
@@ -14,6 +14,16 @@ interface HeroSectionProps {
 
 const HERO_VIDEO = '/assets/hero_landing.mp4';
 
+type NetworkInformation = {
+  saveData?: boolean;
+  effectiveType?: string;
+};
+
+type IdleWindow = Window & {
+  requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+  cancelIdleCallback?: (handle: number) => void;
+};
+
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onNavigate,
   onExploreMahdev,
@@ -22,6 +32,38 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const heroRef = useRef<HTMLElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const reducedMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (reducedMotion || typeof navigator === 'undefined') return;
+
+    const connection = (navigator as Navigator & { connection?: NetworkInformation }).connection;
+    if (connection?.saveData || connection?.effectiveType === 'slow-2g' || connection?.effectiveType === '2g') {
+      return;
+    }
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    const startVideo = () => {
+      video.src = HERO_VIDEO;
+      video.load();
+      void video.play().catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        console.warn('[HomeHero] Could not start background video:', error);
+      });
+    };
+
+    const idleWindow = window as IdleWindow;
+    const idleHandle = idleWindow.requestIdleCallback?.(startVideo, { timeout: 1800 });
+    const timeoutHandle = idleHandle === undefined
+      ? window.setTimeout(startVideo, 1200)
+      : undefined;
+
+    return () => {
+      if (idleHandle !== undefined) idleWindow.cancelIdleCallback?.(idleHandle);
+      if (timeoutHandle !== undefined) window.clearTimeout(timeoutHandle);
+    };
+  }, [reducedMotion]);
 
   const explore = () => {
     if (onExploreServices) onExploreServices();
@@ -37,12 +79,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       <ScrollParallax targetRef={heroRef} distance={34} className="absolute -inset-y-10 inset-x-0 overflow-hidden">
         <video
           ref={videoRef}
-          src={HERO_VIDEO}
-          autoPlay
           loop
           playsInline
           muted
-          preload="auto"
+          preload="none"
           aria-hidden="true"
           disablePictureInPicture
           className="absolute inset-0 h-full w-full object-cover object-center brightness-[1.05] contrast-[1.08] saturate-[1.08]"
