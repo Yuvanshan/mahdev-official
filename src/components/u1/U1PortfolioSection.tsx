@@ -25,6 +25,7 @@ import { ScrollReveal } from '../motion/MotionWrappers';
 import { shareMediaAsset, inquireMediaAssetOnWhatsApp } from '../../utils/mediaShare';
 import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
 import { CrossfadeImage } from '../common/CrossfadeImage';
+import { ImageWatermark } from '../common/ImageWatermark';
 
 const U1PortfolioCardImage: React.FC<{ item: U1PortfolioItem }> = ({ item }) => {
   const images = (item.images?.length ? item.images : [item.imageUrl]).filter(Boolean);
@@ -36,8 +37,9 @@ const U1PortfolioCardImage: React.FC<{ item: U1PortfolioItem }> = ({ item }) => 
         src={images[activeIndex] || item.imageUrl}
         alt={item.title}
         className="absolute inset-0"
-        imageClassName="transition-transform duration-500 group-hover:scale-[1.03]"
+        imageClassName="object-contain transition-transform duration-500 group-hover:scale-[1.02]"
       />
+      <ImageWatermark label="U1 STUDIO" />
       {images.length > 1 && (
         <div className="pointer-events-none absolute inset-x-0 bottom-2 flex items-center justify-center gap-1">
           {images.map((_, imageIndex) => (
@@ -67,6 +69,7 @@ export const U1PortfolioSection: React.FC = () => {
   } = useFirestoreDataContext();
   const [activeCategory, setActiveCategory] = useState<PortfolioCategory>('All');
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
+  const [activeSubImageIndex, setActiveSubImageIndex] = useState(0);
   const [shareToast, setShareToast] = useState<string | null>(null);
   const [cardCopiedId, setCardCopiedId] = useState<string | null>(null);
 
@@ -99,7 +102,7 @@ export const U1PortfolioSection: React.FC = () => {
           imageUrl: p.imageUrl || (p.images && p.images.length > 0 ? p.images[0] : ''),
           images: (p.images || [p.imageUrl]).filter(Boolean).slice(0, 3),
           location: p.location || 'Colombo, Sri Lanka',
-          year: p.year || (p.date ? p.date.slice(-4) : '2024'),
+          year: '2026',
           description: p.description || p.summary || '',
           client: p.client || 'Creative Client',
           tags: p.tags || ['Studio', 'Cinema'],
@@ -122,7 +125,7 @@ export const U1PortfolioSection: React.FC = () => {
             imageUrl: galUrl,
             images: ((g as any).images || [galUrl]).filter(Boolean).slice(0, 3),
             location: 'Colombo Studio',
-            year: g.createdAt ? new Date(g.createdAt).getFullYear().toString() : '2024',
+            year: '2026',
             description: g.caption || (g as any).description || '',
             client: 'U1 Gallery Collection',
             tags: g.tags || [],
@@ -170,7 +173,7 @@ export const U1PortfolioSection: React.FC = () => {
             imageUrl: m.url,
             images: [m.url],
             location: m.dimensions ? `Master Format • ${m.dimensions}` : 'U1 Media Asset',
-            year: m.createdAt ? new Date(m.createdAt).getFullYear().toString() : '2024',
+            year: '2026',
             description: (m as any).description || (m.tags?.length ? `Tags: ${m.tags.join(', ')}` : 'Fine Art Studio Production'),
             client: 'U1 Studio Master Asset',
             tags: m.tags || [],
@@ -247,6 +250,7 @@ export const U1PortfolioSection: React.FC = () => {
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (activeLightboxIndex !== null) {
+      setActiveSubImageIndex(0);
       setActiveLightboxIndex((prev) =>
         prev === 0 ? filteredItems.length - 1 : (prev as number) - 1
       );
@@ -256,6 +260,7 @@ export const U1PortfolioSection: React.FC = () => {
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (activeLightboxIndex !== null) {
+      setActiveSubImageIndex(0);
       setActiveLightboxIndex((prev) =>
         prev === filteredItems.length - 1 ? 0 : (prev as number) + 1
       );
@@ -299,10 +304,14 @@ export const U1PortfolioSection: React.FC = () => {
             key={item.id}
             role="button"
             tabIndex={0}
-            onClick={() => setActiveLightboxIndex(index)}
+            onClick={() => {
+              setActiveSubImageIndex(0);
+              setActiveLightboxIndex(index);
+            }}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
+                setActiveSubImageIndex(0);
                 setActiveLightboxIndex(index);
               }
             }}
@@ -426,13 +435,65 @@ export const U1PortfolioSection: React.FC = () => {
             className="relative max-w-5xl w-full max-h-[90vh] flex flex-col items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="relative rounded-2xl overflow-hidden max-h-[70vh] w-auto border border-white/10 shadow-2xl bg-black">
+            <div className="relative flex h-[48vh] w-full max-w-5xl items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl sm:h-[56vh]">
               <img
-                src={activeItem.imageUrl}
-                alt={activeItem.title}
-                className="max-h-[66vh] w-auto max-w-full object-contain"
+                  src={activeItem.images?.[activeSubImageIndex] || activeItem.imageUrl}
+                  alt={`${activeItem.title} photo ${activeSubImageIndex + 1}`}
+                  className="max-h-full max-w-full object-contain"
               />
+              <ImageWatermark label="U1 STUDIO" />
+                {(activeItem.images?.length || 0) > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setActiveSubImageIndex((index) =>
+                          (index - 1 + (activeItem.images?.length || 1)) % (activeItem.images?.length || 1)
+                        )
+                      }
+                      className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/75 sm:left-4 sm:h-10 sm:w-10"
+                      aria-label="Previous portfolio photo"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setActiveSubImageIndex((index) =>
+                          (index + 1) % (activeItem.images?.length || 1)
+                        )
+                      }
+                      className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/75 sm:right-4 sm:h-10 sm:w-10"
+                      aria-label="Next portfolio photo"
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+                    <span className="absolute bottom-2 right-2 rounded-md bg-black/60 px-2 py-1 text-xs text-white">
+                      {activeSubImageIndex + 1} / {activeItem.images.length}
+                    </span>
+                  </>
+                )}
             </div>
+            {(activeItem.images?.length || 0) > 1 && (
+              <div className="mt-2 flex max-w-full items-center justify-center gap-2 overflow-x-auto px-1">
+                {activeItem.images?.map((image, imageIndex) => (
+                  <button
+                    key={`${image}-${imageIndex}`}
+                    type="button"
+                    onClick={() => setActiveSubImageIndex(imageIndex)}
+                    aria-label={`View portfolio photo ${imageIndex + 1}`}
+                    aria-current={activeSubImageIndex === imageIndex}
+                    className={`h-12 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-black transition sm:h-14 sm:w-20 ${
+                      activeSubImageIndex === imageIndex
+                        ? 'border-blue-400'
+                        : 'border-white/20 opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={image} alt="" className="h-full w-full object-contain" />
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Meta & Interactive Action Bar */}
             <div className="w-full max-w-4xl mt-3 bg-slate-900/95 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-white/10 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

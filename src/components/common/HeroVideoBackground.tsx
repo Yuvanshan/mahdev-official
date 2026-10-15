@@ -194,7 +194,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
               handleVideoReady();
             }, 300);
           }}
-          className={`absolute inset-0 w-full h-full object-cover scale-135 border-0 z-1 transition-opacity duration-700 ease-out ${
+          className={`absolute inset-0 w-full h-full object-cover scale-135 border-0 z-1 transition-opacity duration-300 ease-out ${
             isVideoReady ? 'opacity-100' : 'opacity-0'
           }`}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -208,7 +208,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
               handleVideoReady();
             }, 300);
           }}
-          className={`absolute inset-0 w-full h-full object-cover scale-135 border-0 z-1 transition-opacity duration-700 ease-out ${
+          className={`absolute inset-0 w-full h-full object-cover scale-135 border-0 z-1 transition-opacity duration-300 ease-out ${
             isVideoReady ? 'opacity-100' : 'opacity-0'
           }`}
           allow="autoplay; fullscreen; picture-in-picture"
@@ -221,7 +221,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
           loop
           muted
           playsInline
-          preload="metadata"
+          preload="auto"
           onCanPlay={handleVideoReady}
           onCanPlayThrough={() => {
             handleVideoReady();
@@ -240,7 +240,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
             console.warn('[HeroVideoBackground] Video playback note:', err?.message || err);
             handleVideoError();
           }}
-          className={`absolute inset-0 w-full h-full object-cover z-1 transition-opacity duration-700 ease-out ${
+          className={`absolute inset-0 w-full h-full object-cover z-1 transition-opacity duration-300 ease-out ${
             isVideoReady ? 'opacity-100' : 'opacity-0'
           }`}
           title={title}

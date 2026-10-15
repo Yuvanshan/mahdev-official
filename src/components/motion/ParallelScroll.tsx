@@ -24,22 +24,24 @@ export const ScrollParallax: React.FC<ScrollParallaxProps> = ({
 }) => {
   const { reducedMotion, isTouch } = useDeviceMotion();
 
-  if (reducedMotion || isTouch) {
-    return <div className={className}>{children}</div>;
-  }
-
   return (
-    <ScrollParallaxMotion targetRef={targetRef} distance={distance} className={className}>
+    <ScrollParallaxMotion
+      targetRef={targetRef}
+      distance={distance}
+      className={className}
+      enabled={!reducedMotion && !isTouch}
+    >
       {children}
     </ScrollParallaxMotion>
   );
 };
 
-const ScrollParallaxMotion: React.FC<ScrollParallaxProps> = ({
+const ScrollParallaxMotion: React.FC<ScrollParallaxProps & { enabled: boolean }> = ({
   targetRef,
   children,
   className = '',
   distance = 28,
+  enabled,
 }) => {
   const { scrollYProgress } = useScroll({
     target: targetRef,
@@ -49,7 +51,7 @@ const ScrollParallaxMotion: React.FC<ScrollParallaxProps> = ({
   const smoothY = useSpring(rawY, { stiffness: 75, damping: 24, mass: 0.2 });
 
   return (
-    <motion.div style={{ y: smoothY }} className={className}>
+    <motion.div style={enabled ? { y: smoothY } : undefined} className={className}>
       {children}
     </motion.div>
   );

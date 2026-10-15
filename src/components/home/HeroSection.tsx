@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { ScrollParallax } from '../motion/ParallelScroll';
@@ -19,7 +19,71 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onExploreServices,
 }) => {
   const heroRef = useRef<HTMLElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const reducedMotion = useReducedMotion();
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    let audioEnabled = false;
+    let audioAttemptPending = false;
+    let userInteracted = false;
+
+    const removeInteractionListeners = () => {
+      window.removeEventListener('pointerdown', enableAudio);
+      window.removeEventListener('touchstart', enableAudio);
+      window.removeEventListener('keydown', enableAudio);
+    };
+
+    const enableAudio = () => {
+      if (audioEnabled || audioAttemptPending) return;
+      userInteracted = true;
+      audioAttemptPending = true;
+      video.volume = 0.2;
+      video.muted = false;
+      void video.play().then(
+        () => {
+          audioEnabled = true;
+          audioAttemptPending = false;
+          removeInteractionListeners();
+        },
+        (error: unknown) => {
+          audioAttemptPending = false;
+          video.muted = true;
+          console.warn('[HomeHero] Could not enable video audio after interaction:', error);
+        }
+      );
+    };
+
+    window.addEventListener('pointerdown', enableAudio, { passive: true });
+    window.addEventListener('touchstart', enableAudio, { passive: true });
+    window.addEventListener('keydown', enableAudio);
+    video.volume = 0.2;
+    video.muted = false;
+    void video.play().then(
+      () => {
+        audioEnabled = true;
+        removeInteractionListeners();
+      },
+      (error: unknown) => {
+        if (userInteracted) return;
+        video.muted = true;
+        if (error instanceof DOMException && error.name === 'NotAllowedError') {
+          void video.play().catch((mutedError: unknown) => {
+            console.warn('[HomeHero] Muted autoplay was blocked:', mutedError);
+          });
+          return;
+        }
+        removeInteractionListeners();
+        console.warn('[HomeHero] Could not start the hero video:', error);
+      }
+    );
+
+    return () => {
+      removeInteractionListeners();
+    };
+  }, []);
 
   const explore = () => {
     if (onExploreServices) onExploreServices();
@@ -34,12 +98,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     >
       <ScrollParallax targetRef={heroRef} distance={34} className="absolute -inset-y-10 inset-x-0 overflow-hidden">
         <video
+          ref={videoRef}
           src={HERO_VIDEO}
           autoPlay
           loop
           playsInline
           muted
-          preload="metadata"
+          preload="auto"
           aria-hidden="true"
           disablePictureInPicture
           className="absolute inset-0 h-full w-full object-cover object-center brightness-[1.05] contrast-[1.08] saturate-[1.08]"

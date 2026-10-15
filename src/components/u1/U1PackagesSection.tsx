@@ -171,6 +171,7 @@ export const U1PackagesSection: React.FC<U1PackagesSectionProps> = ({ onBookPack
                     alt={pkg.name}
                     className="absolute inset-0"
                     imageClassName="transition-transform duration-500 group-hover:scale-105"
+                    watermarkLabel="U1 STUDIO"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
 

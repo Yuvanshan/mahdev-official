@@ -219,6 +219,27 @@ function AppContent() {
     return (window.location.pathname || '/') + search;
   });
 
+  useEffect(() => {
+    const isEditableTarget = (target: EventTarget | null): boolean =>
+      target instanceof Element &&
+      Boolean(target.closest('input, textarea, select, [contenteditable="true"], [data-allow-context-menu]'));
+
+    const blockContextMenu = (event: MouseEvent) => {
+      if (!isEditableTarget(event.target)) event.preventDefault();
+    };
+    const blockCopy = (event: ClipboardEvent) => {
+      if (!isEditableTarget(event.target)) event.preventDefault();
+    };
+
+    document.addEventListener('contextmenu', blockContextMenu, true);
+    document.addEventListener('copy', blockCopy, true);
+
+    return () => {
+      document.removeEventListener('contextmenu', blockContextMenu, true);
+      document.removeEventListener('copy', blockCopy, true);
+    };
+  }, []);
+
   // Dynamic favicon and document title synchronization from Firestore
   useEffect(() => {
     const brandName = companySettings?.name

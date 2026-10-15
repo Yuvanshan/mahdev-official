@@ -99,6 +99,7 @@ export const U1ServiceDetailModal: React.FC<U1ServiceDetailModalProps> = ({
               alt={service.name}
               className="absolute inset-0"
               imageClassName="transition-transform duration-500"
+              watermarkLabel="U1 STUDIO"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
 

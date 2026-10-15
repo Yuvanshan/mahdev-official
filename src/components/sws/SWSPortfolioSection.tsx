@@ -103,6 +103,7 @@ export const SWSPortfolioSection: React.FC<SWSPortfolioSectionProps> = ({
                   }
                   alt={item.title}
                   className="h-14 w-14 shrink-0 rounded-lg"
+                  watermarkLabel="SWS EVENT MANAGEMENT"
                 />
                 <div className="min-w-0 flex-1">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-[#0052FF]">
@@ -134,6 +135,7 @@ export const SWSPortfolioSection: React.FC<SWSPortfolioSectionProps> = ({
               }
               alt={activeCase.title}
               className="absolute inset-0"
+              watermarkLabel="SWS EVENT MANAGEMENT"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
 

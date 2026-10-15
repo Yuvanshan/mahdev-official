@@ -46,6 +46,7 @@ export const SWSServiceCard: React.FC<SWSServiceCardProps> = ({
             className="absolute inset-0"
             imageClassName="transition-transform duration-700 group-hover:scale-105"
             fallbackSources={images.filter((_, index) => index !== activeIndex)}
+            watermarkLabel="SWS EVENT MANAGEMENT"
           />
           {images.length > 1 && (
             <div className="absolute inset-x-0 bottom-2 flex items-center justify-center gap-1" aria-hidden="true">

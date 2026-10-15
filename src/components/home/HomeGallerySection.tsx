@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Expand, X, MapPin, MessageCircle, Search } from 'lucide-react';
+import { X, MapPin, MessageCircle, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { Caption, H2, Body } from '../ui/Heading';
@@ -17,11 +17,16 @@ interface HomeGalleryItem {
   location: string;
 }
 
+interface ActiveGalleryImage {
+  item: HomeGalleryItem;
+  imageIndex: number;
+}
+
 const HomeGalleryCard: React.FC<{
   item: HomeGalleryItem;
   index: number;
   isFeatured: boolean;
-  onOpen: (image: { url: string; title: string; category: string; location: string }) => void;
+  onOpen: (item: HomeGalleryItem, imageIndex: number) => void;
 }> = ({ item, index, isFeatured, onOpen }) => {
   const { activeIndex, containerRef } = useAutoSlideImage(item.images.length);
   const imageUrl = item.images[activeIndex] || item.url;
@@ -31,11 +36,11 @@ const HomeGalleryCard: React.FC<{
       ref={containerRef}
       role="button"
       tabIndex={0}
-      onClick={() => onOpen({ ...item, url: imageUrl })}
+      onClick={() => onOpen(item, activeIndex)}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
-          onOpen({ ...item, url: imageUrl });
+          onOpen(item, activeIndex);
         }
       }}
       className={`group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${
@@ -48,7 +53,7 @@ const HomeGalleryCard: React.FC<{
           alt={item.title}
           className={`bg-slate-100 ${isFeatured ? 'aspect-[16/10]' : 'aspect-[4/5]'}`}
           loading={index < 4 ? 'eager' : 'lazy'}
-          imageClassName="transition duration-500 group-hover:scale-105"
+          imageClassName="object-contain transition duration-500 group-hover:scale-[1.02]"
           fallbackText={item.title}
         />
         {item.images.length > 1 && (
@@ -104,7 +109,7 @@ const HomeGalleryCard: React.FC<{
 /** A premium gallery that mirrors the polished presentation used in the division pages. */
 export const HomeGallerySection: React.FC = () => {
   const { gallery, isGalleryLoading, isInitialLoading, isFetching } = useFirestoreDataContext();
-  const [activeImage, setActiveImage] = useState<{ url: string; title: string; category: string; location?: string } | null>(null);
+  const [activeImage, setActiveImage] = useState<ActiveGalleryImage | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -196,7 +201,7 @@ export const HomeGallerySection: React.FC = () => {
               item={item}
               index={index}
               isFeatured={isFeatured}
-              onOpen={setActiveImage}
+              onOpen={(openedItem, imageIndex) => setActiveImage({ item: openedItem, imageIndex })}
             />
           );
         })}
@@ -209,39 +214,89 @@ export const HomeGallerySection: React.FC = () => {
 
       {activeImage && (
         <div
-          className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/90 p-4"
+          className="fixed inset-0 z-[110] flex items-center justify-center overflow-y-auto bg-slate-950/90 p-3 sm:p-6"
           role="dialog"
           aria-modal="true"
-          aria-label={activeImage.title}
+          aria-label={activeImage.item.title}
           onClick={() => setActiveImage(null)}
         >
-          <div className="relative max-h-full max-w-5xl" onClick={(event) => event.stopPropagation()}>
+          <div className="relative flex max-h-full w-full max-w-5xl flex-col items-center" onClick={(event) => event.stopPropagation()}>
             <button
               type="button"
               onClick={() => setActiveImage(null)}
-              className="absolute -right-3 -top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-sm transition hover:bg-white/25"
+              className="absolute right-1 top-1 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/70 sm:right-2 sm:top-2"
               aria-label="Close gallery image"
             >
               <X className="h-5 w-5" />
             </button>
-            <img
-              src={activeImage.url}
-              alt={activeImage.title}
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
-                if (fb) fb.classList.remove('hidden');
-              }}
-              className="max-h-[85vh] w-auto max-w-full rounded-2xl object-contain shadow-2xl"
-            />
-            <div className="hidden w-80 h-64 bg-slate-900/80 rounded-2xl border border-white/10 flex flex-col items-center justify-center text-center p-6 text-slate-300">
-              <span className="font-semibold text-sm mb-1">{activeImage.title}</span>
-              <span className="text-xs text-slate-400">{activeImage.category}</span>
+            <div className="relative flex h-[62vh] w-full items-center justify-center overflow-hidden rounded-2xl bg-black/30 sm:h-[70vh]">
+              <img
+                src={activeImage.item.images[activeImage.imageIndex] || activeImage.item.url}
+                alt={`${activeImage.item.title} photo ${activeImage.imageIndex + 1}`}
+                onError={(event) => {
+                  event.currentTarget.style.display = 'none';
+                  const fallback = event.currentTarget.nextElementSibling as HTMLElement | null;
+                  fallback?.classList.remove('hidden');
+                }}
+                className="max-h-full max-w-full object-contain"
+              />
+              <div className="hidden h-64 w-full flex-col items-center justify-center p-6 text-center text-slate-300">
+                <span className="mb-1 text-sm font-semibold">{activeImage.item.title}</span>
+                <span className="text-xs text-slate-400">{activeImage.item.category}</span>
+              </div>
+              {activeImage.item.images.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveImage((current) => current && ({
+                        ...current,
+                        imageIndex: (current.imageIndex - 1 + current.item.images.length) % current.item.images.length,
+                      }))
+                    }
+                    className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/75 sm:left-4"
+                    aria-label="Previous gallery photo"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveImage((current) => current && ({
+                        ...current,
+                        imageIndex: (current.imageIndex + 1) % current.item.images.length,
+                      }))
+                    }
+                    className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/75 sm:right-4"
+                    aria-label="Next gallery photo"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </>
+              )}
             </div>
-            <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-slate-200">
-              <span className="truncate font-medium">{activeImage.title}</span>
-              <span className="rounded-full bg-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-slate-300">
-                {activeImage.category}
+            {activeImage.item.images.length > 1 && (
+              <div className="mt-3 flex max-w-full items-center justify-center gap-2 overflow-x-auto px-1">
+                {activeImage.item.images.map((image, imageIndex) => (
+                  <button
+                    key={`${image}-${imageIndex}`}
+                    type="button"
+                    onClick={() => setActiveImage((current) => current && ({ ...current, imageIndex }))}
+                    aria-label={`View photo ${imageIndex + 1}`}
+                    aria-current={activeImage.imageIndex === imageIndex}
+                    className={`h-14 w-20 shrink-0 overflow-hidden rounded-lg border-2 bg-black/40 transition sm:h-16 sm:w-24 ${
+                      activeImage.imageIndex === imageIndex ? 'border-blue-400' : 'border-white/20 opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={image} alt="" className="h-full w-full object-contain" />
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="mt-3 flex w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-slate-200">
+              <span className="truncate font-medium">{activeImage.item.title}</span>
+              <span className="shrink-0 rounded-full bg-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-slate-300">
+                {activeImage.item.category}
               </span>
             </div>
           </div>

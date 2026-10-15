@@ -6,7 +6,7 @@
 import { evaluateBotRisk, isDisposableEmail, checkActionThrottle, sanitizeClientInput } from '../src/utils/securityProtection';
 import { validateAndCreateAuthoritativeOrder, validateOrderStatusTransition } from '../backend/services/secureOrderService';
 import { generateSecureFiscalInvoice } from '../backend/services/secureInvoiceService';
-import { runSecurityRulesSimulation } from './test-security-rules';
+import { verifyFirestoreDenyAllPolicy } from './test-security-rules';
 import { validateFile } from '../src/utils/imageOptimizer';
 import { runBackupRecoveryDrill } from './test-backup-recovery-drill';
 import { buildWhatsAppMessage, buildWhatsAppOrderMessage } from '../src/utils/whatsapp';
@@ -555,13 +555,13 @@ async function runTestSuite() {
       },
     },
 
-    // 4. FIRESTORE SECURITY RULES MATRIX
+    // 4. FIRESTORE DIRECT ACCESS POLICY
     {
       category: 'Firestore Rules',
-      name: 'Multi-Role RBAC & Anti-Escalation Simulation (20+ Scenarios)',
+      name: 'Direct Client Firestore Access Is Denied',
       fn: () => {
-        const sim = runSecurityRulesSimulation();
-        return sim.failed === 0 && sim.passed >= 20;
+        const sim = verifyFirestoreDenyAllPolicy();
+        return sim.failed === 0 && sim.passed === 1;
       },
     },
 

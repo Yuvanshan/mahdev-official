@@ -98,6 +98,7 @@ export const SWSServiceDetailModal: React.FC<SWSServiceDetailModalProps> = ({
               alt={`${service.name} preview ${activeImageIndex + 1}`}
               className="absolute inset-0"
               imageClassName="transition-all duration-500"
+              watermarkLabel="SWS EVENT MANAGEMENT"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none" />
 
@@ -138,7 +139,7 @@ export const SWSServiceDetailModal: React.FC<SWSServiceDetailModalProps> = ({
                       : 'border-transparent opacity-60 hover:opacity-100'
                   }`}
                 >
-                  <ImageWithShimmer src={img} alt="thumb" className="absolute inset-0" />
+                  <ImageWithShimmer src={img} alt="thumb" className="absolute inset-0" watermarkLabel="SWS EVENT MANAGEMENT" />
                 </button>
               ))}
             </div>

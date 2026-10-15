@@ -270,6 +270,7 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
                     fallbackSources={item.gallery}
                     className="absolute inset-0"
                     imageClassName="transition-transform duration-500 group-hover:scale-105"
+                    watermarkLabel="SWS EVENT MANAGEMENT"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-black/20" />
 
@@ -428,6 +429,7 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
                 }
                 alt={activeDetailItem.name}
                 className="absolute inset-0"
+                watermarkLabel="SWS EVENT MANAGEMENT"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-black/30 to-transparent" />
               <button

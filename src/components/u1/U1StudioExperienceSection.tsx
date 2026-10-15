@@ -110,6 +110,7 @@ export const U1StudioExperienceSection: React.FC = () => {
                   alt={f.title}
                   className="absolute inset-0"
                   imageClassName="transition-transform duration-500 group-hover:scale-105"
+                  watermarkLabel="U1 STUDIO"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
                 <div className="absolute bottom-3 left-3 w-9 h-9 rounded-xl bg-white/90 backdrop-blur-md flex items-center justify-center shadow-md">

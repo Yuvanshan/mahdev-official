@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CrossfadeImage } from '../common/CrossfadeImage';
+import { ImageWatermark } from '../common/ImageWatermark';
 import { getImageSourceCandidates } from '../../utils/imageSources';
 
 const EMPTY_IMAGE_SOURCES: string[] = [];
@@ -13,6 +14,7 @@ interface ImageWithShimmerProps {
   loading?: 'eager' | 'lazy';
   fallbackText?: string;
   showShimmer?: boolean;
+  watermarkLabel?: 'SWS EVENT MANAGEMENT' | 'U1 STUDIO';
 }
 
 export const ImageWithShimmer: React.FC<ImageWithShimmerProps> = ({
@@ -24,6 +26,7 @@ export const ImageWithShimmer: React.FC<ImageWithShimmerProps> = ({
   loading = 'lazy',
   fallbackText,
   showShimmer = true,
+  watermarkLabel,
 }) => {
   const [hasLoadedImage, setHasLoadedImage] = useState(false);
   const sourceCandidates = getImageSourceCandidates(src, fallbackSources);
@@ -36,6 +39,7 @@ export const ImageWithShimmer: React.FC<ImageWithShimmerProps> = ({
     <ImageSourceSequence
       candidateKey={candidateKey}
       sourceCandidates={sourceCandidates}
+      watermarkLabel={watermarkLabel}
       alt={alt}
       className={`${hasPositionClass ? '' : 'relative'} overflow-hidden ${className}`}
       imageClassName={imageClassName}
@@ -50,6 +54,7 @@ export const ImageWithShimmer: React.FC<ImageWithShimmerProps> = ({
 const ImageSourceSequence: React.FC<{
   candidateKey: string;
   sourceCandidates: string[];
+  watermarkLabel?: 'SWS EVENT MANAGEMENT' | 'U1 STUDIO';
   alt: string;
   className: string;
   imageClassName: string;
@@ -57,7 +62,7 @@ const ImageSourceSequence: React.FC<{
   fallbackText?: string;
   showShimmer: boolean;
   onImageLoad: () => void;
-}> = ({ candidateKey, sourceCandidates, alt, className, imageClassName, loading, fallbackText, showShimmer, onImageLoad }) => {
+}> = ({ candidateKey, sourceCandidates, watermarkLabel, alt, className, imageClassName, loading, fallbackText, showShimmer, onImageLoad }) => {
   const [sequence, setSequence] = useState({ candidateKey, sourceIndex: 0 });
   const sourceIndex = sequence.candidateKey === candidateKey ? sequence.sourceIndex : 0;
   const currentSrc = sourceCandidates[sourceIndex] || '';
@@ -90,6 +95,7 @@ const ImageSourceSequence: React.FC<{
           {fallbackText && (
             <span className="text-center text-xs font-semibold text-slate-600">{fallbackText}</span>
           )}
+          {currentSrc && watermarkLabel && <ImageWatermark label={watermarkLabel} />}
         </div>
       )}
     </div>

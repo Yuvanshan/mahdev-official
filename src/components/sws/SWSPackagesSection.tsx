@@ -158,6 +158,7 @@ export const SWSPackagesSection: React.FC<SWSPackagesSectionProps> = ({ onBookPa
                     alt={pkg.name}
                     className="absolute inset-0"
                     imageClassName="transition-transform duration-500 group-hover:scale-105"
+                    watermarkLabel="SWS EVENT MANAGEMENT"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
 

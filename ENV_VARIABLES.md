@@ -85,7 +85,10 @@ This document outlines the environment configuration architecture for the **Mahd
 - Set `LANKAPAY_MERCHANT_ID` and `LANKAPAY_SECRET_KEY`
 - Set `ORDER_SIGNATURE_SECRET`, `INVOICE_SIGNING_SALT` to high-entropy 256-bit keys.
 - Set `SMTP_*` and `WHATSAPP_*` credentials for live customer receipts.
-- Enable App Check with production `VITE_FIREBASE_RECAPTCHA_SITE_KEY`.
+- Set `VITE_FIREBASE_RECAPTCHA_SITE_KEY` to the reCAPTCHA v3 site key registered for the production Firebase web app.
+- In Firebase Console > App Check, verify that the registered app ID matches `VITE_FIREBASE_APP_ID`, add `mahdev-official.vercel.app` and each custom production hostname to the reCAPTCHA key's allowed domains, and enable enforcement for Firebase services that the site uses only after valid tokens are confirmed.
+- Deploy `firestore.rules` to the configured project. Direct client Firestore access is intentionally denied because application data is served through the server-authorized `/api/database` Turso API.
+- Verify production App Check token exchange in the browser before enabling enforcement. App Check does not replace authorization for `/api/*` routes, and it cannot prevent downloading media that is publicly displayed.
 
 ---
 

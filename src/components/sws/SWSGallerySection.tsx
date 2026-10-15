@@ -25,6 +25,7 @@ import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { shareMediaAsset } from '../../utils/mediaShare';
 import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
 import { CrossfadeImage } from '../common/CrossfadeImage';
+import { ImageWatermark } from '../common/ImageWatermark';
 
 const SWSGalleryCardImage: React.FC<{ images: string[]; alt: string }> = ({ images, alt }) => {
   const { activeIndex, containerRef } = useAutoSlideImage(images.length);
@@ -39,8 +40,9 @@ const SWSGalleryCardImage: React.FC<{ images: string[]; alt: string }> = ({ imag
         }
         alt={alt}
         className="h-full w-full"
-        imageClassName="transition-transform duration-500 group-hover:scale-[1.03]"
+        imageClassName="object-contain transition-transform duration-500 group-hover:scale-[1.02]"
       />
+      <ImageWatermark label="SWS EVENT MANAGEMENT" />
       {images.length > 1 && (
         <div className="absolute inset-x-0 bottom-2 flex items-center justify-center gap-1" aria-hidden="true">
           {images.map((_, imageIndex) => (
@@ -136,6 +138,7 @@ export const SWSGallerySection: React.FC = () => {
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (activeLightboxIndex !== null) {
+      setActiveSubImageIdx(0);
       setActiveLightboxIndex((prev) =>
         prev === 0 ? filteredItems.length - 1 : (prev as number) - 1
       );
@@ -145,6 +148,7 @@ export const SWSGallerySection: React.FC = () => {
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (activeLightboxIndex !== null) {
+      setActiveSubImageIdx(0);
       setActiveLightboxIndex((prev) =>
         prev === filteredItems.length - 1 ? 0 : (prev as number) + 1
       );
@@ -329,7 +333,7 @@ export const SWSGallerySection: React.FC = () => {
             className="relative max-w-5xl w-full max-h-[90vh] flex flex-col items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="relative rounded-2xl overflow-hidden max-h-[68vh] w-auto border border-white/10 shadow-2xl bg-black">
+            <div className="relative flex h-[58vh] w-full max-w-5xl items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl sm:h-[65vh]">
               <img
                 src={
                   (activeItem.images && activeItem.images[activeSubImageIdx]) ||
@@ -337,25 +341,26 @@ export const SWSGallerySection: React.FC = () => {
                   'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80'
                 }
                 alt={activeItem.title}
-                className="max-h-[65vh] w-auto max-w-full object-contain"
+                className="max-h-full max-w-full object-contain"
               />
+              <ImageWatermark label="SWS EVENT MANAGEMENT" />
             </div>
 
             {/* Thumbnail switcher for multiple photos (up to 3) */}
             {activeItem.images && activeItem.images.length > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-3">
+              <div className="mt-3 flex max-w-full items-center justify-center gap-2 overflow-x-auto px-1">
                 {activeItem.images.map((subImg, sIdx) => (
                   <button
                     key={sIdx}
                     type="button"
                     onClick={() => setActiveSubImageIdx(sIdx)}
-                    className={`relative w-14 h-10 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
+                    className={`relative h-12 w-16 shrink-0 rounded-lg overflow-hidden border-2 bg-black transition-all cursor-pointer sm:h-14 sm:w-20 ${
                       activeSubImageIdx === sIdx
                         ? 'border-purple-400 ring-2 ring-purple-400/40 scale-105'
                         : 'border-white/20 opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img src={subImg} alt={`Photo ${sIdx + 1}`} className="w-full h-full object-cover" />
+                    <img src={subImg} alt={`Photo ${sIdx + 1}`} className="h-full w-full object-contain" />
                   </button>
                 ))}
               </div>

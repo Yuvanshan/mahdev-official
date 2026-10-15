@@ -26,6 +26,7 @@ import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
 import { CrossfadeImage } from '../common/CrossfadeImage';
+import { ImageWatermark } from '../common/ImageWatermark';
 import { getImageSourceCandidates } from '../../utils/imageSources';
 
 interface U1ServicesSectionProps {
@@ -49,6 +50,7 @@ const U1ServiceCardImage: React.FC<{ service: U1Service }> = ({ service }) => {
         className="absolute inset-0"
         imageClassName="transition-transform duration-700 group-hover:scale-105"
       />
+      <ImageWatermark label="U1 STUDIO" />
       {images.length > 1 && (
         <div className="absolute inset-x-0 bottom-2 flex items-center justify-center gap-1" aria-hidden="true">
           {images.map((_, index) => (
