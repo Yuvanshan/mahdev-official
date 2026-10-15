@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { HeroVideoControls } from '../common/HeroVideoControls';
 import { ScrollParallax } from '../motion/ParallelScroll';
+import { AnimatedHeroTitle } from '../common/AnimatedHeroTitle';
 
 interface HeroSectionProps {
   onNavigate: (route: string) => void;
@@ -71,12 +72,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
         >
-          <h1 className="font-editorial text-4xl font-medium leading-[1.04] tracking-[-0.035em] text-white sm:text-6xl lg:text-7xl">
-            <span className="block">Creating moments.</span>
+          <h1 aria-label="Creating moments. Capturing memories. Delivering innovation." className="font-editorial text-4xl font-medium leading-[1.04] tracking-[-0.035em] text-white sm:text-6xl lg:text-7xl">
+            <span className="block"><AnimatedHeroTitle text="Creating moments." /></span>
             <span className="block bg-gradient-to-r from-sky-300 via-blue-200 to-white bg-clip-text text-transparent">
-              Capturing memories.
+              <AnimatedHeroTitle text="Capturing memories." delay={0.18} />
             </span>
-            <span className="block">Delivering innovation.</span>
+            <span className="block"><AnimatedHeroTitle text="Delivering innovation." delay={0.36} /></span>
           </h1>
           <button
             type="button"

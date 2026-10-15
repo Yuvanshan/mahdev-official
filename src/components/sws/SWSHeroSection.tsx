@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
 import { HeroVideoBackground } from '../common/HeroVideoBackground';
 import { ScrollParallax } from '../motion/ParallelScroll';
+import { AnimatedHeroTitle } from '../common/AnimatedHeroTitle';
 
 interface SWSHeroSectionProps {
   onOpenBooking?: () => void;
@@ -35,13 +36,14 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
           
           {/* High-Impact Headline */}
           <motion.h1
+            aria-label="We Create Moments. You Make Memories."
             initial={{ opacity: 0.85, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
             className="font-editorial text-4xl font-medium leading-[1.04] tracking-[-0.035em] text-white drop-shadow-md sm:text-6xl lg:text-7xl"
           >
-            <span className="block">We Create Moments.</span>
-            <span className="block bg-gradient-to-r from-sky-300 via-blue-200 to-white bg-clip-text text-transparent">You Make Memories.</span>
+            <span className="block"><AnimatedHeroTitle text="We Create Moments." /></span>
+            <span className="block bg-gradient-to-r from-sky-300 via-blue-200 to-white bg-clip-text text-transparent"><AnimatedHeroTitle text="You Make Memories." delay={0.2} /></span>
           </motion.h1>
 
           <motion.button

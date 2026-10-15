@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { getTelLink } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { HeroVideoBackground } from '../common/HeroVideoBackground';
+import { AnimatedHeroTitle } from '../common/AnimatedHeroTitle';
 
 interface TravelsHeroSectionProps {
   onPlanTrip: () => void;
@@ -116,12 +117,13 @@ export const TravelsHeroSection: React.FC<TravelsHeroSectionProps> = ({
 
           {/* High-Impact Headline */}
           <motion.h1
+            aria-label={headline}
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
             className="font-display text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-white leading-[1.08] drop-shadow-md"
           >
-            {headline}
+            <AnimatedHeroTitle text={headline} />
           </motion.h1>
 
           {/* Subheadline / Travel Description */}

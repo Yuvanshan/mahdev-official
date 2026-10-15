@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Camera, CheckCircle2, Filter, Image as ImageIcon, MessageCircle, Search, ShoppingBag, X } from 'lucide-react';
+import { ArrowRight, Camera, CheckCircle2, ChevronLeft, ChevronRight, Filter, Image as ImageIcon, MessageCircle, Search, ShoppingBag, X } from 'lucide-react';
 import { SEOHead } from '../components/layout/SEOHead';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { CatalogProductModal } from '../components/catalog/CatalogProductModal';
@@ -9,9 +9,6 @@ import { SectionContainer } from '../components/ui/SectionContainer';
 import { mapFirestoreProductToCatalog } from '../services/catalogService';
 import { CatalogProduct } from '../types/catalog';
 import { FirestoreGallery, FirestoreProduct, FirestoreService } from '../types/firestore';
-import { firestoreGalleryService } from '../services/firestore/gallery';
-import { firestoreProductsService } from '../services/firestore/products';
-import { firestoreServicesService } from '../services/firestore/services';
 import { formatCurrency } from '../utils/currency';
 import { getImageSourceCandidates } from '../utils/imageSources';
 import { openWhatsAppInquiry } from '../utils/whatsapp';
@@ -64,7 +61,7 @@ const BrowseCard: React.FC<{
             fallbackSources={imageSources.slice(1)}
             alt={item.title}
             className="absolute inset-0"
-            imageClassName="transition duration-500 group-hover:scale-105"
+            imageClassName="!object-contain"
             loading={imageLoading}
           />
         ) : (
@@ -105,18 +102,18 @@ const BrowseCard: React.FC<{
             View details <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
-        {item.type === 'service' && (
+        {item.type === 'service' ? (
           <a
             href={`/services/${encodeURIComponent(item.data.slug || item.id)}`}
             onClick={(event) => {
               event.preventDefault();
               onNavigate(`/services/${encodeURIComponent(item.data.slug || item.id)}`);
             }}
-            className="mt-2 inline-flex text-xs font-medium text-slate-500 underline decoration-slate-300 underline-offset-2 hover:text-blue-700"
+            className="mt-2 inline-flex h-4 items-center text-xs font-medium text-slate-500 underline decoration-slate-300 underline-offset-2 hover:text-blue-700"
           >
             Full service details
           </a>
-        )}
+        ) : <div aria-hidden="true" className="mt-2 h-4" />}
       </div>
     </article>
   );
@@ -135,50 +132,13 @@ export const ExploreAllView: React.FC<{
     isProductsLoading,
     isGalleryLoading,
   } = useFirestoreDataContext();
-  const [fallbackServices, setFallbackServices] = useState<FirestoreService[]>([]);
-  const [fallbackProducts, setFallbackProducts] = useState<FirestoreProduct[]>([]);
-  const [fallbackGallery, setFallbackGallery] = useState<FirestoreGallery[]>([]);
-  const [fallbackLoading, setFallbackLoading] = useState({
-    services: services.length === 0,
-    products: products.length === 0,
-    gallery: gallery.length === 0,
-  });
   const [query, setQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedService, setSelectedService] = useState<FirestoreService | null>(null);
-  const [selectedGalleryItem, setSelectedGalleryItem] = useState<FirestoreGallery | null>(null);
+  const [selectedGalleryItem, setSelectedGalleryItem] = useState<{ data: FirestoreGallery; images: string[] } | null>(null);
+  const [selectedGalleryImageIndex, setSelectedGalleryImageIndex] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
   const [isCategoryDrawerOpen, setIsCategoryDrawerOpen] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-
-    const loadFallback = <T,>(
-      collection: 'services' | 'products' | 'gallery',
-      load: () => Promise<T[]>,
-      setItems: (items: T[]) => void,
-    ) => {
-      if (!fallbackLoading[collection]) return;
-      void load()
-        .then((items) => {
-          if (active) setItems(items);
-        })
-        .catch((error: unknown) => {
-          console.error(`[ExploreAllView] Could not load ${collection}:`, error);
-        })
-        .finally(() => {
-          if (active) setFallbackLoading((current) => ({ ...current, [collection]: false }));
-        });
-    };
-
-    loadFallback('services', () => firestoreServicesService.getServices(), setFallbackServices);
-    loadFallback('products', () => firestoreProductsService.getProducts(), setFallbackProducts);
-    loadFallback('gallery', () => firestoreGalleryService.getGallery(), setFallbackGallery);
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   useEffect(() => {
     if (!isCategoryDrawerOpen) return;
@@ -196,9 +156,9 @@ export const ExploreAllView: React.FC<{
     };
   }, [isCategoryDrawerOpen]);
 
-  const availableProducts = products.length > 0 ? products : fallbackProducts;
-  const availableServices = services.length > 0 ? services : fallbackServices;
-  const availableGallery = gallery.length > 0 ? gallery : fallbackGallery;
+  const availableProducts = products;
+  const availableServices = services;
+  const availableGallery = gallery;
 
   const productItems = useMemo(
     () => availableProducts
@@ -338,15 +298,14 @@ export const ExploreAllView: React.FC<{
 
   const handleSelect = (item: BrowseItem) => {
     if (item.type === 'service') setSelectedService(item.data);
-    if (item.type === 'gallery') setSelectedGalleryItem(item.data);
+    if (item.type === 'gallery') {
+      setSelectedGalleryItem({ data: item.data, images: item.images });
+      setSelectedGalleryImageIndex(0);
+    }
     if (item.type === 'product') setSelectedProduct(item.data);
   };
 
-  const isLoading = (
-    (isServicesLoading && fallbackLoading.services) ||
-    (isProductsLoading && fallbackLoading.products) ||
-    (isGalleryLoading && fallbackLoading.gallery)
-  );
+  const isLoading = isServicesLoading || isProductsLoading || isGalleryLoading;
 
   const filterButtonClass = (value: string) => `flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm transition ${
     selectedFilter === value ? 'bg-blue-50 font-semibold text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
@@ -560,15 +519,61 @@ export const ExploreAllView: React.FC<{
       )}
 
       {selectedGalleryItem && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/85 p-4" role="dialog" aria-modal="true" aria-label={selectedGalleryItem.title} onClick={() => setSelectedGalleryItem(null)}>
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/85 p-4" role="dialog" aria-modal="true" aria-label={selectedGalleryItem.data.title} onClick={() => setSelectedGalleryItem(null)}>
           <div className="relative max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
             <button type="button" onClick={() => setSelectedGalleryItem(null)} className="absolute right-3 top-3 z-10 rounded-full bg-black/60 p-2 text-white" aria-label="Close gallery details"><X className="h-4 w-4" /></button>
-            <div className="relative max-h-[65vh] min-h-48 w-full bg-slate-950">
-              <ImageWithShimmer src={selectedGalleryItem.images?.[0] || selectedGalleryItem.mediaUrl || selectedGalleryItem.url} alt={selectedGalleryItem.title} className="absolute inset-0" imageClassName="!object-contain" />
+            <div className="relative aspect-video max-h-[65vh] min-h-48 w-full bg-slate-950">
+              {selectedGalleryItem.images[selectedGalleryImageIndex] && (
+                <ImageWithShimmer
+                  src={selectedGalleryItem.images[selectedGalleryImageIndex]}
+                  alt={`${selectedGalleryItem.data.title} photo ${selectedGalleryImageIndex + 1}`}
+                  className="absolute inset-0"
+                  imageClassName="!object-contain"
+                />
+              )}
+              {selectedGalleryItem.images.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedGalleryImageIndex((index) => (index === 0 ? selectedGalleryItem.images.length - 1 : index - 1))}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
+                    aria-label="Previous gallery image"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedGalleryImageIndex((index) => (index + 1) % selectedGalleryItem.images.length)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
+                    aria-label="Next gallery image"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                  <span className="absolute bottom-3 right-3 rounded bg-black/60 px-2 py-1 text-xs text-white">
+                    {selectedGalleryImageIndex + 1} / {selectedGalleryItem.images.length}
+                  </span>
+                </>
+              )}
             </div>
+            {selectedGalleryItem.images.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto bg-slate-950 px-4 py-3">
+                {selectedGalleryItem.images.map((image, index) => (
+                  <button
+                    key={`${image}-${index}`}
+                    type="button"
+                    onClick={() => setSelectedGalleryImageIndex(index)}
+                    className={`relative h-14 w-20 shrink-0 overflow-hidden rounded-md border-2 ${index === selectedGalleryImageIndex ? 'border-blue-500' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                    aria-label={`Show gallery image ${index + 1}`}
+                    aria-pressed={index === selectedGalleryImageIndex}
+                  >
+                    <ImageWithShimmer src={image} alt="" className="absolute inset-0" imageClassName="!object-contain" />
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5">
-              <div><p className="text-xs font-semibold uppercase tracking-wide text-blue-700">{selectedGalleryItem.category || selectedGalleryItem.tag}</p><h2 className="mt-1 font-semibold text-slate-900">{selectedGalleryItem.title}</h2><p className="mt-1 text-xs text-slate-500">{selectedGalleryItem.caption}</p></div>
-              <button type="button" onClick={() => openWhatsAppInquiry({ title: selectedGalleryItem.title, category: selectedGalleryItem.category || selectedGalleryItem.tag, itemId: selectedGalleryItem.id, divisionName: String(selectedGalleryItem.division), description: selectedGalleryItem.caption, type: 'gallery' })} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-700"><MessageCircle className="h-3.5 w-3.5" />Ask on WhatsApp</button>
+              <div><p className="text-xs font-semibold uppercase tracking-wide text-blue-700">{selectedGalleryItem.data.category || selectedGalleryItem.data.tag}</p><h2 className="mt-1 font-semibold text-slate-900">{selectedGalleryItem.data.title}</h2><p className="mt-1 text-xs text-slate-500">{selectedGalleryItem.data.caption}</p></div>
+              <button type="button" onClick={() => openWhatsAppInquiry({ title: selectedGalleryItem.data.title, category: selectedGalleryItem.data.category || selectedGalleryItem.data.tag, itemId: selectedGalleryItem.data.id, divisionName: String(selectedGalleryItem.data.division), description: selectedGalleryItem.data.caption, type: 'gallery' })} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-700"><MessageCircle className="h-3.5 w-3.5" />Ask on WhatsApp</button>
             </div>
           </div>
         </div>

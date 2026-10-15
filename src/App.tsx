@@ -42,6 +42,34 @@ type RouteLoadingFallbackProps = {
 };
 
 const RouteLoadingFallback: React.FC<RouteLoadingFallbackProps> = ({ path }) => {
+  const routeHeadlines: Record<string, string> = {
+    '/': 'Creating moments... Capturing memories... Delivering innovation...',
+    '/sws': 'We Create Moments... You Make Memories...',
+    '/u1': 'Every Frame Tells a Story...',
+    '/it': 'Enterprise Software, Cloud & AI Engineered for Uncompromising Scale',
+    '/travels': 'Bespoke Expeditions Across Sri Lanka',
+    '/mart': 'Curated Event & Home Decor, Ambient Lighting & Smart Tech',
+  };
+  const divisionPath = canonicalizeDivisionRoute(path);
+  const heroHeadline = routeHeadlines[divisionPath];
+
+  if (heroHeadline) {
+    return (
+      <section
+        role="status"
+        aria-busy="true"
+        aria-label="Loading page"
+        className="flex min-h-[680px] items-center bg-gradient-to-br from-[#061033] via-[#0b1c4c] to-[#0052FF] px-5 py-20 text-white sm:min-h-[740px] sm:px-8 lg:min-h-[min(820px,calc(100svh-5rem))]"
+      >
+        <div className="mx-auto w-full max-w-7xl">
+          <h1 className="max-w-4xl font-editorial text-4xl font-medium leading-tight tracking-tight sm:text-6xl lg:text-7xl">
+            {heroHeadline}
+          </h1>
+        </div>
+      </section>
+    );
+  }
+
   const isAbout = path === '/about' || path === '/about-us';
   const isLegal = [
     '/terms-and-conditions',
@@ -164,6 +192,7 @@ function AppContent() {
     divisions,
     isDivisionLoaded,
     loadDivisionData,
+    loadRouteData,
   } = useFirestoreDataContext();
   const [currentPath, setCurrentPath] = useState<string>(() => {
     if (typeof window === 'undefined') return '/';
@@ -320,6 +349,21 @@ function AppContent() {
   else if (rawBase.startsWith('#') && rawBase.length > 1) rawBase = `/${rawBase.substring(1)}`;
   const basePath = rawBase.split('#')[0] || '/';
   const normalizedPath = canonicalizeDivisionRoute(basePath);
+  const lastDataRouteRef = React.useRef<string | null>(null);
+  useEffect(() => {
+    if (lastDataRouteRef.current === null) {
+      lastDataRouteRef.current = normalizedPath;
+      return;
+    }
+    if (lastDataRouteRef.current === normalizedPath) return;
+
+    lastDataRouteRef.current = normalizedPath;
+    if (normalizedPath.startsWith('/admin')) return;
+
+    void loadRouteData(normalizedPath).catch((routeError: unknown) => {
+      console.error(`[App] Could not load data for route ${normalizedPath}:`, routeError);
+    });
+  }, [normalizedPath, loadRouteData]);
   const searchParams = new URLSearchParams(
     searchParamsString || (typeof window !== 'undefined' ? window.location.search : '')
   );
@@ -398,14 +442,14 @@ function AppContent() {
       rawDivId === 'u1' || rawDivId === 'u1-studio' || rawDivId === 'u1-cinema'
         ? 'u1'
         : rawDivId === 'it' || rawDivId === 'it-solutions' || rawDivId === 'mahdev-it'
-        ? 'it'
-        : rawDivId === 'travels' || rawDivId === 'mahdev-travels'
-        ? 'travels'
-        : rawDivId === 'mart' || rawDivId === 'online-mart' || rawDivId === 'mahdev-mart'
-        ? 'mart'
-        : rawDivId === 'sws' || rawDivId === 'sws-event-management' || rawDivId === 'sws-events'
-        ? 'sws'
-        : rawDivId;
+          ? 'it'
+          : rawDivId === 'travels' || rawDivId === 'mahdev-travels'
+            ? 'travels'
+            : rawDivId === 'mart' || rawDivId === 'online-mart' || rawDivId === 'mahdev-mart'
+              ? 'mart'
+              : rawDivId === 'sws' || rawDivId === 'sws-event-management' || rawDivId === 'sws-events'
+                ? 'sws'
+                : rawDivId;
 
     const matched = divisions.find(
       (d) =>
@@ -443,22 +487,22 @@ function AppContent() {
             return (cachedMatched as any).isComingSoon !== undefined
               ? !!(cachedMatched as any).isComingSoon
               : (cachedMatched as any).comingSoon !== undefined
-              ? !!(cachedMatched as any).comingSoon
-              : cachedMatched.status !== undefined
-              ? cachedMatched.status === 'coming_soon'
-              : isDefaultComingSoon;
+                ? !!(cachedMatched as any).comingSoon
+                : cachedMatched.status !== undefined
+                  ? cachedMatched.status === 'coming_soon'
+                  : isDefaultComingSoon;
           }
         }
-      } catch {}
+      } catch { }
       return isDefaultComingSoon;
     }
     return (matched as any).isComingSoon !== undefined
       ? !!(matched as any).isComingSoon
       : (matched as any).comingSoon !== undefined
-      ? !!(matched as any).comingSoon
-      : (matched as any).status !== undefined
-      ? (matched as any).status === 'coming_soon'
-      : isDefaultComingSoon;
+        ? !!(matched as any).comingSoon
+        : (matched as any).status !== undefined
+          ? (matched as any).status === 'coming_soon'
+          : isDefaultComingSoon;
   };
 
   // Track page views and division views automatically
@@ -479,8 +523,8 @@ function AppContent() {
   // 1. Maintenance Mode Screen: Live Firestore switch
   const isMaintenanceActive = Boolean(
     siteSettings?.maintenance?.enabled ??
-      siteSettings?.maintenanceMode ??
-      siteSettings?.enableMaintenanceMode
+    siteSettings?.maintenanceMode ??
+    siteSettings?.enableMaintenanceMode
   );
 
   if (isMaintenanceActive && !isAdminRoute) {
@@ -686,7 +730,7 @@ function AppContent() {
       const subSlug = normalizedPath
         .replace(/^\/(sws-event-management|sws-events|event-management|events|sws)\//, '')
         .trim();
-      
+
       const swsService = services.find(
         (s) => s.division === 'sws' && (s.slug === subSlug || s.id === subSlug)
       );
@@ -727,7 +771,7 @@ function AppContent() {
       const subSlug = normalizedPath
         .replace(/^\/(u1-studio|u1-cinema|studio|photography|cinema|u1)\//, '')
         .trim();
-      
+
       const u1Service = services.find(
         (s) => s.division === 'u1' && (s.slug === subSlug || s.id === subSlug)
       );
@@ -768,7 +812,7 @@ function AppContent() {
       const subSlug = normalizedPath
         .replace(/^\/(it-solutions|mahdev-it|it-services|solutions|software|it)\//, '')
         .trim();
-      
+
       const itService = services.find(
         (s) => s.division === 'it' && (s.slug === subSlug || s.id === subSlug)
       );
@@ -807,7 +851,7 @@ function AppContent() {
       const subSlug = normalizedPath
         .replace(/^\/(mahdev-travels|tourism|tours|travel|travels)\//, '')
         .trim();
-      
+
       const travelsService = services.find(
         (s) => s.division === 'travels' && (s.slug === subSlug || s.id === subSlug)
       );
@@ -960,14 +1004,14 @@ function AppContent() {
           rawId === 'sws' || rawId === 'sws-event-management' || rawId === 'sws-events'
             ? 'sws'
             : rawId === 'u1' || rawId === 'u1-studio'
-            ? 'u1'
-            : rawId === 'it' || rawId === 'it-solutions'
-            ? 'it'
-            : rawId === 'travels' || rawId === 'mahdev-travels'
-            ? 'travels'
-            : rawId === 'mart' || rawId === 'online-mart'
-            ? 'mart'
-            : (rawId as DivisionId);
+              ? 'u1'
+              : rawId === 'it' || rawId === 'it-solutions'
+                ? 'it'
+                : rawId === 'travels' || rawId === 'mahdev-travels'
+                  ? 'travels'
+                  : rawId === 'mart' || rawId === 'online-mart'
+                    ? 'mart'
+                    : (rawId as DivisionId);
 
         if (isDivisionComingSoon(divId)) {
           return <DivisionComingSoonView divisionId={divId} onNavigate={navigate} />;

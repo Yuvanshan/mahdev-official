@@ -1,4 +1,5 @@
 import React from 'react';
+import { AnimatedHeroTitle } from '../common/AnimatedHeroTitle';
 import {
   ShoppingBag,
   Search,
@@ -118,7 +119,7 @@ export const MartHeroSection: React.FC<MartHeroSectionProps> = ({
 
           {/* High-Impact Headline */}
           <h1 className="font-display text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-white leading-[1.08] drop-shadow-md">
-            {headline}
+            <AnimatedHeroTitle text={headline} />
           </h1>
 
           {/* Subheadline / Store Description */}
