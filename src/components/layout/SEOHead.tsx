@@ -271,7 +271,8 @@ export const SEOHead: React.FC<SEOMetaData> = ({
         companySettings?.socials?.facebook,
         companySettings?.socials?.instagram,
         companySettings?.socials?.youtube,
-        companySettings?.socials?.pinterest,
+        companySettings?.socials?.tiktok,
+        companySettings?.socials?.whatsapp,
       ].filter(Boolean),
       address: [
         {

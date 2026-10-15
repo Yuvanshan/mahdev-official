@@ -729,6 +729,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error(`[TursoDataContext] Failed to refresh ${resource}:`, refreshError);
       setError((currentError) => currentError || refreshError);
       };
+      const publicCmsTask = cmsService.loadPublicCollections(forceRefresh).catch((err) => {
+        reportRefreshError('public CMS content', err);
+      });
       try {
       setError(null);
       setSyncProgress(20);
@@ -1000,11 +1003,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         });
       await fetchMediaAssetsTask;
 
-      try {
-        await cmsService.loadPublicCollections(forceRefresh);
-      } catch (err) {
-        reportRefreshError('public CMS content', err);
-      }
+      await publicCmsTask;
       try {
         await getPublishedCareerOpenings(forceRefresh);
       } catch (err) {

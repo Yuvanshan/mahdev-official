@@ -21,7 +21,7 @@ function getInitialCachedCompany(): { data: FirestoreCompanySettings; timestamp:
   if (typeof window === 'undefined') return null;
   try {
     const raw = sessionStorage.getItem('mahdev_cached_company_settings');
-    if (raw) return { data: JSON.parse(raw), timestamp: Date.now() };
+    if (raw) return { data: mergeCompanySettings(JSON.parse(raw)), timestamp: Date.now() };
   } catch {}
   return null;
 }
@@ -38,6 +38,33 @@ function getInitialCachedSite(): { data: FirestoreSiteSettings; timestamp: numbe
 let cachedCompanySettings: { data: FirestoreCompanySettings; timestamp: number } | null = getInitialCachedCompany();
 let cachedSiteSettings: { data: FirestoreSiteSettings; timestamp: number } | null = getInitialCachedSite();
 let cachedHomepageSettings: { data: HomepageCmsConfig; timestamp: number } | null = null;
+
+function mergeCompanySettings(
+  ...sources: Array<Partial<FirestoreCompanySettings> | null | undefined>
+): FirestoreCompanySettings {
+  const defaults = getDefaultCompanySettings();
+  const merged = Object.assign({}, defaults, ...sources.filter(Boolean)) as FirestoreCompanySettings;
+  const socials = Object.assign(
+    {},
+    defaults.socials,
+    ...sources.map((source) => source?.socials || {})
+  ) as Record<string, string>;
+  const legacyProfileUrls: Record<string, string> = {
+    facebook: 'https://facebook.com/mahdev',
+    instagram: 'https://instagram.com/mahdev',
+    youtube: 'https://youtube.com/@mahdev',
+  };
+
+  for (const [platform, legacyUrl] of Object.entries(legacyProfileUrls)) {
+    if (socials[platform]?.replace(/\/+$/, '').toLowerCase() === legacyUrl.toLowerCase()) {
+      socials[platform] = defaults.socials[platform];
+    }
+  }
+
+  delete socials.pinterest;
+  merged.socials = socials;
+  return merged;
+}
 
 export const DEFAULT_HOMEPAGE_SECTIONS = [
   { id: 'sec-services', name: 'Featured Services', sectionKey: 'services', enabled: true, order: 1 },
@@ -371,7 +398,7 @@ export const firestoreSettingsService = {
 
       if (snap && typeof snap.exists === 'function' && snap.exists()) {
         const data = snap.data() as FirestoreCompanySettings;
-        const merged = { ...getDefaultCompanySettings(), ...(cachedCompanySettings?.data || {}), ...data };
+        const merged = mergeCompanySettings(cachedCompanySettings?.data, data);
         cachedCompanySettings = { data: merged, timestamp: now };
         if (typeof window !== 'undefined') {
           try {
@@ -388,8 +415,9 @@ export const firestoreSettingsService = {
           try {
             const parsed = JSON.parse(local);
             if (parsed && (parsed.logoUrl || parsed.name)) {
-              cachedCompanySettings = { data: parsed, timestamp: now };
-              return parsed;
+              const merged = mergeCompanySettings(parsed);
+              cachedCompanySettings = { data: merged, timestamp: now };
+              return merged;
             }
           } catch {}
         }
@@ -410,9 +438,8 @@ export const firestoreSettingsService = {
   async updateCompanySettings(data: Partial<FirestoreCompanySettings>): Promise<void> {
     const docRef = doc(db, 'settings', 'company');
     const existing = cachedCompanySettings?.data || getDefaultCompanySettings();
-    const merged: FirestoreCompanySettings = {
-      ...existing,
-      ...data,
+    const merged = {
+      ...mergeCompanySettings(existing, data),
       updatedAt: new Date().toISOString(),
     };
     const payload = sanitizeForFirestore(merged);
@@ -441,16 +468,18 @@ export const firestoreSettingsService = {
     // BroadcastChannel listener
     const handleBroadcast = (event: MessageEvent) => {
       if (event.data?.type === 'company' && event.data?.data) {
-        cachedCompanySettings = { data: event.data.data, timestamp: Date.now() };
-        onData(event.data.data);
+        const merged = mergeCompanySettings(event.data.data);
+        cachedCompanySettings = { data: merged, timestamp: Date.now() };
+        onData(merged);
       }
     };
 
     const handleCustomEvent = (e: Event) => {
       const customEvent = e as CustomEvent<FirestoreCompanySettings>;
       if (customEvent.detail) {
-        cachedCompanySettings = { data: customEvent.detail, timestamp: Date.now() };
-        onData(customEvent.detail);
+        const merged = mergeCompanySettings(customEvent.detail);
+        cachedCompanySettings = { data: merged, timestamp: Date.now() };
+        onData(merged);
       }
     };
 
@@ -465,7 +494,7 @@ export const firestoreSettingsService = {
       docRef,
       (snap) => {
         if (snap.exists()) {
-          const data = snap.data() as FirestoreCompanySettings;
+          const data = mergeCompanySettings(snap.data() as FirestoreCompanySettings);
           cachedCompanySettings = { data, timestamp: Date.now() };
           if (typeof window !== 'undefined') {
             try {

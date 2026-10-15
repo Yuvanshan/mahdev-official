@@ -31,7 +31,6 @@ export interface CompanyInformation {
     instagram?: string;
     youtube?: string;
     linkedin?: string;
-    pinterest?: string;
     tiktok?: string;
     whatsapp?: string;
   };
@@ -82,9 +81,10 @@ export const COMPANY_INFO: CompanyInformation = {
   },
   socials: {
     linkedin: 'https://linkedin.com/company/mahdev',
-    facebook: 'https://facebook.com/mahdev',
-    instagram: 'https://instagram.com/mahdev',
-    youtube: 'https://youtube.com/@mahdev',
+    facebook: 'https://www.facebook.com/SWSEventsManagement/',
+    instagram: 'https://www.instagram.com/sws_event_management/',
+    youtube: 'https://www.youtube.com/@swseventmanagement5126',
+    tiktok: 'https://www.tiktok.com/@yuvan.shan5',
     whatsapp: 'https://wa.me/94750928078?text=Hello%20Mahdev%20Pvt%20Ltd',
   },
   workingHours: {

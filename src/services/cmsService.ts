@@ -570,8 +570,8 @@ class CmsService {
   }
 
   public async loadPublicCollections(forceRefresh = false): Promise<void> {
-    for (const entity of ['packages', 'pages', 'banners'] as const) {
-      if (!forceRefresh && this.readPublicCache(entity) !== null) continue;
+    await Promise.all((['packages', 'pages', 'banners'] as const).map(async (entity) => {
+      if (!forceRefresh && this.readPublicCache(entity) !== null) return;
 
       try {
         const snapshot = await getDocs(collection(db, entity));
@@ -584,7 +584,7 @@ class CmsService {
         console.error(`[CmsService] Could not load public ${entity} from Turso:`, error);
         throw error;
       }
-    }
+    }));
   }
 
   public clearPublicCollectionCache(): void {

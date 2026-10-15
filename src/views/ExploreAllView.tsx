@@ -8,7 +8,10 @@ import { ImageWithShimmer } from '../components/ui/ImageWithShimmer';
 import { SectionContainer } from '../components/ui/SectionContainer';
 import { mapFirestoreProductToCatalog } from '../services/catalogService';
 import { CatalogProduct } from '../types/catalog';
-import { FirestoreGallery, FirestoreService } from '../types/firestore';
+import { FirestoreGallery, FirestoreProduct, FirestoreService } from '../types/firestore';
+import { firestoreGalleryService } from '../services/firestore/gallery';
+import { firestoreProductsService } from '../services/firestore/products';
+import { firestoreServicesService } from '../services/firestore/services';
 import { formatCurrency } from '../utils/currency';
 import { getImageSourceCandidates } from '../utils/imageSources';
 import { openWhatsAppInquiry } from '../utils/whatsapp';
@@ -115,18 +118,54 @@ export const ExploreAllView: React.FC<{
     products,
     categories: productCategories,
     gallery,
-    isInitialLoading,
-    isFetching,
     isServicesLoading,
     isProductsLoading,
     isGalleryLoading,
   } = useFirestoreDataContext();
+  const [fallbackServices, setFallbackServices] = useState<FirestoreService[]>([]);
+  const [fallbackProducts, setFallbackProducts] = useState<FirestoreProduct[]>([]);
+  const [fallbackGallery, setFallbackGallery] = useState<FirestoreGallery[]>([]);
+  const [fallbackLoading, setFallbackLoading] = useState({
+    services: services.length === 0,
+    products: products.length === 0,
+    gallery: gallery.length === 0,
+  });
   const [query, setQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedService, setSelectedService] = useState<FirestoreService | null>(null);
   const [selectedGalleryItem, setSelectedGalleryItem] = useState<FirestoreGallery | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
   const [isCategoryDrawerOpen, setIsCategoryDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadFallback = <T,>(
+      collection: 'services' | 'products' | 'gallery',
+      load: () => Promise<T[]>,
+      setItems: (items: T[]) => void,
+    ) => {
+      if (!fallbackLoading[collection]) return;
+      void load()
+        .then((items) => {
+          if (active) setItems(items);
+        })
+        .catch((error: unknown) => {
+          console.error(`[ExploreAllView] Could not load ${collection}:`, error);
+        })
+        .finally(() => {
+          if (active) setFallbackLoading((current) => ({ ...current, [collection]: false }));
+        });
+    };
+
+    loadFallback('services', () => firestoreServicesService.getServices(), setFallbackServices);
+    loadFallback('products', () => firestoreProductsService.getProducts(), setFallbackProducts);
+    loadFallback('gallery', () => firestoreGalleryService.getGallery(), setFallbackGallery);
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!isCategoryDrawerOpen) return;
@@ -144,15 +183,19 @@ export const ExploreAllView: React.FC<{
     };
   }, [isCategoryDrawerOpen]);
 
+  const availableProducts = products.length > 0 ? products : fallbackProducts;
+  const availableServices = services.length > 0 ? services : fallbackServices;
+  const availableGallery = gallery.length > 0 ? gallery : fallbackGallery;
+
   const productItems = useMemo(
-    () => products
+    () => availableProducts
       .filter((product) => product.isPublished !== false && product.status !== 'draft' && product.status !== 'archived')
       .map((product) => mapFirestoreProductToCatalog(product, productCategories)),
-    [products, productCategories]
+    [availableProducts, productCategories]
   );
 
   const allItems = useMemo<BrowseItem[]>(() => {
-    const serviceItems: BrowseItem[] = services
+    const serviceItems: BrowseItem[] = availableServices
       .filter((service) => service.isPublished !== false && service.status !== 'draft' && service.status !== 'inactive')
       .map((service) => {
         const legacyService = service as FirestoreService & {
@@ -190,7 +233,7 @@ export const ExploreAllView: React.FC<{
           data: service,
         };
       });
-    const galleryItems: BrowseItem[] = gallery
+    const galleryItems: BrowseItem[] = availableGallery
       .filter((item) => item.status !== 'hidden')
       .map((item) => {
         const raw = item as FirestoreGallery & Record<string, unknown>;
@@ -239,7 +282,7 @@ export const ExploreAllView: React.FC<{
       data: product,
     }));
     return [...serviceItems, ...galleryItems, ...catalogItems];
-  }, [services, gallery, productItems]);
+  }, [availableServices, availableGallery, productItems]);
 
   const categories = useMemo(() => {
     const counts = new Map<string, number>();
@@ -286,10 +329,11 @@ export const ExploreAllView: React.FC<{
     if (item.type === 'product') setSelectedProduct(item.data);
   };
 
-  const isLoading = isInitialLoading || isFetching || isServicesLoading || isProductsLoading || isGalleryLoading;
-  if (!allItems.length && isLoading) {
-    return <div className="min-h-screen bg-slate-50 pt-20"><GallerySectionShimmer divisionName="Mahdev catalog" /></div>;
-  }
+  const isLoading = (
+    (isServicesLoading && fallbackLoading.services) ||
+    (isProductsLoading && fallbackLoading.products) ||
+    (isGalleryLoading && fallbackLoading.gallery)
+  );
 
   const filterButtonClass = (value: string) => `flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm transition ${
     selectedFilter === value ? 'bg-blue-50 font-semibold text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
@@ -423,6 +467,11 @@ export const ExploreAllView: React.FC<{
                     imageLoading={index < 4 ? 'eager' : 'lazy'}
                   />
                 ))}
+              </div>
+            ) : isLoading ? (
+              <div className="rounded-2xl border border-slate-200 bg-white px-5 py-16 text-center">
+                <GallerySectionShimmer divisionName="Mahdev catalog" />
+                <p className="mt-4 text-sm text-slate-500">Loading available services and items…</p>
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-16 text-center">
