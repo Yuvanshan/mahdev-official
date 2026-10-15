@@ -16,6 +16,7 @@ import { notificationService } from '../src/services/notificationService';
 import { getOfficeMapUrl, getMapSearchUrl } from '../src/config/company';
 import { getImageSourceCandidates } from '../src/utils/imageSources';
 import { canonicalizeDivisionRoute, sortDivisions } from '../src/services/firestore/divisions';
+import { getDefaultTrustedCompanies, isPublishedTrustedCompany } from '../src/services/firestore/trustedCompanies';
 import { buildSitemapXml } from '../backend/api/handlers/sitemap';
 import { analyticsService } from '../src/services/analyticsService';
 
@@ -42,6 +43,27 @@ async function runTestSuite() {
         canonicalizeDivisionRoute('/sws') === '/sws' &&
         canonicalizeDivisionRoute('/u1') === '/u1' &&
         canonicalizeDivisionRoute('/u1-studio') === '/u1',
+    },
+    {
+      category: 'Admin Operations',
+      name: 'Trusted-company defaults are empty and unpublished companies stay off the website',
+      fn: () =>
+        getDefaultTrustedCompanies().length === 0 &&
+        isPublishedTrustedCompany({
+         id: 'real-partner',
+         name: 'Published Partner',
+         logoUrl: '',
+         isPublished: true,
+         status: 'active',
+        }) &&
+        !isPublishedTrustedCompany({
+         id: 'archived-partner',
+         name: 'Archived Partner',
+         logoUrl: '',
+         isPublished: false,
+         isDeleted: true,
+         status: 'inactive',
+        }),
     },
     {
       category: 'Customer Experience',

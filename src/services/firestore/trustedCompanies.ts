@@ -24,6 +24,12 @@ export function getDefaultTrustedCompanies(): FirestoreTrustedCompany[] {
   return [];
 }
 
+export function isPublishedTrustedCompany(company: FirestoreTrustedCompany): boolean {
+  return company.isDeleted !== true &&
+    company.isPublished !== false &&
+    company.status !== 'inactive';
+}
+
 export const firestoreTrustedCompaniesService = {
   async getTrustedCompanies(forceRefresh = false): Promise<FirestoreTrustedCompany[]> {
     const now = Date.now();
@@ -42,32 +48,45 @@ export const firestoreTrustedCompaniesService = {
       return [];
     } catch (err) {
       console.warn('[Firestore TrustedCompanies] getTrustedCompanies error:', err);
-      return cachedCompanies?.data || [];
+      if (!forceRefresh && cachedCompanies) return cachedCompanies.data;
+      throw err;
     }
   },
 
   async saveTrustedCompany(id: string, data: Partial<FirestoreTrustedCompany>): Promise<void> {
     const docRef = doc(db, 'trustedCompanies', id);
-    const payload = sanitizeForFirestore({ ...data, id });
+    const existing = cachedCompanies?.data.find((company) => company.id === id);
+    const payload = sanitizeForFirestore({
+      ...data,
+      id,
+      createdAt: data.createdAt || existing?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
     await setDoc(docRef, payload, { merge: true });
-    if (cachedCompanies) {
-      const idx = cachedCompanies.data.findIndex((c) => c.id === id);
-      if (idx >= 0) {
-        cachedCompanies.data[idx] = { ...cachedCompanies.data[idx], ...payload } as FirestoreTrustedCompany;
-      } else {
-        cachedCompanies.data.unshift(payload as FirestoreTrustedCompany);
-      }
-      cachedCompanies.timestamp = Date.now();
-    }
+    const companies = cachedCompanies?.data || [];
+    const idx = companies.findIndex((company) => company.id === id);
+    const updated = { ...existing, ...payload } as FirestoreTrustedCompany;
+    const next = idx >= 0
+      ? companies.map((company, index) => index === idx ? updated : company)
+      : [updated, ...companies];
+    cachedCompanies = { data: next, timestamp: Date.now() };
+  },
+
+  async createTrustedCompany(data: Omit<FirestoreTrustedCompany, 'id'>): Promise<FirestoreTrustedCompany> {
+    const id = `company-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    await this.saveTrustedCompany(id, data);
+    const created = cachedCompanies?.data.find((company) => company.id === id);
+    if (!created) throw new Error('Company was saved but could not be read from the local cache.');
+    return created;
   },
 
   async deleteTrustedCompany(id: string): Promise<void> {
     const docRef = doc(db, 'trustedCompanies', id);
     await deleteDoc(docRef);
-    if (cachedCompanies) {
-      cachedCompanies.data = cachedCompanies.data.filter((c) => c.id !== id);
-      cachedCompanies.timestamp = Date.now();
-    }
+    cachedCompanies = {
+      data: (cachedCompanies?.data || []).filter((company) => company.id !== id),
+      timestamp: Date.now(),
+    };
   },
 
   subscribeTrustedCompanies(onData: (data: FirestoreTrustedCompany[]) => void): Unsubscribe {

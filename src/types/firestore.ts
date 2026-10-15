@@ -604,6 +604,7 @@ export interface FirestoreTrustedCompany {
   description?: string;
   order?: number;
   isPublished?: boolean;
+  isDeleted?: boolean;
   featured?: boolean;
   division?: string;
   tier?: string;

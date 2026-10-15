@@ -45,11 +45,11 @@ export const AdminCompaniesView: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     industry: '',
-    partnershipType: 'Enterprise Partner',
+    partnershipType: '',
     logoUrl: '',
     website: '',
     description: '',
-    featured: true,
+    featured: false,
     order: 1,
   });
 
@@ -72,6 +72,18 @@ export const AdminCompaniesView: React.FC = () => {
   };
 
   useEffect(() => {
+    void firestoreTrustedCompaniesService
+      .getTrustedCompanies(true)
+      .then((companies) => {
+        cmsService.syncEntityFromFirestore('companies', companies);
+      })
+      .catch((error: unknown) => {
+        console.error('[AdminCompaniesView] Could not load trusted companies:', error);
+        addToast('error', 'Load Failed', 'Trusted companies could not be loaded from the database.');
+      });
+  }, []);
+
+  useEffect(() => {
     loadCompanies();
     const unsub = cmsService.subscribe('companies', loadCompanies);
     return () => unsub();
@@ -81,12 +93,12 @@ export const AdminCompaniesView: React.FC = () => {
     setEditingCompany(null);
     setFormData({
       name: '',
-      industry: 'Technology & Telecommunications',
-      partnershipType: 'Strategic Technology Partner',
-      logoUrl: 'https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?auto=format&fit=crop&w=200&q=80',
-      website: 'https://example.com',
-      description: 'Key collaborative enterprise partner.',
-      featured: true,
+      industry: '',
+      partnershipType: '',
+      logoUrl: '',
+      website: '',
+      description: '',
+      featured: false,
       order: companies.length + 1,
     });
     setFormErrors({});
@@ -125,49 +137,28 @@ export const AdminCompaniesView: React.FC = () => {
     setIsSaving(true);
 
     try {
+      const companyData = {
+        name: formData.name.trim(),
+        industry: formData.industry.trim(),
+        partnershipType: formData.partnershipType.trim(),
+        logoUrl: formData.logoUrl.trim(),
+        website: formData.website.trim(),
+        description: formData.description.trim(),
+        featured: formData.featured,
+        order: Number(formData.order),
+        isPublished: true,
+        isDeleted: false,
+        status: 'active',
+      };
       if (editingCompany) {
-        await cmsService.update<CmsTrustedCompany>('companies', editingCompany.id, {
-          name: formData.name,
-          industry: formData.industry,
-          partnershipType: formData.partnershipType,
-          logoUrl: formData.logoUrl,
-          website: formData.website,
-          description: formData.description,
-          featured: formData.featured,
-          order: Number(formData.order),
-        });
-        firestoreTrustedCompaniesService.saveTrustedCompany(editingCompany.id, {
-          name: formData.name,
-          industry: formData.industry,
-          logoUrl: formData.logoUrl,
-          website: formData.website,
-          description: formData.description,
-          featured: formData.featured,
-          order: Number(formData.order),
-        }).catch(() => {});
+        await firestoreTrustedCompaniesService.saveTrustedCompany(editingCompany.id, companyData);
         addToast('success', 'Partner Updated', `"${formData.name}" has been successfully updated.`);
       } else {
-        const created = await cmsService.create<CmsTrustedCompany>('companies', {
-          name: formData.name,
-          industry: formData.industry,
-          partnershipType: formData.partnershipType,
-          logoUrl: formData.logoUrl,
-          website: formData.website,
-          description: formData.description,
-          featured: formData.featured,
-          order: Number(formData.order),
-        });
-        firestoreTrustedCompaniesService.saveTrustedCompany(created.id, {
-          name: formData.name,
-          industry: formData.industry,
-          logoUrl: formData.logoUrl,
-          website: formData.website,
-          description: formData.description,
-          featured: formData.featured,
-          order: Number(formData.order),
-        }).catch(() => {});
+        await firestoreTrustedCompaniesService.createTrustedCompany(companyData);
         addToast('success', 'Partner Created', `"${formData.name}" has been added to trusted enterprise partners.`);
       }
+      const companies = await firestoreTrustedCompaniesService.getTrustedCompanies();
+      cmsService.syncEntityFromFirestore('companies', companies);
 
       setIsEditorOpen(false);
       setIsDirty(false);
@@ -179,17 +170,13 @@ export const AdminCompaniesView: React.FC = () => {
     }
   };
 
-  const handleDelete = async (permanent: boolean) => {
+  const handleDelete = async () => {
     if (!deletingCompany) return;
     try {
-      if (permanent) {
-        await cmsService.permanentDelete('companies', deletingCompany.id);
-        firestoreTrustedCompaniesService.deleteTrustedCompany(deletingCompany.id).catch(() => {});
-        addToast('success', 'Partner Removed', `"${deletingCompany.name}" was permanently deleted.`);
-      } else {
-        await cmsService.softDelete('companies', deletingCompany.id);
-        addToast('success', 'Partner Archived', `"${deletingCompany.name}" was archived (soft deleted).`);
-      }
+      await firestoreTrustedCompaniesService.deleteTrustedCompany(deletingCompany.id);
+      addToast('success', 'Partner Removed', `"${deletingCompany.name}" was permanently deleted.`);
+      const companies = await firestoreTrustedCompaniesService.getTrustedCompanies();
+      cmsService.syncEntityFromFirestore('companies', companies);
       setDeletingCompany(null);
     } catch (err: any) {
       addToast('error', 'Deletion Error', err.message || 'Could not delete partner.');
@@ -198,7 +185,13 @@ export const AdminCompaniesView: React.FC = () => {
 
   const handleRestore = async (company: CmsTrustedCompany) => {
     try {
-      await cmsService.restore('companies', company.id);
+      await firestoreTrustedCompaniesService.saveTrustedCompany(company.id, {
+        isPublished: true,
+        isDeleted: false,
+        status: 'active',
+      });
+      const companies = await firestoreTrustedCompaniesService.getTrustedCompanies();
+      cmsService.syncEntityFromFirestore('companies', companies);
       addToast('success', 'Partner Restored', `"${company.name}" has been restored to active partners.`);
     } catch (err: any) {
       addToast('error', 'Restore Error', err.message || 'Could not restore partner.');
@@ -380,7 +373,7 @@ export const AdminCompaniesView: React.FC = () => {
                         leftIcon={<Trash2 className="w-3.5 h-3.5 text-red-500" />}
                         className="text-xs h-8 hover:bg-red-50 hover:text-red-600"
                       >
-                        Archive
+                        Delete
                       </Button>
                     </>
                   )}
@@ -619,15 +612,15 @@ export const AdminCompaniesView: React.FC = () => {
       <AdminConfirmDialog
         isOpen={!!deletingCompany}
         onClose={() => setDeletingCompany(null)}
-        title={deletingCompany?.isDeleted ? 'Purge Partner Record?' : 'Archive Partner Company?'}
+        title={deletingCompany?.isDeleted ? 'Purge Partner Record?' : 'Delete Partner Record?'}
         message={
           deletingCompany?.isDeleted
             ? `Are you sure you want to permanently delete "${deletingCompany?.name}"? This action cannot be undone.`
-            : `Are you sure you want to archive "${deletingCompany?.name}"? It can be restored later from the archive tab.`
+            : `Are you sure you want to permanently delete "${deletingCompany?.name}" from the database? This action cannot be undone.`
         }
-        confirmText={deletingCompany?.isDeleted ? 'Permanent Purge' : 'Archive Partner'}
-        isDangerous={!!deletingCompany?.isDeleted}
-        onConfirm={() => handleDelete(!!deletingCompany?.isDeleted)}
+        confirmText={deletingCompany?.isDeleted ? 'Permanent Purge' : 'Delete Partner'}
+        isDangerous
+        onConfirm={() => handleDelete()}
       />
     </div>
   );

@@ -2,6 +2,7 @@ import React from 'react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { FirestoreTrustedCompany } from '../../types/firestore';
+import { isPublishedTrustedCompany } from '../../services/firestore/trustedCompanies';
 
 interface TrustedCompaniesSectionProps {
   onExplorePartners?: () => void;
@@ -13,7 +14,7 @@ export const TrustedCompaniesSection: React.FC<TrustedCompaniesSectionProps> = (
   // Strictly display trusted enterprise companies saved in Firestore by the admin
   const activeCompanies = React.useMemo(() => {
     return (trustedCompanies || [])
-      .filter((c) => c.status !== 'inactive' && c.isPublished !== false && !(c as any).isDeleted)
+      .filter(isPublishedTrustedCompany)
       .sort((a, b) => (a.order || 0) - (b.order || 0));
   }, [trustedCompanies]);
 

@@ -521,8 +521,8 @@ class CmsService {
         description: c.description || '',
         featured: Boolean(c.featured),
         order: c.order || 0,
-        isActive: (c as any).isActive !== false && c.status !== 'inactive',
-        isDeleted: c.status === 'inactive' && (c as any).isActive === false,
+        isActive: c.isPublished !== false && c.status !== 'inactive' && c.isDeleted !== true,
+        isDeleted: c.isDeleted === true,
         createdAt: c.createdAt || now,
         updatedAt: c.updatedAt || now,
       }));
@@ -1311,7 +1311,9 @@ class CmsService {
           logoUrl: item.logoUrl || '',
           website: item.website || '',
           description: item.description || '',
+          featured: Boolean(item.featured),
           isPublished: !item.isDeleted && item.isActive !== false,
+          isDeleted: Boolean(item.isDeleted),
           order: item.order || 0,
           status: item.isDeleted ? 'inactive' : (item.isActive === false ? 'inactive' : 'active'),
         });
