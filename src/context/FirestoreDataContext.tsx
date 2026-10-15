@@ -135,7 +135,11 @@ function hasValidDeviceCacheItem(key: string): boolean {
   if (cached === null) return false;
   try {
     const parsed: unknown = JSON.parse(cached);
-    if (DEVICE_CACHE_ARRAY_KEYS.has(key)) return Array.isArray(parsed);
+    if (DEVICE_CACHE_ARRAY_KEYS.has(key)) {
+      return Array.isArray(parsed) && (
+        !DEVICE_CACHE_NONEMPTY_ARRAY_KEYS.has(key) || parsed.length > 0
+      );
+    }
     return Boolean(parsed && typeof parsed === 'object' && !Array.isArray(parsed));
   } catch {
     return false;
