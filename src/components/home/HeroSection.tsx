@@ -12,6 +12,7 @@ interface HeroSectionProps {
 }
 
 const HERO_VIDEO = '/assets/hero_landing.mp4';
+let savedHeroVideoTime = 0;
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onNavigate,
@@ -32,6 +33,18 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     let hasAttemptedAudibleAutoplay = false;
     let isHeroVisible = false;
     let playbackRequest = 0;
+    const savePlaybackPosition = () => {
+      if (Number.isFinite(video.currentTime)) savedHeroVideoTime = video.currentTime;
+    };
+    const restorePlaybackPosition = () => {
+      if (
+        savedHeroVideoTime > 0 &&
+        Number.isFinite(video.duration) &&
+        savedHeroVideoTime < video.duration
+      ) {
+        video.currentTime = savedHeroVideoTime;
+      }
+    };
 
     const removeInteractionListeners = () => {
       window.removeEventListener('pointerdown', enableAudio);
@@ -41,6 +54,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
     const pauseVideo = () => {
       playbackRequest += 1;
+      savePlaybackPosition();
       video.pause();
       video.muted = true;
     };
@@ -54,7 +68,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       try {
         await video.play();
         if (requestId !== playbackRequest || !isHeroVisible) {
-          pauseVideo();
           return;
         }
         if (tryAudio) {
@@ -70,6 +83,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           } catch (mutedError) {
             console.warn('[HomeHero] Muted autoplay was blocked:', mutedError);
           }
+          if (requestId !== playbackRequest || !isHeroVisible) return;
           if (userInteracted) {
             console.warn('[HomeHero] Could not enable video audio after interaction:', error);
           }
@@ -88,6 +102,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     window.addEventListener('pointerdown', enableAudio, { passive: true });
     window.addEventListener('touchstart', enableAudio, { passive: true });
     window.addEventListener('keydown', enableAudio);
+    video.addEventListener('timeupdate', savePlaybackPosition);
+    video.addEventListener('loadedmetadata', restorePlaybackPosition);
+    if (video.readyState >= HTMLMediaElement.HAVE_METADATA) restorePlaybackPosition();
     const onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         pauseVideo();
@@ -121,6 +138,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       observer?.disconnect();
       document.removeEventListener('visibilitychange', onVisibilityChange);
       removeInteractionListeners();
+      video.removeEventListener('timeupdate', savePlaybackPosition);
+      video.removeEventListener('loadedmetadata', restorePlaybackPosition);
       pauseVideo();
     };
   }, []);
@@ -140,11 +159,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         <video
           ref={videoRef}
           src={HERO_VIDEO}
-          autoPlay
           loop
           playsInline
           muted
-          preload="auto"
+          preload="metadata"
           aria-hidden="true"
           disablePictureInPicture
           className="absolute inset-0 h-full w-full object-cover object-center brightness-[1.05] contrast-[1.08] saturate-[1.08]"

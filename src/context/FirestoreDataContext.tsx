@@ -339,6 +339,12 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   const cachedPort = getCache('mahdev_cached_portfolio');
   const cachedGal = getCache('mahdev_cached_gallery');
   const cachedMedia = getCache('mahdev_cached_media_assets');
+  const hasCachedDivisionCollections = [
+    'mahdev_cached_services',
+    'mahdev_cached_gallery',
+    'mahdev_cached_products',
+    'mahdev_cached_categories',
+  ].every(hasValidDeviceCacheItem);
 
   // Individual Per-Entity Loading States (All core corporate entities pre-seeded for 0ms instant rendering!)
   const [isDivisionsLoading, setIsDivisionsLoading] = useState<boolean>(!Array.isArray(cachedDivs));
@@ -443,7 +449,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Track loaded divisions state for seamless transition & shimmers
   const [loadedDivisions, setLoadedDivisions] = useState<Record<string, boolean>>(() => {
-    if (hasCachedData) return { ...FULLY_LOADED_DIVISION_FLAGS };
+    if (hasCachedData || hasCachedDivisionCollections) return { ...FULLY_LOADED_DIVISION_FLAGS };
     try {
       if (typeof window !== 'undefined') {
         const cached = getDeviceCacheItem('mahdev_cached_loaded_divisions');
@@ -454,7 +460,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   });
 
   const [loadedServices, setLoadedServices] = useState<Record<string, boolean>>(() => {
-    if (hasCachedData) return { ...FULLY_LOADED_DIVISION_FLAGS };
+    if (hasCachedData || hasCachedDivisionCollections) return { ...FULLY_LOADED_DIVISION_FLAGS };
     try {
       if (typeof window !== 'undefined') {
         const cached = getDeviceCacheItem('mahdev_cached_loaded_services');
@@ -465,7 +471,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   });
 
   const [loadedGallery, setLoadedGallery] = useState<Record<string, boolean>>(() => {
-    if (hasCachedData) return { ...FULLY_LOADED_DIVISION_FLAGS };
+    if (hasCachedData || hasCachedDivisionCollections) return { ...FULLY_LOADED_DIVISION_FLAGS };
     try {
       if (typeof window !== 'undefined') {
         const cached = getDeviceCacheItem('mahdev_cached_loaded_gallery');
@@ -523,33 +529,28 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     const canonicalId = getCanonicalDivisionId(rawDivId) || rawDivId;
     if (!canonicalId) return;
     const hasDivisionCache = () => {
-      try {
-        const services = JSON.parse(getDeviceCacheItem('mahdev_cached_loaded_services') || '{}');
-        const gallery = JSON.parse(getDeviceCacheItem('mahdev_cached_loaded_gallery') || '{}');
-        return Boolean(
-          services[canonicalId] &&
-          gallery[canonicalId] &&
-          hasValidDeviceCacheItem('mahdev_cached_services') &&
-          hasValidDeviceCacheItem('mahdev_cached_gallery') &&
-          hasValidDeviceCacheItem('mahdev_cached_products') &&
-          hasValidDeviceCacheItem('mahdev_cached_categories')
-        );
-      } catch {
-        return false;
-      }
+      return [
+        'mahdev_cached_services',
+        'mahdev_cached_gallery',
+        'mahdev_cached_products',
+        'mahdev_cached_categories',
+      ].every(hasValidDeviceCacheItem);
     };
-    if (!forceRefresh && hasDivisionCache()) return;
+    const hasRenderableCachedData = hasDivisionCache();
+    if (!forceRefresh && hasRenderableCachedData) return;
 
     // Deduplicate in-flight requests for the exact same division
     if (inFlightDivisionLoadsRef.current[canonicalId]) {
       return inFlightDivisionLoadsRef.current[canonicalId];
     }
 
-    setFetchingDivisions((prev) => ({
-      ...prev,
-      [canonicalId]: true,
-      [rawDivId]: true,
-    }));
+    if (!hasRenderableCachedData) {
+      setFetchingDivisions((prev) => ({
+        ...prev,
+        [canonicalId]: true,
+        [rawDivId]: true,
+      }));
+    }
     setDivisionLoadErrors((previous) => {
       const next = { ...previous };
       delete next[canonicalId];
@@ -1447,23 +1448,25 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       if (services.length > 0) bookingService.syncWithFirestore(services);
       if (divisions.length > 0) cmsService.syncEntityFromFirestore('divisions', divisions);
       if (homepageConfig) cmsService.syncHomepageConfig(homepageConfig);
-      if (isHardReloadNavigation()) {
-        void loadRouteData(getCurrentRoutePath(), true).catch((error: unknown) => {
-          console.error('[FirestoreDataContext] Route refresh failed:', error);
-        });
-      }
+      const route = getCurrentRoutePath();
+      const refresh = route === '/' || route === '/divisions'
+        ? refreshAll(true)
+        : loadRouteData(route, true);
+      void refresh.catch((error: unknown) => {
+        console.error('[FirestoreDataContext] Route refresh failed:', error);
+      });
       return;
     }
 
     if (!bootLoadStartedRef.current) {
       bootLoadStartedRef.current = true;
       const route = getCurrentRoutePath();
-      if (isHardReloadNavigation()) {
+      if (route === '/' || route === '/divisions') {
+        void refreshAll(true);
+      } else if (isHardReloadNavigation()) {
         void loadRouteData(route, true).catch((error: unknown) => {
           console.error('[FirestoreDataContext] Route refresh failed:', error);
         });
-      } else if (route === '/' || route === '/divisions') {
-        void refreshAll(true);
       } else {
         void loadRouteData(route).catch((error: unknown) => {
           console.error('[FirestoreDataContext] Initial route data load failed:', error);
