@@ -18,7 +18,7 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
       {/* Reliable Full-Width Video Background with guaranteed autoplay */}
       <ScrollParallax targetRef={heroRef} distance={34} className="absolute -inset-y-10 inset-x-0 overflow-hidden">
         <HeroVideoBackground
-          videoUrl="/assets/hero_main.mp4?v=2"
+          videoUrl="/assets/u1-studio-hero.mp4"
           title="U1 Studio Photography & Cinema"
           enableAutomaticAudio
         />
