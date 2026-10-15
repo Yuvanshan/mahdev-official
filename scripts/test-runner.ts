@@ -19,6 +19,7 @@ import { canonicalizeDivisionRoute, sortDivisions } from '../src/services/firest
 import { getDefaultTrustedCompanies, isPublishedTrustedCompany } from '../src/services/firestore/trustedCompanies';
 import { buildSitemapXml } from '../backend/api/handlers/sitemap';
 import { analyticsService } from '../src/services/analyticsService';
+import { CANONICAL_SITE_ORIGIN } from '../src/config/site';
 
 interface TestStep {
   category: string;
@@ -120,6 +121,21 @@ async function runTestSuite() {
         return sws?.logoUrl === '/assets/images/sws_logo.jpeg' &&
           u1?.logoUrl === '/assets/images/u1_logo.jpeg' &&
           it?.logoUrl === 'https://cdn.example.com/it-custom.svg';
+      },
+    },
+    {
+      category: 'SEO & Marketing',
+      name: 'Canonical origin matches the generated sitemap origin',
+      fn: () => {
+        const sitemap = buildSitemapXml({
+          pages: [],
+          divisions: [],
+          services: [],
+          portfolio: [],
+        });
+        return CANONICAL_SITE_ORIGIN === 'https://mahdev-official.vercel.app' &&
+          sitemap.includes(`<loc>${CANONICAL_SITE_ORIGIN}/</loc>`) &&
+          !sitemap.includes('mahdev-lk.vercel.app');
       },
     },
     {

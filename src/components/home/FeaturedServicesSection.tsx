@@ -21,7 +21,15 @@ interface FeaturedServicesSectionProps {
 }
 
 export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (props) => {
-  const { services, homepageConfig, isServicesLoading, isInitialLoading, isFetching } = useFirestoreDataContext();
+  const {
+    services,
+    homepageConfig,
+    isServicesLoading,
+    isInitialLoading,
+    isFetching,
+    error,
+    refreshAll,
+  } = useFirestoreDataContext();
 
   if (homepageConfig.featuredServices && !homepageConfig.featuredServices.enabled) {
     return null;
@@ -32,8 +40,24 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
     .sort((a, b) => (a.order ?? (a as any).sortOrder ?? 0) - (b.order ?? (b as any).sortOrder ?? 0));
 
   if (activeServices.length === 0) {
-    if (isServicesLoading) {
+    if (isServicesLoading || isInitialLoading || isFetching) {
       return <ServicesSectionShimmer divisionName="Featured" />;
+    }
+    if (error) {
+      return (
+        <SectionContainer background="subtle" paddingY="xl">
+          <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <span>Services could not be loaded. Please retry.</span>
+            <button
+              type="button"
+              onClick={() => void refreshAll(true)}
+              className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 font-semibold hover:bg-amber-100"
+            >
+              Retry loading
+            </button>
+          </div>
+        </SectionContainer>
+      );
     }
     return null;
   }

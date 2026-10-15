@@ -43,7 +43,15 @@ interface DivisionViewProps {
 }
 
 export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNavigate }) => {
-  const { divisions, services, companySettings, isInitialLoading, loadDivisionData, isDivisionLoaded } = useFirestoreDataContext();
+  const {
+    divisions,
+    services,
+    companySettings,
+    isInitialLoading,
+    divisionLoadErrors,
+    loadDivisionData,
+    isDivisionLoaded,
+  } = useFirestoreDataContext();
 
   // Normalize IDs across short keys ('sws', 'u1', 'it', 'travels', 'mart') and slug variants
   const normalizedKey: DivisionId =
@@ -445,7 +453,22 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
 
       {/* 2. Below-hero sections */}
       {isDivisionDataLoading ? (
-        <DivisionBelowHeroShimmer divisionName={division.name} />
+        divisionLoadErrors[normalizedKey] ? (
+          <SectionContainer background="subtle" paddingY="xl">
+            <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <span>{divisionLoadErrors[normalizedKey]}</span>
+              <button
+                type="button"
+                onClick={() => void loadDivisionData(normalizedKey, true)}
+                className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 font-semibold hover:bg-amber-100"
+              >
+                Retry loading
+              </button>
+            </div>
+          </SectionContainer>
+        ) : (
+          <DivisionBelowHeroShimmer divisionName={division.name} />
+        )
       ) : (
         <>
           {/* 2. EXECUTIVE NARRATIVE & ABOUT SECTION */}

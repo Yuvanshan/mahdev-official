@@ -40,6 +40,7 @@ const SWSGalleryCardImage: React.FC<{ images: string[]; alt: string }> = ({ imag
         }
         alt={alt}
         className="h-full w-full"
+        objectFit="contain"
         imageClassName="object-contain transition-transform duration-500 group-hover:scale-[1.02]"
       />
       <ImageWatermark label="SWS EVENT MANAGEMENT" />
@@ -60,7 +61,7 @@ const SWSGalleryCardImage: React.FC<{ images: string[]; alt: string }> = ({ imag
 };
 
 export const SWSGallerySection: React.FC = () => {
-  const { gallery: rawGallery, isDivisionGalleryLoaded } = useFirestoreDataContext();
+  const { gallery: rawGallery, isDivisionGalleryLoaded, divisionLoadErrors, loadDivisionData } = useFirestoreDataContext();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
   const [activeSubImageIdx, setActiveSubImageIdx] = useState<number>(0);
@@ -109,6 +110,22 @@ export const SWSGallerySection: React.FC = () => {
   }, [galleryItems]);
 
   if (galleryItems.length === 0 && !isDivisionGalleryLoaded('sws')) {
+    if (divisionLoadErrors.sws) {
+      return (
+        <SectionContainer background="white" paddingY="xl">
+          <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <span>{divisionLoadErrors.sws}</span>
+            <button
+              type="button"
+              onClick={() => void loadDivisionData('sws', true)}
+              className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 font-semibold hover:bg-amber-100"
+            >
+              Retry loading
+            </button>
+          </div>
+        </SectionContainer>
+      );
+    }
     return <GallerySectionShimmer divisionName="SWS" />;
   }
 

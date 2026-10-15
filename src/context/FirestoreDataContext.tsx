@@ -269,6 +269,7 @@ export interface FirestoreDataContextValue {
   loadedServices: Record<string, boolean>;
   loadedGallery: Record<string, boolean>;
   fetchingDivisions: Record<string, boolean>;
+  divisionLoadErrors: Record<string, string>;
   isDivisionLoaded: (divisionId: string) => boolean;
   isDivisionServicesLoaded: (divisionId: string) => boolean;
   isDivisionGalleryLoaded: (divisionId: string) => boolean;
@@ -476,6 +477,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Track active fetching state to prevent premature shimmer disappearance on mobile networks
   const [fetchingDivisions, setFetchingDivisions] = useState<Record<string, boolean>>({});
+  const [divisionLoadErrors, setDivisionLoadErrors] = useState<Record<string, string>>({});
   const inFlightDivisionLoadsRef = React.useRef<Record<string, Promise<void> | undefined>>({});
   const publicDataLoadedRef = React.useRef(hasCachedData);
   const refreshRequestRef = React.useRef<Promise<void> | null>(null);
@@ -537,10 +539,6 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     };
     if (!forceRefresh && hasDivisionCache()) return;
-    if (refreshRequestRef.current) {
-      await refreshRequestRef.current;
-      if (!forceRefresh && hasDivisionCache()) return;
-    }
 
     // Deduplicate in-flight requests for the exact same division
     if (inFlightDivisionLoadsRef.current[canonicalId]) {
@@ -552,10 +550,17 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       [canonicalId]: true,
       [rawDivId]: true,
     }));
+    setDivisionLoadErrors((previous) => {
+      const next = { ...previous };
+      delete next[canonicalId];
+      delete next[rawDivId];
+      return next;
+    });
 
     const loadPromise = (async () => {
       let servicesLoadedSuccessfully = false;
       let galleryLoadedSuccessfully = false;
+      const failedCollections: string[] = [];
       try {
         // 1. Fetch Services
         const fetchServicesPromise = firestoreServicesService
@@ -585,6 +590,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           })
           .catch((err) => {
             console.warn(`[FirestoreDataContext] Services notice for ${rawDivId}:`, err);
+            failedCollections.push('services');
           });
 
         // 2. Fetch Gallery in parallel
@@ -610,6 +616,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           })
           .catch((err) => {
             console.warn(`[FirestoreDataContext] Gallery notice for ${rawDivId}:`, err);
+            failedCollections.push('gallery');
           });
 
         // 3. Fetch products, categories, portfolio
@@ -702,6 +709,13 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           try { setDeviceCacheItem('mahdev_cached_loaded_divisions', JSON.stringify(next)); } catch {}
           return next;
         });
+
+        if (failedCollections.length > 0) {
+          setDivisionLoadErrors((previous) => ({
+            ...previous,
+            [canonicalId]: `Unable to load ${failedCollections.join(' and ')} right now. Please retry.`,
+          }));
+        }
 
         setFetchingDivisions((prev) => ({
           ...prev,
@@ -1444,12 +1458,11 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!bootLoadStartedRef.current) {
       bootLoadStartedRef.current = true;
       const route = getCurrentRoutePath();
-      const divisionRoute = /^\/(?:sws|u1|it|travels|mart)$/.test(route);
       if (isHardReloadNavigation()) {
         void loadRouteData(route, true).catch((error: unknown) => {
           console.error('[FirestoreDataContext] Route refresh failed:', error);
         });
-      } else if (route === '/' || route === '/divisions' || divisionRoute) {
+      } else if (route === '/' || route === '/divisions') {
         void refreshAll(true);
       } else {
         void loadRouteData(route).catch((error: unknown) => {
@@ -1665,6 +1678,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       loadedServices,
       loadedGallery,
       fetchingDivisions,
+      divisionLoadErrors,
       isDivisionLoaded,
       isDivisionServicesLoaded,
       isDivisionGalleryLoaded,
@@ -1720,6 +1734,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       loadedServices,
       loadedGallery,
       fetchingDivisions,
+      divisionLoadErrors,
       isDivisionLoaded,
       isDivisionServicesLoaded,
       isDivisionGalleryLoaded,

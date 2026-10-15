@@ -45,7 +45,7 @@ The project includes a root `vercel.json` configured specifically for modern Rea
 - **Node.js Version**: `20.x` or `22.x`
 
 ### Security & Caching Headers
-- **Defense in Depth**: `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`.
+- **Defense in Depth**: Content Security Policy, Permissions Policy, `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`.
 - **Immutable Static Assets**: `Cache-Control: public, max-age=31536000, immutable` for all files in `/assets/`.
 - **SPA Fallback**: Clean URL rewrite routing all unmatched routes to `/index.html`.
 
@@ -90,8 +90,8 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 
 | Variable Name | Environments | Description |
 | :--- | :--- | :--- |
-| `VITE_APP_URL` | Production: `https://mahdev-official.vercel.app`<br>Preview: `https://$VERCEL_URL`<br>Development: `http://localhost:3000` | Public canonical base URL used by SEO and production analytics |
-| `PUBLIC_SITE_URL` | Production: `https://mahdev-official.vercel.app` | Server-only public canonical origin for generated sitemap URLs; update alongside `VITE_APP_URL` when the primary domain changes |
+| `VITE_APP_URL` | Production: `https://mahdev-official.vercel.app`<br>Preview: `https://$VERCEL_URL`<br>Development: `http://localhost:3000` | Public runtime URL for client-side links and analytics; canonical tags use the fixed origin in `src/config/site.ts` |
+| `PUBLIC_SITE_URL` | Production: `https://mahdev-official.vercel.app` | Server-only public canonical origin for generated sitemap URLs; keep it aligned with `src/config/site.ts` |
 | `VITE_FIREBASE_API_KEY` | Production, Preview, Development | Public Firebase Web SDK API Key |
 | `VITE_FIREBASE_AUTH_DOMAIN` | Production, Preview, Development | `for-her-33ea9.firebaseapp.com` |
 | `VITE_FIREBASE_PROJECT_ID` | Production, Preview, Development | `for-her-33ea9` |
@@ -99,7 +99,7 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 | `FIREBASE_STORAGE_BUCKET` | Production, Preview, Development | Server-side Firebase Storage bucket (defaults to `for-her-33ea9.firebasestorage.app`) |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | Production, Preview, Development | Server-only Firebase service-account JSON used to create admin-authorized resumable uploads; store as a secret and never prefix with `VITE_` |
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | Production, Preview, Development | `1062826041810` |
-| `VITE_FIREBASE_APP_ID` | Production, Preview, Development | `1:1062826041810:web:2905a8e9f7bc3243dfa80b` |
+| `VITE_FIREBASE_APP_ID` | Production, Preview, Development | Exact Web App ID copied from Firebase Project Settings for the selected registered app; must belong to `VITE_FIREBASE_PROJECT_ID` |
 | `VITE_FIREBASE_MEASUREMENT_ID` | Production, Preview, Development | `G-MWNCCXGY4F` |
 | `VITE_GA_MEASUREMENT_ID` | Production | Optional Google Analytics 4 Measurement ID (`G-...`); unset disables GA4 |
 | `VITE_META_PIXEL_ID` | Production | Optional numeric Meta Pixel ID; unset disables Meta Pixel |
@@ -113,7 +113,7 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 | `ADMIN_LOGIN_PASSWORD_HASH` | Production, Preview, Development | scrypt password hash; generate locally with `npm run admin:hash-password` |
 | `ADMIN_SESSION_SECRET` | Production, Preview, Development | Random server-only session signing secret; generate with `openssl rand -base64 48` |
 | `VITE_TURSO_DATABASE_NAME` | Production, Preview, Development | Optional public database label for diagnostics |
-| `VITE_FIREBASE_RECAPTCHA_SITE_KEY` | Production | reCAPTCHA v3 / Enterprise Site Key for App Check |
+| `VITE_FIREBASE_RECAPTCHA_SITE_KEY` | Production | reCAPTCHA v3 / Enterprise site key registered for the selected Firebase Web App and allowed production hostname |
 | `PAYMENT_GATEWAY_ENV` | Production: `production`<br>Preview/Dev: `sandbox` | Payment verification engine mode |
 | `STRIPE_SECRET_KEY` | Production: `sk_live_...`<br>Preview/Dev: `sk_test_...` | Stripe Server Secret API Key |
 | `PAYMENT_WEBHOOK_SECRET` | Production, Preview | HMAC-SHA256 signature verification key |
@@ -122,6 +122,8 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 | `GEMINI_API_KEY` | Production, Preview, Development | Gemini AI intelligence secret |
 
 > ⚠️ **Note**: After adding or modifying environment variables in Vercel, you must trigger a redeployment for the changes to take effect.
+
+The live site must use a Firebase Web App ID registered under `for-her-33ea9`. A production App Check verification returned `App not registered` for the currently deployed app ID. Confirm the correct Web App ID in Firebase Project Settings > General, confirm that the reCAPTCHA key is configured for that same app and the production hostname in App Check, update the Vercel Production variables, and redeploy. Do not enable Firebase App Check enforcement until valid tokens are being issued and verified.
 
 ### Admin sign-in and database permissions
 
@@ -143,7 +145,7 @@ Admin portal access uses `ADMIN_LOGIN_EMAIL`, `ADMIN_LOGIN_PASSWORD_HASH`, and `
 
 The public sitemap is generated at request time from published CMS pages, active divisions, public services, and published portfolio projects, in addition to the main public routes. It is served from `https://mahdev-official.vercel.app/sitemap.xml` and declared in `robots.txt`. Public marketing pages are indexable; account, admin, and transaction routes are excluded. Individual service pages use service structured data, and division/service listing links use crawlable URLs.
 
-Search indexing is enabled only when Vercel sets `VERCEL_ENV=production`; Vercel preview deployments and local builds remain `noindex`. Set `VITE_APP_URL` and `PUBLIC_SITE_URL` to the same primary HTTPS origin so page canonicals and sitemap URLs consistently identify the preferred domain.
+Search indexing is enabled only when Vercel sets `VERCEL_ENV=production`; Vercel preview deployments and local builds remain `noindex`. `src/config/site.ts` is the source of truth for page canonical URLs; keep the server-side `PUBLIC_SITE_URL` aligned to it for sitemap URLs. `VITE_APP_URL` is not used to override canonical URLs.
 
 After deploying SEO changes:
 

@@ -3,11 +3,10 @@ import { SEOMetaData } from '../../types';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { db } from '../../lib/firebase';
 import { doc, getDoc } from '../../lib/tursoFirestore';
+import { CANONICAL_SITE_ORIGIN } from '../../config/site';
 
 const SEO_CACHE_KEY = 'mahdev_cached_seo_configs';
-const SEO_ORIGIN = new URL(
-  import.meta.env.VITE_APP_URL || 'https://mahdev-official.vercel.app'
-).origin;
+const SEO_ORIGIN = CANONICAL_SITE_ORIGIN;
 const IS_PRODUCTION_DEPLOYMENT = import.meta.env.VITE_SITE_DEPLOYMENT_ENV === 'production';
 
 type SeoConfig = {

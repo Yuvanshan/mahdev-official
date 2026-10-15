@@ -45,6 +45,78 @@ export function sanitizePublicSettingsDocument(document: TursoDocument): TursoDo
   };
 }
 
+function sanitizePublicMediaDeletionRegistryDocument(document: TursoDocument): TursoDocument {
+  const deletedIds = Array.isArray(document.data.deletedIds)
+    ? document.data.deletedIds.filter((value): value is string => typeof value === 'string')
+    : [];
+  const deletedUrls = Array.isArray(document.data.deletedUrls)
+    ? document.data.deletedUrls.filter((value): value is string => typeof value === 'string')
+    : [];
+
+  return {
+    ...document,
+    data: { deletedIds, deletedUrls },
+  };
+}
+
+const PUBLIC_IMAGE_COLLECTIONS = new Set(['gallery', 'media_assets', 'portfolio', 'products', 'services']);
+const INLINE_IMAGE_FIELDS = ['imageUrl', 'url', 'mediaUrl', 'thumbnailUrl', 'image'];
+
+export function compactPublicImageDocument(collection: string, document: TursoDocument): TursoDocument {
+  if (!PUBLIC_IMAGE_COLLECTIONS.has(collection)) return document;
+
+  const data = { ...document.data };
+  const inlineImage = (value: unknown): value is string =>
+    typeof value === 'string' && value.startsWith('data:image/');
+  const imageArray = Array.isArray(data.images) ? data.images.filter((value) => typeof value === 'string') as string[] : null;
+  const preferImageUrl = ['portfolio', 'products', 'services'].includes(collection);
+  const preferredField = preferImageUrl ? 'imageUrl' : 'url';
+  const imageFields = collection === 'gallery'
+    ? ['url', 'mediaUrl', 'thumbnailUrl', 'imageUrl', 'image']
+    : preferImageUrl
+      ? ['imageUrl', 'url', 'mediaUrl', 'thumbnailUrl', 'image']
+      : ['url', 'mediaUrl', 'thumbnailUrl', 'imageUrl', 'image'];
+  const explicitPreferredValue = inlineImage(data[preferredField])
+    ? data[preferredField] as string
+    : undefined;
+  const fallbackField = imageFields.find((field) => inlineImage(data[field]));
+  const fallbackValue = fallbackField ? data[fallbackField] as string : undefined;
+  const imageSources = imageArray?.length
+    ? [...new Set(imageArray)]
+    : explicitPreferredValue
+      ? [explicitPreferredValue]
+      : fallbackValue
+        ? [fallbackValue]
+        : [];
+  const retainedField = imageArray?.length
+    ? preferImageUrl && explicitPreferredValue
+      ? preferredField
+      : undefined
+    : explicitPreferredValue
+      ? preferredField
+      : fallbackField;
+
+  if (imageArray?.length) {
+    const uniqueImages = [...new Set(imageArray)];
+    data.images = preferImageUrl && explicitPreferredValue
+      ? uniqueImages.filter((image) => image !== explicitPreferredValue)
+      : uniqueImages;
+  }
+  for (const field of INLINE_IMAGE_FIELDS) {
+    const value = data[field];
+    if (
+      inlineImage(value) &&
+      imageSources.includes(value) &&
+      !(preferImageUrl && explicitPreferredValue && field === preferredField) &&
+      field !== retainedField
+    ) {
+      delete data[field];
+    }
+  }
+
+  return { ...document, data };
+}
+
 const PUBLIC_READ_COLLECTIONS = new Set([
   'announcements',
   'banners',
@@ -233,11 +305,17 @@ export async function authorizeDatabaseAction(
     body.action === 'list' &&
     collection === 'media_blobs' &&
     (!body.parentPath || body.parentPath === '');
+  const isPublicMediaDeletionRegistryRead =
+    body.action === 'get' &&
+    collection === 'system_metadata' &&
+    body.id === 'deleted_media' &&
+    (!body.parentPath || body.parentPath === '');
   const isPrivilegedAction =
     requiresAdminForDatabaseAction(input) ||
     body.action === 'clear' ||
     body.action === 'batch' ||
     isPublicMediaDirectoryRead ||
+    (collection === 'system_metadata' && !isPublicMediaDeletionRegistryRead) ||
     (body.action === 'write' && !(
       writeCollections.length === 1 &&
       (CUSTOMER_OWNED_COLLECTIONS.has(writeCollections[0]) ||
@@ -264,7 +342,13 @@ export async function authorizeDatabaseAction(
   }
 
   const isRead = body.action === 'get' || body.action === 'list';
-  if (isRead && [...collections].every((name) => PUBLIC_READ_COLLECTIONS.has(name))) {
+  if (
+    isRead &&
+    (
+      [...collections].every((name) => PUBLIC_READ_COLLECTIONS.has(name)) ||
+      isPublicMediaDeletionRegistryRead
+    )
+  ) {
     return { role: 'public' };
   }
 
@@ -577,6 +661,20 @@ function parseFilters(value: unknown): TursoFilter[] {
   });
 }
 
+function parseFilterGroups(value: unknown): TursoFilter[][] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > 10) {
+    throw new Error('Query filter groups must be an array with no more than 10 alternatives.');
+  }
+  return value.map((group) => {
+    const filters = parseFilters(group);
+    if (filters.length === 0 || filters.length > 10) {
+      throw new Error('Each query filter group must contain between 1 and 10 filters.');
+    }
+    return filters;
+  });
+}
+
 function parseOrder(value: unknown): TursoOrder | undefined {
   if (value === undefined) return undefined;
   if (!value || typeof value !== 'object') throw new Error('Invalid query ordering.');
@@ -664,7 +762,14 @@ export async function handleTursoAction(
       ) ? document : null;
       const publicDocument = access.role === 'public' && collection === 'settings' && visibleDocument
         ? sanitizePublicSettingsDocument(visibleDocument)
-        : visibleDocument;
+        : access.role === 'public' &&
+            collection === 'system_metadata' &&
+            id === 'deleted_media' &&
+            visibleDocument
+          ? sanitizePublicMediaDeletionRegistryDocument(visibleDocument)
+        : access.role === 'public' && visibleDocument
+          ? compactPublicImageDocument(collection, visibleDocument)
+          : visibleDocument;
       return {
         status: 200,
         body: { document: publicDocument },
@@ -677,6 +782,7 @@ export async function handleTursoAction(
         ? body.afterValue
         : undefined;
       const filters = parseFilters(body.filters);
+      const filterGroups = parseFilterGroups(body.filterGroups);
       if (access.role === 'public' && collection === 'careerOpenings') {
         filters.push({ field: 'status', operator: '==', value: 'published' });
       }
@@ -688,13 +794,16 @@ export async function handleTursoAction(
         maxRows,
         afterId,
         access.role === 'customer' ? access.identity : undefined,
-        afterValue
+        afterValue,
+        filterGroups
       );
       return {
         status: 200,
         body: {
           documents: access.role === 'public' && collection === 'settings'
             ? documents.map(sanitizePublicSettingsDocument)
+            : access.role === 'public' && PUBLIC_IMAGE_COLLECTIONS.has(collection)
+              ? documents.map((document) => compactPublicImageDocument(collection, document))
             : documents,
         },
       };

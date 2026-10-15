@@ -26,7 +26,13 @@ export const SWSServicesSection: React.FC<SWSServicesSectionProps> = ({
   onBookNow,
   onRequestQuote,
 }) => {
-  const { services: rawServices, categories: rawCategories, isDivisionServicesLoaded } = useFirestoreDataContext();
+  const {
+    services: rawServices,
+    categories: rawCategories,
+    isDivisionServicesLoaded,
+    divisionLoadErrors,
+    loadDivisionData,
+  } = useFirestoreDataContext();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeModalService, setActiveModalService] = useState<SWSService | null>(null);
@@ -116,6 +122,22 @@ export const SWSServicesSection: React.FC<SWSServicesSectionProps> = ({
 
   if (allServices.length === 0) {
     if (!isDivisionServicesLoaded('sws')) {
+      if (divisionLoadErrors.sws) {
+        return (
+          <SectionContainer background="subtle" paddingY="xl">
+            <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <span>{divisionLoadErrors.sws}</span>
+              <button
+                type="button"
+                onClick={() => void loadDivisionData('sws', true)}
+                className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 font-semibold hover:bg-amber-100"
+              >
+                Retry loading
+              </button>
+            </div>
+          </SectionContainer>
+        );
+      }
       return (
         <SectionContainer background="subtle" paddingY="xl">
           <div className="animate-pulse space-y-8">

@@ -11,6 +11,7 @@ interface ImageWithShimmerProps {
   alt: string;
   className: string;
   imageClassName?: string;
+  imageFit?: 'cover' | 'contain';
   loading?: 'eager' | 'lazy';
   fallbackText?: string;
   showShimmer?: boolean;
@@ -23,6 +24,7 @@ export const ImageWithShimmer: React.FC<ImageWithShimmerProps> = ({
   alt,
   className,
   imageClassName = '',
+  imageFit = 'cover',
   loading = 'lazy',
   fallbackText,
   showShimmer = true,
@@ -40,6 +42,7 @@ export const ImageWithShimmer: React.FC<ImageWithShimmerProps> = ({
       candidateKey={candidateKey}
       sourceCandidates={sourceCandidates}
       watermarkLabel={watermarkLabel}
+      imageFit={imageFit}
       alt={alt}
       className={`${hasPositionClass ? '' : 'relative'} overflow-hidden ${className}`}
       imageClassName={imageClassName}
@@ -55,6 +58,7 @@ const ImageSourceSequence: React.FC<{
   candidateKey: string;
   sourceCandidates: string[];
   watermarkLabel?: 'SWS EVENT MANAGEMENT' | 'U1 STUDIO';
+  imageFit: 'cover' | 'contain';
   alt: string;
   className: string;
   imageClassName: string;
@@ -62,7 +66,7 @@ const ImageSourceSequence: React.FC<{
   fallbackText?: string;
   showShimmer: boolean;
   onImageLoad: () => void;
-}> = ({ candidateKey, sourceCandidates, watermarkLabel, alt, className, imageClassName, loading, fallbackText, showShimmer, onImageLoad }) => {
+}> = ({ candidateKey, sourceCandidates, watermarkLabel, imageFit, alt, className, imageClassName, loading, fallbackText, showShimmer, onImageLoad }) => {
   const [sequence, setSequence] = useState({ candidateKey, sourceIndex: 0 });
   const sourceIndex = sequence.candidateKey === candidateKey ? sequence.sourceIndex : 0;
   const currentSrc = sourceCandidates[sourceIndex] || '';
@@ -79,6 +83,7 @@ const ImageSourceSequence: React.FC<{
           onLoad={onImageLoad}
           className="absolute inset-0"
           imageClassName={imageClassName}
+          objectFit={imageFit}
           onError={() =>
             setSequence((current) => ({
               candidateKey,
@@ -95,9 +100,9 @@ const ImageSourceSequence: React.FC<{
           {fallbackText && (
             <span className="text-center text-xs font-semibold text-slate-600">{fallbackText}</span>
           )}
-          {currentSrc && watermarkLabel && <ImageWatermark label={watermarkLabel} />}
         </div>
       )}
+      {currentSrc && watermarkLabel && <ImageWatermark label={watermarkLabel} />}
     </div>
   );
 };

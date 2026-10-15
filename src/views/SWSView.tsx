@@ -39,6 +39,7 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
     companySettings,
     siteSettings,
     products,
+    divisionLoadErrors,
     loadDivisionData,
   } = useFirestoreDataContext();
   const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
@@ -129,6 +130,21 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
         onExploreServices={() => scrollToAnchor('services')}
         onExploreRentals={() => scrollToAnchor('rentals')}
       />
+
+      {divisionLoadErrors.sws && (
+        <div className="mx-auto mt-6 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <span>{divisionLoadErrors.sws}</span>
+            <button
+              type="button"
+              onClick={() => void loadDivisionData('sws', true)}
+              className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 font-semibold hover:bg-amber-100"
+            >
+              Retry loading
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Sections render as their own data arrives rather than waiting for every collection. */}
       <>

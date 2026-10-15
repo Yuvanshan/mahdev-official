@@ -26,6 +26,7 @@ const {
   handleTursoAction,
   requiresAdminForDatabaseAction,
   requiresSuperAdminForDatabaseAction,
+  compactPublicImageDocument,
   sanitizePublicSettingsDocument,
 } = await import('../backend/api/tursoRoutes');
 const { FirebaseTokenError, verifyFirebaseIdToken } = await import('../backend/auth/firebaseIdToken');
@@ -110,6 +111,28 @@ async function run(): Promise<void> {
       (await authorizeDatabaseAction({ action: 'list', collection: 'products' }, undefined)).role,
       'public'
     );
+    assert.equal(
+      (await authorizeDatabaseAction({
+        action: 'get',
+        collection: 'system_metadata',
+        parentPath: '',
+        id: 'deleted_media',
+      }, undefined)).role,
+      'public'
+    );
+    await assert.rejects(
+      () => authorizeDatabaseAction({
+        action: 'get',
+        collection: 'system_metadata',
+        parentPath: '',
+        id: 'private_config',
+      }, undefined),
+      /An administrator session is required/
+    );
+    await assert.rejects(
+      () => authorizeDatabaseAction({ action: 'list', collection: 'system_metadata' }, undefined),
+      /An administrator session is required/
+    );
     await assert.rejects(
       () => authorizeDatabaseAction({ action: 'list', collection: 'media_blobs' }, undefined),
       /An administrator session is required/
@@ -168,6 +191,24 @@ async function run(): Promise<void> {
     assert.deepEqual(
       [...firstAnalyticsPage, ...secondAnalyticsPage].map((event) => event.id),
       ['cursor-event-04', 'cursor-event-03', 'cursor-event-02', 'cursor-event-01']
+    );
+    await importMigratedDocuments('services', [
+      { id: 'division-filter-primary', data: { division: 'sws' } },
+      { id: 'division-filter-legacy', data: { divisionId: 'u1' } },
+      { id: 'division-filter-other', data: { division: 'it' } },
+    ]);
+    const divisionFilterResult = await handleTursoAction({
+      action: 'list',
+      collection: 'services',
+      filterGroups: [
+        [{ field: 'division', operator: 'in', value: ['sws'] }],
+        [{ field: 'divisionId', operator: 'in', value: ['u1'] }],
+      ],
+    }, { role: 'public' });
+    assert.equal(divisionFilterResult.status, 200);
+    assert.deepEqual(
+      (divisionFilterResult.body.documents as Array<{ id: string }>).map(({ id }) => id).sort(),
+      ['division-filter-legacy', 'division-filter-primary']
     );
 
     const publicSettingsAccess = await authorizeDatabaseAction(
@@ -233,6 +274,26 @@ async function run(): Promise<void> {
       data: { dailyBackupEnabled: true, details: [{ enableStockAlertEmails: true, title: 'Public' }] },
     });
     assert.deepEqual(filteredNestedRecord.data, { details: [{ title: 'Public' }] });
+    const duplicatedImage = 'data:image/webp;base64,AAAA';
+    const compactGallery = compactPublicImageDocument('gallery', {
+      id: 'gallery-compact-test',
+      data: {
+        images: [duplicatedImage],
+        url: duplicatedImage,
+        mediaUrl: duplicatedImage,
+        thumbnailUrl: duplicatedImage,
+      },
+    });
+    assert.deepEqual(compactGallery.data, { images: [duplicatedImage] });
+    const compactService = compactPublicImageDocument('services', {
+      id: 'service-compact-test',
+      data: {
+        imageUrl: duplicatedImage,
+        images: [duplicatedImage],
+        url: duplicatedImage,
+      },
+    });
+    assert.deepEqual(compactService.data, { imageUrl: duplicatedImage, images: [] });
     assert.equal(requiresAdminForDatabaseAction({
       action: 'write',
       write: { type: 'set', collection: 'services', id: 'svc-1' },

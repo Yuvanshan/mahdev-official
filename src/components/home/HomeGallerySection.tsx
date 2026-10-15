@@ -108,7 +108,14 @@ const HomeGalleryCard: React.FC<{
 
 /** A premium gallery that mirrors the polished presentation used in the division pages. */
 export const HomeGallerySection: React.FC = () => {
-  const { gallery, isGalleryLoading, isInitialLoading, isFetching } = useFirestoreDataContext();
+  const {
+    gallery,
+    isGalleryLoading,
+    isInitialLoading,
+    isFetching,
+    error,
+    refreshAll,
+  } = useFirestoreDataContext();
   const [activeImage, setActiveImage] = useState<ActiveGalleryImage | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -146,8 +153,24 @@ export const HomeGallerySection: React.FC = () => {
     : searchedItems.slice(0, 9);
 
   if (!items.length) {
-    if (isGalleryLoading) {
+    if (isGalleryLoading || isInitialLoading || isFetching) {
       return <GallerySectionShimmer divisionName="Corporate" />;
+    }
+    if (error) {
+      return (
+        <SectionContainer background="white" paddingY="xl">
+          <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <span>Gallery content could not be loaded. Please retry.</span>
+            <button
+              type="button"
+              onClick={() => void refreshAll(true)}
+              className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 font-semibold hover:bg-amber-100"
+            >
+              Retry loading
+            </button>
+          </div>
+        </SectionContainer>
+      );
     }
     return null;
   }

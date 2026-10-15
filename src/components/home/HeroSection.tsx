@@ -24,11 +24,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    const hero = heroRef.current;
+    if (!video || !hero) return;
 
     let audioEnabled = false;
-    let audioAttemptPending = false;
     let userInteracted = false;
+    let hasAttemptedAudibleAutoplay = false;
+    let isHeroVisible = false;
+    let playbackRequest = 0;
 
     const removeInteractionListeners = () => {
       window.removeEventListener('pointerdown', enableAudio);
@@ -36,52 +39,89 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       window.removeEventListener('keydown', enableAudio);
     };
 
-    const enableAudio = () => {
-      if (audioEnabled || audioAttemptPending) return;
-      userInteracted = true;
-      audioAttemptPending = true;
+    const pauseVideo = () => {
+      playbackRequest += 1;
+      video.pause();
+      video.muted = true;
+    };
+
+    const startVideo = async (tryAudio: boolean) => {
+      if (!isHeroVisible || document.visibilityState === 'hidden') return;
+
+      const requestId = ++playbackRequest;
       video.volume = 0.2;
-      video.muted = false;
-      void video.play().then(
-        () => {
-          audioEnabled = true;
-          audioAttemptPending = false;
-          removeInteractionListeners();
-        },
-        (error: unknown) => {
-          audioAttemptPending = false;
-          video.muted = true;
-          console.warn('[HomeHero] Could not enable video audio after interaction:', error);
+      video.muted = !tryAudio;
+      try {
+        await video.play();
+        if (requestId !== playbackRequest || !isHeroVisible) {
+          pauseVideo();
+          return;
         }
-      );
+        if (tryAudio) {
+          audioEnabled = true;
+          removeInteractionListeners();
+        }
+      } catch (error) {
+        if (requestId !== playbackRequest) return;
+        video.muted = true;
+        if (tryAudio && isHeroVisible) {
+          try {
+            await video.play();
+          } catch (mutedError) {
+            console.warn('[HomeHero] Muted autoplay was blocked:', mutedError);
+          }
+          if (userInteracted) {
+            console.warn('[HomeHero] Could not enable video audio after interaction:', error);
+          }
+          return;
+        }
+        console.warn('[HomeHero] Could not start the hero video:', error);
+      }
+    };
+
+    const enableAudio = () => {
+      userInteracted = true;
+      if (audioEnabled || !isHeroVisible) return;
+      void startVideo(true);
     };
 
     window.addEventListener('pointerdown', enableAudio, { passive: true });
     window.addEventListener('touchstart', enableAudio, { passive: true });
     window.addEventListener('keydown', enableAudio);
-    video.volume = 0.2;
-    video.muted = false;
-    void video.play().then(
-      () => {
-        audioEnabled = true;
-        removeInteractionListeners();
-      },
-      (error: unknown) => {
-        if (userInteracted) return;
-        video.muted = true;
-        if (error instanceof DOMException && error.name === 'NotAllowedError') {
-          void video.play().catch((mutedError: unknown) => {
-            console.warn('[HomeHero] Muted autoplay was blocked:', mutedError);
-          });
-          return;
-        }
-        removeInteractionListeners();
-        console.warn('[HomeHero] Could not start the hero video:', error);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        pauseVideo();
+      } else if (isHeroVisible) {
+        void startVideo(audioEnabled || userInteracted || !hasAttemptedAudibleAutoplay);
       }
-    );
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    const observer = typeof IntersectionObserver === 'undefined'
+      ? null
+      : new IntersectionObserver(([entry]) => {
+          isHeroVisible = entry.isIntersecting;
+          if (!isHeroVisible) {
+            pauseVideo();
+            return;
+          }
+          const tryAudio = audioEnabled || userInteracted || !hasAttemptedAudibleAutoplay;
+          if (!userInteracted && !audioEnabled) hasAttemptedAudibleAutoplay = true;
+          void startVideo(tryAudio);
+        }, { threshold: 0.05 });
+    if (observer) {
+      observer.observe(hero);
+    } else {
+      isHeroVisible = true;
+      hasAttemptedAudibleAutoplay = true;
+      void startVideo(true);
+    }
 
     return () => {
+      observer?.disconnect();
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       removeInteractionListeners();
+      pauseVideo();
     };
   }, []);
 

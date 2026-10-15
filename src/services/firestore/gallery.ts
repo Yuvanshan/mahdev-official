@@ -10,17 +10,19 @@ import {
   setDoc,
   deleteDoc,
   query,
-  where,
+  whereAny,
   onSnapshot,
   Unsubscribe,
 } from '../../lib/tursoFirestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreGallery, DivisionId } from '../../types/firestore';
-import { isSameDivision } from './divisions';
+import { getCanonicalDivisionId, getDivisionQueryAliases, isSameDivision } from './divisions';
 
 const CACHE_TTL_MS = 1000 * 60 * 20;
 let cachedGallery: { data: FirestoreGallery[]; timestamp: number } | null = null;
 let inFlightGalleryPromise: Promise<FirestoreGallery[]> | null = null;
+const divisionGalleryCache = new Map<string, { data: FirestoreGallery[]; timestamp: number }>();
+const inFlightDivisionGallery = new Map<string, Promise<FirestoreGallery[]>>();
 
 export function getDefaultGallery(): FirestoreGallery[] {
   return [
@@ -176,6 +178,55 @@ export const firestoreGalleryService = {
     const now = Date.now();
     let allItems: FirestoreGallery[] = [];
 
+    if (division && (forceRefresh || !(cachedGallery && now - cachedGallery.timestamp < CACHE_TTL_MS))) {
+      const canonicalId = getCanonicalDivisionId(division);
+      const divisionCache = divisionGalleryCache.get(canonicalId);
+      if (!forceRefresh && divisionCache && now - divisionCache.timestamp < CACHE_TTL_MS) {
+        return divisionCache.data;
+      }
+      const pending = inFlightDivisionGallery.get(canonicalId);
+      if (pending) return pending;
+
+      const request = (async () => {
+        try {
+          const aliases = getDivisionQueryAliases(division);
+          const collectionRef = collection(db, 'gallery');
+          const snapshot = await getDocs(query(collectionRef, whereAny([
+            { field: 'division', operator: 'in', value: aliases },
+            { field: 'divisionId', operator: 'in', value: aliases },
+          ])));
+          const documentsById = new Map<string, FirestoreGallery>();
+          for (const document of snapshot.docs) {
+            documentsById.set(document.id, { ...document.data(), id: document.id } as FirestoreGallery);
+          }
+          const items = Array.from(documentsById.values()).filter(
+            (item) =>
+              isSameDivision(item.division, division) ||
+              isSameDivision((item as any).divisionId, division)
+          );
+          divisionGalleryCache.set(canonicalId, { data: items, timestamp: Date.now() });
+          return items;
+        } catch (error) {
+          const cachedDivision = divisionGalleryCache.get(canonicalId)?.data;
+          const cachedFullList = cachedGallery?.data.filter(
+            (item) =>
+              isSameDivision(item.division, division) ||
+              isSameDivision((item as any).divisionId, division)
+          );
+          const stale = cachedDivision?.length ? cachedDivision : cachedFullList?.length ? cachedFullList : undefined;
+          if (stale) {
+            console.warn(`[Firestore Gallery] Using cached ${canonicalId} gallery after refresh failure:`, error);
+            return stale;
+          }
+          throw error;
+        } finally {
+          inFlightDivisionGallery.delete(canonicalId);
+        }
+      })();
+      inFlightDivisionGallery.set(canonicalId, request);
+      return request;
+    }
+
     // 1. Return fresh in-memory cache immediately if not forced to refresh
     if (!forceRefresh && cachedGallery && now - cachedGallery.timestamp < CACHE_TTL_MS) {
       allItems = cachedGallery.data;
@@ -217,6 +268,7 @@ export const firestoreGalleryService = {
     const docRef = doc(db, 'gallery', id);
     const payload = sanitizeForFirestore({ ...data, id });
     await setDoc(docRef, payload, { merge: true });
+    divisionGalleryCache.clear();
     if (cachedGallery) {
       const idx = cachedGallery.data.findIndex((g) => g.id === id);
       if (idx >= 0) {
@@ -231,6 +283,7 @@ export const firestoreGalleryService = {
   async deleteGallery(id: string): Promise<void> {
     const docRef = doc(db, 'gallery', id);
     await deleteDoc(docRef);
+    divisionGalleryCache.clear();
     if (cachedGallery) {
       cachedGallery.data = cachedGallery.data.filter((g) => g.id !== id);
       cachedGallery.timestamp = Date.now();

@@ -299,7 +299,8 @@ export async function listTursoDocuments(
   maxRows?: number,
   afterId?: string,
   owner?: FirebaseIdentity,
-  afterValue?: string | number
+  afterValue?: string | number,
+  filterGroups: TursoFilter[][] = []
 ): Promise<TursoDocument[]> {
   const table = await ensureCollectionTable(collection);
   const conditions = ['parent_path = ?'];
@@ -309,6 +310,17 @@ export async function listTursoDocuments(
     const parsed = whereSql(filter);
     conditions.push(parsed.sql);
     args.push(...parsed.args);
+  }
+  if (filterGroups.length > 0) {
+    const alternatives = filterGroups.map((group) => {
+      const groupConditions = group.map((filter) => {
+        const parsed = whereSql(filter);
+        args.push(...parsed.args);
+        return parsed.sql;
+      });
+      return `(${groupConditions.join(' AND ')})`;
+    });
+    conditions.push(`(${alternatives.join(' OR ')})`);
   }
   if (afterId) {
     if (order && afterValue !== undefined) {

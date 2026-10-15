@@ -11,18 +11,20 @@ import {
   setDoc,
   deleteDoc,
   query,
-  where,
+  whereAny,
   onSnapshot,
   Unsubscribe,
   writeBatch,
 } from '../../lib/tursoFirestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreService, DivisionId } from '../../types/firestore';
-import { isSameDivision } from './divisions';
+import { getCanonicalDivisionId, getDivisionQueryAliases, isSameDivision } from './divisions';
 
 const CACHE_TTL_MS = 1000 * 60 * 15; // 15 min cache
 let cachedServices: { data: FirestoreService[]; timestamp: number } | null = null;
 let inFlightServicesPromise: Promise<FirestoreService[]> | null = null;
+const divisionServicesCache = new Map<string, { data: FirestoreService[]; timestamp: number }>();
+const inFlightDivisionServices = new Map<string, Promise<FirestoreService[]>>();
 
 export function getDefaultServices(): FirestoreService[] {
   return [
@@ -201,6 +203,57 @@ export const firestoreServicesService = {
     const now = Date.now();
     let allServices: FirestoreService[] = [];
 
+    if (division && (forceRefresh || !(cachedServices && now - cachedServices.timestamp < CACHE_TTL_MS))) {
+      const canonicalId = getCanonicalDivisionId(division);
+      const divisionCache = divisionServicesCache.get(canonicalId);
+      if (!forceRefresh && divisionCache && now - divisionCache.timestamp < CACHE_TTL_MS) {
+        return divisionCache.data;
+      }
+      const pending = inFlightDivisionServices.get(canonicalId);
+      if (pending) return pending;
+
+      const request = (async () => {
+        try {
+          const aliases = getDivisionQueryAliases(division);
+          const collectionRef = collection(db, 'services');
+          const snapshot = await getDocs(query(collectionRef, whereAny([
+            { field: 'division', operator: 'in', value: aliases },
+            { field: 'divisionId', operator: 'in', value: aliases },
+          ])));
+          const documentsById = new Map<string, FirestoreService>();
+          for (const document of snapshot.docs) {
+            documentsById.set(document.id, { ...document.data(), id: document.id } as FirestoreService);
+          }
+          const items = Array.from(documentsById.values())
+            .filter(
+              (service) =>
+                isSameDivision(service.division, division) ||
+                isSameDivision((service as any).divisionId, division)
+            )
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+          divisionServicesCache.set(canonicalId, { data: items, timestamp: Date.now() });
+          return items;
+        } catch (error) {
+          const cachedDivision = divisionServicesCache.get(canonicalId)?.data;
+          const cachedFullList = cachedServices?.data.filter(
+            (service) =>
+              isSameDivision(service.division, division) ||
+              isSameDivision((service as any).divisionId, division)
+          );
+          const stale = cachedDivision?.length ? cachedDivision : cachedFullList?.length ? cachedFullList : undefined;
+          if (stale) {
+            console.warn(`[Firestore Services] Using cached ${canonicalId} services after refresh failure:`, error);
+            return stale;
+          }
+          throw error;
+        } finally {
+          inFlightDivisionServices.delete(canonicalId);
+        }
+      })();
+      inFlightDivisionServices.set(canonicalId, request);
+      return request;
+    }
+
     // 1. Return fresh in-memory cache immediately if not forced to refresh
     if (!forceRefresh && cachedServices && now - cachedServices.timestamp < CACHE_TTL_MS) {
       allServices = cachedServices.data;
@@ -261,6 +314,7 @@ export const firestoreServicesService = {
       updatedAt: new Date().toISOString(),
     });
     await setDoc(docRef, payload, { merge: true });
+    divisionServicesCache.clear();
     if (cachedServices) {
       const idx = cachedServices.data.findIndex((s) => s.id === id);
       if (idx >= 0) {
@@ -286,6 +340,7 @@ export const firestoreServicesService = {
     });
 
     await batch.commit();
+    divisionServicesCache.clear();
 
     if (cachedServices) {
       cachedServices.data = cachedServices.data
@@ -304,6 +359,7 @@ export const firestoreServicesService = {
   async deleteService(id: string): Promise<void> {
     const docRef = doc(db, 'services', id);
     await deleteDoc(docRef);
+    divisionServicesCache.clear();
     if (cachedServices) {
       cachedServices.data = cachedServices.data.filter((s) => s.id !== id);
       cachedServices.timestamp = Date.now();

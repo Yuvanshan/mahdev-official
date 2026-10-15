@@ -9,15 +9,14 @@ import { analyticsService } from '../services/analyticsService';
 import { FirestoreService } from '../types/firestore';
 import { openWhatsAppInquiry } from '../utils/whatsapp';
 import { NotFoundView } from './NotFoundView';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 
 interface ServiceDetailViewProps {
   slug: string;
   onNavigate: (route: string) => void;
 }
 
-const SITE_ORIGIN = new URL(
-  import.meta.env.VITE_APP_URL || 'https://mahdev-official.vercel.app'
-).origin;
+const SITE_ORIGIN = CANONICAL_SITE_ORIGIN;
 
 function findService(services: FirestoreService[], slug: string): FirestoreService | null {
   const normalizedSlug = slug.toLowerCase();

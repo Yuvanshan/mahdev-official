@@ -30,7 +30,7 @@ export interface DocumentSnapshot<T extends DocumentData = DocumentData> {
 }
 
 export interface QueryConstraint {
-  readonly type: 'where' | 'orderBy' | 'limit' | 'startAfter';
+  readonly type: 'where' | 'whereAny' | 'orderBy' | 'limit' | 'startAfter';
   readonly field?: string;
   readonly operator?: string;
   readonly value?: unknown;
@@ -161,6 +161,12 @@ export function query(
 
 export function where(field: string, operator: string, value: unknown): QueryConstraint {
   return { type: 'where', field, operator, value };
+}
+
+export function whereAny(
+  conditions: Array<{ field: string; operator: string; value: unknown }>
+): QueryConstraint {
+  return { type: 'whereAny', value: conditions };
 }
 
 export function orderBy(field: string, direction: 'asc' | 'desc' = 'asc'): QueryConstraint {
@@ -313,6 +319,9 @@ async function readQuery<T extends DocumentData>(
   const filters = parsed.constraints
     .filter((constraint) => constraint.type === 'where')
     .map(({ field, operator, value }) => ({ field, operator, value }));
+  const filterGroups = parsed.constraints
+    .filter((constraint) => constraint.type === 'whereAny')
+    .map((constraint) => constraint.value);
   const orderConstraint = parsed.constraints.find((constraint) => constraint.type === 'orderBy');
   const limitConstraint = parsed.constraints.find((constraint) => constraint.type === 'limit');
   const cursor = parsed.constraints.find((constraint) => constraint.type === 'startAfter');
@@ -332,6 +341,7 @@ async function readQuery<T extends DocumentData>(
     collection: parsed.collection,
     parentPath: parsed.parentPath,
     filters,
+    filterGroups,
     order: orderConstraint ? { field: orderConstraint.field, direction: orderConstraint.direction } : undefined,
     limit: limitConstraint?.value,
     afterId: cursorId,

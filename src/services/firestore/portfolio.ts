@@ -11,6 +11,7 @@ import {
   deleteDoc,
   query,
   where,
+  whereAny,
   orderBy,
   limit as firestoreLimit,
   onSnapshot,
@@ -18,11 +19,13 @@ import {
 } from '../../lib/tursoFirestore';
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestorePortfolio, DivisionId } from '../../types/firestore';
-import { isSameDivision } from './divisions';
+import { getCanonicalDivisionId, getDivisionQueryAliases, isSameDivision } from './divisions';
 
 const CACHE_TTL_MS = 1000 * 60 * 30; // 30-minute memoized cache for static portfolio
 let cachedPortfolio: { data: FirestorePortfolio[]; timestamp: number } | null = null;
 let inFlightPortfolioPromise: Promise<FirestorePortfolio[]> | null = null;
+const divisionPortfolioCache = new Map<string, { data: FirestorePortfolio[]; timestamp: number }>();
+const inFlightDivisionPortfolio = new Map<string, Promise<FirestorePortfolio[]>>();
 
 export function getDefaultPortfolio(): FirestorePortfolio[] {
   // Phase 60: Real Data Architecture - Zero fake portfolio items by default.
@@ -51,6 +54,59 @@ export const firestorePortfolioService = {
    */
   async getPortfolio(division?: DivisionId, forceRefresh = false): Promise<FirestorePortfolio[]> {
     const now = Date.now();
+
+    if (division && (forceRefresh || !(cachedPortfolio && now - cachedPortfolio.timestamp < CACHE_TTL_MS))) {
+      const canonicalId = getCanonicalDivisionId(division);
+      const divisionCache = divisionPortfolioCache.get(canonicalId);
+      if (!forceRefresh && divisionCache && now - divisionCache.timestamp < CACHE_TTL_MS) {
+        return divisionCache.data;
+      }
+      const pending = inFlightDivisionPortfolio.get(canonicalId);
+      if (pending) return pending;
+
+      const request = (async () => {
+        try {
+          const aliases = getDivisionQueryAliases(division);
+          const portfolioCollection = collection(db, 'portfolio');
+          const snapshot = await getDocs(query(
+            portfolioCollection,
+            whereAny([
+              { field: 'division', operator: 'in', value: aliases },
+              { field: 'divisionId', operator: 'in', value: aliases },
+            ]),
+            firestoreLimit(100)
+          ));
+          const documentsById = new Map<string, FirestorePortfolio>();
+          for (const document of snapshot.docs) {
+            documentsById.set(document.id, { ...document.data(), id: document.id } as FirestorePortfolio);
+          }
+          const items = Array.from(documentsById.values()).filter(
+            (item) =>
+              isSameDivision(item.division, division) ||
+              isSameDivision((item as any).divisionId, division)
+          );
+          divisionPortfolioCache.set(canonicalId, { data: items, timestamp: Date.now() });
+          return items;
+        } catch (error) {
+          const cachedDivision = divisionPortfolioCache.get(canonicalId)?.data;
+          const cachedFullList = cachedPortfolio?.data.filter(
+            (item) =>
+              isSameDivision(item.division, division) ||
+              isSameDivision((item as any).divisionId, division)
+          );
+          const stale = cachedDivision?.length ? cachedDivision : cachedFullList?.length ? cachedFullList : undefined;
+          if (stale) {
+            console.warn(`[Firestore Portfolio] Using cached ${canonicalId} portfolio after refresh failure:`, error);
+            return stale;
+          }
+          throw error;
+        } finally {
+          inFlightDivisionPortfolio.delete(canonicalId);
+        }
+      })();
+      inFlightDivisionPortfolio.set(canonicalId, request);
+      return request;
+    }
 
     if (!forceRefresh && cachedPortfolio && now - cachedPortfolio.timestamp < CACHE_TTL_MS) {
       return division
@@ -130,6 +186,7 @@ export const firestorePortfolioService = {
     const docRef = doc(db, 'portfolio', id);
     const payload = sanitizeForFirestore({ ...data, id });
     await setDoc(docRef, payload, { merge: true });
+    divisionPortfolioCache.clear();
     if (cachedPortfolio) {
       const idx = cachedPortfolio.data.findIndex((p) => p.id === id);
       if (idx >= 0) {
@@ -144,6 +201,7 @@ export const firestorePortfolioService = {
   async deletePortfolio(id: string): Promise<void> {
     const docRef = doc(db, 'portfolio', id);
     await deleteDoc(docRef);
+    divisionPortfolioCache.clear();
     if (cachedPortfolio) {
       cachedPortfolio.data = cachedPortfolio.data.filter((p) => p.id !== id);
       cachedPortfolio.timestamp = Date.now();

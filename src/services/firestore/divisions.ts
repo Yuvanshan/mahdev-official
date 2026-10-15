@@ -119,6 +119,19 @@ export function getCanonicalDivisionId(id: string): string {
   return shortId;
 }
 
+export function getDivisionQueryAliases(id: string): string[] {
+  const canonicalId = getCanonicalDivisionId(id);
+  const aliases: Record<string, string[]> = {
+    sws: ['sws', 'sws-event-management', 'sws-events', 'events'],
+    u1: ['u1', 'u1-studio', 'u1-cinema', 'studio', 'photography'],
+    it: ['it', 'it-solutions', 'mahdev-it', 'solutions'],
+    travels: ['travels', 'mahdev-travels', 'travel'],
+    mart: ['mart', 'online-mart', 'mahdev-mart', 'shop'],
+  };
+  const values = aliases[canonicalId] || [canonicalId];
+  return [...new Set([...values, `div-${canonicalId}`])];
+}
+
 const DIVISION_ROUTE_ALIASES: Record<string, string> = {
   '/sws-event-management': '/sws',
   '/sws-events': '/sws',

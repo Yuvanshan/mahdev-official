@@ -6,6 +6,7 @@ interface CrossfadeImageProps {
   alt: string;
   className?: string;
   imageClassName?: string;
+  objectFit?: 'cover' | 'contain';
   loading?: 'eager' | 'lazy';
   decoding?: 'async' | 'auto' | 'sync';
   showShimmer?: boolean;
@@ -20,9 +21,10 @@ const CrossfadeSlide: React.FC<{
   loading: 'eager' | 'lazy';
   decoding: 'async' | 'auto' | 'sync';
   showShimmer: boolean;
+  objectFit: 'cover' | 'contain';
   onLoad?: () => void;
   onError?: () => void;
-}> = ({ src, alt, className, loading, decoding, showShimmer, onLoad, onError }) => {
+}> = ({ src, alt, className, loading, decoding, showShimmer, objectFit, onLoad, onError }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasLoadedImage, setHasLoadedImage] = useState(false);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -72,6 +74,7 @@ const CrossfadeSlide: React.FC<{
           opacity: { duration: 0.45, ease: 'easeInOut' },
           scale: { duration: 0.5, ease: 'easeOut' },
         }}
+        style={{ objectFit }}
         className={`absolute inset-0 h-full w-full object-cover ${className}`}
       />
     </>
@@ -83,6 +86,7 @@ export const CrossfadeImage: React.FC<CrossfadeImageProps> = ({
   alt,
   className = '',
   imageClassName = '',
+  objectFit = 'cover',
   loading = 'lazy',
   decoding = 'async',
   showShimmer = true,
@@ -143,6 +147,7 @@ export const CrossfadeImage: React.FC<CrossfadeImageProps> = ({
             loading={loading}
             decoding={decoding}
             showShimmer={showShimmer && !hasLoadedImage}
+            objectFit={objectFit}
             onLoad={handleLoad}
             onError={() => {
               if (displayedSrc === src) onErrorRef.current?.();

@@ -2,13 +2,12 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig, loadEnv} from 'vite';
+import { CANONICAL_SITE_ORIGIN } from './src/config/site';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const vercelEnvironment = env.VERCEL_ENV || process.env.VERCEL_ENV || 'development';
-  const siteOrigin = new URL(
-    env.VITE_APP_URL || 'https://mahdev-official.vercel.app'
-  ).origin;
+  const siteOrigin = CANONICAL_SITE_ORIGIN;
   const verificationTags = [
     ['google-site-verification', env.VITE_GOOGLE_SITE_VERIFICATION],
     ['msvalidate.01', env.VITE_BING_SITE_VERIFICATION],

@@ -37,6 +37,7 @@ const U1PortfolioCardImage: React.FC<{ item: U1PortfolioItem }> = ({ item }) => 
         src={images[activeIndex] || item.imageUrl}
         alt={item.title}
         className="absolute inset-0"
+        objectFit="contain"
         imageClassName="object-contain transition-transform duration-500 group-hover:scale-[1.02]"
       />
       <ImageWatermark label="U1 STUDIO" />
@@ -65,6 +66,8 @@ export const U1PortfolioSection: React.FC = () => {
     mediaAssets,
     isInitialLoading,
     isDivisionGalleryLoaded,
+    divisionLoadErrors,
+    loadDivisionData,
     loadMediaAssets,
   } = useFirestoreDataContext();
   const [activeCategory, setActiveCategory] = useState<PortfolioCategory>('All');
@@ -236,6 +239,22 @@ export const U1PortfolioSection: React.FC = () => {
 
   if (portfolioItems.length === 0) {
     if (isInitialLoading || !isDivisionGalleryLoaded('u1')) {
+      if (divisionLoadErrors.u1) {
+        return (
+          <SectionContainer background="subtle" paddingY="xl">
+            <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <span>{divisionLoadErrors.u1}</span>
+              <button
+                type="button"
+                onClick={() => void loadDivisionData('u1', true)}
+                className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 font-semibold hover:bg-amber-100"
+              >
+                Retry loading
+              </button>
+            </div>
+          </SectionContainer>
+        );
+      }
       return <GallerySectionShimmer divisionName="U1 Studio" />;
     }
     return null;
