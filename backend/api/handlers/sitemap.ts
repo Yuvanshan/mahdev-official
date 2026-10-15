@@ -290,7 +290,6 @@ export default async function sitemapHandler(
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400');
-    res.setHeader('X-Robots-Tag', 'noindex');
     res.end(req.method === 'HEAD' ? undefined : xml);
   } catch (error) {
     console.error('[Sitemap] Could not generate public sitemap:', error);

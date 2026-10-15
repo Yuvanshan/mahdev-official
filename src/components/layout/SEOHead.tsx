@@ -8,7 +8,7 @@ const SEO_CACHE_KEY = 'mahdev_cached_seo_configs';
 const SEO_ORIGIN = new URL(
   import.meta.env.VITE_APP_URL || 'https://mahdev-official.vercel.app'
 ).origin;
-const SEO_DOMAIN = new URL(SEO_ORIGIN).hostname;
+const IS_PRODUCTION_DEPLOYMENT = import.meta.env.VITE_SITE_DEPLOYMENT_ENV === 'production';
 
 type SeoConfig = {
   route: string;
@@ -165,9 +165,6 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       : currentPath;
     effectiveCanonical = `${SEO_ORIGIN}${canonicalPath === '/' ? '' : canonicalPath}`;
 
-    // Hostname evaluation for environment-aware search engine indexing
-    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-    const isProductionHost = hostname === SEO_DOMAIN;
     const privateRoutePrefixes = [
       '/admin',
       '/admin-login',
@@ -187,7 +184,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     const isPrivateRoute = privateRoutePrefixes.some(
       (prefix) => currentPath === prefix || currentPath.startsWith(`${prefix}/`)
     );
-    const canIndexPage = isProductionHost && !noIndex && !isPrivateRoute && allowIndexing;
+    const canIndexPage = IS_PRODUCTION_DEPLOYMENT && !noIndex && !isPrivateRoute && allowIndexing;
 
     // Helper to safely update or create meta tags
     const setMetaTag = (attr: string, key: string, content: string) => {
@@ -200,7 +197,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       element.setAttribute('content', content);
     };
 
-    // Prevent search indexing on Preview / Development staging environments
+    // Only production deployments may be indexed; Vercel preview and local builds remain noindex.
     setMetaTag(
       'name',
       'robots',

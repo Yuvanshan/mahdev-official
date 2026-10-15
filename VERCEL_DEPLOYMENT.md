@@ -143,6 +143,8 @@ Admin portal access uses `ADMIN_LOGIN_EMAIL`, `ADMIN_LOGIN_PASSWORD_HASH`, and `
 
 The public sitemap is generated at request time from published CMS pages, active divisions, public services, and published portfolio projects, in addition to the main public routes. It is served from `https://mahdev-official.vercel.app/sitemap.xml` and declared in `robots.txt`. Public marketing pages are indexable; account, admin, and transaction routes are excluded. Individual service pages use service structured data, and division/service listing links use crawlable URLs.
 
+Search indexing is enabled only when Vercel sets `VERCEL_ENV=production`; Vercel preview deployments and local builds remain `noindex`. Set `VITE_APP_URL` and `PUBLIC_SITE_URL` to the same primary HTTPS origin so page canonicals and sitemap URLs consistently identify the preferred domain.
+
 After deploying SEO changes:
 
 1. Verify `https://mahdev-official.vercel.app/robots.txt` and `https://mahdev-official.vercel.app/sitemap.xml` return successfully.

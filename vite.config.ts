@@ -5,6 +5,7 @@ import {defineConfig, loadEnv} from 'vite';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
+  const vercelEnvironment = env.VERCEL_ENV || process.env.VERCEL_ENV || 'development';
   const siteOrigin = new URL(
     env.VITE_APP_URL || 'https://mahdev-official.vercel.app'
   ).origin;
@@ -19,6 +20,9 @@ export default defineConfig(({ mode }) => {
     }));
 
   return {
+    define: {
+      'import.meta.env.VITE_SITE_DEPLOYMENT_ENV': JSON.stringify(vercelEnvironment),
+    },
     plugins: [
       react(),
       tailwindcss(),
