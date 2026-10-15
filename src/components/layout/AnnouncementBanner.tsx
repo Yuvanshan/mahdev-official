@@ -1,4 +1,5 @@
 import React from 'react';
+import { ArrowRight } from 'lucide-react';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { useAvailableCmsBanners } from '../../hooks/useAvailableCmsBanners';
 
@@ -20,10 +21,11 @@ export const AnnouncementBanner: React.FC<AnnouncementBannerProps> = ({ onNaviga
         <button
           type="button"
           onClick={() => onNavigate?.('/promotion')}
-          className="mx-auto block max-w-7xl px-4"
+          className="mx-auto inline-flex max-w-7xl items-center justify-center gap-2 px-4"
           aria-label={promotionBanner.title}
         >
           {promotionBanner.title}
+          <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" />
         </button>
       </div>
     );
@@ -43,9 +45,10 @@ export const AnnouncementBanner: React.FC<AnnouncementBannerProps> = ({ onNaviga
             onNavigate?.(link);
           }
         }}
-        className="mx-auto block max-w-7xl px-4"
+        className="mx-auto inline-flex max-w-7xl items-center justify-center gap-2 px-4"
       >
         {firestoreAnnouncement?.text}
+        <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" />
       </button>
     </div>
   );

@@ -45,16 +45,18 @@ export const TrustedCompaniesSection: React.FC<TrustedCompaniesSectionProps> = (
         </h2>
       </div>
 
-      {/* Partner Logos Matrix - Responsive Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4 items-stretch justify-center">
+      <div
+        className="flex snap-x snap-mandatory items-center gap-4 overflow-x-auto pb-3"
+        aria-label="Trusted companies"
+      >
         {activeCompanies.slice(0, 12).map((company) => (
           <div
             key={company.id}
-            className="flex flex-col items-center justify-center"
+            className="w-40 shrink-0 snap-start sm:w-48"
           >
             <div
               onClick={onExplorePartners}
-              className={`w-full h-full p-4 rounded-xl bg-white border border-slate-200/90 hover:border-blue-400 hover:shadow-md transition-all duration-200 flex flex-col items-center justify-center text-center group ${
+              className={`group flex h-24 w-full items-center justify-center rounded-xl border border-slate-200/90 bg-white p-4 transition-all duration-200 hover:border-blue-400 hover:shadow-md ${
                 onExplorePartners ? 'cursor-pointer' : 'cursor-default'
               }`}
             >
@@ -62,21 +64,15 @@ export const TrustedCompaniesSection: React.FC<TrustedCompaniesSectionProps> = (
                 <img
                   src={company.logoUrl}
                   alt={company.name}
-                  className="h-9 max-w-[120px] object-contain mb-1.5 group-hover:scale-105 transition-transform"
-                  
+                  className="max-h-14 max-w-full object-contain transition-transform group-hover:scale-105"
                 />
               ) : (
-                <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-base mb-1">
-                  {company.name.charAt(0)}
+                <div className="text-center">
+                  <div className="mx-auto mb-1 flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-base font-bold text-blue-600">
+                    {company.name.charAt(0)}
+                  </div>
+                  <span className="text-xs font-bold text-slate-800">{company.name}</span>
                 </div>
-              )}
-              <span className="font-display font-bold text-xs sm:text-sm text-slate-800 group-hover:text-blue-600 transition-colors line-clamp-1">
-                {company.name}
-              </span>
-              {company.industry && (
-                <span className="text-[10px] text-slate-500 mt-0.5 line-clamp-1">
-                  {company.industry}
-                </span>
               )}
             </div>
           </div>

@@ -99,7 +99,7 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
       setIsLoading(true);
       try {
         const [about, terms, privacy] = await Promise.all([
-          websiteContentService.getAboutUsContent(),
+          websiteContentService.getAboutUsContent(true),
           websiteContentService.getLegalDocument('termsAndConditions', true),
           websiteContentService.getLegalDocument('privacyPolicy', true),
         ]);

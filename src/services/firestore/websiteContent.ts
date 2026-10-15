@@ -15,6 +15,42 @@ import {
 
 const WEBSITE_CONTENT_COLLECTION = 'websiteContent';
 const LEGAL_PAGES_COLLECTION = 'legalPages';
+const ABOUT_CONTENT_CACHE_KEY = 'mahdev_public_about_us_v1';
+
+function readPublicContentCache<T>(key: string): T | null {
+  try {
+    const cached = localStorage.getItem(key);
+    return cached ? JSON.parse(cached) as T : null;
+  } catch (error) {
+    console.warn(`[WebsiteContentService] Could not read cache "${key}":`, error);
+    return null;
+  }
+}
+
+function writePublicContentCache(key: string, data: unknown): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (error) {
+    console.warn(`[WebsiteContentService] Could not save cache "${key}":`, error);
+  }
+}
+
+function normalizeAboutUsContent(data: Partial<AboutUsContent> = {}): AboutUsContent {
+  return {
+    ...DEFAULT_ABOUT_US_CONTENT,
+    ...data,
+    hero: { ...DEFAULT_ABOUT_US_CONTENT.hero, ...(data.hero || {}) },
+    companyIntro: { ...DEFAULT_ABOUT_US_CONTENT.companyIntro, ...(data.companyIntro || {}) },
+    vision: { ...DEFAULT_ABOUT_US_CONTENT.vision, ...(data.vision || {}) },
+    mission: { ...DEFAULT_ABOUT_US_CONTENT.mission, ...(data.mission || {}) },
+    cta: { ...DEFAULT_ABOUT_US_CONTENT.cta, ...(data.cta || {}) },
+    values: Array.isArray(data.values) && data.values.length > 0 ? data.values : DEFAULT_ABOUT_US_CONTENT.values,
+    divisions: Array.isArray(data.divisions) && data.divisions.length > 0 ? data.divisions : DEFAULT_ABOUT_US_CONTENT.divisions,
+    timeline: Array.isArray(data.timeline) && data.timeline.length > 0 ? data.timeline : DEFAULT_ABOUT_US_CONTENT.timeline,
+    team: Array.isArray(data.team) ? data.team : DEFAULT_ABOUT_US_CONTENT.team,
+    locations: Array.isArray(data.locations) && data.locations.length > 0 ? data.locations : DEFAULT_ABOUT_US_CONTENT.locations,
+  };
+}
 
 export const DEFAULT_ABOUT_US_CONTENT: AboutUsContent = {
   id: 'aboutUs',
@@ -243,7 +279,7 @@ export const DEFAULT_ABOUT_US_CONTENT: AboutUsContent = {
     {
       id: 'ceo-yuvanshan-prabakaran',
       name: 'Yuvanshan Prabakaran',
-      title: 'CEO 1',
+      title: 'Chief Executive Officer',
       imageUrl: '/assets/images/ceo1.jpeg',
       order: 1,
       enabled: true,
@@ -251,7 +287,7 @@ export const DEFAULT_ABOUT_US_CONTENT: AboutUsContent = {
     {
       id: 'ceo-divaincy-fernando',
       name: 'Divaincy Fernando',
-      title: 'CEO 2',
+      title: 'Board of Director',
       imageUrl: '/assets/images/ceo2.jpeg',
       order: 2,
       enabled: true,
@@ -780,27 +816,18 @@ export const websiteContentService = {
   /**
    * Fetch About Us content from Firestore (creates default seed if doc doesn't exist)
    */
-  async getAboutUsContent(): Promise<AboutUsContent> {
+  async getAboutUsContent(forceRefresh = false): Promise<AboutUsContent> {
+    const cached = readPublicContentCache<AboutUsContent>(ABOUT_CONTENT_CACHE_KEY);
+    if (cached && !forceRefresh) return normalizeAboutUsContent(cached);
+
     try {
       const docRef = doc(db, WEBSITE_CONTENT_COLLECTION, 'aboutUs');
       const snap = await getDoc(docRef);
 
       if (snap.exists()) {
-        const data = snap.data() as AboutUsContent;
-        return {
-          ...DEFAULT_ABOUT_US_CONTENT,
-          ...data,
-          hero: { ...DEFAULT_ABOUT_US_CONTENT.hero, ...(data.hero || {}) },
-          companyIntro: { ...DEFAULT_ABOUT_US_CONTENT.companyIntro, ...(data.companyIntro || {}) },
-          vision: { ...DEFAULT_ABOUT_US_CONTENT.vision, ...(data.vision || {}) },
-          mission: { ...DEFAULT_ABOUT_US_CONTENT.mission, ...(data.mission || {}) },
-          cta: { ...DEFAULT_ABOUT_US_CONTENT.cta, ...(data.cta || {}) },
-          values: Array.isArray(data.values) && data.values.length > 0 ? data.values : DEFAULT_ABOUT_US_CONTENT.values,
-          divisions: Array.isArray(data.divisions) && data.divisions.length > 0 ? data.divisions : DEFAULT_ABOUT_US_CONTENT.divisions,
-          timeline: Array.isArray(data.timeline) && data.timeline.length > 0 ? data.timeline : DEFAULT_ABOUT_US_CONTENT.timeline,
-          team: Array.isArray(data.team) ? data.team : DEFAULT_ABOUT_US_CONTENT.team,
-          locations: Array.isArray(data.locations) && data.locations.length > 0 ? data.locations : DEFAULT_ABOUT_US_CONTENT.locations,
-        };
+        const content = normalizeAboutUsContent(snap.data() as AboutUsContent);
+        writePublicContentCache(ABOUT_CONTENT_CACHE_KEY, content);
+        return content;
       }
 
       // First run: Seed Firestore with authentic defaults
@@ -809,10 +836,11 @@ export const websiteContentService = {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
+      writePublicContentCache(ABOUT_CONTENT_CACHE_KEY, DEFAULT_ABOUT_US_CONTENT);
       return DEFAULT_ABOUT_US_CONTENT;
     } catch (err) {
       console.warn('[WebsiteContentService] Error fetching About Us content from Firestore, using baseline:', err);
-      return DEFAULT_ABOUT_US_CONTENT;
+      return cached ? normalizeAboutUsContent(cached) : DEFAULT_ABOUT_US_CONTENT;
     }
   },
 
@@ -831,6 +859,8 @@ export const websiteContentService = {
       updatePayload.updatedBy = userEmail;
     }
     await setDoc(docRef, updatePayload, { merge: true });
+    const cached = readPublicContentCache<AboutUsContent>(ABOUT_CONTENT_CACHE_KEY);
+    writePublicContentCache(ABOUT_CONTENT_CACHE_KEY, normalizeAboutUsContent({ ...cached, ...updatePayload }));
   },
 
   /**
@@ -873,9 +903,14 @@ export const websiteContentService = {
    */
   async getLegalDocument(
     docId: 'termsAndConditions' | 'privacyPolicy' | string,
-    includeDraft = false
+    includeDraft = false,
+    forceRefresh = false
   ): Promise<LegalDocument> {
     const defaultDoc = docId === 'privacyPolicy' ? DEFAULT_PRIVACY_CONTENT : DEFAULT_TERMS_CONTENT;
+    const cacheKey = `mahdev_public_legal_${docId}_v1`;
+    const cached = includeDraft ? null : readPublicContentCache<LegalDocument>(cacheKey);
+    if (cached && !forceRefresh) return cached;
+
     try {
       const docRef = doc(db, LEGAL_PAGES_COLLECTION, docId);
       const snap = await getDoc(docRef);
@@ -895,6 +930,7 @@ export const websiteContentService = {
             hasUnpublishedChanges: true,
           };
         }
+        if (!includeDraft) writePublicContentCache(cacheKey, baseDoc);
         return baseDoc;
       }
 
@@ -904,10 +940,11 @@ export const websiteContentService = {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
+      if (!includeDraft) writePublicContentCache(cacheKey, defaultDoc);
       return defaultDoc;
     } catch (err) {
       console.warn(`[WebsiteContentService] Error fetching legal doc ${docId}, using baseline:`, err);
-      return defaultDoc;
+      return cached || defaultDoc;
     }
   },
 
@@ -979,11 +1016,13 @@ export const websiteContentService = {
 
     await setDoc(docRef, payload, { merge: true });
 
-    return {
+    const publishedDocument = {
       ...(docId === 'privacyPolicy' ? DEFAULT_PRIVACY_CONTENT : DEFAULT_TERMS_CONTENT),
       ...(snap.exists() ? (snap.data() as LegalDocument) : {}),
       ...payload,
     } as LegalDocument;
+    writePublicContentCache(`mahdev_public_legal_${docId}_v1`, publishedDocument);
+    return publishedDocument;
   },
 
   /**

@@ -82,27 +82,14 @@ export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavi
 
     let isMounted = true;
     setIsLoading(true);
-
-    // Live subscription from Firestore
-    const unsubscribe = websiteContentService.subscribeLegalDocument(
-      docId,
-      (liveDoc) => {
-        if (isMounted) {
-          setLegalDoc(liveDoc);
-          setIsLoading(false);
-          setHasError(false);
-        }
-      },
-      false // public users receive published document
-    );
-
-    // Initial load fetch
+    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
     websiteContentService
-      .getLegalDocument(docId, false)
+      .getLegalDocument(docId, false, navigation?.type === 'reload')
       .then((doc) => {
         if (isMounted) {
           setLegalDoc(doc);
           setIsLoading(false);
+          setHasError(false);
         }
       })
       .catch((err) => {
@@ -114,7 +101,6 @@ export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavi
 
     return () => {
       isMounted = false;
-      unsubscribe();
     };
   }, [docId, policyType]);
 

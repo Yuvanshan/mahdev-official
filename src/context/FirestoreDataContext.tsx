@@ -3,7 +3,7 @@
  * 
  * Rules:
  * 1. Turso is the source of truth for business and dynamic content.
- * 2. Public content is fetched once on boot and reused until a full page reload.
+ * 2. Public content is cached across reloads and reused during client-side navigation.
  */
 
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
@@ -34,6 +34,7 @@ import {
   normalizeDivisionId,
   getCanonicalDivisionId,
   isSameDivision,
+  canonicalizeDivisionRoute,
 } from '../services/firestore/divisions';
 import { firestoreCategoriesService } from '../services/firestore/categories';
 import { firestoreServicesService } from '../services/firestore/services';
@@ -73,7 +74,6 @@ const DEVICE_CACHE_VERSION = '3';
 const DEVICE_CACHE_NONEMPTY_ARRAY_KEYS = new Set([
   'mahdev_cached_divisions',
   'mahdev_cached_services',
-  'mahdev_cached_gallery',
 ]);
 const REQUIRED_CACHED_DIVISION_IDS = [
   'sws',
@@ -156,25 +156,17 @@ function ensureDeviceCacheVersion(): void {
 
 function prepareDeviceCache(): boolean {
   ensureDeviceCacheVersion();
+  return hasCompleteDeviceCache();
+}
+
+function isHardReloadNavigation(): boolean {
   try {
     const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
-    if (navigation?.type === 'reload') {
-      for (const storage of [localStorage, sessionStorage]) {
-        for (let index = storage.length - 1; index >= 0; index -= 1) {
-          const key = storage.key(index);
-          if (
-            key?.startsWith('mahdev_cached_') ||
-            key?.startsWith('mahdev_cms_public_v1_')
-          ) {
-            storage.removeItem(key);
-          }
-        }
-      }
-    }
+    return navigation?.type === 'reload';
   } catch (error) {
-    console.warn('[FirestoreDataContext] Could not clear public cache on reload:', error);
+    console.warn('[FirestoreDataContext] Could not inspect navigation type:', error);
+    return false;
   }
-  return hasCompleteDeviceCache();
 }
 
 function sanitizeCachedSettings(value: unknown): unknown {
@@ -257,7 +249,7 @@ export interface FirestoreDataContextValue {
   isDivisionServicesLoaded: (divisionId: string) => boolean;
   isDivisionGalleryLoaded: (divisionId: string) => boolean;
   isDivisionFetching: (divisionId: string) => boolean;
-  loadDivisionData: (divisionId: string) => Promise<void>;
+  loadDivisionData: (divisionId: string, forceRefresh?: boolean) => Promise<void>;
   loadMediaAssets: () => Promise<void>;
   isLiveHydrated: boolean;
 }
@@ -273,7 +265,26 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       if (typeof window !== 'undefined') {
         const item = getDeviceCacheItem(key);
         if (item) {
-          const parsed = JSON.parse(item);
+          let parsed = JSON.parse(item);
+          if (key === 'mahdev_cached_company_settings' && parsed && typeof parsed === 'object') {
+            const company = parsed as FirestoreCompanySettings;
+            const defaults = getDefaultCompanySettings();
+            const socials = { ...defaults.socials, ...(company.socials || {}) };
+            const legacySocialUrls: Record<string, string[]> = {
+              linkedin: ['https://linkedin.com/company/mahdev'],
+              instagram: [
+                'https://instagram.com/mahdev',
+                'https://www.instagram.com/sws_event_management',
+              ],
+            };
+            Object.entries(legacySocialUrls).forEach(([platform, legacyUrls]) => {
+              const currentUrl = socials[platform]?.replace(/\/+$/, '').toLowerCase();
+              if (legacyUrls.some((url) => currentUrl === url.replace(/\/+$/, '').toLowerCase())) {
+                socials[platform] = defaults.socials[platform];
+              }
+            });
+            parsed = { ...company, socials };
+          }
           if (PUBLIC_SETTINGS_CACHE_KEYS.has(key)) {
             const sanitized = sanitizeCachedSettings(parsed);
             const serialized = JSON.stringify(sanitized);
@@ -444,6 +455,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   const publicDataLoadedRef = React.useRef(hasCachedData);
   const refreshRequestRef = React.useRef<Promise<void> | null>(null);
   const bootLoadStartedRef = React.useRef(false);
+  const cacheBootHandledRef = React.useRef(false);
 
   const divisionsRef = React.useRef<FirestoreDivision[]>([]);
   divisionsRef.current = divisions;
@@ -480,10 +492,10 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Individual Division Data Loader: Fetches services, gallery, media, products, and categories concurrently.
   // CRITICAL: Holds shimmer in place until 100% of division collections have settled from Firestore!
-  const loadDivisionData = useCallback(async (rawDivId: string) => {
+  const loadDivisionData = useCallback(async (rawDivId: string, forceRefresh = false) => {
     const canonicalId = getCanonicalDivisionId(rawDivId) || rawDivId;
     if (!canonicalId) return;
-    if (publicDataLoadedRef.current || hasCachedData) return;
+    if (!forceRefresh && (publicDataLoadedRef.current || hasCachedData)) return;
     if (refreshRequestRef.current) {
       await refreshRequestRef.current;
       return;
@@ -504,7 +516,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
         // 1. Fetch Services
         const fetchServicesPromise = firestoreServicesService
-          .getServices(canonicalId as DivisionId, false)
+          .getServices(canonicalId as DivisionId, forceRefresh)
           .then((srvs) => {
             setServices((prev) => {
               const otherServices = prev.filter(
@@ -533,7 +545,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
         // 2. Fetch Gallery in parallel
         const fetchGalleryPromise = firestoreGalleryService
-          .getGallery(canonicalId as DivisionId, false)
+          .getGallery(canonicalId as DivisionId, forceRefresh)
           .then((gal) => {
             setGallery((prev) => {
               const otherGal = prev.filter(
@@ -557,9 +569,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
         // 3. Fetch products, categories, portfolio
         const fetchOthersPromise = Promise.all([
-          firestoreProductsService.getProducts({ division: canonicalId as DivisionId }, false),
-          firestoreCategoriesService.getCategories(canonicalId as DivisionId, false),
-          firestorePortfolioService.getPortfolio(canonicalId as DivisionId, false),
+          firestoreProductsService.getProducts({ division: canonicalId as DivisionId }, forceRefresh),
+          firestoreCategoriesService.getCategories(canonicalId as DivisionId, forceRefresh),
+          firestorePortfolioService.getPortfolio(canonicalId as DivisionId, forceRefresh),
         ])
           .then(([prods, cats, port]) => {
             setProducts((prev) => {
@@ -659,6 +671,255 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     inFlightDivisionLoadsRef.current[canonicalId] = loadPromise;
     await loadPromise;
   }, [hasCachedData]);
+
+  const refreshCurrentPageData = useCallback(async () => {
+    const route = window.location.pathname.replace(/\/+$/, '') || '/';
+    const routeAliases: Record<string, string> = {
+      '/about-us': '/about',
+      '/company': '/about',
+      '/promotions': '/promotion',
+      '/featured-services': '/services',
+      '/media': '/gallery',
+      '/work': '/portfolio',
+      '/projects': '/portfolio',
+      '/journey': '/milestones',
+      '/reviews': '/testimonials',
+      '/jobs': '/careers',
+      '/partners': '/clients',
+      '/companies': '/clients',
+      '/sws-events': '/sws',
+      '/sws-event-management': '/sws',
+      '/u1-studio': '/u1',
+      '/u1-cinema': '/u1',
+      '/it-solutions': '/it',
+      '/mahdev-it': '/it',
+      '/mahdev-travels': '/travels',
+    };
+    const normalizedRoute = canonicalizeDivisionRoute(routeAliases[route] || route);
+
+    const refreshServices = async () => {
+      const fresh = await firestoreServicesService.getServices(undefined, true);
+      const unique = fresh.filter((item, index) => fresh.findIndex((candidate) => candidate.id === item.id) === index);
+      setServices(unique);
+      bookingService.syncWithFirestore(unique);
+      cmsService.syncEntityFromFirestore('services', unique);
+      setDeviceCacheItem('mahdev_cached_services', JSON.stringify(unique));
+    };
+    const refreshGallery = async () => {
+      const fresh = await firestoreGalleryService.getGallery(undefined, true);
+      setGallery(fresh);
+      cmsService.syncEntityFromFirestore('gallery', fresh);
+      setDeviceCacheItem('mahdev_cached_gallery', JSON.stringify(fresh));
+    };
+    const refreshProducts = async () => {
+      const fresh = await firestoreProductsService.getProducts({}, true);
+      setProducts(fresh);
+      catalogService.syncWithFirestore(fresh);
+      cmsService.syncEntityFromFirestore('products', fresh);
+      setDeviceCacheItem('mahdev_cached_products', JSON.stringify(fresh));
+    };
+    const refreshCategories = async () => {
+      const fresh = await firestoreCategoriesService.getCategories(undefined, true);
+      setCategories(fresh);
+      cmsService.syncEntityFromFirestore('categories', fresh);
+      setDeviceCacheItem('mahdev_cached_categories', JSON.stringify(fresh));
+    };
+    const refreshDivisions = async () => {
+      const fresh = sortDivisions(await firestoreDivisionsService.getDivisions(true));
+      divisionsRef.current = fresh;
+      setDivisions(fresh);
+      cmsService.syncEntityFromFirestore('divisions', fresh);
+      setDeviceCacheItem('mahdev_cached_divisions', JSON.stringify(fresh));
+    };
+    const refreshHomepageSettings = async () => {
+      const fresh = await firestoreSettingsService.getHomepageSettings(true);
+      setHomepageConfig(fresh);
+      cmsService.syncHomepageConfig(fresh);
+      setDeviceCacheItem('mahdev_cached_homepage_config', JSON.stringify(fresh));
+    };
+    const refreshPortfolio = async () => {
+      const fresh = await firestorePortfolioService.getPortfolio(undefined, true);
+      setPortfolio(fresh);
+      setDeviceCacheItem('mahdev_cached_portfolio', JSON.stringify(fresh));
+    };
+    const refreshMilestones = async () => {
+      const fresh = await firestoreMilestonesService.getMilestones(true);
+      setMilestones(fresh);
+      setDeviceCacheItem('mahdev_cached_milestones', JSON.stringify(fresh));
+    };
+    const refreshCompanies = async () => {
+      const fresh = await firestoreTrustedCompaniesService.getTrustedCompanies(true);
+      setTrustedCompanies(fresh);
+      setDeviceCacheItem('mahdev_cached_companies', JSON.stringify(fresh));
+    };
+    const refreshTestimonials = async () => {
+      const fresh = await firestoreTestimonialsService.getTestimonials(undefined, true);
+      setTestimonials(fresh);
+      setDeviceCacheItem('mahdev_cached_testimonials', JSON.stringify(fresh));
+    };
+    const refreshCompanySettings = async () => {
+      const fresh = await firestoreSettingsService.getCompanySettings(true);
+      setCompanySettings(fresh);
+      setDeviceCacheItem('mahdev_cached_company_settings', JSON.stringify(fresh));
+    };
+
+    try {
+      if (
+        normalizedRoute === '/services' ||
+        normalizedRoute === '/featured-services' ||
+        normalizedRoute.startsWith('/services/') ||
+        normalizedRoute.startsWith('/service/') ||
+        normalizedRoute === '/promotion'
+      ) {
+        await refreshServices();
+        await refreshGallery();
+        await refreshProducts();
+        await refreshCategories();
+        if (normalizedRoute === '/promotion') {
+          await cmsService.loadPublicCollections(true);
+        }
+        return;
+      }
+
+      const divisionRoute = normalizedRoute.match(/^\/(?:divisions|division\/)?(sws|u1|it|travels)$/);
+      if (divisionRoute) {
+        await loadDivisionData(divisionRoute[1], true);
+        return;
+      }
+
+      if (normalizedRoute === '/divisions') {
+        await refreshDivisions();
+        await refreshHomepageSettings();
+        return;
+      }
+
+      if (normalizedRoute === '/gallery' || normalizedRoute.startsWith('/gallery/')) {
+        await refreshServices();
+        await refreshGallery();
+        await refreshProducts();
+        await refreshCategories();
+        return;
+      }
+
+      if (normalizedRoute === '/about') {
+        await refreshCompanySettings();
+        await refreshDivisions();
+        const [milestoneData, companies, reviews] = await Promise.all([
+          firestoreMilestonesService.getMilestones(true),
+          firestoreTrustedCompaniesService.getTrustedCompanies(true),
+          firestoreTestimonialsService.getTestimonials(undefined, true),
+        ]);
+        setMilestones(milestoneData);
+        setTrustedCompanies(companies);
+        setTestimonials(reviews);
+        setDeviceCacheItem('mahdev_cached_milestones', JSON.stringify(milestoneData));
+        setDeviceCacheItem('mahdev_cached_companies', JSON.stringify(companies));
+        setDeviceCacheItem('mahdev_cached_testimonials', JSON.stringify(reviews));
+        return;
+      }
+
+      if (normalizedRoute === '/careers') {
+        await getPublishedCareerOpenings(true);
+        return;
+      }
+
+      if (normalizedRoute === '/portfolio') {
+        await refreshPortfolio();
+        return;
+      }
+
+      if (normalizedRoute === '/milestones') {
+        await refreshMilestones();
+        return;
+      }
+
+      if (normalizedRoute === '/testimonials') {
+        await refreshTestimonials();
+        return;
+      }
+
+      if (normalizedRoute === '/clients') {
+        await refreshCompanies();
+        return;
+      }
+
+      if (normalizedRoute === '/contact') {
+        await Promise.all([refreshCompanySettings(), firestoreSettingsService.getSiteSettings(true).then((fresh) => {
+          setSiteSettings(fresh);
+          setDeviceCacheItem('mahdev_cached_site_settings', JSON.stringify(fresh));
+        })]);
+        return;
+      }
+
+      if (normalizedRoute === '/insights') {
+        await cmsService.loadPublicCollections(true);
+        return;
+      }
+
+      if (
+        /^\/(?:mart|shop|store|online-mart|mahdev-mart)(?:\/|$)/.test(normalizedRoute) ||
+        normalizedRoute === '/divisions/mart' ||
+        normalizedRoute === '/division/mart'
+      ) {
+        await refreshProducts();
+        await refreshCategories();
+        return;
+      }
+
+      if (normalizedRoute === '/') {
+        await refreshServices();
+        await refreshGallery();
+        await refreshProducts();
+        const [
+          divisionData,
+          milestoneData,
+          companyData,
+          siteData,
+          homepageData,
+          categoryData,
+          portfolioData,
+          companies,
+          reviews,
+        ] = await Promise.all([
+          firestoreDivisionsService.getDivisions(true),
+          firestoreMilestonesService.getMilestones(true),
+          firestoreSettingsService.getCompanySettings(true),
+          firestoreSettingsService.getSiteSettings(true),
+          firestoreSettingsService.getHomepageSettings(true),
+          firestoreCategoriesService.getCategories(undefined, true),
+          firestorePortfolioService.getPortfolio(undefined, true),
+          firestoreTrustedCompaniesService.getTrustedCompanies(true),
+          firestoreTestimonialsService.getTestimonials(undefined, true),
+        ]);
+        const sortedDivisions = sortDivisions(divisionData);
+        divisionsRef.current = sortedDivisions;
+        setDivisions(sortedDivisions);
+        setMilestones(milestoneData);
+        setCompanySettings(companyData);
+        setSiteSettings(siteData);
+        setHomepageConfig(homepageData);
+        setCategories(categoryData);
+        setPortfolio(portfolioData);
+        setTrustedCompanies(companies);
+        setTestimonials(reviews);
+        setDeviceCacheItem('mahdev_cached_divisions', JSON.stringify(sortedDivisions));
+        setDeviceCacheItem('mahdev_cached_milestones', JSON.stringify(milestoneData));
+        setDeviceCacheItem('mahdev_cached_company_settings', JSON.stringify(companyData));
+        setDeviceCacheItem('mahdev_cached_site_settings', JSON.stringify(siteData));
+        setDeviceCacheItem('mahdev_cached_homepage_config', JSON.stringify(homepageData));
+        setDeviceCacheItem('mahdev_cached_categories', JSON.stringify(categoryData));
+        setDeviceCacheItem('mahdev_cached_portfolio', JSON.stringify(portfolioData));
+        setDeviceCacheItem('mahdev_cached_companies', JSON.stringify(companies));
+        setDeviceCacheItem('mahdev_cached_testimonials', JSON.stringify(reviews));
+        return;
+      }
+    } catch (cause) {
+      const refreshError = cause instanceof Error ? cause : new Error(String(cause));
+      console.error(`[FirestoreDataContext] Could not refresh data for ${normalizedRoute}:`, refreshError);
+      setError(refreshError);
+      throw refreshError;
+    }
+  }, [loadDivisionData]);
 
   const isDivisionFetching = useCallback(
     (divisionId: string) => {
@@ -860,58 +1121,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         });
       await fetchServicesTask;
 
-      // 7. One-by-one API Call: Products
-      const fetchProductsTask = firestoreProductsService
-        .getProducts({}, forceRefresh)
-        .then((allProducts) => {
-          const seen = new Set<string>();
-          const dedupedProducts = allProducts.filter((p) => p && p.id && !seen.has(p.id) && seen.add(p.id));
-          setProducts(dedupedProducts);
-          setIsProductsLoading(false);
-          catalogService.syncWithFirestore(dedupedProducts);
-          cmsService.syncEntityFromFirestore('products', dedupedProducts);
-          try { setDeviceCacheItem('mahdev_cached_products', JSON.stringify(dedupedProducts)); } catch {}
-          setSyncProgress((p) => Math.min(95, p + 6));
-        })
-        .catch((err) => {
-          reportRefreshError('products', err);
-          setIsProductsLoading(false);
-        });
-      await fetchProductsTask;
-
-      // 8. One-by-one API Call: Categories
-      const fetchCategoriesTask = firestoreCategoriesService
-        .getCategories(undefined, forceRefresh)
-        .then((allCategories) => {
-          const seen = new Set<string>();
-          const dedupedCategories = allCategories.filter((c) => c && c.id && !seen.has(c.id) && seen.add(c.id));
-          setCategories(dedupedCategories);
-          cmsService.syncEntityFromFirestore('categories', dedupedCategories);
-          try { setDeviceCacheItem('mahdev_cached_categories', JSON.stringify(dedupedCategories)); } catch {}
-        })
-        .catch((err) => {
-          reportRefreshError('categories', err);
-        });
-      await fetchCategoriesTask;
-
-      // 9. One-by-one API Call: Portfolio
-      const fetchPortfolioTask = firestorePortfolioService
-        .getPortfolio(undefined, forceRefresh)
-        .then((allPortfolio) => {
-          const seen = new Set<string>();
-          const dedupedPortfolio = allPortfolio.filter((p) => p && p.id && !seen.has(p.id) && seen.add(p.id));
-          setPortfolio(dedupedPortfolio);
-          setIsPortfolioLoading(false);
-          cmsService.syncEntityFromFirestore('portfolio', dedupedPortfolio);
-          try { setDeviceCacheItem('mahdev_cached_portfolio', JSON.stringify(dedupedPortfolio)); } catch {}
-        })
-        .catch((err) => {
-          reportRefreshError('portfolio', err);
-          setIsPortfolioLoading(false);
-        });
-      await fetchPortfolioTask;
-
-      // 10. One-by-one API Call: Gallery
+      // 7. One-by-one API Call: Gallery
       const fetchGalleryTask = firestoreGalleryService
         .getGallery(undefined, forceRefresh)
         .then((allGallery) => {
@@ -936,6 +1146,57 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           setIsGalleryLoading(false);
         });
       await fetchGalleryTask;
+
+      // 8. One-by-one API Call: Products
+      const fetchProductsTask = firestoreProductsService
+        .getProducts({}, forceRefresh)
+        .then((allProducts) => {
+          const seen = new Set<string>();
+          const dedupedProducts = allProducts.filter((p) => p && p.id && !seen.has(p.id) && seen.add(p.id));
+          setProducts(dedupedProducts);
+          setIsProductsLoading(false);
+          catalogService.syncWithFirestore(dedupedProducts);
+          cmsService.syncEntityFromFirestore('products', dedupedProducts);
+          try { setDeviceCacheItem('mahdev_cached_products', JSON.stringify(dedupedProducts)); } catch {}
+          setSyncProgress((p) => Math.min(95, p + 6));
+        })
+        .catch((err) => {
+          reportRefreshError('products', err);
+          setIsProductsLoading(false);
+        });
+      await fetchProductsTask;
+
+      // 9. One-by-one API Call: Categories
+      const fetchCategoriesTask = firestoreCategoriesService
+        .getCategories(undefined, forceRefresh)
+        .then((allCategories) => {
+          const seen = new Set<string>();
+          const dedupedCategories = allCategories.filter((c) => c && c.id && !seen.has(c.id) && seen.add(c.id));
+          setCategories(dedupedCategories);
+          cmsService.syncEntityFromFirestore('categories', dedupedCategories);
+          try { setDeviceCacheItem('mahdev_cached_categories', JSON.stringify(dedupedCategories)); } catch {}
+        })
+        .catch((err) => {
+          reportRefreshError('categories', err);
+        });
+      await fetchCategoriesTask;
+
+      // 10. One-by-one API Call: Portfolio
+      const fetchPortfolioTask = firestorePortfolioService
+        .getPortfolio(undefined, forceRefresh)
+        .then((allPortfolio) => {
+          const seen = new Set<string>();
+          const dedupedPortfolio = allPortfolio.filter((p) => p && p.id && !seen.has(p.id) && seen.add(p.id));
+          setPortfolio(dedupedPortfolio);
+          setIsPortfolioLoading(false);
+          cmsService.syncEntityFromFirestore('portfolio', dedupedPortfolio);
+          try { setDeviceCacheItem('mahdev_cached_portfolio', JSON.stringify(dedupedPortfolio)); } catch {}
+        })
+        .catch((err) => {
+          reportRefreshError('portfolio', err);
+          setIsPortfolioLoading(false);
+        });
+      await fetchPortfolioTask;
 
       // 11. One-by-one API Call: Trusted Corporate Partners
       const fetchTrustedCompaniesTask = firestoreTrustedCompaniesService
@@ -1024,8 +1285,13 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       setSyncStatus('Welcome');
       setIsLiveHydrated(true);
       try {
-        setDeviceCacheItem('mahdev_cache_hydrated', 'true');
-        setDeviceCacheItem('mahdev_cache_timestamp', String(Date.now()));
+        const cacheIsComplete = hasCompleteDeviceCache();
+        setDeviceCacheItem('mahdev_cache_hydrated', String(cacheIsComplete));
+        if (cacheIsComplete) {
+          setDeviceCacheItem('mahdev_cache_timestamp', String(Date.now()));
+        } else {
+          console.warn('[FirestoreDataContext] Public cache remains incomplete; missing or empty required data will be fetched on the next load.');
+        }
       } catch {}
     } catch (err) {
       console.error('[FirestoreDataContext] Refresh error:', err);
@@ -1051,6 +1317,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   useEffect(() => {
+    if (cacheBootHandledRef.current) return;
+    cacheBootHandledRef.current = true;
+
     if (hasCachedData) {
       if (products.length > 0) catalogService.syncWithFirestore(products);
       if (services.length > 0) bookingService.syncWithFirestore(services);
@@ -1062,6 +1331,11 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       void getPublishedCareerOpenings(false).catch((error: unknown) => {
         console.error('[FirestoreDataContext] Could not restore cached career openings:', error);
       });
+      if (isHardReloadNavigation()) {
+        void refreshCurrentPageData().catch((error: unknown) => {
+          console.error('[FirestoreDataContext] Route refresh failed:', error);
+        });
+      }
       return;
     }
 
@@ -1070,7 +1344,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       cmsService.clearPublicCollectionCache();
       void refreshAll(true);
     }
-  }, []);
+  }, [hasCachedData, products, services, divisions, homepageConfig, refreshAll, refreshCurrentPageData]);
 
   const activeDivisions = useMemo(() => {
     return divisions.filter((d) => d.status === 'active');

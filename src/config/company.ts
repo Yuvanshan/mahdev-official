@@ -80,9 +80,9 @@ export const COMPANY_INFO: CompanyInformation = {
     },
   },
   socials: {
-    linkedin: 'https://linkedin.com/company/mahdev',
+    linkedin: 'https://www.linkedin.com/company/mahdev-pvt-ltd/',
     facebook: 'https://www.facebook.com/SWSEventsManagement/',
-    instagram: 'https://www.instagram.com/sws_event_management/',
+    instagram: 'https://www.instagram.com/sws_event_management?exln=MW5kamxsczNlOXlxbg==',
     youtube: 'https://www.youtube.com/@swseventmanagement5126',
     tiktok: 'https://www.tiktok.com/@yuvan.shan5',
     whatsapp: 'https://wa.me/94750928078?text=Hello%20Mahdev%20Pvt%20Ltd',

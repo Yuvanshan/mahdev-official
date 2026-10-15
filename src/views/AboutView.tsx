@@ -46,6 +46,21 @@ const VALUE_ICONS: Record<string, React.ElementType> = {
   Compass,
 };
 
+function normalizeLeadershipTitles(content: AboutUsContent): AboutUsContent {
+  return {
+    ...content,
+    team: (content.team || []).map((member) => ({
+      ...member,
+      title:
+        member.title === 'CEO 1'
+          ? 'Chief Executive Officer'
+          : member.title === 'CEO 2'
+            ? 'Board of Director'
+            : member.title,
+    })),
+  };
+}
+
 export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
   const { companySettings } = useFirestoreDataContext();
   const [content, setContent] = useState<AboutUsContent>(DEFAULT_ABOUT_US_CONTENT);
@@ -57,23 +72,14 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
 
     let isMounted = true;
     setIsLoading(true);
-
-    // Subscribe to live Firestore updates
-    const unsubscribe = websiteContentService.subscribeAboutUsContent((liveContent) => {
-      if (isMounted) {
-        setContent(liveContent);
-        setIsLoading(false);
-        setHasError(false);
-      }
-    });
-
-    // Fallback load
+    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
     websiteContentService
-      .getAboutUsContent()
+      .getAboutUsContent(navigation?.type === 'reload')
       .then((data) => {
         if (isMounted) {
-          setContent(data);
+          setContent(normalizeLeadershipTitles(data));
           setIsLoading(false);
+          setHasError(false);
         }
       })
       .catch((err) => {
@@ -85,7 +91,6 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
 
     return () => {
       isMounted = false;
-      unsubscribe();
     };
   }, []);
 

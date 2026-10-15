@@ -15,7 +15,7 @@ import { DisplayGalleryItem, matchGalleryItem, matchGalleryItemByTitle } from '.
 import { notificationService } from '../src/services/notificationService';
 import { getOfficeMapUrl, getMapSearchUrl } from '../src/config/company';
 import { getImageSourceCandidates } from '../src/utils/imageSources';
-import { sortDivisions } from '../src/services/firestore/divisions';
+import { canonicalizeDivisionRoute, sortDivisions } from '../src/services/firestore/divisions';
 import { buildSitemapXml } from '../backend/api/handlers/sitemap';
 import { analyticsService } from '../src/services/analyticsService';
 
@@ -34,6 +34,15 @@ async function runTestSuite() {
   let failed = 0;
 
   const testSteps: TestStep[] = [
+    {
+      category: 'Customer Experience',
+      name: 'SWS and U1 aliases resolve to their canonical division routes',
+      fn: () =>
+        canonicalizeDivisionRoute('/sws-event-management') === '/sws' &&
+        canonicalizeDivisionRoute('/sws') === '/sws' &&
+        canonicalizeDivisionRoute('/u1') === '/u1' &&
+        canonicalizeDivisionRoute('/u1-studio') === '/u1',
+    },
     {
       category: 'Customer Experience',
       name: 'Image candidate normalization preserves fallback URLs',

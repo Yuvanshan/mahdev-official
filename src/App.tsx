@@ -17,6 +17,7 @@ import { BottomNavigation } from './components/layout/BottomNavigation';
 import { initAppCheck } from './lib/firebase';
 import { analyticsService } from './services/analyticsService';
 import { catalogService } from './services/catalogService';
+import { canonicalizeDivisionRoute } from './services/firestore/divisions';
 import { motion, AnimatePresence } from 'motion/react';
 
 const CHUNK_RECOVERY_KEY = 'mahdev:chunk-load-recovery';
@@ -318,8 +319,7 @@ function AppContent() {
   if (rawBase.startsWith('#/')) rawBase = rawBase.substring(1);
   else if (rawBase.startsWith('#') && rawBase.length > 1) rawBase = `/${rawBase.substring(1)}`;
   const basePath = rawBase.split('#')[0] || '/';
-  const normalizedPath =
-    (basePath.startsWith('/') ? basePath : `/${basePath}`).toLowerCase().replace(/\/$/, '') || '/';
+  const normalizedPath = canonicalizeDivisionRoute(basePath);
   const searchParams = new URLSearchParams(
     searchParamsString || (typeof window !== 'undefined' ? window.location.search : '')
   );

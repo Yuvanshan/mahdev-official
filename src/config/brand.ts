@@ -11,9 +11,9 @@ export const BRAND_CONFIG: BrandConfig = {
   contactEmail: COMPANY_INFO.email,
   contactPhone: COMPANY_INFO.primaryPhone,
   socials: {
-    linkedin: COMPANY_INFO.socials.linkedin || 'https://linkedin.com/company/mahdev',
+    linkedin: COMPANY_INFO.socials.linkedin || 'https://www.linkedin.com/company/mahdev-pvt-ltd/',
     facebook: COMPANY_INFO.socials.facebook || 'https://facebook.com/mahdev',
-    instagram: COMPANY_INFO.socials.instagram || 'https://instagram.com/mahdev',
+    instagram: COMPANY_INFO.socials.instagram || 'https://www.instagram.com/sws_event_management?exln=MW5kamxsczNlOXlxbg==',
     twitter: 'https://twitter.com/mahdev',
     youtube: COMPANY_INFO.socials.youtube || 'https://youtube.com/@mahdev',
   },

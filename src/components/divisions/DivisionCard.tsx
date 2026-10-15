@@ -65,7 +65,19 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate
             decoding="async"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           />
-        ) : null}
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-white p-8">
+            {division.logoUrl && (
+              <img
+                src={division.logoUrl}
+                alt={`${division.name} logo`}
+                loading="lazy"
+                decoding="async"
+                className="max-h-full max-w-full object-contain"
+              />
+            )}
+          </div>
+        )}
         {division.isComingSoon && (
           <span className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold text-slate-700">
             Coming soon

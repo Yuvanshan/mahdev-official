@@ -7,6 +7,7 @@ export interface DivisionCardItem {
   description: string;
   mediaUrl: string;
   mediaType: 'image' | 'video';
+  logoUrl: string;
   isComingSoon: boolean;
   order: number;
 }
@@ -21,6 +22,14 @@ const CANONICAL_IDS: Record<string, string> = {
   'mahdev-travels': 'travels',
   'online-mart': 'mart',
   'mahdev-mart': 'mart',
+};
+
+const DEFAULT_DIVISION_LOGOS: Record<string, string> = {
+  sws: '/assets/images/sws_logo.jpeg',
+  u1: '/assets/images/u1_logo.jpeg',
+  it: '/assets/images/it_logo.png',
+  travels: '/assets/images/travels_logo.png',
+  mart: '/assets/images/mart_logo.png',
 };
 
 function shortDescription(value: string): string {
@@ -71,6 +80,7 @@ export function getDivisionCardItems(divisions: FirestoreDivision[]): DivisionCa
         ),
         mediaUrl,
         mediaType,
+        logoUrl: division.logoUrl || division.logo || DEFAULT_DIVISION_LOGOS[id] || '',
         isComingSoon: Boolean(
           division.isComingSoon ||
           division.comingSoon ||

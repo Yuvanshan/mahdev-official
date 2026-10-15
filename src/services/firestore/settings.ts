@@ -53,10 +53,15 @@ function mergeCompanySettings(
     facebook: 'https://facebook.com/mahdev',
     instagram: 'https://instagram.com/mahdev',
     youtube: 'https://youtube.com/@mahdev',
+    linkedin: 'https://linkedin.com/company/mahdev',
   };
 
   for (const [platform, legacyUrl] of Object.entries(legacyProfileUrls)) {
-    if (socials[platform]?.replace(/\/+$/, '').toLowerCase() === legacyUrl.toLowerCase()) {
+    if (
+      socials[platform]?.replace(/\/+$/, '').toLowerCase() === legacyUrl.toLowerCase() ||
+      (platform === 'instagram' &&
+        socials[platform]?.replace(/\/+$/, '').toLowerCase() === 'https://www.instagram.com/sws_event_management')
+    ) {
       socials[platform] = defaults.socials[platform];
     }
   }
