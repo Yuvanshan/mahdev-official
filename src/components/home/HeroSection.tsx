@@ -15,6 +15,8 @@ interface HeroSectionProps {
 }
 
 const HERO_VIDEO = '/assets/hero_landing.mp4';
+// First frame shown instantly (preloaded in index.html) until the video can play.
+const HERO_POSTER = '/assets/hero_landing_poster.jpg';
 let savedHeroVideoTime = 0;
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -162,10 +164,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         <video
           ref={videoRef}
           src={HERO_VIDEO}
+          poster={HERO_POSTER}
+          autoPlay
           loop
           playsInline
           muted
-          preload="metadata"
+          preload="auto"
           aria-hidden="true"
           disablePictureInPicture
           className="absolute inset-0 h-full w-full object-cover object-center brightness-[1.05] contrast-[1.08] saturate-[1.08]"

@@ -84,9 +84,9 @@ export const firestoreProductsService = {
         }
       } catch (err) {
         console.warn('[Firestore Products] Optimized fetch fallback:', err);
-        const fallback = cachedProducts?.data || [];
-        cachedProducts = { data: fallback, timestamp: Date.now() };
-        return fallback;
+        // Serve the last good copy without refreshing its timestamp; never cache a failure as empty.
+        if (cachedProducts) return cachedProducts.data;
+        throw err;
       } finally {
         inFlightProductsPromise = null;
       }

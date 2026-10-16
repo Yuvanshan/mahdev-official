@@ -7,6 +7,19 @@
 
 import crypto from 'crypto';
 
+import { randomBytes } from 'node:crypto';
+
+// Secrets come from the environment. When one is missing, use a random
+// per-process value instead of a hardcoded default, so no known secret can be
+// used to forge signatures. Set the env variable for stable signatures.
+function envSecret(name: string): string {
+  const value = process.env[name];
+  if (value) return value;
+  console.warn(`[security] ${name} is not set; using an ephemeral random value for this process.`);
+  return randomBytes(32).toString('hex');
+}
+
+
 export interface InvoiceItem {
   description: string;
   quantity: number;
@@ -71,7 +84,7 @@ export interface GeneratedFiscalInvoice {
 }
 
 const INVOICE_SIGNING_SALT =
-  process.env.INVOICE_SIGNING_SALT || 'mahdev_fiscal_invoice_cryptographic_salt_2026';
+  envSecret('INVOICE_SIGNING_SALT');
 
 let invoiceCounter = 1042;
 

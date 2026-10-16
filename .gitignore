@@ -52,3 +52,9 @@ Thumbs.db
 *.temp
 .vercel
 .env*
+
+# Local data dumps and debug output (may contain personal data)
+firestore-dump.json
+login.json
+out.txt
+firebase-debug.log

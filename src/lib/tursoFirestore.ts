@@ -1,5 +1,12 @@
 import { getAuth } from 'firebase/auth';
 import { isBrowserOnAdminPortal } from '../config/adminRoutes';
+import {
+  canEvaluateFilters,
+  filterSnapshotDocuments,
+  querySnapshotDocuments,
+  type SnapshotFilter,
+  type SnapshotOrder,
+} from './publicSnapshotQuery';
 
 export type DocumentData = Record<string, any>;
 export type Unsubscribe = () => void;
@@ -114,6 +121,94 @@ const PUBLIC_READ_BATCHABLE_COLLECTIONS = new Set([
   'trustedCompanies',
   'websiteContent',
 ]);
+
+// ---------------------------------------------------------------------------
+// Public snapshot: one CDN-cached GET (/api/public/snapshot) holding every
+// public collection. Simple public reads (no filters or cursors) are answered
+// from it, so a page load needs one request instead of one per collection.
+// Fetched at most once per page session; no polling. Anything it cannot
+// answer, or any failure, falls through to the normal batched reads below.
+// ---------------------------------------------------------------------------
+const PUBLIC_SNAPSHOT_TIMEOUT_MS = 15000;
+
+interface PublicSnapshotPayload {
+  version: string;
+  collections: Record<string, ApiDocument[]>;
+  documents: Record<string, ApiDocument | null>;
+  omitted: string[];
+}
+
+let publicSnapshotPromise: Promise<PublicSnapshotPayload | null> | null = null;
+
+function loadPublicSnapshot(): Promise<PublicSnapshotPayload | null> {
+  if (publicSnapshotPromise) return publicSnapshotPromise;
+  publicSnapshotPromise = (async () => {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), PUBLIC_SNAPSHOT_TIMEOUT_MS);
+    try {
+      const response = await fetch('/api/public/snapshot', { credentials: 'same-origin', signal: controller.signal });
+      if (!response.ok) return null;
+      const snapshot = await response.json() as PublicSnapshotPayload;
+      return snapshot && snapshot.collections && typeof snapshot.collections === 'object' ? snapshot : null;
+    } catch (error) {
+      console.warn('[TursoFirestore] Public snapshot unavailable; using standard reads.', error);
+      return null;
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  })();
+  return publicSnapshotPromise;
+}
+
+function isSnapshotEligible(action: string, payload: Record<string, unknown>): boolean {
+  if (action !== 'get' && action !== 'list') return false;
+  if (typeof payload.collection !== 'string' || payload.collection.includes('/')) return false;
+  if (payload.parentPath) return false;
+  if (isBrowserOnAdminPortal()) return false; // admin needs live, admin-visible data
+  if (action === 'list') {
+    // Cursors (pagination) always go to the server; simple == / in filters are evaluated locally.
+    if (payload.afterId !== undefined || payload.afterValue !== undefined) return false;
+    const filters = Array.isArray(payload.filters) ? payload.filters as SnapshotFilter[] : [];
+    const groups = Array.isArray(payload.filterGroups) ? payload.filterGroups as SnapshotFilter[][] : [];
+    if (!canEvaluateFilters(filters, groups)) return false;
+  }
+  return true;
+}
+
+async function readFromPublicSnapshot(
+  action: string,
+  payload: Record<string, unknown>
+): Promise<ApiResponse<unknown> | null> {
+  const snapshot = await loadPublicSnapshot();
+  if (!snapshot) return null;
+  const collection = payload.collection as string;
+
+  if (action === 'get') {
+    const key = `${collection}/${String(payload.id)}`;
+    if (key in snapshot.documents) {
+      const document = snapshot.documents[key];
+      return { document: document ? structuredClone(document) : null };
+    }
+    const documents = snapshot.collections[collection];
+    if (!documents) return null;
+    const match = documents.find((document) => document.id === payload.id);
+    return { document: match ? structuredClone(match) : null };
+  }
+
+  const documents = snapshot.collections[collection];
+  if (!documents) return null;
+  return {
+    documents: structuredClone(querySnapshotDocuments(
+      filterSnapshotDocuments(
+        documents,
+        Array.isArray(payload.filters) ? payload.filters as SnapshotFilter[] : [],
+        Array.isArray(payload.filterGroups) ? payload.filterGroups as SnapshotFilter[][] : []
+      ),
+      payload.order as SnapshotOrder | undefined,
+      typeof payload.limit === 'number' ? payload.limit : undefined
+    )),
+  };
+}
 
 interface PendingPublicRead {
   action: 'get' | 'list';
@@ -246,6 +341,11 @@ async function request<T>(
     : '';
   const pendingRead = readKey ? inFlightReads.get(readKey) : undefined;
   if (pendingRead) return pendingRead as Promise<ApiResponse<T>>;
+
+  if (isRead && isSnapshotEligible(action, payload)) {
+    const snapshotResponse = await readFromPublicSnapshot(action, payload);
+    if (snapshotResponse) return snapshotResponse as ApiResponse<T>;
+  }
 
   const performRequest = async <TResponse>(
     requestAction: string,

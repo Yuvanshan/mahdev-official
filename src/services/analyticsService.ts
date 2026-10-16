@@ -56,6 +56,62 @@ function aggregateTraffic(
     .slice(0, maxItems);
 }
 
+
+// ---------------------------------------------------------------------------
+// Batched delivery: events are queued and sent together to /api/analytics,
+// instead of one request per page view. A flush happens when the queue holds
+// 10 events, 5 seconds after the first queued event (one-shot timer, not
+// polling), or when the tab is hidden/closed (sendBeacon survives unload).
+// ---------------------------------------------------------------------------
+const ANALYTICS_FLUSH_SIZE = 10;
+const ANALYTICS_FLUSH_DELAY_MS = 5000;
+let analyticsQueue: Array<Record<string, unknown>> = [];
+let analyticsFlushTimer: number | null = null;
+let analyticsUnloadHooked = false;
+
+function flushAnalyticsQueue(useBeacon: boolean): void {
+  if (analyticsFlushTimer !== null) {
+    window.clearTimeout(analyticsFlushTimer);
+    analyticsFlushTimer = null;
+  }
+  if (analyticsQueue.length === 0) return;
+  const events = analyticsQueue.splice(0, 25);
+  // text/plain keeps sendBeacon a simple request in every browser.
+  const body = JSON.stringify({ events });
+  const sentByBeacon = useBeacon && typeof navigator.sendBeacon === 'function'
+    && navigator.sendBeacon('/api/analytics', new Blob([body], { type: 'text/plain;charset=UTF-8' }));
+  if (!sentByBeacon) {
+    void fetch('/api/analytics', {
+      method: 'POST',
+      credentials: 'same-origin',
+      keepalive: true,
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body,
+    }).then((response) => {
+      if (!response.ok) console.warn(`[Analytics] Events were not stored (HTTP ${response.status}).`);
+    }).catch((error: unknown) => {
+      console.warn('[Analytics] Could not store events:', error);
+    });
+  }
+  if (analyticsQueue.length > 0) flushAnalyticsQueue(useBeacon);
+}
+
+function queueAnalyticsEvent(event: Record<string, unknown>): void {
+  if (!analyticsUnloadHooked) {
+    analyticsUnloadHooked = true;
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flushAnalyticsQueue(true);
+    });
+    window.addEventListener('pagehide', () => flushAnalyticsQueue(true));
+  }
+  analyticsQueue.push(event);
+  if (analyticsQueue.length >= ANALYTICS_FLUSH_SIZE) {
+    flushAnalyticsQueue(false);
+  } else if (analyticsFlushTimer === null) {
+    analyticsFlushTimer = window.setTimeout(() => flushAnalyticsQueue(false), ANALYTICS_FLUSH_DELAY_MS);
+  }
+}
+
 class AnalyticsService {
   private sessionId: string = '';
   private sessionEvents: AnalyticsEvent[] = [];
@@ -179,33 +235,14 @@ class AnalyticsService {
           : 'desktop';
     }
 
-    void fetch('/api/database', {
-      method: 'POST',
-      credentials: 'same-origin',
-      keepalive: true,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'write',
-        write: {
-          type: 'set',
-          collection: 'analyticsEvents',
-          id: event.id,
-          data: {
-            type: event.type,
-            path: event.path.split(/[?#]/, 1)[0].slice(0, 300) || '/',
-            title: event.title || '',
-            sessionId: event.sessionId,
-            divisionId: event.divisionId,
-            metadata,
-          },
-        },
-      }),
-    }).then((response) => {
-      if (!response.ok) {
-        console.warn(`[Analytics] Event was not stored (HTTP ${response.status}).`);
-      }
-    }).catch((error: unknown) => {
-      console.warn('[Analytics] Could not store event:', error);
+    queueAnalyticsEvent({
+      id: event.id,
+      type: event.type,
+      path: event.path.split(/[?#]/, 1)[0].slice(0, 300) || '/',
+      title: event.title || '',
+      sessionId: event.sessionId,
+      divisionId: event.divisionId,
+      metadata,
     });
   }
 

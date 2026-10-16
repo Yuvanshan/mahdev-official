@@ -279,7 +279,9 @@ export const firestoreServicesService = {
           }
         } catch (err) {
           console.warn('[Firestore Services] getServices error:', err);
-          return cachedServices?.data || [];
+          // Never report a failed read as "no services"; callers must not cache it.
+          if (cachedServices) return cachedServices.data;
+          throw err;
         } finally {
           inFlightServicesPromise = null;
         }

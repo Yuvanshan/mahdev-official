@@ -141,9 +141,9 @@ export const firestorePortfolioService = {
         }
       } catch (err) {
         console.warn('[Firestore Portfolio] Optimized fetch error:', err);
-        const fallback = cachedPortfolio?.data || [];
-        cachedPortfolio = { data: fallback, timestamp: Date.now() };
-        return fallback;
+        // Serve the last good copy without refreshing its timestamp; never cache a failure as empty.
+        if (cachedPortfolio) return cachedPortfolio.data;
+        throw err;
       } finally {
         inFlightPortfolioPromise = null;
       }

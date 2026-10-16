@@ -18,6 +18,8 @@ import {
 import careerCvHandler from './handlers/careers/cv.js';
 import careerStatusHandler from './handlers/careers/status.js';
 import careerApplicationHandler from './handlers/careers/application.js';
+import publicSnapshotHandler from './handlers/publicSnapshot.js';
+import analyticsHandler from './handlers/analytics.js';
 
 const apiRouter = Router();
 
@@ -36,6 +38,14 @@ apiRouter.get('/careers/status', async (req: Request, res: Response) => {
 });
 apiRouter.delete('/careers/application', async (req: Request, res: Response) => {
   await careerApplicationHandler(req, res);
+});
+
+apiRouter.post('/analytics', (req: Request, res: Response) => {
+  void analyticsHandler(req, res);
+});
+
+apiRouter.get('/public/snapshot', (req: Request, res: Response) => {
+  void publicSnapshotHandler(req, res);
 });
 
 apiRouter.get('/health', async (_req, res) => {

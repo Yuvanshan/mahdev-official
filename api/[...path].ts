@@ -12,6 +12,9 @@ import adminCustomersHandler from '../backend/api/handlers/admin/customers.js';
 import notificationHandler from '../backend/api/handlers/notifications.js';
 import publicEmailHandler from '../backend/api/handlers/publicEmail.js';
 import sitemapHandler from '../backend/api/handlers/sitemap.js';
+import publicSnapshotHandler from '../backend/api/handlers/publicSnapshot.js';
+import analyticsHandler from '../backend/api/handlers/analytics.js';
+import pageShellHandler from '../backend/api/handlers/pageShell.js';
 
 interface ApiRequest extends IncomingMessage {
   method?: string;
@@ -85,6 +88,18 @@ export default async function handler(req: ApiRequest, res: ServerResponse): Pro
     await publicEmailHandler(req, res);
     return;
   }
+  if (pathname === '/api/page-shell') {
+    await pageShellHandler(req, res);
+    return;
+  }
+  if (pathname === '/api/analytics') {
+    await analyticsHandler(req, res);
+    return;
+  }
+  if (pathname === '/api/public/snapshot') {
+    await publicSnapshotHandler(req, res);
+    return;
+  }
   if (pathname === '/api/database') {
     await databaseHandler(req, res);
     return;
@@ -110,7 +125,7 @@ export default async function handler(req: ApiRequest, res: ServerResponse): Pro
     return;
   }
   if (pathname === '/api/admin/auth/login') {
-    adminLoginHandler(req, res);
+    await adminLoginHandler(req, res);
     return;
   }
   if (pathname === '/api/admin/auth/logout') {

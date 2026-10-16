@@ -596,11 +596,20 @@ function AppContent() {
     }
   }, [normalizedPath, divisionKey]);
 
-  // Priority division data hydration on navigation
+  // Priority division data hydration on navigation. Attempt once per division
+  // visit: if a load fails, the loaded flag stays false and isDivisionLoaded
+  // changes identity, which would otherwise re-run this effect in a loop.
+  const attemptedDivisionRef = React.useRef<string | null>(null);
   useEffect(() => {
-    if (divisionKey && !isDivisionLoaded(divisionKey)) {
-      loadDivisionData(divisionKey);
+    if (!divisionKey) {
+      attemptedDivisionRef.current = null;
+      return;
     }
+    if (attemptedDivisionRef.current === divisionKey || isDivisionLoaded(divisionKey)) return;
+    attemptedDivisionRef.current = divisionKey;
+    void Promise.resolve(loadDivisionData(divisionKey)).catch((error: unknown) => {
+      console.error(`[App] Could not load ${divisionKey} division data:`, error);
+    });
   }, [divisionKey, isDivisionLoaded, loadDivisionData]);
 
   // 1. Maintenance Mode Screen: Live Firestore switch

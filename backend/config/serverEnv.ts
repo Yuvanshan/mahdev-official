@@ -1,3 +1,15 @@
+import { randomBytes } from 'node:crypto';
+
+// Secrets come from the environment. When one is missing, use a random
+// per-process value instead of a hardcoded default, so no known secret can be
+// used to forge signatures. Set the env variable for stable signatures.
+function envSecret(name: string): string {
+  const value = process.env[name];
+  if (value) return value;
+  console.warn(`[security] ${name} is not set; using an ephemeral random value for this process.`);
+  return randomBytes(32).toString('hex');
+}
+
 /**
  * Mahdev Enterprise Server-Side Environment & Secrets Management (Phase 30)
  * 
@@ -57,15 +69,15 @@ export function getServerConfig(): ServerEnvironmentConfig {
     payments: {
       gatewayEnv: (process.env.PAYMENT_GATEWAY_ENV as 'sandbox' | 'production') || 'sandbox',
       stripeSecretKey: process.env.STRIPE_SECRET_KEY || '',
-      webhookSecret: process.env.PAYMENT_WEBHOOK_SECRET || 'mahdev_secure_hmac_secret_2026_enterprise_key',
+      webhookSecret: envSecret('PAYMENT_WEBHOOK_SECRET'),
       lankaPayMerchantId: process.env.LANKAPAY_MERCHANT_ID || '',
       lankaPaySecretKey: process.env.LANKAPAY_SECRET_KEY || '',
     },
 
     security: {
-      orderSignatureSecret: process.env.ORDER_SIGNATURE_SECRET || 'mahdev_order_signature_secret_2026',
-      invoiceSigningSalt: process.env.INVOICE_SIGNING_SALT || 'mahdev_invoice_hmac_salt_2026',
-      notificationSecretSalt: process.env.NOTIFICATION_SECRET_SALT || 'mahdev_notification_secret_2026',
+      orderSignatureSecret: envSecret('ORDER_SIGNATURE_SECRET'),
+      invoiceSigningSalt: envSecret('INVOICE_SIGNING_SALT'),
+      notificationSecretSalt: envSecret('NOTIFICATION_SECRET_SALT'),
     },
 
     notifications: {

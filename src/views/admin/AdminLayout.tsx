@@ -140,7 +140,10 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
 ];
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigate }) => {
-  const { admin, session, isAuthenticated, logout } = useAdminAuth();
+  const { admin, session, isAuthenticated, isRestoringSession, logout, ensureSessionRestored } = useAdminAuth();
+  React.useEffect(() => {
+    ensureSessionRestored();
+  }, [ensureSessionRestored]);
   const { refreshAll } = useFirestoreDataContext();
 
   // Admin views read from the shared CMS/data stores, which public routes fill
@@ -198,6 +201,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
   };
 
   // 1. Authentication Guard: If not authenticated, show Admin Login View immediately
+  // Avoid flashing the login form while an existing session is being checked.
+  if (isRestoringSession && !admin) {
+    return <div className="min-h-screen bg-slate-950" />;
+  }
+
   if (!isAuthenticated || !admin) {
     return (
       <React.Suspense fallback={<div className="min-h-screen bg-slate-950" />}>

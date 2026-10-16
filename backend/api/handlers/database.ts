@@ -9,6 +9,12 @@ import {
 } from '../tursoRoutes.js';
 import { getTursoDocument } from '../../db/tursoDatabase.js';
 import { dispatchServerNotification } from '../../services/secureNotificationService.js';
+import {
+  consumeRateLimit,
+  getClientIp,
+  PUBLIC_SUBMISSION_LIMITS,
+  RateLimitError,
+} from '../../security/rateLimit.js';
 
 interface TursoApiRequest extends IncomingMessage {
   method?: string;
@@ -165,6 +171,26 @@ export async function handleTursoDatabaseRequest(
       error: 'Turso is unavailable or not configured. Check the server database environment.',
     }));
     return;
+  }
+
+  // Shared per-IP limits for anonymous submissions (forms, orders, analytics).
+  if (access.role !== 'admin' && isRecord(req.body) && req.body.action === 'write' && isRecord(req.body.write)) {
+    const collection = typeof req.body.write.collection === 'string' ? req.body.write.collection : '';
+    const rule = PUBLIC_SUBMISSION_LIMITS[collection];
+    if (rule) {
+      try {
+        await consumeRateLimit(`submit:${collection}:${getClientIp(req)}`, rule.limit, rule.windowMs);
+      } catch (error) {
+        if (!(error instanceof RateLimitError)) {
+          console.error('[Turso API] Rate limiter unavailable:', error);
+        } else {
+          res.statusCode = 429;
+          res.setHeader('Retry-After', String(Math.ceil(rule.windowMs / 1000)));
+          res.end(JSON.stringify({ success: false, error: error.message }));
+          return;
+        }
+      }
+    }
   }
 
   const result = await handleTursoAction(req.body, access);

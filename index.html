@@ -23,6 +23,24 @@
     <meta name="twitter:title" content="Mahdev (Pvt) Ltd | Events, Photography, IT, Travel & Online Mart in Sri Lanka" />
     <meta name="twitter:description" content="Discover Mahdev (Pvt) Ltd, a Sri Lankan group for event management, photography and cinema, IT solutions, travel, and professional production equipment." />
     <meta name="twitter:image" content="https://mahdev-official.vercel.app/logo.png" />
+    <!-- Home only: the prerender step removes this from every other page. -->
+    <link rel="preload" as="image" href="/assets/hero_landing_poster.jpg" fetchpriority="high" data-home-only />
+    <!-- Structured data for search engines (not executed, so allowed by the CSP). -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://mahdev-official.vercel.app/#organization",
+        "name": "Mahdev (Pvt) Ltd",
+        "url": "https://mahdev-official.vercel.app/",
+        "logo": "https://mahdev-official.vercel.app/logo.png",
+        "description": "Sri Lankan group for event management, photography and cinema, IT solutions, travel, and professional production equipment.",
+        "email": "info@mahdev.lk",
+        "telephone": "+94750928078",
+        "address": { "@type": "PostalAddress", "addressCountry": "LK" },
+        "areaServed": "LK"
+      }
+    </script>
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="shortcut icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/favicon.png" />

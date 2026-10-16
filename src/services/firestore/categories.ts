@@ -53,7 +53,9 @@ export const firestoreCategoriesService = {
         }
       } catch (err) {
         console.warn('[Firestore Categories] getCategories error:', err);
-        allCategories = cachedCategories?.data || [];
+        // Never report a failed read as "no categories"; callers must not cache it.
+        if (!cachedCategories) throw err;
+        allCategories = cachedCategories.data;
       }
     }
 

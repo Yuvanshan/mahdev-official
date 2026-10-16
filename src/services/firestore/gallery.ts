@@ -248,7 +248,9 @@ export const firestoreGalleryService = {
           }
         } catch (err) {
           console.warn('[Firestore Gallery] getGallery error:', err);
-          return cachedGallery?.data || [];
+          // Never report a failed read as "no gallery items"; callers must not cache it.
+          if (cachedGallery) return cachedGallery.data;
+          throw err;
         } finally {
           inFlightGalleryPromise = null;
         }

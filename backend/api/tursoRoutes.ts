@@ -122,6 +122,8 @@ const PUBLIC_READ_COLLECTIONS = new Set([
   'banners',
   'categories',
   'careerOpenings',
+  // Published legal text (privacy, terms, refunds...) shown on public pages.
+  'legalPages',
   'divisions',
   'faqs',
   'gallery',
@@ -144,6 +146,7 @@ const PUBLIC_READ_COLLECTIONS = new Set([
   'websiteContent',
 ]);
 const MAX_PUBLIC_READ_BATCH_SIZE = 8;
+const MAX_PUBLIC_LIST_ROWS = 1000;
 const MAX_PUBLIC_READ_BATCH_RESPONSE_BYTES = 3_500_000;
 const CUSTOMER_OWNED_COLLECTIONS = new Set(['users', 'orders', 'bookings', 'payments']);
 const ADMIN_ONLY_READ_COLLECTIONS = new Set([
@@ -461,6 +464,68 @@ async function prepareCustomerWrite(write: TursoWrite, identity: FirebaseIdentit
   return { ...write, data };
 }
 
+interface OrderPricingVerification {
+  verified: boolean;
+  verifiedSubtotal: number;
+  clientSubtotal: number | null;
+  mismatches: Array<{ productId: string; reason: string; clientUnitPrice?: number; catalogueUnitPrice?: number }>;
+  checkedAt: string;
+}
+
+async function verifyOrderPricing(data: Record<string, unknown>): Promise<OrderPricingVerification> {
+  const items = Array.isArray(data.items) ? data.items.slice(0, 200) : [];
+  const mismatches: OrderPricingVerification['mismatches'] = [];
+  let verifiedSubtotal = 0;
+  const productCache = new Map<string, Record<string, unknown> | null>();
+
+  for (const rawItem of items) {
+    if (!rawItem || typeof rawItem !== 'object') continue;
+    const item = rawItem as Record<string, unknown>;
+    const productId = typeof item.productId === 'string' ? item.productId : '';
+    const quantity = Number(item.quantity);
+    if (!productId || !Number.isInteger(quantity) || quantity < 1 || quantity > 1000) {
+      mismatches.push({ productId, reason: 'invalid product or quantity' });
+      continue;
+    }
+    if (!productCache.has(productId)) {
+      productCache.set(productId, (await getTursoDocument('products', '', productId))?.data ?? null);
+    }
+    const product = productCache.get(productId);
+    if (!product) {
+      mismatches.push({ productId, reason: 'product not found' });
+      continue;
+    }
+    const variantId = item.selectedVariant && typeof item.selectedVariant === 'object'
+      ? (item.selectedVariant as Record<string, unknown>).id
+      : undefined;
+    const variant = variantId && Array.isArray(product.variants)
+      ? (product.variants as Array<Record<string, unknown>>).find((candidate) => candidate?.id === variantId)
+      : undefined;
+    const catalogueUnitPrice = Number(variant?.price ?? product.price);
+    if (!Number.isFinite(catalogueUnitPrice)) {
+      mismatches.push({ productId, reason: 'catalogue price unavailable' });
+      continue;
+    }
+    verifiedSubtotal += catalogueUnitPrice * quantity;
+    const clientUnitPrice = Number(item.unitPrice ?? item.price);
+    if (!Number.isFinite(clientUnitPrice) || Math.abs(clientUnitPrice - catalogueUnitPrice) > 0.005) {
+      mismatches.push({ productId, reason: 'unit price differs from catalogue', clientUnitPrice, catalogueUnitPrice });
+    }
+  }
+
+  const clientSubtotal = Number.isFinite(Number(data.subtotal)) ? Number(data.subtotal) : null;
+  if (clientSubtotal !== null && Math.abs(clientSubtotal - verifiedSubtotal) > 0.005) {
+    mismatches.push({ productId: '', reason: 'subtotal differs from catalogue total' });
+  }
+  return {
+    verified: mismatches.length === 0,
+    verifiedSubtotal: Math.round(verifiedSubtotal * 100) / 100,
+    clientSubtotal,
+    mismatches: mismatches.slice(0, 50),
+    checkedAt: new Date().toISOString(),
+  };
+}
+
 async function preparePublicWrite(write: TursoWrite): Promise<TursoWrite> {
   if (
     write.type !== 'set' ||
@@ -649,10 +714,15 @@ async function preparePublicWrite(write: TursoWrite): Promise<TursoWrite> {
             .filter(([field]) => field !== 'email' && field !== 'customerEmail')
         )
       : rawCustomer;
+    // Prices in a public order come from the browser and cannot be trusted.
+    // Recalculate each line from the catalogue and flag differences for the
+    // admin, who reviews every order before it is confirmed or paid.
+    const pricing = write.collection === 'orders' ? await verifyOrderPricing(data) : undefined;
     return {
       ...write,
       data: {
         ...data,
+        ...(pricing ? { pricingVerification: pricing } : {}),
         ...(customer === undefined ? {} : { customer }),
         ...(write.collection === 'orders'
           ? { paymentStatus: 'unpaid', status: 'pending_payment', orderStatus: 'pending_payment' }
@@ -834,6 +904,24 @@ export async function handleTursoAction(
         : undefined;
       const filters = parseFilters(body.filters);
       const filterGroups = parseFilterGroups(body.filterGroups);
+      const order = parseOrder(body.order);
+      if (access.role === 'public') {
+        // Hidden settings fields are stripped from responses, but filtering or
+        // sorting on them would still reveal their values (e.g. comparing
+        // superAdminEmail with >= / < one character at a time). Refuse it.
+        const touchesHiddenField = (field: string) =>
+          collection === 'settings' && field.split('.').some((part) => PRIVATE_PUBLIC_SETTINGS_FIELDS.has(part));
+        if (
+          [...filters, ...filterGroups.flat()].some((filter) => touchesHiddenField(filter.field)) ||
+          (order && touchesHiddenField(order.field))
+        ) {
+          throw new Error('Invalid query: this field cannot be used to filter or sort.');
+        }
+      }
+      // Public lists are capped so one request cannot pull an unbounded table.
+      const effectiveMaxRows = access.role === 'public'
+        ? Math.min(maxRows ?? MAX_PUBLIC_LIST_ROWS, MAX_PUBLIC_LIST_ROWS)
+        : maxRows;
       if (access.role === 'public' && collection === 'careerOpenings') {
         filters.push({ field: 'status', operator: '==', value: 'published' });
       }
@@ -841,8 +929,8 @@ export async function handleTursoAction(
         collection,
         parentPath,
         filters,
-        parseOrder(body.order),
-        maxRows,
+        order,
+        effectiveMaxRows,
         afterId,
         access.role === 'customer' ? access.identity : undefined,
         afterValue,
