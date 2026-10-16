@@ -1,4 +1,5 @@
 import { getAuth } from 'firebase/auth';
+import { isBrowserOnAdminPortal } from '../config/adminRoutes';
 
 export type DocumentData = Record<string, any>;
 export type Unsubscribe = () => void;
@@ -81,6 +82,12 @@ export class TursoApiError extends Error {
 
 const database: TursoDatabase = { type: 'turso' };
 const DATABASE_REQUEST_TIMEOUT_MS = 12000;
+// Admin portal reads return whole collections (incl. drafts), which can take longer.
+const ADMIN_DATABASE_REQUEST_TIMEOUT_MS = 60000;
+
+function getRequestTimeoutMs(): number {
+  return isBrowserOnAdminPortal() ? ADMIN_DATABASE_REQUEST_TIMEOUT_MS : DATABASE_REQUEST_TIMEOUT_MS;
+}
 const inFlightReads = new Map<string, Promise<ApiResponse<unknown>>>();
 const MAX_PUBLIC_READ_BATCH_SIZE = 8;
 const PUBLIC_READ_BATCHABLE_COLLECTIONS = new Set([
@@ -250,9 +257,10 @@ async function request<T>(
       headers.Authorization = `Bearer ${await currentUser.getIdToken()}`;
     }
     const controller = new AbortController();
+    const timeoutMs = getRequestTimeoutMs();
     const timeoutId = window.setTimeout(
       () => controller.abort(),
-      DATABASE_REQUEST_TIMEOUT_MS
+      timeoutMs
     );
     try {
       const response = await fetch('/api/database', {
@@ -286,7 +294,7 @@ async function request<T>(
       if (error instanceof TursoApiError) throw error;
       if (controller.signal.aborted) {
         throw new Error(
-          `The database API request timed out after ${DATABASE_REQUEST_TIMEOUT_MS / 1000} seconds. Check the database service and retry.`
+          `The database API request timed out after ${timeoutMs / 1000} seconds. Check the database service and retry.`
         );
       }
       if (
@@ -308,6 +316,10 @@ async function request<T>(
   const canBatchPublicRead = (
     (action === 'get' || action === 'list') &&
     !getAuth().currentUser &&
+    // Admin sessions authenticate via cookie, but batched reads are always served
+    // with public access, so admin portal reads go out individually. Public
+    // pages keep batching unchanged.
+    !isBrowserOnAdminPortal() &&
     typeof payload.collection === 'string' &&
     PUBLIC_READ_BATCHABLE_COLLECTIONS.has(payload.collection)
   );

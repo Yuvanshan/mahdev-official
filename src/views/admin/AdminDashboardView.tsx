@@ -31,6 +31,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { AdminInlineImageTool } from '../../components/admin/AdminInlineImageTool';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { firestoreOrdersService } from '../../services/firestore/orders';
 import { firestoreBookingsService } from '../../services/firestore/bookings';
@@ -723,6 +724,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
   return (
     <div className="space-y-6">
+      <AdminInlineImageTool />
       {/* Top Banner / Actions Bar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
         <div>
