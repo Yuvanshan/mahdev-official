@@ -59,7 +59,7 @@ export const AdminInlineImageTool: React.FC = () => {
           <div>
             <h3 className="text-sm font-bold text-slate-900">Optimise inline images</h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Moves images saved directly inside service and gallery records into media storage, so pages load faster.
+              Moves images saved directly inside services, gallery, divisions and settings (logos) into media storage, so pages load faster.
             </p>
           </div>
         </div>

@@ -1,22 +1,24 @@
 /**
- * One-off admin tool: moves base64 `data:image/...` values stored inside service
- * and gallery records into Firebase Storage (via the normal admin media upload)
- * and saves the resulting URL back on the record.
+ * Admin tool: moves base64 `data:image/...` values stored inside database
+ * records into Firebase Storage (via the normal admin media upload) and saves
+ * the resulting URL back in the same place.
  *
- * Inline images make collection reads very large (hundreds of KB per record),
- * which slows every page that lists services or gallery items and causes
- * request timeouts. Records then hold a short URL like the rest of the data.
+ * Inline images make every read of a record very large (a single logo can be
+ * 550 KB), which slows the site and drives up Vercel "Fast Origin Transfer".
+ * Images are found at any depth (e.g. settings.darkLogoUrl,
+ * divisions.seo.ogImage, gallery.mediaUrl), and only changed fields are saved.
  */
 
-import { firestoreServicesService } from './firestore/services';
-import { firestoreGalleryService } from './firestore/gallery';
+import { collection, doc, getDocs, setDoc } from '../lib/tursoFirestore';
+import { db } from '../lib/firebase';
 import { uploadMediaAsset } from './mediaUploadService';
 
-// Image fields that may hold a single URL or a list of URLs.
-const IMAGE_FIELDS = ['imageUrl', 'images', 'url', 'thumbnailUrl', 'image', 'galleryImages'] as const;
+// Collections whose records may hold inline images.
+const MIGRATED_COLLECTIONS = ['services', 'gallery', 'divisions', 'settings'] as const;
+type MigratedCollection = typeof MIGRATED_COLLECTIONS[number];
 
 export interface InlineImageScanItem {
-  collection: 'services' | 'gallery';
+  collection: MigratedCollection;
   id: string;
   title: string;
   inlineImageCount: number;
@@ -33,20 +35,28 @@ function isInlineImage(value: unknown): value is string {
   return typeof value === 'string' && /^data:image\//i.test(value);
 }
 
-function countInline(record: Record<string, unknown>): { count: number; bytes: number } {
-  let count = 0;
-  let bytes = 0;
-  for (const field of IMAGE_FIELDS) {
-    const value = record[field];
-    const values = Array.isArray(value) ? value : [value];
-    for (const item of values) {
-      if (isInlineImage(item)) {
-        count += 1;
-        bytes += item.length;
-      }
-    }
+// Every inline image anywhere inside a value (strings, arrays, nested objects).
+function collectInline(value: unknown, found: string[] = []): string[] {
+  if (isInlineImage(value)) found.push(value);
+  else if (Array.isArray(value)) value.forEach((item) => collectInline(item, found));
+  else if (value && typeof value === 'object') Object.values(value).forEach((item) => collectInline(item, found));
+  return found;
+}
+
+// Returns a copy of `value` with every inline image replaced via `replace`.
+async function replaceInline(value: unknown, replace: (dataUrl: string) => Promise<string>): Promise<unknown> {
+  if (isInlineImage(value)) return replace(value);
+  if (Array.isArray(value)) {
+    const next: unknown[] = [];
+    for (const item of value) next.push(await replaceInline(item, replace));
+    return next;
   }
-  return { count, bytes };
+  if (value && typeof value === 'object') {
+    const next: Record<string, unknown> = {};
+    for (const [key, item] of Object.entries(value)) next[key] = await replaceInline(item, replace);
+    return next;
+  }
+  return value;
 }
 
 // Convert a data URL into a File so it can go through the standard upload flow.
@@ -61,77 +71,65 @@ function dataUrlToFile(dataUrl: string, baseName: string): File {
 }
 
 async function loadRecords() {
-  // Fresh reads so we never act on a stale cached copy.
-  const [services, gallery] = await Promise.all([
-    firestoreServicesService.getServices(undefined, true),
-    firestoreGalleryService.getGallery(undefined, true),
-  ]);
-  return [
-    ...services.map((record) => ({ collection: 'services' as const, record: record as unknown as Record<string, unknown> })),
-    ...gallery.map((record) => ({ collection: 'gallery' as const, record: record as unknown as Record<string, unknown> })),
-  ];
+  // Direct reads on the admin portal: live, complete records (no caches).
+  const lists = await Promise.all(MIGRATED_COLLECTIONS.map(async (name) => {
+    const snapshot = await getDocs(collection(db, name));
+    return snapshot.docs.map((document) => ({
+      collection: name,
+      id: document.id,
+      data: document.data() as Record<string, unknown>,
+    }));
+  }));
+  return lists.flat();
 }
 
 /** Lists records that still contain inline images, without changing anything. */
 export async function scanInlineImages(): Promise<InlineImageScanItem[]> {
-  const records = await loadRecords();
-  return records
-    .map(({ collection, record }) => {
-      const { count, bytes } = countInline(record);
+  return (await loadRecords())
+    .map(({ collection: name, id, data }) => {
+      const images = collectInline(data);
       return {
-        collection,
-        id: String(record.id),
-        title: String(record.title || record.name || record.id),
-        inlineImageCount: count,
-        inlineBytes: bytes,
+        collection: name,
+        id,
+        title: String(data.title || data.name || id),
+        inlineImageCount: images.length,
+        inlineBytes: images.reduce((sum, image) => sum + image.length, 0),
       };
     })
     .filter((item) => item.inlineImageCount > 0);
 }
 
-/** Uploads every inline image and saves only the changed image fields on each record. */
+/** Uploads every inline image and saves only the changed top-level fields of each record. */
 export async function migrateInlineImages(
   onProgress?: (done: number, total: number) => void
 ): Promise<InlineImageMigrationResult> {
-  const records = (await loadRecords()).filter(({ record }) => countInline(record).count > 0);
+  const records = (await loadRecords()).filter(({ data }) => collectInline(data).length > 0);
   const result: InlineImageMigrationResult = { migratedRecords: 0, migratedImages: 0, failures: [] };
 
   for (let index = 0; index < records.length; index += 1) {
-    const { collection, record } = records[index];
-    const id = String(record.id);
+    const { collection: name, id, data } = records[index];
     try {
-      const patch: Record<string, unknown> = {};
-      let imageNumber = 0;
-      // Reuse one upload when the same inline image appears in several fields.
-      const uploadedByDataUrl = new Map<string, string>();
+      // Reuse one upload when the same image appears several times in a record.
+      const uploaded = new Map<string, string>();
       const upload = async (dataUrl: string) => {
-        const existing = uploadedByDataUrl.get(dataUrl);
+        const existing = uploaded.get(dataUrl);
         if (existing) return existing;
-        imageNumber += 1;
-        const url = await uploadMediaAsset(dataUrlToFile(dataUrl, `${collection}-${id}-${imageNumber}`));
-        uploadedByDataUrl.set(dataUrl, url);
+        const url = await uploadMediaAsset(dataUrlToFile(dataUrl, `${name}-${id}-${uploaded.size + 1}`));
+        uploaded.set(dataUrl, url);
         return url;
       };
 
-      for (const field of IMAGE_FIELDS) {
-        const value = record[field];
-        if (Array.isArray(value) && value.some(isInlineImage)) {
-          const next: unknown[] = [];
-          for (const item of value) next.push(isInlineImage(item) ? await upload(item) : item);
-          patch[field] = next;
-        } else if (isInlineImage(value)) {
-          patch[field] = await upload(value);
-        }
+      const patch: Record<string, unknown> = {};
+      for (const [field, value] of Object.entries(data)) {
+        if (collectInline(value).length > 0) patch[field] = await replaceInline(value, upload);
       }
-
       if (Object.keys(patch).length > 0) {
-        if (collection === 'services') await firestoreServicesService.saveService(id, patch);
-        else await firestoreGalleryService.saveGallery(id, patch);
+        await setDoc(doc(db, name, id), patch, { merge: true });
         result.migratedRecords += 1;
-        result.migratedImages += uploadedByDataUrl.size;
+        result.migratedImages += uploaded.size;
       }
     } catch (error) {
-      result.failures.push({ collection, id, error: error instanceof Error ? error.message : String(error) });
+      result.failures.push({ collection: name, id, error: error instanceof Error ? error.message : String(error) });
     }
     onProgress?.(index + 1, records.length);
   }

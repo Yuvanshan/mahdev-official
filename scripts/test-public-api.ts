@@ -77,7 +77,7 @@ try {
     assert.equal(body.collections.settings[0].data.superAdminEmail, undefined, 'hidden settings field leaked');
     assert.deepEqual(body.collections.careerOpenings.map((d: any) => d.id), ['job-live'], 'draft career opening leaked');
     assert.equal(body.collections.media_blobs, undefined, 'media_blobs must not be in the snapshot');
-    assert.match(res.headers['cdn-cache-control'], /s-maxage=60/);
+    assert.match(res.headers['cdn-cache-control'], /s-maxage=300/);
     assert.ok(res.headers.etag);
     const notModified = makeRes();
     await publicSnapshotHandler(makeReq({ url: '/api/public/snapshot', headers: { 'if-none-match': res.headers.etag } }), notModified);

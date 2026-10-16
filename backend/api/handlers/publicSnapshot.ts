@@ -12,7 +12,7 @@ import { handleTursoAction } from '../tursoRoutes.js';
  * settings fields stripped, unpublished career openings hidden, duplicate
  * inline images compacted).
  *
- * Caching: Vercel's CDN keeps the response for 60s and keeps serving the
+ * Caching: Vercel's CDN keeps the response for 5 minutes and keeps serving the
  * cached copy while it refreshes in the background (stale-while-revalidate),
  * so most visitors are answered from the edge without touching the database.
  * There is no polling: the browser fetches it once per page session.
@@ -130,8 +130,8 @@ export default async function publicSnapshotHandler(req: IncomingMessage, res: S
     res.setHeader('ETag', etag);
     // Browser always revalidates; the CDN serves cached copies and refreshes in the background.
     res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
-    res.setHeader('CDN-Cache-Control', 'public, s-maxage=60, stale-while-revalidate=86400');
-    res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=60, stale-while-revalidate=86400');
+    res.setHeader('CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=86400');
+    res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=86400');
     if (req.headers['if-none-match'] === etag) {
       res.statusCode = 304;
       res.end();
