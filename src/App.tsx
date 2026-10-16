@@ -65,9 +65,14 @@ const RouteLoadingFallback: React.FC<RouteLoadingFallbackProps> = ({ path }) => 
           className="flex min-h-[680px] items-center bg-gradient-to-br from-[#061033] via-[#0b1c4c] to-[#0052FF] px-5 py-20 text-white sm:min-h-[740px] sm:px-8 lg:min-h-[min(820px,calc(100svh-5rem))]"
         >
           <div className="mx-auto w-full max-w-7xl">
-            <h1 className="max-w-4xl font-editorial text-4xl font-medium leading-tight tracking-tight sm:text-6xl lg:text-7xl">
+            <motion.h1
+              initial={{ opacity: 0.7, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+              className="max-w-4xl font-editorial text-4xl font-medium leading-tight tracking-tight sm:text-6xl lg:text-7xl"
+            >
               {heroHeadline}
-            </h1>
+            </motion.h1>
           </div>
         </section>
         {showContentShimmer && (
