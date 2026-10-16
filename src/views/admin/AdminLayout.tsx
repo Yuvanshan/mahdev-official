@@ -36,6 +36,7 @@ import {
 import { activeDatabaseName } from '../../lib/firebase';
 import { AdminSectionId } from '../../types/admin';
 import { useAdminAuth } from '../../context/AdminAuthContext';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { AdminNotificationCenter } from '../../components/admin/AdminNotificationCenter';
 import { SEOHead } from '../../components/layout/SEOHead';
 import { BrandLogo } from '../../components/layout/BrandLogo';
@@ -140,6 +141,18 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigate }) => {
   const { admin, session, isAuthenticated, logout } = useAdminAuth();
+  const { refreshAll } = useFirestoreDataContext();
+
+  // Admin views read from the shared CMS/data stores, which public routes fill
+  // lazily per page. Load every collection fresh once the admin session is
+  // active so gallery, services, divisions, products, etc. are populated with
+  // admin-visible records (drafts and hidden items included).
+  React.useEffect(() => {
+    if (!isAuthenticated || !admin) return;
+    void refreshAll(true).catch((error: unknown) => {
+      console.error('[AdminLayout] Could not load admin data:', error);
+    });
+  }, [isAuthenticated, admin?.id, refreshAll]);
   const getPathSection = (path: string) =>
     path.slice(ADMIN_PORTAL_PATH.length).split('/').filter(Boolean)[0]?.toLowerCase();
   const [activeSection, setActiveSection] = useState<AdminSectionId>(() => {

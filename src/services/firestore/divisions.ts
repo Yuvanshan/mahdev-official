@@ -202,6 +202,10 @@ export function getDivisionFallbackOrder(id: string): number {
   return 99;
 }
 
+function isVideoMediaReference(url: string): boolean {
+  return /^firestore:\/\/media_blobs\/vid_/i.test(url) || /\.(mp4|webm|mov|m4v|ogv)$/i.test(url);
+}
+
 export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
   const mapByCanonical = new Map<string, FirestoreDivision>();
   for (const item of (Array.isArray(list) ? list : [])) {
@@ -215,7 +219,9 @@ export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
       ['/assets/images/sws_logo.svg', '/assets/images/sws_logo.png'].some((path) => localLogoPath.endsWith(path));
     const usesLegacyU1Logo = shortId === 'u1' &&
       ['/assets/images/u1_logo.svg', '/assets/images/u1_logo.png'].some((path) => localLogoPath.endsWith(path));
-    const logoUrl = usesLegacySwsLogo || usesLegacyU1Logo || !currentLogo
+    // A video blob saved as the logo (e.g. the hero video picked by mistake) cannot render in <img>.
+    const usesVideoAsLogo = isVideoMediaReference(localLogoPath);
+    const logoUrl = usesLegacySwsLogo || usesLegacyU1Logo || usesVideoAsLogo || !currentLogo
       ? defaultLogo
       : currentLogo;
     const normalized: FirestoreDivision = {

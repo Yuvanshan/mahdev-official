@@ -5,12 +5,39 @@ interface AnimatedHeroTitleProps {
   text: string;
   className?: string;
   delay?: number;
+  /**
+   * Hex colour stops applied across the text, character by character.
+   * Use this instead of `bg-clip-text text-transparent` on a parent: each character
+   * is an animated inline-block, which does not inherit a clipped parent background
+   * and would otherwise render fully transparent.
+   */
+  gradient?: string[];
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  const value = hex.replace('#', '');
+  const full = value.length === 3 ? value.split('').map((c) => c + c).join('') : value;
+  const parsed = Number.parseInt(full, 16);
+  return [(parsed >> 16) & 255, (parsed >> 8) & 255, parsed & 255];
+}
+
+// Colour at position t (0..1) along evenly spaced gradient stops.
+function colourAt(stops: string[], t: number): string {
+  if (stops.length === 1) return stops[0];
+  const scaled = Math.min(Math.max(t, 0), 1) * (stops.length - 1);
+  const index = Math.min(Math.floor(scaled), stops.length - 2);
+  const local = scaled - index;
+  const from = hexToRgb(stops[index]);
+  const to = hexToRgb(stops[index + 1]);
+  const mixed = from.map((channel, i) => Math.round(channel + (to[i] - channel) * local));
+  return `rgb(${mixed[0]}, ${mixed[1]}, ${mixed[2]})`;
 }
 
 export const AnimatedHeroTitle: React.FC<AnimatedHeroTitleProps> = ({
   text,
   className = '',
   delay = 0,
+  gradient,
 }) => {
   const prefersReducedMotion = useReducedMotion();
   const words = text.trim().split(/\s+/);
@@ -63,6 +90,11 @@ export const AnimatedHeroTitle: React.FC<AnimatedHeroTitleProps> = ({
                   <motion.span
                     key={`${character}-${characterIndex}`}
                     className="inline-block"
+                    style={
+                      gradient && gradient.length > 0
+                        ? { color: colourAt(gradient, characterCount > 1 ? (wordOffset + characterIndex) / (characterCount - 1) : 0) }
+                        : undefined
+                    }
                     initial={false}
                     animate={{
                       opacity: prefersReducedMotion || wordOffset + characterIndex < visibleCharacters ? 1 : 0,

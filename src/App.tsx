@@ -22,6 +22,7 @@ import {
   ADMIN_PORTAL_PATH,
   canonicalizeAdminPath,
   isAdminPortalPath,
+  isRetiredAdminPath,
 } from './config/adminRoutes';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -247,14 +248,13 @@ function AppContent() {
     }
     const cleanHash = hash.replace(/^#\/?/, '').toLowerCase();
     const directHashRoutes = [
-      'admin', 'admin-login', 'adminlogin', 'adminportal', 'admin-portal', 'admin-yuvan1709',
+      'admin-yuvan1709',
       'sws', 'u1', 'it', 'travels', 'mart',
       'sws-events', 'sws-event-management', 'u1-studio', 'it-solutions', 'mahdev-travels', 'online-mart',
       'about', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'catalog', 'track-order', 'order', 'orders'
     ];
     if (
       directHashRoutes.includes(cleanHash) ||
-      cleanHash.startsWith('admin/') ||
       cleanHash.startsWith('admin-yuvan1709/')
     ) {
       return `${canonicalizeAdminPath(`/${cleanHash}`)}${search}`;
@@ -337,45 +337,6 @@ function AppContent() {
 
   // Handle browser back/forward and hash navigation
   useEffect(() => {
-    const hash = window.location.hash || '';
-    if (hash.startsWith('#/')) {
-      const hashRoute = hash.substring(1);
-      const canonicalHashRoute = canonicalizeAdminPath(hashRoute);
-      if (canonicalHashRoute !== hashRoute) {
-        window.history.replaceState(
-          {},
-          '',
-          `${window.location.pathname}${window.location.search}#${canonicalHashRoute}`
-        );
-      }
-      return;
-    }
-
-    const cleanHash = hash.replace(/^#\/?/, '').toLowerCase();
-    const legacyHashAdminPath = [
-      'admin',
-      'admin-login',
-      'adminlogin',
-      'adminportal',
-      'admin-portal',
-    ].find((legacyPath) => cleanHash === legacyPath || cleanHash.startsWith(`${legacyPath}/`));
-    if (legacyHashAdminPath) {
-      const canonicalHashRoute = canonicalizeAdminPath(`/${cleanHash}`);
-      window.history.replaceState({}, '', `${canonicalHashRoute}${window.location.search}`);
-      return;
-    }
-
-    const canonicalPath = canonicalizeAdminPath(window.location.pathname || '/');
-    if (canonicalPath !== window.location.pathname) {
-      window.history.replaceState(
-        {},
-        '',
-        `${canonicalPath}${window.location.search}${window.location.hash}`
-      );
-    }
-  }, []);
-
-  useEffect(() => {
     const handleLocationChange = () => {
       const hash = window.location.hash || '';
       const search = window.location.search || '';
@@ -386,14 +347,13 @@ function AppContent() {
       }
       const cleanHash = hash.replace(/^#\/?/, '').toLowerCase();
       const directHashRoutes = [
-        'admin', 'admin-login', 'adminlogin', 'adminportal', 'admin-portal', 'admin-yuvan1709',
+        'admin-yuvan1709',
         'sws', 'u1', 'it', 'travels', 'mart',
         'sws-events', 'sws-event-management', 'u1-studio', 'it-solutions', 'mahdev-travels', 'online-mart',
         'about', 'about-us', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'catalog', 'track-order', 'order', 'orders', 'promotion', 'promotions', 'terms-and-conditions', 'privacy-policy'
       ];
       if (
         directHashRoutes.includes(cleanHash) ||
-        cleanHash.startsWith('admin/') ||
         cleanHash.startsWith('admin-yuvan1709/')
       ) {
         window.dispatchEvent(new Event('mahdev:routechange'));
@@ -480,6 +440,7 @@ function AppContent() {
     if (lastDataRouteRef.current === normalizedPath) return;
 
     lastDataRouteRef.current = normalizedPath;
+    // The admin portal loads its own data once the admin session is authenticated.
     if (isAdminPortalPath(normalizedPath)) return;
 
     void loadRouteData(normalizedPath).catch((routeError: unknown) => {
@@ -1232,15 +1193,14 @@ function AppContent() {
       return <LegalPageView policyType={legalPolicyType} onNavigate={navigate} />;
     }
 
+    // Retired admin URLs (e.g. /admin) are a plain 404 and never hint at the portal path.
+    if (isRetiredAdminPath(normalizedPath)) {
+      return <NotFoundView onNavigate={navigate} />;
+    }
+
     switch (normalizedPath) {
       case '/':
         return <HomeView onNavigate={navigate} />;
-      case '/admin':
-      case '/admin-login':
-      case '/adminlogin':
-      case '/adminportal':
-      case '/admin-portal':
-        return <AdminLayout currentPath={normalizedPath} onNavigate={navigate} />;
       case '/sws':
       case '/sws-events':
       case '/sws-event-management':

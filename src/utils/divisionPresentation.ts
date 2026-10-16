@@ -32,6 +32,15 @@ const DEFAULT_DIVISION_LOGOS: Record<string, string> = {
   mart: '/assets/images/mart_logo.png',
 };
 
+// Ignore logo values that point at video media; they cannot render as an image.
+function pickImageLogo(...candidates: Array<string | undefined>): string {
+  return candidates.find((url) =>
+    Boolean(url) &&
+    !/^firestore:\/\/media_blobs\/vid_/i.test(url as string) &&
+    !/\.(mp4|webm|mov|m4v|ogv)(?:[?#]|$)/i.test(url as string)
+  ) || '';
+}
+
 function shortDescription(value: string): string {
   const sentence = value.split(/(?<=[.!?])\s/)[0] || value;
   return sentence.length > 112 ? `${sentence.slice(0, 109).trimEnd()}…` : sentence;
@@ -80,7 +89,10 @@ export function getDivisionCardItems(divisions: FirestoreDivision[]): DivisionCa
         ),
         mediaUrl,
         mediaType,
-        logoUrl: division.logoUrl || division.logo || DEFAULT_DIVISION_LOGOS[id] || '',
+        // SWS always uses the bundled brand logo on the divisions cards.
+        logoUrl: id === 'sws'
+          ? DEFAULT_DIVISION_LOGOS.sws
+          : pickImageLogo(division.logoUrl, division.logo) || DEFAULT_DIVISION_LOGOS[id] || '',
         isComingSoon: Boolean(
           division.isComingSoon ||
           division.comingSoon ||

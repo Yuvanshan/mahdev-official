@@ -5,6 +5,9 @@ import { HeroVideoBackground } from '../common/HeroVideoBackground';
 import { ScrollParallax } from '../motion/ParallelScroll';
 import { AnimatedHeroTitle } from '../common/AnimatedHeroTitle';
 
+// Sky-300 → blue-200 → white, matching the previous clipped-text gradient.
+const HERO_TITLE_GRADIENT = ['#7dd3fc', '#bfdbfe', '#ffffff'];
+
 interface U1HeroSectionProps {
   onExploreServices: () => void;
 }
@@ -38,7 +41,7 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
             className="font-editorial text-4xl font-medium leading-[1.04] tracking-[-0.035em] text-white drop-shadow-md sm:text-6xl lg:text-7xl"
           >
             <span className="block"><AnimatedHeroTitle text="Every Frame" /></span>
-            <span className="block bg-gradient-to-r from-sky-300 via-blue-200 to-white bg-clip-text text-transparent"><AnimatedHeroTitle text="Tells a Story." delay={0.18} /></span>
+            <span className="block"><AnimatedHeroTitle text="Tells a Story." delay={0.18} gradient={HERO_TITLE_GRADIENT} /></span>
           </motion.h1>
 
           <motion.button

@@ -32,7 +32,8 @@
   </head>
   <body class="bg-[#FAF9F6] text-slate-900 antialiased selection:bg-purple-700 selection:text-white min-h-screen flex flex-col">
     <div id="root" class="min-h-screen flex flex-col">
-      <main id="seo-fallback" class="mx-auto w-full max-w-5xl px-6 py-16 text-slate-900">
+      <!-- Crawler-only fallback copy: visually hidden so visitors never see a text flash before the app mounts. -->
+      <main id="seo-fallback" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">
         <h1 class="text-4xl font-bold tracking-tight">Mahdev Sri Lanka: Events, Photography, IT and Travel</h1>
         <p class="mt-6 text-lg leading-8">
           Mahdev (Pvt) Ltd is a Sri Lankan company bringing together event production, photography and cinema,

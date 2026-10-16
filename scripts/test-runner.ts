@@ -21,7 +21,7 @@ import { getDefaultTrustedCompanies, isPublishedTrustedCompany } from '../src/se
 import { buildSitemapXml } from '../backend/api/handlers/sitemap';
 import { analyticsService } from '../src/services/analyticsService';
 import { CANONICAL_SITE_ORIGIN } from '../src/config/site';
-import { ADMIN_PORTAL_PATH, canonicalizeAdminPath, isAdminPortalPath } from '../src/config/adminRoutes';
+import { ADMIN_PORTAL_PATH, canonicalizeAdminPath, isAdminPortalPath, isRetiredAdminPath } from '../src/config/adminRoutes';
 import { MAIN_NAV_ITEMS } from '../src/config/navigation';
 
 interface TestStep {
@@ -41,11 +41,15 @@ async function runTestSuite() {
   const testSteps: TestStep[] = [
     {
       category: 'Admin Operations',
-      name: 'Admin portal uses the private canonical path and legacy paths redirect there',
+      name: 'Admin portal uses the private path and legacy paths are 404s, not redirects',
       fn: () =>
         ADMIN_PORTAL_PATH === '/admin-yuvan1709' &&
-        canonicalizeAdminPath('/admin') === ADMIN_PORTAL_PATH &&
-        canonicalizeAdminPath('/admin/services') === `${ADMIN_PORTAL_PATH}/services` &&
+        canonicalizeAdminPath('/admin') === '/admin' &&
+        canonicalizeAdminPath('/admin/services') === '/admin/services' &&
+        isRetiredAdminPath('/admin') &&
+        isRetiredAdminPath('/admin/services') &&
+        !isRetiredAdminPath(ADMIN_PORTAL_PATH) &&
+        !isAdminPortalPath('/admin') &&
         isAdminPortalPath(`${ADMIN_PORTAL_PATH}/dashboard`) &&
         !isAdminPortalPath('/services'),
     },

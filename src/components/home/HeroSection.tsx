@@ -4,6 +4,9 @@ import { motion, useReducedMotion } from 'motion/react';
 import { ScrollParallax } from '../motion/ParallelScroll';
 import { AnimatedHeroTitle } from '../common/AnimatedHeroTitle';
 
+// Sky-300 → blue-200 → white, matching the previous clipped-text gradient.
+const HERO_TITLE_GRADIENT = ['#7dd3fc', '#bfdbfe', '#ffffff'];
+
 interface HeroSectionProps {
   onNavigate: (route: string) => void;
   onExploreMahdev: () => void;
@@ -190,8 +193,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         >
           <h1 aria-label="Creating moments. Capturing memories. Delivering innovation." className="font-editorial text-4xl font-medium leading-[1.04] tracking-[-0.035em] text-white sm:text-6xl lg:text-7xl">
             <span className="block"><AnimatedHeroTitle text="Creating moments." /></span>
-            <span className="block bg-gradient-to-r from-sky-300 via-blue-200 to-white bg-clip-text text-transparent">
-              <AnimatedHeroTitle text="Capturing memories." delay={0.18} />
+            <span className="block">
+              <AnimatedHeroTitle text="Capturing memories." delay={0.18} gradient={HERO_TITLE_GRADIENT} />
             </span>
             <span className="block"><AnimatedHeroTitle text="Delivering innovation." delay={0.36} /></span>
           </h1>

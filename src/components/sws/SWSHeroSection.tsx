@@ -5,6 +5,9 @@ import { HeroVideoBackground } from '../common/HeroVideoBackground';
 import { ScrollParallax } from '../motion/ParallelScroll';
 import { AnimatedHeroTitle } from '../common/AnimatedHeroTitle';
 
+// Sky-300 → blue-200 → white, matching the previous clipped-text gradient.
+const HERO_TITLE_GRADIENT = ['#7dd3fc', '#bfdbfe', '#ffffff'];
+
 interface SWSHeroSectionProps {
   onOpenBooking?: () => void;
   onBookNow?: () => void;
@@ -43,7 +46,7 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
             className="font-editorial text-4xl font-medium leading-[1.04] tracking-[-0.035em] text-white drop-shadow-md sm:text-6xl lg:text-7xl"
           >
             <span className="block"><AnimatedHeroTitle text="We Create Moments." /></span>
-            <span className="block bg-gradient-to-r from-sky-300 via-blue-200 to-white bg-clip-text text-transparent"><AnimatedHeroTitle text="You Make Memories." delay={0.2} /></span>
+            <span className="block"><AnimatedHeroTitle text="You Make Memories." delay={0.2} gradient={HERO_TITLE_GRADIENT} /></span>
           </motion.h1>
 
           <motion.button
