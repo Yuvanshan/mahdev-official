@@ -14,7 +14,7 @@ import publicEmailHandler from '../backend/api/handlers/publicEmail.js';
 import sitemapHandler from '../backend/api/handlers/sitemap.js';
 import publicSnapshotHandler from '../backend/api/handlers/publicSnapshot.js';
 import analyticsHandler from '../backend/api/handlers/analytics.js';
-import pageShellHandler from '../backend/api/handlers/pageShell.js';
+import pageShellHandler, { sendNotFoundPage } from '../backend/api/handlers/pageShell.js';
 
 interface ApiRequest extends IncomingMessage {
   method?: string;
@@ -72,8 +72,34 @@ export const config = {
   },
 };
 
+// API addresses a browser may legitimately open directly (downloads, feeds,
+// status checks). Any other /api/ address opened in a browser shows the
+// website's 404 page instead of raw JSON.
+const BROWSER_VISIBLE_API_PATHS = new Set([
+  '/api/sitemap',
+  '/api/public/snapshot',
+  '/api/health',
+  '/api/careers/cv',
+  '/api/careers/status',
+  '/api/admin/auth/verify',
+  '/api/admin/customers',
+  '/api/page-shell',
+]);
+
+// A top-level browser navigation asks for HTML; fetch() calls from the app do not.
+function isBrowserPageRequest(req: ApiRequest): boolean {
+  const accept = String(req.headers.accept || '');
+  const destination = String(req.headers['sec-fetch-dest'] || '');
+  return (req.method === 'GET' || req.method === 'HEAD') &&
+    (destination === 'document' || (!destination && accept.includes('text/html')));
+}
+
 export default async function handler(req: ApiRequest, res: ServerResponse): Promise<void> {
   const pathname = new URL(req.url || '/', 'http://localhost').pathname;
+  if (pathname.startsWith('/api/') && !BROWSER_VISIBLE_API_PATHS.has(pathname) && isBrowserPageRequest(req)) {
+    await sendNotFoundPage(req, res);
+    return;
+  }
   if (!(await parseJsonBody(req, res, pathname))) return;
 
   if (pathname === '/api/sitemap') {
@@ -88,7 +114,9 @@ export default async function handler(req: ApiRequest, res: ServerResponse): Pro
     await publicEmailHandler(req, res);
     return;
   }
-  if (pathname === '/api/page-shell') {
+  // Page requests rewritten here by vercel.json arrive with their ORIGINAL URL
+  // (e.g. /admin, /services/abc), so anything outside /api/ is a page request.
+  if (pathname === '/api/page-shell' || !pathname.startsWith('/api/')) {
     await pageShellHandler(req, res);
     return;
   }

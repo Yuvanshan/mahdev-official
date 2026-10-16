@@ -27,7 +27,7 @@
     },
     {
       "source": "/:path((?!api/).*)",
-      "destination": "/api/page-shell?path=/:path"
+      "destination": "/api/page-shell?route=/:path"
     }
   ],
   "headers": [

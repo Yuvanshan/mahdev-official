@@ -4,7 +4,7 @@ import { handleTursoAction } from '../tursoRoutes.js';
 import { APP_ROUTE_SEGMENTS, RETIRED_ADMIN_SEGMENTS } from '../../seo/publicRoutes.js';
 
 /**
- * GET /api/page-shell?path=/some/route
+ * GET /api/page-shell?route=/some/route (or the original page URL via a rewrite)
  *
  * Serves the single-page-app shell for routes that are not prerendered, with
  * the correct HTTP status: 404 for unknown URLs and retired admin paths, so
@@ -54,16 +54,27 @@ async function resolveStatus(path: string): Promise<200 | 404> {
   return (await getPublishedSlugs()).has(normalised) ? 200 : 404;
 }
 
-export default async function pageShellHandler(req: IncomingMessage, res: ServerResponse): Promise<void> {
+/** Serves the website's HTML 404 page (used for unknown API addresses opened in a browser). */
+export function sendNotFoundPage(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  return serveShell(req, res, 404);
+}
+
+export default function pageShellHandler(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  return serveShell(req, res);
+}
+
+async function serveShell(req: IncomingMessage, res: ServerResponse, forcedStatus?: 404): Promise<void> {
   const url = new URL(req.url || '/', 'http://localhost');
-  const path = url.searchParams.get('path') || '/';
+  // Vercel passes the original page URL to rewritten requests; a direct call
+  // uses ?route=. ("path" is avoided: Vercel injects it for api/[...path].ts.)
+  const path = url.pathname.startsWith('/api/') ? url.searchParams.get('route') || '/' : url.pathname;
   const host = (Array.isArray(req.headers['x-forwarded-host']) ? req.headers['x-forwarded-host'][0] : req.headers['x-forwarded-host'])
     || req.headers.host || 'localhost';
   const origin = `${host.startsWith('localhost') || host.startsWith('127.0.0.1') ? 'http' : 'https'}://${host}`;
 
-  let status: 200 | 404 = 200;
+  let status: 200 | 404 = forcedStatus ?? 200;
   try {
-    status = await resolveStatus(path);
+    if (!forcedStatus) status = await resolveStatus(path);
   } catch (error) {
     console.error('[PageShell] Could not resolve route status; serving 200:', error);
   }

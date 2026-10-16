@@ -18,6 +18,7 @@ const { initializeTursoDatabase, writeTursoBatch, listTursoDocuments } = await i
 const { handleTursoAction } = await import('../backend/api/tursoRoutes');
 const { default: publicSnapshotHandler } = await import('../backend/api/handlers/publicSnapshot');
 const { default: pageShellHandler } = await import('../backend/api/handlers/pageShell');
+const { default: apiDispatcher } = await import('../api/[...path]');
 const { default: analyticsHandler } = await import('../backend/api/handlers/analytics');
 const { default: adminLoginHandler } = await import('../backend/api/handlers/admin/auth/login');
 const { consumeRateLimit, RateLimitError } = await import('../backend/security/rateLimit');
@@ -150,7 +151,7 @@ try {
     try {
       const status = async (p: string) => {
         const res = makeRes();
-        await pageShellHandler(makeReq({ url: `/api/page-shell?path=${encodeURIComponent(p)}`, headers: { host: 'example.test' } }), res);
+        await pageShellHandler(makeReq({ url: `/api/page-shell?route=${encodeURIComponent(p)}`, headers: { host: 'example.test' } }), res);
         return res;
       };
       assert.equal((await status('/admin')).statusCode, 404);
@@ -163,6 +164,39 @@ try {
       assert.equal((await status('/admin-yuvan1709/gallery')).statusCode, 200);
       assert.equal((await status('/summer-offer')).statusCode, 200, 'published CMS page must be 200');
       assert.equal((await status('/')).statusCode, 200);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  await test('Rewritten page requests reach the page shell via the API dispatcher (Vercel behaviour)', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => new Response('<html><head><meta name="robots" content="index, follow" /></head></html>', { status: 200 })) as typeof fetch;
+    try {
+      const viaDispatcher = async (url: string) => {
+        const res = makeRes();
+        await apiDispatcher(makeReq({ url, headers: { host: 'example.test' } }), res);
+        return res;
+      };
+      // Vercel passes the original URL to rewritten requests.
+      const admin = await viaDispatcher('/admin');
+      assert.equal(admin.statusCode, 404);
+      assert.match(admin.headers['content-type'], /text\/html/, 'must be the HTML 404 page, not JSON');
+      assert.equal((await viaDispatcher('/services/abc')).statusCode, 200);
+      assert.equal((await viaDispatcher('/no-such-page?x=1')).statusCode, 404);
+      // Direct call with Vercel's injected catch-all "path" parameter present.
+      assert.equal((await viaDispatcher('/api/page-shell?route=%2Fadmin&path=page-shell')).statusCode, 404);
+      // Unknown or POST-only API addresses opened in a browser show the 404 page.
+      for (const apiPath of ['/api/does-not-exist', '/api/database']) {
+        const res = makeRes();
+        await apiDispatcher(makeReq({ url: apiPath, headers: { host: 'example.test', accept: 'text/html,application/xhtml+xml', 'sec-fetch-dest': 'document' } }), res);
+        assert.equal(res.statusCode, 404, apiPath);
+        assert.match(res.headers['content-type'], /text\/html/, `${apiPath} should show the HTML 404 page`);
+      }
+      // App fetch() calls to a missing API endpoint still get JSON.
+      const unknownApi = await viaDispatcher('/api/does-not-exist');
+      assert.equal(unknownApi.statusCode, 404);
+      assert.match(unknownApi.headers['content-type'], /json/);
     } finally {
       globalThis.fetch = originalFetch;
     }
