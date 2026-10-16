@@ -39,6 +39,12 @@ import { useAdminAuth } from '../../context/AdminAuthContext';
 import { AdminNotificationCenter } from '../../components/admin/AdminNotificationCenter';
 import { SEOHead } from '../../components/layout/SEOHead';
 import { BrandLogo } from '../../components/layout/BrandLogo';
+import {
+  ADMIN_PORTAL_PATH,
+  canonicalizeAdminPath,
+  getAdminPortalPath,
+  isAdminPortalPath,
+} from '../../config/adminRoutes';
 
 const AdminLoginView = React.lazy(() => import('./AdminLoginView').then((module) => ({ default: module.AdminLoginView })));
 const AdminDashboardView = React.lazy(() => import('./AdminDashboardView').then((module) => ({ default: module.AdminDashboardView })));
@@ -134,11 +140,12 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigate }) => {
   const { admin, session, isAuthenticated, logout } = useAdminAuth();
+  const getPathSection = (path: string) =>
+    path.slice(ADMIN_PORTAL_PATH.length).split('/').filter(Boolean)[0]?.toLowerCase();
   const [activeSection, setActiveSection] = useState<AdminSectionId>(() => {
     if (typeof window !== 'undefined' && currentPath) {
-      const match = currentPath.match(/^\/admin\/([a-z0-9-]+)/i);
-      if (match && match[1]) {
-        const slug = match[1].toLowerCase();
+      const slug = getPathSection(currentPath);
+      if (slug) {
         if (slug === 'projects') return 'portfolio';
         if (slug === 'about-us' || slug === 'legal-pages' || slug === 'website-content') {
           return slug as AdminSectionId;
@@ -154,15 +161,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
   // Synchronize activeSection whenever currentPath prop changes
   React.useEffect(() => {
     if (currentPath) {
-      const match = currentPath.match(/^\/admin\/([a-z0-9-]+)/i);
-      if (match && match[1]) {
-        const slug = match[1].toLowerCase();
+      const slug = getPathSection(currentPath);
+      if (slug) {
         const sec = (slug === 'projects' ? 'portfolio' : slug) as AdminSectionId;
         const exists = SIDEBAR_ITEMS.some((item) => item.id === sec);
         if (exists) {
           setActiveSection(sec);
         }
-      } else if (currentPath === '/admin' || currentPath === '/admin/') {
+      } else if (currentPath === ADMIN_PORTAL_PATH || currentPath === `${ADMIN_PORTAL_PATH}/`) {
         setActiveSection('dashboard');
       }
     }
@@ -172,9 +178,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
     setActiveSection(sec);
     setIsMobileMenuOpen(false);
     if (sec === 'dashboard') {
-      onNavigate('/admin');
+      onNavigate(getAdminPortalPath());
     } else {
-      onNavigate(`/admin/${sec}`);
+      onNavigate(getAdminPortalPath(sec));
     }
   };
 
@@ -427,8 +433,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
           {/* Top Bar Right Tools */}
           <div className="flex items-center gap-3">
             <AdminNotificationCenter onNavigate={(path) => {
-              if (path && path.startsWith('/admin')) {
-                const cleaned = String(path).replace(/^\/admin\/?/, '').split('?')[0].split('/')[0];
+              if (isAdminPortalPath(path)) {
+                const canonicalPath = canonicalizeAdminPath(path).split('?')[0];
+                const cleaned = canonicalPath.slice(ADMIN_PORTAL_PATH.length).split('/').filter(Boolean)[0];
                 const section = (cleaned || 'dashboard') as AdminSectionId;
                 handleSelectSection(section);
               } else {

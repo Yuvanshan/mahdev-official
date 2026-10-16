@@ -5,6 +5,7 @@ import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { DEFAULT_HOMEPAGE_SECTIONS } from '../services/firestore/settings';
 import { DynamicSectionItem } from '../types/cms';
 import { motion, useReducedMotion } from 'motion/react';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 
 const FeaturedServicesSection = lazy(() =>
   import('../components/home/FeaturedServicesSection').then((module) => ({ default: module.FeaturedServicesSection }))
@@ -95,14 +96,15 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
   const effectiveBrandName = companySettings?.name
     ? companySettings.name
     : siteSettings?.siteName || 'Mahdev Group';
-  const effectivePageTitle = homepageConfig?.seo?.pageTitle || `${effectiveBrandName} | Products, experiences and technology`;
+  const effectivePageTitle =
+    homepageConfig?.seo?.pageTitle || 'Mahdev Sri Lanka | Events, Photography, IT & Travel';
 
   return (
     <div className="w-full flex flex-col pb-24 lg:pb-0">
       <SEOHead
         title={effectivePageTitle}
         description={homepageConfig?.seo?.metaDescription || `${effectiveBrandName} brings together events, creative studio, technology, travel and retail.`}
-        canonicalUrl={homepageConfig?.seo?.canonicalUrl || 'https://mahdev.lk'}
+        canonicalUrl={homepageConfig?.seo?.canonicalUrl || CANONICAL_SITE_ORIGIN}
         ogTitle={effectivePageTitle}
         ogDescription={homepageConfig?.seo?.metaDescription}
       />

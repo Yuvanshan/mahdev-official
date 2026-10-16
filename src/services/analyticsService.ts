@@ -28,6 +28,7 @@ import { bookingService } from './bookingService';
 import { cmsService } from './cmsService';
 import { DIVISION_LIST } from '../config/divisions';
 import { trackMarketingEvent } from './marketingAnalytics';
+import { isAdminPortalPath } from '../config/adminRoutes';
 
 const MAX_SESSION_EVENTS = 600;
 const CAMPAIGN_ATTRIBUTION_KEY = 'mahdev_utm_attribution';
@@ -156,7 +157,7 @@ class AnalyticsService {
   }
 
   private persistEvent(event: AnalyticsEvent): void {
-    if (this.isDntEnabled || typeof window === 'undefined' || window.location.pathname.startsWith('/admin')) return;
+    if (this.isDntEnabled || typeof window === 'undefined' || isAdminPortalPath(window.location.pathname)) return;
 
     const metadata: Record<string, unknown> = { ...(event.metadata || {}) };
     if (event.type === 'page_view') {

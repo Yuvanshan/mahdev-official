@@ -13,6 +13,7 @@ import { Order } from '../types/order';
 import { Booking } from '../types/booking';
 import { PaymentTransaction } from '../types/payment';
 import { COMPANY_INFO } from '../config/company';
+import { getAdminPortalPath } from '../config/adminRoutes';
 
 class NotificationService {
   private notifications: AppNotification[] = [];
@@ -310,7 +311,7 @@ class NotificationService {
         customerNotes: order.customerNotes,
         createdAt: order.createdAt,
       },
-      '/admin'
+      getAdminPortalPath()
     );
   }
 
@@ -342,7 +343,7 @@ class NotificationService {
         status: booking.status,
         createdAt: booking.createdAt,
       },
-      '/admin'
+      getAdminPortalPath()
     );
   }
 
@@ -356,7 +357,7 @@ class NotificationService {
       `💰 Payment Verified: ${transaction.currency} ${transaction.amount.toLocaleString()}`,
       `Transaction #${transaction.transactionId} settled for Order #${orderId} via ${transaction.gatewayName || transaction.gateway}. Auth code: ${transaction.verificationResult?.authCode || 'N/A'}.`,
       { transactionId: transaction.transactionId, orderId, amount: transaction.amount, gateway: transaction.gateway },
-      '/admin'
+      getAdminPortalPath()
     );
   }
 
@@ -370,7 +371,7 @@ class NotificationService {
       `👤 New Customer Registration: ${user.name}`,
       `New user account registered: ${user.name} (${user.email}). Phone: ${user.phone || 'Not provided'}.`,
       { name: user.name, email: user.email },
-      '/admin'
+      getAdminPortalPath()
     );
   }
 
@@ -384,7 +385,7 @@ class NotificationService {
       `⚠️ Low Inventory Warning: ${sku}`,
       `Stock level for "${productName}" (${sku}) has fallen to ${currentStock} units. Replenishment threshold reached.`,
       { sku, currentStock, productName },
-      '/admin'
+      getAdminPortalPath()
     );
   }
 
@@ -398,7 +399,7 @@ class NotificationService {
       `📩 New Inquiry: ${inquiry.subject}`,
       `Message from ${inquiry.name} (${inquiry.email}): "${inquiry.message.slice(0, 140)}..."`,
       { name: inquiry.name, email: inquiry.email, subject: inquiry.subject, message: inquiry.message },
-      '/admin/enquiries',
+      getAdminPortalPath('enquiries'),
       ['in_app']
     );
   }
@@ -427,7 +428,7 @@ class NotificationService {
         email: inquiry.email,
       },
       channels: ['in_app'],
-      actionUrl: '/admin/enquiries',
+      actionUrl: getAdminPortalPath('enquiries'),
     });
     this.notifications.splice(100);
     this.notifyStateChanged();
@@ -443,7 +444,7 @@ class NotificationService {
       `📋 RFP Quote Request: ${(quote.division || 'GROUP').toUpperCase()}`,
       `Custom proposal requested by ${quote.name} (${quote.email}, ${quote.phone || 'No phone'}). Details: ${quote.details.slice(0, 120)}...`,
       { name: quote.name, email: quote.email, division: quote.division },
-      '/admin/enquiries',
+      getAdminPortalPath('enquiries'),
       ['in_app']
     );
   }

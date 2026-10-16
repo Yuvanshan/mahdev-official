@@ -269,6 +269,31 @@ async function run(): Promise<void> {
     }>).find(({ id }) => id === 'public-settings-test');
     assert.equal(filteredListRecord?.data.superAdminEmail, undefined);
     assert.deepEqual(filteredListRecord?.data.nested, { publicLabel: 'Public label' });
+    const multiReadRequest = {
+      action: 'multiRead',
+      requests: [
+        { action: 'list', collection: 'services' },
+        { action: 'get', collection: 'settings', id: 'public-settings-test' },
+      ],
+    };
+    const multiReadAccess = await authorizeDatabaseAction(multiReadRequest, undefined);
+    assert.equal(multiReadAccess.role, 'public');
+    const multiReadResult = await handleTursoAction(multiReadRequest, multiReadAccess);
+    assert.equal(multiReadResult.status, 200);
+    const multiReadBodies = multiReadResult.body.results as Array<{
+      status: number;
+      body: { document?: { data: Record<string, unknown> } };
+    }>;
+    assert.equal(multiReadBodies.length, 2);
+    assert.equal(multiReadBodies[0].status, 200);
+    assert.equal(multiReadBodies[1].body.document?.data.superAdminEmail, undefined);
+    await assert.rejects(
+      () => authorizeDatabaseAction({
+        action: 'multiRead',
+        requests: [{ action: 'list', collection: 'careerApplications' }],
+      }, undefined),
+      /Invalid public read batch/
+    );
     const filteredNestedRecord = sanitizePublicSettingsDocument({
       id: 'nested-settings-test',
       data: { dailyBackupEnabled: true, details: [{ enableStockAlertEmails: true, title: 'Public' }] },

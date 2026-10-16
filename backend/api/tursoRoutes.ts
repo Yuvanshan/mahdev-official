@@ -143,6 +143,8 @@ const PUBLIC_READ_COLLECTIONS = new Set([
   'trustedCompanies',
   'websiteContent',
 ]);
+const MAX_PUBLIC_READ_BATCH_SIZE = 8;
+const MAX_PUBLIC_READ_BATCH_RESPONSE_BYTES = 3_500_000;
 const CUSTOMER_OWNED_COLLECTIONS = new Set(['users', 'orders', 'bookings', 'payments']);
 const ADMIN_ONLY_READ_COLLECTIONS = new Set([
   'analyticsEvents',
@@ -288,6 +290,25 @@ export async function authorizeDatabaseAction(
   }
   const body = input as Record<string, unknown>;
   if (body.action === 'health') return { role: 'public' };
+  if (body.action === 'multiRead') {
+    if (
+      !Array.isArray(body.requests) ||
+      body.requests.length === 0 ||
+      body.requests.length > MAX_PUBLIC_READ_BATCH_SIZE ||
+      body.requests.some((request) => {
+        if (!request || typeof request !== 'object' || Array.isArray(request)) return true;
+        const read = request as Record<string, unknown>;
+        return (
+          (read.action !== 'get' && read.action !== 'list') ||
+          typeof read.collection !== 'string' ||
+          !PUBLIC_READ_COLLECTIONS.has(read.collection)
+        );
+      })
+    ) {
+      throw new AdminSessionAuthError('Invalid public read batch.', 400);
+    }
+    return { role: 'public' };
+  }
 
   const writes = body.action === 'write'
     ? [body.write]
@@ -744,6 +765,36 @@ export async function handleTursoAction(
       if (!Array.isArray(body.writes)) throw new Error('Batch writes must be an array.');
       await writeTursoBatch(body.writes.map(parseWrite));
       return { status: 200, body: { success: true } };
+    }
+    if (action === 'multiRead') {
+      if (
+        access.role !== 'public' ||
+        !Array.isArray(body.requests) ||
+        body.requests.length === 0 ||
+        body.requests.length > MAX_PUBLIC_READ_BATCH_SIZE
+      ) {
+        throw new Error('Invalid public read batch.');
+      }
+      const requests = body.requests as unknown[];
+      const results = await Promise.all(requests.map(async (request) => {
+        if (!request || typeof request !== 'object' || Array.isArray(request)) {
+          return { status: 400, body: { success: false, error: 'Invalid read request.' } };
+        }
+        const read = request as Record<string, unknown>;
+        if (
+          (read.action !== 'get' && read.action !== 'list') ||
+          typeof read.collection !== 'string' ||
+          !PUBLIC_READ_COLLECTIONS.has(read.collection)
+        ) {
+          return { status: 400, body: { success: false, error: 'Read is not allowed in a public batch.' } };
+        }
+        return handleTursoAction(read, { role: 'public' });
+      }));
+      const responseBytes = new TextEncoder().encode(JSON.stringify(results)).byteLength;
+      if (responseBytes > MAX_PUBLIC_READ_BATCH_RESPONSE_BYTES) {
+        return { status: 200, body: { fallbackToIndividualReads: true } };
+      }
+      return { status: 200, body: { results } };
     }
 
     const collection = requiredString(body.collection, 'Collection');

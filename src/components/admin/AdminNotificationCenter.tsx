@@ -24,6 +24,7 @@ import { notificationService } from '../../services/notificationService';
 import { AppNotification } from '../../types/notification';
 import { firestoreInquiriesService } from '../../services/firestore/inquiries';
 import { firestoreContactsService } from '../../services/firestore/contacts';
+import { getAdminPortalPath } from '../../config/adminRoutes';
 
 interface AdminNotificationCenterProps {
   onNavigate?: (path: string) => void;
@@ -153,11 +154,11 @@ export const AdminNotificationCenter: React.FC<AdminNotificationCenterProps> = (
 
     if (onNavigate) {
       if (isEnquiry) {
-        onNavigate('/admin/enquiries');
+        onNavigate(getAdminPortalPath('enquiries'));
       } else if (n.actionUrl) {
         onNavigate(n.actionUrl);
       } else {
-        onNavigate('/admin/dashboard');
+        onNavigate(getAdminPortalPath('dashboard'));
       }
       setIsOpen(false);
     }

@@ -3,6 +3,7 @@
  * Phase 38: GitHub to Vercel Production Pipeline
  */
 
+import { readFileSync } from 'node:fs';
 import { evaluateBotRisk, isDisposableEmail, checkActionThrottle, sanitizeClientInput } from '../src/utils/securityProtection';
 import { validateAndCreateAuthoritativeOrder, validateOrderStatusTransition } from '../backend/services/secureOrderService';
 import { generateSecureFiscalInvoice } from '../backend/services/secureInvoiceService';
@@ -20,6 +21,8 @@ import { getDefaultTrustedCompanies, isPublishedTrustedCompany } from '../src/se
 import { buildSitemapXml } from '../backend/api/handlers/sitemap';
 import { analyticsService } from '../src/services/analyticsService';
 import { CANONICAL_SITE_ORIGIN } from '../src/config/site';
+import { ADMIN_PORTAL_PATH, canonicalizeAdminPath, isAdminPortalPath } from '../src/config/adminRoutes';
+import { MAIN_NAV_ITEMS } from '../src/config/navigation';
 
 interface TestStep {
   category: string;
@@ -36,6 +39,36 @@ async function runTestSuite() {
   let failed = 0;
 
   const testSteps: TestStep[] = [
+    {
+      category: 'Admin Operations',
+      name: 'Admin portal uses the private canonical path and legacy paths redirect there',
+      fn: () =>
+        ADMIN_PORTAL_PATH === '/admin-yuvan1709' &&
+        canonicalizeAdminPath('/admin') === ADMIN_PORTAL_PATH &&
+        canonicalizeAdminPath('/admin/services') === `${ADMIN_PORTAL_PATH}/services` &&
+        isAdminPortalPath(`${ADMIN_PORTAL_PATH}/dashboard`) &&
+        !isAdminPortalPath('/services'),
+    },
+    {
+      category: 'SEO & Marketing',
+      name: 'Homepage and llms.txt provide crawlable, correctly formatted public content',
+      fn: () => {
+        const html = readFileSync('index.html', 'utf8');
+        const llms = readFileSync('public/llms.txt', 'utf8');
+        const title = html.match(/<title>([^<]+)<\/title>/)?.[1]?.replaceAll('&amp;', '&') || '';
+        const fallback = html.match(/<main id="seo-fallback"[\s\S]*?<\/main>/)?.[0] || '';
+        const fallbackText = fallback.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        const fallbackLinks = fallback.match(/<a\b[^>]*href="\/[^"]+"/g) || [];
+        return title.length <= 70 &&
+          /<h1\b/.test(fallback) &&
+          fallbackText.split(' ').length >= 200 &&
+          fallbackLinks.length >= 8 &&
+          MAIN_NAV_ITEMS.some((item) => item.id === 'insights' && item.href === '/insights') &&
+          llms.startsWith('# Mahdev (Pvt) Ltd\n') &&
+          llms.includes('## Main pages') &&
+          llms.includes('[Home](https://mahdev-official.vercel.app/)');
+      },
+    },
     {
       category: 'Customer Experience',
       name: 'SWS and U1 aliases resolve to their canonical division routes',
@@ -147,6 +180,7 @@ async function runTestSuite() {
             { id: 'published', data: { slug: 'event-planning', category: 'insights', isPublished: true, updatedAt: '2026-10-13T12:00:00.000Z' } },
             { id: 'draft', data: { slug: 'draft-article', isPublished: false } },
             { id: 'private', data: { slug: 'admin/reports', isPublished: true } },
+            { id: 'admin-portal', data: { slug: 'admin-yuvan1709', isPublished: true } },
           ],
           divisions: [
             { id: 'active', data: { slug: 'custom-division', isPublished: true } },
@@ -179,6 +213,7 @@ async function runTestSuite() {
           !xml.includes('draft-article') &&
           !xml.includes('draft-service') &&
           !xml.includes('admin/reports') &&
+          !xml.includes('admin-yuvan1709') &&
           !xml.includes('closed-division') &&
           !xml.includes('<loc>https://mahdev-official.vercel.app/sws</loc>') &&
           !xml.includes('gallery-hidden') &&

@@ -1,0 +1,30 @@
+# Mahdev (Pvt) Ltd
+
+> Mahdev is a Sri Lankan company bringing together event production, photography and cinema, technology, travel, and online retail.
+
+## Main pages
+
+- [Home](https://mahdev-official.vercel.app/): Overview of Mahdev and its divisions.
+- [About Mahdev](https://mahdev-official.vercel.app/about): Company background and information.
+- [Services](https://mahdev-official.vercel.app/services): Services available across Mahdev.
+- [Projects](https://mahdev-official.vercel.app/portfolio): Selected projects and work.
+- [Gallery](https://mahdev-official.vercel.app/gallery): Photography and visual work.
+- [Careers](https://mahdev-official.vercel.app/careers): Current career opportunities.
+- [Contact](https://mahdev-official.vercel.app/contact): Contact and enquiry information.
+- [Insights](https://mahdev-official.vercel.app/insights): Company articles and insights.
+
+## Divisions
+
+- [SWS Event Management](https://mahdev-official.vercel.app/sws): Event production and management.
+- [U1 Studio](https://mahdev-official.vercel.app/u1): Photography, cinema, and creative studio services.
+- [Mahdev IT](https://mahdev-official.vercel.app/it): IT and digital solutions.
+- [Mahdev Travels](https://mahdev-official.vercel.app/travels): Travel planning and experiences.
+- [Mahdev Online Mart](https://mahdev-official.vercel.app/mart): Online retail and equipment.
+
+## Policies
+
+- [Privacy Policy](https://mahdev-official.vercel.app/privacy-policy)
+- [Terms and Conditions](https://mahdev-official.vercel.app/terms-and-conditions)
+- [Refund Policy](https://mahdev-official.vercel.app/refund-policy)
+- [Shipping Policy](https://mahdev-official.vercel.app/shipping-policy)
+- [Cookie Policy](https://mahdev-official.vercel.app/cookie-policy)

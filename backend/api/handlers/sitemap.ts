@@ -37,6 +37,7 @@ const STATIC_PUBLIC_PATHS = [
 const RESERVED_PATHS = new Set(STATIC_PUBLIC_PATHS);
 const PRIVATE_PATH_PREFIXES = [
   '/admin',
+  '/admin-yuvan1709',
   '/admin-login',
   '/adminlogin',
   '/adminportal',

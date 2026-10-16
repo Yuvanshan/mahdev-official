@@ -82,6 +82,41 @@ export class TursoApiError extends Error {
 const database: TursoDatabase = { type: 'turso' };
 const DATABASE_REQUEST_TIMEOUT_MS = 12000;
 const inFlightReads = new Map<string, Promise<ApiResponse<unknown>>>();
+const MAX_PUBLIC_READ_BATCH_SIZE = 8;
+const PUBLIC_READ_BATCHABLE_COLLECTIONS = new Set([
+  'announcements',
+  'banners',
+  'categories',
+  'careerOpenings',
+  'divisions',
+  'faqs',
+  'gallery',
+  'googleReviews',
+  'googleReviewsConfig',
+  'heroSections',
+  'milestones',
+  'navigation',
+  'packages',
+  'pages',
+  'portfolio',
+  'products',
+  'services',
+  'settings',
+  'team',
+  'testimonials',
+  'trustedCompanies',
+  'websiteContent',
+]);
+
+interface PendingPublicRead {
+  action: 'get' | 'list';
+  payload: Record<string, unknown>;
+  resolve: (response: ApiResponse<unknown>) => void;
+  reject: (error: Error) => void;
+}
+
+let pendingPublicReads: PendingPublicRead[] = [];
+let publicReadBatchTimer: number | null = null;
 
 function normalizeSegments(segments: string[]): string[] {
   if (!segments.length || segments.some((segment) => !segment || segment.includes('/'))) {
@@ -205,7 +240,10 @@ async function request<T>(
   const pendingRead = readKey ? inFlightReads.get(readKey) : undefined;
   if (pendingRead) return pendingRead as Promise<ApiResponse<T>>;
 
-  const requestPromise = (async (): Promise<ApiResponse<T>> => {
+  const performRequest = async <TResponse>(
+    requestAction: string,
+    requestPayload: Record<string, unknown>
+  ): Promise<ApiResponse<TResponse>> => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     const currentUser = getAuth().currentUser;
     if (currentUser) {
@@ -220,7 +258,7 @@ async function request<T>(
       const response = await fetch('/api/database', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ action, ...payload }),
+        body: JSON.stringify({ action: requestAction, ...requestPayload }),
         signal: controller.signal,
       });
       if (response.status === 413) {
@@ -265,7 +303,22 @@ async function request<T>(
     } finally {
       window.clearTimeout(timeoutId);
     }
-  })();
+  };
+
+  const canBatchPublicRead = (
+    (action === 'get' || action === 'list') &&
+    !getAuth().currentUser &&
+    typeof payload.collection === 'string' &&
+    PUBLIC_READ_BATCHABLE_COLLECTIONS.has(payload.collection)
+  );
+  const requestPromise: Promise<ApiResponse<T>> = canBatchPublicRead
+    ? new Promise<ApiResponse<unknown>>((resolve, reject) => {
+        pendingPublicReads.push({ action, payload, resolve, reject });
+        if (publicReadBatchTimer === null) {
+          publicReadBatchTimer = window.setTimeout(flushPublicReadBatch, 0);
+        }
+      }) as Promise<ApiResponse<T>>
+    : performRequest<T>(action, payload);
 
   if (readKey) {
     const cachedPromise = requestPromise as Promise<ApiResponse<unknown>>;
@@ -280,6 +333,135 @@ async function request<T>(
     );
   }
   return requestPromise;
+}
+
+function flushPublicReadBatch(): void {
+  publicReadBatchTimer = null;
+  const reads = pendingPublicReads.splice(0, MAX_PUBLIC_READ_BATCH_SIZE);
+  if (pendingPublicReads.length > 0) {
+    publicReadBatchTimer = window.setTimeout(() => {
+      publicReadBatchTimer = null;
+      flushPublicReadBatch();
+    }, 0);
+  }
+  void sendPublicReadBatch(reads);
+}
+
+async function sendPublicReadBatch(reads: PendingPublicRead[]): Promise<void> {
+  if (reads.length === 0) return;
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), DATABASE_REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch('/api/database', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        action: 'multiRead',
+        requests: reads.map(({ action, payload }) => ({ action, ...payload })),
+      }),
+      signal: controller.signal,
+    });
+    if (response.status === 413) {
+      await Promise.all(reads.map(async ({ action, payload, resolve, reject }) => {
+        try {
+          resolve(await requestWithoutBatch(action, payload));
+        } catch (error) {
+          reject(error instanceof Error ? error : new Error(String(error)));
+        }
+      }));
+      return;
+    }
+    const responseText = await response.text();
+    let result: {
+      error?: string;
+      fallbackToIndividualReads?: boolean;
+      results?: Array<{ status: number; body: ApiResponse<unknown> }>;
+    };
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      throw new Error(`Turso API returned a non-JSON response (HTTP ${response.status}). Check the Vercel API route configuration.`);
+    }
+    if (!response.ok) {
+      throw new TursoApiError(result.error || `Turso request failed (${response.status}).`, response.status);
+    }
+    if (result.fallbackToIndividualReads) {
+      await Promise.all(reads.map(async ({ action, payload, resolve, reject }) => {
+        try {
+          resolve(await requestWithoutBatch(action, payload));
+        } catch (error) {
+          reject(error instanceof Error ? error : new Error(String(error)));
+        }
+      }));
+      return;
+    }
+    if (!Array.isArray(result.results) || result.results.length !== reads.length) {
+      throw new Error('Turso API returned an invalid batched read response.');
+    }
+    result.results.forEach((item, index) => {
+      if (item.status < 200 || item.status >= 300) {
+        reads[index].reject(new TursoApiError(
+          item.body.error || `Turso request failed (${item.status}).`,
+          item.status
+        ));
+      } else {
+        reads[index].resolve(item.body);
+      }
+    });
+  } catch (error) {
+    const normalizedError = controller.signal.aborted
+      ? new Error(`The database API request timed out after ${DATABASE_REQUEST_TIMEOUT_MS / 1000} seconds. Check the database service and retry.`)
+      : error instanceof Error ? error : new Error(String(error));
+    reads.forEach(({ reject }) => reject(normalizedError));
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
+async function requestWithoutBatch(
+  action: 'get' | 'list',
+  payload: Record<string, unknown>
+): Promise<ApiResponse<unknown>> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), DATABASE_REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch('/api/database', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ action, ...payload }),
+      signal: controller.signal,
+    });
+    const text = await response.text();
+    let result: ApiResponse<unknown>;
+    try {
+      result = JSON.parse(text) as ApiResponse<unknown>;
+    } catch {
+      throw new Error(
+        `Turso API returned a non-JSON response (HTTP ${response.status}). Check the Vercel API route configuration.`
+      );
+    }
+    if (!response.ok) {
+      throw new TursoApiError(result.error || `Turso request failed (${response.status}).`, response.status);
+    }
+    return result;
+  } catch (error) {
+    if (error instanceof TursoApiError || error instanceof Error && error.message.startsWith('Turso API returned')) {
+      throw error;
+    }
+    if (controller.signal.aborted) {
+      throw new Error(
+        `The database API request timed out after ${DATABASE_REQUEST_TIMEOUT_MS / 1000} seconds. Check the database service and retry.`
+      );
+    }
+    const detail = error instanceof Error ? ` ${error.message}` : '';
+    throw new Error(
+      `Cannot reach the database API at /api/database. Check that the backend/API is deployed and reachable, then verify its Turso configuration.${detail}`
+    );
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 }
 
 function makeDocumentSnapshot<T extends DocumentData>(

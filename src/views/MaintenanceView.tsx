@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { getMailtoLink, getTelLink } from '../config/company';
+import { ADMIN_PORTAL_PATH } from '../config/adminRoutes';
 
 interface MaintenanceViewProps {
   onAdminLogin?: () => void;
@@ -138,7 +139,7 @@ export const MaintenanceView: React.FC<MaintenanceViewProps> = ({ onAdminLogin }
             </button>
           ) : (
             <a
-              href="/admin"
+              href={ADMIN_PORTAL_PATH}
               className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 hover:border-slate-600 transition-colors w-full sm:w-auto"
             >
               <span>Authorized Administrator Portal</span>

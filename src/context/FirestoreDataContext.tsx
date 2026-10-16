@@ -1115,6 +1115,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       setError(null);
       setSyncProgress(20);
       setSyncStatus('Streaming data one-by-one...');
+      const refreshTasks: Promise<void>[] = [];
 
       // Immediately unblock UI so mobile users never see a blank/frozen screen
       setIsInitialLoading(false);
@@ -1145,7 +1146,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('divisions', err);
           setIsDivisionsLoading(false);
         });
-      await fetchDivisionsTask;
+      refreshTasks.push(fetchDivisionsTask);
 
       // 2. One-by-one API Call: Milestones
       const fetchMilestonesTask = firestoreMilestonesService
@@ -1161,7 +1162,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('milestones', err);
           setIsMilestonesLoading(false);
         });
-      await fetchMilestonesTask;
+      refreshTasks.push(fetchMilestonesTask);
 
       // 3. One-by-one API Call: Company Settings
       const fetchCompanySettingsTask = firestoreSettingsService
@@ -1177,7 +1178,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('company settings', err);
           setIsSettingsLoading(false);
         });
-      await fetchCompanySettingsTask;
+      refreshTasks.push(fetchCompanySettingsTask);
 
       // 4. One-by-one API Call: Site Settings
       const fetchSiteSettingsTask = firestoreSettingsService
@@ -1193,7 +1194,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('site settings', err);
           setIsSettingsLoading(false);
         });
-      await fetchSiteSettingsTask;
+      refreshTasks.push(fetchSiteSettingsTask);
 
       // 5. One-by-one API Call: Homepage CMS Config
       const fetchHomepageSettingsTask = firestoreSettingsService
@@ -1209,7 +1210,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('homepage settings', err);
           setIsHomepageConfigLoading(false);
         });
-      await fetchHomepageSettingsTask;
+      refreshTasks.push(fetchHomepageSettingsTask);
 
       // 6. One-by-one API Call: Services
       const fetchServicesTask = firestoreServicesService
@@ -1237,7 +1238,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('services', err);
           setIsServicesLoading(false);
         });
-      await fetchServicesTask;
+      refreshTasks.push(fetchServicesTask);
 
       // 7. One-by-one API Call: Gallery
       const fetchGalleryTask = firestoreGalleryService
@@ -1263,7 +1264,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('gallery', err);
           setIsGalleryLoading(false);
         });
-      await fetchGalleryTask;
+      refreshTasks.push(fetchGalleryTask);
 
       // 8. One-by-one API Call: Products
       const fetchProductsTask = firestoreProductsService
@@ -1282,7 +1283,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('products', err);
           setIsProductsLoading(false);
         });
-      await fetchProductsTask;
+      refreshTasks.push(fetchProductsTask);
 
       // 9. One-by-one API Call: Categories
       const fetchCategoriesTask = firestoreCategoriesService
@@ -1297,7 +1298,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         .catch((err) => {
           reportRefreshError('categories', err);
         });
-      await fetchCategoriesTask;
+      refreshTasks.push(fetchCategoriesTask);
 
       // 10. One-by-one API Call: Portfolio
       const fetchPortfolioTask = firestorePortfolioService
@@ -1314,7 +1315,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('portfolio', err);
           setIsPortfolioLoading(false);
         });
-      await fetchPortfolioTask;
+      refreshTasks.push(fetchPortfolioTask);
 
       // 11. One-by-one API Call: Trusted Corporate Partners
       const fetchTrustedCompaniesTask = firestoreTrustedCompaniesService
@@ -1329,7 +1330,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('trusted companies', err);
           setIsCompaniesLoading(false);
         });
-      await fetchTrustedCompaniesTask;
+      refreshTasks.push(fetchTrustedCompaniesTask);
 
       // 12. One-by-one API Call: Testimonials
       let googleReviewSourceDocuments: Array<Record<string, any>> | undefined;
@@ -1346,10 +1347,11 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
           reportRefreshError('testimonials', err);
           setIsTestimonialsLoading(false);
         });
-      await fetchTestimonialsTask;
+      refreshTasks.push(fetchTestimonialsTask);
 
       // 13. One-by-one API Call: Google Reviews & Config
       const fetchGoogleReviewsTask = (async () => {
+        await fetchTestimonialsTask;
         const gConfig = await firestoreGoogleReviewsService.getConfig(forceRefresh).catch((err) => {
           reportRefreshError('Google review settings', err);
           return null;
@@ -1367,7 +1369,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         setGoogleReviews(gReviews);
         try { setDeviceCacheItem('mahdev_cached_google_reviews', JSON.stringify(gReviews)); } catch {}
       })();
-      await fetchGoogleReviewsTask;
+      refreshTasks.push(fetchGoogleReviewsTask);
 
       // 14. One-by-One API Call: Media Assets
       const fetchMediaAssetsTask = mediaService
@@ -1380,9 +1382,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         .catch((err) => {
           reportRefreshError('media assets', err);
         });
-      await fetchMediaAssetsTask;
+      refreshTasks.push(fetchMediaAssetsTask);
 
-      await publicCmsTask;
+      await Promise.all([...refreshTasks, publicCmsTask]);
       try {
         await getPublishedCareerOpenings(forceRefresh);
       } catch (err) {

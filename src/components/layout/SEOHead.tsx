@@ -4,6 +4,7 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { db } from '../../lib/firebase';
 import { doc, getDoc } from '../../lib/tursoFirestore';
 import { CANONICAL_SITE_ORIGIN } from '../../config/site';
+import { ADMIN_PORTAL_PATH } from '../../config/adminRoutes';
 
 const SEO_CACHE_KEY = 'mahdev_cached_seo_configs';
 const SEO_ORIGIN = CANONICAL_SITE_ORIGIN;
@@ -165,6 +166,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     effectiveCanonical = `${SEO_ORIGIN}${canonicalPath === '/' ? '' : canonicalPath}`;
 
     const privateRoutePrefixes = [
+      ADMIN_PORTAL_PATH,
       '/admin',
       '/admin-login',
       '/adminlogin',

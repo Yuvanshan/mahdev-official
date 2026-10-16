@@ -10,6 +10,8 @@ import {
 import { useAdminAuth } from '../../context/AdminAuthContext';
 import { Button } from '../../components/ui/Button';
 import { SEOHead } from '../../components/layout/SEOHead';
+import { ADMIN_PORTAL_PATH } from '../../config/adminRoutes';
+import { CANONICAL_SITE_ORIGIN } from '../../config/site';
 
 interface AdminLoginViewProps {
   onSuccess?: () => void;
@@ -35,7 +37,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
         if (onSuccess) {
           onSuccess();
         } else {
-          onNavigate('/admin');
+          onNavigate(ADMIN_PORTAL_PATH);
         }
       } else {
         setError(res.error || 'Invalid executive credentials. Access denied.');
@@ -52,7 +54,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onSuccess, onNav
       <SEOHead
         title="Administrative Access Gate | Mahdev Pvt Ltd"
         description="Restricted executive administrative access portal for Mahdev Pvt Ltd enterprise management."
-        canonicalUrl="https://mahdev.lk/admin"
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}${ADMIN_PORTAL_PATH}`}
       />
 
       {/* Subtle Background Grid & Glow */}

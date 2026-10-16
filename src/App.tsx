@@ -18,6 +18,11 @@ import { initAppCheck } from './lib/firebase';
 import { analyticsService } from './services/analyticsService';
 import { catalogService } from './services/catalogService';
 import { canonicalizeDivisionRoute } from './services/firestore/divisions';
+import {
+  ADMIN_PORTAL_PATH,
+  canonicalizeAdminPath,
+  isAdminPortalPath,
+} from './config/adminRoutes';
 import { motion, AnimatePresence } from 'motion/react';
 
 const CHUNK_RECOVERY_KEY = 'mahdev:chunk-load-recovery';
@@ -238,24 +243,28 @@ function AppContent() {
     const hash = window.location.hash || '';
     const search = window.location.search || '';
     if (hash.startsWith('#/') && hash.length > 2) {
-      return hash.substring(1);
+      return canonicalizeAdminPath(hash.substring(1));
     }
     const cleanHash = hash.replace(/^#\/?/, '').toLowerCase();
     const directHashRoutes = [
-      'admin', 'admin-login', 'adminportal', 'admin-portal',
+      'admin', 'admin-login', 'adminlogin', 'adminportal', 'admin-portal', 'admin-yuvan1709',
       'sws', 'u1', 'it', 'travels', 'mart',
       'sws-events', 'sws-event-management', 'u1-studio', 'it-solutions', 'mahdev-travels', 'online-mart',
       'about', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'catalog', 'track-order', 'order', 'orders'
     ];
-    if (directHashRoutes.includes(cleanHash) || cleanHash.startsWith('admin/')) {
-      return `/${cleanHash}${search}`;
+    if (
+      directHashRoutes.includes(cleanHash) ||
+      cleanHash.startsWith('admin/') ||
+      cleanHash.startsWith('admin-yuvan1709/')
+    ) {
+      return `${canonicalizeAdminPath(`/${cleanHash}`)}${search}`;
     }
     const searchParams = new URLSearchParams(window.location.search);
     const queryRoute = searchParams.get('route') || searchParams.get('p') || searchParams.get('path');
     if (queryRoute) {
-      return (queryRoute.startsWith('/') ? queryRoute : `/${queryRoute}`) + search;
+      return canonicalizeAdminPath(queryRoute.startsWith('/') ? queryRoute : `/${queryRoute}`) + search;
     }
-    return (window.location.pathname || '/') + search;
+    return canonicalizeAdminPath(window.location.pathname || '/') + search;
   });
 
   useEffect(() => {
@@ -328,35 +337,78 @@ function AppContent() {
 
   // Handle browser back/forward and hash navigation
   useEffect(() => {
+    const hash = window.location.hash || '';
+    if (hash.startsWith('#/')) {
+      const hashRoute = hash.substring(1);
+      const canonicalHashRoute = canonicalizeAdminPath(hashRoute);
+      if (canonicalHashRoute !== hashRoute) {
+        window.history.replaceState(
+          {},
+          '',
+          `${window.location.pathname}${window.location.search}#${canonicalHashRoute}`
+        );
+      }
+      return;
+    }
+
+    const cleanHash = hash.replace(/^#\/?/, '').toLowerCase();
+    const legacyHashAdminPath = [
+      'admin',
+      'admin-login',
+      'adminlogin',
+      'adminportal',
+      'admin-portal',
+    ].find((legacyPath) => cleanHash === legacyPath || cleanHash.startsWith(`${legacyPath}/`));
+    if (legacyHashAdminPath) {
+      const canonicalHashRoute = canonicalizeAdminPath(`/${cleanHash}`);
+      window.history.replaceState({}, '', `${canonicalHashRoute}${window.location.search}`);
+      return;
+    }
+
+    const canonicalPath = canonicalizeAdminPath(window.location.pathname || '/');
+    if (canonicalPath !== window.location.pathname) {
+      window.history.replaceState(
+        {},
+        '',
+        `${canonicalPath}${window.location.search}${window.location.hash}`
+      );
+    }
+  }, []);
+
+  useEffect(() => {
     const handleLocationChange = () => {
       const hash = window.location.hash || '';
       const search = window.location.search || '';
       if (hash.startsWith('#/') && hash.length > 2) {
         window.dispatchEvent(new Event('mahdev:routechange'));
-        setCurrentPath(hash.substring(1));
+        setCurrentPath(canonicalizeAdminPath(hash.substring(1)));
         return;
       }
       const cleanHash = hash.replace(/^#\/?/, '').toLowerCase();
       const directHashRoutes = [
-        'admin', 'admin-login', 'adminportal', 'admin-portal',
+        'admin', 'admin-login', 'adminlogin', 'adminportal', 'admin-portal', 'admin-yuvan1709',
         'sws', 'u1', 'it', 'travels', 'mart',
         'sws-events', 'sws-event-management', 'u1-studio', 'it-solutions', 'mahdev-travels', 'online-mart',
         'about', 'about-us', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'catalog', 'track-order', 'order', 'orders', 'promotion', 'promotions', 'terms-and-conditions', 'privacy-policy'
       ];
-      if (directHashRoutes.includes(cleanHash) || cleanHash.startsWith('admin/')) {
+      if (
+        directHashRoutes.includes(cleanHash) ||
+        cleanHash.startsWith('admin/') ||
+        cleanHash.startsWith('admin-yuvan1709/')
+      ) {
         window.dispatchEvent(new Event('mahdev:routechange'));
-        setCurrentPath(`/${cleanHash}${search}`);
+        setCurrentPath(canonicalizeAdminPath(`/${cleanHash}`) + search);
         return;
       }
       const searchParams = new URLSearchParams(window.location.search);
       const queryRoute = searchParams.get('route') || searchParams.get('p') || searchParams.get('path');
       if (queryRoute) {
         window.dispatchEvent(new Event('mahdev:routechange'));
-        setCurrentPath((queryRoute.startsWith('/') ? queryRoute : `/${queryRoute}`) + search);
+        setCurrentPath(canonicalizeAdminPath(queryRoute.startsWith('/') ? queryRoute : `/${queryRoute}`) + search);
         return;
       }
       window.dispatchEvent(new Event('mahdev:routechange'));
-      setCurrentPath((window.location.pathname || '/') + search);
+      setCurrentPath(canonicalizeAdminPath(window.location.pathname || '/') + search);
     };
     window.addEventListener('popstate', handleLocationChange);
     window.addEventListener('hashchange', handleLocationChange);
@@ -394,6 +446,10 @@ function AppContent() {
     } else if (targetPath.startsWith('#') && targetPath.length > 1 && !targetPath.includes('=')) {
       targetPath = `/${targetPath.substring(1)}`;
     }
+    const queryIndex = targetPath.indexOf('?');
+    const targetRoute = queryIndex >= 0 ? targetPath.slice(0, queryIndex) : targetPath;
+    const targetQuery = queryIndex >= 0 ? targetPath.slice(queryIndex) : '';
+    targetPath = `${canonicalizeAdminPath(targetRoute)}${targetQuery}`;
 
     if (targetPath !== currentPath) {
       window.dispatchEvent(new Event('mahdev:routechange'));
@@ -408,7 +464,13 @@ function AppContent() {
   if (rawBase.startsWith('#/')) rawBase = rawBase.substring(1);
   else if (rawBase.startsWith('#') && rawBase.length > 1) rawBase = `/${rawBase.substring(1)}`;
   const basePath = rawBase.split('#')[0] || '/';
-  const normalizedPath = canonicalizeDivisionRoute(basePath);
+  const normalizedPath = canonicalizeAdminPath(canonicalizeDivisionRoute(basePath));
+  useEffect(() => {
+    if (normalizedPath === basePath || typeof window === 'undefined') return;
+    const canonicalUrl = `${normalizedPath}${searchParamsString ? `?${searchParamsString}` : ''}`;
+    window.history.replaceState({}, '', canonicalUrl);
+    setCurrentPath(canonicalUrl);
+  }, [basePath, normalizedPath, searchParamsString]);
   const lastDataRouteRef = React.useRef<string | null>(null);
   useEffect(() => {
     if (lastDataRouteRef.current === null) {
@@ -418,7 +480,7 @@ function AppContent() {
     if (lastDataRouteRef.current === normalizedPath) return;
 
     lastDataRouteRef.current = normalizedPath;
-    if (normalizedPath.startsWith('/admin')) return;
+    if (isAdminPortalPath(normalizedPath)) return;
 
     void loadRouteData(normalizedPath).catch((routeError: unknown) => {
       console.error(`[App] Could not load data for route ${normalizedPath}:`, routeError);
@@ -429,7 +491,7 @@ function AppContent() {
   );
   const redirectParam = searchParams.get('redirect') || undefined;
 
-  const isAdminRoute = normalizedPath === '/admin' || normalizedPath.startsWith('/admin/');
+  const isAdminRoute = isAdminPortalPath(normalizedPath);
 
   // Determine current division from path or known aliases
   const divisionKey =
@@ -588,7 +650,7 @@ function AppContent() {
   );
 
   if (isMaintenanceActive && !isAdminRoute) {
-    return <MaintenanceView onAdminLogin={() => navigate('/admin')} />;
+    return <MaintenanceView onAdminLogin={() => navigate(ADMIN_PORTAL_PATH)} />;
   }
 
   // Admin routes handle their own layout & auth flow
@@ -1294,7 +1356,7 @@ function AppContent() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.24, ease: 'easeInOut' }}
-            className={`w-full max-w-full min-w-0 ${normalizedPath.startsWith('/admin') ? '' : 'public-editorial'}`}
+            className={`w-full max-w-full min-w-0 ${isAdminRoute ? '' : 'public-editorial'}`}
           >
             <Suspense
               fallback={

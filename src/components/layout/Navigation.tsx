@@ -190,6 +190,18 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
     }
   };
 
+  const handleAnchorClick = (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) return;
+    event.preventDefault();
+    handleLinkClick(href);
+  };
+
   return (
     <>
       <header
@@ -241,24 +253,37 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                         if (event.key === 'Escape') setIsServicesOpen(false);
                       }}
                     >
-                      <button
-                        type="button"
-                        onClick={() => setIsServicesOpen(!isServicesOpen)}
-                        className={`inline-flex items-center gap-1 px-3.5 py-2 text-sm font-medium rounded-full transition-all duration-200 cursor-pointer ${
+                      <div className={`inline-flex items-center rounded-full transition-all duration-200 ${
                           isServicesOpen || currentDivision
-                            ? 'text-[#0052FF] bg-blue-50 font-semibold shadow-sm shadow-blue-900/5'
+                            ? 'bg-blue-50 font-semibold shadow-sm shadow-blue-900/5'
                             : 'text-slate-700 hover:text-[#0052FF] hover:bg-blue-50/70'
                         }`}
-                        aria-expanded={isServicesOpen}
-                        aria-haspopup="true"
                       >
-                        <span>Divisions</span>
-                        <ChevronDown
-                          className={`w-4 h-4 transition-transform duration-200 ${
-                            isServicesOpen ? 'rotate-180 text-[#0052FF]' : 'text-slate-400'
+                        <a
+                          href={item.href}
+                          onClick={(event) => handleAnchorClick(event, item.href)}
+                          aria-current={currentPath === item.href ? 'page' : undefined}
+                          className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-l-full transition-colors ${
+                            isServicesOpen || currentDivision ? 'text-[#0052FF]' : ''
                           }`}
-                        />
-                      </button>
+                        >
+                          Divisions
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => setIsServicesOpen(!isServicesOpen)}
+                          className="inline-flex items-center rounded-r-full px-1.5 py-2 text-slate-500 hover:text-[#0052FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0052FF]"
+                          aria-label="Show division links"
+                          aria-expanded={isServicesOpen}
+                          aria-haspopup="true"
+                        >
+                          <ChevronDown
+                            className={`w-4 h-4 transition-transform duration-200 ${
+                              isServicesOpen ? 'rotate-180 text-[#0052FF]' : ''
+                            }`}
+                          />
+                        </button>
+                      </div>
 
                       {/* Dropdown Menu - perfectly constrained, responsive width, never overflows viewport */}
                       {isServicesOpen && (
@@ -270,9 +295,10 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                           {/* Scrollable division items container */}
                           <div className="p-2 space-y-1 overflow-y-auto overscroll-contain max-h-[360px] divide-y divide-slate-100 scrollbar-thin">
                             {displayDivisions.map((division) => (
-                              <button
+                              <a
                                 key={division.id}
-                                onClick={() => handleLinkClick(division.route)}
+                                href={division.route}
+                                onClick={(event) => handleAnchorClick(event, division.route)}
                                 className={`w-full flex items-center p-3 rounded-xl text-left transition-all cursor-pointer group ${
                                   currentPath === division.route
                                     ? 'bg-blue-100/80 text-blue-900 ring-1 ring-blue-500/30'
@@ -282,7 +308,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                                 <span className="truncate text-sm font-semibold group-hover:text-[#0052FF] transition-colors">
                                   {division.name}
                                 </span>
-                              </button>
+                              </a>
                             ))}
                           </div>
 
@@ -305,9 +331,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                 }
 
                 return (
-                  <button
+                  <a
                     key={item.id}
-                    onClick={() => handleLinkClick(item.href)}
+                    href={item.href}
+                    onClick={(event) => handleAnchorClick(event, item.href)}
+                    aria-current={currentPath === item.href ? 'page' : undefined}
                     className={`px-3.5 py-2 text-sm font-medium rounded-full transition-all duration-200 cursor-pointer ${
                       currentPath === item.href
                         ? 'text-[#0052FF] font-semibold bg-blue-50 shadow-sm shadow-blue-900/5'
@@ -315,7 +343,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                     }`}
                   >
                     {item.label}
-                  </button>
+                  </a>
                 );
               })}
             </nav>
@@ -365,9 +393,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
             {/* Primary Navigation Links */}
             <div className="space-y-1">
               {MAIN_NAV_ITEMS.map((item) => (
-                <button
+                <a
                   key={`mobile-${item.id}`}
-                  onClick={() => handleLinkClick(item.href)}
+                  href={item.href}
+                  onClick={(event) => handleAnchorClick(event, item.href)}
+                  aria-current={currentPath === item.href ? 'page' : undefined}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left text-sm font-semibold transition-colors cursor-pointer ${
                     currentPath === item.href
                       ? 'bg-[#0052FF] text-white'
@@ -376,7 +406,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                 >
                   <span>{item.label}</span>
                   <ArrowRight className="w-4 h-4 opacity-70" />
-                </button>
+                </a>
               ))}
             </div>
 
@@ -386,9 +416,10 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                 Operating Divisions
               </div>
               {displayDivisions.map((division) => (
-                <button
+                <a
                   key={`mobile-nav-${division.id}`}
-                  onClick={() => handleLinkClick(division.route)}
+                  href={division.route}
+                  onClick={(event) => handleAnchorClick(event, division.route)}
                   className={`w-full flex items-center px-3 py-2 rounded-lg text-left text-xs font-medium cursor-pointer ${
                     currentPath === division.route
                       ? 'bg-blue-50 text-[#0052FF] font-semibold'
@@ -396,7 +427,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                   }`}
                 >
                   <span className="truncate">{division.name}</span>
-                </button>
+                </a>
               ))}
             </div>
 
