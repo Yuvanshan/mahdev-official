@@ -18,11 +18,18 @@ export interface FirestoreFAQ {
   divisionId?: string;
   order: number;
   isActive: boolean;
+  /** Pages this FAQ appears on (see FAQ_PAGES), e.g. ['contact']. */
+  pages?: string[];
   createdAt?: any;
   updatedAt?: any;
 }
 
 const COLLECTION_NAME = 'faqs';
+
+/** Pages that can show FAQs, managed from Admin → FAQs. */
+export const FAQ_PAGES = [
+  { id: 'contact', label: 'Contact page (/contact)' },
+] as const;
 
 export const firestoreFaqsService = {
   async getFaqs(): Promise<FirestoreFAQ[]> {
@@ -33,7 +40,7 @@ export const firestoreFaqsService = {
         .sort((a, b) => (a.order || 0) - (b.order || 0));
     } catch (err) {
       console.warn(`[FirestoreFaqs] Error fetching FAQs:`, err);
-      return [];
+      throw err;
     }
   },
 

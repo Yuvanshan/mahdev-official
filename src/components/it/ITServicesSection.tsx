@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { IT_SERVICES, ITService } from '../../data/itData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { ServiceTile } from '../services/ServiceTile';
+import { toServiceDetails } from '../services/ServiceDetailsModal';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
@@ -76,6 +78,7 @@ export const ITServicesSection: React.FC<ITServicesSectionProps> = ({
         return itServices.map((s) => ({
           id: s.id,
           name: s.name,
+          images: toServiceDetails(s as unknown as Record<string, any>).images,
           tagline: (s as any).tagline || s.description?.slice(0, 60) || '',
           iconName: (s as any).iconName || 'Code2',
           shortDescription: s.description || '',
@@ -191,85 +194,14 @@ export const ITServicesSection: React.FC<ITServicesSectionProps> = ({
 
       {/* Grid of 10 Services */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredServices.map((service, idx) => (
-          <div
+        {/* Cards show only image, title and View; full details open in the IT modal. */}
+        {filteredServices.map((service) => (
+          <ServiceTile
             key={service.id}
-            onClick={() => onSelectService(service)}
-            className="group relative rounded-2xl bg-white border border-slate-200 hover:border-blue-500/80 p-6 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer"
-          >
-            {/* Subtle top indicator on hover */}
-            <div className="absolute top-0 left-6 right-6 h-[2px] bg-transparent group-hover:bg-[#0052FF] rounded-t-full transition-colors" />
-
-            <div className="space-y-4">
-              {/* Header: Icon + Badge */}
-              <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#0052FF] group-hover:bg-[#0052FF] group-hover:text-white transition-colors flex items-center justify-center border border-blue-100">
-                  {getServiceIcon(service.iconName)}
-                </div>
-
-                {service.badge && (
-                  <Badge variant="default" size="sm" className="text-[10px] font-mono">
-                    {service.badge}
-                  </Badge>
-                )}
-              </div>
-
-              {/* Title & Tagline */}
-              <div>
-                <h3 className="font-display text-base sm:text-lg font-bold text-slate-900 group-hover:text-[#0052FF] transition-colors">
-                  {service.name}
-                </h3>
-                <p className="text-xs font-medium text-slate-500 mt-0.5">{service.tagline}</p>
-              </div>
-
-              {/* Short Description */}
-              <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
-                {service.shortDescription}
-              </p>
-
-              {/* Problems Solved Teaser (2 items) */}
-              <div className="pt-2 border-t border-slate-100 space-y-1.5">
-                <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
-                  Solves
-                </div>
-                {service.problemsSolved.slice(0, 2).map((prob, pIdx) => (
-                  <div key={pIdx} className="flex items-start gap-1.5 text-[11px] text-slate-600">
-                    <span className="text-rose-500 font-bold mt-0.5">•</span>
-                    <span className="line-clamp-1">{prob}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Micro Tech Tags */}
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {service.technologies.slice(0, 4).map((tech, tIdx) => (
-                  <span
-                    key={tIdx}
-                    className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-700 border border-slate-200/60"
-                  >
-                    {tech.name}
-                  </span>
-                ))}
-                {service.technologies.length > 4 && (
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono text-slate-400 bg-slate-50">
-                    +{service.technologies.length - 4}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Bottom Action Ribbon */}
-            <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
-              <div className="text-[11px] font-semibold text-[#0052FF] flex items-center gap-1 group-hover:underline">
-                <span>View Full Architecture</span>
-                <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-              </div>
-
-              <span className="text-[11px] text-slate-400 font-mono">
-                {service.startingTimeline}
-              </span>
-            </div>
-          </div>
+            title={service.name}
+            images={service.images || []}
+            onView={() => onSelectService(service)}
+          />
         ))}
       </div>
 

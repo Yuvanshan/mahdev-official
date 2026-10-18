@@ -81,7 +81,7 @@ export const TravelsPackageDetailModal: React.FC<TravelsPackageDetailModalProps>
         <div className="overflow-y-auto flex-1 p-6 space-y-8 text-slate-800">
           {/* 1. HERO & GALLERY PREVIEW */}
           <div className="space-y-3">
-            <div className="relative aspect-[16/9] rounded-xl overflow-hidden bg-slate-950">
+            <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-950">
               <img
                 src={pkg.gallery[activeGalleryIndex] || pkg.heroImage}
                 alt={pkg.title}

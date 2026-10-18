@@ -93,7 +93,7 @@ export const U1ServiceDetailModal: React.FC<U1ServiceDetailModalProps> = ({
         {/* Modal Body */}
         <div className="overflow-y-auto flex-1 p-6 space-y-6">
           {/* Main Gallery Carousel */}
-          <div className="relative rounded-2xl overflow-hidden aspect-[16/9] max-h-[380px] bg-slate-950 group">
+          <div className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-slate-950 group">
             <ImageWithShimmer
               src={currentImage}
               alt={service.name}

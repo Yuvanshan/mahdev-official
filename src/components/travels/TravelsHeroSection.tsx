@@ -1,11 +1,6 @@
 import React from 'react';
-import { Compass, ArrowRight, Phone, ChevronLeft, MapPin } from 'lucide-react';
-import { motion } from 'motion/react';
-import { Button } from '../ui/Button';
-import { getTelLink } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
-import { HeroVideoBackground } from '../common/HeroVideoBackground';
-import { AnimatedHeroTitle } from '../common/AnimatedHeroTitle';
+import { DivisionHero } from '../common/DivisionHero';
 
 interface TravelsHeroSectionProps {
   onPlanTrip: () => void;
@@ -17,7 +12,7 @@ export const TravelsHeroSection: React.FC<TravelsHeroSectionProps> = ({
   onPlanTrip,
   onExplorePackages,
 }) => {
-  const { divisions, companySettings } = useFirestoreDataContext();
+  const { divisions } = useFirestoreDataContext();
 
   const travelsDiv = divisions?.find(
     (d) =>
@@ -29,12 +24,6 @@ export const TravelsHeroSection: React.FC<TravelsHeroSectionProps> = ({
       d.slug === 'travels' ||
       d.slug === 'mahdev-travels'
   );
-
-  const hotline =
-    (travelsDiv as any)?.contactPhone ||
-    (travelsDiv as any)?.contactNumber ||
-    companySettings?.primaryPhone ||
-    '075 092 8078';
 
   const rawHeroVideo =
     (travelsDiv as any)?.heroVideoUrl ||
@@ -59,123 +48,21 @@ export const TravelsHeroSection: React.FC<TravelsHeroSectionProps> = ({
 
   const effectiveVideoUrl = (travelsDiv as any)?.heroMediaType === 'image' && !(travelsDiv as any)?.heroVideoUrl && !(travelsDiv as any)?.videoUrl ? '' : rawHeroVideo;
 
-  const badgeText =
-    (travelsDiv as any)?.hero?.badge ||
-    travelsDiv?.badge ||
-    'Mahdev Travels • Curated Ceylon Journeys';
-
   const headline =
     (travelsDiv as any)?.heroHeadline ||
     (travelsDiv as any)?.hero?.title ||
     travelsDiv?.name ||
     'Bespoke Expeditions Across Sri Lanka';
 
-  const subheadline =
-    (travelsDiv as any)?.heroSubheadline ||
-    (travelsDiv as any)?.hero?.subtitle ||
-    (travelsDiv as any)?.heroSubtitle ||
-    travelsDiv?.tagline ||
-    travelsDiv?.description ||
-    'Curated luxury private tours, tea country rail journeys, leopard wildlife safaris, VIP airport transfers, and bespoke holiday itineraries across Sri Lanka.';
-
+  // Clean hero (headline + one button), matching the SWS and U1 pages.
   return (
-    <section className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-[#061033] text-white">
-      {/* Reliable Full-Width Video Background with guaranteed autoplay and poster fallback */}
-      <HeroVideoBackground
-        videoUrl={effectiveVideoUrl}
-        imageUrl={heroImage}
-        posterImageUrl={heroImage}
-        title={travelsDiv?.name || 'Sigiriya Rock Fortress Sri Lanka'}
-      />
-
-      {/* ================= HERO CONTENT OVER VIDEO ON LEFT SIDE ================= */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-28 z-20 w-full">
-        <div className="max-w-3xl space-y-6">
-          
-          {/* Breadcrumb Back Link */}
-          <div>
-            <a
-              href="/"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-bold text-white transition-all backdrop-blur-md cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4 text-blue-400" />
-              <span>Back to Home</span>
-            </a>
-          </div>
-
-          {/* Division Badge in Electric Blue */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0052FF]/20 border border-[#0052FF]/40 text-xs font-bold text-blue-300 backdrop-blur-md shadow-lg">
-              <Compass className="w-3.5 h-3.5 text-blue-400" />
-              <span className="tracking-wide">{badgeText}</span>
-            </div>
-          </motion.div>
-
-          {/* High-Impact Headline */}
-          <motion.h1
-            aria-label={headline}
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="font-display text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-white leading-[1.08] drop-shadow-md"
-          >
-            <AnimatedHeroTitle text={headline} />
-          </motion.h1>
-
-          {/* Subheadline / Travel Description */}
-          {subheadline && (
-            <motion.p
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-              className="text-base sm:text-lg lg:text-xl text-slate-200 font-normal leading-relaxed max-w-2xl drop-shadow"
-            >
-              {subheadline}
-            </motion.p>
-          )}
-
-          {/* Clean Action CTAs in Electric Blue */}
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="flex flex-wrap items-center gap-3.5 pt-2"
-          >
-            <Button
-              variant="electric"
-              size="lg"
-              onClick={onPlanTrip}
-              rightIcon={<ArrowRight className="w-4 h-4" />}
-              className="font-bold px-7 py-3.5 text-sm sm:text-base bg-[#0052FF] hover:bg-blue-600 shadow-lg shadow-blue-600/30"
-            >
-              Plan Custom Journey
-            </Button>
-
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={onExplorePackages}
-              className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-md px-6 py-3.5 text-sm font-semibold"
-            >
-              Curated Packages
-            </Button>
-
-            <a
-              href={getTelLink(hotline)}
-              className="inline-flex items-center gap-2 px-4 py-3.5 rounded-xl border border-white/20 bg-white/10 text-white text-sm font-semibold hover:bg-white/20 transition-all backdrop-blur-md"
-              title={`Call Concierge ${hotline}`}
-            >
-              <Phone className="w-4 h-4 text-blue-400" />
-              <span>{hotline}</span>
-            </a>
-          </motion.div>
-
-        </div>
-      </div>
-    </section>
+    <DivisionHero
+      videoUrl={effectiveVideoUrl}
+      imageUrl={heroImage}
+      mediaTitle={travelsDiv?.name || 'Sigiriya Rock Fortress Sri Lanka'}
+      headline={headline}
+      buttonLabel="Explore Packages"
+      onButtonClick={onExplorePackages}
+    />
   );
 };

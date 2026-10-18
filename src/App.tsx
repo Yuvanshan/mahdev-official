@@ -1308,7 +1308,8 @@ function AppContent() {
       {!isStandaloneComingSoon && <CartDrawer onNavigate={navigate} />}
 
       {/* Sticky Top Navigation */}
-      <AnnouncementBanner onNavigate={navigate} />
+      {/* The promo banner is for the main site only, not division pages (/sws, /u1, ...). */}
+      {!divisionKey && <AnnouncementBanner onNavigate={navigate} />}
       <Navigation currentPath={normalizedPath} onNavigate={navigate} />
 
       {/* Main Content Area with Smooth View Transitions */}

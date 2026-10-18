@@ -1,14 +1,14 @@
 import React from 'react';
 import { MapPin, Phone, MessageCircle } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
-import { H2, H3, Body } from '../ui/Heading';
+import { H2, Body } from '../ui/Heading';
 import { ScrollReveal } from '../motion/MotionWrappers';
-import { SWS_BUSINESS, SWS_FAQS, SWS_SERVICE_HIGHLIGHTS } from '../../data/swsLocalSeo';
+import { SWS_BUSINESS, SWS_SERVICE_HIGHLIGHTS } from '../../data/swsLocalSeo';
 
 /**
  * Local search section for /sws: keyword service headings, the exact business
  * name/address/phone from the Google Business Profile, an embedded map of the
- * Trincomalee pin and a local FAQ. Content comes from src/data/swsLocalSeo.ts,
+ * Trincomalee pin. (FAQs are shown on the Contact page only.) Content comes from src/data/swsLocalSeo.ts,
  * which also feeds the page's structured data.
  */
 export const SWSLocalSection: React.FC = () => {
@@ -88,21 +88,6 @@ export const SWSLocalSection: React.FC = () => {
         </div>
       </SectionContainer>
 
-      <SectionContainer background="white" paddingY="xl" id="sws-faq">
-        <ScrollReveal>
-          <H2 className="text-slate-900">Frequently asked questions</H2>
-          <div className="mt-6 divide-y divide-slate-200 rounded-2xl border border-slate-200">
-            {SWS_FAQS.map((faq) => (
-              <details key={faq.question} className="group p-5">
-                <summary className="cursor-pointer list-none font-semibold text-slate-900">
-                  <H3 className="text-base">{faq.question}</H3>
-                </summary>
-                <Body className="mt-3 text-slate-600">{faq.answer}</Body>
-              </details>
-            ))}
-          </div>
-        </ScrollReveal>
-      </SectionContainer>
     </>
   );
 };

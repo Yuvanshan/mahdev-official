@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Camera, CheckCircle2, ChevronLeft, ChevronRight, Filter, Image as ImageIcon, MessageCircle, Search, ShoppingBag, X } from 'lucide-react';
 import { SEOHead } from '../components/layout/SEOHead';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
+import { ServiceTile } from '../components/services/ServiceTile';
 import { CatalogProductModal } from '../components/catalog/CatalogProductModal';
 import { GallerySectionShimmer } from '../components/common/GallerySectionShimmer';
 import { ImageWithShimmer } from '../components/ui/ImageWithShimmer';
@@ -41,11 +42,11 @@ const BrowseCard: React.FC<{
   imageLoading: 'eager' | 'lazy';
 }> = ({ item, onSelect, onNavigate, imageLoading }) => {
   const imageSources = getImageSourceCandidates(item.image, item.images);
-  const price = item.type === 'service'
-    ? Number(item.data.startingPrice || item.data.price || 0)
-    : item.type === 'product'
-      ? item.data.price
-      : null;
+  // Services: image, title and View only; full details open in the modal below.
+  if (item.type === 'service') {
+    return <ServiceTile title={item.title} images={imageSources} onView={() => onSelect(item)} imageLoading={imageLoading} />;
+  }
+  const price = item.type === 'product' ? item.data.price : null;
 
   return (
     <article className="group flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg">
@@ -91,7 +92,7 @@ const BrowseCard: React.FC<{
             {item.type === 'gallery'
               ? 'View project'
               : price && price > 0
-                ? `${item.type === 'service' ? 'From ' : ''}${formatCurrency(price, 'LKR')}`
+                ? formatCurrency(price, 'LKR')
                 : 'Contact for details'}
           </span>
           <button
@@ -102,18 +103,7 @@ const BrowseCard: React.FC<{
             View details <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
-        {item.type === 'service' ? (
-          <a
-            href={`/services/${encodeURIComponent(item.data.slug || item.id)}`}
-            onClick={(event) => {
-              event.preventDefault();
-              onNavigate(`/services/${encodeURIComponent(item.data.slug || item.id)}`);
-            }}
-            className="mt-2 inline-flex h-4 items-center text-xs font-medium text-slate-500 underline decoration-slate-300 underline-offset-2 hover:text-blue-700"
-          >
-            Full service details
-          </a>
-        ) : <div aria-hidden="true" className="mt-2 h-4" />}
+        <div aria-hidden="true" className="mt-2 h-4" />
       </div>
     </article>
   );
@@ -491,7 +481,7 @@ export const ExploreAllView: React.FC<{
       {selectedService && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 p-4" role="dialog" aria-modal="true" aria-label={selectedService.title || selectedService.name} onClick={() => setSelectedService(null)}>
           <div className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            <div className="relative aspect-[16/9] bg-slate-100">
+            <div className="relative aspect-[4/3] bg-slate-100">
               {((selectedService.images || []).filter(Boolean)[0] || selectedService.imageUrl) && (
                 <ImageWithShimmer src={(selectedService.images || []).filter(Boolean)[0] || selectedService.imageUrl} alt={selectedService.title || selectedService.name} className="absolute inset-0" />
               )}

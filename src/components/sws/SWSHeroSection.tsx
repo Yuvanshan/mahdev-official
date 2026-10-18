@@ -40,7 +40,8 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
         <div className="max-w-3xl space-y-6">
           
           {/* Page heading for search engines: the business and service keywords. */}
-          <h1 className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-200 sm:text-sm">
+          {/* Visually hidden (still read by search engines and screen readers). */}
+          <h1 className="sr-only">
             {SWS_PRIMARY_HEADING}
           </h1>
 

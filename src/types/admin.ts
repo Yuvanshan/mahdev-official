@@ -119,6 +119,7 @@ export type AdminSectionId =
   | 'milestones'
   | 'companies'
   | 'testimonials'
+  | 'faqs'
   | 'pages'
   | 'banners'
   | 'coupons'

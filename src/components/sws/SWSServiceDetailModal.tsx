@@ -92,7 +92,7 @@ export const SWSServiceDetailModal: React.FC<SWSServiceDetailModalProps> = ({
         {/* Modal Body (Scrollable) */}
         <div className="overflow-y-auto flex-1 p-6 space-y-6">
           {/* Main Gallery Display with Controls */}
-          <div className="relative rounded-xl overflow-hidden bg-slate-950 aspect-video max-h-[380px] group">
+          <div className="relative rounded-xl overflow-hidden bg-slate-950 aspect-[4/3] group">
             <ImageWithShimmer
               src={images[activeImageIndex]}
               alt={`${service.name} preview ${activeImageIndex + 1}`}

@@ -29,6 +29,8 @@ import { DIVISIONS, DIVISION_LIST } from '../config/divisions';
 import { DivisionId } from '../types';
 import { DivisionComingSoonView } from './DivisionComingSoonView';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
+import { ServiceTile } from '../components/services/ServiceTile';
+import { ServiceDetailsModal, toServiceDetails } from '../components/services/ServiceDetailsModal';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { firestoreInquiriesService } from '../services/firestore/inquiries';
 import { firestoreContactsService } from '../services/firestore/contacts';
@@ -249,10 +251,12 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
             title: s.name,
             description: s.description || 'Specialized enterprise service by Mahdev.',
             iconName: (s as any).iconName || 'Sparkles',
+            record: s as unknown as Record<string, any>,
           }))
         : baseDivision.coreServices || [],
   };
 
+  const [selectedCoreService, setSelectedCoreService] = useState<any | null>(null);
   const [inquirySubmitted, setInquirySubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
@@ -514,38 +518,32 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
         </ScrollReveal>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-          {division.coreServices.map((service, index) => (
-            <Card
+          {/* Cards show only image, title and View; full details open in a modal. */}
+          {division.coreServices.map((service: any, index: number) => (
+            <ServiceTile
               key={index}
-              variant="default"
-              hoverEffect
-              className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-6 hover:border-blue-500 transition-all shadow-xs"
-            >
-              <div>
-                <div className="w-11 h-11 rounded-xl bg-blue-50 text-[#0052FF] flex items-center justify-center mb-4">
-                  <IconRenderer name={service.iconName || 'Sparkles'} className="w-5 h-5" />
-                </div>
-                <CardTitle className="text-lg font-bold text-slate-900">{service.title}</CardTitle>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-[#0052FF]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFormData((prev) => ({ ...prev, serviceInterest: service.title }));
-                    const el = document.getElementById('division-inquiry');
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="inline-flex items-center gap-1 hover:underline cursor-pointer font-bold"
-                >
-                  <span>Select Scope</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </Card>
+              title={service.title}
+              images={service.record ? toServiceDetails(service.record).images : []}
+              onView={() => setSelectedCoreService(service)}
+            />
           ))}
         </div>
       </SectionContainer>
+
+      <ServiceDetailsModal
+        service={selectedCoreService
+          ? toServiceDetails(selectedCoreService.record || { title: selectedCoreService.title, description: selectedCoreService.description }, division.shortName)
+          : null}
+        onClose={() => setSelectedCoreService(null)}
+        primaryAction={selectedCoreService ? {
+          label: 'Enquire about this service',
+          onClick: () => {
+            setFormData((prev) => ({ ...prev, serviceInterest: selectedCoreService.title }));
+            setSelectedCoreService(null);
+            document.getElementById('division-inquiry')?.scrollIntoView({ behavior: 'smooth' });
+          },
+        } : undefined}
+      />
 
       {/* 4. DIVISION DIRECT INQUIRY FORM */}
       <SectionContainer id="division-inquiry" background="white" paddingY="xl" hasBorderBottom>

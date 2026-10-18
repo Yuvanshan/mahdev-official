@@ -14,10 +14,13 @@ import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { ServiceTile } from '../services/ServiceTile';
+import { ServiceDetailsModal, toServiceDetails } from '../services/ServiceDetailsModal';
 import { isSameDivision } from '../../services/firestore/divisions';
 
 export const TravelsServicesSection: React.FC = () => {
   const { services: rawServices } = useFirestoreDataContext();
+  const [selectedService, setSelectedService] = React.useState<Record<string, any> | null>(null);
 
   const defaultServices = [
     {
@@ -65,6 +68,7 @@ export const TravelsServicesSection: React.FC = () => {
           title: s.name,
           desc: s.description || (s as any).detailedDescription || '',
           icon: <Compass className="w-5 h-5 text-blue-600" />,
+          record: s as unknown as Record<string, any>,
         }));
       }
     }
@@ -91,26 +95,21 @@ export const TravelsServicesSection: React.FC = () => {
 
       {/* Grid of Services */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Cards show only image, title and View; full details open in a modal. */}
         {travelServices.map((svc, idx) => (
-          <div
+          <ServiceTile
             key={idx}
-            className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-md transition-all space-y-3 flex flex-col justify-between"
-          >
-            <div className="space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
-                {svc.icon}
-              </div>
-              <h3 className="font-display text-base font-bold text-slate-900">{svc.title}</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">{svc.desc}</p>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[11px] font-semibold text-blue-600">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Included in all bespoke bookings</span>
-            </div>
-          </div>
+            title={svc.title}
+            images={toServiceDetails(svc.record).images}
+            onView={() => setSelectedService(svc.record)}
+          />
         ))}
       </div>
+
+      <ServiceDetailsModal
+        service={selectedService ? toServiceDetails(selectedService, 'Mahdev Travels') : null}
+        onClose={() => setSelectedService(null)}
+      />
     </SectionContainer>
   );
 };

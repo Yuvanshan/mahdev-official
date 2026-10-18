@@ -255,10 +255,12 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
       {/* 4. Electric Blue & High Contrast Shading Overlay (Always on top of media, under content) */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#061033] via-[#061033]/85 sm:via-[#061033]/70 md:via-[#061033]/45 to-transparent pointer-events-none z-10" />
       <div className="absolute inset-0 bg-gradient-to-t from-[#061033] via-transparent to-[#0052FF]/10 pointer-events-none z-10" />
-      {enableAutomaticAudio && (
+      {/* Only once the <video> element exists, and re-initialised when its source changes. */}
+      {enableAutomaticAudio && hasVideo && effectiveVideoSrc && !isEmbedVideo && (
         <HeroVideoControls
           heroRef={backgroundRef}
           videoRef={videoRef}
+          videoSrc={effectiveVideoSrc}
         />
       )}
     </div>

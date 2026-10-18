@@ -20,7 +20,11 @@ import {
 } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 import { Button } from '../ui/Button';
-import { MAIN_NAV_ITEMS } from '../../config/navigation';
+import { MAIN_NAV_ITEMS as ALL_NAV_ITEMS } from '../../config/navigation';
+
+// Items kept in config (and the footer) but hidden from the top bar and mobile menu.
+const HIDDEN_TOP_BAR_ITEMS = new Set(['insights']);
+const MAIN_NAV_ITEMS = ALL_NAV_ITEMS.filter((item) => !HIDDEN_TOP_BAR_ITEMS.has(item.id));
 import { DIVISIONS, DIVISION_LIST } from '../../config/divisions';
 import { DivisionId } from '../../types';
 import { useCart } from '../../context/CartContext';
@@ -205,7 +209,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
   return (
     <>
       <header
-        className={`sticky top-0 z-[60] w-full transition-all duration-300 ${
+        className={`sticky top-0 z-[60] w-full !overflow-visible transition-all duration-300 ${
           isScrolled
             ? 'bg-white/90 backdrop-blur-2xl border-b border-slate-200/80 shadow-[0_8px_32px_-18px_rgba(15,23,42,0.24)]'
             : 'bg-white/95 backdrop-blur-xl border-b border-slate-200/80'
@@ -235,7 +239,6 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
             {/* Left: Brand Logo */}
             <div className="flex items-center shrink-0 min-w-0 mr-1 sm:mr-0">
               <BrandLogo
-                divisionLabel={currentDivision ? currentDivision.badge : undefined}
                 onClick={() => onNavigate('/')}
               />
             </div>
@@ -389,7 +392,15 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
         {/* Mobile Navigation Drawer */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden border-t border-blue-200/80 bg-[#FAF9F6] px-4 pt-4 pb-6 space-y-4 shadow-lg animate-in slide-in-from-top-2 duration-200 max-w-full overflow-hidden">
+          <>
+          {/* Tap outside the floating menu to close it. */}
+          <button
+            type="button"
+            aria-label="Close menu"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="lg:hidden absolute inset-x-0 top-full h-[100svh] z-[55] bg-slate-950/30"
+          />
+          <div className="lg:hidden absolute inset-x-3 top-full z-[61] mt-2 max-h-[calc(100svh-6rem)] overflow-y-auto overscroll-contain rounded-2xl border border-blue-200/80 bg-[#FAF9F6] px-4 pt-4 pb-6 space-y-4 shadow-2xl animate-in slide-in-from-top-2 duration-200">
             {/* Primary Navigation Links */}
             <div className="space-y-1">
               {MAIN_NAV_ITEMS.map((item) => (
@@ -452,6 +463,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
               </a>
             </div>
           </div>
+          </>
         )}
       </header>
     </>

@@ -134,6 +134,23 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
             </ScrollReveal>
           </div>
 
+          {/* Product search (moved here from the hero, which is now kept clean). */}
+          <form
+            role="search"
+            onSubmit={(event) => event.preventDefault()}
+            className="relative w-full md:max-w-sm"
+          >
+            <label htmlFor="mart-product-search" className="sr-only">Search products</label>
+            <input
+              id="mart-product-search"
+              type="search"
+              value={searchQuery}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder="Search decor, lighting, tech gear..."
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+          </form>
+
           {/* Sort Control */}
           <div className="flex items-center gap-3">
             <span className="text-xs font-mono text-slate-500 whitespace-nowrap">Sort by:</span>

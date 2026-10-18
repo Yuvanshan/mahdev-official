@@ -32,6 +32,7 @@ import {
   Database,
   Loader2,
   Mail,
+  HelpCircle,
 } from 'lucide-react';
 import { activeDatabaseName } from '../../lib/firebase';
 import { AdminSectionId } from '../../types/admin';
@@ -58,6 +59,7 @@ const AdminPackagesView = React.lazy(() => import('./AdminPackagesView').then((m
 const AdminPortfolioView = React.lazy(() => import('./AdminPortfolioView').then((module) => ({ default: module.AdminPortfolioView })));
 const AdminCareersView = React.lazy(() => import('./AdminCareersView').then((module) => ({ default: module.AdminCareersView })));
 const AdminGalleryView = React.lazy(() => import('./AdminGalleryView').then((module) => ({ default: module.AdminGalleryView })));
+const AdminFaqsView = React.lazy(() => import('./AdminFaqsView').then((module) => ({ default: module.AdminFaqsView })));
 const AdminMilestonesView = React.lazy(() => import('./AdminMilestonesView').then((module) => ({ default: module.AdminMilestonesView })));
 const AdminCompaniesView = React.lazy(() => import('./AdminCompaniesView').then((module) => ({ default: module.AdminCompaniesView })));
 const AdminTestimonialsView = React.lazy(() => import('./AdminTestimonialsView').then((module) => ({ default: module.AdminTestimonialsView })));
@@ -124,6 +126,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { id: 'milestones', label: 'Milestones', icon: Flag },
   { id: 'companies', label: 'Companies', icon: Building },
   { id: 'testimonials', label: 'Testimonials', icon: MessageSquare },
+  { id: 'faqs', label: 'FAQs', icon: HelpCircle },
   { id: 'pages', label: 'Pages', icon: FileCode },
   { id: 'banners', label: 'Banners', icon: Tag },
   { id: 'coupons', label: 'Coupons', icon: Tag },
@@ -274,6 +277,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
         return <AdminCompaniesView />;
       case 'testimonials':
         return <AdminTestimonialsView />;
+      case 'faqs':
+        return <AdminFaqsView />;
       case 'pages':
         return <AdminPagesView />;
       case 'banners':

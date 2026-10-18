@@ -1,4 +1,6 @@
 export interface ITService {
+  /** Service photos from the database (card and details images). */
+  images?: string[];
   id: string;
   name: string;
   tagline: string;

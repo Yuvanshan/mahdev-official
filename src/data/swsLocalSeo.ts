@@ -71,7 +71,20 @@ export const SWS_FAQS = [
   },
 ] as const;
 
-/** JSON-LD for the /sws page: the SWS EventPlanner (Trincomalee branch) and its FAQs. */
+/** FAQPage JSON-LD for any page showing SWS_FAQS (e.g. /contact). */
+export function getFaqStructuredData(): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: SWS_FAQS.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+    })),
+  };
+}
+
+/** JSON-LD for the /sws page: the SWS EventPlanner (Trincomalee branch). FAQ schema is added at runtime from admin-managed FAQs. */
 export function getSwsStructuredData(): Array<Record<string, unknown>> {
   return [
     {
@@ -100,15 +113,6 @@ export function getSwsStructuredData(): Array<Record<string, unknown>> {
       hasMap: SWS_BUSINESS.trincomalee.mapsUrl,
       areaServed: ['Trincomalee', 'Nilaveli', 'Uppuveli', 'Colombo'],
       sameAs: [...SWS_BUSINESS.sameAs],
-    },
-    {
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: SWS_FAQS.map((faq) => ({
-        '@type': 'Question',
-        name: faq.question,
-        acceptedAnswer: { '@type': 'Answer', text: faq.answer },
-      })),
     },
   ];
 }

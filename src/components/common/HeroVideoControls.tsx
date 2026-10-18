@@ -1,272 +1,125 @@
-import React, { RefObject, useEffect, useRef } from 'react';
+import React, { RefObject, useEffect } from 'react';
 
 interface HeroVideoControlsProps {
   heroRef: RefObject<HTMLElement | null>;
   videoRef: RefObject<HTMLVideoElement | null>;
+  /** Current video source; playback is re-initialised when it changes. */
+  videoSrc?: string;
 }
 
 const HERO_VIDEO_VOLUME = 0.15;
 const HERO_VISIBLE_THRESHOLD = 0.05;
-const STALL_RECOVERY_MS = 15000;
 
+/**
+ * Division hero playback, matching the landing page hero (HeroSection):
+ * when the hero is visible it tries to play with sound and, if the browser
+ * refuses, immediately continues muted in the same step, so the video always
+ * starts on arrival. The first tap/click/key press turns sound on. Playback
+ * pauses when the hero scrolls out of view or the tab is hidden.
+ */
 export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
   heroRef,
   videoRef,
+  videoSrc,
 }) => {
-  const isVisibleRef = useRef(false);
-  const soundAllowedRef = useRef(false);
-  const autoSoundAttemptedRef = useRef(false);
-  const soundBlockedUntilInteractionRef = useRef(false);
-  const pendingAudiblePlaybackRef = useRef(false);
-  const playbackRequestRef = useRef<'audible' | 'muted' | null>(null);
-  const recoveryCountRef = useRef(0);
-  const lastRecoveryAtRef = useRef(0);
-  const lastProgressAtRef = useRef(Date.now());
-  const lastPlaybackTimeRef = useRef(0);
-
   useEffect(() => {
+    const video = videoRef.current;
     const hero = heroRef.current;
-    const currentVideo = videoRef.current;
-    if (!hero || !currentVideo) return;
-    const video: HTMLVideoElement = currentVideo;
+    if (!video || !hero) return;
 
-    let recoveryTimer = 0;
-    let watchTimer = 0;
-    let routeIsActive = true;
+    let audioEnabled = false;
+    let userInteracted = false;
+    let hasAttemptedAudibleAutoplay = false;
+    let isHeroVisible = false;
+    let playbackRequest = 0;
 
-    // On phones/tablets, unmuting without a fresh tap makes the browser pause the
-    // video (iOS Safari), leaving the hero frozen until the next tap. Touch
-    // devices therefore play muted and only turn sound on after a tap
-    // (handleUserInteraction); desktop keeps the automatic sound attempt.
-    const isTouchDevice = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+    const removeInteractionListeners = () => {
+      window.removeEventListener('pointerdown', enableAudio);
+      window.removeEventListener('touchstart', enableAudio);
+      window.removeEventListener('keydown', enableAudio);
+    };
 
-    function attemptInitialSound() {
-      if (
-        isTouchDevice ||
-        autoSoundAttemptedRef.current ||
-        soundBlockedUntilInteractionRef.current ||
-        soundAllowedRef.current ||
-        !isVisibleRef.current ||
-        !routeIsActive ||
-        document.visibilityState !== 'visible'
-      ) {
-        return;
-      }
-      autoSoundAttemptedRef.current = true;
-      playWithSound();
-    }
+    const pauseVideo = () => {
+      playbackRequest += 1;
+      video.pause();
+      video.muted = true;
+    };
 
-    function playMuted() {
-      if (!routeIsActive || !isVisibleRef.current || document.visibilityState !== 'visible') return;
-      if (playbackRequestRef.current) return;
-      playbackRequestRef.current = 'muted';
-      video.muted = !soundAllowedRef.current;
-      if (soundAllowedRef.current) video.volume = HERO_VIDEO_VOLUME;
-      video.playsInline = true;
-      video.play().then(
-        () => {
-          playbackRequestRef.current = null;
-          if (pendingAudiblePlaybackRef.current) {
-            pendingAudiblePlaybackRef.current = false;
-            playWithSound();
-          } else if (!soundAllowedRef.current) {
-            attemptInitialSound();
+    const startVideo = async (tryAudio: boolean) => {
+      if (!isHeroVisible || document.visibilityState === 'hidden') return;
+
+      const requestId = ++playbackRequest;
+      video.volume = HERO_VIDEO_VOLUME;
+      video.muted = !tryAudio;
+      try {
+        await video.play();
+        if (requestId !== playbackRequest || !isHeroVisible) return;
+        if (tryAudio) {
+          audioEnabled = true;
+          removeInteractionListeners();
+        }
+      } catch (error) {
+        if (requestId !== playbackRequest) return;
+        // Sound was refused: keep playing muted straight away.
+        video.muted = true;
+        if (tryAudio && isHeroVisible) {
+          try {
+            await video.play();
+          } catch (mutedError) {
+            console.warn('[DivisionHero] Muted autoplay was blocked:', mutedError);
           }
-        },
-        (error: unknown) => {
-          playbackRequestRef.current = null;
-          if (pendingAudiblePlaybackRef.current) {
-            pendingAudiblePlaybackRef.current = false;
-            playWithSound();
+          return;
+        }
+        console.warn('[DivisionHero] Could not start the hero video:', error);
+      }
+    };
+
+    const enableAudio = () => {
+      userInteracted = true;
+      if (audioEnabled || !isHeroVisible) return;
+      void startVideo(true);
+    };
+
+    window.addEventListener('pointerdown', enableAudio, { passive: true });
+    window.addEventListener('touchstart', enableAudio, { passive: true });
+    window.addEventListener('keydown', enableAudio);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        pauseVideo();
+      } else if (isHeroVisible) {
+        void startVideo(audioEnabled || userInteracted || !hasAttemptedAudibleAutoplay);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    const observer = typeof IntersectionObserver === 'undefined'
+      ? null
+      : new IntersectionObserver(([entry]) => {
+          isHeroVisible = entry.isIntersecting;
+          if (!isHeroVisible) {
+            pauseVideo();
             return;
           }
-          console.debug('[HeroVideoControls] Muted playback deferred:', error);
-        }
-      );
-    }
-
-    function playWithSound() {
-      if (!routeIsActive || !isVisibleRef.current || document.visibilityState !== 'visible') return;
-      if (playbackRequestRef.current === 'audible') return;
-      if (playbackRequestRef.current === 'muted') {
-        pendingAudiblePlaybackRef.current = true;
-        return;
-      }
-      playbackRequestRef.current = 'audible';
-      autoSoundAttemptedRef.current = true;
-      video.volume = HERO_VIDEO_VOLUME;
-      video.muted = false;
-      video.play().then(
-        () => {
-          playbackRequestRef.current = null;
-          soundAllowedRef.current = true;
-        },
-        (error: unknown) => {
-          playbackRequestRef.current = null;
-          video.muted = true;
-          const blockedByAutoplayPolicy =
-            error instanceof DOMException && error.name === 'NotAllowedError';
-          soundBlockedUntilInteractionRef.current = blockedByAutoplayPolicy;
-          if (!blockedByAutoplayPolicy) autoSoundAttemptedRef.current = false;
-          console.debug('[HeroVideoControls] Audible autoplay blocked; continuing muted:', error);
-          playMuted();
-        }
-      );
-    }
-
-    const recoverStalledVideo = () => {
-      if (!routeIsActive || !isVisibleRef.current || document.visibilityState !== 'visible') return;
-      if (Date.now() - lastProgressAtRef.current < STALL_RECOVERY_MS) return;
-      if (Date.now() - lastRecoveryAtRef.current < 5000) return;
-      if (recoveryCountRef.current >= 3) {
-        console.warn('[HeroVideoControls] Playback recovery limit reached.');
-        return;
-      }
-
-      recoveryCountRef.current += 1;
-      lastRecoveryAtRef.current = Date.now();
-      lastProgressAtRef.current = Date.now();
-      lastPlaybackTimeRef.current = 0;
-      console.warn(`[HeroVideoControls] Recovering stalled hero video (attempt ${recoveryCountRef.current}).`);
-      video.load();
-      playMuted();
-    };
-
-    const updateVisibility = (isVisible: boolean) => {
-      isVisibleRef.current = isVisible;
-      if (!isVisible || document.visibilityState !== 'visible') {
-        video.pause();
-        video.muted = true;
-        playbackRequestRef.current = null;
-        return;
-      }
-
-      lastProgressAtRef.current = Date.now();
-      if (video.error) lastProgressAtRef.current = 0;
-      if (video.error) {
-        recoverStalledVideo();
-        return;
-      }
-      if (soundAllowedRef.current) {
-        video.volume = HERO_VIDEO_VOLUME;
-        video.muted = false;
-        playMuted();
-      } else {
-        playMuted();
-      }
-    };
-
-    const handleUserInteraction = () => {
-      if (!isVisibleRef.current || soundAllowedRef.current) return;
-      soundBlockedUntilInteractionRef.current = false;
-      autoSoundAttemptedRef.current = false;
-      playWithSound();
-    };
-
-    const handlePlaying = () => {
-      lastProgressAtRef.current = Date.now();
-      if (!soundAllowedRef.current) attemptInitialSound();
-    };
-
-    const handleProgress = () => {
-      if (video.currentTime !== lastPlaybackTimeRef.current) {
-        lastPlaybackTimeRef.current = video.currentTime;
-        lastProgressAtRef.current = Date.now();
-      }
-    };
-
-    const handleWaiting = () => {
-      window.clearTimeout(recoveryTimer);
-      recoveryTimer = window.setTimeout(recoverStalledVideo, STALL_RECOVERY_MS);
-    };
-
-    const handleCanPlay = () => {
-      window.clearTimeout(recoveryTimer);
-      lastProgressAtRef.current = Date.now();
-      if (soundAllowedRef.current || soundBlockedUntilInteractionRef.current) playMuted();
-      else attemptInitialSound();
-    };
-
-    const handleVideoError = () => {
-      lastProgressAtRef.current = 0;
-      recoverStalledVideo();
-    };
-
-    const handleVisibilityChange = () => {
-      updateVisibility(isVisibleRef.current);
-    };
-
-    const stopForRouteChange = () => {
-      routeIsActive = false;
-      isVisibleRef.current = false;
-      pendingAudiblePlaybackRef.current = false;
-      playbackRequestRef.current = null;
-      video.pause();
-      video.muted = true;
-    };
-
-    const interactionEvents: Array<keyof WindowEventMap> = [
-      'pointerdown',
-      'touchstart',
-      'keydown',
-    ];
-    interactionEvents.forEach((eventName) =>
-      window.addEventListener(eventName, handleUserInteraction, { passive: true })
-    );
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('mahdev:routechange', stopForRouteChange);
-    video.addEventListener('playing', handlePlaying);
-    video.addEventListener('timeupdate', handleProgress);
-    video.addEventListener('waiting', handleWaiting);
-    video.addEventListener('stalled', handleWaiting);
-    video.addEventListener('canplay', handleCanPlay);
-    video.addEventListener('error', handleVideoError);
-
-    let observer: IntersectionObserver | null = null;
-    if (typeof IntersectionObserver === 'undefined') {
-      updateVisibility(true);
-    } else {
-      observer = new IntersectionObserver(
-        ([entry]) => {
-          updateVisibility(entry.isIntersecting && entry.intersectionRatio >= HERO_VISIBLE_THRESHOLD);
-        },
-        { threshold: [0, HERO_VISIBLE_THRESHOLD] }
-      );
+          const tryAudio = audioEnabled || userInteracted || !hasAttemptedAudibleAutoplay;
+          if (!userInteracted && !audioEnabled) hasAttemptedAudibleAutoplay = true;
+          void startVideo(tryAudio);
+        }, { threshold: HERO_VISIBLE_THRESHOLD });
+    if (observer) {
       observer.observe(hero);
+    } else {
+      isHeroVisible = true;
+      hasAttemptedAudibleAutoplay = true;
+      void startVideo(true);
     }
 
-    watchTimer = window.setInterval(() => {
-      if (!isVisibleRef.current || document.visibilityState !== 'visible') return;
-      // iOS does not preload video, so readyState can stay at 0 until play() is
-      // called; retry a paused hero regardless of how much data has loaded.
-      if (video.paused) {
-        playMuted();
-      } else if (!video.paused) {
-        recoverStalledVideo();
-      }
-    }, 5000);
-
-    function cleanup() {
+    return () => {
       observer?.disconnect();
-      window.clearTimeout(recoveryTimer);
-      window.clearInterval(watchTimer);
-      interactionEvents.forEach((eventName) =>
-        window.removeEventListener(eventName, handleUserInteraction)
-      );
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('mahdev:routechange', stopForRouteChange);
-      video.removeEventListener('playing', handlePlaying);
-      video.removeEventListener('timeupdate', handleProgress);
-      video.removeEventListener('waiting', handleWaiting);
-      video.removeEventListener('stalled', handleWaiting);
-      video.removeEventListener('canplay', handleCanPlay);
-      video.removeEventListener('error', handleVideoError);
-      video.pause();
-      video.muted = true;
-    }
-
-    return cleanup;
-  }, [heroRef, videoRef]);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      removeInteractionListeners();
+      pauseVideo();
+    };
+  }, [heroRef, videoRef, videoSrc]);
 
   return null;
 };

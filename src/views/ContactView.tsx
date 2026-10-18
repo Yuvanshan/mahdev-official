@@ -1,3 +1,5 @@
+import { FaqSection } from '../components/common/FaqSection';
+import { usePageFaqs } from '../hooks/usePageFaqs';
 import React, { useEffect } from 'react';
 import { ContactCorporateSection } from '../components/corporate/ContactCorporateSection';
 import { TrustedCompaniesMatrix } from '../components/corporate/TrustedCompaniesMatrix';
@@ -10,6 +12,7 @@ interface ContactViewProps {
 }
 
 export const ContactView: React.FC<ContactViewProps> = ({ onNavigate }) => {
+  const faqs = usePageFaqs('contact');
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
@@ -34,6 +37,9 @@ export const ContactView: React.FC<ContactViewProps> = ({ onNavigate }) => {
 
       {/* Main Contact Form & Location Details */}
       <ContactCorporateSection />
+
+      {/* Frequently asked questions (also published as FAQPage structured data). */}
+      <FaqSection items={faqs} id="contact-faq" background="subtle" />
 
       {/* Trusted Partners */}
       <TrustedCompaniesMatrix />

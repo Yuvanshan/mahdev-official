@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { U1_SERVICES, U1Service } from '../../data/u1Data';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { ServiceTile } from '../services/ServiceTile';
 import { ServicesSectionShimmer } from '../common/ServicesSectionShimmer';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { formatCurrency } from '../../utils/currency';
@@ -213,78 +214,14 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
 
       {/* Services Grid (Image-First Cards) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        {/* Cards show only image, title and View; details and booking are in the modal. */}
         {filteredServices.map((service) => (
-          <div
+          <ServiceTile
             key={service.id}
-            className="group rounded-2xl bg-white border border-slate-200/90 hover:border-blue-500 hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden shadow-xs"
-          >
-            <div>
-              {/* Image Banner */}
-              <div onClick={() => setActiveModalService(service)}>
-                <U1ServiceCardImage service={service} />
-                {/* Quick Expand Icon */}
-                <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Eye className="w-3.5 h-3.5" />
-                </div>
-
-              </div>
-
-              {/* Content Details */}
-              <div className="p-5 space-y-3">
-                {service.badge && (
-                  <Badge variant="electric" size="sm" className="text-[10px]">
-                    {service.badge}
-                  </Badge>
-                )}
-                <div>
-                  <h3 className="font-display text-lg font-bold text-slate-900 group-hover:text-[#0052FF] transition-colors leading-snug">
-                    {service.name}
-                  </h3>
-                  <p className="text-xs text-[#0052FF] font-medium mt-0.5">{service.tagline}</p>
-                </div>
-
-                <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
-                  {service.description}
-                </p>
-
-                <div className="rounded-xl bg-blue-50/70 px-3.5 py-3">
-                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">Starting from</span>
-                  <span className="font-display text-base font-bold text-slate-900">{service.startingPrice}</span>
-                </div>
-
-                {/* Key Deliverables sample */}
-                <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                  {service.deliverables.slice(0, 2).map((del, dIdx) => (
-                    <div key={dIdx} className="flex items-center gap-2 text-[11px] text-slate-600 truncate">
-                      <CheckCircle2 className="w-3 h-3 text-blue-600 shrink-0" />
-                      <span className="truncate">{del}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Card Action Buttons */}
-            <div className="p-5 bg-slate-50/80 border-t border-slate-100 flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setActiveModalService(service)}
-                className="flex-1 text-xs py-2"
-              >
-                View Details
-              </Button>
-              <Button
-                variant="electric"
-                size="sm"
-                onClick={() => onBookService(service)}
-                rightIcon={<ArrowRight className="w-3 h-3" />}
-                className="flex-1 text-xs font-bold py-2 shadow-xs"
-              >
-                Book Session
-              </Button>
-            </div>
-          </div>
+            title={service.name}
+            images={(service.gallery?.length ? service.gallery : [service.imageUrl]).filter(Boolean) as string[]}
+            onView={() => setActiveModalService(service)}
+          />
         ))}
       </div>
 

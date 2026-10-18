@@ -869,7 +869,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const divisionRoute = normalizedRoute.match(/^\/(?:divisions|division\/)?(sws|u1|it|travels)$/);
       if (divisionRoute) {
-        await loadDivisionData(divisionRoute[1], forceRefresh);
+        // Division records hold the live status (e.g. "coming soon") set in admin; without
+        // them a direct visit falls back to the built-in default. Served from the snapshot.
+        await Promise.all([loadDivisionData(divisionRoute[1], forceRefresh), refreshDivisions()]);
         return;
       }
 
@@ -957,8 +959,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         normalizedRoute === '/divisions/mart' ||
         normalizedRoute === '/division/mart'
       ) {
-        await refreshProducts();
-        await refreshCategories();
+        await Promise.all([refreshProducts(), refreshCategories(), refreshDivisions()]);
         return;
       }
 
