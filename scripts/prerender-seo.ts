@@ -44,6 +44,13 @@ function renderRoute(route: RouteSeo): string {
     `$1\n        <h1>${escapeHtml(route.heading)}</h1>\n        <p>${escapeHtml(route.intro)}</p>\n        <p>${description}</p>\n        <p><a href="/">Mahdev home</a> · <a href="/services">Services</a> · <a href="/contact">Contact</a></p>\n      $2`,
     'seo-fallback block'
   );
+  if (route.structuredData?.length) {
+    // JSON-LD is data, not script code: escape "<" so content can never close the tag.
+    const blocks = route.structuredData
+      .map((block) => `    <script type="application/ld+json">${JSON.stringify(block).replace(/</g, '\\u003c')}</script>`)
+      .join('\n');
+    html = replaceTag(html, /<\/head>/, `${blocks}\n  </head>`, '</head>');
+  }
   return html;
 }
 

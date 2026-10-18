@@ -34,8 +34,15 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
     let watchTimer = 0;
     let routeIsActive = true;
 
+    // On phones/tablets, unmuting without a fresh tap makes the browser pause the
+    // video (iOS Safari), leaving the hero frozen until the next tap. Touch
+    // devices therefore play muted and only turn sound on after a tap
+    // (handleUserInteraction); desktop keeps the automatic sound attempt.
+    const isTouchDevice = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+
     function attemptInitialSound() {
       if (
+        isTouchDevice ||
         autoSoundAttemptedRef.current ||
         soundBlockedUntilInteractionRef.current ||
         soundAllowedRef.current ||
@@ -230,7 +237,9 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
 
     watchTimer = window.setInterval(() => {
       if (!isVisibleRef.current || document.visibilityState !== 'visible') return;
-      if (video.paused && video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+      // iOS does not preload video, so readyState can stay at 0 until play() is
+      // called; retry a paused hero regardless of how much data has loaded.
+      if (video.paused) {
         playMuted();
       } else if (!video.paused) {
         recoverStalledVideo();

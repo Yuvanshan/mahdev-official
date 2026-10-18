@@ -10,6 +10,56 @@
       "destination": "/api/sitemap"
     },
     {
+      "source": "/api/public/snapshot",
+      "has": [
+        {
+          "type": "header",
+          "key": "sec-fetch-site",
+          "value": "(cross-site|same-site|none)"
+        }
+      ],
+      "destination": "/api/page-shell?route=/__denied"
+    },
+    {
+      "source": "/api/:area(database|data|analytics)/:rest*",
+      "has": [
+        {
+          "type": "header",
+          "key": "sec-fetch-site",
+          "value": "(cross-site|same-site|none)"
+        }
+      ],
+      "destination": "/api/page-shell?route=/__denied"
+    },
+    {
+      "source": "/api/public/snapshot",
+      "missing": [
+        {
+          "type": "header",
+          "key": "sec-fetch-site"
+        },
+        {
+          "type": "header",
+          "key": "referer"
+        }
+      ],
+      "destination": "/api/page-shell?route=/__denied"
+    },
+    {
+      "source": "/api/:area(database|data|analytics)/:rest*",
+      "missing": [
+        {
+          "type": "header",
+          "key": "sec-fetch-site"
+        },
+        {
+          "type": "header",
+          "key": "referer"
+        }
+      ],
+      "destination": "/api/page-shell?route=/__denied"
+    },
+    {
       "source": "/api/:first/:path*",
       "destination": "/api/[...path]"
     },

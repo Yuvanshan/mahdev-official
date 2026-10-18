@@ -260,7 +260,10 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       name: compName,
       alternateName: compName,
       url: SEO_ORIGIN,
-      logo: siteSettings?.logoUrl || companySettings?.logoUrl || `${SEO_ORIGIN}/logo.png`,
+      // Schema needs an absolute http(s) logo URL (not a relative path or inline data).
+      logo: [siteSettings?.logoUrl, companySettings?.logoUrl]
+        .map((url) => (typeof url === 'string' && url.startsWith('/') ? `${SEO_ORIGIN}${url}` : url))
+        .find((url) => typeof url === 'string' && /^https?:\/\//.test(url)) || `${SEO_ORIGIN}/logo.png`,
       description: siteSettings?.metaDescription || companySettings?.description || 'Mahdev Pvt Ltd – Creating. Capturing. Innovating. Multi-division enterprise group.',
       email: companySettings?.email || 'info@mahdev.lk',
       telephone: [companySettings?.primaryPhone || '075 092 8078', companySettings?.secondaryPhone || '075 092 8078'].filter(Boolean),
@@ -275,14 +278,14 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       address: [
         {
           '@type': 'PostalAddress',
-          streetAddress: companySettings?.offices?.colombo?.address || 'No. 128, Galle Road, Colombo 03, Sri Lanka',
+          streetAddress: companySettings?.offices?.colombo?.address || '41/22, Pickerings Road, Kotahena, Colombo 13',
           addressLocality: companySettings?.offices?.colombo?.city || 'Colombo',
           addressRegion: 'Western Province',
           addressCountry: 'LK',
         },
         {
           '@type': 'PostalAddress',
-          streetAddress: companySettings?.offices?.trincomalee?.address || 'No. 45, Main Street, Trincomalee, Sri Lanka',
+          streetAddress: companySettings?.offices?.trincomalee?.address || 'No 95/15, Iluppaikkulam, Kanniya Road, Trincomalee 31006',
           addressLocality: companySettings?.offices?.trincomalee?.city || 'Trincomalee',
           addressRegion: 'Eastern Province',
           addressCountry: 'LK',

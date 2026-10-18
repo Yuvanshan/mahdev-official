@@ -7,6 +7,8 @@
  * the home page's head. The React app still takes over in the browser.
  */
 
+import { getSwsStructuredData, SWS_BUSINESS, SWS_PRIMARY_HEADING } from '../../src/data/swsLocalSeo.js';
+
 export const SITE_ORIGIN = 'https://mahdev-official.vercel.app';
 
 export interface RouteSeo {
@@ -15,6 +17,8 @@ export interface RouteSeo {
   description: string;
   heading: string;
   intro: string;
+  /** Extra JSON-LD blocks added to this page's prerendered <head>. */
+  structuredData?: Array<Record<string, unknown>>;
 }
 
 // /gallery is not listed: the app renders it as the /services page and declares
@@ -29,10 +33,11 @@ export const PRERENDERED_ROUTES: RouteSeo[] = [
   },
   {
     path: '/sws',
-    title: 'SWS Event Management | Weddings, Decor & Stage Production',
-    description: 'SWS Event Management by Mahdev: wedding decorations, corporate events, stage engineering, equipment rentals and full event production in Sri Lanka.',
-    heading: 'SWS Event Management',
-    intro: 'We create moments, you make memories. SWS plans, designs and produces weddings, celebrations and corporate events across Sri Lanka.',
+    title: 'SWS Event Management | Wedding & Party Decorators in Trincomalee & Colombo',
+    description: 'SWS Event Management: luxury wedding, Manavarai and Poruwa decoration, birthday party styling, Manjal Neerattu Vizha ceremonies, photography and catering in Trincomalee and Colombo. Call or WhatsApp 075 092 8078.',
+    heading: SWS_PRIMARY_HEADING,
+    intro: `${SWS_BUSINESS.displayName}. Trincomalee: ${SWS_BUSINESS.trincomalee.full}. Colombo: ${SWS_BUSINESS.colombo.full}. Hotline / WhatsApp: ${SWS_BUSINESS.phoneDisplay}.`,
+    structuredData: getSwsStructuredData(),
   },
   {
     path: '/u1',

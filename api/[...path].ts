@@ -94,8 +94,36 @@ function isBrowserPageRequest(req: ApiRequest): boolean {
     (destination === 'document' || (!destination && accept.includes('text/html')));
 }
 
+// Data APIs used only by the website itself.
+// Images under /api/public/media/ stay public so link previews and image search work.
+const SITE_ONLY_API_PREFIXES = ['/api/public/snapshot', '/api/database', '/api/data/', '/api/analytics'];
+
+function headerValue(req: ApiRequest, name: string): string {
+  const value = req.headers[name];
+  return (Array.isArray(value) ? value[0] : value) || '';
+}
+
+// True when the request comes from a page on this same site. Browsers set
+// Sec-Fetch-Site themselves (pages cannot fake it); older browsers fall back
+// to the Origin/Referer host. Direct visits, other websites and scripts fail.
+function isFromThisSite(req: ApiRequest): boolean {
+  const fetchSite = headerValue(req, 'sec-fetch-site');
+  if (fetchSite) return fetchSite === 'same-origin';
+  const host = headerValue(req, 'x-forwarded-host') || headerValue(req, 'host');
+  const source = headerValue(req, 'origin') || headerValue(req, 'referer');
+  try {
+    return Boolean(host && source && new URL(source).host === host);
+  } catch {
+    return false;
+  }
+}
+
 export default async function handler(req: ApiRequest, res: ServerResponse): Promise<void> {
   const pathname = new URL(req.url || '/', 'http://localhost').pathname;
+  if (SITE_ONLY_API_PREFIXES.some((prefix) => pathname.startsWith(prefix)) && !isFromThisSite(req)) {
+    await sendNotFoundPage(req, res);
+    return;
+  }
   if (
     pathname.startsWith('/api/') &&
     !BROWSER_VISIBLE_API_PATHS.has(pathname) &&

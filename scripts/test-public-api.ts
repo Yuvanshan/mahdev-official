@@ -230,6 +230,35 @@ try {
     }
   });
 
+  await test('Data APIs only answer requests from the website itself', async () => {
+    const call = async (headers: Record<string, string>) => {
+      const res = makeRes();
+      await apiDispatcher(makeReq({ url: '/api/public/snapshot', headers: { host: 'example.test', ...headers } }), res);
+      return res;
+    };
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => new Response('<html><head><meta name="robots" content="index, follow" /></head></html>', { status: 200 })) as typeof fetch;
+    try {
+      for (const [label, headers] of [
+        ['typed into the address bar', { 'sec-fetch-site': 'none', 'sec-fetch-dest': 'document', accept: 'text/html' }],
+        ['another website', { 'sec-fetch-site': 'cross-site' }],
+        ['a script with no headers', {}],
+        ['a forged referer from another site', { referer: 'https://evil.example/page' }],
+      ] as Array<[string, Record<string, string>]>) {
+        const res = await call(headers);
+        assert.equal(res.statusCode, 404, `${label} should be blocked`);
+        assert.match(res.headers['content-type'], /text\/html/, `${label} should get the 404 page`);
+      }
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+    const fromSite = await call({ 'sec-fetch-site': 'same-origin', 'sec-fetch-dest': 'empty' });
+    assert.equal(fromSite.statusCode, 200, 'the website itself must get data');
+    assert.ok(JSON.parse(fromSite.body).collections);
+    const olderBrowser = await call({ referer: 'https://example.test/sws' });
+    assert.equal(olderBrowser.statusCode, 200, 'older browsers without Sec-Fetch-Site but a same-site referer must work');
+  });
+
   await test('Public orders get a server-side price check', async () => {
     const result = await handleTursoAction({
       action: 'write',

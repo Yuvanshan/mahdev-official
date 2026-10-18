@@ -217,7 +217,10 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
         <video
           ref={videoRef}
           src={effectiveVideoSrc}
-          autoPlay={!enableAutomaticAudio}
+          // Muted autoplay is allowed on every browser, including iOS; when
+          // enableAutomaticAudio is on, HeroVideoControls adds sound afterwards.
+          autoPlay
+          poster={posterImageUrl?.trim() || undefined}
           loop
           muted
           playsInline
@@ -241,7 +244,9 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
             handleVideoError();
           }}
           className={`absolute inset-0 w-full h-full object-cover z-1 transition-opacity duration-300 ease-out ${
-            isVideoReady ? 'opacity-100' : 'opacity-0'
+            // With a poster the element is shown straight away (poster first,
+            // then the video), so the hero is never blank while loading.
+            isVideoReady || posterImageUrl?.trim() ? 'opacity-100' : 'opacity-0'
           }`}
           title={title}
         />

@@ -18,6 +18,7 @@ import { SWSPackagesSection } from '../components/sws/SWSPackagesSection';
 import { SWSGallerySection } from '../components/sws/SWSGallerySection';
 import { SWSPortfolioSection } from '../components/sws/SWSPortfolioSection';
 import { SWSProcessSection } from '../components/sws/SWSProcessSection';
+import { SWSLocalSection } from '../components/sws/SWSLocalSection';
 import { SWSBookingModal } from '../components/sws/SWSBookingModal';
 import { SectionContainer } from '../components/ui/SectionContainer';
 import { Button } from '../components/ui/Button';
@@ -163,6 +164,9 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
         <SWSPackagesSection onBookPackage={handleBookPackage} />
 
         <SWSPortfolioSection onConsultationClick={() => handleBookNow()} />
+
+        {/* Local search: service keywords, exact business address/phone, map and FAQ. */}
+        <SWSLocalSection />
       </>
 
       {/* 7. INTERACTIVE BOOKING FOUNDATION MODAL */}

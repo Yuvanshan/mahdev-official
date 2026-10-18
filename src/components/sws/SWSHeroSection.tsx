@@ -4,6 +4,7 @@ import { ArrowRight } from 'lucide-react';
 import { HeroVideoBackground } from '../common/HeroVideoBackground';
 import { ScrollParallax } from '../motion/ParallelScroll';
 import { AnimatedHeroTitle } from '../common/AnimatedHeroTitle';
+import { SWS_PRIMARY_HEADING } from '../../data/swsLocalSeo';
 
 // Sky-300 → blue-200 → white, matching the previous clipped-text gradient.
 const HERO_TITLE_GRADIENT = ['#7dd3fc', '#bfdbfe', '#ffffff'];
@@ -28,6 +29,7 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
       <ScrollParallax targetRef={heroRef} distance={34} className="absolute -inset-y-10 inset-x-0 overflow-hidden">
         <HeroVideoBackground
           videoUrl="/assets/hero_main.mp4?v=2"
+          posterImageUrl="/assets/hero_main_poster.jpg"
           title="SWS Luxury Event Decor & Rentals"
           enableAutomaticAudio
         />
@@ -37,8 +39,13 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-28 z-20 w-full">
         <div className="max-w-3xl space-y-6">
           
-          {/* High-Impact Headline */}
-          <motion.h1
+          {/* Page heading for search engines: the business and service keywords. */}
+          <h1 className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-200 sm:text-sm">
+            {SWS_PRIMARY_HEADING}
+          </h1>
+
+          {/* High-Impact Headline (tagline, visually unchanged) */}
+          <motion.p
             aria-label="We Create Moments. You Make Memories."
             initial={{ opacity: 0.85, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -47,7 +54,7 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
           >
             <span className="block"><AnimatedHeroTitle text="We Create Moments." /></span>
             <span className="block"><AnimatedHeroTitle text="You Make Memories." delay={0.2} gradient={HERO_TITLE_GRADIENT} /></span>
-          </motion.h1>
+          </motion.p>
 
           <motion.button
             type="button"

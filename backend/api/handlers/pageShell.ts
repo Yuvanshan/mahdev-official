@@ -49,7 +49,7 @@ async function getPublishedSlugs(): Promise<Set<string>> {
 async function resolveStatus(path: string): Promise<200 | 404> {
   const normalised = path.replace(/^\/+|\/+$/g, '').toLowerCase();
   const firstSegment = normalised.split('/')[0] || '';
-  if (RETIRED_ADMIN_SEGMENTS.has(firstSegment)) return 404;
+  if (RETIRED_ADMIN_SEGMENTS.has(firstSegment) || firstSegment === '__denied') return 404;
   if (APP_ROUTE_SEGMENTS.has(firstSegment)) return 200;
   return (await getPublishedSlugs()).has(normalised) ? 200 : 404;
 }
