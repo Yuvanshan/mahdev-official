@@ -16,7 +16,7 @@ delete process.env.ADMIN_SESSION_SECRET;
 
 const { initializeTursoDatabase, writeTursoBatch, listTursoDocuments } = await import('../backend/db/tursoDatabase');
 const { handleTursoAction } = await import('../backend/api/tursoRoutes');
-const { default: publicSnapshotHandler } = await import('../backend/api/handlers/publicSnapshot');
+const { default: publicSnapshotHandler, publicInlineMediaHandler } = await import('../backend/api/handlers/publicSnapshot');
 const { default: pageShellHandler } = await import('../backend/api/handlers/pageShell');
 const { default: apiDispatcher } = await import('../api/[...path]');
 const { default: analyticsHandler } = await import('../backend/api/handlers/analytics');
@@ -41,6 +41,13 @@ function makeRes() {
   return res;
 }
 
+// A real (tiny) PNG padded past the inline-image threshold, as stored in records.
+const LOGO_BYTES = Buffer.concat([
+  Buffer.from('89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489', 'hex'),
+  Buffer.alloc(2048, 7),
+]);
+const INLINE_LOGO = `data:image/png;base64,${LOGO_BYTES.toString('base64')}`;
+
 const results: Array<{ name: string; ok: boolean; error?: string }> = [];
 async function test(name: string, fn: () => Promise<void>) {
   try { await fn(); results.push({ name, ok: true }); }
@@ -62,6 +69,7 @@ try {
     { type: 'set', collection: 'pages', parentPath: '', id: 'p1', data: { slug: 'summer-offer', isPublished: true } },
     { type: 'set', collection: 'pages', parentPath: '', id: 'p2', data: { slug: 'hidden-draft', isPublished: false } },
     { type: 'set', collection: 'products', parentPath: '', id: 'prod-1', data: { name: 'Lamp', price: 100 } },
+    { type: 'set', collection: 'websiteContent', parentPath: '', id: 'brand', data: { logo: { dark: INLINE_LOGO } } },
     { type: 'set', collection: 'items', parentPath: '', id: 'i1', data: { division: 'sws', featured: true, rank: 1, code: '1' } },
     { type: 'set', collection: 'items', parentPath: '', id: 'i2', data: { divisionId: 'sws-events', featured: false, rank: '1' } },
     { type: 'set', collection: 'items', parentPath: '', id: 'i3', data: { division: 'u1', featured: 1, rank: null } },
@@ -82,6 +90,26 @@ try {
     const notModified = makeRes();
     await publicSnapshotHandler(makeReq({ url: '/api/public/snapshot', headers: { 'if-none-match': res.headers.etag } }), notModified);
     assert.equal(notModified.statusCode, 304);
+  });
+
+  await test('Inline images leave the snapshot and are served from an immutable media URL', async () => {
+    const res = makeRes();
+    await publicSnapshotHandler(makeReq({ url: '/api/public/snapshot' }), res);
+    assert.ok(!res.body.includes('data:image/png;base64'), 'inline image still inside the snapshot');
+    const brand = JSON.parse(res.body).collections.websiteContent.find((d: any) => d.id === 'brand');
+    const mediaUrl: string = brand.data.logo.dark;
+    assert.match(mediaUrl, /^\/api\/public\/media\/[a-f0-9]{32}\.png$/);
+
+    const media = makeRes();
+    await publicInlineMediaHandler(makeReq({ url: mediaUrl }), media);
+    assert.equal(media.statusCode, 200);
+    assert.equal(media.headers['content-type'], 'image/png');
+    assert.match(media.headers['cdn-cache-control'], /immutable/);
+    assert.ok(Buffer.isBuffer(media.body) && media.body.equals(LOGO_BYTES), 'image bytes differ from the stored image');
+
+    const missing = makeRes();
+    await publicInlineMediaHandler(makeReq({ url: `/api/public/media/${'0'.repeat(32)}.png` }), missing);
+    assert.equal(missing.statusCode, 404);
   });
 
   await test('Snapshot ordering and limits match the server SQL exactly', async () => {

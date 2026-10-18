@@ -50,6 +50,42 @@ export const PUBLIC_SNAPSHOT_COLLECTIONS = [
 // Vercel serverless responses are capped at 4.5 MB; stay safely below it.
 const MAX_SNAPSHOT_BYTES = 4_000_000;
 
+// Inline images (base64 data URLs stored in records, e.g. a 550 KB logo) are
+// moved out of the snapshot and served from /api/public/media/<hash>.<ext>
+// with an immutable one-year CDN cache. The snapshot stays small, and each
+// image leaves the function roughly once per CDN region instead of on every
+// snapshot refresh. Stored data is not changed.
+const INLINE_IMAGE_MIN_LENGTH = 1024;
+const MEDIA_PATH_PREFIX = '/api/public/media/';
+
+interface InlineImage {
+  mimeType: string;
+  bytes: Buffer;
+}
+
+// Most recent images seen by this instance, keyed by content hash.
+let inlineImageCache = new Map<string, InlineImage>();
+
+function extractInlineImages(value: unknown, images: Map<string, InlineImage>): unknown {
+  if (typeof value === 'string') {
+    if (value.length < INLINE_IMAGE_MIN_LENGTH) return value;
+    const match = value.match(/^data:(image\/(?:png|jpe?g|webp|gif|avif));base64,([A-Za-z0-9+/=\s]+)$/i);
+    if (!match) return value;
+    const mimeType = match[1].toLowerCase();
+    const hash = createHash('sha256').update(value).digest('hex').slice(0, 32);
+    if (!images.has(hash)) images.set(hash, { mimeType, bytes: Buffer.from(match[2], 'base64') });
+    const extension = mimeType.split('/')[1].replace('jpeg', 'jpg');
+    return `${MEDIA_PATH_PREFIX}${hash}.${extension}`;
+  }
+  if (Array.isArray(value)) return value.map((item) => extractInlineImages(item, images));
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, extractInlineImages(item, images)])
+    );
+  }
+  return value;
+}
+
 interface SnapshotDocument {
   id: string;
   data: Record<string, unknown>;
@@ -95,6 +131,16 @@ async function buildSnapshot(): Promise<PublicSnapshot> {
   } catch (error) {
     console.error('[PublicSnapshot] Could not read the media deletion registry:', error);
   }
+
+  // Replace inline images with cacheable media URLs (see extractInlineImages).
+  const images = new Map<string, InlineImage>();
+  for (const name of Object.keys(collections)) {
+    collections[name] = extractInlineImages(collections[name], images) as SnapshotDocument[];
+  }
+  for (const key of Object.keys(documents)) {
+    documents[key] = extractInlineImages(documents[key], images) as SnapshotDocument | null;
+  }
+  inlineImageCache = images;
 
   // Drop the largest collections until the payload fits the platform limit.
   const sizeOf = (value: unknown) => Buffer.byteLength(JSON.stringify(value));
@@ -144,5 +190,46 @@ export default async function publicSnapshotHandler(req: IncomingMessage, res: S
     res.statusCode = 503;
     res.setHeader('Cache-Control', 'no-store');
     res.end(JSON.stringify({ success: false, error: 'Public snapshot is temporarily unavailable.' }));
+  }
+}
+
+/**
+ * GET /api/public/media/<hash>.<ext>
+ * Serves an inline image extracted from the public snapshot. Only images that
+ * are part of public data can be served; the URL changes whenever the image
+ * changes, so it can be cached for a year.
+ */
+export async function publicInlineMediaHandler(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const pathname = new URL(req.url || '/', 'http://localhost').pathname;
+  // Works for both the Vercel path (/api/public/media/x) and Express' relative one.
+  const hash = pathname.match(/\/([a-f0-9]{32})(?:\.[a-z]+)?$/)?.[1] || '';
+  if ((req.method !== 'GET' && req.method !== 'HEAD') || !/^[a-f0-9]{32}$/.test(hash)) {
+    res.statusCode = 404;
+    res.setHeader('Cache-Control', 'no-store');
+    res.end();
+    return;
+  }
+
+  try {
+    if (!inlineImageCache.has(hash)) await buildSnapshot(); // cold instance: rebuild the image index
+    const image = inlineImageCache.get(hash);
+    if (!image) {
+      res.statusCode = 404;
+      res.setHeader('Cache-Control', 'public, max-age=60');
+      res.end();
+      return;
+    }
+    res.statusCode = 200;
+    res.setHeader('Content-Type', image.mimeType);
+    res.setHeader('Content-Length', String(image.bytes.length));
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.setHeader('CDN-Cache-Control', 'public, max-age=31536000, immutable');
+    res.setHeader('Vercel-CDN-Cache-Control', 'public, max-age=31536000, immutable');
+    res.end(req.method === 'HEAD' ? undefined : image.bytes);
+  } catch (error) {
+    console.error('[PublicSnapshot] Inline media lookup failed:', error);
+    res.statusCode = 503;
+    res.setHeader('Cache-Control', 'no-store');
+    res.end();
   }
 }

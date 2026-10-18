@@ -18,7 +18,7 @@ import {
 import careerCvHandler from './handlers/careers/cv.js';
 import careerStatusHandler from './handlers/careers/status.js';
 import careerApplicationHandler from './handlers/careers/application.js';
-import publicSnapshotHandler from './handlers/publicSnapshot.js';
+import publicSnapshotHandler, { publicInlineMediaHandler } from './handlers/publicSnapshot.js';
 import analyticsHandler from './handlers/analytics.js';
 
 const apiRouter = Router();
@@ -42,6 +42,10 @@ apiRouter.delete('/careers/application', async (req: Request, res: Response) => 
 
 apiRouter.post('/analytics', (req: Request, res: Response) => {
   void analyticsHandler(req, res);
+});
+
+apiRouter.get('/public/media/:file', (req: Request, res: Response) => {
+  void publicInlineMediaHandler(req, res);
 });
 
 apiRouter.get('/public/snapshot', (req: Request, res: Response) => {

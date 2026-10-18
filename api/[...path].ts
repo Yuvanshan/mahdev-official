@@ -12,7 +12,7 @@ import adminCustomersHandler from '../backend/api/handlers/admin/customers.js';
 import notificationHandler from '../backend/api/handlers/notifications.js';
 import publicEmailHandler from '../backend/api/handlers/publicEmail.js';
 import sitemapHandler from '../backend/api/handlers/sitemap.js';
-import publicSnapshotHandler from '../backend/api/handlers/publicSnapshot.js';
+import publicSnapshotHandler, { publicInlineMediaHandler } from '../backend/api/handlers/publicSnapshot.js';
 import analyticsHandler from '../backend/api/handlers/analytics.js';
 import pageShellHandler, { sendNotFoundPage } from '../backend/api/handlers/pageShell.js';
 
@@ -96,7 +96,12 @@ function isBrowserPageRequest(req: ApiRequest): boolean {
 
 export default async function handler(req: ApiRequest, res: ServerResponse): Promise<void> {
   const pathname = new URL(req.url || '/', 'http://localhost').pathname;
-  if (pathname.startsWith('/api/') && !BROWSER_VISIBLE_API_PATHS.has(pathname) && isBrowserPageRequest(req)) {
+  if (
+    pathname.startsWith('/api/') &&
+    !BROWSER_VISIBLE_API_PATHS.has(pathname) &&
+    !pathname.startsWith('/api/public/media/') &&
+    isBrowserPageRequest(req)
+  ) {
     await sendNotFoundPage(req, res);
     return;
   }
@@ -122,6 +127,10 @@ export default async function handler(req: ApiRequest, res: ServerResponse): Pro
   }
   if (pathname === '/api/analytics') {
     await analyticsHandler(req, res);
+    return;
+  }
+  if (pathname.startsWith('/api/public/media/')) {
+    await publicInlineMediaHandler(req, res);
     return;
   }
   if (pathname === '/api/public/snapshot') {
