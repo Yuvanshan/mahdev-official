@@ -140,7 +140,8 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
   const isDivisionDataLoading = isInitialLoading || (!firestoreDiv && divisions.length === 0) || !isDivisionLoaded(divisionId);
 
   // Immediate guard: If division is marked as Coming Soon, display DivisionComingSoonView
-  const isDefaultComingSoon = normalizedKey === 'it' || normalizedKey === 'travels' || normalizedKey === 'mart';
+  // Default when the record has no status: IT and Mart live, Travels coming soon.
+  const isDefaultComingSoon = normalizedKey === 'travels';
   const isComingSoon = (firestoreDiv as any)?.isComingSoon !== undefined
     ? !!(firestoreDiv as any)?.isComingSoon
     : (firestoreDiv as any)?.comingSoon !== undefined

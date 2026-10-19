@@ -53,21 +53,21 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
       },
     },
     {
-      id: 'travels',
-      label: 'Travel',
-      icon: Compass,
-      isActive: normalizedPath === '/travels' || normalizedPath.startsWith('/travels/'),
-      onClick: () => {
-        onNavigate('/travels');
-      },
-    },
-    {
       id: 'mart',
       label: 'Mart',
       icon: ShoppingBag,
       isActive: normalizedPath === '/mart' || normalizedPath.startsWith('/mart/') || normalizedPath === '/online-mart' || normalizedPath.startsWith('/online-mart/') || normalizedPath === '/shop' || normalizedPath.startsWith('/shop/'),
       onClick: () => {
         onNavigate('/mart');
+      },
+    },
+    {
+      id: 'travels',
+      label: 'Travel',
+      icon: Compass,
+      isActive: normalizedPath === '/travels' || normalizedPath.startsWith('/travels/'),
+      onClick: () => {
+        onNavigate('/travels');
       },
     },
   ];

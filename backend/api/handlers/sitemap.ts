@@ -17,6 +17,7 @@ const STATIC_PUBLIC_PATHS = [
   '/mart',
   '/services',
   '/insights',
+  '/catalog',
   '/book',
   '/about',
   '/gallery',

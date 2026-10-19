@@ -811,6 +811,22 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       cmsService.syncEntityFromFirestore('divisions', fresh);
       setDeviceCacheItem('mahdev_cached_divisions', JSON.stringify(fresh));
     };
+    // Stale-while-revalidate for division records: a saved copy is shown at once and the
+    // latest status (e.g. "coming soon" switched off in admin) is fetched in the background.
+    const revalidateDivisionsInBackground = () => {
+      if (forceRefresh || !hasValidDeviceCacheItem('mahdev_cached_divisions')) return;
+      void firestoreDivisionsService.getDivisions(true)
+        .then((fresh) => {
+          const sorted = sortDivisions(fresh);
+          divisionsRef.current = sorted;
+          setDivisions(sorted);
+          cmsService.syncEntityFromFirestore('divisions', sorted);
+          setDeviceCacheItem('mahdev_cached_divisions', JSON.stringify(sorted));
+        })
+        .catch((error: unknown) => {
+          console.warn('[FirestoreDataContext] Background division refresh failed; using saved divisions.', error);
+        });
+    };
     const refreshHomepageSettings = async () => {
       if (!forceRefresh && hasValidDeviceCacheItem('mahdev_cached_homepage_config')) return;
       const fresh = await firestoreSettingsService.getHomepageSettings(forceRefresh);
@@ -872,6 +888,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         // Division records hold the live status (e.g. "coming soon") set in admin; without
         // them a direct visit falls back to the built-in default. Served from the snapshot.
         await Promise.all([loadDivisionData(divisionRoute[1], forceRefresh), refreshDivisions()]);
+        revalidateDivisionsInBackground();
         return;
       }
 
@@ -969,11 +986,12 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       if (
-        /^\/(?:mart|shop|store|online-mart|mahdev-mart)(?:\/|$)/.test(normalizedRoute) ||
+        /^\/(?:mart|shop|store|online-mart|mahdev-mart|catalog)(?:\/|$)/.test(normalizedRoute) ||
         normalizedRoute === '/divisions/mart' ||
         normalizedRoute === '/division/mart'
       ) {
         await Promise.all([refreshProducts(), refreshCategories(), refreshDivisions()]);
+        revalidateDivisionsInBackground();
         return;
       }
 

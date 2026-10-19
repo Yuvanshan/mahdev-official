@@ -547,7 +547,8 @@ function AppContent() {
         (normalized === 'sws' && (d.id === 'sws-event-management' || d.slug === 'sws-event-management'))
     );
 
-    const isDefaultComingSoon = normalized === 'travels' || normalized === 'it' || normalized === 'mart';
+    // Default when the record has no status: IT and Mart live, Travels coming soon.
+    const isDefaultComingSoon = normalized === 'travels';
 
     if (!matched) {
       try {

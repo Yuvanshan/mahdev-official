@@ -82,6 +82,13 @@ export const PRERENDERED_ROUTES: RouteSeo[] = [
     intro: 'Learnings and guidance from the Mahdev teams.',
   },
   {
+    path: '/catalog',
+    title: 'Mahdev Mart Product Catalogue | Event Decor, Gifts & More in Sri Lanka',
+    description: 'Browse the Mahdev Mart product catalogue: event and home decor, foil balloons, gifts and more, with island-wide delivery in Sri Lanka. Order easily on WhatsApp.',
+    heading: 'Mahdev Mart product catalogue',
+    intro: 'Search Mahdev Mart products by name or category and order directly on WhatsApp with island-wide delivery.',
+  },
+  {
     path: '/book',
     title: 'Book a Service | Mahdev Sri Lanka',
     description: 'Book Mahdev event, studio, IT and travel services online in a few simple steps.',

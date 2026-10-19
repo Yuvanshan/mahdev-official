@@ -79,7 +79,7 @@ export const DIVISION_DOCUMENT_MAP: Record<string, {
     imageUrl: '',
     logoUrl: '/assets/images/travels_logo.svg',
     route: '/travels',
-    order: 4,
+    order: 5,
   },
   'online-mart': {
     docId: 'mart',
@@ -90,7 +90,7 @@ export const DIVISION_DOCUMENT_MAP: Record<string, {
     imageUrl: '',
     logoUrl: '/assets/images/mart_logo.svg',
     route: '/mart',
-    order: 5,
+    order: 4,
   },
 };
 
@@ -197,8 +197,9 @@ export function getDivisionFallbackOrder(id: string): number {
   if (canonical === 'sws') return 1;
   if (canonical === 'u1') return 2;
   if (canonical === 'it') return 3;
-  if (canonical === 'travels') return 4;
-  if (canonical === 'mart') return 5;
+  // Display order: Mart 4th, Travels 5th.
+  if (canonical === 'mart') return 4;
+  if (canonical === 'travels') return 5;
   return 99;
 }
 
@@ -232,6 +233,8 @@ export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
       divisionKey: item.divisionKey || shortId,
       logoUrl,
       logo: logoUrl,
+      // The five core divisions always appear in the fixed site order (SWS, U1, IT, Mart, Travels).
+      order: getDivisionFallbackOrder(shortId) < 99 ? getDivisionFallbackOrder(shortId) : item.order,
     };
     const existing = mapByCanonical.get(shortId);
     if (!existing || new Date(normalized.updatedAt || 0) >= new Date(existing.updatedAt || 0)) {
@@ -247,7 +250,8 @@ export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
 export function getDefaultDivisions(): FirestoreDivision[] {
   return Object.values(DIVISION_DOCUMENT_MAP).map((d) => {
     const shortKey = (d.docId === 'u1-studio' ? 'u1' : d.docId === 'it-solutions' ? 'it' : d.docId === 'online-mart' ? 'mart' : d.docId) as DivisionId;
-    const isComingSoonDefault = shortKey === 'it' || shortKey === 'travels' || shortKey === 'mart';
+    // Default status like SWS and U1: IT and Mart live; only Travels is coming soon.
+    const isComingSoonDefault = shortKey === 'travels';
     const config = DIVISIONS[shortKey] || {};
 
     const item: FirestoreDivision = {

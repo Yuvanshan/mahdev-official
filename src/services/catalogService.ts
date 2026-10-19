@@ -94,7 +94,7 @@ export function mapFirestoreProductToCatalog(
     reviewsCount: (fp as any).reviewsCount || 0,
     isFeatured: (fp as any).isFeatured ?? true,
     brand: (fp as any).brand || 'Mahdev',
-    status: fp.isPublished === false || fp.status === 'draft' ? 'draft' : 'active',
+    status: fp.isPublished === false || fp.status === 'draft' || (fp as any).status === 'archived' ? 'draft' : 'active',
     createdAt: fp.createdAt || new Date().toISOString(),
     updatedAt: fp.updatedAt || new Date().toISOString(),
   };
@@ -111,7 +111,8 @@ export function mapFirestoreCategoryToCatalog(fc: FirestoreCategory): CatalogCat
     imageUrl: fc.imageUrl || '',
     iconName: (fc as any).iconName || 'Package',
     itemCount: (fc as any).itemCount || (fc as any).productCount || 0,
-    status: (fc.status === 'inactive' ? 'inactive' : 'active'),
+    // Drafts, archived and unpublished products are never shown publicly.
+    status: ((fc as any).status === 'inactive' || (fc as any).status === 'draft' || (fc as any).status === 'archived' || (fc as any).isPublished === false ? 'inactive' : 'active'),
     sortOrder: fc.order || (fc as any).sortOrder || 0,
   };
 }
@@ -207,9 +208,10 @@ class CatalogService {
 
     // Filter by Category
     if (filters.categoryId && filters.categoryId !== 'all') {
-      result = result.filter(
-        (p) => p.categoryId === filters.categoryId || p.categorySlug === filters.categoryId
-      );
+      // Products may store their category by id or by slug: match either.
+      const selected = this.getCategoryByIdOrSlug(filters.categoryId);
+      const keys = new Set([filters.categoryId, selected?.id, selected?.slug].filter(Boolean));
+      result = result.filter((p) => keys.has(p.categoryId) || keys.has(p.categorySlug));
     }
 
     // Filter by Stock Status
@@ -312,7 +314,8 @@ class CatalogService {
   // ----------------------------------------------------
   public getRelatedProducts(product: CatalogProduct, limit: number = 4): CatalogProduct[] {
     return this.products
-      .filter((p) => p.id !== product.id && (p.categoryId === product.categoryId || p.divisionId === product.divisionId))
+      // Same division only (e.g. Mart products never suggest SWS rental items).
+      .filter((p) => p.id !== product.id && p.divisionId === product.divisionId)
       .sort((a, b) => (b.categoryId === product.categoryId ? 1 : 0) - (a.categoryId === product.categoryId ? 1 : 0))
       .slice(0, limit)
       .map((item) => ({ ...item, stockStatus: this.getComputedStockStatus(item) }));

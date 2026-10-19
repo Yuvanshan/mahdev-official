@@ -19,6 +19,7 @@ Allow: /u1
 Allow: /it
 Allow: /travels
 Allow: /mart
+Allow: /catalog
 Allow: /about
 Allow: /portfolio
 Allow: /contact

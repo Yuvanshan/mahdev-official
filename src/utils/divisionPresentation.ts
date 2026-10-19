@@ -24,6 +24,8 @@ const CANONICAL_IDS: Record<string, string> = {
   'mahdev-mart': 'mart',
 };
 
+const CORE_DIVISION_ORDER: Record<string, number> = { sws: 1, u1: 2, it: 3, mart: 4, travels: 5 };
+
 const DEFAULT_DIVISION_LOGOS: Record<string, string> = {
   sws: '/assets/images/sws_logo.jpeg',
   u1: '/assets/images/u1_logo.jpeg',
@@ -98,7 +100,8 @@ export function getDivisionCardItems(divisions: FirestoreDivision[]): DivisionCa
           division.comingSoon ||
           division.status === 'coming_soon'
         ),
-        order: division.order ?? Number.MAX_SAFE_INTEGER,
+        // Fixed site order for the core divisions (Mart 4th, Travels 5th); others keep their stored order.
+        order: CORE_DIVISION_ORDER[id] ?? division.order ?? Number.MAX_SAFE_INTEGER,
       });
     });
 

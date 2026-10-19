@@ -106,7 +106,9 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
           }
         }
       }
-      return result;
+      // Fixed site order: SWS, U1, IT, Mart, Travels.
+      const navOrder: Record<string, number> = { sws: 1, u1: 2, it: 3, mart: 4, travels: 5 };
+      return result.sort((a, b) => (navOrder[a.id] ?? 99) - (navOrder[b.id] ?? 99));
     }
     return Object.values(DIVISIONS);
   }, [divisions]);
