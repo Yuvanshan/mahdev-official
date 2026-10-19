@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { ArrowRight } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, H3, Body } from '../ui/Heading';
 import { ScrollReveal } from '../motion/MotionWrappers';
@@ -45,8 +46,10 @@ export const FaqSection: React.FC<FaqSectionProps> = ({
       <div className="mt-6 divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
         {items.map((faq) => (
           <details key={faq.question} className="group p-5">
-            <summary className="cursor-pointer list-none font-semibold text-slate-900">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-slate-900 [&::-webkit-details-marker]:hidden">
               <H3 className="text-base">{faq.question}</H3>
+              {/* Arrow shows the item can be opened; it turns down when open. */}
+              <ArrowRight className="h-5 w-5 shrink-0 text-blue-600 transition-transform duration-200 group-open:rotate-90" aria-hidden="true" />
             </summary>
             <Body className="mt-3 text-slate-600">{faq.answer}</Body>
           </details>

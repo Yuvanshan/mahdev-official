@@ -316,11 +316,29 @@ export const HomeGallerySection: React.FC = () => {
                 ))}
               </div>
             )}
-            <div className="mt-3 flex w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-slate-200">
-              <span className="truncate font-medium">{activeImage.item.title}</span>
-              <span className="shrink-0 rounded-full bg-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-slate-300">
-                {activeImage.item.category}
-              </span>
+            <div className="mt-3 flex w-full flex-col gap-3 rounded-xl border border-white/10 bg-slate-900/70 px-3 py-3 text-sm text-slate-200 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="truncate font-medium">{activeImage.item.title}</span>
+                <span className="shrink-0 rounded-full bg-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-slate-300">
+                  {activeImage.item.category}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  openWhatsAppInquiry({
+                    title: activeImage.item.title,
+                    itemId: activeImage.item.id,
+                    category: activeImage.item.category,
+                    location: activeImage.item.location,
+                    imageUrl: activeImage.item.images[activeImage.imageIndex] || activeImage.item.url,
+                    type: 'gallery',
+                  })
+                }
+                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-700"
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden="true" /> Enquire on WhatsApp
+              </button>
             </div>
           </div>
         </div>

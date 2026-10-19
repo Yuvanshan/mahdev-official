@@ -1,121 +1,191 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, MessageCircle, X } from 'lucide-react';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
+import { getWhatsAppInquiryUrl, type WhatsAppInquiryOptions } from '../../utils/whatsapp';
 
 export interface ServiceDetails {
   title: string;
   images: string[];
+  subtitle?: string;
   description?: string;
   divisionName?: string;
   features?: string[];
   deliverables?: string[];
+  /** Extra titled lists (e.g. specs, process, technologies). */
+  sections?: Array<{ label: string; items: string[] }>;
   priceLabel?: string;
   turnaround?: string;
+}
+
+export interface ServiceAction {
+  label: string;
+  onClick: () => void;
 }
 
 interface ServiceDetailsModalProps {
   service: ServiceDetails | null;
   onClose: () => void;
-  /** Optional primary action, e.g. open the division page or booking. */
-  primaryAction?: { label: string; onClick: () => void };
-  whatsappNumber?: string;
+  /** Main action next to WhatsApp, e.g. "Book Now" or "Explore SWS". */
+  primaryAction?: ServiceAction;
+  /** Further actions, e.g. "Request Quote". */
+  actions?: ServiceAction[];
+  /** Extra details for the standard WhatsApp enquiry message (category, ids...). */
+  whatsappInquiry?: Partial<WhatsAppInquiryOptions>;
 }
 
 /**
- * Full service details opened from a ServiceTile's View button. Images use
- * the same 4:3 frame as gallery images.
+ * Full service details opened from a ServiceTile's View button, shared by
+ * every service listing (landing, /services, SWS, U1, IT, Travels...).
+ * - Desktop: near full-screen with space on all four sides; images on the
+ *   left (whole image, never cropped, with thumbnails), details on the right.
+ * - Mobile: full screen; image on top, scrolling details and an action bar
+ *   that stays clear of the phone's bottom edge.
+ * Rendered into <body> so transformed/animated parents cannot clip it.
  */
 export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
   service,
   onClose,
   primaryAction,
-  whatsappNumber = '94750928078',
+  actions = [],
+  whatsappInquiry,
 }) => {
   const [imageIndex, setImageIndex] = useState(0);
+  const images = service ? service.images.filter(Boolean) : [];
 
   useEffect(() => {
     setImageIndex(0);
     if (!service) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
+    const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
+      if (event.key === 'ArrowRight') setImageIndex((i) => (images.length ? (i + 1) % images.length : 0));
+      if (event.key === 'ArrowLeft') setImageIndex((i) => (images.length ? (i - 1 + images.length) % images.length : 0));
     };
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', closeOnEscape);
+    window.addEventListener('keydown', onKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
-      window.removeEventListener('keydown', closeOnEscape);
+      window.removeEventListener('keydown', onKeyDown);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [service, onClose]);
 
-  if (!service) return null;
-  const images = service.images.filter(Boolean);
-  const showImage = (delta: number) => setImageIndex((current) => (current + delta + images.length) % images.length);
-  const whatsappText = encodeURIComponent(`Hello, I'd like to know more about "${service.title}".`);
+  if (!service || typeof document === 'undefined') return null;
 
-  return (
+  const showImage = (delta: number) => setImageIndex((current) => (current + delta + images.length) % images.length);
+  // Same message format and links as every other WhatsApp enquiry on the site.
+  const whatsappHref = getWhatsAppInquiryUrl({
+    title: service.title,
+    divisionName: service.divisionName,
+    price: service.priceLabel,
+    description: service.description,
+    imageUrl: images[imageIndex],
+    type: 'service',
+    ...whatsappInquiry,
+  });
+  const listGroups = [
+    { label: 'What’s included', items: service.features },
+    { label: 'Deliverables', items: service.deliverables },
+    ...(service.sections || []),
+  ].filter((group) => group.items && group.items.length > 0);
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-[120] flex items-end justify-center bg-slate-950/70 p-0 sm:items-center sm:p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label={service.title}
+      className="fixed inset-0 z-[200] flex justify-center bg-slate-950/80 backdrop-blur-sm lg:p-8 xl:p-10"
       onClick={onClose}
     >
       <div
-        className="max-h-[92svh] w-full max-w-3xl overflow-y-auto rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-label={service.title}
+        className="relative flex h-full w-full max-w-7xl flex-col overflow-hidden bg-white shadow-2xl lg:flex-row lg:rounded-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="relative">
-          {images.length > 0 && (
-            <ImageWithShimmer
-              src={images[imageIndex]}
-              alt={service.title}
-              className="aspect-[4/3] w-full bg-slate-100"
-              fallbackText={service.title}
-              loading="eager"
-            />
-          )}
-          {images.length > 1 && (
-            <>
-              <button type="button" onClick={() => showImage(-1)} aria-label="Previous image" className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow hover:bg-white">
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button type="button" onClick={() => showImage(1)} aria-label="Next image" className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow hover:bg-white">
-                <ChevronRight className="h-5 w-5" />
-              </button>
-              <span className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-slate-950/70 px-2.5 py-1 text-xs font-semibold text-white">
-                {imageIndex + 1} / {images.length}
-              </span>
-            </>
-          )}
-          <button type="button" onClick={onClose} aria-label="Close" className="absolute right-3 top-3 rounded-full bg-white/90 p-2 shadow hover:bg-white">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-3 top-3 z-20 rounded-full bg-white/95 p-2 text-slate-900 shadow-md hover:bg-white"
+        >
+          <X className="h-5 w-5" />
+        </button>
 
-        <div className="space-y-5 p-5 sm:p-7">
-          <div>
-            {service.divisionName && (
-              <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">{service.divisionName}</p>
+        {/* Images: whole picture (contain), thumbnails underneath. */}
+        <div className="flex shrink-0 flex-col bg-slate-950 lg:w-[58%]">
+          <div className="relative h-[42svh] w-full sm:h-[48svh] lg:h-auto lg:flex-1">
+            {images.length > 0 ? (
+              <ImageWithShimmer
+                src={images[imageIndex]}
+                alt={service.title}
+                className="absolute inset-0"
+                imageFit="contain"
+                fallbackText={service.title}
+                loading="eager"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-400">No photos yet</div>
             )}
-            <h2 className="font-display text-2xl font-bold text-slate-900">{service.title}</h2>
-            {(service.priceLabel || service.turnaround) && (
-              <p className="mt-2 text-sm font-medium text-slate-600">
-                {[service.priceLabel, service.turnaround].filter(Boolean).join(' · ')}
-              </p>
+            {images.length > 1 && (
+              <>
+                <button type="button" onClick={() => showImage(-1)} aria-label="Previous image" className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow hover:bg-white">
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button type="button" onClick={() => showImage(1)} aria-label="Next image" className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow hover:bg-white">
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+                <span className="absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-slate-950/70 px-2.5 py-1 text-xs font-semibold text-white">
+                  {imageIndex + 1} / {images.length}
+                </span>
+              </>
             )}
           </div>
-
-          {service.description && (
-            <p className="whitespace-pre-line text-sm leading-7 text-slate-700">{service.description}</p>
+          {images.length > 1 && (
+            <div className="hidden gap-2 overflow-x-auto p-3 sm:flex">
+              {images.map((image, index) => (
+                <button
+                  key={`${image}-${index}`}
+                  type="button"
+                  onClick={() => setImageIndex(index)}
+                  aria-label={`Show image ${index + 1}`}
+                  className={`relative h-14 w-20 shrink-0 overflow-hidden rounded-md border-2 ${index === imageIndex ? 'border-white' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                >
+                  <ImageWithShimmer src={image} alt="" className="absolute inset-0" loading="lazy" />
+                </button>
+              ))}
+            </div>
           )}
+        </div>
 
-          {[{ label: 'What’s included', items: service.features }, { label: 'Deliverables', items: service.deliverables }]
-            .filter((group) => group.items && group.items.length > 0)
-            .map((group) => (
+        {/* Details and actions. */}
+        <div className="flex min-h-0 flex-1 flex-col lg:w-[42%]">
+          <div className="flex-1 space-y-5 overflow-y-auto overscroll-contain p-5 sm:p-7 lg:pt-10">
+            <div>
+              {service.divisionName && (
+                <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">{service.divisionName}</p>
+              )}
+              <h2 className="pr-10 font-display text-2xl font-bold leading-tight text-slate-900 lg:text-3xl">{service.title}</h2>
+              {service.subtitle && <p className="mt-1 text-sm text-slate-500">{service.subtitle}</p>}
+              {(service.priceLabel || service.turnaround) && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {service.priceLabel && (
+                    <span className="rounded-lg bg-blue-50 px-3 py-1.5 text-sm font-bold text-slate-900">{service.priceLabel}</span>
+                  )}
+                  {service.turnaround && (
+                    <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700">{service.turnaround}</span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {service.description && (
+              <p className="whitespace-pre-line text-sm leading-7 text-slate-700">{service.description}</p>
+            )}
+
+            {listGroups.map((group) => (
               <div key={group.label}>
                 <h3 className="mb-2 text-sm font-bold text-slate-900">{group.label}</h3>
-                <ul className="grid gap-2 sm:grid-cols-2">
+                <ul className="grid gap-2">
                   {group.items!.map((item) => (
                     <li key={item} className="flex items-start gap-2 text-sm text-slate-700">
                       <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" aria-hidden="true" />
@@ -125,29 +195,40 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
                 </ul>
               </div>
             ))}
+          </div>
 
-          <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row">
+          <div className="flex flex-col gap-2 border-t border-slate-200 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-5">
             <a
-              href={`https://wa.me/${whatsappNumber}?text=${whatsappText}`}
+              href={whatsappHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 text-sm font-semibold text-white hover:bg-emerald-700"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 text-sm font-semibold text-white hover:bg-emerald-700"
             >
               <MessageCircle className="h-4 w-4" aria-hidden="true" /> Enquire on WhatsApp
             </a>
-            {primaryAction && (
-              <button
-                type="button"
-                onClick={primaryAction.onClick}
-                className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-slate-300 px-5 text-sm font-semibold text-slate-800 hover:border-blue-600 hover:text-blue-700"
-              >
-                {primaryAction.label} <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </button>
+            {(primaryAction || actions.length > 0) && (
+              <div className="flex gap-2">
+                {[primaryAction, ...actions].filter(Boolean).map((action) => (
+                  <button
+                    key={action!.label}
+                    type="button"
+                    // Close first so a booking/quote form opened by the action is not hidden behind this modal.
+                    onClick={() => {
+                      onClose();
+                      action!.onClick();
+                    }}
+                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-800 hover:border-blue-600 hover:text-blue-700"
+                  >
+                    {action!.label} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                ))}
+              </div>
             )}
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
@@ -164,7 +245,7 @@ export function toServiceDetails(service: Record<string, any>, divisionName?: st
     divisionName: service.divisionName || divisionName,
     features: Array.isArray(service.features) ? service.features : undefined,
     deliverables: Array.isArray(service.deliverables) ? service.deliverables : undefined,
-    priceLabel: typeof price === 'number' && price > 0 ? `From LKR ${price.toLocaleString()}` : undefined,
+    priceLabel: typeof price === 'number' && price > 0 ? `From LKR ${price.toLocaleString()}` : typeof price === 'string' && price.trim() ? price : undefined,
     turnaround: service.turnaroundTime,
   };
 }

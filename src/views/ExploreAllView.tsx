@@ -3,6 +3,7 @@ import { ArrowRight, Camera, CheckCircle2, ChevronLeft, ChevronRight, Filter, Im
 import { SEOHead } from '../components/layout/SEOHead';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { ServiceTile } from '../components/services/ServiceTile';
+import { ServiceDetailsModal, toServiceDetails } from '../components/services/ServiceDetailsModal';
 import { CatalogProductModal } from '../components/catalog/CatalogProductModal';
 import { GallerySectionShimmer } from '../components/common/GallerySectionShimmer';
 import { ImageWithShimmer } from '../components/ui/ImageWithShimmer';
@@ -478,35 +479,31 @@ export const ExploreAllView: React.FC<{
         <CatalogProductModal product={selectedProduct} onClose={() => setSelectedProduct(null)} onSelectRelated={setSelectedProduct} />
       )}
 
-      {selectedService && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 p-4" role="dialog" aria-modal="true" aria-label={selectedService.title || selectedService.name} onClick={() => setSelectedService(null)}>
-          <div className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            <div className="relative aspect-[4/3] bg-slate-100">
-              {((selectedService.images || []).filter(Boolean)[0] || selectedService.imageUrl) && (
-                <ImageWithShimmer src={(selectedService.images || []).filter(Boolean)[0] || selectedService.imageUrl} alt={selectedService.title || selectedService.name} className="absolute inset-0" />
-              )}
-              <button type="button" onClick={() => setSelectedService(null)} className="absolute right-3 top-3 rounded-full bg-black/60 p-2 text-white" aria-label="Close service details"><X className="h-4 w-4" /></button>
-            </div>
-            <div className="p-5 sm:p-6">
-              <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">{selectedService.category || selectedService.divisionName}</p>
-              <h2 className="mt-1 text-xl font-semibold text-slate-900">{selectedService.title || selectedService.name}</h2>
-              <p className="mt-3 text-sm leading-6 text-slate-600">{selectedService.description}</p>
-              {!!selectedService.features?.length && (
-                <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-                  {selectedService.features.slice(0, 6).map((feature, index) => <li key={`${feature}-${index}`} className="flex items-start gap-2 text-xs text-slate-700"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-600" />{feature}</li>)}
-                </ul>
-              )}
-              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
-                <span className="text-sm font-semibold text-slate-900">{selectedService.startingPrice || selectedService.price ? `From ${formatCurrency(Number(selectedService.startingPrice || selectedService.price), 'LKR')}` : 'Contact for pricing'}</span>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => openWhatsAppInquiry({ title: selectedService.title || selectedService.name, category: selectedService.category, divisionName: selectedService.divisionName, serviceId: selectedService.id, description: selectedService.description, type: 'service' })} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700"><MessageCircle className="h-3.5 w-3.5" />Ask</button>
-                  <button type="button" onClick={() => { setSelectedService(null); onNavigate(`/book/service/${selectedService.id}`); }} className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700">Book <ArrowRight className="h-3.5 w-3.5" /></button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Shared full-screen service details (images left, details right; full screen on mobile). */}
+      <ServiceDetailsModal
+        service={selectedService ? toServiceDetails(selectedService as unknown as Record<string, any>, selectedService.divisionName) : null}
+        onClose={() => setSelectedService(null)}
+        primaryAction={selectedService ? {
+          label: 'Book',
+          onClick: () => {
+            const id = selectedService.id;
+            setSelectedService(null);
+            onNavigate(`/book/service/${id}`);
+          },
+        } : undefined}
+        actions={selectedService ? [{
+          label: 'Full service page',
+          onClick: () => {
+            const slug = selectedService.slug || selectedService.id;
+            setSelectedService(null);
+            onNavigate(`/services/${encodeURIComponent(slug)}`);
+          },
+        }] : []}
+        whatsappInquiry={selectedService ? {
+          category: selectedService.category,
+          serviceId: selectedService.id,
+        } : undefined}
+      />
 
       {selectedGalleryItem && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/85 p-4" role="dialog" aria-modal="true" aria-label={selectedGalleryItem.data.title} onClick={() => setSelectedGalleryItem(null)}>
