@@ -178,22 +178,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                   size="sm"
                   onClick={() => {
                     closeCart();
-                    if (onNavigate) onNavigate('/mart');
+                    if (onNavigate) onNavigate('/catalog');
                   }}
                   className="text-xs"
                 >
-                  Browse Mahdev Mart
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    closeCart();
-                    if (onNavigate) onNavigate('/mart');
-                  }}
-                  className="text-xs"
-                >
-                  Browse Mahdev Mart
+                  Browse Products
                 </Button>
               </div>
             </div>
@@ -459,10 +448,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                   Clear Cart
                 </button>
                 <button
-                  onClick={closeCart}
-                  className="font-semibold text-slate-600 hover:text-slate-900 cursor-pointer"
+                  onClick={() => {
+                    closeCart();
+                    if (onNavigate) onNavigate('/catalog');
+                  }}
+                  className="font-semibold text-[#0052FF] hover:text-blue-800 cursor-pointer"
                 >
-                  Continue Shopping
+                  Browse Products →
                 </button>
               </div>
             </div>

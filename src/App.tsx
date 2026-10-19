@@ -5,7 +5,7 @@ import { Navigation } from './components/layout/Navigation';
 import { Footer } from './components/layout/Footer';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { DivisionId, LegalPolicyType } from './types';
-import { DIVISIONS } from './config/divisions';
+import { DIVISIONS, FORCED_COMING_SOON_DIVISIONS } from './config/divisions';
 import { CustomCursor } from './components/motion/CustomCursor';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
@@ -533,6 +533,9 @@ function AppContent() {
               : rawDivId === 'sws' || rawDivId === 'sws-event-management' || rawDivId === 'sws-events'
                 ? 'sws'
                 : rawDivId;
+
+    // Divisions not launched yet always show "Coming soon" (src/config/divisions.ts).
+    if (FORCED_COMING_SOON_DIVISIONS.has(normalized)) return true;
 
     const matched = divisions.find(
       (d) =>

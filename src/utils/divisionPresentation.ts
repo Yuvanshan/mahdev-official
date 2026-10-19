@@ -1,3 +1,4 @@
+import { FORCED_COMING_SOON_DIVISIONS } from '../config/divisions';
 import { FirestoreDivision } from '../types/firestore';
 
 export interface DivisionCardItem {
@@ -96,6 +97,7 @@ export function getDivisionCardItems(divisions: FirestoreDivision[]): DivisionCa
           ? DEFAULT_DIVISION_LOGOS.sws
           : pickImageLogo(division.logoUrl, division.logo) || DEFAULT_DIVISION_LOGOS[id] || '',
         isComingSoon: Boolean(
+          FORCED_COMING_SOON_DIVISIONS.has(id) ||
           division.isComingSoon ||
           division.comingSoon ||
           division.status === 'coming_soon'

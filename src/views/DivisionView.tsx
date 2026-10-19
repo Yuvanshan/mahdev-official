@@ -25,7 +25,7 @@ import { IconRenderer } from '../components/ui/IconRenderer';
 import { SEOHead } from '../components/layout/SEOHead';
 import { SlideIn, ScrollReveal } from '../components/motion/MotionWrappers';
 import { ScrollParallax } from '../components/motion/ParallelScroll';
-import { DIVISIONS, DIVISION_LIST } from '../config/divisions';
+import { DIVISIONS, DIVISION_LIST, FORCED_COMING_SOON_DIVISIONS } from '../config/divisions';
 import { DivisionId } from '../types';
 import { DivisionComingSoonView } from './DivisionComingSoonView';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
@@ -142,7 +142,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
   // Immediate guard: If division is marked as Coming Soon, display DivisionComingSoonView
   // Default when the record has no status: IT and Mart live, Travels coming soon.
   const isDefaultComingSoon = normalizedKey === 'travels';
-  const isComingSoon = (firestoreDiv as any)?.isComingSoon !== undefined
+  const isComingSoon = FORCED_COMING_SOON_DIVISIONS.has(normalizedKey) ? true : (firestoreDiv as any)?.isComingSoon !== undefined
     ? !!(firestoreDiv as any)?.isComingSoon
     : (firestoreDiv as any)?.comingSoon !== undefined
     ? !!(firestoreDiv as any)?.comingSoon

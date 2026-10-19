@@ -266,3 +266,9 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
 };
 
 export const DIVISION_LIST: DivisionConfig[] = Object.values(DIVISIONS);
+
+/**
+ * Divisions that always show the "Coming soon" page, regardless of the admin
+ * setting. Remove an id from this list to launch that division.
+ */
+export const FORCED_COMING_SOON_DIVISIONS: ReadonlySet<string> = new Set(['travels']);

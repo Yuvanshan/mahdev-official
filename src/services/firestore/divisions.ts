@@ -236,8 +236,18 @@ export function sortDivisions(list: FirestoreDivision[]): FirestoreDivision[] {
       // The five core divisions always appear in the fixed site order (SWS, U1, IT, Mart, Travels).
       order: getDivisionFallbackOrder(shortId) < 99 ? getDivisionFallbackOrder(shortId) : item.order,
     };
+    // Each division has a main record (id "it", "mart", "travels"...) and older alias
+    // records ("it-solutions", "online-mart"...). The main record always wins, so a
+    // stale alias (e.g. still "coming soon") can never override the admin setting.
     const existing = mapByCanonical.get(shortId);
-    if (!existing || new Date(normalized.updatedAt || 0) >= new Date(existing.updatedAt || 0)) {
+    const isMainRecord = item.id === shortId;
+    const existingIsMain = Boolean(existing && (existing as any).__mainRecord);
+    if (
+      !existing ||
+      (isMainRecord && !existingIsMain) ||
+      (isMainRecord === existingIsMain && new Date(normalized.updatedAt || 0) >= new Date(existing.updatedAt || 0))
+    ) {
+      Object.defineProperty(normalized, '__mainRecord', { value: isMainRecord, enumerable: false });
       mapByCanonical.set(shortId, normalized);
     }
   }

@@ -48,11 +48,9 @@ export const TravelsHeroSection: React.FC<TravelsHeroSectionProps> = ({
 
   const effectiveVideoUrl = (travelsDiv as any)?.heroMediaType === 'image' && !(travelsDiv as any)?.heroVideoUrl && !(travelsDiv as any)?.videoUrl ? '' : rawHeroVideo;
 
-  const headline =
-    (travelsDiv as any)?.heroHeadline ||
-    (travelsDiv as any)?.hero?.title ||
-    travelsDiv?.name ||
-    'Bespoke Expeditions Across Sri Lanka';
+  // Travel-specific headline (the stored division headline contained SWS event text).
+  // Matches the /travels loading screen headline.
+  const headline = 'Bespoke Expeditions Across Sri Lanka';
 
   // Clean hero (headline + one button), matching the SWS and U1 pages.
   return (
