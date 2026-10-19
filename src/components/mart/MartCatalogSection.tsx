@@ -24,6 +24,8 @@ interface MartCatalogSectionProps {
   onSearchChange: (query: string) => void;
   onViewProduct: (product: Product) => void;
   onAddToCart: (product: Product) => void;
+  /** Opens the full product catalogue (/catalog). */
+  onViewAllProducts?: () => void;
 }
 
 export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
@@ -33,6 +35,7 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
   onSearchChange,
   onViewProduct,
   onAddToCart,
+  onViewAllProducts,
 }) => {
   const [sortBy, setSortBy] = useState<'featured' | 'price-low' | 'price-high' | 'rating'>('featured');
   const [inStockOnly, setInStockOnly] = useState(false);
@@ -136,6 +139,17 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
               )}
             </ScrollReveal>
           </div>
+
+          {onViewAllProducts && (
+            <button
+              type="button"
+              onClick={onViewAllProducts}
+              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#0052FF] px-5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+            >
+              View all products
+              <span aria-hidden="true">→</span>
+            </button>
+          )}
 
           {/* Product search (moved here from the hero, which is now kept clean). */}
           <form

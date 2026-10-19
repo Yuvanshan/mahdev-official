@@ -17,6 +17,8 @@ export interface RouteSeo {
   description: string;
   heading: string;
   intro: string;
+  /** 1200x630 share image (path) for Facebook/WhatsApp/X; defaults to the site image. */
+  ogImage?: string;
   /** Extra JSON-LD blocks added to this page's prerendered <head>. */
   structuredData?: Array<Record<string, unknown>>;
 }
@@ -33,6 +35,7 @@ export const PRERENDERED_ROUTES: RouteSeo[] = [
   },
   {
     path: '/sws',
+    ogImage: '/assets/og/og-sws.jpg',
     title: 'SWS Event Management | Wedding & Party Decorators in Trincomalee & Colombo',
     description: 'SWS Event Management: luxury wedding, Manavarai and Poruwa decoration, birthday party styling, Manjal Neerattu Vizha ceremonies, photography and catering in Trincomalee and Colombo. Call or WhatsApp 075 092 8078.',
     heading: SWS_PRIMARY_HEADING,
@@ -41,6 +44,7 @@ export const PRERENDERED_ROUTES: RouteSeo[] = [
   },
   {
     path: '/u1',
+    ogImage: '/assets/og/og-u1.jpg',
     title: 'U1 Studio | Photography, 4K Cinema & Creative Studio',
     description: 'U1 Studio by Mahdev: editorial photography, 4K wedding films, fashion portraits, product imaging and heirloom albums in Sri Lanka.',
     heading: 'U1 Studio',

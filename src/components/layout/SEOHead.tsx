@@ -136,10 +136,16 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     let effectiveOgTitle = ogTitle || dynamicFullTitle;
     let effectiveOgDesc = ogDescription || effectiveDesc;
     let effectiveCanonical = canonicalUrl;
-    let effectiveOgImage = siteSettings?.ogImageUrl || `${SEO_ORIGIN}/logo.png`;
+    const currentPath = window.location.pathname || '/';
+    // 1200x630 share images (Facebook/WhatsApp/X): division pages use their own,
+    // others the admin-configured image or the default. Must be absolute URLs.
+    const divisionShareImage = /^\/sws(\/|$)/.test(currentPath)
+      ? '/assets/og/og-sws.jpg'
+      : /^\/u1(\/|$)/.test(currentPath) ? '/assets/og/og-u1.jpg' : '';
+    const shareImage = divisionShareImage || siteSettings?.ogImageUrl || '/assets/og/og-default.jpg';
+    let effectiveOgImage = shareImage.startsWith('/') ? `${SEO_ORIGIN}${shareImage}` : shareImage;
     let effectiveKeywords = keywords;
     let allowIndexing = true;
-    const currentPath = window.location.pathname || '/';
     const matched = seoConfigs.find(
       (config) => config.route === currentPath ||
         (config.canonicalUrl && canonicalUrl && config.canonicalUrl.includes(currentPath))

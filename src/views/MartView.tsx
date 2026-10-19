@@ -112,10 +112,8 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
           setSelectedCategoryId(catId);
           scrollToAnchor('products');
         }}
-        onExploreAll={() => {
-          setSelectedCategoryId(null);
-          scrollToAnchor('products');
-        }}
+        // Hero button opens the full Mart product catalogue.
+        onExploreAll={() => onNavigate('/catalog')}
       />
 
       {/* 2. CATEGORIES SECTION */}
@@ -128,6 +126,7 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
 
       {/* 3. CATALOG & FILTERED PRODUCTS GRID */}
       <MartCatalogSection
+        onViewAllProducts={() => onNavigate('/catalog')}
         selectedCategoryId={selectedCategoryId}
         searchQuery={searchQuery}
         onSelectCategory={setSelectedCategoryId}
