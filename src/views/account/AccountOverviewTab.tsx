@@ -90,11 +90,11 @@ export const AccountOverviewTab: React.FC<AccountOverviewTabProps> = ({
             <Button
               variant="electric"
               size="sm"
-              onClick={() => onNavigate('/catalog')}
+              onClick={() => onNavigate('/mart')}
               leftIcon={<ShoppingBag className="w-3.5 h-3.5" />}
               className="text-xs font-bold"
             >
-              Explore Catalog
+              Shop Mahdev Mart
             </Button>
             <Button
               variant="outline"
@@ -204,7 +204,7 @@ export const AccountOverviewTab: React.FC<AccountOverviewTabProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onNavigate('/catalog')}
+                onClick={() => onNavigate('/mart')}
                 className="text-xs mt-2"
               >
                 Start Shopping

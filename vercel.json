@@ -64,7 +64,7 @@
       "destination": "/api/[...path]"
     },
     {
-      "source": "/:route(divisions|sws|u1|it|travels|mart|services|insights|catalog|book|about|portfolio|milestones|testimonials|careers|clients|contact|promotions|privacy-policy|terms-and-conditions|refund-policy|shipping-policy|cookie-policy)",
+      "source": "/:route(divisions|sws|u1|it|travels|mart|services|insights|book|about|portfolio|milestones|testimonials|careers|clients|contact|promotions|privacy-policy|terms-and-conditions|refund-policy|shipping-policy|cookie-policy)",
       "destination": "/:route/index.html"
     },
     {

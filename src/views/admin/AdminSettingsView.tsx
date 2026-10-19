@@ -1908,6 +1908,46 @@ export const AdminSettingsView: React.FC = () => {
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:bg-white focus:outline-none"
                 />
               </div>
+
+              {/* Mart delivery pricing used by the cart and WhatsApp orders. */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Delivery Fee (LKR)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="50"
+                  value={systemSettings.deliveryFee ?? 650}
+                  onChange={(e) =>
+                    setSystemSettings({
+                      ...systemSettings,
+                      deliveryFee: Math.max(0, parseFloat(e.target.value) || 0),
+                    })
+                  }
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Free Delivery For Orders Over (LKR)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="500"
+                  value={systemSettings.freeDeliveryThreshold ?? 15000}
+                  onChange={(e) =>
+                    setSystemSettings({
+                      ...systemSettings,
+                      freeDeliveryThreshold: Math.max(0, parseFloat(e.target.value) || 0),
+                    })
+                  }
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:bg-white focus:outline-none"
+                />
+                <p className="mt-1 text-[11px] text-slate-500">Set to 0 to turn off free delivery.</p>
+              </div>
             </div>
           </div>
 

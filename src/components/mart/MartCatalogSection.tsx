@@ -8,7 +8,7 @@ import {
   ArrowUpDown,
   Filter,
 } from 'lucide-react';
-import { Product, MART_PRODUCTS, MART_CATEGORIES, mapFirestoreProductToMart, mapFirestoreCategoryToMart } from '../../data/martData';
+import { Product, MART_PRODUCTS, MART_CATEGORIES, mapFirestoreProductToMart, mapFirestoreCategoryToMart, productInMartCategory } from '../../data/martData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { MartProductCard } from './MartProductCard';
 import { SectionContainer } from '../ui/SectionContainer';
@@ -43,9 +43,10 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
   // Dynamically resolve products from Firestore (or fallback)
   const allMartProducts = useMemo<Product[]>(() => {
     if (rawProducts && rawProducts.length > 0) {
-      const martDivisionProducts = rawProducts.filter(
-        (p) => !p.division || p.division === 'mart' || (p as any).divisionId === 'mart'
-      );
+      // Published Mart products only (same rule as the category counts).
+      const martDivisionProducts = rawProducts
+        .filter((p) => !p.division || p.division === 'mart' || (p as any).divisionId === 'mart')
+        .filter((p) => p.isPublished !== false && (p as any).status !== 'draft' && (p as any).status !== 'archived');
       if (martDivisionProducts.length > 0) {
         return martDivisionProducts.map((p) => mapFirestoreProductToMart(p, rawCategories));
       }
@@ -65,16 +66,13 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
     return [];
   }, [rawCategories]);
 
-  if (allMartProducts.length === 0) {
-    return null;
-  }
-
   // Filter & Sort Products
   const filteredProducts = useMemo(() => {
     return allMartProducts.filter((product) => {
       // Category filter
-      if (selectedCategoryId && product.category !== selectedCategoryId) {
-        return false;
+      if (selectedCategoryId) {
+        const selected = allMartCategories.find((c) => c.id === selectedCategoryId) || { id: selectedCategoryId };
+        if (!productInMartCategory(product.category, selected)) return false;
       }
       // Search query filter
       if (searchQuery.trim()) {
@@ -101,7 +99,12 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
       // Default: featured first, then best-seller
       return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
     });
-  }, [allMartProducts, selectedCategoryId, searchQuery, inStockOnly, maxPrice, sortBy]);
+  }, [allMartProducts, allMartCategories, selectedCategoryId, searchQuery, inStockOnly, maxPrice, sortBy]);
+
+  // Early return only after every hook has run (keeps hook order stable; React error #310).
+  if (allMartProducts.length === 0) {
+    return null;
+  }
 
   const activeCategoryName = allMartCategories.find((c) => c.id === selectedCategoryId)?.name || 'All Products';
 

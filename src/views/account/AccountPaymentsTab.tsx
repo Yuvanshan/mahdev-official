@@ -77,10 +77,10 @@ export const AccountPaymentsTab: React.FC<AccountPaymentsTabProps> = ({
           <Button
             variant="electric"
             size="sm"
-            onClick={() => onNavigate('/catalog')}
+            onClick={() => onNavigate('/mart')}
             className="text-xs font-bold"
           >
-            Explore Catalog
+            Shop Mahdev Mart
           </Button>
         </div>
       ) : (

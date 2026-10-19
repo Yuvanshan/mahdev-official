@@ -85,7 +85,7 @@ const CatalogProductModalContent: React.FC<
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 overflow-y-auto bg-neutral-950/70 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="fixed inset-0 z-[200] overflow-y-auto bg-neutral-950/70 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 lg:p-8">
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -305,7 +305,7 @@ const CatalogProductModalContent: React.FC<
                       className="py-3.5 px-5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all bg-[#0052FF] hover:bg-blue-700 text-white cursor-pointer min-h-[44px] shrink-0"
                     >
                       <ShoppingCart className="w-4 h-4 shrink-0" />
-                      <span>Checkout</span>
+                      <span>Order Now</span>
                     </button>
                   </div>
 

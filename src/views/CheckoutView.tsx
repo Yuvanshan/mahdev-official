@@ -289,9 +289,9 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
           </div>
           <h2 className="font-display text-xl font-bold text-slate-900">Your Cart is Empty</h2>
           <p className="text-xs text-slate-500">
-            Please add items or services from our Master Catalog or divisions before proceeding to checkout.
+            Please add items or services from Mahdev Mart or our divisions before proceeding to checkout.
           </p>
-          <Button variant="electric" onClick={() => onNavigate('/catalog')} className="w-full">
+          <Button variant="electric" onClick={() => onNavigate('/mart')} className="w-full">
             Browse Master Catalog
           </Button>
         </div>
@@ -311,7 +311,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
         {/* Header Breadcrumb */}
         <div className="mb-6 flex items-center justify-between">
           <button
-            onClick={() => onNavigate('/catalog')}
+            onClick={() => onNavigate('/mart')}
             className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -780,7 +780,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                   </h3>
                   <button
                     type="button"
-                    onClick={() => onNavigate('/catalog')}
+                    onClick={() => onNavigate('/mart')}
                     className="text-xs text-blue-600 font-semibold hover:underline cursor-pointer"
                   >
                     Edit Cart

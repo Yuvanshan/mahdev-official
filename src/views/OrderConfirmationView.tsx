@@ -185,7 +185,7 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
           </form>
 
           <div className="pt-4 border-t border-slate-100 flex items-center justify-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => onNavigate('/catalog')} className="text-xs">
+            <Button variant="outline" size="sm" onClick={() => onNavigate('/mart')} className="text-xs">
               Go to Catalog
             </Button>
             <Button variant="outline" size="sm" onClick={() => onNavigate('/')} className="text-xs">
@@ -598,7 +598,7 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
                   Pay Now
                 </Button>
               )}
-              <Button variant="outline" size="sm" onClick={() => onNavigate('/catalog')}>
+              <Button variant="outline" size="sm" onClick={() => onNavigate('/mart')}>
                 Continue Shopping
               </Button>
               <Button variant="outline" size="sm" onClick={() => onNavigate('/')} rightIcon={<ArrowRight className="w-4 h-4" />}>

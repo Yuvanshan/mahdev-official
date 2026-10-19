@@ -10,7 +10,7 @@ import {
   Headphones,
   Laptop,
 } from 'lucide-react';
-import { MART_CATEGORIES, MartCategory, mapFirestoreCategoryToMart } from '../../data/martData';
+import { MART_CATEGORIES, MartCategory, mapFirestoreCategoryToMart, mapFirestoreProductToMart, productInMartCategory } from '../../data/martData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
@@ -23,7 +23,7 @@ interface MartCategoriesSectionProps {
 export const MartCategoriesSection: React.FC<MartCategoriesSectionProps> = ({
   onSelectCategory,
 }) => {
-  const { categories: rawCategories } = useFirestoreDataContext();
+  const { categories: rawCategories, products: rawProducts } = useFirestoreDataContext();
 
   const categories = useMemo<MartCategory[]>(() => {
     if (rawCategories && rawCategories.length > 0) {
@@ -31,11 +31,19 @@ export const MartCategoriesSection: React.FC<MartCategoriesSectionProps> = ({
         (c) => !c.division || c.division === 'mart' || (c as any).divisionId === 'mart'
       );
       if (martCats.length > 0) {
-        return martCats.map(mapFirestoreCategoryToMart);
+        // Count the Mart products actually in each category (same rule as the catalogue filter).
+        const martProducts = (rawProducts || [])
+          .filter((p) => !p.division || p.division === 'mart' || (p as any).divisionId === 'mart')
+          .filter((p) => p.isPublished !== false && (p as any).status !== 'draft' && (p as any).status !== 'archived')
+          .map((p) => mapFirestoreProductToMart(p, rawCategories));
+        return martCats.map(mapFirestoreCategoryToMart).map((category) => ({
+          ...category,
+          itemCount: martProducts.filter((product) => productInMartCategory(product.category, category)).length,
+        }));
       }
     }
     return [];
-  }, [rawCategories]);
+  }, [rawCategories, rawProducts]);
 
   if (categories.length === 0) {
     return null;

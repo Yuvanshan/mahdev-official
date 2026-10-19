@@ -78,7 +78,7 @@ export function resolveItemDirectUrl(options: WhatsAppInquiryOptions, effectiveS
   const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://mahdev.lk';
 
   if (options.type === 'product' && options.productId) {
-    return `${origin}/catalog?id=${encodeURIComponent(options.productId)}`;
+    return `${origin}/mart?id=${encodeURIComponent(options.productId)}`;
   }
   if (options.type === 'service' && options.serviceId) {
     return `${origin}/services/${encodeURIComponent(options.serviceId)}`;
@@ -95,7 +95,7 @@ export function resolveItemDirectUrl(options: WhatsAppInquiryOptions, effectiveS
     return `${origin}${options.productUrl.startsWith('/') ? '' : '/'}${options.productUrl}`;
   }
   if (options.type === 'product') {
-    return `${origin}/catalog?sku=${encodeURIComponent(effectiveSku)}`;
+    return `${origin}/mart?sku=${encodeURIComponent(effectiveSku)}`;
   }
   if (options.type === 'service') {
     return `${origin}/services?q=${encodeURIComponent(options.title)}`;
@@ -134,7 +134,7 @@ export function resolveItemDirectUrl(options: WhatsAppInquiryOptions, effectiveS
   if (typeof window !== 'undefined' && window.location.href.startsWith('http')) {
     return window.location.href;
   }
-  return `${origin}/catalog`;
+  return `${origin}/mart`;
 }
 
 /**
@@ -278,11 +278,11 @@ export function buildWhatsAppOrderMessage(payload: WhatsAppOrderPayload): string
     const itemSku = item.sku || deriveLookupSku(item.name);
     const skuTag = `[SKU: \`${itemSku}\`]`;
     const itemDirectUrl = item.productId
-      ? `${origin}/catalog?id=${encodeURIComponent(item.productId)}`
+      ? `${origin}/mart?id=${encodeURIComponent(item.productId)}`
       : item.itemUrl || (
         item.slug
-          ? `${origin}/catalog?product=${encodeURIComponent(item.slug)}`
-          : `${origin}/catalog?sku=${encodeURIComponent(itemSku)}`
+          ? `${origin}/mart?product=${encodeURIComponent(item.slug)}`
+          : `${origin}/mart?sku=${encodeURIComponent(itemSku)}`
       );
 
     let line = `${index + 1}. ${skuTag} *${item.name}*` +

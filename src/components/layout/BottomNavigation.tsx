@@ -76,7 +76,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
     <nav
       id="floating-bottom-navbar"
       aria-label="Mobile Navigation"
-      className="lg:hidden fixed bottom-3 left-0 right-0 z-50 flex justify-center items-center pointer-events-none px-2"
+      className="lg:hidden fixed bottom-3 left-0 right-0 z-40 flex justify-center items-center pointer-events-none px-2"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0.5rem)' }}
     >
       <div className="pointer-events-auto flex items-center justify-between gap-0.5 w-full max-w-[28rem] px-1.5 py-1.5 rounded-full bg-slate-950/95 backdrop-blur-xl border border-white/10 shadow-2xl shadow-slate-950/50">

@@ -195,13 +195,6 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  if (services.length === 0 && (isInitialLoading || isFetching)) {
-    return (
-      <div className="pt-24 pb-20 min-h-[60vh] bg-white">
-        <ServicesSectionShimmer divisionName="Enterprise" />
-      </div>
-    );
-  }
 
   const activeServices = useMemo(() => {
     return services.filter((s) => (s as any).status !== 'archived');
@@ -290,6 +283,15 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
       return matchesDivision && matchesCategory && matchesQuery;
     });
   }, [activeServices, selectedDivision, selectedCategory, searchQuery]);
+
+  // Loading state returned only after every hook has run (stable hook order).
+  if (services.length === 0 && (isInitialLoading || isFetching)) {
+    return (
+      <div className="pt-24 pb-20 min-h-[60vh] bg-white">
+        <ServicesSectionShimmer divisionName="Enterprise" />
+      </div>
+    );
+  }
 
   const divisionTabs: { id: DivisionId | 'all'; label: string; count: number }[] = [
     { id: 'all', label: 'All Services', count: activeServices.length },
@@ -575,7 +577,7 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
       {/* 5. Call to Action Banner */}
       <CallToActionSection
         onPrimaryClick={() => onNavigate('/contact')}
-        onSecondaryClick={() => onNavigate('/catalog')}
+        onSecondaryClick={() => onNavigate('/mart')}
       />
     </div>
   );

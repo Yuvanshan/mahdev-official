@@ -413,6 +413,10 @@ export interface FirestoreSiteSettings {
   taxRate?: number;
   vatTaxPercentage?: number;
   bookingDepositPercent?: number;
+  /** Mart delivery fee in LKR (Admin → Settings → Commerce). */
+  deliveryFee?: number;
+  /** Orders at or above this subtotal (LKR) get free delivery; 0 disables free delivery. */
+  freeDeliveryThreshold?: number;
   legalRegistrationNumber?: string;
   enableStockAlertEmails?: boolean;
   enableSmsAlerts?: boolean;

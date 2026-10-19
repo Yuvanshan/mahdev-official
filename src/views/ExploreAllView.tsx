@@ -123,7 +123,10 @@ export const ExploreAllView: React.FC<{
     isProductsLoading,
     isGalleryLoading,
   } = useFirestoreDataContext();
-  const [query, setQuery] = useState('');
+  // Pre-fill from ?q= (used by the 404 page search and WhatsApp service links).
+  const [query, setQuery] = useState(() =>
+    typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('q')?.trim() || ''
+  );
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedService, setSelectedService] = useState<FirestoreService | null>(null);
   const [selectedGalleryItem, setSelectedGalleryItem] = useState<{ data: FirestoreGallery; images: string[] } | null>(null);

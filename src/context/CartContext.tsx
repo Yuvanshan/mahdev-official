@@ -5,6 +5,7 @@ import { analyticsService } from '../services/analyticsService';
 import { cmsService } from '../services/cmsService';
 import { CmsCoupon } from '../types/cms';
 import { formatCurrency } from '../utils/currency';
+import { useFirestoreDataContext } from './FirestoreDataContext';
 
 interface CartContextType {
   cartItems: CartItem[];
@@ -57,13 +58,46 @@ const VALID_COUPONS: CouponCode[] = [
   },
 ];
 
-const FREE_SHIPPING_THRESHOLD = 15000; // 15,000 LKR for automatic free courier delivery
-const STANDARD_SHIPPING_RATE = 650; // 650 LKR standard islandwide shipping
+// Defaults until set in Admin → Settings → Commerce (deliveryFee / freeDeliveryThreshold).
+const DEFAULT_FREE_SHIPPING_THRESHOLD = 15000; // LKR
+const DEFAULT_SHIPPING_RATE = 650; // LKR islandwide delivery
+
+// The cart is kept on this device so it survives refreshes and later visits.
+const CART_STORAGE_KEY = 'mahdev_cart_v1';
+
+function loadStoredCart(): CartItem[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const parsed: unknown = JSON.parse(window.localStorage.getItem(CART_STORAGE_KEY) || '[]');
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is CartItem =>
+          Boolean(item) && typeof item === 'object' &&
+          typeof (item as CartItem).id === 'string' &&
+          typeof (item as CartItem).quantity === 'number' &&
+          typeof (item as CartItem).itemTotal === 'number')
+      : [];
+  } catch {
+    return [];
+  }
+}
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [cartItems, setCartItems] = useState<CartItem[]>(loadStoredCart);
+  const { siteSettings } = useFirestoreDataContext();
+  const shippingRate = typeof siteSettings?.deliveryFee === 'number' ? siteSettings.deliveryFee : DEFAULT_SHIPPING_RATE;
+  const freeShippingThreshold = typeof siteSettings?.freeDeliveryThreshold === 'number'
+    ? siteSettings.freeDeliveryThreshold
+    : DEFAULT_FREE_SHIPPING_THRESHOLD;
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+    } catch {
+      // Storage may be full or blocked (private mode); the cart still works for this visit.
+    }
+  }, [cartItems]);
   const [appliedCoupon, setAppliedCoupon] = useState<CouponCode | null>(null);
 
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
@@ -101,11 +135,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let shippingFee = 0;
 
     if (requiresShippingAddress && subtotal > 0) {
-      if (subtotal >= FREE_SHIPPING_THRESHOLD || appliedCoupon?.discountType === 'free_shipping') {
+      // A threshold of 0 means free delivery is turned off in admin.
+      if ((freeShippingThreshold > 0 && subtotal >= freeShippingThreshold) || appliedCoupon?.discountType === 'free_shipping') {
         isFreeShipping = true;
         shippingFee = 0;
       } else {
-        shippingFee = STANDARD_SHIPPING_RATE;
+        shippingFee = shippingRate;
       }
     }
 
@@ -140,13 +175,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       appliedCoupon,
       shippingFee,
       isFreeShipping,
-      freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
+      freeShippingThreshold,
       tax,
       grandTotal,
       requiresShippingAddress,
       requiresBookingInfo,
     };
-  }, [cartItems, appliedCoupon]);
+  }, [cartItems, appliedCoupon, shippingRate, freeShippingThreshold]);
 
   const addToCart = (
     product: CatalogProduct | any,

@@ -882,10 +882,24 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       if (normalizedRoute === '/gallery' || normalizedRoute.startsWith('/gallery/')) {
+        // Stale-while-revalidate: show the saved gallery instantly, then fetch the latest
+        // in the background (one snapshot request per page load) and update quietly.
+        const galleryWasCached = !forceRefresh && hasValidDeviceCacheItem('mahdev_cached_gallery');
         await refreshServices();
         await refreshGallery();
         await refreshProducts();
         await refreshCategories();
+        if (galleryWasCached) {
+          void firestoreGalleryService.getGallery(undefined, true)
+            .then((fresh) => {
+              setGallery(fresh);
+              cmsService.syncEntityFromFirestore('gallery', fresh);
+              setDeviceCacheItem('mahdev_cached_gallery', JSON.stringify(fresh));
+            })
+            .catch((error: unknown) => {
+              console.warn('[FirestoreDataContext] Background gallery refresh failed; showing saved gallery.', error);
+            });
+        }
         return;
       }
 

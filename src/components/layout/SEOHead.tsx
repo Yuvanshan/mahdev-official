@@ -175,6 +175,9 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       '/account',
       '/checkout',
       '/cart',
+      // Product catalogue stays reachable by URL but is not promoted or indexed
+      // (it also lists rental equipment).
+      '/catalog',
       '/order',
       '/orders',
       '/track-order',

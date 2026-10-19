@@ -115,11 +115,11 @@ export const AccountOrdersTab: React.FC<AccountOrdersTabProps> = ({ orders, onNa
           <Button
             variant="electric"
             size="sm"
-            onClick={() => onNavigate('/catalog')}
+            onClick={() => onNavigate('/mart')}
             leftIcon={<ShoppingBag className="w-4 h-4" />}
             className="text-xs font-bold"
           >
-            Explore Product Catalog
+            Shop Mahdev Mart
           </Button>
         </div>
       ) : (

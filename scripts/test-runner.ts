@@ -418,7 +418,7 @@ async function runTestSuite() {
     },
     {
       category: 'Customer Experience',
-      name: 'WhatsApp order links to the catalog product without an image URL',
+      name: 'WhatsApp order links to the Mart product without an image URL',
       fn: () => {
         const message = buildWhatsAppOrderMessage({
           orderId: 'ORD-CI-100',
@@ -436,7 +436,7 @@ async function runTestSuite() {
           subtotal: 100,
           grandTotal: 100,
         });
-        return message.includes('https://mahdev.lk/catalog?id=prod-test-001') &&
+        return message.includes('https://mahdev.lk/mart?id=prod-test-001') &&
           !message.includes('images.example.com') &&
           !message.includes('Photo:');
       },
@@ -454,7 +454,7 @@ async function runTestSuite() {
           imageUrl: 'https://images.example.com/test-product.jpg',
           type: 'product',
         });
-        return message.includes('https://mahdev.lk/catalog?id=prod-test-001') &&
+        return message.includes('https://mahdev.lk/mart?id=prod-test-001') &&
           !message.includes('wrong-product') &&
           !message.includes('wrong-sku') &&
           !message.includes('images.example.com') &&

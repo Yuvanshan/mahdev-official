@@ -377,6 +377,25 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                 <span className="hidden sm:inline">WhatsApp</span>
               </a>
 
+              {/* Cart: item count badge; opens the cart sheet. */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  openCart();
+                }}
+                className="relative inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-blue-50 border border-slate-200 text-xs font-semibold text-slate-900 transition-colors shadow-2xs shrink-0"
+                title="View cart"
+                aria-label={`View cart, ${totalQuantity} ${totalQuantity === 1 ? 'item' : 'items'}`}
+              >
+                <ShoppingCart className="w-4 h-4 text-slate-800 shrink-0" />
+                {totalQuantity > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 min-w-5 h-5 px-1 rounded-full bg-[#0052FF] text-white text-[10px] font-bold leading-5 text-center shadow">
+                    {totalQuantity > 99 ? '99+' : totalQuantity}
+                  </span>
+                )}
+              </button>
+
               {/* Mobile Hamburger Button */}
               <button
                 type="button"

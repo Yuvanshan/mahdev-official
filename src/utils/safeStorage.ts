@@ -59,12 +59,24 @@ function sanitizePayloadForSessionStorage(value: string): string {
   }
 }
 
+// Legacy data is removed ONCE per browser. Previously this wiped every "mahdev_"
+// localStorage key on every page load, which also deleted the current device
+// caches (mahdev_cached_*) and the cart, so every visit re-downloaded all data.
+const LEGACY_CLEANUP_FLAG = 'mahdev_legacy_storage_cleanup_v1';
+// Current keys that must survive even the one-time cleanup.
+const PRESERVED_KEY_PREFIXES = ['mahdev_cart_'];
+
 function clearLegacyPersistentAppData(): void {
   if (typeof window === 'undefined') return;
   try {
-    for (let index = window.localStorage.length - 1; index >= 0; index--) {
-      const key = window.localStorage.key(index);
-      if (key?.startsWith('mahdev_')) window.localStorage.removeItem(key);
+    if (window.localStorage.getItem(LEGACY_CLEANUP_FLAG) !== '1') {
+      for (let index = window.localStorage.length - 1; index >= 0; index--) {
+        const key = window.localStorage.key(index);
+        if (key?.startsWith('mahdev_') && !PRESERVED_KEY_PREFIXES.some((prefix) => key.startsWith(prefix))) {
+          window.localStorage.removeItem(key);
+        }
+      }
+      window.localStorage.setItem(LEGACY_CLEANUP_FLAG, '1');
     }
   } catch (error) {
     console.warn('[SafeStorage] Could not clear legacy persistent app data:', error);

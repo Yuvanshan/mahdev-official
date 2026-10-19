@@ -48,7 +48,7 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-    onNavigate(`/catalog?search=${encodeURIComponent(searchQuery.trim())}`);
+    onNavigate(`/services?q=${encodeURIComponent(searchQuery.trim())}`);
   };
 
   // Determine Title & Subtitle based on resourceType
@@ -246,7 +246,7 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
           <Button
             variant="ghost"
             size="lg"
-            onClick={() => onNavigate('/catalog')}
+            onClick={() => onNavigate('/mart')}
             leftIcon={<ShoppingBag className="w-4 h-4 text-slate-600" />}
             className="font-semibold text-xs sm:text-sm text-slate-700 hover:text-slate-950"
           >

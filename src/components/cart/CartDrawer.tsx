@@ -28,6 +28,8 @@ interface CartDrawerProps {
   onNavigate?: (path: string) => void;
 }
 
+const SHOW_ONLINE_CHECKOUT = false;
+
 export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
   const {
     isCartDrawerOpen,
@@ -87,11 +89,22 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
   );
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/70 backdrop-blur-xs flex justify-end animate-fadeIn">
+    // Bottom sheet on phones/tablets, side panel on desktop. Above the bottom nav bar (z-50).
+    <div
+      className="fixed inset-0 z-[150] overflow-hidden bg-slate-950/70 backdrop-blur-xs flex items-end justify-center lg:items-stretch lg:justify-end animate-fadeIn"
+      onClick={closeCart}
+    >
       <div
-        className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col justify-between border-l border-slate-200 animate-slideLeft"
+        className="w-full max-h-[88svh] rounded-t-2xl overflow-hidden bg-white shadow-2xl flex flex-col justify-between border-slate-200 animate-in slide-in-from-bottom duration-200 lg:h-full lg:max-h-none lg:max-w-md lg:rounded-none lg:border-l lg:slide-in-from-right"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Your cart"
       >
+        {/* Sheet handle (mobile) */}
+        <div className="flex justify-center bg-slate-900 pt-2 lg:hidden" aria-hidden="true">
+          <span className="h-1 w-10 rounded-full bg-white/30" />
+        </div>
         {/* Header */}
         <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-900 text-white shrink-0">
           <div className="flex items-center gap-2.5">
@@ -165,11 +178,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                   size="sm"
                   onClick={() => {
                     closeCart();
-                    if (onNavigate) onNavigate('/catalog');
+                    if (onNavigate) onNavigate('/mart');
                   }}
                   className="text-xs"
                 >
-                  Explore Master Catalog
+                  Browse Mahdev Mart
                 </Button>
                 <Button
                   variant="outline"
@@ -393,7 +406,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
             <div className="p-2.5 rounded-lg bg-blue-50/80 border border-blue-100 text-[10px] text-slate-600 flex items-start gap-2">
               <ShieldCheck className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
               <span>
-                <strong>Enterprise Checkout Architecture:</strong> Instant checkout with official SKU numbers or direct WhatsApp dispatch.
+                Place your order on WhatsApp: your items, SKU codes and delivery total are sent to our team to confirm.
               </span>
             </div>
 
@@ -421,12 +434,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                     notes: 'Direct Order from Cart with SKU codes',
                   });
                 }}
-                className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer border border-slate-800"
+                className="w-full min-h-12 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
               >
-                <MessageCircle className="w-4 h-4 text-[#0052FF]" />
-                <span>Order via WhatsApp (SKU Included)</span>
+                <MessageCircle className="w-4 h-4" />
+                <span>Order via WhatsApp</span>
               </button>
 
+              {/* Online checkout is hidden for now (orders are taken on WhatsApp); set SHOW_ONLINE_CHECKOUT to re-enable. */}
+              {SHOW_ONLINE_CHECKOUT && (
               <button
                 onClick={handleProceedToCheckout}
                 className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#0052FF] to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
@@ -434,6 +449,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                 <span>Proceed to Checkout</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
+              )}
 
               <div className="flex items-center justify-between text-[11px] pt-1">
                 <button

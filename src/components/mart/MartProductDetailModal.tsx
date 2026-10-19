@@ -39,6 +39,21 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'specs' | 'desc' | 'reviews'>('desc');
 
+  // Hooks must run on every render (before the early return), otherwise opening
+  // the modal changes the hook count and React throws error #310.
+  const specsList = React.useMemo(() => {
+    if (!product) return [];
+    const raw = (product as any).specifications;
+    if (Array.isArray(raw)) return raw;
+    if (raw && typeof raw === 'object') {
+      return Object.entries(raw).map(([k, v]) => ({ label: k, value: String(v) }));
+    }
+    if (typeof raw === 'string' && raw.trim()) {
+      return [{ label: 'Details', value: raw.trim() }];
+    }
+    return [];
+  }, [product]);
+
   if (!isOpen || !product) return null;
 
   // Calculate current price based on variant modifier
@@ -55,18 +70,6 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
   const handleIncrement = () => setQuantity((q) => q + 1);
   const handleDecrement = () => setQuantity((q) => (q > 1 ? q - 1 : 1));
 
-  const specsList = React.useMemo(() => {
-    if (!product) return [];
-    const raw = (product as any).specifications;
-    if (Array.isArray(raw)) return raw;
-    if (raw && typeof raw === 'object') {
-      return Object.entries(raw).map(([k, v]) => ({ label: k, value: String(v) }));
-    }
-    if (typeof raw === 'string' && raw.trim()) {
-      return [{ label: 'Details', value: raw.trim() }];
-    }
-    return [];
-  }, [product]);
 
   const tagsList = Array.isArray(product.tags) ? product.tags : [];
 
@@ -75,7 +78,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
+    <div className="fixed inset-0 z-[200] overflow-y-auto bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
       <div
         className="relative w-full max-w-5xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-8 max-h-[92vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}

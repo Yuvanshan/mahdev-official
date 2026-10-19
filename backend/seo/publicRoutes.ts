@@ -82,13 +82,6 @@ export const PRERENDERED_ROUTES: RouteSeo[] = [
     intro: 'Learnings and guidance from the Mahdev teams.',
   },
   {
-    path: '/catalog',
-    title: 'Product Catalogue | Mahdev Sri Lanka',
-    description: 'Browse the Mahdev product catalogue: event and production equipment, decor, lighting and technology.',
-    heading: 'Product catalogue',
-    intro: 'Browse products and equipment from across the Mahdev group.',
-  },
-  {
     path: '/book',
     title: 'Book a Service | Mahdev Sri Lanka',
     description: 'Book Mahdev event, studio, IT and travel services online in a few simple steps.',

@@ -124,6 +124,12 @@ export function mapFirestoreProductToMart(p: any, categories: any[] = []): Produ
   };
 }
 
+/** True when a Mart product belongs to the category (stored by category id or slug). */
+export function productInMartCategory(productCategory: string | undefined, category: { id: string; slug?: string } | undefined): boolean {
+  if (!productCategory || !category) return false;
+  return productCategory === category.id || (!!category.slug && productCategory === category.slug);
+}
+
 export function mapFirestoreCategoryToMart(c: any): MartCategory {
   return {
     id: c.id,
