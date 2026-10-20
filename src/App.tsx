@@ -424,7 +424,13 @@ function AppContent() {
   if (rawBase.startsWith('#/')) rawBase = rawBase.substring(1);
   else if (rawBase.startsWith('#') && rawBase.length > 1) rawBase = `/${rawBase.substring(1)}`;
   const basePath = rawBase.split('#')[0] || '/';
-  const normalizedPath = canonicalizeAdminPath(canonicalizeDivisionRoute(basePath));
+  // Legacy category links used "/services%{slug}", which Vercel rejects as a malformed URL
+  // (400). Redirect them, including the "%25" form, to the valid /services/category/{slug}.
+  const legacyCategoryPath = basePath.replace(
+    /^\/(?:services|gallery)%(?:25)?([a-z0-9-]+)$/i,
+    (_match, slug: string) => `/services/category/${slug.toLowerCase()}`
+  );
+  const normalizedPath = canonicalizeAdminPath(canonicalizeDivisionRoute(legacyCategoryPath));
   useEffect(() => {
     if (normalizedPath === basePath || typeof window === 'undefined') return;
     const canonicalUrl = `${normalizedPath}${searchParamsString ? `?${searchParamsString}` : ''}`;
@@ -746,7 +752,7 @@ function AppContent() {
       return <OrderConfirmationView orderId={orderQueryId} onNavigate={navigate} />;
     }
 
-    const categoryRoute = normalizedPath.match(/^\/(?:services|gallery)%([a-z0-9-]+)$/);
+    const categoryRoute = normalizedPath.match(/^\/services\/category\/([a-z0-9-]+)$/);
     if (categoryRoute) {
       return (
         <ExploreAllView

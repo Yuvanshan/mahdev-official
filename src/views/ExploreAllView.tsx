@@ -325,7 +325,7 @@ export const ExploreAllView: React.FC<{
           gallery: 'type-gallery',
           product: 'type-products',
         }[filter.slice('type:'.length) as BrowseType];
-    onNavigate(`/services%${pathSlug}`);
+    onNavigate(`/services/category/${pathSlug}`);
   };
   const categoryOptions = (
     <>
