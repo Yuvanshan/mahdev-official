@@ -91,7 +91,8 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 | Variable Name | Environments | Description |
 | :--- | :--- | :--- |
 | `VITE_APP_URL` | Production: `https://mahdev-official.vercel.app`<br>Preview: `https://$VERCEL_URL`<br>Development: `http://localhost:3000` | Public runtime URL for client-side links and analytics; canonical tags use the fixed origin in `src/config/site.ts` |
-| `PUBLIC_SITE_URL` | Production: `https://mahdev-official.vercel.app` | Server-only public canonical origin for generated sitemap URLs; keep it aligned with `src/config/site.ts` |
+| `VITE_SITE_URL` | Production: your live domain, e.g. `https://mahdev-official.vercel.app` | The website's public domain for canonical URLs, Open Graph tags, structured data, sitemap, `robots.txt` and `llms.txt`. Must be an origin with no path. Defaults to `https://mahdev-official.vercel.app` when unset. |
+| `PUBLIC_SITE_URL` | Optional | Legacy alias for `VITE_SITE_URL`, used only when `VITE_SITE_URL` is unset. |
 | `VITE_FIREBASE_API_KEY` | Production, Preview, Development | Public Firebase Web SDK API Key |
 | `VITE_FIREBASE_AUTH_DOMAIN` | Production, Preview, Development | `for-her-33ea9.firebaseapp.com` |
 | `VITE_FIREBASE_PROJECT_ID` | Production, Preview, Development | `for-her-33ea9` |
@@ -145,7 +146,7 @@ Admin portal access uses `ADMIN_LOGIN_EMAIL`, `ADMIN_LOGIN_PASSWORD_HASH`, and `
 
 The public sitemap is generated at request time from published CMS pages, active divisions, public services, and published portfolio projects, in addition to the main public routes. It is served from `https://mahdev-official.vercel.app/sitemap.xml` and declared in `robots.txt`. Public marketing pages are indexable; account, admin, and transaction routes are excluded. Individual service pages use service structured data, and division/service listing links use crawlable URLs.
 
-Search indexing is enabled only when Vercel sets `VERCEL_ENV=production`; Vercel preview deployments and local builds remain `noindex`. `src/config/site.ts` is the source of truth for page canonical URLs; keep the server-side `PUBLIC_SITE_URL` aligned to it for sitemap URLs. `VITE_APP_URL` is not used to override canonical URLs.
+Search indexing is enabled only when Vercel sets `VERCEL_ENV=production`; Vercel preview deployments and local builds remain `noindex`. The `VITE_SITE_URL` environment variable (read by `src/config/site.ts`) is the single source of truth for the public domain: page canonical URLs, sitemap URLs, `robots.txt` and `llms.txt` all follow it. `VITE_APP_URL` is not used to override canonical URLs.
 
 After deploying SEO changes:
 
@@ -194,3 +195,11 @@ npm run preflight
 ## 7. Rollback Reference
 
 For detailed instant rollback instructions via the Vercel Dashboard or CLI, refer to [PIPELINE_AND_ROLLBACK.md](./PIPELINE_AND_ROLLBACK.md).
+
+## Changing the website domain
+
+1. Add the new domain to the Vercel project (Settings > Domains) and wait for DNS to verify.
+2. In Settings > Environment Variables, set `VITE_SITE_URL` for Production to the new origin, e.g. `https://www.mahdev.lk` (no trailing slash or path).
+3. Redeploy production. The value is baked in at build time, so saving the variable alone does not change the live site.
+4. Add the new hostname to the Firebase App Check reCAPTCHA key and any OAuth allowed origins.
+5. Add the new domain in Google Search Console and submit its `/sitemap.xml`. Redirect the old domain to the new one in Vercel so existing links keep working.

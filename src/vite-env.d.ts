@@ -10,6 +10,8 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_MEASUREMENT_ID?: string;
   readonly VITE_FIREBASE_FIRESTORE_DATABASE_ID?: string;
   readonly VITE_FIREBASE_RECAPTCHA_SITE_KEY?: string;
+  /** 'enterprise' (default) or 'v3'; must match the App Check provider registered in Firebase. */
+  readonly VITE_FIREBASE_APPCHECK_PROVIDER?: 'enterprise' | 'v3';
   readonly VITE_SITE_DEPLOYMENT_ENV?: string;
 }
 

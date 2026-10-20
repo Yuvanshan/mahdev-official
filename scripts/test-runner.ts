@@ -17,10 +17,11 @@ import { notificationService } from '../src/services/notificationService';
 import { getOfficeMapUrl, getMapSearchUrl } from '../src/config/company';
 import { getImageSourceCandidates } from '../src/utils/imageSources';
 import { canonicalizeDivisionRoute, sortDivisions } from '../src/services/firestore/divisions';
+import { DIVISION_ROUTE_ALIASES } from '../src/config/divisionRoutes';
 import { getDefaultTrustedCompanies, isPublishedTrustedCompany } from '../src/services/firestore/trustedCompanies';
 import { buildSitemapXml } from '../backend/api/handlers/sitemap';
 import { analyticsService } from '../src/services/analyticsService';
-import { CANONICAL_SITE_ORIGIN } from '../src/config/site';
+import { CANONICAL_SITE_ORIGIN, resolveSiteOrigin } from '../src/config/site';
 import { ADMIN_PORTAL_PATH, canonicalizeAdminPath, isAdminPortalPath, isRetiredAdminPath } from '../src/config/adminRoutes';
 import { MAIN_NAV_ITEMS } from '../src/config/navigation';
 
@@ -81,6 +82,33 @@ async function runTestSuite() {
         canonicalizeDivisionRoute('/sws') === '/sws' &&
         canonicalizeDivisionRoute('/u1') === '/u1' &&
         canonicalizeDivisionRoute('/u1-studio') === '/u1',
+    },
+    {
+      category: 'SEO & Marketing',
+      name: 'Division aliases 301-redirect to their canonical page and stay out of the sitemap',
+      fn: () => {
+        // Turn each vercel.json "/:name(a|b)" redirect into [alias paths, destination].
+        const redirects = (JSON.parse(readFileSync('vercel.json', 'utf8')).redirects || []) as Array<{
+          source: string; destination: string; permanent?: boolean;
+        }>;
+        // Matches single-segment "/:name(pattern)" rules the way Vercel does.
+        const redirectTarget = (path: string) => redirects.find((rule) => {
+          const pattern = rule.source.match(/^\/:[a-z]+\((.+)\)$/)?.[1];
+          return rule.permanent && pattern && new RegExp(`^/(?:${pattern})$`).test(path);
+        })?.destination;
+        const swsVariants = ['/sws-event', '/sws_event_management', '/swsevents', '/SWS', '/SWS-Event-Management'];
+        const sitemap = buildSitemapXml({
+          pages: [],
+          divisions: [{ id: 'sws', data: { route: '/sws-event-management', isPublished: true } }],
+          services: [],
+          portfolio: [],
+        } as Parameters<typeof buildSitemapXml>[0]);
+        return Object.entries(DIVISION_ROUTE_ALIASES).every(([alias, target]) => redirectTarget(alias) === target) &&
+          swsVariants.every((path) => redirectTarget(path) === '/sws' && canonicalizeDivisionRoute(path) === '/sws') &&
+          redirectTarget('/sws') === undefined &&
+          !sitemap.includes('/sws-event-management<') &&
+          sitemap.includes(`<loc>${CANONICAL_SITE_ORIGIN}/sws</loc>`);
+      },
     },
     {
       category: 'Admin Operations',
@@ -170,7 +198,7 @@ async function runTestSuite() {
           services: [],
           portfolio: [],
         });
-        return CANONICAL_SITE_ORIGIN === 'https://mahdev-official.vercel.app' &&
+        return CANONICAL_SITE_ORIGIN === resolveSiteOrigin(process.env.VITE_SITE_URL || process.env.PUBLIC_SITE_URL) &&
           sitemap.includes(`<loc>${CANONICAL_SITE_ORIGIN}/</loc>`) &&
           !sitemap.includes('mahdev-lk.vercel.app');
       },

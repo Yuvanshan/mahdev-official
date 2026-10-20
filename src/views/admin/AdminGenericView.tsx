@@ -27,6 +27,7 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { authService } from '../../services/authService';
 import { Button } from '../../components/ui/Button';
 import { CustomerUser } from '../../types/customer';
+import { CANONICAL_SITE_ORIGIN } from '../../config/site';
 
 interface AdminGenericViewProps {
   sectionId: AdminSectionId;
@@ -367,7 +368,7 @@ export const AdminGenericView: React.FC<AdminGenericViewProps> = ({
           <div className="grid grid-cols-2 gap-4 font-mono">
             <div className="p-3 bg-slate-50 rounded-xl space-y-1">
               <span className="text-[10px] text-slate-400 font-bold uppercase block">Canonical Root:</span>
-              <strong className="text-slate-900">https://mahdev-official.vercel.app</strong>
+              <strong className="text-slate-900">{CANONICAL_SITE_ORIGIN}</strong>
             </div>
             <div className="p-3 bg-slate-50 rounded-xl space-y-1">
               <span className="text-[10px] text-slate-400 font-bold uppercase block">Index Status:</span>

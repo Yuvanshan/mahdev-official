@@ -15,6 +15,7 @@ import { InquiredItemShimmer } from '../components/common/InquiredItemShimmer';
 import { InquiryItemNotFound } from '../components/common/InquiryItemNotFound';
 import { normalizeCode } from '../utils/itemLookup';
 import { deriveLookupSku } from '../utils/whatsapp';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 
 const CATALOG_DIVISION = 'mart';
 
@@ -123,7 +124,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   // Product-list structured data (ItemList) for search engines, from the Mart products shown.
   useEffect(() => {
     if (allMasterProducts.length === 0) return;
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://mahdev-official.vercel.app';
+    const origin = typeof window !== 'undefined' ? window.location.origin : CANONICAL_SITE_ORIGIN;
     const script = document.createElement('script');
     script.type = 'application/ld+json';
     script.dataset.catalogItemList = 'true';
@@ -205,7 +206,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
       <SEOHead
         title="Mahdev Mart Product Catalogue | Event Decor, Gifts & More"
         description="Browse the Mahdev Mart product catalogue: event and home decor, foil balloons, gifts and more, with island-wide delivery in Sri Lanka. Order easily on WhatsApp."
-        canonicalUrl="https://mahdev-official.vercel.app/catalog"
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/catalog`}
       />
       {/* Customer Inquired Item Context Banner */}
       {isSingleItemMode && inquiredProduct && (

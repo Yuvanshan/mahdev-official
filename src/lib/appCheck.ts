@@ -6,7 +6,14 @@
  * Supports reCAPTCHA Enterprise / v3 and Development Debug Provider.
  */
 
-import { AppCheck, initializeAppCheck, ReCaptchaV3Provider, CustomProvider, getToken } from 'firebase/app-check';
+import {
+  AppCheck,
+  initializeAppCheck,
+  ReCaptchaEnterpriseProvider,
+  ReCaptchaV3Provider,
+  CustomProvider,
+  getToken,
+} from 'firebase/app-check';
 import { app } from './firebase';
 import rawConfig from '../../firebase-applet-config.json';
 
@@ -15,8 +22,20 @@ let isAppCheckInitialized = false;
 
 export interface AppCheckStatus {
   initialized: boolean;
-  provider: 'recaptcha-v3' | 'debug-attestation' | 'none';
+  provider: 'recaptcha-enterprise' | 'recaptcha-v3' | 'debug-attestation' | 'none';
   environment: 'development' | 'production';
+}
+
+// Must match the provider the web app is registered with in Firebase Console >
+// App Check. The production app is registered for reCAPTCHA Enterprise; with the
+// v3 provider Firebase answers "App not registered", so tokens were never verified.
+const RECAPTCHA_PROVIDER: 'recaptcha-enterprise' | 'recaptcha-v3' =
+  import.meta.env?.VITE_FIREBASE_APPCHECK_PROVIDER === 'v3' ? 'recaptcha-v3' : 'recaptcha-enterprise';
+
+function createRecaptchaProvider(siteKey: string) {
+  return RECAPTCHA_PROVIDER === 'recaptcha-v3'
+    ? new ReCaptchaV3Provider(siteKey)
+    : new ReCaptchaEnterpriseProvider(siteKey);
 }
 
 /**
@@ -26,7 +45,7 @@ export function initAppCheck(): AppCheckStatus {
   if (isAppCheckInitialized && appCheckInstance) {
     return {
       initialized: true,
-      provider: import.meta.env.PROD ? 'recaptcha-v3' : 'debug-attestation',
+      provider: import.meta.env.PROD ? RECAPTCHA_PROVIDER : 'debug-attestation',
       environment: import.meta.env.PROD ? 'production' : 'development',
     };
   }
@@ -58,7 +77,7 @@ export function initAppCheck(): AppCheckStatus {
       });
 
       appCheckInstance = initializeAppCheck(app, {
-        provider: siteKey ? new ReCaptchaV3Provider(siteKey) : customDebugProvider,
+        provider: siteKey ? createRecaptchaProvider(siteKey) : customDebugProvider,
         isTokenAutoRefreshEnabled: true,
       });
 
@@ -69,12 +88,12 @@ export function initAppCheck(): AppCheckStatus {
       // Production mode with reCAPTCHA v3 or custom provider fallback
       if (siteKey) {
         appCheckInstance = initializeAppCheck(app, {
-          provider: new ReCaptchaV3Provider(siteKey),
+          provider: createRecaptchaProvider(siteKey),
           isTokenAutoRefreshEnabled: true,
         });
         isAppCheckInitialized = true;
-        console.info('[AppCheck] Initialized with reCAPTCHA v3 provider.');
-        return { initialized: true, provider: 'recaptcha-v3', environment: 'production' };
+        console.info(`[AppCheck] Initialized with ${RECAPTCHA_PROVIDER} provider.`);
+        return { initialized: true, provider: RECAPTCHA_PROVIDER, environment: 'production' };
       } else {
         console.error(
           '[AppCheck] Production App Check is not initialized. Set VITE_FIREBASE_RECAPTCHA_SITE_KEY and enable App Check enforcement in Firebase Console.'

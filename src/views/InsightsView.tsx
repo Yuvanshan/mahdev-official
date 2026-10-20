@@ -4,6 +4,7 @@ import { SEOHead } from '../components/layout/SEOHead';
 import { SectionContainer } from '../components/ui/SectionContainer';
 import { CmsPage } from '../types/cms';
 import { cmsService } from '../services/cmsService';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 
 interface InsightsViewProps {
   onNavigate: (path: string) => void;
@@ -31,7 +32,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onNavigate }) => {
       <SEOHead
         title="Insights | Mahdev"
         description="Practical insights, project learnings, and helpful guidance from Mahdev's event, media, technology, travel, and production teams in Sri Lanka."
-        canonicalUrl="https://mahdev-official.vercel.app/insights"
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/insights`}
         keywords={['Mahdev insights', 'Sri Lanka event and production insights', 'business technology Sri Lanka']}
         noIndex={articles.length === 0}
       />

@@ -3,6 +3,7 @@ import { CmsPage } from '../types/cms';
 import { cmsService } from '../services/cmsService';
 import { NotFoundView } from './NotFoundView';
 import { SEOHead } from '../components/layout/SEOHead';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 
 interface CmsPageViewProps {
   slug: string;
@@ -50,7 +51,7 @@ export const CmsPageView: React.FC<CmsPageViewProps> = ({ slug, onNavigate }) =>
       <SEOHead
         title={page.title}
         description={description}
-        canonicalUrl={`https://mahdev-official.vercel.app/${canonicalPath}`}
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/${canonicalPath}`}
       />
       <header className="mb-10 border-b border-slate-200 pb-8">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-700 mb-3">{page.category}</p>

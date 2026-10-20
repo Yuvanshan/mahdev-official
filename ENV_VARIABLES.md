@@ -27,6 +27,7 @@ This document outlines the environment configuration architecture for the **Mahd
 | `PORT` | Server | Standard | HTTP server port | `3000` |
 | `APP_URL` | Server | Standard | Canonical base URL | `https://mahdev.lk` |
 | `VITE_APP_URL` | Client | Public | Public origin URL for redirects | `https://mahdev.lk` |
+| `VITE_SITE_URL` | Client + Server | Public | **The website's public domain.** Drives canonical URLs, Open Graph tags, structured data, the sitemap, `robots.txt` and `llms.txt`. Change it and redeploy to move domains. | `https://mahdev-official.vercel.app` (default when unset) |
 | `GEMINI_API_KEY` | Server | **Confidential** | Google Gemini AI processing | Injected by AI Studio |
 | `TURSO_DATABASE_URL` | Server | Standard | Turso/libSQL connection URL | `libsql://<database>-<organization>.turso.io` |
 | `TURSO_DATABASE_URL_ACTIVE` | Server | **Confidential** | Optional active-URL override; takes precedence over `TURSO_DATABASE_URL` when set | Set only when intentionally overriding the active database URL |
@@ -44,6 +45,7 @@ This document outlines the environment configuration architecture for the **Mahd
 | `VITE_FIREBASE_APP_ID` | Client | Public | Firebase Web App ID | `1:1062826041810:web:...` |
 | `VITE_FIREBASE_MEASUREMENT_ID` | Client | Public | Firebase Analytics ID | `G-MWNCCXGY4F` |
 | `VITE_FIREBASE_RECAPTCHA_SITE_KEY` | Client | Public | App Check reCAPTCHA Site Key | `6Lf...` |
+| `VITE_FIREBASE_APPCHECK_PROVIDER` | Client | Public | App Check provider; must match Firebase Console > App Check registration | `enterprise` (default) or `v3` |
 | `PAYMENT_GATEWAY_ENV` | Server | Standard | Payment mode (`sandbox` / `production`) | `sandbox` |
 | `STRIPE_SECRET_KEY` | Server | **Confidential** | Stripe API Secret Key | `sk_test_...` / `sk_live_...` |
 | `PAYMENT_WEBHOOK_SECRET` | Server | **Confidential** | HMAC-SHA256 webhook verification | Custom cryptographic string |
@@ -85,7 +87,7 @@ This document outlines the environment configuration architecture for the **Mahd
 - Set `LANKAPAY_MERCHANT_ID` and `LANKAPAY_SECRET_KEY`
 - Set `ORDER_SIGNATURE_SECRET`, `INVOICE_SIGNING_SALT` to high-entropy 256-bit keys.
 - Set `SMTP_*` and `WHATSAPP_*` credentials for live customer receipts.
-- Set `VITE_FIREBASE_RECAPTCHA_SITE_KEY` to the reCAPTCHA v3 site key registered for the production Firebase web app.
+- Set `VITE_FIREBASE_RECAPTCHA_SITE_KEY` to the reCAPTCHA site key registered for the production Firebase web app in App Check, and `VITE_FIREBASE_APPCHECK_PROVIDER` to the matching provider (`enterprise` by default).
 - In Firebase Console > App Check, verify that the registered app ID matches `VITE_FIREBASE_APP_ID`, add `mahdev-official.vercel.app` and each custom production hostname to the reCAPTCHA key's allowed domains, and enable enforcement for Firebase services that the site uses only after valid tokens are confirmed.
 - Deploy `firestore.rules` to the configured project. Direct client Firestore access is intentionally denied because application data is served through the server-authorized `/api/database` Turso API.
 - Verify production App Check token exchange in the browser before enabling enforcement. App Check does not replace authorization for `/api/*` routes, and it cannot prevent downloading media that is publicly displayed.

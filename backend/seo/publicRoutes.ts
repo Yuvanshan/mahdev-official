@@ -7,9 +7,10 @@
  * the home page's head. The React app still takes over in the browser.
  */
 
+import { CANONICAL_SITE_ORIGIN } from '../../src/config/site.js';
 import { getSwsStructuredData, SWS_BUSINESS, SWS_PRIMARY_HEADING } from '../../src/data/swsLocalSeo.js';
 
-export const SITE_ORIGIN = 'https://mahdev-official.vercel.app';
+export const SITE_ORIGIN = CANONICAL_SITE_ORIGIN;
 
 export interface RouteSeo {
   path: string;

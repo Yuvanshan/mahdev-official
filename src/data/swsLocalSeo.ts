@@ -6,6 +6,8 @@
  * listing.
  */
 
+import { CANONICAL_SITE_ORIGIN } from '../config/site.js';
+
 export const SWS_BUSINESS = {
   parentName: 'MAHDEV Pvt. Ltd.',
   name: 'SWS Event Management',
@@ -13,7 +15,7 @@ export const SWS_BUSINESS = {
   phoneDisplay: '075 092 8078',
   phoneInternational: '+94750928078',
   whatsappUrl: 'https://wa.me/94750928078',
-  url: 'https://mahdev-official.vercel.app/sws',
+  url: `${CANONICAL_SITE_ORIGIN}/sws`,
   trincomalee: {
     streetAddress: 'No 95/15, Iluppaikkulam, Kanniya Road',
     locality: 'Trincomalee',
@@ -94,10 +96,10 @@ export function getSwsStructuredData(): Array<Record<string, unknown>> {
       name: `${SWS_BUSINESS.name} Trincomalee`,
       url: SWS_BUSINESS.url,
       telephone: SWS_BUSINESS.phoneInternational,
-      image: 'https://mahdev-official.vercel.app/assets/images/sws_logo.jpeg',
-      logo: 'https://mahdev-official.vercel.app/assets/images/sws_logo.jpeg',
+      image: `${CANONICAL_SITE_ORIGIN}/assets/images/sws_logo.jpeg`,
+      logo: `${CANONICAL_SITE_ORIGIN}/assets/images/sws_logo.jpeg`,
       priceRange: '$$',
-      parentOrganization: { '@id': 'https://mahdev-official.vercel.app/#organization' },
+      parentOrganization: { '@id': `${CANONICAL_SITE_ORIGIN}/#organization` },
       address: {
         '@type': 'PostalAddress',
         streetAddress: SWS_BUSINESS.trincomalee.streetAddress,

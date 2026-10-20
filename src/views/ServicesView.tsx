@@ -36,6 +36,7 @@ import { DivisionId } from '../types';
 import { normalizeDivisionId } from '../services/firestore/divisions';
 import { openWhatsAppInquiry } from '../utils/whatsapp';
 import { getRentalAssetCount } from '../utils/assetMetrics';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 
 interface ServicesViewProps {
   onNavigate: (route: string) => void;
@@ -327,7 +328,7 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
       <SEOHead
         title="Event, Photography, IT, Travel & Production Services in Sri Lanka"
         description="Compare Mahdev services across event management, photography and cinema production, IT solutions, travel, and professional production equipment in Sri Lanka."
-        canonicalUrl="https://mahdev-official.vercel.app/services"
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/services`}
         keywords={[
           'event management services Sri Lanka',
           'photography and cinema production Sri Lanka',

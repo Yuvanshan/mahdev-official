@@ -21,6 +21,7 @@ import { Button } from '../../components/ui/Button';
 import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
+import { CANONICAL_SITE_HOST } from '../../config/site';
 
 export const AdminPagesView: React.FC = () => {
   const [pages, setPages] = useState<CmsPage[]>([]);
@@ -483,7 +484,7 @@ export const AdminPagesView: React.FC = () => {
               </label>
               <div className="flex items-center">
                 <span className="px-3 py-2 bg-slate-100 border border-r-0 border-slate-200 rounded-l-xl text-xs text-slate-500 font-mono">
-                  mahdev-official.vercel.app/{formData.category === 'insights' ? 'insights/' : ''}
+                  {CANONICAL_SITE_HOST}/{formData.category === 'insights' ? 'insights/' : ''}
                 </span>
                 <input
                   type="text"

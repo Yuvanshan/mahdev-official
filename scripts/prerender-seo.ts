@@ -7,7 +7,15 @@
 // dist/app-shell.html: the neutral SPA shell used for every other route.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { PRERENDERED_ROUTES, SITE_ORIGIN, type RouteSeo } from '../backend/seo/publicRoutes';
+import { loadEnv } from 'vite';
+import type { RouteSeo } from '../backend/seo/publicRoutes';
+
+// Load .env files exactly as `vite build` does, so prerendered pages use the
+// same VITE_SITE_URL domain as index.html (Vercel already sets process.env).
+const fileEnv = loadEnv(process.env.NODE_ENV === 'development' ? 'development' : 'production', process.cwd(), '');
+process.env.VITE_SITE_URL ||= fileEnv.VITE_SITE_URL || fileEnv.PUBLIC_SITE_URL || '';
+// Imported after the env is loaded, because the site origin is read at import time.
+const { PRERENDERED_ROUTES, SITE_ORIGIN } = await import('../backend/seo/publicRoutes');
 
 const DIST = 'dist';
 const baseHtml = readFileSync(join(DIST, 'index.html'), 'utf8');

@@ -1,3 +1,4 @@
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 type Gtag = (...args: unknown[]) => void;
 interface MetaPixel {
   (...args: unknown[]): void;
@@ -26,7 +27,7 @@ let initialized = false;
 let googleMeasurementId = '';
 let metaPixelId = '';
 const MARKETING_SITE_HOST = new URL(
-  import.meta.env?.VITE_APP_URL || 'https://mahdev-official.vercel.app'
+  import.meta.env?.VITE_APP_URL || CANONICAL_SITE_ORIGIN
 ).hostname;
 
 function hasTrackingOptOut(): boolean {

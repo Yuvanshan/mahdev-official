@@ -5,8 +5,9 @@ import {
   listTursoDocuments,
   type TursoDocument,
 } from '../../db/tursoDatabase.js';
+import { CANONICAL_SITE_ORIGIN } from '../../../src/config/site.js';
+import { canonicalizeDivisionRoute } from '../../../src/config/divisionRoutes.js';
 
-const DEFAULT_SITE_ORIGIN = 'https://mahdev-official.vercel.app';
 const STATIC_PUBLIC_PATHS = [
   '/',
   '/divisions',
@@ -72,13 +73,9 @@ function escapeXml(value: string): string {
   })[character] || character);
 }
 
+// Configured with VITE_SITE_URL (or PUBLIC_SITE_URL); validated in src/config/site.ts.
 function getSiteOrigin(): string {
-  const configured = process.env.PUBLIC_SITE_URL || DEFAULT_SITE_ORIGIN;
-  const parsed = new URL(configured);
-  if (parsed.protocol !== 'https:' || parsed.pathname !== '/' || parsed.search || parsed.hash) {
-    throw new Error('PUBLIC_SITE_URL must be an HTTPS origin without a path, query, or fragment.');
-  }
-  return parsed.origin;
+  return CANONICAL_SITE_ORIGIN;
 }
 
 function publicSlug(value: unknown): string | null {
@@ -129,7 +126,7 @@ export function buildSitemapXml(
     mediaAssets?: TursoDocument[];
     seoConfig?: TursoDocument | null;
   },
-  origin = DEFAULT_SITE_ORIGIN,
+  origin = CANONICAL_SITE_ORIGIN,
 ): string {
   const publishedPages = content.pages.filter(
     ({ data }) => data.isPublished === true && data.isDeleted !== true
@@ -189,12 +186,14 @@ export function buildSitemapXml(
         data.comingSoon !== true
       ),
       ({ data }) => {
+        // List only the canonical URL (e.g. /sws, not its /sws-event-management alias),
+        // so search engines do not see two competing pages for one division.
         const route = typeof data.route === 'string' ? data.route : '';
         if (route.startsWith('/') && /^\/[a-z0-9_-]+(?:\/[a-z0-9_-]+)*$/.test(route)) {
-          return route;
+          return canonicalizeDivisionRoute(route);
         }
         const slug = publicSlug(data.slug);
-        return slug ? `/${slug}` : null;
+        return slug ? canonicalizeDivisionRoute(`/${slug}`) : null;
       },
       origin,
     ),
