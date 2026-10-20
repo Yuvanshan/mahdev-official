@@ -36,6 +36,21 @@ const toCategorySlug = (value: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 
+const TYPE_SLUGS: Record<string, BrowseType> = {
+  'type-services': 'service',
+  'type-gallery': 'gallery',
+  'type-products': 'product',
+};
+
+// Maps a /services/category/{slug} URL slug to a filter. Category filters compare
+// slugs, so the selection works before any items have loaded.
+const toFilterFromSlug = (slug?: string) => {
+  const normalizedSlug = toCategorySlug(slug || '');
+  if (!normalizedSlug) return 'all';
+  const type = TYPE_SLUGS[normalizedSlug];
+  return type ? `type:${type}` : `category:${normalizedSlug}`;
+};
+
 const BrowseCard: React.FC<{
   item: BrowseItem;
   onSelect: (item: BrowseItem) => void;
@@ -127,7 +142,8 @@ export const ExploreAllView: React.FC<{
   const [query, setQuery] = useState(() =>
     typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('q')?.trim() || ''
   );
-  const [selectedFilter, setSelectedFilter] = useState('all');
+  // Select the category from the URL immediately, so a direct visit never flashes "All items".
+  const [selectedFilter, setSelectedFilter] = useState(() => toFilterFromSlug(initialCategorySlug));
   const [selectedService, setSelectedService] = useState<FirestoreService | null>(null);
   const [selectedGalleryItem, setSelectedGalleryItem] = useState<{ data: FirestoreGallery; images: string[] } | null>(null);
   const [selectedGalleryImageIndex, setSelectedGalleryImageIndex] = useState(0);
@@ -257,27 +273,10 @@ export const ExploreAllView: React.FC<{
     return [...counts.entries()].sort(([a], [b]) => a.localeCompare(b));
   }, [allItems]);
 
+  // Keep the selection in sync when the URL's category changes (back/forward navigation).
   useEffect(() => {
-    if (!initialCategorySlug || !allItems.length) return;
-
-    const typeSlugs: Record<string, BrowseType> = {
-      'type-services': 'service',
-      'type-gallery': 'gallery',
-      'type-products': 'product',
-    };
-    const type = typeSlugs[initialCategorySlug];
-    if (type) {
-      setSelectedFilter(`type:${type}`);
-      return;
-    }
-
-    const matchedCategory = categories.find(
-      ([category]) => toCategorySlug(category) === initialCategorySlug
-    );
-    if (matchedCategory) {
-      setSelectedFilter(`category:${toCategorySlug(matchedCategory[0])}`);
-    }
-  }, [initialCategorySlug, categories, allItems.length]);
+    setSelectedFilter(toFilterFromSlug(initialCategorySlug));
+  }, [initialCategorySlug]);
 
   const filteredItems = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();

@@ -871,6 +871,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         normalizedRoute === '/featured-services' ||
         normalizedRoute.startsWith('/services/') ||
         normalizedRoute.startsWith('/service/') ||
+        // Legacy "/services%{slug}" category links, before the app redirects them.
+        /^\/(?:services|gallery)%/.test(normalizedRoute) ||
         normalizedRoute === '/promotion'
       ) {
         await refreshServices();
