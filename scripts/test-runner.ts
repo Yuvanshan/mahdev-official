@@ -3,7 +3,8 @@
  * Phase 38: GitHub to Vercel Production Pipeline
  */
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { dirname, join, normalize } from 'node:path';
 import { evaluateBotRisk, isDisposableEmail, checkActionThrottle, sanitizeClientInput } from '../src/utils/securityProtection';
 import { validateAndCreateAuthoritativeOrder, validateOrderStatusTransition } from '../backend/services/secureOrderService';
 import { generateSecureFiscalInvoice } from '../backend/services/secureInvoiceService';
@@ -97,6 +98,39 @@ async function runTestSuite() {
         return website?.name === SITE_NAME &&
           html.includes(`<meta property="og:site_name" content="${SITE_NAME}" />`) &&
           (html.match(/<title>([^<]+)<\/title>/)?.[1] || '').startsWith(SITE_NAME);
+      },
+    },
+    {
+      category: 'Deployment',
+      name: 'Server code (api/, backend/ and the src/ files they load) uses .js import paths',
+      fn: () => {
+        // Vercel runs the API as plain Node ESM, which cannot resolve "./site" (only
+        // "./site.js"); a missing extension crashes every API route. tsx and Vite hide it.
+        const listTs = (dir: string): string[] => readdirSync(dir).flatMap((name) => {
+          const path = join(dir, name);
+          return statSync(path).isDirectory() ? listTs(path) : /\.tsx?$/.test(name) && !name.endsWith('.d.ts') ? [path] : [];
+        });
+        const resolveImport = (from: string, spec: string) => {
+          const base = normalize(join(dirname(from), spec));
+          return [base.replace(/\.js$/, '.ts'), `${base}.ts`, `${base}.tsx`, join(base, 'index.ts')].find(existsSync);
+        };
+        const pending = [...listTs('api'), ...listTs('backend')];
+        const seen = new Set<string>();
+        const offenders: string[] = [];
+        while (pending.length) {
+          const file = pending.pop()!;
+          if (seen.has(file)) continue;
+          seen.add(file);
+          const source = readFileSync(file, 'utf8');
+          for (const match of source.matchAll(/^\s*(import|export)(\s+type)?[^'"]*?from\s+['"](\.{1,2}\/[^'"]+)['"]/gm)) {
+            const [, , typeOnly, spec] = match;
+            if (!typeOnly && !/\.(js|json)$/.test(spec)) offenders.push(`${file}: ${spec}`);
+            const target = resolveImport(file, spec);
+            if (target) pending.push(target);
+          }
+        }
+        if (offenders.length) console.error('Extensionless server imports:', offenders);
+        return offenders.length === 0 && seen.size > 10;
       },
     },
     {

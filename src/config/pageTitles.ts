@@ -1,5 +1,5 @@
-import { DIVISION_SEO } from './divisionSeo';
-import { SITE_NAME } from './site';
+import { DIVISION_SEO } from './divisionSeo.js';
+import { SITE_NAME } from './site.js';
 
 /**
  * Browser-tab and search-result titles for the fixed pages, in the form

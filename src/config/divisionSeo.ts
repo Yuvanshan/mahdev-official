@@ -1,4 +1,4 @@
-import { SITE_NAME } from './site';
+import { SITE_NAME } from './site.js';
 
 /**
  * Search titles and descriptions for the division pages, shared by the
