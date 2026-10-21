@@ -10,6 +10,7 @@ import { FirestoreService } from '../types/firestore';
 import { openWhatsAppInquiry } from '../utils/whatsapp';
 import { NotFoundView } from './NotFoundView';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
+import { ImageCarousel } from '../components/ui/ImageCarousel';
 
 interface ServiceDetailViewProps {
   slug: string;
@@ -86,7 +87,8 @@ export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ slug, onNa
   const description = (service.description || `${title} from ${divisionName} in Sri Lanka.`).trim().slice(0, 300);
   const canonicalPath = `/services/${encodeURIComponent(service.slug || service.id)}`;
   const price = Number(service.startingPrice || service.price || 0);
-  const image = service.imageUrl || service.images?.[0];
+  // Every photo of the service (main image first), shown in the slider below.
+  const serviceImages = [service.imageUrl, ...(service.images || [])].filter((url): url is string => Boolean(url));
   const serviceSchema = {
     '@context': 'https://schema.org',
     '@type': 'Service',
@@ -133,13 +135,7 @@ export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ slug, onNa
       </SectionContainer>
       <SectionContainer background="subtle" paddingY="lg">
         <article className="mx-auto max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          {image && (
-            <img
-              src={image}
-              alt={`${title} by ${divisionName}`}
-              className="max-h-[32rem] w-full bg-slate-100 object-cover"
-            />
-          )}
+          <ImageCarousel images={serviceImages} alt={`${title} by ${divisionName}`} />
           <div className="p-6 sm:p-10">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700">
               {divisionName}{service.category ? ` · ${service.category}` : ''}

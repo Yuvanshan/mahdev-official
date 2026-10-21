@@ -18,7 +18,7 @@ import { InquiredItemShimmer } from '../components/common/InquiredItemShimmer';
 import { InquiryItemNotFound } from '../components/common/InquiryItemNotFound';
 import { getDefaultGallery } from '../services/firestore/gallery';
 import { ImageWithShimmer } from '../components/ui/ImageWithShimmer';
-import { ServiceDetailsModal } from '../components/services/ServiceDetailsModal';
+import { ServiceDetailsModal, wrapIndex } from '../components/services/ServiceDetailsModal';
 
 interface GalleryPageViewProps {
   onNavigate: (route: string) => void;
@@ -389,6 +389,15 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
           divisionName: activeItem.divisionName,
         } : null}
         onClose={() => setActiveItem(null)}
+        itemNavigation={(() => {
+          const index = activeItem ? filteredItems.findIndex((item) => item.id === activeItem.id) : -1;
+          if (index < 0 || filteredItems.length < 2) return undefined;
+          return {
+            onPrevious: () => setActiveItem(filteredItems[wrapIndex(index, -1, filteredItems.length)]),
+            onNext: () => setActiveItem(filteredItems[wrapIndex(index, 1, filteredItems.length)]),
+            positionLabel: `${index + 1} of ${filteredItems.length}`,
+          };
+        })()}
         whatsappInquiry={activeItem ? {
           sku: activeItem.sku,
           itemId: activeItem.id,

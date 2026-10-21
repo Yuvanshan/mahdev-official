@@ -10,7 +10,7 @@ import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { openWhatsAppInquiry, deriveLookupSku } from '../../utils/whatsapp';
-import { ServiceDetailsModal } from '../services/ServiceDetailsModal';
+import { ServiceDetailsModal, wrapIndex } from '../services/ServiceDetailsModal';
 
 export const TravelsGalleryStoriesSection: React.FC = () => {
   const { gallery: rawGallery, testimonials: rawTestimonials } = useFirestoreDataContext();
@@ -182,6 +182,15 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
               divisionName: 'Mahdev Travels',
             } : null}
             onClose={() => setLightboxImage(null)}
+            itemNavigation={(() => {
+              const index = lightboxImage ? galleryImages.findIndex((g) => g.src === lightboxImage) : -1;
+              if (index < 0 || galleryImages.length < 2) return undefined;
+              return {
+                onPrevious: () => setLightboxImage(galleryImages[wrapIndex(index, -1, galleryImages.length)].src),
+                onNext: () => setLightboxImage(galleryImages[wrapIndex(index, 1, galleryImages.length)].src),
+                positionLabel: `${index + 1} of ${galleryImages.length}`,
+              };
+            })()}
             whatsappInquiry={lightboxImage ? {
               sku: `TRV-${deriveLookupSku(imgTitle, 'TRV')}`,
               location: activeImg?.location || 'Sri Lanka',

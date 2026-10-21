@@ -6,7 +6,7 @@ import { Caption, H2, Body } from '../ui/Heading';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { GallerySectionShimmer } from '../common/GallerySectionShimmer';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
-import { ServiceDetailsModal } from '../services/ServiceDetailsModal';
+import { ServiceDetailsModal, wrapIndex } from '../services/ServiceDetailsModal';
 import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
 
 interface HomeGalleryItem {
@@ -245,6 +245,14 @@ export const HomeGallerySection: React.FC = () => {
         } : null}
         initialImageIndex={activeImage?.imageIndex}
         onClose={() => setActiveImage(null)}
+        itemNavigation={(() => {
+          // Previous/Next move through the gallery items currently shown.
+          const index = activeImage ? displayedItems.findIndex((item) => item.id === activeImage.item.id) : -1;
+          if (index < 0 || displayedItems.length < 2) return undefined;
+          const open = (delta: number) =>
+            setActiveImage({ item: displayedItems[wrapIndex(index, delta, displayedItems.length)], imageIndex: 0 });
+          return { onPrevious: () => open(-1), onNext: () => open(1), positionLabel: `${index + 1} of ${displayedItems.length}` };
+        })()}
         whatsappInquiry={activeImage ? {
           itemId: activeImage.item.id,
           category: activeImage.item.category,

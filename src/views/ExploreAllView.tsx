@@ -3,7 +3,7 @@ import { ArrowRight, Camera, CheckCircle2, Filter, Image as ImageIcon, Search, S
 import { SEOHead } from '../components/layout/SEOHead';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { ServiceTile } from '../components/services/ServiceTile';
-import { ServiceDetailsModal, toServiceDetails } from '../components/services/ServiceDetailsModal';
+import { ServiceDetailsModal, toServiceDetails, wrapIndex } from '../components/services/ServiceDetailsModal';
 import { CatalogProductModal } from '../components/catalog/CatalogProductModal';
 import { GallerySectionShimmer } from '../components/common/GallerySectionShimmer';
 import { ImageWithShimmer } from '../components/ui/ImageWithShimmer';
@@ -289,6 +289,23 @@ export const ExploreAllView: React.FC<{
     });
   }, [allItems, query, selectedFilter]);
 
+  // Previous/Next in the gallery pop-up move through the gallery items in the current list.
+  const listedGalleryItems = filteredItems.filter((item) => item.type === 'gallery');
+  const openGalleryIndex = selectedGalleryItem
+    ? listedGalleryItems.findIndex((item) => item.data.id === selectedGalleryItem.data.id)
+    : -1;
+  const galleryNavigation = openGalleryIndex >= 0 && listedGalleryItems.length > 1 ? {
+    onPrevious: () => {
+      const item = listedGalleryItems[wrapIndex(openGalleryIndex, -1, listedGalleryItems.length)];
+      setSelectedGalleryItem({ data: item.data as FirestoreGallery, images: item.images });
+    },
+    onNext: () => {
+      const item = listedGalleryItems[wrapIndex(openGalleryIndex, 1, listedGalleryItems.length)];
+      setSelectedGalleryItem({ data: item.data as FirestoreGallery, images: item.images });
+    },
+    positionLabel: `${openGalleryIndex + 1} of ${listedGalleryItems.length}`,
+  } : undefined;
+
   const handleSelect = (item: BrowseItem) => {
     if (item.type === 'service') setSelectedService(item.data);
     if (item.type === 'gallery') {
@@ -516,6 +533,7 @@ export const ExploreAllView: React.FC<{
           divisionName: DIVISIONS[selectedGalleryItem.data.division as DivisionId]?.name || String(selectedGalleryItem.data.division || 'Mahdev'),
         } : null}
         onClose={() => setSelectedGalleryItem(null)}
+        itemNavigation={galleryNavigation}
         whatsappInquiry={selectedGalleryItem ? {
           category: selectedGalleryItem.data.category || selectedGalleryItem.data.tag,
           itemId: selectedGalleryItem.data.id,

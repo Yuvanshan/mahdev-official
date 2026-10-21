@@ -16,7 +16,7 @@ import { ScrollReveal } from '../motion/MotionWrappers';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { shareMediaAsset } from '../../utils/mediaShare';
 import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
-import { ServiceDetailsModal } from '../services/ServiceDetailsModal';
+import { ServiceDetailsModal, wrapIndex } from '../services/ServiceDetailsModal';
 import { CrossfadeImage } from '../common/CrossfadeImage';
 import { ImageWatermark } from '../common/ImageWatermark';
 
@@ -294,6 +294,11 @@ export const SWSGallerySection: React.FC = () => {
         } : null}
         watermarkLabel="SWS EVENT MANAGEMENT"
         onClose={() => setActiveLightboxIndex(null)}
+        itemNavigation={activeLightboxIndex !== null && filteredItems.length > 1 ? {
+          onPrevious: () => setActiveLightboxIndex((index) => wrapIndex(index ?? 0, -1, filteredItems.length)),
+          onNext: () => setActiveLightboxIndex((index) => wrapIndex(index ?? 0, 1, filteredItems.length)),
+          positionLabel: `${activeLightboxIndex + 1} of ${filteredItems.length}`,
+        } : undefined}
         whatsappInquiry={activeItem ? {
           sku: `SWS-${activeItem.id.toUpperCase()}`,
           itemId: activeItem.id,

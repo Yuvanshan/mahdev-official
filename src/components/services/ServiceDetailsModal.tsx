@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, MessageCircle, X } from 'lucide-react';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
@@ -40,7 +40,22 @@ interface ServiceDetailsModalProps {
   initialImageIndex?: number;
   /** Division watermark drawn over the photo (SWS and U1 galleries). */
   watermarkLabel?: React.ComponentProps<typeof ImageWatermark>['label'];
+  /** Gallery browsing: buttons (and PageUp/PageDown) to open the previous/next item. */
+  itemNavigation?: {
+    onPrevious: () => void;
+    onNext: () => void;
+    /** e.g. "3 of 126" */
+    positionLabel?: string;
+  };
 }
+
+/** Index after moving `delta` steps through `length` items, wrapping at both ends. */
+export function wrapIndex(current: number, delta: number, length: number): number {
+  return length > 0 ? (current + delta + length) % length : 0;
+}
+
+// Minimum horizontal finger movement (px) that counts as a swipe between photos.
+const SWIPE_THRESHOLD = 45;
 
 /**
  * Full details opened from a ServiceTile's View button, shared by every service
@@ -60,17 +75,31 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
   whatsappInquiry,
   initialImageIndex = 0,
   watermarkLabel,
+  itemNavigation,
 }) => {
   const [imageIndex, setImageIndex] = useState(0);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const images = service ? service.images.filter(Boolean) : [];
+  // Pages pass a new `service` object on every render, so reset the photo only when the
+  // item itself changes (otherwise e.g. a Share toast would jump back to photo 1).
+  const itemKey = service ? `${service.title}\n${images.join('\n')}` : '';
+  const navigationRef = useRef(itemNavigation);
+  navigationRef.current = itemNavigation;
 
   useEffect(() => {
     setImageIndex(initialImageIndex > 0 && initialImageIndex < images.length ? initialImageIndex : 0);
-    if (!service) return;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemKey]);
+
+  const isOpen = Boolean(service);
+  useEffect(() => {
+    if (!isOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
       if (event.key === 'ArrowRight') setImageIndex((i) => (images.length ? (i + 1) % images.length : 0));
       if (event.key === 'ArrowLeft') setImageIndex((i) => (images.length ? (i - 1 + images.length) % images.length : 0));
+      if (event.key === 'PageDown') navigationRef.current?.onNext();
+      if (event.key === 'PageUp') navigationRef.current?.onPrevious();
     };
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -80,11 +109,26 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
       window.removeEventListener('keydown', onKeyDown);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [service, onClose]);
+  }, [isOpen, itemKey, onClose]);
 
   if (!service || typeof document === 'undefined') return null;
 
   const showImage = (delta: number) => setImageIndex((current) => (current + delta + images.length) % images.length);
+  // Swipe left/right on the photo to see the item's other photos (phones and tablets).
+  const onTouchStart = (event: React.TouchEvent) => {
+    const touch = event.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+  };
+  const onTouchEnd = (event: React.TouchEvent) => {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!start || images.length < 2) return;
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    if (Math.abs(deltaX) < SWIPE_THRESHOLD || Math.abs(deltaX) < Math.abs(deltaY)) return;
+    showImage(deltaX < 0 ? 1 : -1);
+  };
   // Same message format and links as every other WhatsApp enquiry on the site.
   const whatsappHref = getWhatsAppInquiryUrl({
     title: service.title,
@@ -124,7 +168,11 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
 
         {/* Images: whole picture (contain), thumbnails underneath. */}
         <div className="flex shrink-0 flex-col bg-slate-950 lg:w-[64%]">
-          <div className="relative h-[58svh] w-full sm:h-[62svh] lg:h-auto lg:flex-1">
+          <div
+            className="relative h-[58svh] w-full touch-pan-y sm:h-[62svh] lg:h-auto lg:flex-1"
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
+          >
             {images.length > 0 ? (
               <ImageWithShimmer
                 src={images[imageIndex]}
@@ -165,6 +213,27 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
                   <ImageWithShimmer src={image} alt="" className="absolute inset-0" loading="lazy" />
                 </button>
               ))}
+            </div>
+          )}
+          {itemNavigation && (
+            <div className="flex items-center justify-between gap-2 border-t border-white/10 px-3 py-2 text-white">
+              <button
+                type="button"
+                onClick={itemNavigation.onPrevious}
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold hover:bg-white/10"
+              >
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" /> Previous
+              </button>
+              {itemNavigation.positionLabel && (
+                <span className="text-xs font-medium text-slate-300">{itemNavigation.positionLabel}</span>
+              )}
+              <button
+                type="button"
+                onClick={itemNavigation.onNext}
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold hover:bg-white/10"
+              >
+                Next <ChevronRight className="h-4 w-4" aria-hidden="true" />
+              </button>
             </div>
           )}
         </div>
