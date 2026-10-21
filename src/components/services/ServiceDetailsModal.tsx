@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, MessageCircle, X } from 'lucide-react';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
+import { ImageWatermark } from '../common/ImageWatermark';
 import { getWhatsAppInquiryUrl, type WhatsAppInquiryOptions } from '../../utils/whatsapp';
 
 export interface ServiceDetails {
@@ -20,7 +21,10 @@ export interface ServiceDetails {
 
 export interface ServiceAction {
   label: string;
-  onClick: () => void;
+  /** Receives the index of the image on screen (e.g. to share that photo). */
+  onClick: (imageIndex: number) => void;
+  /** Keep the pop-up open after the action (e.g. Share); by default it closes first. */
+  keepOpen?: boolean;
 }
 
 interface ServiceDetailsModalProps {
@@ -32,11 +36,16 @@ interface ServiceDetailsModalProps {
   actions?: ServiceAction[];
   /** Extra details for the standard WhatsApp enquiry message (category, ids...). */
   whatsappInquiry?: Partial<WhatsAppInquiryOptions>;
+  /** Image to show first, e.g. the gallery photo the visitor tapped. */
+  initialImageIndex?: number;
+  /** Division watermark drawn over the photo (SWS and U1 galleries). */
+  watermarkLabel?: React.ComponentProps<typeof ImageWatermark>['label'];
 }
 
 /**
- * Full service details opened from a ServiceTile's View button, shared by
- * every service listing (landing, /services, SWS, U1, IT, Travels...).
+ * Full details opened from a ServiceTile's View button, shared by every service
+ * listing (landing, /services, SWS, U1, IT, Travels...) and by gallery items in
+ * Explore All, so both pop-ups look and behave the same.
  * - Desktop: near full-screen with space on all four sides; images on the
  *   left (whole image, never cropped, with thumbnails), details on the right.
  * - Mobile: full screen; image on top, scrolling details and an action bar
@@ -49,12 +58,14 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
   primaryAction,
   actions = [],
   whatsappInquiry,
+  initialImageIndex = 0,
+  watermarkLabel,
 }) => {
   const [imageIndex, setImageIndex] = useState(0);
   const images = service ? service.images.filter(Boolean) : [];
 
   useEffect(() => {
-    setImageIndex(0);
+    setImageIndex(initialImageIndex > 0 && initialImageIndex < images.length ? initialImageIndex : 0);
     if (!service) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
@@ -112,8 +123,8 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
         </button>
 
         {/* Images: whole picture (contain), thumbnails underneath. */}
-        <div className="flex shrink-0 flex-col bg-slate-950 lg:w-[58%]">
-          <div className="relative h-[42svh] w-full sm:h-[48svh] lg:h-auto lg:flex-1">
+        <div className="flex shrink-0 flex-col bg-slate-950 lg:w-[64%]">
+          <div className="relative h-[58svh] w-full sm:h-[62svh] lg:h-auto lg:flex-1">
             {images.length > 0 ? (
               <ImageWithShimmer
                 src={images[imageIndex]}
@@ -126,6 +137,7 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-400">No photos yet</div>
             )}
+            {watermarkLabel && images.length > 0 && <ImageWatermark label={watermarkLabel} />}
             {images.length > 1 && (
               <>
                 <button type="button" onClick={() => showImage(-1)} aria-label="Previous image" className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow hover:bg-white">
@@ -158,7 +170,7 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
         </div>
 
         {/* Details and actions. */}
-        <div className="flex min-h-0 flex-1 flex-col lg:w-[42%]">
+        <div className="flex min-h-0 flex-1 flex-col lg:w-[36%]">
           <div className="flex-1 space-y-5 overflow-y-auto overscroll-contain p-5 sm:p-7 lg:pt-10">
             <div>
               {service.divisionName && (
@@ -214,12 +226,12 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
                     type="button"
                     // Close first so a booking/quote form opened by the action is not hidden behind this modal.
                     onClick={() => {
-                      onClose();
-                      action!.onClick();
+                      if (!action!.keepOpen) onClose();
+                      action!.onClick(imageIndex);
                     }}
                     className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-800 hover:border-blue-600 hover:text-blue-700"
                   >
-                    {action!.label} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    {action!.label} {!action!.keepOpen && <ArrowRight className="h-4 w-4" aria-hidden="true" />}
                   </button>
                 ))}
               </div>

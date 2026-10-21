@@ -3,8 +3,14 @@ import { SEOMetaData } from '../../types';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { db } from '../../lib/firebase';
 import { doc, getDoc } from '../../lib/tursoFirestore';
-import { CANONICAL_SITE_ORIGIN } from '../../config/site';
+import {
+  CANONICAL_SITE_ORIGIN,
+  ORGANIZATION_LEGAL_NAME,
+  SITE_ALTERNATE_NAMES,
+  SITE_NAME,
+} from '../../config/site';
 import { ADMIN_PORTAL_PATH } from '../../config/adminRoutes';
+import { getPageTitle } from '../../config/pageTitles';
 
 const SEO_CACHE_KEY = 'mahdev_cached_seo_configs';
 const SEO_ORIGIN = CANONICAL_SITE_ORIGIN;
@@ -125,9 +131,12 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       sanitizedTitle = `${baseCompanyName} - Creating Moments | Capturing Memories | Delivering Innovation`;
     }
 
-    const dynamicFullTitle = sanitizedTitle.includes(baseCompanyName)
-      ? sanitizedTitle
-      : `${sanitizedTitle} | ${baseCompanyName}`;
+    // Titles that already name Mahdev (e.g. "SWS Event Management – ... | Mahdev (Pvt) Ltd",
+    // "Mahdev Travels – ...") are used as-is, so the brand is never repeated.
+    // Fixed pages use the shared title ("About Us - Mahdev (Pvt) Ltd") whatever the view passes.
+    const routeTitle = getPageTitle(window.location.pathname);
+    const dynamicFullTitle = routeTitle
+      ?? (/mahdev/i.test(sanitizedTitle) ? sanitizedTitle : `${sanitizedTitle} - ${SITE_NAME}`);
     document.title = dynamicFullTitle;
 
     // Check if there is an admin-configured SEO override in CMS
@@ -231,7 +240,8 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     setMetaTag('property', 'og:image', effectiveOgImage);
     setMetaTag('property', 'og:type', ogType);
     setMetaTag('property', 'og:url', effectiveCanonical);
-    setMetaTag('property', 'og:site_name', companySettings?.name || siteSettings?.siteName || 'Mahdev Pvt Ltd');
+    // Fixed (not admin-editable) so Google sees one consistent site name.
+    setMetaTag('property', 'og:site_name', SITE_NAME);
     setMetaTag('property', 'og:locale', 'en_LK');
     setMetaTag('property', 'og:image:alt', effectiveOgTitle);
     setMetaTag('name', 'twitter:card', 'summary_large_image');
@@ -258,13 +268,13 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       document.head.appendChild(scriptTag);
     }
 
-    const compName = companySettings?.name || siteSettings?.siteName || 'Mahdev Pvt Ltd';
     const organizationSchema = {
       '@context': 'https://schema.org',
       '@type': 'Corporation',
       '@id': `${SEO_ORIGIN}/#organization`,
-      name: compName,
-      alternateName: compName,
+      // Must match the static Organization data in index.html (same @id).
+      name: ORGANIZATION_LEGAL_NAME,
+      alternateName: [SITE_NAME, ...SITE_ALTERNATE_NAMES.filter((name) => name !== ORGANIZATION_LEGAL_NAME)],
       url: SEO_ORIGIN,
       // Schema needs an absolute http(s) logo URL (not a relative path or inline data).
       logo: [siteSettings?.logoUrl, companySettings?.logoUrl]
@@ -304,7 +314,8 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       '@type': 'WebSite',
       '@id': `${SEO_ORIGIN}/#website`,
       url: `${SEO_ORIGIN}/`,
-      name: compName,
+      name: SITE_NAME,
+      alternateName: SITE_ALTERNATE_NAMES,
       publisher: { '@id': `${SEO_ORIGIN}/#organization` },
       inLanguage: 'en-LK',
     };

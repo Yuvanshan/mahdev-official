@@ -97,7 +97,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
     ? companySettings.name
     : siteSettings?.siteName || 'Mahdev Group';
   const effectivePageTitle =
-    homepageConfig?.seo?.pageTitle || 'Mahdev Sri Lanka | Events, Photography, IT & Travel';
+    homepageConfig?.seo?.pageTitle || 'Mahdev (Pvt) Ltd | Events, Photography, IT & Travel';
 
   return (
     <div className="w-full flex flex-col pb-24 lg:pb-0">

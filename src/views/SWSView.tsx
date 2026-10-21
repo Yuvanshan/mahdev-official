@@ -25,10 +25,10 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { IconRenderer } from '../components/ui/IconRenderer';
 import { SWSService, SWSPackage, SWSRentalItem } from '../data/swsData';
-import { DIVISION_LIST } from '../config/divisions';
+import { DIVISION_SEO } from '../config/divisionSeo';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
-import { getRentalAssetCount } from '../utils/assetMetrics';
 
 interface SWSViewProps {
   onNavigate: (route: string) => void;
@@ -36,10 +36,7 @@ interface SWSViewProps {
 
 export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
   const {
-    divisions,
     companySettings,
-    siteSettings,
-    products,
     divisionLoadErrors,
     loadDivisionData,
   } = useFirestoreDataContext();
@@ -48,20 +45,6 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
   React.useEffect(() => {
     loadDivisionData('sws');
   }, [loadDivisionData]);
-
-  const swsDiv =
-    divisions?.find(
-      (d) =>
-        d.id === 'sws' ||
-        d.id === 'sws-event-management' ||
-        d.slug === 'sws' ||
-        d.slug === 'sws-event-management'
-    ) || DIVISION_LIST.find((d) => d.id === 'sws');
-
-  const rentalCount = getRentalAssetCount(
-    products,
-    (swsDiv as any)?.rentalAssetCount || (companySettings as any)?.rentalAssetCount || (siteSettings as any)?.rentalAssetCount
-  );
 
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [isQuoteMode, setIsQuoteMode] = useState(false);
@@ -119,9 +102,9 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
   return (
     <div className="division-experience min-h-screen w-full flex flex-col bg-[#FAF9F6]">
       <SEOHead
-        title="SWS Event Management | Luxury Weddings, Decor, Stage Productions & Equipment Rentals"
-        description={`SWS Event Management by Mahdev Pvt Ltd (Est. 2022). Comprehensive event design, wedding decorations, grand summits, stage engineering, ${rentalCount} rental inventory units, photography, catering, and complete packages in Sri Lanka.`}
-        canonicalUrl="https://mahdev.lk/sws"
+        title={DIVISION_SEO.sws.title}
+        description={DIVISION_SEO.sws.description}
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/sws`}
       />
 
       {/* 1. SWS CINEMATIC HERO SECTION */}

@@ -73,6 +73,23 @@ function matchesFilter(document: SnapshotDocument, filter: SnapshotFilter): bool
   return sqlEquals(actual, filter.value, true);
 }
 
+/**
+ * Turns whereAny constraints into filterGroups, which the server SQL and the snapshot
+ * both read as OR-ed groups of AND-ed filters. whereAny([a, b]) means "a OR b", so each
+ * condition is its own group; several whereAny constraints are AND-ed by combining them:
+ * (a OR b) AND (c OR d) -> [a,c] [a,d] [b,c] [b,d]. Sending [a, b] as one group made it
+ * "a AND b", so gallery items with only `division` set never matched (empty SWS gallery).
+ */
+export function whereAnyToFilterGroups(constraints: SnapshotFilter[][]): SnapshotFilter[][] {
+  if (constraints.length === 0) return [];
+  return constraints
+    .reduce<SnapshotFilter[][]>(
+      (groups, conditions) => groups.flatMap((group) => conditions.map((condition) => [...group, condition])),
+      [[]]
+    )
+    .filter((group) => group.length > 0);
+}
+
 export function filterSnapshotDocuments<T extends SnapshotDocument>(
   documents: T[],
   filters: SnapshotFilter[] = [],

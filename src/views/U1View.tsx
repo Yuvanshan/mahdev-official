@@ -23,6 +23,8 @@ import { Badge } from '../components/ui/Badge';
 import { IconRenderer } from '../components/ui/IconRenderer';
 import { U1Service, U1Package } from '../data/u1Data';
 import { DIVISION_LIST } from '../config/divisions';
+import { DIVISION_SEO } from '../config/divisionSeo';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 
@@ -68,9 +70,9 @@ export const U1View: React.FC<U1ViewProps> = ({ onNavigate }) => {
   return (
     <div className="division-experience min-h-screen w-full flex flex-col bg-[#FAF9F6]">
       <SEOHead
-        title="U1 Studio | Luxury Photography, 4K Cinema & Creative Studio"
-        description="U1 Studio by Mahdev Pvt Ltd. High-end editorial photography, 4K cinema wedding films, fashion portraits, commercial product imaging, and heirloom flush-mount albums in Sri Lanka."
-        canonicalUrl="https://mahdev.lk/u1"
+        title={DIVISION_SEO.u1.title}
+        description={DIVISION_SEO.u1.description}
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/u1`}
       />
 
       {/* 1. U1 CINEMATIC IMAGE-FIRST HERO */}

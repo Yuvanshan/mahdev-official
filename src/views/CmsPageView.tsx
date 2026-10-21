@@ -4,6 +4,7 @@ import { cmsService } from '../services/cmsService';
 import { NotFoundView } from './NotFoundView';
 import { SEOHead } from '../components/layout/SEOHead';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
+import { formatPageTitle } from '../config/pageTitles';
 
 interface CmsPageViewProps {
   slug: string;
@@ -31,7 +32,7 @@ export const CmsPageView: React.FC<CmsPageViewProps> = ({ slug, onNavigate }) =>
   }, [slug]);
 
   useEffect(() => {
-    if (page) document.title = `${page.title} | Mahdev`;
+    if (page) document.title = formatPageTitle(page.title);
   }, [page]);
 
   if (!page) {

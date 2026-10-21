@@ -186,6 +186,8 @@ const DecorationVideoShowcaseContent: React.FC<
                   loop
                   muted={isMuted}
                   playsInline
+                  disablePictureInPicture
+                  disableRemotePlayback
                   className="w-full h-full object-cover"
                   onPlay={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}

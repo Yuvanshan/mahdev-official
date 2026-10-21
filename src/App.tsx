@@ -1,4 +1,4 @@
-import React, { lazy as reactLazy, Suspense, useState, useEffect } from 'react';
+import React, { lazy as reactLazy, Suspense, useState, useEffect, useLayoutEffect } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Navigation } from './components/layout/Navigation';
@@ -18,6 +18,8 @@ import { initAppCheck } from './lib/firebase';
 import { analyticsService } from './services/analyticsService';
 import { catalogService } from './services/catalogService';
 import { canonicalizeDivisionRoute } from './services/firestore/divisions';
+import { getPageTitle } from './config/pageTitles';
+import { SITE_NAME } from './config/site';
 import {
   ADMIN_PORTAL_PATH,
   canonicalizeAdminPath,
@@ -431,6 +433,13 @@ function AppContent() {
     (_match, slug: string) => `/services/category/${slug.toLowerCase()}`
   );
   const normalizedPath = canonicalizeAdminPath(canonicalizeDivisionRoute(legacyCategoryPath));
+  // Set the tab title on every route change ("Careers - Mahdev (Pvt) Ltd"), so a page
+  // without its own SEOHead never keeps the previous page's title. A layout effect runs
+  // before the pages' own effects, so pages with a specific title (a service, project
+  // or article) still replace this.
+  useLayoutEffect(() => {
+    document.title = getPageTitle(normalizedPath) ?? SITE_NAME;
+  }, [normalizedPath]);
   useEffect(() => {
     if (normalizedPath === basePath || typeof window === 'undefined') return;
     const canonicalUrl = `${normalizedPath}${searchParamsString ? `?${searchParamsString}` : ''}`;

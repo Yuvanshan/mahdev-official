@@ -1,14 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
-  Camera,
   Star,
-  Quote,
-  X,
-  Sparkles,
-  ChevronLeft,
-  ChevronRight,
-  MapPin,
-  Calendar,
   MessageCircle,
 } from 'lucide-react';
 import { TravelStory } from '../../data/travelsData';
@@ -18,6 +10,7 @@ import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { openWhatsAppInquiry, deriveLookupSku } from '../../utils/whatsapp';
+import { ServiceDetailsModal } from '../services/ServiceDetailsModal';
 
 export const TravelsGalleryStoriesSection: React.FC = () => {
   const { gallery: rawGallery, testimonials: rawTestimonials } = useFirestoreDataContext();
@@ -176,50 +169,28 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
         </>
       )}
 
-      {/* Full-Screen Lightbox Modal */}
-      {lightboxImage && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-950/95 flex flex-col items-center justify-center p-4 animate-fadeIn"
-          onClick={() => setLightboxImage(null)}
-        >
-          <button
-            onClick={() => setLightboxImage(null)}
-            className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer z-20"
-            aria-label="Close lightbox"
-          >
-            <X className="w-6 h-6" />
-          </button>
-          <div className="relative max-h-[80vh] flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
-            <img
-              src={lightboxImage}
-              alt="Enlarged gallery photo"
-              className="max-w-full max-h-[75vh] rounded-xl object-contain shadow-2xl"
-            />
-            <div className="mt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  const activeImg = galleryImages.find((g) => g.src === lightboxImage);
-                  const imgTitle = activeImg?.title || 'Travel Expedition Moment';
-                  openWhatsAppInquiry({
-                    title: imgTitle,
-                    sku: `TRV-${deriveLookupSku(imgTitle, 'TRV')}`,
-                    location: activeImg?.location || 'Sri Lanka',
-                    divisionName: 'Mahdev Travels',
-                    imageUrl: lightboxImage,
-                    description: `Inquiring about ${imgTitle} by Mahdev Travels.`,
-                    type: 'gallery',
-                  });
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs sm:text-sm font-bold shadow-md transition-all cursor-pointer active:scale-95"
-              >
-                <MessageCircle className="w-4 h-4 fill-white/20" />
-                <span>Inquire on WhatsApp</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Same pop-up as services: large image and WhatsApp enquiry. */}
+      {(() => {
+        const activeImg = lightboxImage ? galleryImages.find((g) => g.src === lightboxImage) : undefined;
+        const imgTitle = activeImg?.title || 'Travel Expedition Moment';
+        return (
+          <ServiceDetailsModal
+            service={lightboxImage ? {
+              title: imgTitle,
+              images: [lightboxImage],
+              subtitle: activeImg?.location || 'Sri Lanka',
+              divisionName: 'Mahdev Travels',
+            } : null}
+            onClose={() => setLightboxImage(null)}
+            whatsappInquiry={lightboxImage ? {
+              sku: `TRV-${deriveLookupSku(imgTitle, 'TRV')}`,
+              location: activeImg?.location || 'Sri Lanka',
+              description: `Inquiring about ${imgTitle} by Mahdev Travels.`,
+              type: 'gallery',
+            } : undefined}
+          />
+        );
+      })()}
     </SectionContainer>
   );
 };

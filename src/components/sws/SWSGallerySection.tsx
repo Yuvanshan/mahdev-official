@@ -1,16 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import {
-  Sparkles,
   MapPin,
-  Calendar,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Maximize2,
-  Filter,
   MessageCircle,
   Share2,
-  Check,
   Search,
 } from 'lucide-react';
 import { SWSGalleryItem } from '../../data/swsData';
@@ -24,6 +16,7 @@ import { ScrollReveal } from '../motion/MotionWrappers';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { shareMediaAsset } from '../../utils/mediaShare';
 import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
+import { ServiceDetailsModal } from '../services/ServiceDetailsModal';
 import { CrossfadeImage } from '../common/CrossfadeImage';
 import { ImageWatermark } from '../common/ImageWatermark';
 
@@ -64,7 +57,6 @@ export const SWSGallerySection: React.FC = () => {
   const { gallery: rawGallery, isDivisionGalleryLoaded, divisionLoadErrors, loadDivisionData } = useFirestoreDataContext();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
-  const [activeSubImageIdx, setActiveSubImageIdx] = useState<number>(0);
   const [shareToast, setShareToast] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -152,26 +144,6 @@ export const SWSGallerySection: React.FC = () => {
 
   const activeItem = activeLightboxIndex !== null ? filteredItems[activeLightboxIndex] : null;
 
-  const handlePrev = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (activeLightboxIndex !== null) {
-      setActiveSubImageIdx(0);
-      setActiveLightboxIndex((prev) =>
-        prev === 0 ? filteredItems.length - 1 : (prev as number) - 1
-      );
-    }
-  };
-
-  const handleNext = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (activeLightboxIndex !== null) {
-      setActiveSubImageIdx(0);
-      setActiveLightboxIndex((prev) =>
-        prev === filteredItems.length - 1 ? 0 : (prev as number) + 1
-      );
-    }
-  };
-
   return (
     <SectionContainer id="gallery" background="white" paddingY="xl" hasBorderBottom>
       {/* Section Header */}
@@ -222,13 +194,11 @@ export const SWSGallerySection: React.FC = () => {
             tabIndex={0}
             onClick={() => {
               setActiveLightboxIndex(index);
-              setActiveSubImageIdx(0);
             }}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
                 setActiveLightboxIndex(index);
-                setActiveSubImageIdx(0);
               }
             }}
             className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg"
@@ -313,162 +283,41 @@ export const SWSGallerySection: React.FC = () => {
         </p>
       )}
 
-      {/* Lightbox Modal */}
-      {activeItem && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4 sm:p-8 animate-fadeIn"
-          onClick={() => setActiveLightboxIndex(null)}
-        >
-          {/* Close button */}
-          <button
-            onClick={() => setActiveLightboxIndex(null)}
-            className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer z-20"
-            aria-label="Close Lightbox"
-          >
-            <X className="w-5 h-5" />
-          </button>
-
-          {/* Prev / Next Arrows */}
-          <button
-            onClick={handlePrev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer z-20"
-            aria-label="Previous image"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-
-          <button
-            onClick={handleNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer z-20"
-            aria-label="Next image"
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
-
-          {/* Lightbox Content Container */}
-          <div
-            className="relative max-w-5xl w-full max-h-[90vh] flex flex-col items-center justify-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="relative flex h-[58vh] w-full max-w-5xl items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl sm:h-[65vh]">
-              <img
-                src={
-                  (activeItem.images && activeItem.images[activeSubImageIdx]) ||
-                  activeItem.imageUrl ||
-                  'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80'
-                }
-                alt={activeItem.title}
-                className="max-h-full max-w-full object-contain"
-              />
-              <ImageWatermark label="SWS EVENT MANAGEMENT" />
-            </div>
-
-            {/* Thumbnail switcher for multiple photos (up to 3) */}
-            {activeItem.images && activeItem.images.length > 1 && (
-              <div className="mt-3 flex max-w-full items-center justify-center gap-2 overflow-x-auto px-1">
-                {activeItem.images.map((subImg, sIdx) => (
-                  <button
-                    key={sIdx}
-                    type="button"
-                    onClick={() => setActiveSubImageIdx(sIdx)}
-                    className={`relative h-12 w-16 shrink-0 rounded-lg overflow-hidden border-2 bg-black transition-all cursor-pointer sm:h-14 sm:w-20 ${
-                      activeSubImageIdx === sIdx
-                        ? 'border-purple-400 ring-2 ring-purple-400/40 scale-105'
-                        : 'border-white/20 opacity-60 hover:opacity-100'
-                    }`}
-                  >
-                    <img src={subImg} alt={`Photo ${sIdx + 1}`} className="h-full w-full object-contain" />
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Image Details Caption Bar */}
-            <div className="w-full max-w-3xl mt-4 bg-slate-900/90 backdrop-blur-md rounded-2xl p-4 border border-white/10 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Badge variant="electric" size="sm">
-                    {activeItem.category}
-                  </Badge>
-                  <span className="text-xs text-slate-400">
-                    {activeItem.location} ({activeItem.year})
-                  </span>
-                </div>
-                <h4 className="font-display text-base font-bold text-white">
-                  {activeItem.title}
-                </h4>
-                <p className="text-xs text-slate-300">{activeItem.description}</p>
-                {/* Tags */}
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {activeItem.tags.map((t, idx) => (
-                    <span
-                      key={idx}
-                      className="text-[10px] font-medium bg-white/10 text-slate-200 px-2 py-0.5 rounded-md"
-                    >
-                      #{t}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Actions: WhatsApp + Share */}
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    openWhatsAppInquiry({
-                      title: activeItem.title,
-                      sku: `SWS-${activeItem.id.toUpperCase()}`,
-                      itemId: activeItem.id,
-                      category: activeItem.category,
-                      divisionName: 'SWS Event Management',
-                      imageUrl: (activeItem.images && activeItem.images[activeSubImageIdx]) || activeItem.imageUrl,
-                      location: activeItem.location,
-                      description: activeItem.description,
-                      type: 'gallery',
-                    });
-                  }}
-                  title="Send inquiry with this photo to WhatsApp"
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs sm:text-sm font-bold shadow-md shadow-emerald-500/20 transition-all cursor-pointer active:scale-95 shrink-0"
-                >
-                  <MessageCircle className="w-4 h-4 fill-white/20" />
-                  <span>Inquire on WhatsApp</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const res = await shareMediaAsset({
-                      id: activeItem.id,
-                      title: activeItem.title,
-                      url: (activeItem.images && activeItem.images[activeSubImageIdx]) || activeItem.imageUrl,
-                      category: activeItem.category,
-                      division: 'sws',
-                      description: activeItem.description,
-                    });
-                    setShareToast(res.message);
-                    setTimeout(() => setShareToast(null), 2500);
-                  }}
-                  title="Share Photo"
-                  className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs sm:text-sm font-semibold transition-all cursor-pointer active:scale-95 shrink-0"
-                >
-                  {shareToast ? (
-                    <>
-                      <Check className="w-4 h-4 text-emerald-400" />
-                      <span className="text-emerald-300">{shareToast}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Share2 className="w-4 h-4" />
-                      <span>Share</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Same pop-up as services: large image, swipe/arrow keys, WhatsApp, Share. */}
+      <ServiceDetailsModal
+        service={activeItem ? {
+          title: activeItem.title,
+          images: activeItem.images?.length ? activeItem.images : [activeItem.imageUrl],
+          subtitle: [activeItem.category, activeItem.location, activeItem.year].filter(Boolean).join(' · '),
+          description: activeItem.description,
+          divisionName: 'SWS Event Management',
+        } : null}
+        watermarkLabel="SWS EVENT MANAGEMENT"
+        onClose={() => setActiveLightboxIndex(null)}
+        whatsappInquiry={activeItem ? {
+          sku: `SWS-${activeItem.id.toUpperCase()}`,
+          itemId: activeItem.id,
+          category: activeItem.category,
+          location: activeItem.location,
+          type: 'gallery',
+        } : undefined}
+        actions={activeItem ? [{
+          label: shareToast || 'Share photo',
+          keepOpen: true,
+          onClick: async (imageIndex) => {
+            const res = await shareMediaAsset({
+              id: activeItem.id,
+              title: activeItem.title,
+              url: activeItem.images?.[imageIndex] || activeItem.imageUrl,
+              category: activeItem.category,
+              division: 'sws',
+              description: activeItem.description,
+            });
+            setShareToast(res.message);
+            setTimeout(() => setShareToast(null), 2500);
+          },
+        }] : []}
+      />
     </SectionContainer>
   );
 };

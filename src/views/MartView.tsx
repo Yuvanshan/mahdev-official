@@ -21,6 +21,8 @@ import { Badge } from '../components/ui/Badge';
 import { IconRenderer } from '../components/ui/IconRenderer';
 import { Product, ProductVariant, MART_PRODUCTS, mapFirestoreProductToMart } from '../data/martData';
 import { DIVISION_LIST } from '../config/divisions';
+import { DIVISION_SEO } from '../config/divisionSeo';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useCart } from '../context/CartContext';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
@@ -90,9 +92,9 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
   return (
     <div className="w-full flex flex-col bg-white">
       <SEOHead
-        title="Mahdev Online Mart | Curated Decor Items & Smart Tech Gear"
-        description="Premium e-commerce storefront by Mahdev Pvt Ltd. Shop bespoke event & home decor, ambient stage lighting, smart electronics, and creator tech with island-wide delivery."
-        canonicalUrl="https://mahdev.lk/mart"
+        title={DIVISION_SEO.mart.title}
+        description={DIVISION_SEO.mart.description}
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/mart`}
       />
 
       {/* Toast Notification */}

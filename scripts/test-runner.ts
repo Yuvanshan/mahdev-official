@@ -18,10 +18,13 @@ import { getOfficeMapUrl, getMapSearchUrl } from '../src/config/company';
 import { getImageSourceCandidates } from '../src/utils/imageSources';
 import { canonicalizeDivisionRoute, sortDivisions } from '../src/services/firestore/divisions';
 import { DIVISION_ROUTE_ALIASES } from '../src/config/divisionRoutes';
+import { DIVISION_SEO } from '../src/config/divisionSeo';
+import { filterSnapshotDocuments, whereAnyToFilterGroups } from '../src/lib/publicSnapshotQuery';
+import { PRERENDERED_ROUTES } from '../backend/seo/publicRoutes';
 import { getDefaultTrustedCompanies, isPublishedTrustedCompany } from '../src/services/firestore/trustedCompanies';
 import { buildSitemapXml } from '../backend/api/handlers/sitemap';
 import { analyticsService } from '../src/services/analyticsService';
-import { CANONICAL_SITE_ORIGIN, resolveSiteOrigin } from '../src/config/site';
+import { CANONICAL_SITE_ORIGIN, SITE_NAME, resolveSiteOrigin } from '../src/config/site';
 import { ADMIN_PORTAL_PATH, canonicalizeAdminPath, isAdminPortalPath, isRetiredAdminPath } from '../src/config/adminRoutes';
 import { MAIN_NAV_ITEMS } from '../src/config/navigation';
 
@@ -82,6 +85,57 @@ async function runTestSuite() {
         canonicalizeDivisionRoute('/sws') === '/sws' &&
         canonicalizeDivisionRoute('/u1') === '/u1' &&
         canonicalizeDivisionRoute('/u1-studio') === '/u1',
+    },
+    {
+      category: 'SEO & Marketing',
+      name: 'Home page declares one consistent site name (WebSite schema, og:site_name, title)',
+      fn: () => {
+        const html = readFileSync('index.html', 'utf8');
+        const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+          .map((match) => JSON.parse(match[1]));
+        const website = blocks.find((block) => block['@type'] === 'WebSite');
+        return website?.name === SITE_NAME &&
+          html.includes(`<meta property="og:site_name" content="${SITE_NAME}" />`) &&
+          (html.match(/<title>([^<]+)<\/title>/)?.[1] || '').startsWith(SITE_NAME);
+      },
+    },
+    {
+      category: 'Customer Experience',
+      name: 'Division gallery query matches items tagged by either division or divisionId',
+      fn: () => {
+        const aliases = ['sws', 'sws-event-management'];
+        const groups = whereAnyToFilterGroups([[
+          { field: 'division', operator: 'in', value: aliases },
+          { field: 'divisionId', operator: 'in', value: aliases },
+        ]]);
+        const documents = [
+          { id: 'only-division', data: { division: 'sws' } },
+          { id: 'only-division-id', data: { divisionId: 'sws-event-management' } },
+          { id: 'other-division', data: { division: 'u1' } },
+        ];
+        const matched = filterSnapshotDocuments(documents, [], groups).map((document) => document.id);
+        // Two whereAny constraints are AND-ed: (a OR b) AND (c OR d) gives four groups.
+        const combined = whereAnyToFilterGroups([
+          [{ field: 'a', operator: '==', value: 1 }, { field: 'b', operator: '==', value: 1 }],
+          [{ field: 'c', operator: '==', value: 1 }, { field: 'd', operator: '==', value: 1 }],
+        ]);
+        return matched.join(',') === 'only-division,only-division-id' &&
+          combined.length === 4 && combined.every((group) => group.length === 2) &&
+          whereAnyToFilterGroups([]).length === 0;
+      },
+    },
+    {
+      category: 'SEO & Marketing',
+      name: 'Division titles lead with the division name, fit in Google results and have breadcrumbs',
+      fn: () => (Object.entries(DIVISION_SEO) as Array<[string, { name: string; title: string }]>).every(([key, seo]) => {
+        const route = PRERENDERED_ROUTES.find((item) => item.path === `/${key}`);
+        const views = readFileSync(`src/views/${{ sws: 'SWS', u1: 'U1', it: 'IT', travels: 'Travels', mart: 'Mart' }[key]}View.tsx`, 'utf8');
+        return seo.title.startsWith(seo.name) &&
+          seo.title.length <= 62 &&
+          route?.title === seo.title &&
+          views.includes(`title={DIVISION_SEO.${key}.title}`) &&
+          (route?.structuredData || []).some((block) => block['@type'] === 'BreadcrumbList');
+      }),
     },
     {
       category: 'SEO & Marketing',
@@ -278,17 +332,27 @@ async function runTestSuite() {
     },
     {
       category: 'SEO & Marketing',
-      name: 'Sitemap omits empty Insights archive and order lookup routes',
+      name: 'Sitemap lists every live page and product but no private routes or stale divisions',
       fn: () => {
         const xml = buildSitemapXml({
           pages: [{ id: 'order-lookup', data: { slug: 'order', isPublished: true } }],
-          divisions: [],
+          // "mart" is live; the stale "online-mart" duplicate must not hide it. Travels is coming soon.
+          divisions: [
+            { id: 'mart', data: { route: '/mart', slug: 'mart', status: 'active' } },
+            { id: 'online-mart', data: { route: '/mart', slug: 'mart', status: 'coming_soon', isComingSoon: true } },
+            { id: 'travels', data: { route: '/mahdev-travels', slug: 'travels', status: 'coming_soon' } },
+          ],
           services: [],
           portfolio: [],
-        });
-        return !xml.includes('<loc>https://mahdev-official.vercel.app/insights</loc>') &&
-          !xml.includes('<loc>https://mahdev-official.vercel.app/order</loc>') &&
-          !xml.includes('<loc>https://mahdev-official.vercel.app/order-lookup</loc>');
+          products: [
+            { id: 'p1', data: { slug: 'lotus-pond', status: 'active', isPublished: true } },
+            { id: 'p2', data: { slug: 'hidden-item', status: 'draft' } },
+          ],
+        } as Parameters<typeof buildSitemapXml>[0]);
+        const has = (path: string) => xml.includes(`<loc>${CANONICAL_SITE_ORIGIN}${path}</loc>`);
+        return has('/insights') && has('/mart') && has('/products/lotus-pond') &&
+          !has('/travels') && !xml.includes('hidden-item') &&
+          !has('/order') && !has('/order-lookup');
       },
     },
     {

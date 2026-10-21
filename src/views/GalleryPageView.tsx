@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { X, MapPin, Sparkles, MessageCircle, ArrowLeft, Filter, Camera, Share2, Check } from 'lucide-react';
+import { MessageCircle, ArrowLeft, Camera, Share2 } from 'lucide-react';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { SectionContainer } from '../components/ui/SectionContainer';
 import { H1, H2 } from '../components/ui/Heading';
@@ -18,6 +18,7 @@ import { InquiredItemShimmer } from '../components/common/InquiredItemShimmer';
 import { InquiryItemNotFound } from '../components/common/InquiryItemNotFound';
 import { getDefaultGallery } from '../services/firestore/gallery';
 import { ImageWithShimmer } from '../components/ui/ImageWithShimmer';
+import { ServiceDetailsModal } from '../components/services/ServiceDetailsModal';
 
 interface GalleryPageViewProps {
   onNavigate: (route: string) => void;
@@ -378,114 +379,41 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
       </SectionContainer>
 
       {/* Lightbox Modal */}
-      {activeItem && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm animate-fadeIn"
-          onClick={() => setActiveItem(null)}
-        >
-          <div
-            className="relative max-h-[90vh] max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl flex flex-col md:flex-row"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={() => setActiveItem(null)}
-              className="absolute top-3 right-3 z-10 rounded-full bg-black/50 p-2 text-white hover:bg-black/75 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* Image Section */}
-            <div className="relative min-h-56 md:min-h-[60vh] md:w-3/5 bg-black flex items-center justify-center overflow-hidden max-h-[60vh] md:max-h-[80vh]">
-              <ImageWithShimmer
-                src={activeItem.url}
-                alt={activeItem.title}
-                className="absolute inset-0"
-                imageClassName="!object-contain"
-              />
-            </div>
-
-            {/* Info Section */}
-            <div className="md:w-2/5 p-6 sm:p-8 flex flex-col justify-between bg-white">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="electric" size="sm">
-                    {activeItem.category}
-                  </Badge>
-                  <span className="font-mono text-xs font-semibold text-slate-500">
-                    {activeItem.sku}
-                  </span>
-                </div>
-                <h3 className="font-display text-lg sm:text-xl font-bold text-slate-900 mb-2">
-                  {activeItem.title}
-                </h3>
-                {activeItem.location && (
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-4">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{activeItem.location}</span>
-                  </div>
-                )}
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  {activeItem.description ||
-                    'Captured directly during live production by Mahdev’s certified specialists. Inquire on WhatsApp to book a shoot or request licensing logistics.'}
-                </p>
-              </div>
-
-              <div className="pt-6 border-t border-slate-100 flex flex-col gap-2 mt-6">
-                <button
-                  type="button"
-                  onClick={() => handleInquire(activeItem)}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white hover:bg-[#20bd5a] transition-colors shadow-sm cursor-pointer"
-                >
-                  <MessageCircle className="w-4 h-4 fill-white/20" />
-                  Inquire via WhatsApp
-                </button>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const res = await shareMediaAsset({
-                      id: activeItem.id,
-                      title: activeItem.title,
-                      url: activeItem.url,
-                      category: activeItem.category,
-                      division: activeItem.divisionId,
-                      sku: activeItem.sku,
-                      description: activeItem.description,
-                    });
-                    setShareFeedback(res.message);
-                    setTimeout(() => setShareFeedback(null), 2500);
-                  }}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
-                >
-                  {shareFeedback ? (
-                    <>
-                      <Check className="w-4 h-4 text-emerald-600" />
-                      <span className="text-emerald-700 font-medium">{shareFeedback}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Share2 className="w-4 h-4 text-slate-500" />
-                      <span>Share Media Asset</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveItem(null)}
-                  className="w-full rounded-xl border border-transparent px-4 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
-                >
-                  Close Preview
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Same pop-up as services: large image, WhatsApp enquiry and Share. */}
+      <ServiceDetailsModal
+        service={activeItem ? {
+          title: activeItem.title,
+          images: [activeItem.url],
+          subtitle: [activeItem.category, activeItem.location].filter(Boolean).join(' · '),
+          description: activeItem.description,
+          divisionName: activeItem.divisionName,
+        } : null}
+        onClose={() => setActiveItem(null)}
+        whatsappInquiry={activeItem ? {
+          sku: activeItem.sku,
+          itemId: activeItem.id,
+          category: activeItem.category,
+          location: activeItem.location,
+          type: 'gallery',
+        } : undefined}
+        actions={activeItem ? [{
+          label: shareFeedback || 'Share photo',
+          keepOpen: true,
+          onClick: async () => {
+            const res = await shareMediaAsset({
+              id: activeItem.id,
+              title: activeItem.title,
+              url: activeItem.url,
+              category: activeItem.category,
+              division: activeItem.divisionId,
+              sku: activeItem.sku,
+              description: activeItem.description,
+            });
+            setShareFeedback(res.message);
+            setTimeout(() => setShareFeedback(null), 2500);
+          },
+        }] : []}
+      />
 
       {/* Bottom CTA */}
       <CallToActionSection

@@ -16,6 +16,7 @@ import { InquiryItemNotFound } from '../components/common/InquiryItemNotFound';
 import { normalizeCode } from '../utils/itemLookup';
 import { deriveLookupSku } from '../utils/whatsapp';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
+import { formatPageTitle } from '../config/pageTitles';
 
 const CATALOG_DIVISION = 'mart';
 
@@ -203,11 +204,21 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
 
   return (
     <div className="min-h-screen bg-neutral-50 flex flex-col">
-      <SEOHead
-        title="Mahdev Mart Product Catalogue | Event Decor, Gifts & More"
-        description="Browse the Mahdev Mart product catalogue: event and home decor, foil balloons, gifts and more, with island-wide delivery in Sri Lanka. Order easily on WhatsApp."
-        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/catalog`}
-      />
+      {/* A /products/{slug} URL is its own indexable page (listed in the sitemap), so it
+          declares itself as canonical with the product's name; otherwise the catalogue. */}
+      {initialProductId && inquiredProduct ? (
+        <SEOHead
+          title={formatPageTitle(inquiredProduct.name)}
+          description={(inquiredProduct.shortDescription || inquiredProduct.description || `${inquiredProduct.name} from Mahdev Online Mart, Sri Lanka.`).slice(0, 300)}
+          canonicalUrl={`${CANONICAL_SITE_ORIGIN}/products/${encodeURIComponent(inquiredProduct.slug || inquiredProduct.id)}`}
+        />
+      ) : (
+        <SEOHead
+          title="Mahdev Mart Product Catalogue | Event Decor, Gifts & More"
+          description="Browse the Mahdev Mart product catalogue: event and home decor, foil balloons, gifts and more, with island-wide delivery in Sri Lanka. Order easily on WhatsApp."
+          canonicalUrl={`${CANONICAL_SITE_ORIGIN}/catalog`}
+        />
+      )}
       {/* Customer Inquired Item Context Banner */}
       {isSingleItemMode && inquiredProduct && (
         <div className="bg-emerald-50 border-b border-emerald-200 py-3.5 px-4 sm:px-6">

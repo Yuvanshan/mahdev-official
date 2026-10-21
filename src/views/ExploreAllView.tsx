@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Camera, CheckCircle2, ChevronLeft, ChevronRight, Filter, Image as ImageIcon, MessageCircle, Search, ShoppingBag, X } from 'lucide-react';
+import { ArrowRight, Camera, CheckCircle2, Filter, Image as ImageIcon, Search, ShoppingBag, X } from 'lucide-react';
 import { SEOHead } from '../components/layout/SEOHead';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { ServiceTile } from '../components/services/ServiceTile';
@@ -13,7 +13,8 @@ import { CatalogProduct } from '../types/catalog';
 import { FirestoreGallery, FirestoreProduct, FirestoreService } from '../types/firestore';
 import { formatCurrency } from '../utils/currency';
 import { getImageSourceCandidates } from '../utils/imageSources';
-import { openWhatsAppInquiry } from '../utils/whatsapp';
+import { DIVISIONS } from '../config/divisions';
+import type { DivisionId } from '../types';
 
 type BrowseType = 'service' | 'gallery' | 'product';
 type BrowseItem =
@@ -146,7 +147,6 @@ export const ExploreAllView: React.FC<{
   const [selectedFilter, setSelectedFilter] = useState(() => toFilterFromSlug(initialCategorySlug));
   const [selectedService, setSelectedService] = useState<FirestoreService | null>(null);
   const [selectedGalleryItem, setSelectedGalleryItem] = useState<{ data: FirestoreGallery; images: string[] } | null>(null);
-  const [selectedGalleryImageIndex, setSelectedGalleryImageIndex] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
   const [isCategoryDrawerOpen, setIsCategoryDrawerOpen] = useState(false);
 
@@ -293,7 +293,6 @@ export const ExploreAllView: React.FC<{
     if (item.type === 'service') setSelectedService(item.data);
     if (item.type === 'gallery') {
       setSelectedGalleryItem({ data: item.data, images: item.images });
-      setSelectedGalleryImageIndex(0);
     }
     if (item.type === 'product') setSelectedProduct(item.data);
   };
@@ -507,66 +506,22 @@ export const ExploreAllView: React.FC<{
         } : undefined}
       />
 
-      {selectedGalleryItem && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/85 p-4" role="dialog" aria-modal="true" aria-label={selectedGalleryItem.data.title} onClick={() => setSelectedGalleryItem(null)}>
-          <div className="relative max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            <button type="button" onClick={() => setSelectedGalleryItem(null)} className="absolute right-3 top-3 z-10 rounded-full bg-black/60 p-2 text-white" aria-label="Close gallery details"><X className="h-4 w-4" /></button>
-            <div className="relative aspect-video max-h-[65vh] min-h-48 w-full bg-slate-950">
-              {selectedGalleryItem.images[selectedGalleryImageIndex] && (
-                <ImageWithShimmer
-                  src={selectedGalleryItem.images[selectedGalleryImageIndex]}
-                  alt={`${selectedGalleryItem.data.title} photo ${selectedGalleryImageIndex + 1}`}
-                  className="absolute inset-0"
-                  imageClassName="!object-contain"
-                />
-              )}
-              {selectedGalleryItem.images.length > 1 && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedGalleryImageIndex((index) => (index === 0 ? selectedGalleryItem.images.length - 1 : index - 1))}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
-                    aria-label="Previous gallery image"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedGalleryImageIndex((index) => (index + 1) % selectedGalleryItem.images.length)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
-                    aria-label="Next gallery image"
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </button>
-                  <span className="absolute bottom-3 right-3 rounded bg-black/60 px-2 py-1 text-xs text-white">
-                    {selectedGalleryImageIndex + 1} / {selectedGalleryItem.images.length}
-                  </span>
-                </>
-              )}
-            </div>
-            {selectedGalleryItem.images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto bg-slate-950 px-4 py-3">
-                {selectedGalleryItem.images.map((image, index) => (
-                  <button
-                    key={`${image}-${index}`}
-                    type="button"
-                    onClick={() => setSelectedGalleryImageIndex(index)}
-                    className={`relative h-14 w-20 shrink-0 overflow-hidden rounded-md border-2 ${index === selectedGalleryImageIndex ? 'border-blue-500' : 'border-transparent opacity-70 hover:opacity-100'}`}
-                    aria-label={`Show gallery image ${index + 1}`}
-                    aria-pressed={index === selectedGalleryImageIndex}
-                  >
-                    <ImageWithShimmer src={image} alt="" className="absolute inset-0" imageClassName="!object-contain" />
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5">
-              <div><p className="text-xs font-semibold uppercase tracking-wide text-blue-700">{selectedGalleryItem.data.category || selectedGalleryItem.data.tag}</p><h2 className="mt-1 font-semibold text-slate-900">{selectedGalleryItem.data.title}</h2><p className="mt-1 text-xs text-slate-500">{selectedGalleryItem.data.caption}</p></div>
-              <button type="button" onClick={() => openWhatsAppInquiry({ title: selectedGalleryItem.data.title, category: selectedGalleryItem.data.category || selectedGalleryItem.data.tag, itemId: selectedGalleryItem.data.id, divisionName: String(selectedGalleryItem.data.division), description: selectedGalleryItem.data.caption, type: 'gallery' })} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-700"><MessageCircle className="h-3.5 w-3.5" />Ask on WhatsApp</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Gallery items open in the same pop-up as services (large image, swipeable). */}
+      <ServiceDetailsModal
+        service={selectedGalleryItem ? {
+          title: selectedGalleryItem.data.title || 'Gallery project',
+          images: selectedGalleryItem.images,
+          subtitle: selectedGalleryItem.data.category || selectedGalleryItem.data.tag,
+          description: selectedGalleryItem.data.caption,
+          divisionName: DIVISIONS[selectedGalleryItem.data.division as DivisionId]?.name || String(selectedGalleryItem.data.division || 'Mahdev'),
+        } : null}
+        onClose={() => setSelectedGalleryItem(null)}
+        whatsappInquiry={selectedGalleryItem ? {
+          category: selectedGalleryItem.data.category || selectedGalleryItem.data.tag,
+          itemId: selectedGalleryItem.data.id,
+          type: 'gallery',
+        } : undefined}
+      />
     </main>
   );
 };

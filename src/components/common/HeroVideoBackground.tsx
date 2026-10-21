@@ -224,6 +224,9 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
           loop
           muted
           playsInline
+          // Background loop: stops Safari offering "Video Viewer" / AirPlay for it.
+          disablePictureInPicture
+          disableRemotePlayback
           preload="auto"
           onCanPlay={handleVideoReady}
           onCanPlayThrough={() => {

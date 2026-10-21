@@ -168,6 +168,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           autoPlay
           loop
           playsInline
+          disableRemotePlayback
           muted
           preload="auto"
           aria-hidden="true"

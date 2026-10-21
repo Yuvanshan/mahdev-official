@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { X, MapPin, MessageCircle, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, MessageCircle, Search } from 'lucide-react';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { Caption, H2, Body } from '../ui/Heading';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { GallerySectionShimmer } from '../common/GallerySectionShimmer';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
+import { ServiceDetailsModal } from '../services/ServiceDetailsModal';
 import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
 
 interface HomeGalleryItem {
@@ -235,114 +236,22 @@ export const HomeGallerySection: React.FC = () => {
         </p>
       )}
 
-      {activeImage && (
-        <div
-          className="fixed inset-0 z-[110] flex items-center justify-center overflow-y-auto bg-slate-950/90 p-3 sm:p-6"
-          role="dialog"
-          aria-modal="true"
-          aria-label={activeImage.item.title}
-          onClick={() => setActiveImage(null)}
-        >
-          <div className="relative flex max-h-full w-full max-w-5xl flex-col items-center" onClick={(event) => event.stopPropagation()}>
-            <button
-              type="button"
-              onClick={() => setActiveImage(null)}
-              className="absolute right-1 top-1 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/70 sm:right-2 sm:top-2"
-              aria-label="Close gallery image"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <div className="relative flex h-[62vh] w-full items-center justify-center overflow-hidden rounded-2xl bg-black/30 sm:h-[70vh]">
-              <img
-                src={activeImage.item.images[activeImage.imageIndex] || activeImage.item.url}
-                alt={`${activeImage.item.title} photo ${activeImage.imageIndex + 1}`}
-                onError={(event) => {
-                  event.currentTarget.style.display = 'none';
-                  const fallback = event.currentTarget.nextElementSibling as HTMLElement | null;
-                  fallback?.classList.remove('hidden');
-                }}
-                className="max-h-full max-w-full object-contain"
-              />
-              <div className="hidden h-64 w-full flex-col items-center justify-center p-6 text-center text-slate-300">
-                <span className="mb-1 text-sm font-semibold">{activeImage.item.title}</span>
-                <span className="text-xs text-slate-400">{activeImage.item.category}</span>
-              </div>
-              {activeImage.item.images.length > 1 && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setActiveImage((current) => current && ({
-                        ...current,
-                        imageIndex: (current.imageIndex - 1 + current.item.images.length) % current.item.images.length,
-                      }))
-                    }
-                    className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/75 sm:left-4"
-                    aria-label="Previous gallery photo"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setActiveImage((current) => current && ({
-                        ...current,
-                        imageIndex: (current.imageIndex + 1) % current.item.images.length,
-                      }))
-                    }
-                    className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/75 sm:right-4"
-                    aria-label="Next gallery photo"
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </button>
-                </>
-              )}
-            </div>
-            {activeImage.item.images.length > 1 && (
-              <div className="mt-3 flex max-w-full items-center justify-center gap-2 overflow-x-auto px-1">
-                {activeImage.item.images.map((image, imageIndex) => (
-                  <button
-                    key={`${image}-${imageIndex}`}
-                    type="button"
-                    onClick={() => setActiveImage((current) => current && ({ ...current, imageIndex }))}
-                    aria-label={`View photo ${imageIndex + 1}`}
-                    aria-current={activeImage.imageIndex === imageIndex}
-                    className={`h-14 w-20 shrink-0 overflow-hidden rounded-lg border-2 bg-black/40 transition sm:h-16 sm:w-24 ${
-                      activeImage.imageIndex === imageIndex ? 'border-blue-400' : 'border-white/20 opacity-70 hover:opacity-100'
-                    }`}
-                  >
-                    <img src={image} alt="" className="h-full w-full object-contain" />
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="mt-3 flex w-full flex-col gap-3 rounded-xl border border-white/10 bg-slate-900/70 px-3 py-3 text-sm text-slate-200 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-0 items-center gap-3">
-                <span className="truncate font-medium">{activeImage.item.title}</span>
-                <span className="shrink-0 rounded-full bg-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-slate-300">
-                  {activeImage.item.category}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() =>
-                  openWhatsAppInquiry({
-                    title: activeImage.item.title,
-                    itemId: activeImage.item.id,
-                    category: activeImage.item.category,
-                    location: activeImage.item.location,
-                    imageUrl: activeImage.item.images[activeImage.imageIndex] || activeImage.item.url,
-                    type: 'gallery',
-                  })
-                }
-                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-700"
-              >
-                <MessageCircle className="h-4 w-4" aria-hidden="true" /> Enquire on WhatsApp
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Same pop-up as services: large image, swipe/arrow keys, WhatsApp enquiry. */}
+      <ServiceDetailsModal
+        service={activeImage ? {
+          title: activeImage.item.title,
+          images: activeImage.item.images.length ? activeImage.item.images : [activeImage.item.url],
+          subtitle: [activeImage.item.category, activeImage.item.location].filter(Boolean).join(' · '),
+        } : null}
+        initialImageIndex={activeImage?.imageIndex}
+        onClose={() => setActiveImage(null)}
+        whatsappInquiry={activeImage ? {
+          itemId: activeImage.item.id,
+          category: activeImage.item.category,
+          location: activeImage.item.location,
+          type: 'gallery',
+        } : undefined}
+      />
     </SectionContainer>
   );
 };

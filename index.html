@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mahdev Sri Lanka | Events, Photography, IT &amp; Travel</title>
+    <title>Mahdev (Pvt) Ltd | Events, Photography, IT &amp; Travel</title>
     <meta name="description" content="Discover Mahdev (Pvt) Ltd, a Sri Lankan group for event management, photography and cinema, IT solutions, travel, and professional production equipment." />
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
@@ -29,12 +29,26 @@
     <!-- Home only: the prerender step removes this from every other page. -->
     <link rel="preload" as="image" href="/assets/hero_landing_poster.jpg" fetchpriority="high" data-home-only />
     <!-- Structured data for search engines (not executed, so allowed by the CSP). -->
+    <!-- WebSite.name is the "site name" Google shows above results; keep it equal to SITE_NAME in src/config/site.ts. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://mahdev-official.vercel.app/#website",
+        "name": "Mahdev (Pvt) Ltd",
+        "alternateName": ["Mahdev", "Mahdev Pvt Ltd", "MAHDEV Pvt. Ltd."],
+        "url": "https://mahdev-official.vercel.app/",
+        "publisher": { "@id": "https://mahdev-official.vercel.app/#organization" },
+        "inLanguage": "en-LK"
+      }
+    </script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "Organization",
         "@id": "https://mahdev-official.vercel.app/#organization",
         "name": "MAHDEV Pvt. Ltd.",
+        "alternateName": ["Mahdev (Pvt) Ltd", "Mahdev", "Mahdev Pvt Ltd"],
         "url": "https://mahdev-official.vercel.app/",
         "logo": "https://mahdev-official.vercel.app/logo.png",
         "description": "Sri Lankan group for event management, photography and cinema, IT solutions, travel, and professional production equipment.",

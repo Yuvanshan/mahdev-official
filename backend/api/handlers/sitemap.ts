@@ -124,6 +124,7 @@ export function buildSitemapXml(
     portfolio: TursoDocument[];
     gallery?: TursoDocument[];
     mediaAssets?: TursoDocument[];
+    products?: TursoDocument[];
     seoConfig?: TursoDocument | null;
   },
   origin = CANONICAL_SITE_ORIGIN,
@@ -131,20 +132,25 @@ export function buildSitemapXml(
   const publishedPages = content.pages.filter(
     ({ data }) => data.isPublished === true && data.isDeleted !== true
   );
-  const hasPublishedInsights = publishedPages.some(({ data }) => data.category === 'insights');
+  const isDivisionLive = ({ data }: TursoDocument) =>
+    data.isPublished !== false &&
+    data.status !== 'inactive' &&
+    data.status !== 'coming_soon' &&
+    data.isComingSoon !== true &&
+    data.comingSoon !== true;
+  const divisionPaths = ({ data }: TursoDocument) => [
+    typeof data.route === 'string' ? canonicalizeDivisionRoute(data.route) : '',
+    typeof data.slug === 'string' ? canonicalizeDivisionRoute(`/${publicSlug(data.slug) || ''}`) : '',
+  ];
+  // Several records can describe one division (e.g. "mart" and an old "online-mart").
+  // Like the app, a division page counts as live if any of its records is live, so a
+  // stale "coming soon" duplicate cannot hide a live page from search engines.
+  const liveDivisionPaths = new Set(content.divisions.filter(isDivisionLive).flatMap(divisionPaths));
   const inactiveDivisionPaths = new Set(
     content.divisions
-      .filter(({ data }) =>
-        data.isPublished === false ||
-        data.status === 'inactive' ||
-        data.status === 'coming_soon' ||
-        data.isComingSoon === true ||
-        data.comingSoon === true
-      )
-      .flatMap(({ data }) => [
-        typeof data.route === 'string' ? data.route : '',
-        typeof data.slug === 'string' ? `/${publicSlug(data.slug) || ''}` : '',
-      ])
+      .filter((division) => !isDivisionLive(division))
+      .flatMap(divisionPaths)
+      .filter((path) => !liveDivisionPaths.has(path))
   );
   const excludedPaths = new Set(
     Array.isArray(content.seoConfig?.data.configs)
@@ -162,8 +168,7 @@ export function buildSitemapXml(
       .filter((path) =>
         !excludedPaths.has(path) &&
           !inactiveDivisionPaths.has(path) &&
-          isPublicPath(path) &&
-        (path !== '/insights' || hasPublishedInsights)
+          isPublicPath(path)
       )
       .map((path) => [path, entry(path, origin)])
   );
@@ -207,6 +212,20 @@ export function buildSitemapXml(
       ({ data, id }) => {
         const slug = publicSlug(data.slug || id);
         return slug && !slug.includes('/') ? `/services/${slug}` : null;
+      },
+      origin,
+    ),
+    ...recordsToEntries(
+      (content.products || []).filter(({ data }) =>
+        data.isPublished !== false &&
+        data.status !== 'inactive' &&
+        data.status !== 'draft' &&
+        data.status !== 'archived' &&
+        data.isDeleted !== true
+      ),
+      ({ data, id }) => {
+        const slug = publicSlug(data.slug || id);
+        return slug && !slug.includes('/') ? `/products/${slug}` : null;
       },
       origin,
     ),
@@ -255,6 +274,7 @@ async function loadPublicSitemapData(): Promise<{
   portfolio: TursoDocument[];
   gallery: TursoDocument[];
   mediaAssets: TursoDocument[];
+  products: TursoDocument[];
   seoConfig: TursoDocument | null;
 }> {
   initialization ??= initializeTursoDatabase().catch((error: unknown) => {
@@ -262,16 +282,17 @@ async function loadPublicSitemapData(): Promise<{
     throw error;
   });
   await initialization;
-  const [pages, divisions, services, portfolio, gallery, mediaAssets, seoConfig] = await Promise.all([
+  const [pages, divisions, services, portfolio, gallery, mediaAssets, products, seoConfig] = await Promise.all([
     listTursoDocuments('pages', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     listTursoDocuments('divisions', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     listTursoDocuments('services', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     listTursoDocuments('portfolio', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     listTursoDocuments('gallery', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     listTursoDocuments('media_assets', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
+    listTursoDocuments('products', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     getTursoDocument('settings', '', 'seo'),
   ]);
-  return { pages, divisions, services, portfolio, gallery, mediaAssets, seoConfig };
+  return { pages, divisions, services, portfolio, gallery, mediaAssets, products, seoConfig };
 }
 
 export default async function sitemapHandler(

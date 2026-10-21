@@ -53,6 +53,8 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate
             loop
             muted
             playsInline
+            disablePictureInPicture
+            disableRemotePlayback
             preload="metadata"
             aria-hidden="true"
             className="h-full w-full object-cover"

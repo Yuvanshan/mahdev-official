@@ -418,9 +418,9 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
       {/* Detail Modal */}
       {activeDetailItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden max-h-[92svh] flex flex-col animate-in zoom-in-95 duration-200">
             {/* Modal Header Image */}
-            <div className="relative h-60 w-full bg-slate-900 shrink-0">
+            <div className="relative h-[40svh] w-full bg-slate-900 shrink-0 sm:h-[48svh]">
               <ImageWithShimmer
                 src={
                   activeDetailItem.imageUrl && activeDetailItem.imageUrl.trim() !== ''
@@ -429,6 +429,8 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
                 }
                 alt={activeDetailItem.name}
                 className="absolute inset-0"
+                // Whole item, never cropped, like the services pop-up.
+                imageFit="contain"
                 watermarkLabel="SWS EVENT MANAGEMENT"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-black/30 to-transparent" />

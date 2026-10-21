@@ -24,6 +24,8 @@ import { Badge } from '../components/ui/Badge';
 import { IconRenderer } from '../components/ui/IconRenderer';
 import { ITService } from '../data/itData';
 import { DIVISION_LIST } from '../config/divisions';
+import { DIVISION_SEO } from '../config/divisionSeo';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 
@@ -64,9 +66,9 @@ export const ITView: React.FC<ITViewProps> = ({ onNavigate }) => {
   return (
     <div className="w-full flex flex-col bg-white">
       <SEOHead
-        title="Mahdev IT & Solutions | Enterprise Software, Cloud & AI Engineering"
-        description="Enterprise web applications, native mobile apps, custom ERPs, POS systems, AWS/GCP cloud orchestration, generative AI agents, and 24/7 SLA maintenance by Mahdev Pvt Ltd."
-        canonicalUrl="https://mahdev.lk/it"
+        title={DIVISION_SEO.it.title}
+        description={DIVISION_SEO.it.description}
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/it`}
       />
 
       {/* 1. HIGH-TECH HERO SECTION WITH LIVE ARCHITECTURE TERMINAL */}

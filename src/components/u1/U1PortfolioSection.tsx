@@ -1,16 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
-  Camera,
   Maximize2,
-  X,
-  ChevronLeft,
-  ChevronRight,
   MapPin,
-  Sparkles,
-  Layers,
-  Sliders,
-  Film,
-  Info,
   Share2,
   MessageCircle,
   Check,
@@ -24,6 +15,7 @@ import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { shareMediaAsset, inquireMediaAssetOnWhatsApp } from '../../utils/mediaShare';
 import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
+import { ServiceDetailsModal } from '../services/ServiceDetailsModal';
 import { CrossfadeImage } from '../common/CrossfadeImage';
 import { ImageWatermark } from '../common/ImageWatermark';
 
@@ -72,7 +64,6 @@ export const U1PortfolioSection: React.FC = () => {
   } = useFirestoreDataContext();
   const [activeCategory, setActiveCategory] = useState<PortfolioCategory>('All');
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
-  const [activeSubImageIndex, setActiveSubImageIndex] = useState(0);
   const [shareToast, setShareToast] = useState<string | null>(null);
   const [cardCopiedId, setCardCopiedId] = useState<string | null>(null);
 
@@ -266,26 +257,6 @@ export const U1PortfolioSection: React.FC = () => {
 
   const activeItem = activeLightboxIndex !== null ? filteredItems[activeLightboxIndex] : null;
 
-  const handlePrev = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (activeLightboxIndex !== null) {
-      setActiveSubImageIndex(0);
-      setActiveLightboxIndex((prev) =>
-        prev === 0 ? filteredItems.length - 1 : (prev as number) - 1
-      );
-    }
-  };
-
-  const handleNext = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (activeLightboxIndex !== null) {
-      setActiveSubImageIndex(0);
-      setActiveLightboxIndex((prev) =>
-        prev === filteredItems.length - 1 ? 0 : (prev as number) + 1
-      );
-    }
-  };
-
   return (
     <SectionContainer id="portfolio" background="subtle" paddingY="xl" hasBorderBottom>
       {/* Header */}
@@ -324,13 +295,11 @@ export const U1PortfolioSection: React.FC = () => {
             role="button"
             tabIndex={0}
             onClick={() => {
-              setActiveSubImageIndex(0);
               setActiveLightboxIndex(index);
             }}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                setActiveSubImageIndex(0);
                 setActiveLightboxIndex(index);
               }
             }}
@@ -417,188 +386,48 @@ export const U1PortfolioSection: React.FC = () => {
         ))}
       </div>
 
-      {/* Full-Screen Lightbox Preview with Camera Metadata, WhatsApp Inquiry & Share */}
-      {activeItem && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4 sm:p-8 animate-fadeIn"
-          onClick={() => setActiveLightboxIndex(null)}
-        >
-          {/* Close button */}
-          <button
-            onClick={() => setActiveLightboxIndex(null)}
-            className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer z-20"
-            aria-label="Close Lightbox"
-          >
-            <X className="w-5 h-5" />
-          </button>
-
-          {/* Prev / Next Arrows */}
-          <button
-            onClick={handlePrev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer z-20"
-            aria-label="Previous image"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-
-          <button
-            onClick={handleNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer z-20"
-            aria-label="Next image"
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
-
-          {/* Lightbox Content Container */}
-          <div
-            className="relative max-w-5xl w-full max-h-[90vh] flex flex-col items-center justify-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="relative flex h-[48vh] w-full max-w-5xl items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl sm:h-[56vh]">
-              <img
-                  src={activeItem.images?.[activeSubImageIndex] || activeItem.imageUrl}
-                  alt={`${activeItem.title} photo ${activeSubImageIndex + 1}`}
-                  className="max-h-full max-w-full object-contain"
-              />
-              <ImageWatermark label="U1 STUDIO" />
-                {(activeItem.images?.length || 0) > 1 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setActiveSubImageIndex((index) =>
-                          (index - 1 + (activeItem.images?.length || 1)) % (activeItem.images?.length || 1)
-                        )
-                      }
-                      className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/75 sm:left-4 sm:h-10 sm:w-10"
-                      aria-label="Previous portfolio photo"
-                    >
-                      <ChevronLeft className="h-5 w-5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setActiveSubImageIndex((index) =>
-                          (index + 1) % (activeItem.images?.length || 1)
-                        )
-                      }
-                      className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/75 sm:right-4 sm:h-10 sm:w-10"
-                      aria-label="Next portfolio photo"
-                    >
-                      <ChevronRight className="h-5 w-5" />
-                    </button>
-                    <span className="absolute bottom-2 right-2 rounded-md bg-black/60 px-2 py-1 text-xs text-white">
-                      {activeSubImageIndex + 1} / {activeItem.images.length}
-                    </span>
-                  </>
-                )}
-            </div>
-            {(activeItem.images?.length || 0) > 1 && (
-              <div className="mt-2 flex max-w-full items-center justify-center gap-2 overflow-x-auto px-1">
-                {activeItem.images?.map((image, imageIndex) => (
-                  <button
-                    key={`${image}-${imageIndex}`}
-                    type="button"
-                    onClick={() => setActiveSubImageIndex(imageIndex)}
-                    aria-label={`View portfolio photo ${imageIndex + 1}`}
-                    aria-current={activeSubImageIndex === imageIndex}
-                    className={`h-12 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-black transition sm:h-14 sm:w-20 ${
-                      activeSubImageIndex === imageIndex
-                        ? 'border-blue-400'
-                        : 'border-white/20 opacity-70 hover:opacity-100'
-                    }`}
-                  >
-                    <img src={image} alt="" className="h-full w-full object-contain" />
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Meta & Interactive Action Bar */}
-            <div className="w-full max-w-4xl mt-3 bg-slate-900/95 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-white/10 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="space-y-1 max-w-md">
-                <div className="flex items-center gap-2">
-                  <Badge variant="electric" size="sm">
-                    {activeItem.category}
-                  </Badge>
-                  <span className="text-xs text-slate-400">
-                    {activeItem.location} ({activeItem.year})
-                  </span>
-                </div>
-                <h4 className="font-display text-base sm:text-lg font-bold text-white mt-1">
-                  {activeItem.title} — <span className="text-slate-400 text-xs font-normal">{activeItem.client}</span>
-                </h4>
-                <p className="text-xs text-slate-300 mt-0.5 line-clamp-2">{activeItem.description}</p>
-              </div>
-
-              {/* Action Buttons: WhatsApp Incur / Inquiry + Share Asset */}
-              <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto shrink-0">
-                {/* Camera EXIF optics info if present */}
-                {activeItem.cameraMetadata && (
-                  <div className="hidden sm:block p-2 rounded-lg bg-white/5 border border-white/10 text-left text-[11px] text-slate-300 font-mono">
-                    <div className="flex items-center gap-1.5 text-blue-400 font-bold">
-                      <Camera className="w-3.5 h-3.5" />
-                      <span>{activeItem.cameraMetadata.camera}</span>
-                    </div>
-                    <div>{activeItem.cameraMetadata.lens} • {activeItem.cameraMetadata.aperture}</div>
-                  </div>
-                )}
-
-                {/* WhatsApp Direct Inquiry Button */}
-                <button
-                  type="button"
-                  onClick={() =>
-                    inquireMediaAssetOnWhatsApp({
-                      id: activeItem.id,
-                      title: activeItem.title,
-                      url: activeItem.imageUrl,
-                      category: activeItem.category,
-                      division: 'u1',
-                      description: activeItem.description,
-                    })
-                  }
-                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs sm:text-sm font-bold shadow-lg shadow-emerald-500/25 transition-all cursor-pointer active:scale-95"
-                  title="Send inquiry with this photo/video to WhatsApp"
-                >
-                  <MessageCircle className="w-4 h-4 fill-white/20" />
-                  <span>Inquire on WhatsApp</span>
-                </button>
-
-                {/* Share Frame Button */}
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const res = await shareMediaAsset({
-                      id: activeItem.id,
-                      title: activeItem.title,
-                      url: activeItem.imageUrl,
-                      category: activeItem.category,
-                      division: 'u1',
-                      description: activeItem.description,
-                    });
-                    setShareToast(res.message);
-                    setTimeout(() => setShareToast(null), 2500);
-                  }}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs sm:text-sm font-semibold transition-all cursor-pointer active:scale-95"
-                  title="Share frame link or via social"
-                >
-                  {shareToast ? (
-                    <>
-                      <Check className="w-4 h-4 text-emerald-400" />
-                      <span className="text-emerald-300">{shareToast}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Share2 className="w-4 h-4" />
-                      <span>Share Frame</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Same pop-up as services: large image, swipe/arrow keys, WhatsApp, Share. */}
+      <ServiceDetailsModal
+        service={activeItem ? {
+          title: activeItem.title,
+          images: activeItem.images?.length ? activeItem.images : [activeItem.imageUrl],
+          subtitle: [activeItem.category, activeItem.client, activeItem.location, activeItem.year].filter(Boolean).join(' · '),
+          description: activeItem.description,
+          divisionName: 'U1 Studio',
+          sections: activeItem.cameraMetadata ? [{
+            label: 'Shot on',
+            items: [
+              activeItem.cameraMetadata.camera,
+              [activeItem.cameraMetadata.lens, activeItem.cameraMetadata.focalLength, activeItem.cameraMetadata.aperture]
+                .filter(Boolean).join(' · '),
+            ].filter(Boolean),
+          }] : undefined,
+        } : null}
+        watermarkLabel="U1 STUDIO"
+        onClose={() => setActiveLightboxIndex(null)}
+        whatsappInquiry={activeItem ? {
+          itemId: activeItem.id,
+          category: activeItem.category,
+          location: activeItem.location,
+          type: 'gallery',
+        } : undefined}
+        actions={activeItem ? [{
+          label: shareToast || 'Share photo',
+          keepOpen: true,
+          onClick: async (imageIndex) => {
+            const res = await shareMediaAsset({
+              id: activeItem.id,
+              title: activeItem.title,
+              url: activeItem.images?.[imageIndex] || activeItem.imageUrl,
+              category: activeItem.category,
+              division: 'u1',
+              description: activeItem.description,
+            });
+            setShareToast(res.message);
+            setTimeout(() => setShareToast(null), 2500);
+          },
+        }] : []}
+      />
     </SectionContainer>
   );
 };

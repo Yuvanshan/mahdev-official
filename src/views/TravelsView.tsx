@@ -26,6 +26,8 @@ import { Badge } from '../components/ui/Badge';
 import { IconRenderer } from '../components/ui/IconRenderer';
 import { TravelPackage, TravelDestination, DayTour, Vehicle } from '../data/travelsData';
 import { DIVISION_LIST } from '../config/divisions';
+import { DIVISION_SEO } from '../config/divisionSeo';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 
@@ -68,9 +70,9 @@ export const TravelsView: React.FC<TravelsViewProps> = ({ onNavigate }) => {
   return (
     <div className="w-full flex flex-col bg-white">
       <SEOHead
-        title="Mahdev Travels & Tours | Luxury Sri Lanka Expeditions & Private Chauffeurs"
-        description="Curated luxury private tours, tea country rail journeys, leopard wildlife safaris, VIP airport transfers, and bespoke holiday itineraries across Sri Lanka by Mahdev Pvt Ltd."
-        canonicalUrl="https://mahdev.lk/travels"
+        title={DIVISION_SEO.travels.title}
+        description={DIVISION_SEO.travels.description}
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/travels`}
       />
 
       {/* 1. CINEMATIC HERO SECTION */}

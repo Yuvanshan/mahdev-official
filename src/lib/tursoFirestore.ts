@@ -4,6 +4,7 @@ import {
   canEvaluateFilters,
   filterSnapshotDocuments,
   querySnapshotDocuments,
+  whereAnyToFilterGroups,
   type SnapshotFilter,
   type SnapshotOrder,
 } from './publicSnapshotQuery';
@@ -613,9 +614,11 @@ async function readQuery<T extends DocumentData>(
   const filters = parsed.constraints
     .filter((constraint) => constraint.type === 'where')
     .map(({ field, operator, value }) => ({ field, operator, value }));
-  const filterGroups = parsed.constraints
-    .filter((constraint) => constraint.type === 'whereAny')
-    .map((constraint) => constraint.value);
+  const filterGroups = whereAnyToFilterGroups(
+    parsed.constraints
+      .filter((constraint) => constraint.type === 'whereAny')
+      .map((constraint) => constraint.value as SnapshotFilter[])
+  );
   const orderConstraint = parsed.constraints.find((constraint) => constraint.type === 'orderBy');
   const limitConstraint = parsed.constraints.find((constraint) => constraint.type === 'limit');
   const cursor = parsed.constraints.find((constraint) => constraint.type === 'startAfter');

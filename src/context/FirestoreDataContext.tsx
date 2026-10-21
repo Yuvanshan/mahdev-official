@@ -70,10 +70,15 @@ const DEVICE_CACHE_REQUIRED_KEYS = [
   'mahdev_cached_gallery',
 ];
 const DEVICE_CACHE_VERSION_KEY = 'mahdev_public_data_cache_version';
-const DEVICE_CACHE_VERSION = '3';
+// Bumped to 4: clears device caches that saved an empty gallery (from the whereAny
+// query bug), which hid the SWS gallery for returning visitors.
+const DEVICE_CACHE_VERSION = '4';
+// An empty saved list here counts as "not cached", so one empty result cannot stop
+// later page loads from fetching (and hide sections such as the SWS gallery).
 const DEVICE_CACHE_NONEMPTY_ARRAY_KEYS = new Set([
   'mahdev_cached_divisions',
   'mahdev_cached_services',
+  'mahdev_cached_gallery',
 ]);
 const REQUIRED_CACHED_DIVISION_IDS = [
   'sws',
@@ -201,6 +206,34 @@ function sanitizeCachedSettings(value: unknown): unknown {
       .filter(([key]) => !PRIVATE_SETTINGS_CACHE_FIELDS.has(key))
       .map(([key, nestedValue]) => [key, sanitizeCachedSettings(nestedValue)])
   );
+}
+
+/** True when a saved list (services, gallery...) holds at least one item of the division. */
+function cacheHasDivisionItems(key: string, divisionId: string): boolean {
+  try {
+    const list: unknown = JSON.parse(getDeviceCacheItem(key) || '[]');
+    return Array.isArray(list) && list.some((item) =>
+      item && typeof item === 'object' &&
+      (isSameDivision((item as Record<string, unknown>).division as string, divisionId) ||
+        isSameDivision((item as Record<string, unknown>).divisionId as string, divisionId))
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * "Loaded" flags for the divisions that really have saved items in the given lists
+ * (all of them when requireAll), instead of assuming every division was saved.
+ */
+function cachedDivisionFlags(keys: string[], requireAll = false): Record<string, boolean> {
+  const flags: Record<string, boolean> = {};
+  for (const id of REQUIRED_CACHED_DIVISION_IDS) {
+    const canonicalId = getCanonicalDivisionId(id) || id;
+    const present = keys.map((key) => cacheHasDivisionItems(key, canonicalId));
+    if (requireAll ? present.every(Boolean) : present.some(Boolean)) flags[id] = true;
+  }
+  return flags;
 }
 
 function hasCompleteDeviceCache(): boolean {
@@ -449,7 +482,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Track loaded divisions state for seamless transition & shimmers
   const [loadedDivisions, setLoadedDivisions] = useState<Record<string, boolean>>(() => {
-    if (hasCachedData || hasCachedDivisionCollections) return { ...FULLY_LOADED_DIVISION_FLAGS };
+    if (hasCachedData) return { ...FULLY_LOADED_DIVISION_FLAGS };
+    if (hasCachedDivisionCollections) return cachedDivisionFlags(['mahdev_cached_services', 'mahdev_cached_gallery'], true);
     try {
       if (typeof window !== 'undefined') {
         const cached = getDeviceCacheItem('mahdev_cached_loaded_divisions');
@@ -460,7 +494,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   });
 
   const [loadedServices, setLoadedServices] = useState<Record<string, boolean>>(() => {
-    if (hasCachedData || hasCachedDivisionCollections) return { ...FULLY_LOADED_DIVISION_FLAGS };
+    if (hasCachedData) return { ...FULLY_LOADED_DIVISION_FLAGS };
+    // Only divisions with saved items count as loaded; others show a shimmer until fetched.
+    if (hasCachedDivisionCollections) return cachedDivisionFlags(['mahdev_cached_services']);
     try {
       if (typeof window !== 'undefined') {
         const cached = getDeviceCacheItem('mahdev_cached_loaded_services');
@@ -471,7 +507,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   });
 
   const [loadedGallery, setLoadedGallery] = useState<Record<string, boolean>>(() => {
-    if (hasCachedData || hasCachedDivisionCollections) return { ...FULLY_LOADED_DIVISION_FLAGS };
+    if (hasCachedData) return { ...FULLY_LOADED_DIVISION_FLAGS };
+    // Only divisions with saved items count as loaded; others show a shimmer until fetched.
+    if (hasCachedDivisionCollections) return cachedDivisionFlags(['mahdev_cached_gallery']);
     try {
       if (typeof window !== 'undefined') {
         const cached = getDeviceCacheItem('mahdev_cached_loaded_gallery');
@@ -485,6 +523,8 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   const [fetchingDivisions, setFetchingDivisions] = useState<Record<string, boolean>>({});
   const [divisionLoadErrors, setDivisionLoadErrors] = useState<Record<string, string>>({});
   const inFlightDivisionLoadsRef = React.useRef<Record<string, Promise<void> | undefined>>({});
+  // Divisions refreshed from the server during this page load (see loadDivisionData).
+  const refreshedDivisionsRef = React.useRef<Set<string>>(new Set());
   const publicDataLoadedRef = React.useRef(hasCachedData);
   const refreshRequestRef = React.useRef<Promise<void> | null>(null);
   const bootLoadStartedRef = React.useRef(false);
@@ -536,8 +576,16 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         'mahdev_cached_categories',
       ].every(hasValidDeviceCacheItem);
     };
-    const hasRenderableCachedData = hasDivisionCache();
-    if (!forceRefresh && hasRenderableCachedData) return;
+    // Saved lists only hold the divisions visited before (e.g. SWS but not U1), so check
+    // that this division is actually in them before showing saved data without a shimmer.
+    const hasRenderableCachedData = hasDivisionCache() && (
+      cacheHasDivisionItems('mahdev_cached_services', canonicalId) ||
+      cacheHasDivisionItems('mahdev_cached_gallery', canonicalId)
+    );
+    // Stale-while-revalidate: saved data renders at once, and each division is still
+    // refreshed once per page load in the background (all reads share the one public
+    // snapshot request). Later visits in the same page load reuse that result.
+    if (!forceRefresh && refreshedDivisionsRef.current.has(canonicalId)) return;
 
     // Deduplicate in-flight requests for the exact same division
     if (inFlightDivisionLoadsRef.current[canonicalId]) {
@@ -693,6 +741,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         ]);
       } finally {
         // ONLY AFTER ALL QUERIES HAVE FULLY SETTLED, TOGGLE FLAGS AND RELEASE SHIMMER
+        if (servicesLoadedSuccessfully && galleryLoadedSuccessfully) refreshedDivisionsRef.current.add(canonicalId);
         if (servicesLoadedSuccessfully) setLoadedServices((prev) => {
           const next = { ...prev, [canonicalId]: true, [rawDivId]: true };
           try { setDeviceCacheItem('mahdev_cached_loaded_services', JSON.stringify(next)); } catch {}

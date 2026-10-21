@@ -28,3 +28,13 @@ export const CANONICAL_SITE_ORIGIN = resolveSiteOrigin(readConfiguredSiteUrl());
 
 /** Host name only (e.g. "mahdev-official.vercel.app"), for display in the admin. */
 export const CANONICAL_SITE_HOST = new URL(CANONICAL_SITE_ORIGIN).host;
+
+/**
+ * The name Google shows above search results ("site name"). Google reads it from
+ * the home page's WebSite structured data, og:site_name and title, so all of them
+ * use these exact values. Without them Google falls back to the host ("Vercel").
+ */
+export const SITE_NAME = 'Mahdev (Pvt) Ltd';
+export const SITE_ALTERNATE_NAMES = ['Mahdev', 'Mahdev Pvt Ltd', 'MAHDEV Pvt. Ltd.'];
+/** Legal name; keep identical to the Google Business Profile listing. */
+export const ORGANIZATION_LEGAL_NAME = 'MAHDEV Pvt. Ltd.';
