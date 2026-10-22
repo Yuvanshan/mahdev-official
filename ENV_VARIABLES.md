@@ -61,6 +61,7 @@ This document outlines the environment configuration architecture for the **Mahd
 | `SMTP_FROM_EMAIL` | Server | Standard | Outbound sender address | `notifications@mahdev.lk` |
 | `WHATSAPP_API_TOKEN` | Server | **Confidential** | WhatsApp Cloud API Bearer Token | Meta System User Token |
 | `WHATSAPP_PHONE_NUMBER_ID` | Server | Standard | WhatsApp Phone Number ID | Meta Phone ID |
+| `WHATSAPP_WEBHOOK_VERIFY_TOKEN` | Server | **Confidential** | Verify token Meta sends to `/api/webhook/whatsapp` during webhook setup | Random string |
 | `VITE_GA_MEASUREMENT_ID` | Client | Public | Google Analytics 4 ID | `G-XXXXXXXXXX` |
 | `VITE_GOOGLE_MAPS_API_KEY` | Client | Public | Google Maps API Display Key | `AIzaSy...` (HTTP restricted) |
 

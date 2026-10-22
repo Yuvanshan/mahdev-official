@@ -14,6 +14,7 @@ import publicEmailHandler from '../backend/api/handlers/publicEmail.js';
 import sitemapHandler from '../backend/api/handlers/sitemap.js';
 import publicSnapshotHandler, { publicInlineMediaHandler } from '../backend/api/handlers/publicSnapshot.js';
 import analyticsHandler from '../backend/api/handlers/analytics.js';
+import whatsappWebhookHandler from '../backend/api/handlers/whatsappWebhook.js';
 import pageShellHandler, { sendNotFoundPage } from '../backend/api/handlers/pageShell.js';
 
 interface ApiRequest extends IncomingMessage {
@@ -84,6 +85,7 @@ const BROWSER_VISIBLE_API_PATHS = new Set([
   '/api/admin/auth/verify',
   '/api/admin/customers',
   '/api/page-shell',
+  '/api/webhook/whatsapp',
 ]);
 
 // A top-level browser navigation asks for HTML; fetch() calls from the app do not.
@@ -141,6 +143,10 @@ export default async function handler(req: ApiRequest, res: ServerResponse): Pro
   }
   if (pathname === '/api/notifications/dispatch') {
     await notificationHandler(req, res);
+    return;
+  }
+  if (pathname === '/api/webhook/whatsapp') {
+    await whatsappWebhookHandler(req, res);
     return;
   }
   if (pathname === '/api/contact/submit' || pathname === '/api/inquiries/submit') {

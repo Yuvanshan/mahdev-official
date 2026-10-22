@@ -20,6 +20,7 @@ import careerStatusHandler from './handlers/careers/status.js';
 import careerApplicationHandler from './handlers/careers/application.js';
 import publicSnapshotHandler, { publicInlineMediaHandler } from './handlers/publicSnapshot.js';
 import analyticsHandler from './handlers/analytics.js';
+import whatsappWebhookHandler from './handlers/whatsappWebhook.js';
 
 const apiRouter = Router();
 
@@ -38,6 +39,10 @@ apiRouter.get('/careers/status', async (req: Request, res: Response) => {
 });
 apiRouter.delete('/careers/application', async (req: Request, res: Response) => {
   await careerApplicationHandler(req, res);
+});
+
+apiRouter.all('/webhook/whatsapp', async (req: Request, res: Response) => {
+  await whatsappWebhookHandler(req, res);
 });
 
 apiRouter.post('/analytics', (req: Request, res: Response) => {
