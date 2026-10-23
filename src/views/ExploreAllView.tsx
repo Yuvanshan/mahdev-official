@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Camera, CheckCircle2, Filter, Image as ImageIcon, Search, ShoppingBag, X } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ArrowRight, BadgeDollarSign, Camera, Image as ImageIcon, Layers, RotateCcw, Search, SlidersHorizontal, X } from 'lucide-react';
 import { SEOHead } from '../components/layout/SEOHead';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { ServiceTile } from '../components/services/ServiceTile';
@@ -11,8 +11,19 @@ import { SectionContainer } from '../components/ui/SectionContainer';
 import { mapFirestoreProductToCatalog } from '../services/catalogService';
 import { CatalogProduct } from '../types/catalog';
 import { FirestoreGallery, FirestoreProduct, FirestoreService } from '../types/firestore';
-import { StartingPriceTag, getServiceStartingPrice, getStartingPriceDetails } from '../components/common/StartingPriceTag';
-import { formatCurrency } from '../utils/currency';
+import { StartingPriceTag, getServiceStartingPrice, getStartingPrice, getStartingPriceDetails } from '../components/common/StartingPriceTag';
+import {
+  EMPTY_PRICE_RANGE,
+  PriceRange,
+  PriceRangeFilter,
+  getPriceBounds,
+  isPriceRangeActive,
+  priceInRange,
+} from '../components/common/PriceRangeFilter';
+import { FilterDrawer, FilterDrawerPanel, FilterOptionRow, FilterTriggerButton, describePriceRange } from '../components/common/FilterDrawer';
+import { ListingSortSelect } from '../components/common/ListingSortSelect';
+import { LISTING_SORT_OPTIONS, ListingSort, sortListing } from '../utils/listingSort';
+import { formatCurrency, formatLKR } from '../utils/currency';
 import { getImageSourceCandidates } from '../utils/imageSources';
 import { DIVISIONS } from '../config/divisions';
 import type { DivisionId } from '../types';
@@ -51,6 +62,29 @@ const toFilterFromSlug = (slug?: string) => {
   if (!normalizedSlug) return 'all';
   const type = TYPE_SLUGS[normalizedSlug];
   return type ? `type:${type}` : `category:${normalizedSlug}`;
+};
+
+/** Price used for filtering and sorting: services' starting price, gallery and product prices. */
+const getItemPrice = (item: BrowseItem): number | null =>
+  item.type === 'service'
+    ? getServiceStartingPrice(item.data as unknown as Record<string, any>)
+    : getStartingPrice(item.data.price);
+
+// Price, sort and search live in the query string (?min=&max=&priced=1&sort=&q=), so they
+// survive the category route change (which remounts the page) and can be shared.
+const readInitialParams = () => {
+  const params = typeof window === 'undefined' ? new URLSearchParams() : new URLSearchParams(window.location.search);
+  const amount = (key: string) => {
+    const value = Number(params.get(key));
+    return params.get(key) && Number.isFinite(value) && value > 0 ? value : null;
+  };
+  const sort = params.get('sort') as ListingSort | null;
+  return {
+    query: params.get('q')?.trim() || '',
+    price: { min: amount('min'), max: amount('max') } as PriceRange,
+    pricedOnly: params.get('priced') === '1',
+    sort: sort && LISTING_SORT_OPTIONS.some((option) => option.value === sort) ? sort : 'recommended' as ListingSort,
+  };
 };
 
 const BrowseCard: React.FC<{
@@ -149,32 +183,20 @@ export const ExploreAllView: React.FC<{
     isProductsLoading,
     isGalleryLoading,
   } = useFirestoreDataContext();
-  // Pre-fill from ?q= (used by the 404 page search and WhatsApp service links).
-  const [query, setQuery] = useState(() =>
-    typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('q')?.trim() || ''
-  );
+  // Pre-fill from ?q= (used by the 404 page search and WhatsApp service links), plus ?min/max/priced/sort.
+  const [initialParams] = useState(readInitialParams);
+  const [query, setQuery] = useState(initialParams.query);
+  const [priceRange, setPriceRange] = useState<PriceRange>(initialParams.price);
+  const [pricedOnly, setPricedOnly] = useState(initialParams.pricedOnly);
+  const [sortBy, setSortBy] = useState<ListingSort>(initialParams.sort);
   // Select the category from the URL immediately, so a direct visit never flashes "All items".
   const [selectedFilter, setSelectedFilter] = useState(() => toFilterFromSlug(initialCategorySlug));
   const [selectedService, setSelectedService] = useState<FirestoreService | null>(null);
   const [selectedGalleryItem, setSelectedGalleryItem] = useState<{ data: FirestoreGallery; images: string[] } | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
-  const [isCategoryDrawerOpen, setIsCategoryDrawerOpen] = useState(false);
-
-  useEffect(() => {
-    if (!isCategoryDrawerOpen) return;
-
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsCategoryDrawerOpen(false);
-    };
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', closeOnEscape);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener('keydown', closeOnEscape);
-    };
-  }, [isCategoryDrawerOpen]);
+  // Which filter drawer tab is open ('categories' | 'price'), or null when closed.
+  const [openPanel, setOpenPanel] = useState<string | null>(null);
+  const closeDrawer = useCallback(() => setOpenPanel(null), []);
 
   const availableProducts = products;
   const availableServices = services;
@@ -288,16 +310,26 @@ export const ExploreAllView: React.FC<{
     setSelectedFilter(toFilterFromSlug(initialCategorySlug));
   }, [initialCategorySlug]);
 
+  // Items in the selected type/category; the price slider limits follow this selection.
+  const itemsInSelection = useMemo(() => allItems.filter((item) => {
+    const matchesType = !selectedFilter.startsWith('type:')
+      || item.type === selectedFilter.slice(5);
+    const matchesCategory = !selectedFilter.startsWith('category:')
+      || toCategorySlug(item.category) === selectedFilter.slice(9);
+    return matchesType && matchesCategory;
+  }), [allItems, selectedFilter]);
+
+  const priceBounds = useMemo(() => getPriceBounds(itemsInSelection.map(getItemPrice)), [itemsInSelection]);
+
   const filteredItems = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    return allItems.filter((item) => {
-      const matchesType = !selectedFilter.startsWith('type:')
-        || item.type === selectedFilter.slice(5);
-      const matchesCategory = !selectedFilter.startsWith('category:')
-        || toCategorySlug(item.category) === selectedFilter.slice(9);
-      return matchesType && matchesCategory && (!normalizedQuery || item.searchableText.includes(normalizedQuery));
+    const matches = itemsInSelection.filter((item) => {
+      const price = getItemPrice(item);
+      if (pricedOnly && price === null) return false;
+      return priceInRange(price, priceRange) && (!normalizedQuery || item.searchableText.includes(normalizedQuery));
     });
-  }, [allItems, query, selectedFilter]);
+    return sortListing(matches, sortBy, getItemPrice, (item) => item.title);
+  }, [itemsInSelection, query, priceRange, pricedOnly, sortBy]);
 
   // Previous/Next in the gallery pop-up move through the gallery items in the current list.
   const listedGalleryItems = filteredItems.filter((item) => item.type === 'gallery');
@@ -326,20 +358,34 @@ export const ExploreAllView: React.FC<{
 
   const isLoading = isServicesLoading || isProductsLoading || isGalleryLoading;
 
-  const filterButtonClass = (value: string) => `flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm transition ${
-    selectedFilter === value ? 'bg-blue-50 font-semibold text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-  }`;
   const selectedFilterLabel = selectedFilter.startsWith('category:')
     ? categories.find(([category]) => toCategorySlug(category) === selectedFilter.slice('category:'.length))?.[0]
       || selectedFilter.slice('category:'.length)
     : selectedFilter.startsWith('type:')
       ? KIND_LABELS[selectedFilter.slice('type:'.length) as BrowseType]
-      : 'All items';
-  const updateFilter = (filter: string) => {
+      : undefined;
+  const priceLabel = describePriceRange(priceRange, formatLKR) || (pricedOnly ? 'Priced only' : undefined);
+  const hasPricedItems = priceBounds !== null;
+  const showPriceSlider = priceBounds !== null && priceBounds.max > priceBounds.min;
+  const isFiltered = query.trim() !== '' || selectedFilter !== 'all' || isPriceRangeActive(priceRange) || pricedOnly;
+
+  // Carries price/sort/search across the category route change (see readInitialParams).
+  const buildQueryString = () => {
+    const params = new URLSearchParams();
+    if (query.trim()) params.set('q', query.trim());
+    if (priceRange.min !== null) params.set('min', String(priceRange.min));
+    if (priceRange.max !== null) params.set('max', String(priceRange.max));
+    if (pricedOnly) params.set('priced', '1');
+    if (sortBy !== 'recommended') params.set('sort', sortBy);
+    const text = params.toString();
+    return text ? `?${text}` : '';
+  };
+  const updateFilter = (filter: string, keepOtherFilters = true) => {
     setSelectedFilter(filter);
-    setIsCategoryDrawerOpen(false);
+    setOpenPanel(null);
+    const queryString = keepOtherFilters ? buildQueryString() : '';
     if (filter === 'all') {
-      onNavigate('/services');
+      onNavigate(`/services${queryString}`);
       return;
     }
 
@@ -350,40 +396,101 @@ export const ExploreAllView: React.FC<{
           gallery: 'type-gallery',
           product: 'type-products',
         }[filter.slice('type:'.length) as BrowseType];
-    onNavigate(`/services/category/${pathSlug}`);
+    onNavigate(`/services/category/${pathSlug}${queryString}`);
   };
-  const categoryOptions = (
-    <>
-      <nav aria-label="Catalog categories" className="space-y-1">
-        <button type="button" className={filterButtonClass('all')} onClick={() => updateFilter('all')}>
-          <span>All items</span><span className="text-xs text-slate-400">{allItems.length}</span>
-        </button>
-        {(['service', 'gallery', 'product'] as BrowseType[]).map((type) => {
-          const count = allItems.filter((item) => item.type === type).length;
-          return (
-            <button key={type} type="button" className={filterButtonClass(`type:${type}`)} onClick={() => updateFilter(`type:${type}`)}>
-              <span>{KIND_LABELS[type]}</span><span className="text-xs text-slate-400">{count}</span>
-            </button>
-          );
-        })}
-      </nav>
-      {categories.length > 0 && (
-        <div className="mt-5 border-t border-slate-100 pt-4">
-          <h3 className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Categories</h3>
-          <nav aria-label="Item category filters" className="max-h-[55vh] space-y-1 overflow-y-auto">
-            {categories.map(([category, count]) => {
-              const filter = `category:${toCategorySlug(category)}`;
-              return (
-                <button key={category} type="button" className={filterButtonClass(filter)} onClick={() => updateFilter(filter)}>
-                  <span className="truncate">{category}</span><span className="text-xs text-slate-400">{count}</span>
-                </button>
-              );
-            })}
+  const clearAllFilters = () => {
+    setQuery('');
+    setPriceRange(EMPTY_PRICE_RANGE);
+    setPricedOnly(false);
+    setSortBy('recommended');
+    if (selectedFilter !== 'all') updateFilter('all', false);
+  };
+
+  // Removable chips summarising what is currently applied
+  const activeChips: Array<{ key: string; label: string; clear: () => void }> = [];
+  if (query.trim()) activeChips.push({ key: 'q', label: `“${query.trim()}”`, clear: () => setQuery('') });
+  if (selectedFilterLabel) activeChips.push({ key: 'cat', label: selectedFilterLabel, clear: () => updateFilter('all') });
+  if (isPriceRangeActive(priceRange)) {
+    activeChips.push({ key: 'price', label: describePriceRange(priceRange, formatLKR)!, clear: () => setPriceRange(EMPTY_PRICE_RANGE) });
+  }
+  if (pricedOnly) activeChips.push({ key: 'priced', label: 'Priced items only', clear: () => setPricedOnly(false) });
+
+  const drawerPanels: FilterDrawerPanel[] = [
+    {
+      id: 'categories',
+      label: 'Categories',
+      icon: <Layers className="h-3.5 w-3.5" />,
+      summary: selectedFilterLabel,
+      content: (
+        <>
+          <h3 className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Show</h3>
+          <nav aria-label="Catalog categories" className="space-y-1">
+            <FilterOptionRow label="All items" count={allItems.length} selected={selectedFilter === 'all'} onClick={() => updateFilter('all')} />
+            {(['service', 'gallery', 'product'] as BrowseType[]).map((type) => (
+              <FilterOptionRow
+                key={type}
+                label={KIND_LABELS[type]}
+                count={allItems.filter((item) => item.type === type).length}
+                selected={selectedFilter === `type:${type}`}
+                onClick={() => updateFilter(`type:${type}`)}
+              />
+            ))}
           </nav>
+          {categories.length > 0 && (
+            <div className="mt-5 border-t border-slate-100 pt-4">
+              <h3 className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Categories</h3>
+              <nav aria-label="Item category filters" className="space-y-1">
+                {categories.map(([category, count]) => {
+                  const filter = `category:${toCategorySlug(category)}`;
+                  return (
+                    <FilterOptionRow
+                      key={category}
+                      label={category}
+                      count={count}
+                      selected={selectedFilter === filter}
+                      onClick={() => updateFilter(filter)}
+                    />
+                  );
+                })}
+              </nav>
+            </div>
+          )}
+        </>
+      ),
+    },
+  ];
+  if (hasPricedItems) {
+    drawerPanels.push({
+      id: 'price',
+      label: 'Price',
+      icon: <BadgeDollarSign className="h-3.5 w-3.5" />,
+      summary: priceLabel,
+      content: (
+        <div className="space-y-5">
+          {showPriceSlider && (
+            <PriceRangeFilter
+              bounds={priceBounds!}
+              value={priceRange}
+              onChange={setPriceRange}
+              hint="Items without a listed price are hidden while a price range is set."
+            />
+          )}
+          <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-200 px-3 py-3 text-sm font-medium text-slate-700 hover:border-blue-300">
+            <span className="inline-flex items-center gap-2">
+              <BadgeDollarSign className="h-4 w-4 text-slate-400" />
+              Only show items with a listed price
+            </span>
+            <input
+              type="checkbox"
+              checked={pricedOnly}
+              onChange={(event) => setPricedOnly(event.target.checked)}
+              className="h-4 w-4 cursor-pointer rounded text-blue-600 focus:ring-blue-500"
+            />
+          </label>
         </div>
-      )}
-    </>
-  );
+      ),
+    });
+  }
 
   return (
     <main className="min-h-screen bg-slate-50 pt-20">
@@ -414,94 +521,92 @@ export const ExploreAllView: React.FC<{
       </SectionContainer>
 
       <SectionContainer background="subtle" paddingY="lg">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[230px_minmax(0,1fr)]">
-          <aside className="sticky top-24 hidden self-start rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:block">
-            <div className="mb-4 flex items-center gap-2">
-              <ShoppingBag className="h-4 w-4 text-blue-700" />
-              <h2 className="text-sm font-semibold text-slate-900">Browse categories</h2>
+        <section aria-live="polite">
+          {/* Filter toolbar: Categories and Price open the left drawer on the matching tab */}
+          <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <FilterTriggerButton
+                icon={<Layers className="h-4 w-4" />}
+                label="Categories"
+                activeLabel={selectedFilterLabel}
+                onClick={() => setOpenPanel('categories')}
+                expanded={openPanel === 'categories'}
+              />
+              {hasPricedItems && (
+                <FilterTriggerButton
+                  icon={<BadgeDollarSign className="h-4 w-4" />}
+                  label="Price"
+                  activeLabel={priceLabel}
+                  onClick={() => setOpenPanel('price')}
+                  expanded={openPanel === 'price'}
+                />
+              )}
+              <ListingSortSelect value={sortBy} onChange={setSortBy} className="min-w-[200px] flex-1 sm:ml-auto sm:flex-none" />
             </div>
-            {categoryOptions}
-          </aside>
-
-          <section aria-live="polite">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex w-full items-center justify-between gap-3 lg:w-auto">
-                <p className="text-sm text-slate-600">
-                  <span className="font-semibold text-slate-900">{filteredItems.length}</span> items
-                  {query.trim() && <> matching <span className="font-medium text-slate-900">“{query.trim()}”</span></>}
-                </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
+              <span className="inline-flex items-center gap-1.5">
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                <span><span className="font-semibold text-slate-900">{filteredItems.length}</span> {isFiltered ? `of ${allItems.length} items match` : 'items'}</span>
+              </span>
+              {activeChips.map((chip) => (
                 <button
+                  key={chip.key}
                   type="button"
-                  onClick={() => setIsCategoryDrawerOpen(true)}
-                  aria-haspopup="dialog"
-                  aria-expanded={isCategoryDrawerOpen}
-                  className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm hover:border-blue-300 hover:text-blue-700 lg:hidden"
+                  onClick={chip.clear}
+                  aria-label={`Remove filter ${chip.label}`}
+                  className="inline-flex max-w-full items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 font-semibold text-blue-700 hover:bg-blue-100"
                 >
-                  <Filter className="h-4 w-4" />
-                  Categories
-                  <span className="max-w-24 truncate text-xs font-medium text-slate-500">{selectedFilterLabel}</span>
+                  <span className="truncate">{chip.label}</span>
+                  <X className="h-3 w-3 shrink-0" />
                 </button>
-              </div>
-              {(query || selectedFilter !== 'all') && (
-                <button type="button" onClick={() => { setQuery(''); updateFilter('all'); }} className="text-xs font-semibold text-blue-700 hover:text-blue-900">
-                  Clear filters
+              ))}
+              {isFiltered && (
+                <button type="button" onClick={clearAllFilters} className="inline-flex items-center gap-1 font-semibold text-rose-600 hover:text-rose-700">
+                  <RotateCcw className="h-3 w-3" />
+                  Clear all
                 </button>
               )}
             </div>
-            {filteredItems.length ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-                {filteredItems.map((item, index) => (
-                  <BrowseCard
-                    key={`${item.type}:${item.id}`}
-                    item={item}
-                    onSelect={handleSelect}
-                    onNavigate={onNavigate}
-                    imageLoading={index < 4 ? 'eager' : 'lazy'}
-                  />
-                ))}
-              </div>
-            ) : isLoading ? (
-              <div className="rounded-2xl border border-slate-200 bg-white px-5 py-16 text-center">
-                <GallerySectionShimmer divisionName="Mahdev catalog" />
-                <p className="mt-4 text-sm text-slate-500">Loading available services and items…</p>
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-16 text-center">
-                <Search className="mx-auto mb-3 h-7 w-7 text-slate-300" />
-                <h2 className="font-semibold text-slate-900">No matching items</h2>
-                <p className="mt-1 text-sm text-slate-500">Try a different keyword or clear the selected category.</p>
-                <button type="button" onClick={() => { setQuery(''); updateFilter('all'); }} className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
-                  Show all items
-                </button>
-              </div>
-            )}
-          </section>
-        </div>
-      </SectionContainer>
-
-      {isCategoryDrawerOpen && (
-        <div className="fixed inset-0 z-[110] lg:hidden" role="presentation" onClick={() => setIsCategoryDrawerOpen(false)}>
-          <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-[2px]" />
-          <aside
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="mobile-categories-title"
-            className="absolute inset-y-0 left-0 flex w-[min(86vw,340px)] flex-col overflow-y-auto bg-white p-5 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-2">
-                <ShoppingBag className="h-4 w-4 text-blue-700" />
-                <h2 id="mobile-categories-title" className="font-editorial text-xl font-semibold text-slate-950">Categories</h2>
-              </div>
-              <button type="button" onClick={() => setIsCategoryDrawerOpen(false)} aria-label="Close categories" className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
-                <X className="h-5 w-5" />
+          </div>
+          {filteredItems.length ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+              {filteredItems.map((item, index) => (
+                <BrowseCard
+                  key={`${item.type}:${item.id}`}
+                  item={item}
+                  onSelect={handleSelect}
+                  onNavigate={onNavigate}
+                  imageLoading={index < 4 ? 'eager' : 'lazy'}
+                />
+              ))}
+            </div>
+          ) : isLoading ? (
+            <div className="rounded-2xl border border-slate-200 bg-white px-5 py-16 text-center">
+              <GallerySectionShimmer divisionName="Mahdev catalog" />
+              <p className="mt-4 text-sm text-slate-500">Loading available services and items…</p>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-16 text-center">
+              <Search className="mx-auto mb-3 h-7 w-7 text-slate-300" />
+              <h2 className="font-semibold text-slate-900">No matching items</h2>
+              <p className="mt-1 text-sm text-slate-500">Try a different keyword, price range or category.</p>
+              <button type="button" onClick={clearAllFilters} className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+                Show all items
               </button>
             </div>
-            {categoryOptions}
-          </aside>
-        </div>
-      )}
+          )}
+        </section>
+      </SectionContainer>
+
+      <FilterDrawer
+        openPanel={openPanel}
+        onChangePanel={setOpenPanel}
+        onClose={closeDrawer}
+        panels={drawerPanels}
+        resultCount={filteredItems.length}
+        onReset={clearAllFilters}
+        canReset={isFiltered}
+      />
 
       {selectedProduct && (
         <CatalogProductModal product={selectedProduct} onClose={() => setSelectedProduct(null)} onSelectRelated={setSelectedProduct} />

@@ -1,8 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { BadgeDollarSign, Layers, RotateCcw, Search, SlidersHorizontal, Tag, X } from 'lucide-react';
+import { BadgeDollarSign, Layers, RotateCcw, Search, SlidersHorizontal, X } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { getStartingPrice } from './StartingPriceTag';
 import { ListingSortSelect } from './ListingSortSelect';
+import { FilterDrawer, FilterDrawerPanel, FilterOptionRow, FilterTriggerButton, describePriceRange } from './FilterDrawer';
 import { ListingSort, sortListing } from '../../utils/listingSort';
 import { formatLKR } from '../../utils/currency';
 import {
@@ -168,9 +169,14 @@ interface DivisionFilterBarProps {
   background?: 'white' | 'subtle';
 }
 
-/** The single search + category + price range panel for a division page. */
+/**
+ * The single search bar for a division page. Categories and Price open in the
+ * shared left-hand filter drawer; sort and applied-filter chips sit inline.
+ */
 export const DivisionFilterBar: React.FC<DivisionFilterBarProps> = ({ placeholder, background = 'white' }) => {
   const ctx = useDivisionFilter();
+  const [openPanel, setOpenPanel] = useState<string | null>(null);
+  const closeDrawer = useCallback(() => setOpenPanel(null), []);
   const allItems = useMemo(() => Object.values(ctx?.sources || {}).flat(), [ctx?.sources]);
 
   // Categories from every section on the page, labelled with the first spelling seen.
@@ -197,137 +203,164 @@ export const DivisionFilterBar: React.FC<DivisionFilterBarProps> = ({ placeholde
   const showPrice = priceBounds !== null && priceBounds.max > priceBounds.min;
   const hasPricedItems = priceBounds !== null;
 
+  const categoryLabelText = filter.category !== 'all'
+    ? categories.find((c) => c.id === filter.category)?.label || filter.category
+    : undefined;
+  const priceLabelText = describePriceRange(filter.price, formatLKR);
+
   // Removable chips summarising what is currently applied
   const activeChips: Array<{ key: string; label: string; clear: () => void }> = [];
   if (filter.query.trim()) activeChips.push({ key: 'q', label: `“${filter.query.trim()}”`, clear: () => setFilter({ query: '' }) });
-  if (filter.category !== 'all') {
-    const label = categories.find((c) => c.id === filter.category)?.label || filter.category;
-    activeChips.push({ key: 'cat', label, clear: () => setFilter({ category: 'all' }) });
-  }
-  if (isPriceRangeActive(filter.price)) {
-    const { min, max } = filter.price;
-    const label = min !== null && max !== null
-      ? `${formatLKR(min)} – ${formatLKR(max)}`
-      : min !== null ? `From ${formatLKR(min)}` : `Up to ${formatLKR(max!)}`;
-    activeChips.push({ key: 'price', label, clear: () => setFilter({ price: EMPTY_PRICE_RANGE }) });
-  }
+  if (categoryLabelText) activeChips.push({ key: 'cat', label: categoryLabelText, clear: () => setFilter({ category: 'all' }) });
+  if (priceLabelText) activeChips.push({ key: 'price', label: priceLabelText, clear: () => setFilter({ price: EMPTY_PRICE_RANGE }) });
   if (filter.pricedOnly) activeChips.push({ key: 'priced', label: 'Priced items only', clear: () => setFilter({ pricedOnly: false }) });
 
-  const pillClass = (selected: boolean) =>
-    `inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3.5 py-2 text-xs font-semibold transition-all ${
-      selected ? 'bg-[#0052FF] text-white shadow-md shadow-blue-500/25' : 'bg-slate-100/80 text-slate-700 hover:bg-slate-200/80'
-    }`;
-
-  return (
-    <SectionContainer id="browse" background={background} paddingY="sm">
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs sm:p-5">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,340px)] lg:gap-6">
-          <div className="min-w-0 space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                type="search"
-                value={filter.query}
-                onChange={(e) => setFilter({ query: e.target.value })}
-                placeholder={placeholder}
-                aria-label={placeholder}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20"
-              />
-              {filter.query && (
-                <button
-                  type="button"
-                  onClick={() => setFilter({ query: '' })}
-                  aria-label="Clear search"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Category filter: one swipeable row on phones, wraps on larger screens so none are hidden */}
-            {categories.length > 0 && (
-              <div className="scrollbar-none -mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible">
-                <button type="button" onClick={() => setFilter({ category: 'all' })} className={pillClass(filter.category === 'all')}>
-                  <Layers className="h-3.5 w-3.5" />
-                  All
-                </button>
-                {categories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setFilter({ category: filter.category === cat.id ? 'all' : cat.id })}
-                    className={pillClass(filter.category === cat.id)}
-                  >
-                    <Tag className="h-3.5 w-3.5" />
-                    {cat.label}
-                    <span
-                      className={`rounded-full px-1.5 text-[10px] font-bold ${
-                        filter.category === cat.id ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
-                      }`}
-                    >
-                      {cat.count}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
+  const panels: FilterDrawerPanel[] = [];
+  if (categories.length > 0) {
+    panels.push({
+      id: 'categories',
+      label: 'Categories',
+      icon: <Layers className="h-3.5 w-3.5" />,
+      summary: categoryLabelText,
+      content: (
+        <nav aria-label="Categories" className="space-y-1">
+          <FilterOptionRow
+            label="All categories"
+            count={allItems.length}
+            selected={filter.category === 'all'}
+            onClick={() => setFilter({ category: 'all' })}
+          />
+          {categories.map((cat) => (
+            <FilterOptionRow
+              key={cat.id}
+              label={cat.label}
+              count={cat.count}
+              selected={filter.category === cat.id}
+              onClick={() => setFilter({ category: filter.category === cat.id ? 'all' : cat.id })}
+            />
+          ))}
+        </nav>
+      ),
+    });
+  }
+  if (hasPricedItems) {
+    panels.push({
+      id: 'price',
+      label: 'Price',
+      icon: <BadgeDollarSign className="h-3.5 w-3.5" />,
+      summary: priceLabelText || (filter.pricedOnly ? 'Priced only' : undefined),
+      content: (
+        <div className="space-y-5">
           {showPrice && (
             <PriceRangeFilter
               bounds={priceBounds!}
               value={filter.price}
               onChange={(price) => setFilter({ price })}
               hint="Items without a listed price are hidden while a price range is set."
-              className="rounded-xl bg-slate-50 p-3"
             />
           )}
+          <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-200 px-3 py-3 text-sm font-medium text-slate-700 hover:border-blue-300">
+            <span className="inline-flex items-center gap-2">
+              <BadgeDollarSign className="h-4 w-4 text-slate-400" />
+              Only show items with a listed price
+            </span>
+            <input
+              type="checkbox"
+              checked={filter.pricedOnly}
+              onChange={(e) => setFilter({ pricedOnly: e.target.checked })}
+              className="h-4 w-4 cursor-pointer rounded text-blue-600 focus:ring-blue-500"
+            />
+          </label>
+        </div>
+      ),
+    });
+  }
+
+  return (
+    <SectionContainer id="browse" background={background} paddingY="sm">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs sm:p-5">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="relative min-w-0 flex-1">
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="search"
+              value={filter.query}
+              onChange={(e) => setFilter({ query: e.target.value })}
+              placeholder={placeholder}
+              aria-label={placeholder}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+            />
+            {filter.query && (
+              <button
+                type="button"
+                onClick={() => setFilter({ query: '' })}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Filter buttons open the left drawer on the matching tab */}
+          <div className="flex flex-wrap items-center gap-2">
+            {categories.length > 0 && (
+              <FilterTriggerButton
+                icon={<Layers className="h-4 w-4" />}
+                label="Categories"
+                activeLabel={categoryLabelText}
+                onClick={() => setOpenPanel('categories')}
+                expanded={openPanel === 'categories'}
+              />
+            )}
+            {hasPricedItems && (
+              <FilterTriggerButton
+                icon={<BadgeDollarSign className="h-4 w-4" />}
+                label="Price"
+                activeLabel={priceLabelText || (filter.pricedOnly ? 'Priced only' : undefined)}
+                onClick={() => setOpenPanel('price')}
+                expanded={openPanel === 'price'}
+              />
+            )}
+            <ListingSortSelect value={filter.sort} onChange={(sort) => setFilter({ sort })} className="min-w-[200px] flex-1 sm:flex-none" />
+          </div>
         </div>
 
-        <div className="mt-3 flex flex-col gap-3 border-t border-slate-100 pt-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5">
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              {isActive ? `${matchCount} of ${allItems.length} items match` : `${allItems.length} items`}
-            </span>
-            {activeChips.map((chip) => (
-              <button
-                key={chip.key}
-                type="button"
-                onClick={chip.clear}
-                aria-label={`Remove filter ${chip.label}`}
-                className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 font-semibold text-blue-700 hover:bg-blue-100"
-              >
-                {chip.label}
-                <X className="h-3 w-3" />
-              </button>
-            ))}
-            {isActive && (
-              <button type="button" onClick={reset} className="inline-flex items-center gap-1 font-semibold text-rose-600 hover:text-rose-700">
-                <RotateCcw className="h-3 w-3" />
-                Clear all
-              </button>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            {hasPricedItems && (
-              <label className="inline-flex cursor-pointer items-center gap-2 font-medium text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={filter.pricedOnly}
-                  onChange={(e) => setFilter({ pricedOnly: e.target.checked })}
-                  className="h-4 w-4 cursor-pointer rounded text-blue-600 focus:ring-blue-500"
-                />
-                <BadgeDollarSign className="h-3.5 w-3.5 text-slate-400" />
-                Priced items only
-              </label>
-            )}
-            <ListingSortSelect value={filter.sort} onChange={(sort) => setFilter({ sort })} className="min-w-[200px]" />
-          </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
+          <span className="inline-flex items-center gap-1.5">
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            {isActive ? `${matchCount} of ${allItems.length} items match` : `${allItems.length} items`}
+          </span>
+          {activeChips.map((chip) => (
+            <button
+              key={chip.key}
+              type="button"
+              onClick={chip.clear}
+              aria-label={`Remove filter ${chip.label}`}
+              className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 font-semibold text-blue-700 hover:bg-blue-100"
+            >
+              {chip.label}
+              <X className="h-3 w-3" />
+            </button>
+          ))}
+          {isActive && (
+            <button type="button" onClick={reset} className="inline-flex items-center gap-1 font-semibold text-rose-600 hover:text-rose-700">
+              <RotateCcw className="h-3 w-3" />
+              Clear all
+            </button>
+          )}
         </div>
       </div>
+
+      <FilterDrawer
+        openPanel={openPanel}
+        onChangePanel={setOpenPanel}
+        onClose={closeDrawer}
+        panels={panels}
+        resultCount={matchCount}
+        onReset={reset}
+        canReset={isActive}
+      />
     </SectionContainer>
   );
 };
