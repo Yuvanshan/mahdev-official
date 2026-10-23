@@ -12,7 +12,9 @@ import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { ScrollReveal } from '../motion/MotionWrappers';
+import { isSameDivision } from '../../services/firestore/divisions';
 import { formatCurrency } from '../../utils/currency';
+import { DivisionFilterEmptyState, useDivisionFilteredItems } from '../common/DivisionFilter';
 
 interface TravelsDayToursSectionProps {
   onBookDayTour: (tour: DayTour) => void;
@@ -28,7 +30,7 @@ export const TravelsDayToursSection: React.FC<TravelsDayToursSectionProps> = ({
     if (rawServices && rawServices.length > 0) {
       const tourServices = rawServices.filter(
         (s) =>
-          (s.division === 'travels' || (s as any).divisionId === 'travels') &&
+          (isSameDivision(s.division, 'travels') || isSameDivision((s as any).divisionId, 'travels')) &&
           ((s as any).category === 'day-tours' || (s as any).type === 'day-tour')
       );
       tourServices.forEach((s) => {
@@ -39,7 +41,7 @@ export const TravelsDayToursSection: React.FC<TravelsDayToursSectionProps> = ({
           location: (s as any).location || (s as any).startLocation || 'Colombo / Negombo',
           price: typeof s.price === 'number'
             ? formatCurrency(s.price, 'LKR')
-            : String(s.price || 'Rs. 95').replace(/\bUSD\b|\$/gi, 'Rs.'),
+            : String(s.price || 'Price on request').replace(/\bUSD\b|\$/gi, 'Rs.'),
           description: s.description || '',
           imageUrl: s.images && s.images.length > 0 ? s.images[0] : (s as any).imageUrl || '',
           highlights: s.features || [],
@@ -49,6 +51,14 @@ export const TravelsDayToursSection: React.FC<TravelsDayToursSectionProps> = ({
     }
     return list;
   }, [rawServices]);
+
+  // Search, category and price come from the page-wide filter bar.
+  const filteredTours = useDivisionFilteredItems('travels-day-tours', dayTours, (tour) => ({
+    title: tour.title,
+    category: 'Day Tours',
+    price: tour.price,
+    text: [tour.location, tour.duration, tour.description, ...tour.highlights].join(' '),
+  }));
 
   if (dayTours.length === 0) {
     return null;
@@ -69,8 +79,9 @@ export const TravelsDayToursSection: React.FC<TravelsDayToursSectionProps> = ({
       </div>
 
       {/* Grid of Day Tours */}
+      {filteredTours.length === 0 && <DivisionFilterEmptyState label="day tours" />}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {dayTours.map((tour) => (
+        {filteredTours.map((tour) => (
           <div
             key={tour.id}
             className="group rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"

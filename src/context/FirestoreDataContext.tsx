@@ -22,6 +22,7 @@ import {
   DivisionId,
 } from '../types/firestore';
 import { HomepageCmsConfig } from '../types/cms';
+import { newestListedFirst } from '../utils/listingOrder';
 import {
   firestoreSettingsService,
   getDefaultCompanySettings,
@@ -1720,6 +1721,11 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  // Newly added gallery items, services and products list first; the rest keep their current order.
+  const orderedServices = useMemo(() => newestListedFirst(services), [services]);
+  const orderedProducts = useMemo(() => newestListedFirst(products), [products]);
+  const orderedGallery = useMemo(() => newestListedFirst(gallery), [gallery]);
+
   const value = useMemo<FirestoreDataContextValue>(
     () => ({
       isInitialLoading,
@@ -1744,15 +1750,15 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       divisions,
       activeDivisions,
       categories,
-      services,
-      products,
+      services: orderedServices,
+      products: orderedProducts,
       milestones,
       trustedCompanies,
       testimonials,
       googleReviews,
       googleReviewsConfig,
       portfolio,
-      gallery,
+      gallery: orderedGallery,
       mediaAssets,
       refreshAll,
       updateSiteSettings,
@@ -1800,15 +1806,15 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       divisions,
       activeDivisions,
       categories,
-      services,
-      products,
+      orderedServices,
+      orderedProducts,
       milestones,
       trustedCompanies,
       testimonials,
       googleReviews,
       googleReviewsConfig,
       portfolio,
-      gallery,
+      orderedGallery,
       mediaAssets,
       refreshAll,
       updateSiteSettings,

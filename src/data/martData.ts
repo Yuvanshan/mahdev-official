@@ -25,6 +25,8 @@ export interface ProductReview {
 
 export interface Product {
   id: string;
+  /** Set when created from the admin portal; newer products list first. */
+  listedAt?: string;
   name: string;
   slug: string;
   category: string;
@@ -101,6 +103,7 @@ export function mapFirestoreProductToMart(p: any, categories: any[] = []): Produ
     inStock: stock > 0 && p.stockStatus !== 'out_of_stock',
     stockCount: stock,
     isFeatured: p.isFeatured ?? true,
+    listedAt: p.listedAt,
     isBestSeller: p.isBestSeller,
     isTrending: p.isTrending,
     brand: p.brand || 'Mahdev',

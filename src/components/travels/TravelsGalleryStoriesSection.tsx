@@ -11,6 +11,8 @@ import { H2, Caption, Body } from '../ui/Heading';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { openWhatsAppInquiry, deriveLookupSku } from '../../utils/whatsapp';
 import { ServiceDetailsModal, wrapIndex } from '../services/ServiceDetailsModal';
+import { StartingPriceTag, getStartingPriceDetails } from '../common/StartingPriceTag';
+import { DivisionFilterEmptyState, useDivisionFilteredItems } from '../common/DivisionFilter';
 
 export const TravelsGalleryStoriesSection: React.FC = () => {
   const { gallery: rawGallery, testimonials: rawTestimonials } = useFirestoreDataContext();
@@ -26,11 +28,21 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
           src: (g as any).imageUrl || (g as any).url || '',
           title: g.title,
           location: (g as any).location || 'Sri Lanka',
+          price: g.price,
+          category: g.category || g.tag || 'Travel Gallery',
         }));
       }
     }
     return [];
   }, [rawGallery]);
+
+  // Search, category and price come from the page-wide filter bar.
+  const filteredImages = useDivisionFilteredItems('travels-gallery', galleryImages, (img) => ({
+    title: img.title,
+    category: img.category,
+    price: img.price,
+    text: img.location,
+  }));
 
   const stories = useMemo<TravelStory[]>(() => {
     if (rawTestimonials && rawTestimonials.length > 0) {
@@ -73,8 +85,13 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
       </div>
 
       {/* Gallery Grid */}
+      {galleryImages.length > 0 && filteredImages.length === 0 && (
+        <div className="mb-20">
+          <DivisionFilterEmptyState label="gallery photos" />
+        </div>
+      )}
       <div className="mb-20 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-        {galleryImages.map((img, idx) => (
+        {filteredImages.map((img, idx) => (
           <div
             key={idx}
             onClick={() => setLightboxImage(img.src)}
@@ -112,6 +129,7 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
             <div className="space-y-1.5 p-4">
               <h4 className="line-clamp-2 font-display text-sm font-semibold text-slate-900">{img.title}</h4>
               <p className="text-xs text-slate-500">{img.location}</p>
+              <StartingPriceTag price={img.price} className="pt-0.5" />
             </div>
           </div>
         ))}
@@ -180,15 +198,16 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
               images: [lightboxImage],
               subtitle: activeImg?.location || 'Sri Lanka',
               divisionName: 'Mahdev Travels',
+              ...getStartingPriceDetails(activeImg?.price),
             } : null}
             onClose={() => setLightboxImage(null)}
             itemNavigation={(() => {
-              const index = lightboxImage ? galleryImages.findIndex((g) => g.src === lightboxImage) : -1;
-              if (index < 0 || galleryImages.length < 2) return undefined;
+              const index = lightboxImage ? filteredImages.findIndex((g) => g.src === lightboxImage) : -1;
+              if (index < 0 || filteredImages.length < 2) return undefined;
               return {
-                onPrevious: () => setLightboxImage(galleryImages[wrapIndex(index, -1, galleryImages.length)].src),
-                onNext: () => setLightboxImage(galleryImages[wrapIndex(index, 1, galleryImages.length)].src),
-                positionLabel: `${index + 1} of ${galleryImages.length}`,
+                onPrevious: () => setLightboxImage(filteredImages[wrapIndex(index, -1, filteredImages.length)].src),
+                onNext: () => setLightboxImage(filteredImages[wrapIndex(index, 1, filteredImages.length)].src),
+                positionLabel: `${index + 1} of ${filteredImages.length}`,
               };
             })()}
             whatsappInquiry={lightboxImage ? {

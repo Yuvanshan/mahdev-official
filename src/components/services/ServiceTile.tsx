@@ -2,20 +2,23 @@ import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
+import { StartingPriceTag } from '../common/StartingPriceTag';
 
 interface ServiceTileProps {
   title: string;
   images: string[];
   onView: () => void;
   imageLoading?: 'eager' | 'lazy';
+  /** Optional starting price; shown as "Starting From" with the transport tag. */
+  price?: unknown;
 }
 
 /**
- * Compact service card used everywhere services are listed: image, title and
- * a View button. Images use the same 4:3 frame as gallery images. Full
+ * Compact service card used everywhere services are listed: image, title,
+ * optional starting price and a View button. Images use the same 4:3 frame as gallery images. Full
  * details (description, features, price, booking) open from View.
  */
-export const ServiceTile: React.FC<ServiceTileProps> = ({ title, images, onView, imageLoading = 'lazy' }) => {
+export const ServiceTile: React.FC<ServiceTileProps> = ({ title, images, onView, imageLoading = 'lazy', price }) => {
   const usableImages = images.filter(Boolean);
   const { activeIndex, containerRef } = useAutoSlideImage(usableImages.length);
 
@@ -42,7 +45,10 @@ export const ServiceTile: React.FC<ServiceTileProps> = ({ title, images, onView,
         </div>
       </button>
       <div className="flex flex-1 flex-col justify-between gap-4 p-4 sm:p-5">
-        <h3 className="font-display text-base font-bold leading-snug text-slate-900">{title}</h3>
+        <div className="space-y-2">
+          <h3 className="font-display text-base font-bold leading-snug text-slate-900">{title}</h3>
+          <StartingPriceTag price={price} />
+        </div>
         <button
           type="button"
           onClick={onView}

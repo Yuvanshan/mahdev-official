@@ -3,7 +3,6 @@ import {
   MapPin,
   MessageCircle,
   Share2,
-  Search,
 } from 'lucide-react';
 import { SWSGalleryItem } from '../../data/swsData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
@@ -19,6 +18,8 @@ import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
 import { ServiceDetailsModal, wrapIndex } from '../services/ServiceDetailsModal';
 import { CrossfadeImage } from '../common/CrossfadeImage';
 import { ImageWatermark } from '../common/ImageWatermark';
+import { StartingPriceTag, getStartingPriceDetails, getStartingPriceInquiryText } from '../common/StartingPriceTag';
+import { DivisionFilterEmptyState, useDivisionFilteredItems } from '../common/DivisionFilter';
 
 const SWSGalleryCardImage: React.FC<{ images: string[]; alt: string }> = ({ images, alt }) => {
   const { activeIndex, containerRef } = useAutoSlideImage(images.length);
@@ -55,10 +56,8 @@ const SWSGalleryCardImage: React.FC<{ images: string[]; alt: string }> = ({ imag
 
 export const SWSGallerySection: React.FC = () => {
   const { gallery: rawGallery, isDivisionGalleryLoaded, divisionLoadErrors, loadDivisionData } = useFirestoreDataContext();
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
   const [shareToast, setShareToast] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const galleryItems = useMemo<SWSGalleryItem[]>(() => {
     if (rawGallery && rawGallery.length > 0) {
@@ -84,6 +83,7 @@ export const SWSGallerySection: React.FC = () => {
             year: !galleryYear || String(galleryYear) === '2024' ? '2026' : String(galleryYear),
             description: (g as any).description || (g as any).caption || '',
             tags: (g as any).tags || [cat],
+            price: g.price,
           };
         });
       }
@@ -91,15 +91,14 @@ export const SWSGallerySection: React.FC = () => {
     return [];
   }, [rawGallery]);
 
-  const categories = useMemo<string[]>(() => {
-    const set = new Set<string>();
-    galleryItems.forEach((item) => {
-      const cat = item.category as string;
-      if (cat && cat !== 'All') set.add(cat);
-    });
-    const customCats = Array.from(set);
-    return ['All', ...customCats];
-  }, [galleryItems]);
+
+  // Search, category and price come from the page-wide filter bar.
+  const filteredItems = useDivisionFilteredItems('sws-gallery', galleryItems, (item) => ({
+    title: item.title,
+    category: item.category,
+    price: item.price,
+    text: [item.location, item.year, item.description, ...item.tags].join(' '),
+  }));
 
   if (galleryItems.length === 0 && !isDivisionGalleryLoaded('sws')) {
     if (divisionLoadErrors.sws) {
@@ -125,23 +124,6 @@ export const SWSGallerySection: React.FC = () => {
     return null;
   }
 
-  const filteredItems = galleryItems.filter((item) => {
-    const matchesCategory = selectedCategory === 'All'
-      || (selectedCategory === 'Conferences'
-        ? item.category === 'Conferences' || item.category === 'Corporate'
-        : item.category === selectedCategory);
-    const query = searchQuery.trim().toLowerCase();
-    const matchesSearch = !query || [
-      item.title,
-      item.category,
-      item.location,
-      item.year,
-      item.description,
-      ...item.tags,
-    ].some((value) => value.toLowerCase().includes(query));
-    return matchesCategory && matchesSearch;
-  });
-
   const activeItem = activeLightboxIndex !== null ? filteredItems[activeLightboxIndex] : null;
 
   return (
@@ -152,36 +134,6 @@ export const SWSGallerySection: React.FC = () => {
           <ScrollReveal direction="up">
             <H2 className="font-editorial text-slate-900">Cinematic Gallery of Live Productions</H2>
           </ScrollReveal>
-        </div>
-
-        {/* Category Pills */}
-        <div className="flex w-full flex-col gap-3 md:w-auto md:items-end">
-          <label className="relative block w-full md:w-72">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search events, places, years..."
-              aria-label="Search the SWS gallery"
-              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-            />
-          </label>
-          <div className="flex max-w-full items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                  selectedCategory === cat
-                    ? 'bg-[#0052FF] text-white shadow-md shadow-blue-500/20'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -223,6 +175,7 @@ export const SWSGallerySection: React.FC = () => {
                       imageUrl: item.imageUrl,
                       location: item.location,
                       description: item.description,
+                      price: getStartingPriceInquiryText(item.price),
                       type: 'gallery',
                     });
                   }}
@@ -273,15 +226,12 @@ export const SWSGallerySection: React.FC = () => {
                 <span>{item.year}</span>
               </div>
               {item.description && <p className="line-clamp-2 text-xs leading-5 text-slate-600">{item.description}</p>}
+              <StartingPriceTag price={item.price} />
             </div>
           </div>
         ))}
       </div>
-      {filteredItems.length === 0 && (
-        <p className="mt-8 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm text-slate-600" role="status">
-          No events match “{searchQuery}”.
-        </p>
-      )}
+      {filteredItems.length === 0 && <DivisionFilterEmptyState label="gallery items" />}
 
       {/* Same pop-up as services: large image, swipe/arrow keys, WhatsApp, Share. */}
       <ServiceDetailsModal
@@ -291,6 +241,7 @@ export const SWSGallerySection: React.FC = () => {
           subtitle: [activeItem.category, activeItem.location, activeItem.year].filter(Boolean).join(' · '),
           description: activeItem.description,
           divisionName: 'SWS Event Management',
+          ...getStartingPriceDetails(activeItem.price),
         } : null}
         watermarkLabel="SWS EVENT MANAGEMENT"
         onClose={() => setActiveLightboxIndex(null)}

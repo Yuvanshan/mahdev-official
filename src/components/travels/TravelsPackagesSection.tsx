@@ -22,6 +22,8 @@ import { ScrollReveal } from '../motion/MotionWrappers';
 import { CmsPackage } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
 import { formatCurrency } from '../../utils/currency';
+import { getStartingPrice } from '../common/StartingPriceTag';
+import { DivisionFilterEmptyState, useDivisionFilteredItems } from '../common/DivisionFilter';
 
 interface TravelsPackagesSectionProps {
   onSelectPackage: (pkg: TravelPackage) => void;
@@ -91,8 +93,8 @@ export const TravelsPackagesSection: React.FC<TravelsPackagesSectionProps> = ({
           highlights: s.features || ['Private Air-Conditioned Vehicle', 'Chauffeur Guide', 'Daily Breakfast'],
           price: typeof s.price === 'number'
             ? formatCurrency(s.price, 'LKR')
-            : String(s.price || 'Rs. 850').replace(/\bUSD\b|\$/gi, 'Rs.'),
-          pricePerPerson: typeof s.price === 'number' ? s.price : 850,
+            : String(s.price || 'Price on request').replace(/\bUSD\b|\$/gi, 'Rs.'),
+          pricePerPerson: getStartingPrice(s.price) ?? 0,
           priceNote: (s as any).priceNote || 'Per Person Sharing',
           availability: (s as any).availability || 'Year-round daily departures',
           difficulty: 'Moderate',
@@ -113,6 +115,14 @@ export const TravelsPackagesSection: React.FC<TravelsPackagesSectionProps> = ({
     return [];
   }, [cmsPackages, rawServices]);
 
+  // Search, category and price come from the page-wide filter bar.
+  const filteredPackages = useDivisionFilteredItems('travels-packages', packages, (pkg) => ({
+    title: pkg.title,
+    category: 'Tour Packages',
+    price: pkg.pricePerPerson,
+    text: [pkg.destination, pkg.duration, pkg.tagline, pkg.description, ...pkg.highlights].join(' '),
+  }));
+
   if (packages.length === 0) {
     return null;
   }
@@ -132,8 +142,9 @@ export const TravelsPackagesSection: React.FC<TravelsPackagesSectionProps> = ({
       </div>
 
       {/* Package Cards Grid */}
+      {filteredPackages.length === 0 && <DivisionFilterEmptyState label="tour packages" />}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {packages.map((pkg) => (
+        {filteredPackages.map((pkg) => (
           <div
             key={pkg.id}
             className="group rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-2xl transition-all duration-300 flex flex-col justify-between"

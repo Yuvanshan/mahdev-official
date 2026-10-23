@@ -8,6 +8,7 @@ import { GallerySectionShimmer } from '../common/GallerySectionShimmer';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 import { ServiceDetailsModal, wrapIndex } from '../services/ServiceDetailsModal';
 import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
+import { StartingPriceTag, getStartingPriceDetails } from '../common/StartingPriceTag';
 
 interface HomeGalleryItem {
   id: string;
@@ -16,6 +17,7 @@ interface HomeGalleryItem {
   title: string;
   category: string;
   location: string;
+  price?: number | null;
 }
 
 interface ActiveGalleryImage {
@@ -102,6 +104,7 @@ const HomeGalleryCard: React.FC<{
           <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-600" />
           <span className="truncate">{item.location}</span>
         </p>
+        <StartingPriceTag price={item.price} className="mt-auto pt-1" />
       </div>
     </div>
   );
@@ -134,6 +137,7 @@ export const HomeGallerySection: React.FC = () => {
         title: item.title || 'Mahdev Gallery',
         category: item.category || item.tag || 'Mahdev Group',
         location: (item as any).location || item.caption || 'Sri Lanka',
+        price: item.price,
       };
     }), [gallery]);
 
@@ -242,6 +246,7 @@ export const HomeGallerySection: React.FC = () => {
           title: activeImage.item.title,
           images: activeImage.item.images.length ? activeImage.item.images : [activeImage.item.url],
           subtitle: [activeImage.item.category, activeImage.item.location].filter(Boolean).join(' · '),
+          ...getStartingPriceDetails(activeImage.item.price),
         } : null}
         initialImageIndex={activeImage?.imageIndex}
         onClose={() => setActiveImage(null)}

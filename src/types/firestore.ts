@@ -95,6 +95,8 @@ export interface FirestoreDivision {
 
 export interface FirestoreService {
   id: string;
+  /** Set once when created from the admin portal; newer items list first. */
+  listedAt?: string;
   name: string;
   slug: string;
   divisionId: DivisionId | string;
@@ -151,6 +153,8 @@ export interface FirestoreProductVariant {
 
 export interface FirestoreProduct {
   id: string;
+  /** Set once when created from the admin portal; newer items list first. */
+  listedAt?: string;
   name: string;
   slug: string;
   description: string;
@@ -558,6 +562,8 @@ export interface FirestorePortfolio {
 
 export interface FirestoreGallery {
   id: string;
+  /** Set once when created from the admin portal; newer items list first. */
+  listedAt?: string;
   division: DivisionId | string;
   title: string;
   url: string;
@@ -572,6 +578,8 @@ export interface FirestoreGallery {
   tags?: string[];
   order?: number;
   sku?: string;
+  /** Optional "starting from" price in LKR; null/undefined hides it on the website. */
+  price?: number | null;
   status: 'published' | 'hidden';
   createdAt?: string;
   updatedAt?: string;

@@ -1,6 +1,8 @@
 export interface ITService {
   /** Service photos from the database (card and details images). */
   images?: string[];
+  /** Numeric starting price from the database (null when not set). */
+  price?: number | null;
   id: string;
   name: string;
   tagline: string;

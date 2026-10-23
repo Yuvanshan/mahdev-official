@@ -1,16 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import {
   Sparkles,
-  Search,
+  Truck,
   Layers,
-  Armchair,
-  Grid,
-  Box,
-  Volume2,
-  Tv,
-  Tent,
   ShieldCheck,
-  Utensils,
   CheckCircle2,
   Calendar,
   PhoneCall,
@@ -38,6 +31,8 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal, FadeIn, ScaleIn } from '../motion/MotionWrappers';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
+import { DivisionFilterEmptyState, useDivisionFilteredItems } from '../common/DivisionFilter';
+import { TRANSPORT_NOTE } from '../common/StartingPriceTag';
 import { getImageSourceCandidates } from '../../utils/imageSources';
 
 interface SWSRentalsSectionProps {
@@ -50,8 +45,6 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
   onRequestQuote,
 }) => {
   const { products: rawProducts, services: rawServices, companySettings, siteSettings, divisions } = useFirestoreDataContext();
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const [activeDetailItem, setActiveDetailItem] = useState<SWSRentalItem | null>(null);
   const [rentalDays, setRentalDays] = useState<number>(1);
   const [rentalQty, setRentalQty] = useState<number>(1);
@@ -76,7 +69,8 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
         (p) =>
           isSameDivision(p.division, 'sws') ||
           isSameDivision((p as any).divisionId, 'sws') ||
-          (p as any).category === 'rentals'
+          // Unassigned rental products count as SWS; another division's products never do
+          ((p as any).category === 'rentals' && !p.division && !(p as any).divisionId)
       );
       swsProds.forEach((p) => {
         items.push({
@@ -90,6 +84,7 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
             ? `${formatCurrency(p.price, 'LKR')}/day`
             : String(p.price || 'Rs. 50/day').replace(/\bUSD\b|\$/gi, 'Rs.'),
           unit: 'Day',
+          price: typeof p.price === 'number' ? p.price : null,
           availableStock: typeof p.stock === 'number' ? p.stock : 10,
           minOrderQuantity: 1,
           imageUrl: getImageSourceCandidates(
@@ -128,30 +123,15 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
     return items;
   }, [rawProducts, rawServices]);
 
-  const rentalCategories = useMemo(() => {
-    const unique = Array.from(new Set(inventory.map((i) => i.category)));
-    return [
-      { id: 'all', label: 'All Inventory', icon: 'grid' },
-      ...unique.map((cat) => ({
-        id: cat,
-        label: cat ? String(cat).charAt(0).toUpperCase() + String(cat).slice(1).replace(/-/g, ' ') : 'Category',
-        icon: 'box',
-      })),
-    ];
-  }, [inventory]);
-
-  const filteredItems = useMemo(() => {
-    return inventory.filter((item) => {
-      const matchesCategory =
-        selectedCategory === 'all' || item.category === selectedCategory;
-      const matchesSearch =
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.tagline.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.features.some((f) => f.toLowerCase().includes(searchQuery.toLowerCase()));
-      return matchesCategory && matchesSearch;
-    });
-  }, [inventory, selectedCategory, searchQuery]);
+  // Search, category and price come from the page-wide filter bar.
+  const filteredItems = useDivisionFilteredItems('sws-rentals', inventory, (item) => ({
+    title: item.name,
+    category: item.category
+      ? String(item.category).charAt(0).toUpperCase() + String(item.category).slice(1).replace(/-/g, ' ')
+      : undefined,
+    price: item.price,
+    text: [item.tagline, item.description, item.categoryLabel, ...item.features].join(' '),
+  }));
 
   if (inventory.length === 0) {
     return null;
@@ -161,31 +141,6 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
     setActiveDetailItem(item);
     setRentalQty(item.minOrderQuantity || 1);
     setRentalDays(1);
-  };
-
-  const getCategoryIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'Armchair':
-        return <Armchair className="w-4 h-4" />;
-      case 'Grid':
-        return <Grid className="w-4 h-4" />;
-      case 'Box':
-        return <Box className="w-4 h-4" />;
-      case 'Volume2':
-        return <Volume2 className="w-4 h-4" />;
-      case 'Sparkles':
-        return <Sparkles className="w-4 h-4" />;
-      case 'Tv':
-        return <Tv className="w-4 h-4" />;
-      case 'Tent':
-        return <Tent className="w-4 h-4" />;
-      case 'ShieldCheck':
-        return <ShieldCheck className="w-4 h-4" />;
-      case 'Utensils':
-        return <Utensils className="w-4 h-4" />;
-      default:
-        return <Layers className="w-4 h-4" />;
-    }
   };
 
   return (
@@ -206,50 +161,6 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
             </H2>
           </ScrollReveal>
         </div>
-
-        {/* Search Bar */}
-        <div className="relative w-full md:w-80 shrink-0">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search chairs, truss, sound, screens, tents..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 shadow-sm transition-all"
-          />
-        </div>
-      </div>
-
-      {/* Category Filter Pills */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 no-scrollbar">
-        {rentalCategories.map((cat) => {
-          const count =
-            cat.id === 'all'
-              ? inventory.length
-              : inventory.filter((i) => i.category === cat.id).length;
-          const isSelected = selectedCategory === cat.id;
-          return (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                isSelected
-                  ? 'bg-[#0052FF] text-white shadow-md shadow-blue-500/25'
-                  : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200/80'
-              }`}
-            >
-              {getCategoryIcon(cat.icon)}
-              <span>{cat.label}</span>
-              <span
-                className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                  isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-                }`}
-              >
-                {count}
-              </span>
-            </button>
-          );
-        })}
       </div>
 
       {/* Rental Items Grid */}
@@ -290,7 +201,7 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
                   {/* Bottom Stock & Rate Overlay */}
                   <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between text-white">
                     <div>
-                      <div className="text-[11px] text-slate-300 font-medium">Daily Rental Rate</div>
+                      <div className="text-[11px] text-slate-300 font-medium">Starting From</div>
                       <div className="text-lg font-bold text-white tracking-tight">
                         {item.dailyRate}{' '}
                         <span className="text-[11px] font-normal text-slate-300">
@@ -319,6 +230,10 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
                     <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed mb-4">
                       {item.description}
                     </p>
+                    <span className="mb-4 inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-800">
+                      <Truck className="h-3 w-3 shrink-0" />
+                      {TRANSPORT_NOTE}
+                    </span>
 
                     {/* Key Specs Pills */}
                     <div className="space-y-1.5 pt-3 border-t border-slate-100 mb-4">
@@ -361,22 +276,7 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
           ))}
         </div>
       ) : (
-        <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200 p-8">
-          <Layers className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h4 className="text-base font-bold text-slate-800">No Rental Equipment Found</h4>
-          <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-            Try adjusting your search query or filter to view other categories in our event rental inventory.
-          </p>
-          <button
-            onClick={() => {
-              setSelectedCategory('all');
-              setSearchQuery('');
-            }}
-            className="mt-4 px-4 py-2 bg-blue-50 text-[#0052FF] text-xs font-bold rounded-xl hover:bg-blue-100 transition-colors"
-          >
-            Reset Filters
-          </button>
-        </div>
+        <DivisionFilterEmptyState label="rental items" />
       )}
 
       {/* Bottom Guarantee Banner */}

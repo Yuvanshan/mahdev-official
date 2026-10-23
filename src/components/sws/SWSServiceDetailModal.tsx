@@ -1,6 +1,7 @@
 import React from 'react';
 import { SWSService } from '../../data/swsData';
 import { ServiceDetailsModal } from '../services/ServiceDetailsModal';
+import { getStartingPriceDetails, getStartingPriceInquiryText } from '../common/StartingPriceTag';
 
 interface SWSServiceDetailModalProps {
   service: SWSService | null;
@@ -31,7 +32,7 @@ export const SWSServiceDetailModal: React.FC<SWSServiceDetailModalProps> = ({
         sections: service.specs?.length
           ? [{ label: 'Specifications', items: service.specs.map((spec) => `${spec.label}: ${spec.value}`) }]
           : undefined,
-        priceLabel: service.startingPrice,
+        ...getStartingPriceDetails(service.price),
         turnaround: service.leadTime,
       }
     : null;
@@ -42,7 +43,7 @@ export const SWSServiceDetailModal: React.FC<SWSServiceDetailModalProps> = ({
       onClose={onClose}
       primaryAction={service ? { label: 'Book Now', onClick: () => onBookNow(service) } : undefined}
       actions={service ? [{ label: 'Request Quote', onClick: () => onRequestQuote(service) }] : []}
-      whatsappInquiry={service ? { category: service.category, price: service.startingPrice, description: service.description } : undefined}
+      whatsappInquiry={service ? { category: service.category, price: getStartingPriceInquiryText(service.price), description: service.description } : undefined}
     />
   );
 };

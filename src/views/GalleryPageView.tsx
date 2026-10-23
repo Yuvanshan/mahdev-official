@@ -19,6 +19,7 @@ import { InquiryItemNotFound } from '../components/common/InquiryItemNotFound';
 import { getDefaultGallery } from '../services/firestore/gallery';
 import { ImageWithShimmer } from '../components/ui/ImageWithShimmer';
 import { ServiceDetailsModal, wrapIndex } from '../components/services/ServiceDetailsModal';
+import { StartingPriceTag, getStartingPriceDetails } from '../components/common/StartingPriceTag';
 
 interface GalleryPageViewProps {
   onNavigate: (route: string) => void;
@@ -90,6 +91,7 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
                 divisionName: itemDivision,
                 location: (item as any).location || item.caption || 'Sri Lanka',
                 description: (item as any).description,
+                price: item.price ?? undefined,
               });
             }
           });
@@ -371,6 +373,7 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
                   <h4 className="font-display font-medium text-xs sm:text-sm text-slate-900 truncate">
                     {item.title}
                   </h4>
+                  <StartingPriceTag price={item.price} className="mt-1.5" />
                 </div>
               </div>
             ))}
@@ -387,6 +390,7 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
           subtitle: [activeItem.category, activeItem.location].filter(Boolean).join(' · '),
           description: activeItem.description,
           divisionName: activeItem.divisionName,
+          ...getStartingPriceDetails(activeItem.price),
         } : null}
         onClose={() => setActiveItem(null)}
         itemNavigation={(() => {

@@ -11,8 +11,11 @@ import {
   Layers,
   Info,
   ShieldCheck,
+  Truck,
 } from 'lucide-react';
 import { DisplayGalleryItem } from '../../utils/itemLookup';
+import { formatLKR } from '../../utils/currency';
+import { TRANSPORT_NOTE, getStartingPrice, getStartingPriceInquiryText } from './StartingPriceTag';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { shareMediaAsset } from '../../utils/mediaShare';
 import { Badge } from '../ui/Badge';
@@ -45,6 +48,7 @@ export const InquiredItemSpotlight: React.FC<InquiredItemSpotlightProps> = ({
       imageUrl: item.url,
       location: item.location,
       description: item.description,
+      price: getStartingPriceInquiryText(item.price),
       type: 'gallery',
     });
   };
@@ -172,14 +176,14 @@ export const InquiredItemSpotlight: React.FC<InquiredItemSpotlightProps> = ({
                 {item.title}
               </h2>
 
-              {/* Price / Rate (if available) */}
-              {item.price !== undefined && (
-                <div className="mb-4 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                  <span className="text-xs text-slate-500 font-medium block">Price / Starting Rate:</span>
-                  <span className="text-xl font-bold text-slate-900">
-                    {typeof item.price === 'number'
-                      ? `Rs. ${item.price.toLocaleString('en-US', { minimumFractionDigits: 2 })} (LKR)`
-                      : item.price}
+              {/* Starting price + transport note (only when a valid price is set) */}
+              {getStartingPrice(item.price) !== null && (
+                <div className="mb-4 p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-1.5">
+                  <span className="text-xs text-slate-500 font-medium block">Starting From</span>
+                  <span className="text-xl font-bold text-slate-900 block">{formatLKR(getStartingPrice(item.price)!)}</span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-800">
+                    <Truck className="h-3 w-3 shrink-0" />
+                    {TRANSPORT_NOTE}
                   </span>
                 </div>
               )}

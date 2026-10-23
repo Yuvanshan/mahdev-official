@@ -1,3 +1,4 @@
+import { LISTED_AT_FIELD, NEWEST_FIRST_ENTITIES } from '../utils/listingOrder';
 import {
   CmsEntityType,
   CmsDivision,
@@ -483,6 +484,7 @@ class CmsService {
           aspectRatio: (g as any).aspectRatio || '16:9',
           tags: (g as any).tags || (g.tag ? [g.tag] : []),
           sortOrder: g.order || (g as any).sortOrder || 1,
+          price: typeof (g as any).price === 'number' ? (g as any).price : null,
           isFeatured: Boolean(g.featured || (g as any).isFeatured),
           isActive: (g as any).isActive !== false && g.status !== 'inactive',
           isDeleted: g.status === 'inactive' && (g as any).isActive === false,
@@ -1093,6 +1095,8 @@ class CmsService {
       updatedAt: now,
       isDeleted: false,
       deletedAt: null,
+      // Only new records get this, so the existing catalogue keeps its order (see utils/listingOrder).
+      ...((NEWEST_FIRST_ENTITIES as readonly string[]).includes(entity) ? { [LISTED_AT_FIELD]: now } : {}),
     };
 
     await this.syncEntityItemToFirestore(entity, newItem);
@@ -1192,6 +1196,7 @@ class CmsService {
           startingPrice: item.startingPrice || item.price || 0,
           currency: item.currency || 'USD',
           status: item.isDeleted ? 'draft' : (item.isActive === false ? 'draft' : 'active'),
+          listedAt: item.listedAt,
           bookingEnabled: item.bookingEnabled !== false,
           quoteEnabled: item.quoteEnabled !== false,
           category: item.category,
@@ -1227,6 +1232,7 @@ class CmsService {
           stockQuantity: typeof item.stockQuantity === 'number' ? item.stockQuantity : (item.stock || 0),
           status: item.isDeleted ? 'draft' : (item.isActive === false ? 'draft' : 'active'),
           isPublished: !item.isDeleted && item.isActive !== false,
+          listedAt: item.listedAt,
           hasVariants: Boolean(item.variants && item.variants.options && item.variants.options.length > 0),
           variants: item.variants?.options,
         });
@@ -1283,6 +1289,8 @@ class CmsService {
           category: item.category || (Array.isArray(item.tags) ? item.tags[0] : (item.tag || 'General')),
           tags: Array.isArray(item.tags) ? item.tags : (item.category ? [item.category] : []),
           order: item.sortOrder || item.order || 0,
+          price: typeof item.price === 'number' && item.price > 0 ? item.price : null,
+          listedAt: item.listedAt,
           status: (item.isDeleted || item.isActive === false) ? 'hidden' : 'published',
         });
       } else if (entity === 'milestones') {

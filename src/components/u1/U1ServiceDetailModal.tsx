@@ -1,6 +1,7 @@
 import React from 'react';
 import { U1Service } from '../../data/u1Data';
 import { ServiceDetailsModal } from '../services/ServiceDetailsModal';
+import { getStartingPriceDetails, getStartingPriceInquiryText } from '../common/StartingPriceTag';
 
 interface U1ServiceDetailModalProps {
   service: U1Service | null;
@@ -27,7 +28,7 @@ export const U1ServiceDetailModal: React.FC<U1ServiceDetailModalProps> = ({
         description: service.detailedDescription || service.description,
         deliverables: service.deliverables,
         sections: service.gearUsed ? [{ label: 'Gear used', items: [service.gearUsed] }] : undefined,
-        priceLabel: [service.startingPrice, service.priceNote].filter(Boolean).join(' · ') || undefined,
+        ...getStartingPriceDetails(service.price),
         turnaround: service.duration,
       }
     : null;
@@ -37,7 +38,7 @@ export const U1ServiceDetailModal: React.FC<U1ServiceDetailModalProps> = ({
       service={details}
       onClose={onClose}
       primaryAction={service ? { label: 'Book Session', onClick: () => onBookNow(service) } : undefined}
-      whatsappInquiry={service ? { category: service.category, price: service.startingPrice, description: service.description } : undefined}
+      whatsappInquiry={service ? { category: service.category, price: getStartingPriceInquiryText(service.price), description: service.description } : undefined}
     />
   );
 };

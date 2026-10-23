@@ -13,6 +13,8 @@ import { useDeviceMotion } from '../motion/MotionWrappers';
 import { DataLoadingOverlay } from '../common/DataLoadingOverlay';
 import { ServicesSectionShimmer } from '../common/ServicesSectionShimmer';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
+import { newestListedFirst } from '../../utils/listingOrder';
+import { getServiceStartingPrice } from '../common/StartingPriceTag';
 import { ServiceTile } from '../services/ServiceTile';
 import { ServiceDetailsModal, toServiceDetails } from '../services/ServiceDetailsModal';
 
@@ -36,9 +38,10 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
     return null;
   }
 
-  const activeServices = services
+  // Admin sort order, with newly added services shown first.
+  const activeServices = newestListedFirst(services
     .filter((s) => (s as any).status !== 'archived')
-    .sort((a, b) => (a.order ?? (a as any).sortOrder ?? 0) - (b.order ?? (b as any).sortOrder ?? 0));
+    .sort((a, b) => (a.order ?? (a as any).sortOrder ?? 0) - (b.order ?? (b as any).sortOrder ?? 0)));
 
   if (activeServices.length === 0) {
     if (isServicesLoading || isInitialLoading || isFetching) {
@@ -107,6 +110,7 @@ const FeaturedServiceCard: React.FC<{
         images={serviceImages}
         onView={() => setIsDetailsOpen(true)}
         imageLoading={idx < 3 ? 'eager' : 'lazy'}
+        price={getServiceStartingPrice(service)}
       />
       <ServiceDetailsModal
         service={isDetailsOpen ? toServiceDetails(service, divisionBadgeText) : null}

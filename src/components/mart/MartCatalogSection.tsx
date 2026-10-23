@@ -10,12 +10,21 @@ import {
 } from 'lucide-react';
 import { Product, MART_PRODUCTS, MART_CATEGORIES, mapFirestoreProductToMart, mapFirestoreCategoryToMart, productInMartCategory } from '../../data/martData';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { isSameDivision } from '../../services/firestore/divisions';
 import { MartProductCard } from './MartProductCard';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { ScrollReveal } from '../motion/MotionWrappers';
+import {
+  EMPTY_PRICE_RANGE,
+  PriceRange,
+  PriceRangeFilter,
+  getPriceBounds,
+  isPriceRangeActive,
+  priceInRange,
+} from '../common/PriceRangeFilter';
 
 interface MartCatalogSectionProps {
   selectedCategoryId: string | null;
@@ -37,9 +46,10 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
   onAddToCart,
   onViewAllProducts,
 }) => {
-  const [sortBy, setSortBy] = useState<'featured' | 'price-low' | 'price-high' | 'rating'>('featured');
+  const [sortBy, setSortBy] = useState<'featured' | 'price-low' | 'price-high' | 'rating' | 'name-asc' | 'name-desc'>('featured');
   const [inStockOnly, setInStockOnly] = useState(false);
-  const [maxPrice, setMaxPrice] = useState<number>(100000);
+  // Unset ends mean "no limit", so every product shows until the shopper narrows it.
+  const [priceRange, setPriceRange] = useState<PriceRange>(EMPTY_PRICE_RANGE);
 
   const { products: rawProducts, categories: rawCategories } = useFirestoreDataContext();
 
@@ -57,17 +67,21 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
     return [];
   }, [rawProducts, rawCategories]);
 
+  // Mart's own categories only; a category with no division shows only if a Mart product uses it.
   const allMartCategories = useMemo(() => {
     if (rawCategories && rawCategories.length > 0) {
-      const martCats = rawCategories.filter(
-        (c) => !c.division || c.division === 'mart' || (c as any).divisionId === 'mart'
+      const usedCategories = new Set(allMartProducts.map((p) => p.category));
+      const martCats = rawCategories.filter((c) =>
+        isSameDivision(c.division, 'mart') ||
+        isSameDivision((c as any).divisionId, 'mart') ||
+        (!c.division && !(c as any).divisionId && (usedCategories.has(c.id) || (!!c.slug && usedCategories.has(c.slug))))
       );
       if (martCats.length > 0) {
         return martCats.map(mapFirestoreCategoryToMart);
       }
     }
     return [];
-  }, [rawCategories]);
+  }, [rawCategories, allMartProducts]);
 
   // Filter & Sort Products
   const filteredProducts = useMemo(() => {
@@ -90,8 +104,8 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
       if (inStockOnly && !product.inStock) {
         return false;
       }
-      // Max price filter
-      if (product.price > maxPrice) {
+      // Price range filter
+      if (!priceInRange(product.price, priceRange)) {
         return false;
       }
       return true;
@@ -99,10 +113,18 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
       if (sortBy === 'price-low') return a.price - b.price;
       if (sortBy === 'price-high') return b.price - a.price;
       if (sortBy === 'rating') return b.rating - a.rating;
+      if (sortBy === 'name-asc') return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+      if (sortBy === 'name-desc') return b.name.localeCompare(a.name, undefined, { sensitivity: 'base' });
+      // Default: newly added products first (newest first), then the existing featured order
+      const aListed = a.listedAt ? Date.parse(a.listedAt) || 0 : 0;
+      const bListed = b.listedAt ? Date.parse(b.listedAt) || 0 : 0;
+      if (aListed || bListed) return bListed - aListed;
       // Default: featured first, then best-seller
       return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
     });
-  }, [allMartProducts, allMartCategories, selectedCategoryId, searchQuery, inStockOnly, maxPrice, sortBy]);
+  }, [allMartProducts, allMartCategories, selectedCategoryId, searchQuery, inStockOnly, priceRange, sortBy]);
+
+  const priceBounds = useMemo(() => getPriceBounds(allMartProducts.map((p) => p.price)), [allMartProducts]);
 
   // Early return only after every hook has run (keeps hook order stable; React error #310).
   if (allMartProducts.length === 0) {
@@ -115,7 +137,7 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
     onSelectCategory(null);
     onSearchChange('');
     setInStockOnly(false);
-    setMaxPrice(200);
+    setPriceRange(EMPTY_PRICE_RANGE);
     setSortBy('featured');
   };
 
@@ -176,10 +198,12 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
               onChange={(e) => setSortBy(e.target.value as any)}
               className="px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none"
             >
-              <option value="featured">Featured & Best Sellers</option>
+              <option value="featured">Newest & Featured</option>
               <option value="price-low">Price: Low to High</option>
               <option value="price-high">Price: High to Low</option>
               <option value="rating">Highest Rated</option>
+              <option value="name-asc">Name: A to Z</option>
+              <option value="name-desc">Name: Z to A</option>
             </select>
           </div>
         </div>
@@ -201,7 +225,8 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
                 All Categories
               </button>
 
-              {MART_CATEGORIES.map((cat) => {
+              {/* Live admin categories; the static list is only a fallback (it is empty until data loads). */}
+              {(allMartCategories.length > 0 ? allMartCategories : MART_CATEGORIES).map((cat) => {
                 const isSelected = selectedCategoryId === cat.id;
                 return (
                   <button
@@ -232,7 +257,7 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
                 <span>In-Stock Only</span>
               </label>
 
-              {(selectedCategoryId || searchQuery || inStockOnly) && (
+              {(selectedCategoryId || searchQuery || inStockOnly || isPriceRangeActive(priceRange)) && (
                 <button
                   type="button"
                   onClick={handleResetFilters}
@@ -244,6 +269,15 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
               )}
             </div>
           </div>
+
+          {priceBounds && priceBounds.max > priceBounds.min && (
+            <PriceRangeFilter
+              bounds={priceBounds}
+              value={priceRange}
+              onChange={setPriceRange}
+              className="border-t border-slate-100 pt-3 sm:max-w-md"
+            />
+          )}
         </div>
       </div>
 

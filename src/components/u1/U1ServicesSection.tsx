@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import {
   Camera,
   Film,
-  Search,
   Layers,
   Sparkles,
   ArrowRight,
@@ -29,12 +28,20 @@ import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
 import { CrossfadeImage } from '../common/CrossfadeImage';
 import { ImageWatermark } from '../common/ImageWatermark';
 import { getImageSourceCandidates } from '../../utils/imageSources';
+import { newestListedFirst } from '../../utils/listingOrder';
+import { getServiceStartingPrice } from '../common/StartingPriceTag';
+import { DivisionFilterEmptyState, useDivisionFilteredItems } from '../common/DivisionFilter';
 
 interface U1ServicesSectionProps {
   onBookService: (service: U1Service) => void;
 }
 
-type U1FilterCategory = 'all' | 'media' | 'portrait' | 'commercial' | 'print';
+const U1_CATEGORY_LABELS: Record<U1Service['category'], string> = {
+  media: 'Cinema & Coverage',
+  portrait: 'Portraits & Studio',
+  commercial: 'Commercial & Product',
+  print: 'Albums & Frames',
+};
 
 const U1ServiceCardImage: React.FC<{ service: U1Service }> = ({ service }) => {
   const images = (service.gallery?.length ? service.gallery : [service.imageUrl]).filter(Boolean);
@@ -78,15 +85,14 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
     divisionLoadErrors,
     loadDivisionData,
   } = useFirestoreDataContext();
-  const [selectedCategory, setSelectedCategory] = useState<U1FilterCategory>('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const [activeModalService, setActiveModalService] = useState<U1Service | null>(null);
 
   const allServices = useMemo<U1Service[]>(() => {
     if (rawServices && rawServices.length > 0) {
-      const u1Services = rawServices
+      // Admin sort order, with newly added services shown first.
+      const u1Services = newestListedFirst(rawServices
         .filter((s) => isSameDivision(s.division, 'u1') || isSameDivision((s as any).divisionId, 'u1'))
-        .sort((a, b) => (a.order ?? (a as any).sortOrder ?? 0) - (b.order ?? (b as any).sortOrder ?? 0));
+        .sort((a, b) => (a.order ?? (a as any).sortOrder ?? 0) - (b.order ?? (b as any).sortOrder ?? 0)));
       if (u1Services.length > 0) {
         return u1Services.map((s) => {
           const raw = s as typeof s & Record<string, unknown>;
@@ -99,6 +105,7 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
             raw.thumbnailUrl,
             raw.url
           );
+          const price = getServiceStartingPrice(s as unknown as Record<string, any>);
           return {
             id: s.id,
             name: s.name,
@@ -106,9 +113,8 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
             tagline: (s as any).tagline || s.description?.slice(0, 60) || '',
             description: s.description || '',
             detailedDescription: (s as any).detailedDescription || s.description || '',
-            startingPrice: typeof s.price === 'number' || typeof (s as any).startingPrice === 'number'
-              ? formatCurrency(s.price || (s as any).startingPrice || 0, 'LKR')
-              : String(s.price || 'Rs. 50,000'),
+            startingPrice: price !== null ? formatCurrency(price, 'LKR') : '',
+            price,
             turnaround: (s as any).turnaround || (s as any).leadTime || '7-10 Days',
             deliverables: (s as any).deliverables || s.features || ['High-Res Digital Master Gallery'],
             imageUrl: images[0] || '',
@@ -121,6 +127,14 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
     }
     return [];
   }, [rawServices]);
+
+  // Search, category and price come from the page-wide filter bar.
+  const filteredServices = useDivisionFilteredItems('u1-services', allServices, (service) => ({
+    title: service.name,
+    category: U1_CATEGORY_LABELS[service.category] || service.category,
+    price: service.price,
+    text: [service.tagline, service.description].join(' '),
+  }));
 
   if (allServices.length === 0) {
     if (isInitialLoading || !isDivisionServicesLoaded('u1')) {
@@ -145,23 +159,6 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
     return null;
   }
 
-  const categories: { id: U1FilterCategory; label: string; count: number; icon: React.ReactNode }[] = [
-    { id: 'all', label: `All ${allServices.length} Services`, count: allServices.length, icon: <Layers className="w-3.5 h-3.5" /> },
-    { id: 'media', label: 'Cinema & Coverage', count: allServices.filter((s) => s.category === 'media').length, icon: <Film className="w-3.5 h-3.5" /> },
-    { id: 'portrait', label: 'Portraits & Studio', count: allServices.filter((s) => s.category === 'portrait').length, icon: <Camera className="w-3.5 h-3.5" /> },
-    { id: 'commercial', label: 'Commercial & Product', count: allServices.filter((s) => s.category === 'commercial').length, icon: <Sparkles className="w-3.5 h-3.5" /> },
-    { id: 'print', label: 'Albums & Frames', count: allServices.filter((s) => s.category === 'print').length, icon: <Frame className="w-3.5 h-3.5" /> },
-  ];
-
-  const filteredServices = allServices.filter((s) => {
-    const matchesCategory = selectedCategory === 'all' || s.category === selectedCategory;
-    const matchesSearch =
-      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.tagline.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
-
   return (
     <SectionContainer background="white" paddingY="xl" hasBorderBottom>
       {/* Header */}
@@ -173,54 +170,19 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
             </H2>
           </ScrollReveal>
         </div>
-
-        {/* Search */}
-        <div className="relative w-full md:w-72 shrink-0">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search studio services..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all"
-          />
-        </div>
-      </div>
-
-      {/* Category Pills */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-8 no-scrollbar">
-        {categories.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setSelectedCategory(cat.id)}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-              selectedCategory === cat.id
-                ? 'bg-[#0052FF] text-white shadow-md shadow-blue-500/20'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-            }`}
-          >
-            {cat.icon}
-            <span>{cat.label}</span>
-            <span
-              className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                selectedCategory === cat.id ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
-              }`}
-            >
-              {cat.count}
-            </span>
-          </button>
-        ))}
       </div>
 
       {/* Services Grid (Image-First Cards) */}
+      {filteredServices.length === 0 && <DivisionFilterEmptyState label="services" />}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-        {/* Cards show only image, title and View; details and booking are in the modal. */}
+        {/* Cards show image, title, starting price and View; details and booking are in the modal. */}
         {filteredServices.map((service) => (
           <ServiceTile
             key={service.id}
             title={service.name}
             images={(service.gallery?.length ? service.gallery : [service.imageUrl]).filter(Boolean) as string[]}
             onView={() => setActiveModalService(service)}
+            price={service.price}
           />
         ))}
       </div>

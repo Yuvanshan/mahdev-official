@@ -33,10 +33,24 @@ import { ServicesSectionShimmer } from '../components/common/ServicesSectionShim
 import { ImageWithShimmer } from '../components/ui/ImageWithShimmer';
 import { DIVISIONS, DIVISION_LIST } from '../config/divisions';
 import { DivisionId } from '../types';
-import { normalizeDivisionId } from '../services/firestore/divisions';
+import { isSameDivision, normalizeDivisionId } from '../services/firestore/divisions';
 import { openWhatsAppInquiry } from '../utils/whatsapp';
 import { getRentalAssetCount } from '../utils/assetMetrics';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
+import { StartingPriceTag, getServiceStartingPrice, getStartingPriceInquiryText } from '../components/common/StartingPriceTag';
+import {
+  EMPTY_PRICE_RANGE,
+  PriceRange,
+  PriceRangeFilter,
+  getPriceBounds,
+  priceInRange,
+} from '../components/common/PriceRangeFilter';
+import { ListingSortSelect } from '../components/common/ListingSortSelect';
+import { ListingSort, sortListing } from '../utils/listingSort';
+
+/** True when a service belongs to the division (handles aliases like "sws-event-management"). */
+const serviceInDivision = (service: any, divisionId: string) =>
+  isSameDivision(service.divisionId, divisionId) || isSameDivision(service.division, divisionId);
 
 interface ServicesViewProps {
   onNavigate: (route: string) => void;
@@ -114,15 +128,14 @@ const ServiceCardItem: React.FC<{
 
           {/* Card Footer Actions */}
           <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <span className="text-xs text-slate-500 block">Pricing / SLA</span>
-              <span className="text-sm font-bold text-slate-900">
-                {service.turnaroundTime ||
-                  (service.startingPrice || service.price
-                    ? `LKR ${(service.startingPrice || service.price).toLocaleString()}`
-                    : 'Custom Scope')}
-              </span>
-            </div>
+            {getServiceStartingPrice(service) !== null ? (
+              <StartingPriceTag price={getServiceStartingPrice(service)} />
+            ) : (
+              <div>
+                <span className="text-xs text-slate-500 block">Pricing / SLA</span>
+                <span className="text-sm font-bold text-slate-900">{service.turnaroundTime || 'Custom Scope'}</span>
+              </div>
+            )}
 
             <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
               <Button
@@ -142,7 +155,7 @@ const ServiceCardItem: React.FC<{
                     divisionName: divisionBadgeText,
                     serviceId: service.id,
                     imageUrl: serviceImage,
-                    price: service.startingPrice || service.price,
+                    price: getStartingPriceInquiryText(getServiceStartingPrice(service)),
                     description: service.description,
                     type: 'service',
                   });
@@ -177,6 +190,8 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
   const [selectedDivision, setSelectedDivision] = useState<DivisionId | 'all Western' | 'all'>(initialDivision);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [priceRange, setPriceRange] = useState<PriceRange>(EMPTY_PRICE_RANGE);
+  const [sortBy, setSortBy] = useState<ListingSort>('recommended');
   const { services, companySettings, siteSettings, divisions, products, isInitialLoading, isFetching } = useFirestoreDataContext();
 
   useEffect(() => {
@@ -240,7 +255,7 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
   const availableCategories = useMemo(() => {
     const set = new Set<string>();
     activeServices.forEach((s) => {
-      const divMatch = selectedDivision === 'all' || (s.divisionId || s.division) === selectedDivision;
+      const divMatch = selectedDivision === 'all' || serviceInDivision(s, selectedDivision);
       if (divMatch) {
         const cat = s.category || (s as any).categoryId;
         if (cat && typeof cat === 'string' && cat.trim()) {
@@ -251,16 +266,26 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
     return Array.from(set);
   }, [activeServices, selectedDivision]);
 
-  // When division changes, reset category selection to 'all'
+  // Slider limits follow the services in the selected division.
+  const priceBounds = useMemo(
+    () => getPriceBounds(
+      activeServices
+        .filter((s) => selectedDivision === 'all' || serviceInDivision(s, selectedDivision))
+        .map(getServiceStartingPrice)
+    ),
+    [activeServices, selectedDivision]
+  );
+
+  // When division changes, reset category and price selection
   const handleSelectDivision = (divId: DivisionId | 'all') => {
     setSelectedDivision(divId);
     setSelectedCategory('all');
+    setPriceRange(EMPTY_PRICE_RANGE);
   };
 
   const filteredServices = useMemo(() => {
-    return activeServices.filter((srv) => {
-      const div = (srv.divisionId || srv.division || '') as DivisionId;
-      const matchesDivision = selectedDivision === 'all' || div === selectedDivision;
+    const matches = activeServices.filter((srv) => {
+      const matchesDivision = selectedDivision === 'all' || serviceInDivision(srv, selectedDivision);
       const matchesCategory =
         selectedCategory === 'all' ||
         srv.category === selectedCategory ||
@@ -281,9 +306,11 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
         ) ||
         srv.features?.some((f) => f.toLowerCase().includes(query));
 
-      return matchesDivision && matchesCategory && matchesQuery;
+      return matchesDivision && matchesCategory && matchesQuery && priceInRange(getServiceStartingPrice(srv), priceRange);
     });
-  }, [activeServices, selectedDivision, selectedCategory, searchQuery]);
+    // "Recommended" keeps the listing order: newly added first, then the existing order
+    return sortListing(matches, sortBy, getServiceStartingPrice, (srv) => srv.title || srv.name || '');
+  }, [activeServices, selectedDivision, selectedCategory, searchQuery, priceRange, sortBy]);
 
   // Loading state returned only after every hook has run (stable hook order).
   if (services.length === 0 && (isInitialLoading || isFetching)) {
@@ -299,27 +326,27 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
     {
       id: 'sws',
       label: 'SWS Events',
-      count: activeServices.filter((s) => (s.divisionId || s.division) === 'sws').length,
+      count: activeServices.filter((s) => serviceInDivision(s, 'sws')).length,
     },
     {
       id: 'u1',
       label: 'U1 Cinema',
-      count: activeServices.filter((s) => (s.divisionId || s.division) === 'u1').length,
+      count: activeServices.filter((s) => serviceInDivision(s, 'u1')).length,
     },
     {
       id: 'it',
       label: 'IT & Cloud',
-      count: activeServices.filter((s) => (s.divisionId || s.division) === 'it').length,
+      count: activeServices.filter((s) => serviceInDivision(s, 'it')).length,
     },
     {
       id: 'travels',
       label: 'Travels',
-      count: activeServices.filter((s) => (s.divisionId || s.division) === 'travels').length,
+      count: activeServices.filter((s) => serviceInDivision(s, 'travels')).length,
     },
     {
       id: 'mart',
       label: 'Mart & Hardware',
-      count: activeServices.filter((s) => (s.divisionId || s.division) === 'mart').length,
+      count: activeServices.filter((s) => serviceInDivision(s, 'mart')).length,
     },
   ];
 
@@ -432,6 +459,20 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
               ))}
             </div>
           )}
+
+          {/* Price range (Starting From amounts) and sort order */}
+          <div className="flex flex-col gap-4 pt-3 border-t border-slate-100 md:flex-row md:items-start md:justify-between">
+            {priceBounds && priceBounds.max > priceBounds.min ? (
+              <PriceRangeFilter
+                bounds={priceBounds}
+                value={priceRange}
+                onChange={setPriceRange}
+                hint="Services without a listed price are hidden while a price range is set."
+                className="w-full md:max-w-md"
+              />
+            ) : <span />}
+            <ListingSortSelect value={sortBy} onChange={setSortBy} className="w-full md:w-60" />
+          </div>
         </div>
       </SectionContainer>
 
@@ -457,6 +498,8 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
                 setSearchQuery('');
                 setSelectedDivision('all');
                 setSelectedCategory('all');
+                setPriceRange(EMPTY_PRICE_RANGE);
+                setSortBy('recommended');
               }}
             >
               Reset Filters

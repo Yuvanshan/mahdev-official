@@ -29,6 +29,7 @@ import { DIVISION_SEO } from '../config/divisionSeo';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
+import { DivisionFilterBar, DivisionFilterProvider } from '../components/common/DivisionFilter';
 
 interface SWSViewProps {
   onNavigate: (route: string) => void;
@@ -130,8 +131,11 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* Sections render as their own data arrives rather than waiting for every collection. */}
-      <>
+      {/* Sections render as their own data arrives rather than waiting for every collection.
+          One shared search/category/price filter drives services, gallery and rentals. */}
+      <DivisionFilterProvider>
+        <DivisionFilterBar placeholder="Search SWS services, gallery & rentals..." />
+
         <SWSServicesSection
           onBookNow={handleBookNow}
           onRequestQuote={handleRequestQuote}
@@ -150,7 +154,7 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
 
         {/* Local search: service keywords, exact business address/phone, map and FAQ. */}
         <SWSLocalSection />
-      </>
+      </DivisionFilterProvider>
 
       {/* 7. INTERACTIVE BOOKING FOUNDATION MODAL */}
       <SWSBookingModal

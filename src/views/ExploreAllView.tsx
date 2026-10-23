@@ -11,6 +11,7 @@ import { SectionContainer } from '../components/ui/SectionContainer';
 import { mapFirestoreProductToCatalog } from '../services/catalogService';
 import { CatalogProduct } from '../types/catalog';
 import { FirestoreGallery, FirestoreProduct, FirestoreService } from '../types/firestore';
+import { StartingPriceTag, getServiceStartingPrice, getStartingPriceDetails } from '../components/common/StartingPriceTag';
 import { formatCurrency } from '../utils/currency';
 import { getImageSourceCandidates } from '../utils/imageSources';
 import { DIVISIONS } from '../config/divisions';
@@ -61,7 +62,15 @@ const BrowseCard: React.FC<{
   const imageSources = getImageSourceCandidates(item.image, item.images);
   // Services: image, title and View only; full details open in the modal below.
   if (item.type === 'service') {
-    return <ServiceTile title={item.title} images={imageSources} onView={() => onSelect(item)} imageLoading={imageLoading} />;
+    return (
+      <ServiceTile
+        title={item.title}
+        images={imageSources}
+        onView={() => onSelect(item)}
+        imageLoading={imageLoading}
+        price={getServiceStartingPrice(item.data as unknown as Record<string, any>)}
+      />
+    );
   }
   const price = item.type === 'product' ? item.data.price : null;
 
@@ -104,6 +113,7 @@ const BrowseCard: React.FC<{
         </div>
         <h2 className="line-clamp-2 min-h-11 text-sm font-semibold leading-5 text-slate-900">{item.title}</h2>
         <p className="mt-2 line-clamp-2 min-h-9 text-xs leading-5 text-slate-500">{item.description || 'Explore this Mahdev offering.'}</p>
+        {item.type === 'gallery' && <StartingPriceTag price={item.data.price} className="mb-3" />}
         <div className="mt-auto flex items-end justify-between gap-3 border-t border-slate-100 pt-3">
           <span className="text-xs font-semibold text-slate-900">
             {item.type === 'gallery'
@@ -531,6 +541,7 @@ export const ExploreAllView: React.FC<{
           subtitle: selectedGalleryItem.data.category || selectedGalleryItem.data.tag,
           description: selectedGalleryItem.data.caption,
           divisionName: DIVISIONS[selectedGalleryItem.data.division as DivisionId]?.name || String(selectedGalleryItem.data.division || 'Mahdev'),
+          ...getStartingPriceDetails(selectedGalleryItem.data.price),
         } : null}
         onClose={() => setSelectedGalleryItem(null)}
         itemNavigation={galleryNavigation}

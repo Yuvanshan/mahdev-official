@@ -10,6 +10,8 @@ export interface U1Service {
   deliverables: string[];
   duration?: string;
   startingPrice: string;
+  /** Numeric starting price (null when not set). */
+  price?: number | null;
   priceNote?: string;
   badge?: string;
   gearUsed?: string;
@@ -17,6 +19,8 @@ export interface U1Service {
 
 export interface U1PortfolioItem {
   id: string;
+  /** Set on gallery items created from the admin portal; newer items list first. */
+  listedAt?: string;
   title: string;
   category: 'Weddings' | 'Portraits' | 'Commercial & Product' | 'Pre-Shoots' | 'Events & Cinema';
   client: string;
@@ -32,6 +36,8 @@ export interface U1PortfolioItem {
     aperture?: string;
   };
   description: string;
+  /** Optional starting price (gallery items only). */
+  price?: number | null;
   tags: string[];
 }
 

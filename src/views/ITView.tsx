@@ -11,6 +11,7 @@ import {
   GitBranch,
   ShieldCheck,
 } from 'lucide-react';
+import { DivisionFilterBar, DivisionFilterProvider } from '../components/common/DivisionFilter';
 import { SEOHead } from '../components/layout/SEOHead';
 import { ITHeroSection } from '../components/it/ITHeroSection';
 import { ITServicesSection } from '../components/it/ITServicesSection';
@@ -79,8 +80,11 @@ export const ITView: React.FC<ITViewProps> = ({ onNavigate }) => {
         onExploreServices={() => scrollToAnchor('services')}
       />
 
-      {/* Render content progressively as each Turso-backed collection arrives. */}
-      <>
+      {/* Render content progressively as each Turso-backed collection arrives.
+          One shared search/category/price filter drives the services list. */}
+      <DivisionFilterProvider>
+        <DivisionFilterBar placeholder="Search Mahdev IT services..." />
+
         <ITServicesSection
           onSelectService={handleOpenServiceDetail}
           onRequestQuote={(svc) => handleOpenQuoteModal(svc, 'quote')}
@@ -93,7 +97,7 @@ export const ITView: React.FC<ITViewProps> = ({ onNavigate }) => {
           onStartProject={() => handleOpenQuoteModal(undefined, 'project')}
           onRequestQuote={() => handleOpenQuoteModal(undefined, 'quote')}
         />
-      </>
+      </DivisionFilterProvider>
 
       {/* 5. INDIVIDUAL SERVICE BLUEPRINT MODAL */}
       <ITServiceDetailModal

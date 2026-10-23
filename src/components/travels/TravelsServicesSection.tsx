@@ -17,6 +17,8 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { ServiceTile } from '../services/ServiceTile';
 import { ServiceDetailsModal, toServiceDetails } from '../services/ServiceDetailsModal';
 import { isSameDivision } from '../../services/firestore/divisions';
+import { getServiceStartingPrice } from '../common/StartingPriceTag';
+import { DivisionFilterEmptyState, useDivisionFilteredItems } from '../common/DivisionFilter';
 
 export const TravelsServicesSection: React.FC = () => {
   const { services: rawServices } = useFirestoreDataContext();
@@ -75,6 +77,14 @@ export const TravelsServicesSection: React.FC = () => {
     return [];
   }, [rawServices]);
 
+  // Search, category and price come from the page-wide filter bar.
+  const filteredServices = useDivisionFilteredItems('travels-services', travelServices, (svc) => ({
+    title: svc.title,
+    category: svc.record.category || 'Travel Services',
+    price: getServiceStartingPrice(svc.record),
+    text: svc.desc,
+  }));
+
   if (travelServices.length === 0) {
     return null;
   }
@@ -94,14 +104,16 @@ export const TravelsServicesSection: React.FC = () => {
       </div>
 
       {/* Grid of Services */}
+      {filteredServices.length === 0 && <DivisionFilterEmptyState label="services" />}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Cards show only image, title and View; full details open in a modal. */}
-        {travelServices.map((svc, idx) => (
+        {/* Cards show image, title, starting price and View; full details open in a modal. */}
+        {filteredServices.map((svc) => (
           <ServiceTile
-            key={idx}
+            key={svc.record.id || svc.title}
             title={svc.title}
             images={toServiceDetails(svc.record).images}
             onView={() => setSelectedService(svc.record)}
+            price={getServiceStartingPrice(svc.record)}
           />
         ))}
       </div>

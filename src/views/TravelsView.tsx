@@ -10,6 +10,7 @@ import {
   Car,
   Camera,
 } from 'lucide-react';
+import { DivisionFilterBar, DivisionFilterProvider } from '../components/common/DivisionFilter';
 import { SEOHead } from '../components/layout/SEOHead';
 import { TravelsHeroSection } from '../components/travels/TravelsHeroSection';
 import { TravelsDestinationsSection } from '../components/travels/TravelsDestinationsSection';
@@ -82,8 +83,11 @@ export const TravelsView: React.FC<TravelsViewProps> = ({ onNavigate }) => {
         onExploreDestinations={() => scrollToAnchor('destinations')}
       />
 
-      {/* Render content progressively as each Turso-backed collection arrives. */}
-      <>
+      {/* Render content progressively as each Turso-backed collection arrives.
+          One shared search/category/price filter drives packages, day tours, services and gallery. */}
+      <DivisionFilterProvider>
+        <DivisionFilterBar placeholder="Search Mahdev Travels packages, tours, services & gallery..." />
+
         <TravelsDestinationsSection
           onPlanTripForDestination={() => handleOpenBooking(null, null, null)}
         />
@@ -104,7 +108,7 @@ export const TravelsView: React.FC<TravelsViewProps> = ({ onNavigate }) => {
         <TravelsServicesSection />
 
         <TravelsGalleryStoriesSection />
-      </>
+      </DivisionFilterProvider>
 
       {/* 8. DETAILED DAY-BY-DAY ITINERARY MODAL */}
       <TravelsPackageDetailModal

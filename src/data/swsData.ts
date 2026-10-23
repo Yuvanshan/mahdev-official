@@ -6,6 +6,8 @@ export interface SWSService {
   description: string;
   detailedDescription: string;
   startingPrice: string;
+  /** Numeric starting price (null when not set). */
+  price?: number | null;
   priceNote?: string;
   imageUrl: string;
   gallery: string[];
@@ -45,6 +47,8 @@ export interface SWSRentalItem {
   features: string[];
   popular?: boolean;
   badge?: string;
+  /** Numeric daily rate when set in the admin portal (used by the price filter). */
+  price?: number | null;
 }
 
 export interface SWSPackage {
@@ -74,6 +78,7 @@ export interface SWSGalleryItem {
   year: string;
   description: string;
   tags: string[];
+  price?: number | null;
 }
 
 export interface SWSPortfolioItem {

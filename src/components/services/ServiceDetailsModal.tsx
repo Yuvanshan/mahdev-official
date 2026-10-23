@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, MessageCircle, X } from 'lucide-react';
+import { ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, MessageCircle, Truck, X } from 'lucide-react';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 import { ImageWatermark } from '../common/ImageWatermark';
 import { getWhatsAppInquiryUrl, type WhatsAppInquiryOptions } from '../../utils/whatsapp';
+import { getServiceStartingPrice, getStartingPriceDetails } from '../common/StartingPriceTag';
 
 export interface ServiceDetails {
   title: string;
@@ -16,6 +17,8 @@ export interface ServiceDetails {
   /** Extra titled lists (e.g. specs, process, technologies). */
   sections?: Array<{ label: string; items: string[] }>;
   priceLabel?: string;
+  /** Small note shown as a tag beside the price (e.g. transport charges). */
+  priceNote?: string;
   turnaround?: string;
 }
 
@@ -133,7 +136,7 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
   const whatsappHref = getWhatsAppInquiryUrl({
     title: service.title,
     divisionName: service.divisionName,
-    price: service.priceLabel,
+    price: service.priceLabel && service.priceNote ? `${service.priceLabel} (${service.priceNote})` : service.priceLabel,
     description: service.description,
     imageUrl: images[imageIndex],
     type: 'service',
@@ -252,6 +255,12 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
                   {service.priceLabel && (
                     <span className="rounded-lg bg-blue-50 px-3 py-1.5 text-sm font-bold text-slate-900">{service.priceLabel}</span>
                   )}
+                  {service.priceLabel && service.priceNote && (
+                    <span className="inline-flex items-center gap-1 self-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">
+                      <Truck className="h-3.5 w-3.5 shrink-0" />
+                      {service.priceNote}
+                    </span>
+                  )}
                   {service.turnaround && (
                     <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700">{service.turnaround}</span>
                   )}
@@ -318,7 +327,6 @@ export function toServiceDetails(service: Record<string, any>, divisionName?: st
   const images: string[] = Array.isArray(service.images) && service.images.length > 0
     ? service.images
     : [service.imageUrl || service.image].filter(Boolean);
-  const price = service.startingPrice || service.price;
   return {
     title: service.title || service.name || 'Service',
     images: images.filter((url) => typeof url === 'string' && url),
@@ -326,7 +334,7 @@ export function toServiceDetails(service: Record<string, any>, divisionName?: st
     divisionName: service.divisionName || divisionName,
     features: Array.isArray(service.features) ? service.features : undefined,
     deliverables: Array.isArray(service.deliverables) ? service.deliverables : undefined,
-    priceLabel: typeof price === 'number' && price > 0 ? `From LKR ${price.toLocaleString()}` : typeof price === 'string' && price.trim() ? price : undefined,
+    ...getStartingPriceDetails(getServiceStartingPrice(service)),
     turnaround: service.turnaroundTime,
   };
 }

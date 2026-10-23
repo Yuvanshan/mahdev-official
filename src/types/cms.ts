@@ -199,6 +199,8 @@ export interface CmsGalleryItem extends BaseCmsEntity {
   isFeatured?: boolean;
   isActive?: boolean;
   location?: string;
+  /** Optional "starting from" price in LKR; null/undefined hides it on the website. */
+  price?: number | null;
 }
 
 // 8. Milestone Entity

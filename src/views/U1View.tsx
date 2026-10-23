@@ -27,6 +27,7 @@ import { DIVISION_SEO } from '../config/divisionSeo';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
+import { DivisionFilterBar, DivisionFilterProvider } from '../components/common/DivisionFilter';
 
 interface U1ViewProps {
   onNavigate: (route: string) => void;
@@ -80,8 +81,11 @@ export const U1View: React.FC<U1ViewProps> = ({ onNavigate }) => {
         onExploreServices={() => scrollToAnchor('services')}
       />
 
-      {/* Render content progressively as each Turso-backed collection arrives. */}
-      <>
+      {/* Render content progressively as each Turso-backed collection arrives.
+          One shared search/category/price filter drives services and the portfolio. */}
+      <DivisionFilterProvider>
+        <DivisionFilterBar placeholder="Search U1 studio services & portfolio..." />
+
         <div id="services">
           <U1ServicesSection onBookService={handleBookService} />
         </div>
@@ -91,7 +95,7 @@ export const U1View: React.FC<U1ViewProps> = ({ onNavigate }) => {
         <U1PackagesSection onBookPackage={handleBookPackage} />
 
         <U1StudioExperienceSection />
-      </>
+      </DivisionFilterProvider>
 
       {/* 6. DEDICATED U1 BOOKING MODAL */}
       <U1BookingModal

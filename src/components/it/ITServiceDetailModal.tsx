@@ -1,6 +1,7 @@
 import React from 'react';
 import { ITService } from '../../data/itData';
 import { ServiceDetailsModal } from '../services/ServiceDetailsModal';
+import { getStartingPriceDetails, getStartingPriceInquiryText } from '../common/StartingPriceTag';
 
 interface ITServiceDetailModalProps {
   service: ITService | null;
@@ -40,6 +41,7 @@ export const ITServiceDetailModal: React.FC<ITServiceDetailModalProps> = ({
             : []),
           ...(service.recommendedFor ? [{ label: 'Recommended for', items: [service.recommendedFor] }] : []),
         ],
+        ...getStartingPriceDetails(service.price),
         turnaround: service.startingTimeline ? `Timeline: ${service.startingTimeline}` : undefined,
       }
     : null;
@@ -55,7 +57,7 @@ export const ITServiceDetailModal: React.FC<ITServiceDetailModalProps> = ({
       ] : []}
       whatsappInquiry={service ? {
         category: service.badge || 'IT Engineering',
-        price: service.startingTimeline ? `Timeline: ${service.startingTimeline}` : undefined,
+        price: getStartingPriceInquiryText(service.price) || (service.startingTimeline ? `Timeline: ${service.startingTimeline}` : undefined),
         description: service.shortDescription || service.fullDescription,
       } : undefined}
     />

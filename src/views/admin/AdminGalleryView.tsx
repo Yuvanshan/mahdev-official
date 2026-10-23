@@ -30,6 +30,8 @@ import { uploadMediaAsset } from '../../services/mediaUploadService';
 import { firestoreGalleryService } from '../../services/firestore/gallery';
 import { purgeRemovedStudioPostsFromFirestore } from '../../services/firestore/databaseManagement';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { getStartingPrice } from '../../components/common/StartingPriceTag';
+import { formatLKR } from '../../utils/currency';
 
 const PRESET_GALLERY_CATEGORIES = [
   'Weddings',
@@ -82,6 +84,7 @@ export const AdminGalleryView: React.FC = () => {
     tags: ['Stage', 'Lighting'],
     sortOrder: 1,
     isActive: true,
+    price: '', // optional; empty string = no price shown
   });
 
   const [mediaUrlInput, setMediaUrlInput] = useState('');
@@ -182,6 +185,7 @@ export const AdminGalleryView: React.FC = () => {
       tags: ['Weddings'],
       sortOrder: galleryItems.length + 1,
       isActive: true,
+      price: '',
     });
     setMediaUrlInput('');
     setCustomCategoryInput('');
@@ -212,6 +216,7 @@ export const AdminGalleryView: React.FC = () => {
       tags: item.tags || [],
       sortOrder: item.sortOrder || 1,
       isActive: item.isActive ?? true,
+      price: getStartingPrice(item.price) !== null ? String(item.price) : '',
     });
     setMediaUrlInput('');
     setCustomCategoryInput(isPreset ? '' : existingCat);
@@ -318,6 +323,9 @@ export const AdminGalleryView: React.FC = () => {
     if (!formData.images.length && !formData.mediaUrl.trim()) {
       errors.mediaUrl = 'At least 1 media image is required (max 3)';
     }
+    if (formData.price.trim() && getStartingPrice(Number(formData.price)) === null) {
+      errors.price = 'Enter a valid amount greater than 0, or leave empty';
+    }
     if (formData.category === 'Other / Custom' && !customCategoryInput.trim()) {
       errors.category = 'Please enter a custom category name';
     }
@@ -366,8 +374,12 @@ export const AdminGalleryView: React.FC = () => {
 
       const finalSku = (formData.sku || generateGallerySku(formData.divisionId, formData.title)).trim().toUpperCase();
 
+      // null (not undefined) so a merge-save clears a previously stored price
+      const finalPrice = formData.price.trim() ? getStartingPrice(Number(formData.price)) : null;
+
       const payload = {
         ...formData,
+        price: finalPrice,
         sku: finalSku,
         mediaUrl: primaryMedia,
         thumbnailUrl: primaryThumbnail,
@@ -389,6 +401,7 @@ export const AdminGalleryView: React.FC = () => {
         tags: payload.tags,
         order: payload.sortOrder,
         sku: payload.sku,
+        price: finalPrice,
         type: payload.type,
         status: payload.isActive ? ('published' as const) : ('hidden' as const),
       };
@@ -647,6 +660,11 @@ export const AdminGalleryView: React.FC = () => {
                     </button>
                   </div>
                   {item.caption && <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{item.caption}</p>}
+                  {getStartingPrice(item.price) !== null && (
+                    <p className="text-[11px] text-slate-700 mt-1">
+                      Starting From <span className="font-bold text-slate-900">{formatLKR(getStartingPrice(item.price)!)}</span>
+                    </p>
+                  )}
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
@@ -1006,6 +1024,33 @@ export const AdminGalleryView: React.FC = () => {
               placeholder="e.g. 4K LED multi-angle stage installation at BMICH"
               className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 mb-1">Starting Price (LKR) <span className="font-normal text-slate-400">— optional</span></label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">Rs.</span>
+              <input
+                type="number"
+                min="0"
+                step="any"
+                inputMode="decimal"
+                value={formData.price}
+                onChange={(e) => {
+                  setFormData({ ...formData, price: e.target.value });
+                  setIsDirty(true);
+                }}
+                placeholder="e.g. 25000"
+                className="w-full pl-10 pr-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
+            {formErrors.price ? (
+              <p className="text-red-600 text-[10px] mt-0.5">{formErrors.price}</p>
+            ) : (
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                Shown on the website as "Starting From" with a transport note. Leave empty to hide the price.
+              </p>
+            )}
           </div>
 
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between">

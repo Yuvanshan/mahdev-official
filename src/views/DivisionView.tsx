@@ -29,6 +29,7 @@ import { DIVISIONS, DIVISION_LIST, FORCED_COMING_SOON_DIVISIONS } from '../confi
 import { DivisionId } from '../types';
 import { DivisionComingSoonView } from './DivisionComingSoonView';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
+import { getServiceStartingPrice } from '../components/common/StartingPriceTag';
 import { ServiceTile } from '../components/services/ServiceTile';
 import { ServiceDetailsModal, toServiceDetails } from '../components/services/ServiceDetailsModal';
 import { COMPANY_INFO, getTelLink } from '../config/company';
@@ -526,6 +527,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
               title={service.title}
               images={service.record ? toServiceDetails(service.record).images : []}
               onView={() => setSelectedCoreService(service)}
+              price={getServiceStartingPrice(service.record)}
             />
           ))}
         </div>

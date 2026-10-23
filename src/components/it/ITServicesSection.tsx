@@ -23,6 +23,8 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { ServiceTile } from '../services/ServiceTile';
 import { toServiceDetails } from '../services/ServiceDetailsModal';
 import { isSameDivision } from '../../services/firestore/divisions';
+import { getServiceStartingPrice } from '../common/StartingPriceTag';
+import { DivisionFilterEmptyState, useDivisionFilteredItems } from '../common/DivisionFilter';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
@@ -61,13 +63,21 @@ const getServiceIcon = (iconName: string) => {
   }
 };
 
+/** Groups IT services into the filter categories (by known id or stored category). */
+function getITServiceGroup(svc: ITService): string {
+  const category = (svc as any).category;
+  if (['web-development', 'mobile-development', 'business-software'].includes(svc.id) || category === 'software') return 'Web & Apps';
+  if (['erp', 'pos', 'automation', 'it-consulting'].includes(svc.id) || category === 'enterprise') return 'ERP & POS Core';
+  if (['cloud-solutions', 'ai-solutions', 'maintenance-support'].includes(svc.id) || category === 'infrastructure') return 'Cloud, AI & SLA';
+  return 'Other IT Services';
+}
+
 export const ITServicesSection: React.FC<ITServicesSectionProps> = ({
   onSelectService,
   onRequestQuote,
   onStartProject,
 }) => {
   const { services: rawServices } = useFirestoreDataContext();
-  const [activeFilter, setActiveFilter] = useState<'all' | 'software' | 'enterprise' | 'infrastructure'>('all');
 
   const allServices = useMemo<ITService[]>(() => {
     if (rawServices && rawServices.length > 0) {
@@ -79,6 +89,7 @@ export const ITServicesSection: React.FC<ITServicesSectionProps> = ({
           id: s.id,
           name: s.name,
           images: toServiceDetails(s as unknown as Record<string, any>).images,
+          price: getServiceStartingPrice(s as unknown as Record<string, any>),
           tagline: (s as any).tagline || s.description?.slice(0, 60) || '',
           iconName: (s as any).iconName || 'Code2',
           shortDescription: s.description || '',
@@ -115,22 +126,17 @@ export const ITServicesSection: React.FC<ITServicesSectionProps> = ({
     return [];
   }, [rawServices]);
 
+  // Search, category and price come from the page-wide filter bar.
+  const filteredServices = useDivisionFilteredItems('it-services', allServices, (svc) => ({
+    title: svc.name,
+    category: getITServiceGroup(svc),
+    price: svc.price,
+    text: [svc.tagline, svc.shortDescription, svc.badge, ...svc.features].join(' '),
+  }));
+
   if (allServices.length === 0) {
     return null;
   }
-
-  const filteredServices = allServices.filter((svc) => {
-    if (activeFilter === 'software') {
-      return ['web-development', 'mobile-development', 'business-software'].includes(svc.id) || (svc as any).category === 'software';
-    }
-    if (activeFilter === 'enterprise') {
-      return ['erp', 'pos', 'automation', 'it-consulting'].includes(svc.id) || (svc as any).category === 'enterprise';
-    }
-    if (activeFilter === 'infrastructure') {
-      return ['cloud-solutions', 'ai-solutions', 'maintenance-support'].includes(svc.id) || (svc as any).category === 'infrastructure';
-    }
-    return true;
-  });
 
   return (
     <SectionContainer id="services" background="white" paddingY="xl" hasBorderBottom>
@@ -147,60 +153,19 @@ export const ITServicesSection: React.FC<ITServicesSectionProps> = ({
           </ScrollReveal>
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex flex-wrap gap-1.5 p-1 rounded-xl bg-slate-100 border border-slate-200/80 self-start md:self-auto">
-          <button
-            onClick={() => setActiveFilter('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              activeFilter === 'all'
-                ? 'bg-[#0052FF] text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            All 10 Services
-          </button>
-          <button
-            onClick={() => setActiveFilter('software')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              activeFilter === 'software'
-                ? 'bg-[#0052FF] text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Web & Apps
-          </button>
-          <button
-            onClick={() => setActiveFilter('enterprise')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              activeFilter === 'enterprise'
-                ? 'bg-[#0052FF] text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            ERP & POS Core
-          </button>
-          <button
-            onClick={() => setActiveFilter('infrastructure')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              activeFilter === 'infrastructure'
-                ? 'bg-[#0052FF] text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Cloud, AI & SLA
-          </button>
-        </div>
       </div>
 
       {/* Grid of 10 Services */}
+      {filteredServices.length === 0 && <DivisionFilterEmptyState label="services" />}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Cards show only image, title and View; full details open in the IT modal. */}
+        {/* Cards show image, title, starting price and View; full details open in the IT modal. */}
         {filteredServices.map((service) => (
           <ServiceTile
             key={service.id}
             title={service.name}
             images={service.images || []}
             onView={() => onSelectService(service)}
+            price={service.price}
           />
         ))}
       </div>
