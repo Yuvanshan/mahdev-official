@@ -8,6 +8,8 @@ export interface DivisionCardItem {
   description: string;
   mediaUrl: string;
   mediaType: 'image' | 'video';
+  // Still image shown before a video plays; search engines also use it as the video thumbnail.
+  posterUrl: string;
   logoUrl: string;
   isComingSoon: boolean;
   order: number;
@@ -74,14 +76,18 @@ export function getDivisionCardItems(divisions: FirestoreDivision[]): DivisionCa
         !posterUrl && configuredVideo.startsWith('firestore://media_blobs/vid_');
       const mediaType: DivisionCardItem['mediaType'] =
         configuredMediaType === 'video' || looksLikeVideoBlob ? 'video' : 'image';
-      const mediaUrl = mediaType === 'video'
-        ? configuredVideo
-        : posterUrl ||
-          division.imageUrl ||
-          division.heroImageUrl ||
-          hero?.imageUrl ||
-          hero?.bgImage ||
-          '';
+      const imageUrl =
+        posterUrl ||
+        division.imageUrl ||
+        division.heroImageUrl ||
+        hero?.imageUrl ||
+        hero?.bgImage ||
+        '';
+      const mediaUrl = mediaType === 'video' ? configuredVideo : imageUrl;
+      // SWS always uses the bundled brand logo on the divisions cards.
+      const logoUrl = id === 'sws'
+        ? DEFAULT_DIVISION_LOGOS.sws
+        : pickImageLogo(division.logoUrl, division.logo) || DEFAULT_DIVISION_LOGOS[id] || '';
 
       unique.set(id, {
         id,
@@ -92,10 +98,8 @@ export function getDivisionCardItems(divisions: FirestoreDivision[]): DivisionCa
         ),
         mediaUrl,
         mediaType,
-        // SWS always uses the bundled brand logo on the divisions cards.
-        logoUrl: id === 'sws'
-          ? DEFAULT_DIVISION_LOGOS.sws
-          : pickImageLogo(division.logoUrl, division.logo) || DEFAULT_DIVISION_LOGOS[id] || '',
+        posterUrl: imageUrl || logoUrl,
+        logoUrl,
         isComingSoon: Boolean(
           FORCED_COMING_SOON_DIVISIONS.has(id) ||
           division.isComingSoon ||

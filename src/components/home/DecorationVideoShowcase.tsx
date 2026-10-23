@@ -23,6 +23,12 @@ import { useDeviceMotion } from '../motion/MotionWrappers';
 
 type DecorationVideo = DecorationShowcaseVideo;
 
+const FALLBACK_THUMBNAIL = 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80';
+
+// Every <video> needs a poster: Google uses it as the thumbnail and will not index the video without one.
+const getThumbnail = (video: { thumbnailUrl?: string }): string =>
+  video.thumbnailUrl?.trim() || FALLBACK_THUMBNAIL;
+
 interface DecorationVideoShowcaseProps {
   onNavigate?: (route: string) => void;
 }
@@ -181,7 +187,7 @@ const DecorationVideoShowcaseContent: React.FC<
                   ref={videoRef}
                   key={activeVideo.videoUrl}
                   src={activeVideo.videoUrl}
-                  poster={activeVideo.thumbnailUrl}
+                  poster={getThumbnail(activeVideo)}
                   autoPlay
                   loop
                   muted={isMuted}
@@ -300,11 +306,7 @@ const DecorationVideoShowcaseContent: React.FC<
                     {/* Thumbnail with mini play overlay */}
                     <div className="relative w-24 h-16 rounded-lg overflow-hidden shrink-0 bg-slate-950 border border-slate-800">
                       <img
-                        src={
-                          video.thumbnailUrl && video.thumbnailUrl.trim() !== ''
-                            ? video.thumbnailUrl.trim()
-                            : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80'
-                        }
+                        src={getThumbnail(video)}
                         alt={video.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
@@ -395,6 +397,7 @@ const DecorationVideoShowcaseContent: React.FC<
                 <div className="aspect-video w-full bg-black">
                   <video
                     src={modalVideo.videoUrl}
+                    poster={getThumbnail(modalVideo)}
                     controls
                     autoPlay
                     className="w-full h-full object-contain"

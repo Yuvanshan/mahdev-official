@@ -10,6 +10,7 @@ interface DivisionCardProps {
 
 export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate }) => {
   const [mediaUrl, setMediaUrl] = useState('');
+  const [posterUrl, setPosterUrl] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -36,6 +37,27 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate
     };
   }, [division.id, division.mediaUrl]);
 
+  // Poster for video cards; Google treats a video without one as having no thumbnail.
+  useEffect(() => {
+    let active = true;
+    if (!division.posterUrl.startsWith('firestore://')) {
+      setPosterUrl(division.posterUrl);
+      return;
+    }
+
+    resolveMediaUrl(division.posterUrl)
+      .then((resolvedUrl) => {
+        if (active) setPosterUrl(resolvedUrl);
+      })
+      .catch((error) => {
+        console.error(`[DivisionCard] Could not load poster for ${division.id}:`, error);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [division.id, division.posterUrl]);
+
   return (
     <a
       href={division.route}
@@ -49,6 +71,7 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate
         {mediaUrl && division.mediaType === 'video' ? (
           <video
             src={mediaUrl}
+            poster={posterUrl || undefined}
             autoPlay
             loop
             muted

@@ -220,7 +220,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
           // Muted autoplay is allowed on every browser, including iOS; when
           // enableAutomaticAudio is on, HeroVideoControls adds sound afterwards.
           autoPlay
-          poster={posterImageUrl?.trim() || undefined}
+          poster={fallbackImage || undefined}
           loop
           muted
           playsInline
