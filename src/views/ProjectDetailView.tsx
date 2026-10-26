@@ -26,6 +26,8 @@ import { DivisionId } from '../types';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { SEOHead } from '../components/layout/SEOHead';
+import { projectSeo } from '../config/itemSeo';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { ScrollReveal } from '../components/motion/MotionWrappers';
 import { getYouTubeEmbedUrl, extractYouTubeId } from '../utils/youtube';
 
@@ -134,14 +136,16 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     project.summary ||
     project.description ||
     'An enterprise showcase engineered by the Mahdev Group.';
+  // Same head the page shell sends crawlers for /projects/{slug} (src/config/itemSeo.ts).
+  const seo = projectSeo(project as unknown as Record<string, unknown>, project.id);
 
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-blue-600 selection:text-white">
       <SEOHead
-        title={`${project.title} – Mahdev Case Study`}
-        description={shortIntro.slice(0, 160)}
+        title={seo.title}
+        description={seo.description}
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}${seo.path}`}
         ogTitle={project.title}
-        ogDescription={shortIntro.slice(0, 160)}
       />
 
       {/* Top Breadcrumb & Return Bar */}

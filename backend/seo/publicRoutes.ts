@@ -10,6 +10,7 @@
 import { CANONICAL_SITE_ORIGIN, SITE_NAME } from '../../src/config/site.js';
 import { DIVISION_SEO } from '../../src/config/divisionSeo.js';
 import { getPageTitle } from '../../src/config/pageTitles.js';
+import { withServiceArea } from '../../src/config/itemSeo.js';
 import { getSwsStructuredData, SWS_BUSINESS, SWS_PRIMARY_HEADING } from '../../src/data/swsLocalSeo.js';
 
 export const SITE_ORIGIN = CANONICAL_SITE_ORIGIN;
@@ -44,9 +45,30 @@ function divisionBreadcrumb(key: keyof typeof DIVISION_SEO): Record<string, unkn
   };
 }
 
+/**
+ * The division as a service of the Mahdev organisation that serves Trincomalee and
+ * Colombo, so local searches ("photography colombo") can match it. Branch addresses
+ * live on the Organization in index.html and on SWS's own LocalBusiness listing.
+ */
+function divisionService(key: Exclude<keyof typeof DIVISION_SEO, 'sws'>, type: string): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': type,
+    name: DIVISION_SEO[key].name,
+    description: DIVISION_SEO[key].description,
+    url: `${SITE_ORIGIN}/${key}`,
+    parentOrganization: { '@id': `${SITE_ORIGIN}/#organization` },
+    areaServed: [
+      { '@type': 'City', name: 'Trincomalee' },
+      { '@type': 'City', name: 'Colombo' },
+      { '@type': 'Country', name: 'Sri Lanka' },
+    ],
+  };
+}
+
 // /gallery is not listed: the app renders it as the /services page and declares
 // /services as its canonical URL, so a separate prerendered head would conflict.
-export const PRERENDERED_ROUTES: RouteSeo[] = [
+const ROUTES: RouteSeo[] = [
   {
     path: '/divisions',
     title: titleFor('/divisions'),
@@ -70,7 +92,7 @@ export const PRERENDERED_ROUTES: RouteSeo[] = [
     description: DIVISION_SEO.u1.description,
     heading: 'U1 Studio',
     intro: 'Every frame tells a story. U1 Studio delivers photography and cinema for weddings, brands and events.',
-    structuredData: [divisionBreadcrumb('u1')],
+    structuredData: [divisionService('u1', 'ProfessionalService'), divisionBreadcrumb('u1')],
   },
   {
     path: '/it',
@@ -78,7 +100,7 @@ export const PRERENDERED_ROUTES: RouteSeo[] = [
     description: DIVISION_SEO.it.description,
     heading: 'Mahdev IT Solutions',
     intro: 'Enterprise software, cloud and AI engineered for scale, with ongoing support and maintenance.',
-    structuredData: [divisionBreadcrumb('it')],
+    structuredData: [divisionService('it', 'ProfessionalService'), divisionBreadcrumb('it')],
   },
   {
     path: '/travels',
@@ -86,7 +108,7 @@ export const PRERENDERED_ROUTES: RouteSeo[] = [
     description: DIVISION_SEO.travels.description,
     heading: 'Mahdev Travels',
     intro: 'Bespoke journeys across Sri Lanka, from tea country to wildlife safaris and coastal escapes.',
-    structuredData: [divisionBreadcrumb('travels')],
+    structuredData: [divisionService('travels', 'TravelAgency'), divisionBreadcrumb('travels')],
   },
   {
     path: '/mart',
@@ -94,7 +116,7 @@ export const PRERENDERED_ROUTES: RouteSeo[] = [
     description: DIVISION_SEO.mart.description,
     heading: 'Mahdev Online Mart',
     intro: 'Curated event and home decor, ambient lighting and smart tech, delivered across Sri Lanka.',
-    structuredData: [divisionBreadcrumb('mart')],
+    structuredData: [divisionService('mart', 'OnlineStore'), divisionBreadcrumb('mart')],
   },
   {
     path: '/services',
@@ -216,6 +238,13 @@ export const PRERENDERED_ROUTES: RouteSeo[] = [
     intro: 'How we use cookies on our websites.',
   },
 ];
+
+// Every description names the Trincomalee and Colombo branches (src/config/itemSeo.ts),
+// matching what SEOHead sets once the app runs.
+export const PRERENDERED_ROUTES: RouteSeo[] = ROUTES.map((route) => ({
+  ...route,
+  description: withServiceArea(route.description),
+}));
 
 /**
  * First path segments the React app routes itself. A URL whose first segment

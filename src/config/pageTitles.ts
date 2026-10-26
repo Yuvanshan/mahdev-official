@@ -9,6 +9,14 @@ import { SITE_NAME } from './site.js';
  */
 export const formatPageTitle = (pageName: string) => `${pageName} - ${SITE_NAME}`;
 
+/** Landing pages people find through local searches also name both branch cities. */
+const formatLocalPageTitle = (pageName: string) => `${pageName} | Trincomalee & Colombo - ${SITE_NAME}`;
+
+const LOCAL_PAGES = new Set([
+  '/about', '/contact', '/services', '/gallery', '/portfolio', '/catalog', '/book', '/divisions',
+  '/testimonials', '/clients', '/promotions', '/milestones', '/insights', '/careers',
+]);
+
 const PAGE_NAMES: Record<string, string> = {
   '/about': 'About Us',
   '/contact': 'Contact Us',
@@ -66,7 +74,8 @@ export function getPageTitle(path: string): string | null {
   const route = PAGE_ALIASES[normalized] || normalized;
   const division = DIVISION_SEO[route.slice(1) as keyof typeof DIVISION_SEO];
   if (division) return division.title;
-  if (route.startsWith('/services/category/')) return formatPageTitle('Services');
+  if (route.startsWith('/services/category/')) return formatLocalPageTitle('Services');
   if (route.startsWith('/account/')) return formatPageTitle('My Account');
-  return PAGE_NAMES[route] ? formatPageTitle(PAGE_NAMES[route]) : null;
+  if (!PAGE_NAMES[route]) return null;
+  return LOCAL_PAGES.has(route) ? formatLocalPageTitle(PAGE_NAMES[route]) : formatPageTitle(PAGE_NAMES[route]);
 }

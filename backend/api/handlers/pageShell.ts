@@ -2,6 +2,9 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { initializeTursoDatabase } from '../../db/tursoDatabase.js';
 import { handleTursoAction } from '../tursoRoutes.js';
 import { APP_ROUTE_SEGMENTS, RETIRED_ADMIN_SEGMENTS } from '../../seo/publicRoutes.js';
+import { resolveDynamicRouteSeo } from '../../seo/dynamicRouteSeo.js';
+import { renderSeoHtml } from '../../seo/renderSeoHtml.js';
+import { CANONICAL_SITE_ORIGIN } from '../../../src/config/site.js';
 
 /**
  * GET /api/page-shell?route=/some/route (or the original page URL via a rewrite)
@@ -90,6 +93,16 @@ async function serveShell(req: IncomingMessage, res: ServerResponse, forcedStatu
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.end('The website is temporarily unavailable. Please refresh in a moment.');
     return;
+  }
+
+  if (status === 200) {
+    // Single service/product/project/gallery URLs get their own title, description and canonical.
+    try {
+      const seo = await resolveDynamicRouteSeo(path, url.searchParams);
+      if (seo) html = renderSeoHtml(html, seo, CANONICAL_SITE_ORIGIN);
+    } catch (error) {
+      console.error('[PageShell] Could not add page SEO; serving the plain shell:', error);
+    }
   }
 
   if (status === 404) {

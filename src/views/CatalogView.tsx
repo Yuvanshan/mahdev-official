@@ -16,7 +16,7 @@ import { InquiryItemNotFound } from '../components/common/InquiryItemNotFound';
 import { normalizeCode } from '../utils/itemLookup';
 import { deriveLookupSku } from '../utils/whatsapp';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
-import { formatPageTitle } from '../config/pageTitles';
+import { productSeo } from '../config/itemSeo';
 
 const CATALOG_DIVISION = 'mart';
 
@@ -202,15 +202,20 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     }
   }
 
+  // Same head the page shell sends crawlers for /products/{slug} (src/config/itemSeo.ts).
+  const productSeoData = inquiredProduct
+    ? productSeo(inquiredProduct as unknown as Record<string, unknown>, inquiredProduct.id)
+    : null;
+
   return (
     <div className="min-h-screen bg-neutral-50 flex flex-col">
       {/* A /products/{slug} URL is its own indexable page (listed in the sitemap), so it
           declares itself as canonical with the product's name; otherwise the catalogue. */}
-      {initialProductId && inquiredProduct ? (
+      {initialProductId && productSeoData ? (
         <SEOHead
-          title={formatPageTitle(inquiredProduct.name)}
-          description={(inquiredProduct.shortDescription || inquiredProduct.description || `${inquiredProduct.name} from Mahdev Online Mart, Sri Lanka.`).slice(0, 300)}
-          canonicalUrl={`${CANONICAL_SITE_ORIGIN}/products/${encodeURIComponent(inquiredProduct.slug || inquiredProduct.id)}`}
+          title={productSeoData.title}
+          description={productSeoData.description}
+          canonicalUrl={`${CANONICAL_SITE_ORIGIN}${productSeoData.path}`}
         />
       ) : (
         <SEOHead

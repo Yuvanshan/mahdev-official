@@ -9,6 +9,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { loadEnv } from 'vite';
 import type { RouteSeo } from '../backend/seo/publicRoutes';
+import { renderSeoHtml } from '../backend/seo/renderSeoHtml';
 
 // Load .env files exactly as `vite build` does, so prerendered pages use the
 // same VITE_SITE_URL domain as index.html (Vercel already sets process.env).
@@ -20,52 +21,10 @@ const { PRERENDERED_ROUTES, SITE_ORIGIN } = await import('../backend/seo/publicR
 const DIST = 'dist';
 const baseHtml = readFileSync(join(DIST, 'index.html'), 'utf8');
 
-function escapeHtml(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-// Replace one tag; fail the build loudly if index.html stops matching.
-function replaceTag(html: string, pattern: RegExp, replacement: string, label: string): string {
-  if (!pattern.test(html)) throw new Error(`[prerender-seo] Could not find ${label} in dist/index.html.`);
-  return html.replace(pattern, replacement);
-}
-
 const removeHomeOnly = (html: string) => html.replace(/^\s*<!-- Home only:.*\n/m, '').replace(/^\s*<link[^>]*data-home-only[^>]*>\n/m, '');
 
-function renderRoute(route: RouteSeo): string {
-  const url = `${SITE_ORIGIN}${route.path}`;
-  const title = escapeHtml(route.title);
-  const description = escapeHtml(route.description);
-  let html = removeHomeOnly(baseHtml);
-  html = replaceTag(html, /<title>[^<]*<\/title>/, `<title>${title}</title>`, '<title>');
-  html = replaceTag(html, /<meta name="description" content="[^"]*" \/>/, `<meta name="description" content="${description}" />`, 'meta description');
-  html = replaceTag(html, /<link rel="canonical" href="[^"]*" \/>/, `<link rel="canonical" href="${url}" />`, 'canonical');
-  html = replaceTag(html, /<meta property="og:title" content="[^"]*" \/>/, `<meta property="og:title" content="${title}" />`, 'og:title');
-  html = replaceTag(html, /<meta property="og:description" content="[^"]*" \/>/, `<meta property="og:description" content="${description}" />`, 'og:description');
-  html = replaceTag(html, /<meta property="og:url" content="[^"]*" \/>/, `<meta property="og:url" content="${url}" />`, 'og:url');
-  html = replaceTag(html, /<meta name="twitter:title" content="[^"]*" \/>/, `<meta name="twitter:title" content="${title}" />`, 'twitter:title');
-  html = replaceTag(html, /<meta name="twitter:description" content="[^"]*" \/>/, `<meta name="twitter:description" content="${description}" />`, 'twitter:description');
-  if (route.ogImage) {
-    const image = `${SITE_ORIGIN}${route.ogImage}`;
-    html = replaceTag(html, /<meta property="og:image" content="[^"]*" \/>/, `<meta property="og:image" content="${image}" />`, 'og:image');
-    html = replaceTag(html, /<meta name="twitter:image" content="[^"]*" \/>/, `<meta name="twitter:image" content="${image}" />`, 'twitter:image');
-  }
-  // Route-specific crawlable copy inside the (visually hidden) fallback block.
-  html = replaceTag(
-    html,
-    /(<main id="seo-fallback"[^>]*>)[\s\S]*?(<\/main>)/,
-    `$1\n        <h1>${escapeHtml(route.heading)}</h1>\n        <p>${escapeHtml(route.intro)}</p>\n        <p>${description}</p>\n        <p><a href="/">Mahdev home</a> · <a href="/services">Services</a> · <a href="/contact">Contact</a></p>\n      $2`,
-    'seo-fallback block'
-  );
-  if (route.structuredData?.length) {
-    // JSON-LD is data, not script code: escape "<" so content can never close the tag.
-    const blocks = route.structuredData
-      .map((block) => `    <script type="application/ld+json">${JSON.stringify(block).replace(/</g, '\\u003c')}</script>`)
-      .join('\n');
-    html = replaceTag(html, /<\/head>/, `${blocks}\n  </head>`, '</head>');
-  }
-  return html;
-}
+// Throws (failing the build) if dist/index.html stops matching the expected tags.
+const renderRoute = (route: RouteSeo) => renderSeoHtml(removeHomeOnly(baseHtml), route, SITE_ORIGIN);
 
 for (const route of PRERENDERED_ROUTES) {
   const file = join(DIST, route.path.replace(/^\//, ''), 'index.html');

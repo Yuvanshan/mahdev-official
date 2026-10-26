@@ -14,6 +14,9 @@ import {
   resolveMediaAssetSku,
 } from '../utils/itemLookup';
 import { InquiredItemSpotlight } from '../components/common/InquiredItemSpotlight';
+import { SEOHead } from '../components/layout/SEOHead';
+import { gallerySeo } from '../config/itemSeo';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { InquiredItemShimmer } from '../components/common/InquiredItemShimmer';
 import { InquiryItemNotFound } from '../components/common/InquiryItemNotFound';
 import { getDefaultGallery } from '../services/firestore/gallery';
@@ -222,8 +225,12 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
 
     // 2. Display exact item retrieved from Firestore
     if (inquiredItem) {
+      // /gallery?id=… is listed in the sitemap, so the item declares itself as canonical
+      // with the same head the page shell sends crawlers (src/config/itemSeo.ts).
+      const seo = gallerySeo(inquiredItem as unknown as Record<string, unknown>, targetQuery);
       return (
         <div className="min-h-screen bg-slate-50 pt-20">
+          <SEOHead title={seo.title} description={seo.description} canonicalUrl={`${CANONICAL_SITE_ORIGIN}${seo.path}`} />
           <InquiredItemSpotlight
             item={inquiredItem}
             totalGalleryCount={allItems.length}

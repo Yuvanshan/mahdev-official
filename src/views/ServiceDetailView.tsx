@@ -10,6 +10,7 @@ import { FirestoreService } from '../types/firestore';
 import { openWhatsAppInquiry } from '../utils/whatsapp';
 import { NotFoundView } from './NotFoundView';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
+import { serviceSeo } from '../config/itemSeo';
 import { ImageCarousel } from '../components/ui/ImageCarousel';
 
 interface ServiceDetailViewProps {
@@ -86,6 +87,8 @@ export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ slug, onNa
   const title = service.title || service.name;
   const description = (service.description || `${title} from ${divisionName} in Sri Lanka.`).trim().slice(0, 300);
   const canonicalPath = `/services/${encodeURIComponent(service.slug || service.id)}`;
+  // Same head the page shell sends crawlers for this URL (src/config/itemSeo.ts).
+  const seo = serviceSeo(service as unknown as Record<string, unknown>, service.id);
   const price = Number(service.startingPrice || service.price || 0);
   // Every photo of the service (main image first), shown in the slider below.
   const serviceImages = [service.imageUrl, ...(service.images || [])].filter((url): url is string => Boolean(url));
@@ -116,9 +119,9 @@ export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ slug, onNa
   return (
     <main className="min-h-screen bg-slate-50 pb-16 pt-24">
       <SEOHead
-        title={`${title} | ${divisionName} | Mahdev`}
-        description={description}
-        canonicalUrl={`${SITE_ORIGIN}${canonicalPath}`}
+        title={seo.title}
+        description={seo.description}
+        canonicalUrl={`${SITE_ORIGIN}${seo.path}`}
         keywords={[title, service.category || '', divisionName, 'Sri Lanka'].filter(Boolean)}
       />
       <script type="application/ld+json">

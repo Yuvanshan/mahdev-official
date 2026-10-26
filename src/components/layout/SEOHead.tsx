@@ -11,6 +11,7 @@ import {
 } from '../../config/site';
 import { ADMIN_PORTAL_PATH } from '../../config/adminRoutes';
 import { getPageTitle } from '../../config/pageTitles';
+import { withServiceArea } from '../../config/itemSeo';
 
 const SEO_CACHE_KEY = 'mahdev_cached_seo_configs';
 const SEO_ORIGIN = CANONICAL_SITE_ORIGIN;
@@ -134,7 +135,10 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     // Titles that already name Mahdev (e.g. "SWS Event Management – ... | Mahdev (Pvt) Ltd",
     // "Mahdev Travels – ...") are used as-is, so the brand is never repeated.
     // Fixed pages use the shared title ("About Us - Mahdev (Pvt) Ltd") whatever the view passes.
-    const routeTitle = getPageTitle(window.location.pathname);
+    // A single item shown on a fixed page's URL (canonical "/gallery?id=…") is its own page:
+    // it keeps its own title and is not overridden by the fixed page's SEO settings.
+    const isItemUrl = Boolean(canonicalUrl && new URL(canonicalUrl, window.location.origin).search);
+    const routeTitle = isItemUrl ? null : getPageTitle(window.location.pathname);
     const dynamicFullTitle = routeTitle
       ?? (/mahdev/i.test(sanitizedTitle) ? sanitizedTitle : `${sanitizedTitle} - ${SITE_NAME}`);
     document.title = dynamicFullTitle;
@@ -155,7 +159,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     let effectiveOgImage = shareImage.startsWith('/') ? `${SEO_ORIGIN}${shareImage}` : shareImage;
     let effectiveKeywords = keywords;
     let allowIndexing = true;
-    const matched = seoConfigs.find(
+    const matched = isItemUrl ? undefined : seoConfigs.find(
       (config) => config.route === currentPath ||
         (config.canonicalUrl && canonicalUrl && config.canonicalUrl.includes(currentPath))
     );
@@ -175,9 +179,13 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       effectiveOgDesc = matched.description;
     }
 
-    const canonicalPath = effectiveCanonical
-      ? new URL(effectiveCanonical, window.location.origin).pathname
-      : currentPath;
+    // Every description names the Trincomalee and Colombo branches, as the prerendered HTML does.
+    effectiveDesc = withServiceArea(effectiveDesc);
+    effectiveOgDesc = effectiveOgDesc ? withServiceArea(effectiveOgDesc) : effectiveDesc;
+
+    // Path plus any query the view declares (gallery items are /gallery?id=…).
+    const canonicalTarget = effectiveCanonical ? new URL(effectiveCanonical, window.location.origin) : null;
+    const canonicalPath = canonicalTarget ? `${canonicalTarget.pathname}${canonicalTarget.search}` : currentPath;
     effectiveCanonical = `${SEO_ORIGIN}${canonicalPath === '/' ? '' : canonicalPath}`;
 
     const privateRoutePrefixes = [

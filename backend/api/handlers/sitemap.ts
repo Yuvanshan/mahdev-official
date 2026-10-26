@@ -21,7 +21,6 @@ const STATIC_PUBLIC_PATHS = [
   '/catalog',
   '/book',
   '/about',
-  '/gallery',
   '/portfolio',
   '/milestones',
   '/testimonials',
@@ -35,7 +34,9 @@ const STATIC_PUBLIC_PATHS = [
   '/shipping-policy',
   '/cookie-policy',
 ];
-const RESERVED_PATHS = new Set(STATIC_PUBLIC_PATHS);
+// /gallery is not listed: it renders the /services page and declares /services as
+// canonical. Single gallery items (/gallery?id=…) are listed below with their own head.
+const RESERVED_PATHS = new Set([...STATIC_PUBLIC_PATHS, '/gallery']);
 const PRIVATE_PATH_PREFIXES = [
   '/admin',
   '/admin-yuvan1709',
