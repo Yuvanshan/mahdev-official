@@ -136,8 +136,8 @@ function ensureDatabase(): Promise<void> {
 }
 
 async function findByToken(token: unknown): Promise<TursoDocument> {
-  // Tokens are 43 base64url characters; anything else is not worth a query.
-  if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(token)) {
+  // Tokens are 64 hex characters (older links: 43 base64url); anything else is not worth a query.
+  if (typeof token !== 'string' || !/^(?:[a-f0-9]{64}|[A-Za-z0-9_-]{43})$/.test(token)) {
     throw new RequestError('This confirmation link is not valid.', 404);
   }
   const [document] = await listTursoDocuments(COLLECTION, '', [{ field: 'token', operator: '==', value: token }], undefined, 1);
@@ -260,7 +260,9 @@ async function createConfirmation(body: Record<string, unknown>, adminEmail: str
   const suffix = randomBytes(3).toString('hex').toUpperCase();
   const id = `OC-${now.getFullYear()}-${suffix}`;
   const data: Record<string, unknown> = {
-    token: randomBytes(32).toString('base64url'),
+    // Hex only: WhatsApp reads "_" and "~" in a message as formatting and can break
+    // a link that contains them (base64url tokens did), and hex survives any case change.
+    token: randomBytes(32).toString('hex'),
     status: 'pending' satisfies ConfirmationStatus,
     title,
     divisionId: text(body.divisionId, 40) || 'sws',
@@ -293,19 +295,25 @@ async function createConfirmation(body: Record<string, unknown>, adminEmail: str
   return { confirmation: { ...data, id, shareUrl: shareUrl(data) } };
 }
 
+/** Sign-off: the division, then the company ("SWS Event Management," / "Mahdev Pvt Ltd"). */
+function signature(divisionName: unknown): string[] {
+  return typeof divisionName === 'string' && divisionName ? [`${divisionName},`, 'Mahdev Pvt Ltd'] : ['Mahdev Pvt Ltd'];
+}
+
 function linkMessage(data: Record<string, unknown>): string {
   const firstName = String(data.customerName || '').split(' ')[0] || 'there';
   const expires = new Date(String(data.expiresAt)).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   return [
     `Hello ${firstName},`,
     '',
-    `Thank you for approving your design "${data.title}" with Mahdev.`,
+    `Thank you for approving your design "${data.title}" with ${data.divisionName || 'Mahdev'}.`,
+    '',
     'Please review the design and decoration details, enter your details and confirm your order here:',
     shareUrl(data),
     '',
     `This link is valid until ${expires}.`,
     '',
-    'Mahdev Pvt Ltd',
+    ...signature(data.divisionName),
   ].join('\n');
 }
 
@@ -479,7 +487,7 @@ function orderFromConfirmation(
   };
 }
 
-function receipt(order: Record<string, unknown>, origin: string) {
+function receipt(order: Record<string, unknown>, origin: string, divisionName: unknown) {
   const items = order.items as Array<{ name: string; quantity: number; lineTotal: number; description?: string }>;
   const firstName = String(order.customerName).split(' ')[0];
   const accountUrl = `${origin}/account/orders`;
@@ -496,7 +504,7 @@ function receipt(order: Record<string, unknown>, origin: string) {
     '',
     `Track progress and view your invoice: ${accountUrl}`,
     '',
-    'Mahdev Pvt Ltd',
+    ...signature(divisionName),
   ].join('\n');
   const rows = items.map((item) => `<tr><td style="padding:8px;border-bottom:1px solid #e2e8f0">${escapeHtml(item.name)}${
     item.description ? `<br><span style="color:#64748b;font-size:12px">${escapeHtml(item.description)}</span>` : ''
@@ -509,7 +517,7 @@ ${image && /^https?:\/\//.test(image) ? `<img src="${escapeHtml(image)}" alt="Yo
 <table style="width:100%;border-collapse:collapse;margin:12px 0"><thead><tr style="background:#f1f5f9"><th style="padding:8px;text-align:left">Item</th><th style="padding:8px">Qty</th><th style="padding:8px;text-align:right">Amount</th></tr></thead><tbody>${rows}</tbody></table>
 <p style="text-align:right;font-size:16px"><strong>Total: ${formatLkr(Number(order.total))}</strong>${advance ? `<br><span style="font-size:13px">Advance to confirm the date: ${formatLkr(advance)}</span>` : ''}</p>
 <p><a href="${escapeHtml(accountUrl)}" style="display:inline-block;background:#0052FF;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Track my order &amp; invoice</a></p>
-<p style="color:#64748b;font-size:12px">Mahdev Pvt Ltd</p></div>`;
+<p style="color:#64748b;font-size:12px">${signature(divisionName).map(escapeHtml).join('<br>')}</p></div>`;
   return { text: textBody, html };
 }
 
@@ -568,7 +576,7 @@ async function confirmOrder(req: IncomingMessage, body: Record<string, unknown>)
   ]);
 
   // Order is saved; messages are best effort and reported back to the page.
-  const message = receipt(order, siteOrigin(data.siteOrigin));
+  const message = receipt(order, siteOrigin(data.siteOrigin), data.divisionName);
   const [email] = await Promise.all([
     customer.email
       ? sendCustomerEmail({ to: customer.email, subject: `Order confirmed: ${order.id}`, html: message.html, text: message.text })

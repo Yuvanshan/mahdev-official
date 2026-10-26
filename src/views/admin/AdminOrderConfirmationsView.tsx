@@ -71,18 +71,22 @@ function whatsAppUrl(phone: string, text: string): string {
 
 const formatDay = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
+/** Sign-off: the division, then the company ("SWS Event Management," / "Mahdev Pvt Ltd"). */
+const signature = (divisionName?: string) => (divisionName ? [`${divisionName},`, 'Mahdev Pvt Ltd'] : ['Mahdev Pvt Ltd']);
+
 /** The confirmation link, sent before the customer confirms. */
 function linkMessage(confirmation: OrderConfirmation): string {
   return [
     `Hello ${confirmation.customerName.split(' ')[0]},`,
     '',
-    `Thank you for approving your design "${confirmation.title}" with Mahdev.`,
+    `Thank you for approving your design "${confirmation.title}" with ${confirmation.divisionName || 'Mahdev'}.`,
+    '',
     'Please review the design and decoration details, enter your details and confirm your order here:',
     confirmation.shareUrl,
     '',
     `This link is valid until ${formatDay(confirmation.expiresAt)}.`,
     '',
-    'Mahdev Pvt Ltd',
+    ...signature(confirmation.divisionName),
   ].join('\n');
 }
 
@@ -102,7 +106,7 @@ function receiptMessage(confirmation: OrderConfirmation): string {
     '',
     `Track your order and view your invoice: ${accountUrl}`,
     '',
-    'Mahdev Pvt Ltd',
+    ...signature(confirmation.divisionName),
   ].join('\n');
 }
 
