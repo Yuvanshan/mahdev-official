@@ -310,6 +310,37 @@ try {
     assert.notEqual(result.status, 200, 'an invalid phone number must be refused');
   });
 
+  await test('Customers cannot change their own role or status, and profile fields are checked', async () => {
+    const carol = { role: 'customer' as const, identity: { uid: 'cust-carol', email: 'carol@example.com' } };
+    const save = (data: Record<string, unknown>) =>
+      handleTursoAction({ action: 'write', write: { type: 'set', collection: 'users', parentPath: '', id: 'cust-carol', data } }, carol);
+    const load = async () => (await listTursoDocuments('users', '')).find((d) => d.id === 'cust-carol')!;
+
+    // New profile: server sets role, status and creation date, ignoring the browser's values.
+    let result = await save({ name: 'Carol', role: 'admin', status: 'suspended', createdAt: '2001-01-01T00:00:00.000Z' });
+    assert.equal(result.status, 200, JSON.stringify(result.body));
+    let profile = await load();
+    assert.equal(profile.data.role, 'customer');
+    assert.equal(profile.data.status, 'active');
+    assert.notEqual(profile.data.createdAt, '2001-01-01T00:00:00.000Z');
+
+    // Unsafe photo addresses and malformed fields are refused; an https upload is accepted.
+    result = await save({ avatarUrl: 'javascript:alert(1)' });
+    assert.notEqual(result.status, 200, 'a script URL must not be accepted as a photo');
+    result = await save({ address: 'not an object' });
+    assert.notEqual(result.status, 200, 'a malformed address must be refused');
+    result = await save({ avatarUrl: 'https://firebasestorage.googleapis.com/v0/b/x/o/a.webp?alt=media', preferences: { smsAlerts: 'yes', currency: 'USD', admin: true } });
+    assert.equal(result.status, 200, JSON.stringify(result.body));
+    profile = await load();
+    assert.deepEqual(profile.data.preferences, { currency: 'LKR', smsAlerts: false });
+
+    // Once suspended by an admin, the customer can neither edit nor reactivate the account.
+    await handleTursoAction({ action: 'write', write: { type: 'set', collection: 'users', parentPath: '', id: 'cust-carol', merge: true, data: { status: 'suspended' } } });
+    result = await save({ name: 'Carol B', status: 'active' });
+    assert.equal(result.status, 403, JSON.stringify(result.body));
+    assert.equal((await load()).data.status, 'suspended');
+  });
+
   await test('Admin sign-in has no built-in fallback credentials', async () => {
     const res = makeRes();
     await adminLoginHandler(makeReq({ method: 'POST', url: '/api/admin/auth/login', body: { email: 'anyone@example.com', password: 'x' } }), res);

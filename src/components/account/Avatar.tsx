@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { hasRealName } from '../../utils/profileCompletion';
 
 interface AvatarProps {
@@ -28,12 +28,20 @@ export function initialsFor(name: string, email: string): string {
  * instant). If the photo cannot load, the initials stay.
  */
 export const Avatar: React.FC<AvatarProps> = ({ name, email, src, className = 'h-8 w-8 rounded-lg', textClassName = 'text-xs' }) => {
-  const [loaded, setLoaded] = useState(false);
-  const [failed, setFailed] = useState(false);
-  useEffect(() => {
-    setLoaded(false);
-    setFailed(false);
-  }, [src]);
+  // Load state is kept per photo address rather than reset in an effect: a photo the
+  // browser already has (e.g. the one just shown while the session restored) can
+  // finish loading before an effect runs, and a reset then hid it for good.
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const loaded = Boolean(src) && loadedSrc === src;
+  const failed = Boolean(src) && failedSrc === src;
+  // A cached photo can also be complete before React attaches onLoad: check on mount.
+  const imgRef = useCallback(
+    (img: HTMLImageElement | null) => {
+      if (img && src && img.complete && img.naturalWidth > 0) setLoadedSrc(src);
+    },
+    [src]
+  );
 
   return (
     <span className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-[#0052FF] to-indigo-600 font-bold text-white ${className}`}>
@@ -42,13 +50,14 @@ export const Avatar: React.FC<AvatarProps> = ({ name, email, src, className = 'h
       </span>
       {src && !failed && (
         <img
+          ref={imgRef}
           src={src}
           alt=""
           // Google profile photos are refused when a referrer is sent.
           referrerPolicy="no-referrer"
           decoding="async"
-          onLoad={() => setLoaded(true)}
-          onError={() => setFailed(true)}
+          onLoad={() => setLoadedSrc(src)}
+          onError={() => setFailedSrc(src)}
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
         />
       )}

@@ -45,6 +45,7 @@ Disallow: /track-order
 Disallow: /login
 Disallow: /register
 Disallow: /forgot-password
+Disallow: /auth/
 Disallow: /api/
 
 Sitemap: https://mahdev-official.vercel.app/sitemap.xml

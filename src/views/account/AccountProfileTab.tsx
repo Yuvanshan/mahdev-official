@@ -21,7 +21,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ImageUploader } from '../../components/common/ImageUploader';
 import { Avatar } from '../../components/account/Avatar';
 import { AuthAlert, AuthField, PasswordField } from '../../components/auth/AuthFields';
-import { MIN_PASSWORD_LENGTH } from '../../services/authService';
+import { passwordPolicyError } from '../../services/authService';
 import { ageFromDateOfBirth, formatSriLankaPhone, normaliseSriLankaPhone, parseNic } from '../../utils/sriLankaIdentity';
 
 interface AccountProfileTabProps {
@@ -181,7 +181,8 @@ export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) =>
     setPasswordMessage(null);
     const errors: typeof passwordErrors = {};
     if (!passwords.current) errors.current = 'Enter your current password.';
-    if (passwords.next.length < MIN_PASSWORD_LENGTH) errors.next = `Use at least ${MIN_PASSWORD_LENGTH} characters.`;
+    const passwordProblem = passwordPolicyError(passwords.next);
+    if (passwordProblem) errors.next = passwordProblem;
     else if (passwords.next === passwords.current) errors.next = 'Choose a password different from your current one.';
     if (passwords.confirm !== passwords.next) errors.confirm = 'Passwords do not match.';
     setPasswordErrors(errors);

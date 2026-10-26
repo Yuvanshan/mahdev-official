@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { initializeTursoDatabase } from '../../db/tursoDatabase.js';
 import { handleTursoAction } from '../tursoRoutes.js';
-import { APP_ROUTE_SEGMENTS, RETIRED_ADMIN_SEGMENTS } from '../../seo/publicRoutes.js';
+import { APP_ROUTE_SEGMENTS, PRIVATE_ROUTE_SEGMENTS, RETIRED_ADMIN_SEGMENTS } from '../../seo/publicRoutes.js';
 import { resolveDynamicRouteSeo } from '../../seo/dynamicRouteSeo.js';
 import { renderSeoHtml } from '../../seo/renderSeoHtml.js';
 import { CANONICAL_SITE_ORIGIN } from '../../../src/config/site.js';
@@ -109,10 +109,14 @@ async function serveShell(req: IncomingMessage, res: ServerResponse, forcedStatu
     }
   }
 
-  if (status === 404) {
-    // Tell crawlers not to index the not-found page.
-    html = html.replace(/<meta name="robots" content="[^"]*" \/>/, '<meta name="robots" content="noindex, follow" />');
-    res.setHeader('X-Robots-Tag', 'noindex, follow');
+  const isPrivatePage = status === 200 && PRIVATE_ROUTE_SEGMENTS.has(path.replace(/^\/+/, '').split('/')[0].toLowerCase());
+  if (status === 404 || isPrivatePage) {
+    // Tell crawlers not to index the not-found page or private (account, sign-in, checkout) pages.
+    const robots = status === 404 ? 'noindex, follow' : 'noindex, nofollow';
+    html = html
+      .replace(/<meta name="robots" content="[^"]*" \/>/, `<meta name="robots" content="${robots}" />`)
+      .replace(/<meta name="googlebot" content="[^"]*" \/>/, `<meta name="googlebot" content="${robots}" />`);
+    res.setHeader('X-Robots-Tag', robots);
   }
   res.statusCode = status;
   res.setHeader('Content-Type', 'text/html; charset=utf-8');

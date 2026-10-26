@@ -204,6 +204,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       '/login',
       '/register',
       '/forgot-password',
+      '/auth',
     ];
     const isPrivateRoute = privateRoutePrefixes.some(
       (prefix) => currentPath === prefix || currentPath.startsWith(`${prefix}/`)

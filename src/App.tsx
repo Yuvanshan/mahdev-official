@@ -216,6 +216,7 @@ const GalleryPageView = lazy(() => import('./views/GalleryPageView').then((modul
 const LoginView = lazy(() => import('./views/auth/LoginView').then((module) => ({ default: module.LoginView })));
 const RegisterView = lazy(() => import('./views/auth/RegisterView').then((module) => ({ default: module.RegisterView })));
 const ForgotPasswordView = lazy(() => import('./views/auth/ForgotPasswordView').then((module) => ({ default: module.ForgotPasswordView })));
+const AuthActionView = lazy(() => import('./views/auth/AuthActionView').then((module) => ({ default: module.AuthActionView })));
 const AccountLayout = lazy(() => import('./views/account/AccountLayout').then((module) => ({ default: module.AccountLayout })));
 const CompleteProfileView = lazy(() => import('./views/account/CompleteProfileView').then((module) => ({ default: module.CompleteProfileView })));
 const AdminLayout = lazy(() => import('./views/admin/AdminLayout').then(({ AdminLayout }) => ({ default: AdminLayout })));
@@ -676,6 +677,11 @@ function AppContent() {
 
     if (normalizedPath === '/forgot-password') {
       return <ForgotPasswordView onNavigate={navigate} />;
+    }
+
+    // Links from account emails (verify email, reset password).
+    if (normalizedPath === '/auth/action') {
+      return <AuthActionView onNavigate={navigate} />;
     }
 
     // Protected Customer Account Routes

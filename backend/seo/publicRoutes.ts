@@ -252,7 +252,7 @@ export const PRERENDERED_ROUTES: RouteSeo[] = ROUTES.map((route) => ({
  * Kept deliberately broad so no valid page is ever answered with a 404.
  */
 export const APP_ROUTE_SEGMENTS = new Set([
-  '', 'about', 'about-us', 'account', 'admin-yuvan1709', 'articles', 'blog', 'book', 'bookings', 'careers', 'cart',
+  '', 'about', 'about-us', 'account', 'admin-yuvan1709', 'articles', 'auth', 'blog', 'book', 'bookings', 'careers', 'cart',
   'catalog', 'checkout', 'cinema', 'clients', 'companies', 'company', 'contact', 'cookie-policy', 'decor',
   'decorations', 'division', 'divisions', 'event-management', 'events', 'events-management', 'featured-services',
   'forgot-password', 'gallery', 'insights', 'it', 'it-services', 'it-solutions', 'jobs', 'journey', 'login',
@@ -262,6 +262,15 @@ export const APP_ROUTE_SEGMENTS = new Set([
   'shipping-policy', 'shop', 'software', 'solutions', 'store', 'studio', 'sws', 'sws-event', 'sws-event-management',
   'sws-events', 'terms-and-conditions', 'testimonials', 'tourism', 'tours', 'track-order', 'travel', 'travels',
   'u1', 'u1-cinema', 'u1-studio', 'work',
+]);
+
+/**
+ * Signed-in, checkout and one-time-link pages: served normally but marked noindex in
+ * the HTML itself, so crawlers that do not run JavaScript keep them out of results too.
+ */
+export const PRIVATE_ROUTE_SEGMENTS = new Set([
+  'account', 'admin-yuvan1709', 'auth', 'bookings', 'cart', 'checkout', 'forgot-password', 'login', 'order', 'orders',
+  'register', 'track-order',
 ]);
 
 /** Retired admin entry points: always a 404, never a redirect. */

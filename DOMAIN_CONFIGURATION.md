@@ -79,3 +79,15 @@ curl -I https://www.mahdev.lk/sws
 curl -I https://mahdev.lk/mart
 # Expected Output: HTTP/2 200
 ```
+
+## Account email links (verification and password reset)
+
+Account emails link to the website's own `/auth/action` page (`src/views/auth/AuthActionView.tsx`) rather than `for-her-33ea9.firebaseapp.com`. This needs one setting in the Firebase console:
+
+1. Firebase console → **Authentication** → **Templates**.
+2. Open **Email address verification** → edit (pencil) → **Customize action URL**.
+3. Enter `https://<your-domain>/auth/action` (for example `https://mahdev-official.vercel.app/auth/action`) and save. The setting applies to every template (password reset, email change).
+4. While there, set the **sender name** (for example "Mahdev") and edit the subject and message.
+5. Under **Authentication → Settings → Authorized domains**, make sure the domain is listed.
+
+Until step 3 is done, emails keep using Firebase's default link, which still works.

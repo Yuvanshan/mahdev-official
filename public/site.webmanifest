@@ -1,0 +1,16 @@
+{
+  "name": "Mahdev (Pvt) Ltd",
+  "short_name": "Mahdev",
+  "description": "Events, photography and cinema, IT solutions, travel and an online mart in Trincomalee and Colombo, Sri Lanka.",
+  "lang": "en-LK",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FAF9F6",
+  "theme_color": "#0052FF",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -15,6 +15,10 @@ import {
   getRedirectResult,
   User as FirebaseUser,
   updateProfile as updateFirebaseProfile,
+  applyActionCode,
+  checkActionCode,
+  verifyPasswordResetCode,
+  confirmPasswordReset as confirmFirebasePasswordReset,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, setDocWithResult } from '../lib/tursoFirestore';
 import { auth, db } from '../lib/firebase';
@@ -35,6 +39,21 @@ type ProfileRecord = FirestoreUser & Record<string, any>;
 type Result = { success: boolean; error?: string };
 
 export const MIN_PASSWORD_LENGTH = 8;
+const MAX_PASSWORD_LENGTH = 128;
+
+/**
+ * The one password rule for registration, password changes and resets: 8–128
+ * characters with at least one letter and one number. Returns the problem, or null.
+ */
+export function passwordPolicyError(password: string): string | null {
+  if (password.length < MIN_PASSWORD_LENGTH) return `Use at least ${MIN_PASSWORD_LENGTH} characters.`;
+  if (password.length > MAX_PASSWORD_LENGTH) return `Use at most ${MAX_PASSWORD_LENGTH} characters.`;
+  if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) return 'Include at least one letter and one number.';
+  return null;
+}
+
+/** What an emailed account link (verification, password reset, email change undo) does. */
+export type EmailActionMode = 'verifyEmail' | 'resetPassword' | 'recoverEmail' | 'verifyAndChangeEmail';
 
 /** How long a loaded profile is reused before asking the server again. */
 const PROFILE_CACHE_MS = 60_000;
@@ -150,6 +169,14 @@ function authErrorMessage(error: unknown, fallback: string): string {
       console.error('[Firebase Auth] Unhandled error:', error);
       return code ? `${fallback} (${code})` : fallback;
   }
+}
+
+/** Friendly message for an emailed link that cannot be used. */
+function emailActionErrorMessage(error: unknown): string {
+  const code = (error as { code?: string } | null)?.code || '';
+  if (code === 'auth/expired-action-code') return 'This link has expired. Please request a new one.';
+  if (code === 'auth/invalid-action-code') return 'This link is invalid or has already been used. Please request a new one.';
+  return authErrorMessage(error, 'This link could not be used. Please request a new one.');
 }
 
 /** Maps a Firebase user and their profile record to the app's customer shape. */
@@ -495,9 +522,8 @@ class AuthService {
     if (!nic) return { success: false, error: 'Please enter a valid NIC number.' };
     if (!phone) return { success: false, error: 'Please enter a valid Sri Lankan contact number.' };
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailClean)) return { success: false, error: 'A valid email address is required.' };
-    if (input.password.length < MIN_PASSWORD_LENGTH) {
-      return { success: false, error: `Password must contain at least ${MIN_PASSWORD_LENGTH} characters.` };
-    }
+    const passwordProblem = passwordPolicyError(input.password);
+    if (passwordProblem) return { success: false, error: passwordProblem };
     if (input.password !== input.confirmPassword) return { success: false, error: 'Passwords do not match.' };
     if (!input.agreeToTerms) return { success: false, error: 'Please accept the Terms and Privacy Policy.' };
 
@@ -588,9 +614,8 @@ class AuthService {
   public async changePassword(currentPassword: string, newPassword: string): Promise<Result> {
     const fbUser = auth.currentUser;
     if (!fbUser?.email) return { success: false, error: 'Please sign in again.' };
-    if (newPassword.length < MIN_PASSWORD_LENGTH) {
-      return { success: false, error: `New password must contain at least ${MIN_PASSWORD_LENGTH} characters.` };
-    }
+    const passwordProblem = passwordPolicyError(newPassword);
+    if (passwordProblem) return { success: false, error: passwordProblem };
     try {
       await reauthenticateWithCredential(fbUser, EmailAuthProvider.credential(fbUser.email, currentPassword));
       await updatePassword(fbUser, newPassword);
@@ -610,6 +635,38 @@ class AuthService {
       return { success: true };
     } catch (err) {
       return { success: false, error: authErrorMessage(err, 'Could not send the verification email.') };
+    }
+  }
+
+  /**
+   * Confirms an emailed link opened on this site's /auth/action page: verifies the
+   * email address or restores a changed one. For password resets it only checks the
+   * link and returns the account's email; confirmPasswordReset() finishes it.
+   */
+  public async handleEmailAction(mode: EmailActionMode, oobCode: string): Promise<Result & { email?: string }> {
+    try {
+      if (mode === 'resetPassword') {
+        return { success: true, email: await verifyPasswordResetCode(auth, oobCode) };
+      }
+      const info = await checkActionCode(auth, oobCode);
+      await applyActionCode(auth, oobCode);
+      // Signed in on this device: show the confirmed status straight away.
+      if (auth.currentUser && this.currentUser) await this.refreshEmailVerification().catch(() => undefined);
+      return { success: true, email: info.data.email || undefined };
+    } catch (err) {
+      return { success: false, error: emailActionErrorMessage(err) };
+    }
+  }
+
+  /** Sets the new password from a reset link (checked first by handleEmailAction). */
+  public async confirmPasswordReset(oobCode: string, newPassword: string): Promise<Result> {
+    const passwordProblem = passwordPolicyError(newPassword);
+    if (passwordProblem) return { success: false, error: passwordProblem };
+    try {
+      await confirmFirebasePasswordReset(auth, oobCode, newPassword);
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: emailActionErrorMessage(err) };
     }
   }
 
@@ -702,7 +759,7 @@ class AuthService {
         company: data.company || '',
         accountType: data.accountType || 'individual',
         role: (data.role as CustomerRole) || 'customer',
-        avatarUrl: data.photoURL || data.photoUrl || '',
+        avatarUrl: data.avatarUrl || data.photoURL || data.photoUrl || '',
         address: data.address || {
           street: '',
           city: '',

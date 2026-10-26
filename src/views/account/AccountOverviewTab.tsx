@@ -16,6 +16,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { CustomerUser } from '../../types/customer';
+import { Avatar } from '../../components/account/Avatar';
 import { Order } from '../../types/order';
 import { Booking } from '../../types/booking';
 import { PaymentTransaction } from '../../types/payment';
@@ -57,13 +58,12 @@ export const AccountOverviewTab: React.FC<AccountOverviewTabProps> = ({
         <div className="absolute right-0 top-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-start gap-4">
-            <img
-              src={
-                user.avatarUrl ||
-                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'
-              }
-              alt={user.fullName}
-              className="w-16 h-16 rounded-2xl object-cover border-2 border-white/20 shadow-md shrink-0"
+            <Avatar
+              name={user.fullName}
+              email={user.email}
+              src={user.avatarUrl}
+              className="w-16 h-16 rounded-2xl border-2 border-white/20 shadow-md"
+              textClassName="font-display text-xl"
             />
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">

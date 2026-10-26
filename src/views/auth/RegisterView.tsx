@@ -20,7 +20,7 @@ import { AuthShell } from '../../components/auth/AuthShell';
 import { AuthAlert, AuthField, AuthSubmit, PasswordField } from '../../components/auth/AuthFields';
 import { evaluateBotRisk, checkActionThrottle } from '../../utils/securityProtection';
 import { notificationService } from '../../services/notificationService';
-import { MIN_PASSWORD_LENGTH } from '../../services/authService';
+import { MIN_PASSWORD_LENGTH, passwordPolicyError } from '../../services/authService';
 import { ageFromDateOfBirth, normaliseNic, normaliseSriLankaPhone, parseNic } from '../../utils/sriLankaIdentity';
 import { CANONICAL_SITE_ORIGIN } from '../../config/site';
 import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton';
@@ -89,7 +89,8 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
   const validateStepTwo = (): FieldErrors => {
     const errors: FieldErrors = {};
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) errors.email = 'Enter a valid email address.';
-    if (formData.password.length < MIN_PASSWORD_LENGTH) errors.password = `Use at least ${MIN_PASSWORD_LENGTH} characters.`;
+    const passwordProblem = passwordPolicyError(formData.password);
+    if (passwordProblem) errors.password = passwordProblem;
     if (formData.confirmPassword !== formData.password) errors.confirmPassword = 'Passwords do not match.';
     if (!formData.agreeToTerms) errors.agreeToTerms = 'Please accept the Terms and Privacy Policy.';
     return errors;
@@ -374,7 +375,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
                 <PasswordField
                   label="Password"
                   autoComplete="new-password"
-                  placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
+                  placeholder={`${MIN_PASSWORD_LENGTH}+ characters, letters and numbers`}
                   value={formData.password}
                   onChange={(e) => update('password', e.target.value)}
                   error={fieldErrors.password}

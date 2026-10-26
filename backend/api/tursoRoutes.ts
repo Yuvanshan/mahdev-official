@@ -436,6 +436,7 @@ function customerOwnsDocument(document: TursoDocument, identity: FirebaseIdentit
 async function verifyCustomerIdentityFields(
   data: Record<string, unknown>,
   identity: FirebaseIdentity,
+  existing: TursoDocument | null,
 ): Promise<Record<string, unknown>> {
   const verified: Record<string, unknown> = {};
 
@@ -454,7 +455,6 @@ async function verifyCustomerIdentityFields(
   // stored NIC, date of birth and gender as they are.
   if (data.nic === undefined && data.dateOfBirth === undefined && data.gender === undefined) return verified;
 
-  const existing = await getTursoDocument('users', '', identity.uid);
   const storedNic = typeof existing?.data.nic === 'string' ? existing.data.nic : '';
   if (data.nic === undefined || data.nic === storedNic) {
     // Keep the stored identity: date of birth and gender cannot be edited on their own.
@@ -480,6 +480,73 @@ async function verifyCustomerIdentityFields(
   return { ...verified, nic: nic.nic, dateOfBirth: nic.dateOfBirth, gender: nic.gender };
 }
 
+const MAX_PROFILE_TEXT_LENGTH = 200;
+const MAX_AVATAR_URL_LENGTH = 2048;
+const CUSTOMER_PREFERENCE_FLAGS = ['orderNotifications', 'promotionalUpdates', 'smsAlerts', 'twoFactorEnabled'];
+const CUSTOMER_CONTACT_METHODS = new Set(['whatsapp', 'email', 'phone']);
+
+function profileText(value: unknown, label: string, maxLength = MAX_PROFILE_TEXT_LENGTH): string {
+  if (value === null || value === undefined) return '';
+  if (typeof value !== 'string' || value.trim().length > maxLength) {
+    throw new Error(`${label} must be text of up to ${maxLength} characters.`);
+  }
+  return value.trim();
+}
+
+/**
+ * Checks the free-form fields of a customer's own profile write (photo, company,
+ * address, preferences) and returns the cleaned values. Photos must be https or
+ * this site's own paths; a photo already on the profile is accepted unchanged.
+ */
+function verifyCustomerProfileFields(
+  data: Record<string, unknown>,
+  existing: TursoDocument | null,
+): Record<string, unknown> {
+  const verified: Record<string, unknown> = {};
+
+  for (const field of ['avatarUrl', 'photoURL', 'photoUrl'] as const) {
+    if (data[field] === undefined) continue;
+    const url = profileText(data[field], 'Profile photo address', MAX_AVATAR_URL_LENGTH);
+    const unchanged = url === existing?.data[field];
+    const allowed = !url || /^https:\/\/[^\s"'<>]+$/i.test(url) || /^\/(?!\/)[^\s"'<>]*$/.test(url);
+    if (!unchanged && !allowed) throw new Error('The profile photo must be an uploaded image.');
+    verified[field] = url;
+  }
+  if (data.displayName !== undefined) verified.displayName = profileText(data.displayName, 'Display name', MAX_PROFILE_NAME_LENGTH);
+  if (data.company !== undefined) verified.company = profileText(data.company, 'Company name', 120);
+  if (data.accountType !== undefined) {
+    if (data.accountType !== 'individual' && data.accountType !== 'corporate') throw new Error('Choose a valid account type.');
+    verified.accountType = data.accountType;
+  }
+  if (data.address !== undefined) {
+    if (!data.address || typeof data.address !== 'object' || Array.isArray(data.address)) throw new Error('The address is not valid.');
+    const address = data.address as Record<string, unknown>;
+    verified.address = {
+      street: profileText(address.street, 'Street address'),
+      city: profileText(address.city, 'City', 100),
+      postalCode: profileText(address.postalCode, 'Postal code', 20),
+      country: profileText(address.country, 'Country', 60) || 'Sri Lanka',
+      ...(address.apartment !== undefined ? { apartment: profileText(address.apartment, 'Apartment', 100) } : {}),
+      ...(address.state !== undefined ? { state: profileText(address.state, 'Province', 60) } : {}),
+    };
+  }
+  if (data.preferences !== undefined) {
+    if (!data.preferences || typeof data.preferences !== 'object' || Array.isArray(data.preferences)) {
+      throw new Error('The preferences are not valid.');
+    }
+    const preferences = data.preferences as Record<string, unknown>;
+    const cleaned: Record<string, unknown> = { currency: 'LKR' };
+    for (const flag of CUSTOMER_PREFERENCE_FLAGS) {
+      if (preferences[flag] !== undefined) cleaned[flag] = preferences[flag] === true;
+    }
+    if (typeof preferences.preferredContactMethod === 'string' && CUSTOMER_CONTACT_METHODS.has(preferences.preferredContactMethod)) {
+      cleaned.preferredContactMethod = preferences.preferredContactMethod;
+    }
+    verified.preferences = cleaned;
+  }
+  return verified;
+}
+
 async function prepareCustomerWrite(write: TursoWrite, identity: FirebaseIdentity): Promise<TursoWrite> {
   if (write.parentPath) {
     throw new AdminSessionAuthError('Customer writes must target their own top-level record.', 403);
@@ -492,14 +559,23 @@ async function prepareCustomerWrite(write: TursoWrite, identity: FirebaseIdentit
     if (unsupportedFields.length) {
       throw new Error(`Customer profile fields cannot be changed: ${unsupportedFields.join(', ')}.`);
     }
+    const existing = await getTursoDocument('users', '', identity.uid);
+    // A suspended account cannot edit (or reactivate) itself.
+    if (existing && existing.data.status === 'suspended') {
+      throw new AdminSessionAuthError('This account is suspended. Please contact us.', 403);
+    }
+    // Role, status and creation date are server-owned: whatever the browser sends is dropped.
+    const { role: _role, status: _status, createdAt: _createdAt, ...customerData } = write.data;
+    const now = new Date().toISOString();
     const data = {
-      ...write.data,
-      ...(await verifyCustomerIdentityFields(write.data, identity)),
+      ...customerData,
+      ...verifyCustomerProfileFields(customerData, existing),
+      ...(await verifyCustomerIdentityFields(customerData, identity, existing)),
       uid: identity.uid,
       ...(identity.email ? { email: identity.email } : {}),
       role: 'customer',
-      status: 'active',
-      updatedAt: new Date().toISOString(),
+      ...(existing ? {} : { status: 'active', createdAt: now }),
+      updatedAt: now,
     };
     return { ...write, type: 'set', merge: true, data };
   }
