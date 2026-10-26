@@ -27,6 +27,9 @@ import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { QuickCategoryCreator } from '../../components/admin/QuickCategoryCreator';
 import { DivisionId } from '../../types';
 import { uploadMediaAsset } from '../../services/mediaUploadService';
+import { AdminSeoFields } from '../../components/admin/AdminSeoFields';
+import { AdminGenerateSeoButton } from '../../components/admin/AdminGenerateSeoButton';
+import { seoFileName } from '../../config/imageAlt';
 import { firestoreGalleryService } from '../../services/firestore/gallery';
 import { purgeRemovedStudioPostsFromFirestore } from '../../services/firestore/databaseManagement';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
@@ -84,6 +87,8 @@ export const AdminGalleryView: React.FC = () => {
     tags: ['Stage', 'Lighting'],
     sortOrder: 1,
     isActive: true,
+    imageAlt: '',
+    seoDescription: '',
     price: '', // optional; empty string = no price shown
   });
 
@@ -185,6 +190,8 @@ export const AdminGalleryView: React.FC = () => {
       tags: ['Weddings'],
       sortOrder: galleryItems.length + 1,
       isActive: true,
+      imageAlt: '',
+      seoDescription: '',
       price: '',
     });
     setMediaUrlInput('');
@@ -216,6 +223,8 @@ export const AdminGalleryView: React.FC = () => {
       tags: item.tags || [],
       sortOrder: item.sortOrder || 1,
       isActive: item.isActive ?? true,
+      imageAlt: item.imageAlt || '',
+      seoDescription: item.seoDescription || '',
       price: getStartingPrice(item.price) !== null ? String(item.price) : '',
     });
     setMediaUrlInput('');
@@ -246,9 +255,13 @@ export const AdminGalleryView: React.FC = () => {
     try {
       for (const [index, file] of filesToProcess.entries()) {
         try {
+          // Stored under the keyword alt text (e.g. "...-trincomalee-colombo.jpg") once a title is entered.
+          const fileName = formData.title.trim()
+            ? seoFileName(formData.imageAlt || formData.title, file.name, formData.images.length + index + 1)
+            : undefined;
           const uploadedUrl = await uploadMediaAsset(file, (percent) => {
             setUploadProgress(Math.round(((index + percent / 100) / filesToProcess.length) * 100));
-          });
+          }, { fileName });
           newImages.push(uploadedUrl);
         } catch (err) {
           console.error('[AdminGallery] Image upload failed:', err);
@@ -397,6 +410,8 @@ export const AdminGalleryView: React.FC = () => {
         images: payload.images,
         category: payload.category,
         caption: payload.caption,
+        imageAlt: payload.imageAlt,
+        seoDescription: payload.seoDescription,
         aspectRatio: payload.aspectRatio,
         tags: payload.tags,
         order: payload.sortOrder,
@@ -517,6 +532,7 @@ export const AdminGalleryView: React.FC = () => {
             <Trash2 className="w-3.5 h-3.5 mr-1.5" />
             {isPurgingStudio ? 'Cleaning Firestore...' : 'Purge Removed Studio Posts'}
           </Button>
+          <AdminGenerateSeoButton entity="gallery" items={galleryItems} notify={addToast} onComplete={loadData} />
           <Button variant="primary" size="sm" onClick={handleOpenCreate}>
             <Plus className="w-3.5 h-3.5 mr-1.5" />
             Add Gallery Asset
@@ -1025,6 +1041,18 @@ export const AdminGalleryView: React.FC = () => {
               className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
+
+          <AdminSeoFields
+            key={editingItem?.id || 'new'}
+            title={formData.title}
+            division={formData.divisionId}
+            divisionName={undefined}
+            category={formData.category}
+            description={formData.caption}
+            imageAlt={formData.imageAlt}
+            seoDescription={formData.seoDescription}
+            onChange={({ imageAlt, seoDescription }) => setFormData((prev) => ({ ...prev, imageAlt, seoDescription }))}
+          />
 
           <div>
             <label className="block font-semibold text-slate-700 mb-1">Starting Price (LKR) <span className="font-normal text-slate-400">— optional</span></label>

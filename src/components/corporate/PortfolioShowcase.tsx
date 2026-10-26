@@ -15,6 +15,7 @@ import { PortfolioProject, DivisionId } from '../../types';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { DataLoadingOverlay } from '../common/DataLoadingOverlay';
+import { getImageAltForPhoto, getRecordImageAlt } from '../../config/imageAlt';
 
 interface PortfolioShowcaseProps {
   onInquireProject?: (project: PortfolioProject) => void;
@@ -189,7 +190,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                       ? project.imageUrl.trim()
                       : 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'
                   }
-                  alt={project.title}
+                  alt={getRecordImageAlt(project)}
                   className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 group-hover:opacity-75 transition-all duration-700 ease-out"
                   
                 />
@@ -294,7 +295,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                     <div className="relative h-64 sm:h-80 md:h-96 w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-200">
                       <img
                         src={activeImg}
-                        alt={selectedProject.title}
+                        alt={getRecordImageAlt(selectedProject)}
                         className="w-full h-full object-cover"
                         
                       />
@@ -320,7 +321,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                           >
                             <img
                               src={img}
-                              alt={`Thumbnail ${i + 1}`}
+                              alt={getImageAltForPhoto(getRecordImageAlt(selectedProject), i, allImages.length)}
                               className="w-full h-full object-cover"
                               
                             />

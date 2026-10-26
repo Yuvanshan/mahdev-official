@@ -34,6 +34,8 @@ import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 import { DivisionFilterEmptyState, useDivisionFilteredItems } from '../common/DivisionFilter';
 import { TRANSPORT_NOTE } from '../common/StartingPriceTag';
 import { getImageSourceCandidates } from '../../utils/imageSources';
+import { getSwsImageAlt } from '../../data/swsLocalSeo';
+import { preferSavedAlt } from '../../config/imageAlt';
 
 interface SWSRentalsSectionProps {
   onBookRental: (rentalItem?: SWSRentalItem) => void;
@@ -75,6 +77,7 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
       swsProds.forEach((p) => {
         items.push({
           id: p.id,
+          imageAlt: (p as any).imageAlt,
           name: p.name,
           category: ((p as any).rentalCategory || 'seating') as RentalCategory,
           categoryLabel: (p as any).categoryLabel || 'Equipment & Rentals',
@@ -177,7 +180,7 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
                         ? item.imageUrl.trim()
                         : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
                     }
-                    alt={item.name}
+                    alt={preferSavedAlt(item.imageAlt, getSwsImageAlt(item.name, item.categoryLabel))}
                     fallbackSources={item.gallery}
                     className="absolute inset-0"
                     imageClassName="transition-transform duration-500 group-hover:scale-105"
@@ -327,7 +330,7 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
                     ? activeDetailItem.imageUrl.trim()
                     : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
                 }
-                alt={activeDetailItem.name}
+                alt={preferSavedAlt(activeDetailItem.imageAlt, getSwsImageAlt(activeDetailItem.name, activeDetailItem.categoryLabel))}
                 className="absolute inset-0"
                 // Whole item, never cropped, like the services pop-up.
                 imageFit="contain"

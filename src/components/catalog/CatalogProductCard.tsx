@@ -20,6 +20,7 @@ import { CatalogProduct, ProductType, StockStatus } from '../../types/catalog';
 import { useCart } from '../../context/CartContext';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 import { formatCurrency } from '../../utils/currency';
+import { getRecordImageAlt } from '../../config/imageAlt';
 
 interface CatalogProductCardProps {
   product: CatalogProduct;
@@ -114,7 +115,7 @@ export const CatalogProductCard: React.FC<CatalogProductCardProps> = ({
           <ImageWithShimmer
             src={product.imageUrl}
             fallbackSources={product.gallery}
-            alt={product.name}
+            alt={getRecordImageAlt(product)}
             className="absolute inset-0 rounded-none"
             imageClassName="transition-transform duration-500 ease-out group-hover:scale-105"
           />

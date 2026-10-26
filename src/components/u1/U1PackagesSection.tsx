@@ -23,6 +23,7 @@ import { CmsPackage } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
 import { formatCurrency } from '../../utils/currency';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
+import { getU1ImageAlt } from '../../data/u1LocalSeo';
 import { getImageSourceCandidates } from '../../utils/imageSources';
 
 interface U1PackagesSectionProps {
@@ -168,7 +169,7 @@ export const U1PackagesSection: React.FC<U1PackagesSectionProps> = ({ onBookPack
                 <div className="relative aspect-[16/10] overflow-hidden bg-slate-950 group">
                   <ImageWithShimmer
                     src={currentImage}
-                    alt={pkg.name}
+                    alt={getU1ImageAlt(pkg.name, pkg.tagline)}
                     className="absolute inset-0"
                     imageClassName="transition-transform duration-500 group-hover:scale-105"
                     watermarkLabel="U1 STUDIO"

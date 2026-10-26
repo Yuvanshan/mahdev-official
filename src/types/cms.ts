@@ -75,6 +75,10 @@ export interface CmsDivision extends BaseCmsEntity {
 
 // 2. Service Entity
 export interface CmsService extends BaseCmsEntity {
+  /** Image alt text from the admin editor (auto-filled; names Trincomalee & Colombo). */
+  imageAlt?: string;
+  /** Search description from the admin editor (auto-filled, ~160 characters). */
+  seoDescription?: string;
   divisionId: DivisionId;
   divisionName: string;
   category?: string;
@@ -98,6 +102,10 @@ export interface CmsService extends BaseCmsEntity {
 
 // 3. Product Entity
 export interface CmsProduct extends BaseCmsEntity {
+  /** Image alt text from the admin editor (auto-filled; names Trincomalee & Colombo). */
+  imageAlt?: string;
+  /** Search description from the admin editor (auto-filled, ~160 characters). */
+  seoDescription?: string;
   sku: string;
   name: string;
   slug: string;
@@ -182,6 +190,10 @@ export type CmsPortfolioItem = CmsPortfolioProject;
 
 // 7. Gallery Entity
 export interface CmsGalleryItem extends BaseCmsEntity {
+  /** Image alt text from the admin editor (auto-filled; names Trincomalee & Colombo). */
+  imageAlt?: string;
+  /** Search description from the admin editor (auto-filled, ~160 characters). */
+  seoDescription?: string;
   divisionId: DivisionId;
   title: string;
   sku?: string;

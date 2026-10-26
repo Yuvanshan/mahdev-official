@@ -18,6 +18,7 @@ import { newestListedFirst } from '../../utils/listingOrder';
 import { getServiceStartingPrice } from '../common/StartingPriceTag';
 import { ServiceTile } from '../services/ServiceTile';
 import { ServiceDetailsModal, toServiceDetails } from '../services/ServiceDetailsModal';
+import { getRecordImageAlt } from '../../config/imageAlt';
 
 interface FeaturedServicesSectionProps {
   onNavigate: (route: string) => void;
@@ -108,6 +109,7 @@ const FeaturedServiceCard: React.FC<{
       {/* Card shows only image, title and View; full details open in a modal. */}
       <ServiceTile
         title={service.title || service.name}
+        imageAlt={getRecordImageAlt(service, service.title || service.name)}
         images={serviceImages}
         onView={() => setIsDetailsOpen(true)}
         href={servicePagePath(service)}

@@ -12,6 +12,7 @@ import { NotFoundView } from './NotFoundView';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { serviceSeo } from '../config/itemSeo';
 import { ImageCarousel } from '../components/ui/ImageCarousel';
+import { getImageAlt } from '../config/imageAlt';
 
 interface ServiceDetailViewProps {
   slug: string;
@@ -138,7 +139,7 @@ export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ slug, onNa
       </SectionContainer>
       <SectionContainer background="subtle" paddingY="lg">
         <article className="mx-auto max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <ImageCarousel images={serviceImages} alt={`${title} by ${divisionName}`} />
+          <ImageCarousel images={serviceImages} alt={getImageAlt(title, divisionName, service.category)} />
           <div className="p-6 sm:p-10">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700">
               {divisionName}{service.category ? ` · ${service.category}` : ''}

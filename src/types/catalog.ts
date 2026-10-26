@@ -53,6 +53,10 @@ export interface ProductReview {
 }
 
 export interface CatalogProduct {
+  /** Image alt text from the admin editor (auto-filled; names Trincomalee & Colombo). */
+  imageAlt?: string;
+  /** Search description from the admin editor (auto-filled, ~160 characters). */
+  seoDescription?: string;
   id: string;
   sku: string;
   name: string;

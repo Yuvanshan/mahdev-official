@@ -9,6 +9,7 @@ import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 import { ServiceDetailsModal, wrapIndex } from '../services/ServiceDetailsModal';
 import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
 import { StartingPriceTag, getStartingPriceDetails } from '../common/StartingPriceTag';
+import { getRecordImageAlt } from '../../config/imageAlt';
 
 interface HomeGalleryItem {
   id: string;
@@ -53,7 +54,7 @@ const HomeGalleryCard: React.FC<{
       <div className="relative">
         <ImageWithShimmer
           src={imageUrl}
-          alt={item.title}
+          alt={getRecordImageAlt(item)}
           className={`bg-slate-100 ${isFeatured ? 'aspect-[16/10]' : 'aspect-[4/5]'}`}
           loading={index < 4 ? 'eager' : 'lazy'}
           imageClassName="object-contain transition duration-500 group-hover:scale-[1.02]"

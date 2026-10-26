@@ -12,6 +12,7 @@ import {
   Info,
 } from 'lucide-react';
 import { SWSPackage, SWS_PACKAGES } from '../../data/swsData';
+import { getSwsImageAlt } from '../../data/swsLocalSeo';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';
@@ -155,7 +156,7 @@ export const SWSPackagesSection: React.FC<SWSPackagesSectionProps> = ({ onBookPa
                 <div className="relative aspect-[16/10] overflow-hidden bg-slate-900 group">
                   <ImageWithShimmer
                     src={currentImage}
-                    alt={pkg.name}
+                    alt={getSwsImageAlt(pkg.name, pkg.tagline, pkg.idealFor)}
                     className="absolute inset-0"
                     imageClassName="transition-transform duration-500 group-hover:scale-105"
                     watermarkLabel="SWS EVENT MANAGEMENT"

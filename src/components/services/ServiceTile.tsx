@@ -16,6 +16,8 @@ interface ServiceTileProps {
    * links search engines can follow; a plain click still opens the details pop-up.
    */
   href?: string;
+  /** Image alt text; defaults to the title. Pass getImageAlt(...) for the keyword version. */
+  imageAlt?: string;
 }
 
 /**
@@ -53,7 +55,7 @@ const ViewControl: React.FC<{
  * optional starting price and a View button. Images use the same 4:3 frame as gallery images. Full
  * details (description, features, price, booking) open from View.
  */
-export const ServiceTile: React.FC<ServiceTileProps> = ({ title, images, onView, imageLoading = 'lazy', price, href }) => {
+export const ServiceTile: React.FC<ServiceTileProps> = ({ title, images, onView, imageLoading = 'lazy', price, href, imageAlt }) => {
   const usableImages = images.filter(Boolean);
   const { activeIndex, containerRef } = useAutoSlideImage(usableImages.length);
 
@@ -68,7 +70,7 @@ export const ServiceTile: React.FC<ServiceTileProps> = ({ title, images, onView,
         <div ref={containerRef}>
         <ImageWithShimmer
           src={usableImages[activeIndex] || usableImages[0] || ''}
-          alt={title}
+          alt={imageAlt || title}
           className="aspect-[4/3] w-full bg-slate-100"
           // Whole image, never cropped (letterboxed inside the gallery-sized 4:3 frame).
           imageFit="contain"

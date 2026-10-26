@@ -9,6 +9,7 @@ import { DIVISIONS } from '../../config/divisions';
 import { DivisionId } from '../../types';
 import { ParallelWatermark } from '../motion/ParallelScroll';
 import { useDeviceMotion } from '../motion/MotionWrappers';
+import { getRecordImageAlt } from '../../config/imageAlt';
 
 interface FeaturedWorkSectionProps {
   onNavigate: (route: string) => void;
@@ -102,7 +103,7 @@ const FeaturedWorkSectionContent: React.FC<
                       ? featuredHeroProject.imageUrl.trim()
                       : 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'
                   }
-                  alt={featuredHeroProject.title}
+                  alt={getRecordImageAlt(featuredHeroProject)}
                   className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-700 ease-out"
                   loading="lazy"
                 />
@@ -175,7 +176,7 @@ const FeaturedWorkSectionContent: React.FC<
                                 ? project.imageUrl.trim()
                                 : 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80'
                             }
-                            alt={project.title}
+                            alt={getRecordImageAlt(project)}
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                             loading="lazy"
                           />

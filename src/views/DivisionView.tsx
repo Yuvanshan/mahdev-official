@@ -40,6 +40,7 @@ import { notificationService } from '../services/notificationService';
 import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
 import { HeroVideoBackground } from '../components/common/HeroVideoBackground';
 import { DivisionBelowHeroShimmer } from '../components/common/DivisionBelowHeroShimmer';
+import { getRecordImageAlt } from '../config/imageAlt';
 
 interface DivisionViewProps {
   divisionId: string;
@@ -526,6 +527,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
             <ServiceTile
               key={index}
               title={service.title}
+              imageAlt={getRecordImageAlt(service)}
               images={service.record ? toServiceDetails(service.record).images : []}
               onView={() => setSelectedCoreService(service)}
               href={service.record ? servicePagePath(service.record) : undefined}

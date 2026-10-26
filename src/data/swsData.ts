@@ -1,4 +1,6 @@
 export interface SWSService {
+  /** Admin-saved image alt text, when set in the editor. */
+  imageAlt?: string;
   id: string;
   /** The service's own page (/services/…); only for services from the database. */
   pagePath?: string;
@@ -33,6 +35,8 @@ export type RentalCategory =
   | 'power-climate';
 
 export interface SWSRentalItem {
+  /** Admin-saved image alt text, when set in the editor. */
+  imageAlt?: string;
   id: string;
   name: string;
   category: RentalCategory;
@@ -71,6 +75,8 @@ export interface SWSPackage {
 }
 
 export interface SWSGalleryItem {
+  /** Admin-saved image alt text, when set in the editor. */
+  imageAlt?: string;
   id: string;
   title: string;
   category: 'Weddings' | 'Conferences' | 'Corporate' | 'Birthdays & Socials' | 'Stage & Lighting' | 'Dining & Decor';

@@ -28,6 +28,7 @@ import { formatCurrency, formatLKR } from '../utils/currency';
 import { getImageSourceCandidates } from '../utils/imageSources';
 import { DIVISIONS } from '../config/divisions';
 import type { DivisionId } from '../types';
+import { getImageAlt, preferSavedAlt } from '../config/imageAlt';
 
 type BrowseType = 'service' | 'gallery' | 'product';
 type BrowseItem =
@@ -109,6 +110,7 @@ const BrowseCard: React.FC<{
     return (
       <ServiceTile
         title={item.title}
+        imageAlt={preferSavedAlt(item.data.imageAlt, getImageAlt(item.title, item.division, item.category))}
         images={imageSources}
         href={href}
         onView={() => onSelect(item)}
@@ -131,7 +133,7 @@ const BrowseCard: React.FC<{
           <ImageWithShimmer
             src={imageSources[0]}
             fallbackSources={imageSources.slice(1)}
-            alt={item.title}
+            alt={preferSavedAlt(item.data.imageAlt, getImageAlt(item.title, item.division, item.category))}
             className="absolute inset-0"
             imageClassName="!object-contain"
             loading={imageLoading}

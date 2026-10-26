@@ -11,7 +11,8 @@ import { CANONICAL_SITE_ORIGIN, SITE_NAME } from '../../src/config/site.js';
 import { DIVISION_SEO } from '../../src/config/divisionSeo.js';
 import { getPageTitle } from '../../src/config/pageTitles.js';
 import { withServiceArea } from '../../src/config/itemSeo.js';
-import { getSwsStructuredData, SWS_BUSINESS, SWS_PRIMARY_HEADING } from '../../src/data/swsLocalSeo.js';
+import { getSwsStructuredData, SWS_BUSINESS, SWS_PRIMARY_HEADING, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS } from '../../src/data/swsLocalSeo.js';
+import { U1_PRIMARY_HEADING, U1_SERVICE_AREA_SUMMARY, U1_SERVICE_HIGHLIGHTS } from '../../src/data/u1LocalSeo.js';
 
 export const SITE_ORIGIN = CANONICAL_SITE_ORIGIN;
 
@@ -21,6 +22,8 @@ export interface RouteSeo {
   description: string;
   heading: string;
   intro: string;
+  /** Section headings written as crawlable <h2>s under the <h1>. */
+  subheadings?: readonly string[];
   /** 1200x630 share image (path) for Facebook/WhatsApp/X; defaults to the site image. */
   ogImage?: string;
   /** Extra JSON-LD blocks added to this page's prerendered <head>. */
@@ -82,7 +85,8 @@ const ROUTES: RouteSeo[] = [
     title: DIVISION_SEO.sws.title,
     description: DIVISION_SEO.sws.description,
     heading: SWS_PRIMARY_HEADING,
-    intro: `${SWS_BUSINESS.displayName}. Trincomalee: ${SWS_BUSINESS.trincomalee.full}. Colombo: ${SWS_BUSINESS.colombo.full}. Hotline / WhatsApp: ${SWS_BUSINESS.phoneDisplay}.`,
+    subheadings: SWS_SERVICE_HIGHLIGHTS.map((service) => service.heading),
+    intro: `${SWS_SERVICE_AREA_SUMMARY} ${SWS_BUSINESS.displayName}. Trincomalee: ${SWS_BUSINESS.trincomalee.full}. Colombo: ${SWS_BUSINESS.colombo.full}. Hotline / WhatsApp: ${SWS_BUSINESS.phoneDisplay}.`,
     structuredData: [...getSwsStructuredData(), divisionBreadcrumb('sws')],
   },
   {
@@ -90,8 +94,9 @@ const ROUTES: RouteSeo[] = [
     ogImage: '/assets/og/og-u1.jpg',
     title: DIVISION_SEO.u1.title,
     description: DIVISION_SEO.u1.description,
-    heading: 'U1 Studio',
-    intro: 'Every frame tells a story. U1 Studio delivers photography and cinema for weddings, brands and events.',
+    heading: U1_PRIMARY_HEADING,
+    subheadings: U1_SERVICE_HIGHLIGHTS.map((service) => service.heading),
+    intro: U1_SERVICE_AREA_SUMMARY,
     structuredData: [divisionService('u1', 'ProfessionalService'), divisionBreadcrumb('u1')],
   },
   {

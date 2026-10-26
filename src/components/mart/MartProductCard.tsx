@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Product } from '../../data/martData';
 import { formatCurrency } from '../../utils/currency';
+import { getImageAlt } from '../../config/imageAlt';
 
 interface MartProductCardProps {
   product: Product;
@@ -42,7 +43,7 @@ export const MartProductCard: React.FC<MartProductCardProps> = ({
         >
           <img
             src={product.imageUrl}
-            alt={product.name}
+            alt={getImageAlt(product.name, 'mart', product.category)}
             loading="lazy"
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108"
           />

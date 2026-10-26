@@ -20,6 +20,7 @@ import { ServiceDetailsModal, toServiceDetails } from '../services/ServiceDetail
 import { isSameDivision } from '../../services/firestore/divisions';
 import { getServiceStartingPrice } from '../common/StartingPriceTag';
 import { DivisionFilterEmptyState, useDivisionFilteredItems } from '../common/DivisionFilter';
+import { getImageAlt } from '../../config/imageAlt';
 
 export const TravelsServicesSection: React.FC = () => {
   const { services: rawServices } = useFirestoreDataContext();
@@ -112,6 +113,7 @@ export const TravelsServicesSection: React.FC = () => {
           <ServiceTile
             key={svc.record.id || svc.title}
             title={svc.title}
+            imageAlt={getImageAlt(svc.title, 'travels')}
             images={toServiceDetails(svc.record).images}
             onView={() => setSelectedService(svc.record)}
             href={svc.record ? servicePagePath(svc.record) : undefined}

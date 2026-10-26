@@ -16,6 +16,7 @@ import { U1ServicesSection } from '../components/u1/U1ServicesSection';
 import { U1PortfolioSection } from '../components/u1/U1PortfolioSection';
 import { U1PackagesSection } from '../components/u1/U1PackagesSection';
 import { U1StudioExperienceSection } from '../components/u1/U1StudioExperienceSection';
+import { U1LocalSection } from '../components/u1/U1LocalSection';
 import { U1BookingModal } from '../components/u1/U1BookingModal';
 import { SectionContainer } from '../components/ui/SectionContainer';
 import { Button } from '../components/ui/Button';
@@ -96,6 +97,8 @@ export const U1View: React.FC<U1ViewProps> = ({ onNavigate }) => {
 
         <U1StudioExperienceSection />
       </DivisionFilterProvider>
+
+      <U1LocalSection />
 
       {/* 6. DEDICATED U1 BOOKING MODAL */}
       <U1BookingModal

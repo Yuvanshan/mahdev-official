@@ -30,6 +30,7 @@ import { projectSeo } from '../config/itemSeo';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { ScrollReveal } from '../components/motion/MotionWrappers';
 import { getYouTubeEmbedUrl, extractYouTubeId } from '../utils/youtube';
+import { getRecordImageAlt } from '../config/imageAlt';
 
 interface ProjectDetailViewProps {
   projectSlugOrId: string;
@@ -293,7 +294,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
             <div className="relative aspect-16/9 sm:aspect-21/9 rounded-3xl overflow-hidden shadow-2xl bg-slate-900">
               <img
                 src={project.imageUrl}
-                alt={project.title}
+                alt={getRecordImageAlt(project)}
                 className="w-full h-full object-cover"
                 loading="eager"
               />
@@ -460,7 +461,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                 >
                   <img
                     src={imgUrl}
-                    alt={`${project.title} showcase ${index + 1}`}
+                    alt={`${getRecordImageAlt(project)} – photo ${index + 1}`}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
                   />
@@ -511,7 +512,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                   <div className="aspect-16/10 overflow-hidden bg-slate-100 relative">
                     <img
                       src={rel.imageUrl}
-                      alt={rel.title}
+                      alt={getRecordImageAlt(rel)}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                     <div className="absolute top-4 left-4">
@@ -612,7 +613,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
           <div className="relative max-w-5xl max-h-[90vh] w-full" onClick={(e) => e.stopPropagation()}>
             <img
               src={activeGalleryImage}
-              alt="Expanded project showcase"
+              alt={getRecordImageAlt(project)}
               className="w-full h-auto max-h-[85vh] object-contain rounded-2xl shadow-2xl mx-auto"
             />
             <button

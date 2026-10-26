@@ -7,6 +7,7 @@
  */
 
 import { CANONICAL_SITE_ORIGIN } from '../config/site.js';
+import { keywordImageAlt, type ImageAltKeyword } from '../utils/keywordImageAlt.js';
 
 export const SWS_BUSINESS = {
   parentName: 'MAHDEV Pvt. Ltd.',
@@ -37,26 +38,66 @@ export const SWS_BUSINESS = {
   ],
 } as const;
 
-export const SWS_PRIMARY_HEADING = 'SWS Event Management – Premier Wedding & Party Decorators in Trincomalee & Colombo';
+export const SWS_PRIMARY_HEADING = 'SWS Event Management – Wedding Decorators Colombo & Trincomalee';
 
+/** Visible summary under the service headings, naming the searches the page should match. */
+export const SWS_SERVICE_AREA_SUMMARY =
+  'SWS Event Management decorates every kind of event: wedding decoration, birthday decoration, cradle ceremony decoration, puberty ceremony decoration, engagement, homecoming, anniversary, baby shower and corporate event decoration in Trincomalee, Nilaveli, Uppuveli and Colombo, Sri Lanka.';
+
+// Each heading is rendered as an <h2> on /sws and in the prerendered HTML, so
+// each one leads with the search phrase people type ("birthday decoration trincomalee").
 export const SWS_SERVICE_HIGHLIGHTS = [
   {
-    heading: 'Luxury Wedding, Manavarai, Poruwa & Beach Wedding Decoration in Trincomalee',
-    body: 'Complete wedding styling from Manavarai and Poruwa stages to floral backdrops, entrance arches, table settings and beach wedding setups in Trincomalee, Nilaveli and Uppuveli.',
+    heading: 'Wedding Decorators Colombo & Trincomalee – Manavarai, Poruwa & Beach Wedding Decoration',
+    body: 'Complete wedding decoration in Trincomalee and Colombo, from Manavarai and Poruwa stages to floral backdrops, entrance arches, table settings and beach wedding setups in Nilaveli and Uppuveli.',
   },
   {
-    heading: '1st Birthday, Milestone Birthday & Surprise Party Styling',
-    body: 'Themed balloon decor, backdrops, cake tables and venue styling for first birthdays, milestone celebrations and surprise parties at homes, halls and hotels.',
+    heading: 'Birthday Decoration in Trincomalee & Colombo – 1st Birthday, Milestone & Surprise Parties',
+    body: 'Themed balloon decoration, backdrops, cake tables and venue styling for first birthdays, kids’ parties, milestone birthdays and surprise parties at homes, halls and hotels.',
   },
   {
-    heading: 'Traditional Puberty Ceremony (Manjal Neerattu Vizha) & Cradle Decor',
-    body: 'Traditional stage decoration, floral backdrops and seating for Manjal Neerattu Vizha (puberty ceremonies), Ponnurukku and cradle ceremonies.',
+    heading: 'Cradle Ceremony Decoration Sri Lanka – Traditional Cradle & Naming Ceremony Decor',
+    body: 'Decorated cradles, floral and fabric backdrops, stage and seating for cradle ceremonies and naming ceremonies in Trincomalee, Colombo and across Sri Lanka.',
   },
   {
-    heading: 'Event Photography, Videography & Full-Service Event Catering',
-    body: 'Photography and videography with our U1 Studio team, plus full-service catering, so your whole event is handled by one trusted team.',
+    heading: 'Puberty Ceremony Decoration Trincomalee & Colombo – Manjal Neerattu Vizha & Ponnurukku',
+    body: 'Traditional stage decoration, floral backdrops and seating for Manjal Neerattu Vizha (puberty ceremonies) and Ponnurukku.',
+  },
+  {
+    heading: 'Engagement, Homecoming & Anniversary Decoration in Trincomalee & Colombo',
+    body: 'Romantic ring-ceremony stages, homecoming setups, anniversary dinners and candle-lit walkways styled to your theme.',
+  },
+  {
+    heading: 'Baby Shower, Housewarming & Religious Event Decoration in Sri Lanka',
+    body: 'Baby showers, gender reveals, housewarmings, poojas and temple or church functions decorated with flowers, drapes, balloons and lighting.',
+  },
+  {
+    heading: 'Corporate Event Planner Trincomalee – Product Launches, Summits & Award Galas',
+    body: 'Branded stage builds, digital backdrops, exhibition booths, registration desks and VIP lounges for annual general meetings, product launches and award banquets in Trincomalee and Colombo.',
+  },
+  {
+    heading: 'Stage Decoration, Event Rentals, Photography & Catering in Trincomalee & Colombo',
+    body: 'Stage and venue decoration, chairs, tables, sound, lighting and LED wall rentals, photography and videography with our U1 Studio team, and full-service catering, all from one trusted team.',
   },
 ] as const;
+
+// Local search phrase for each kind of image, checked in order; the first match goes into the alt text.
+// Specific ceremonies come before "wedding" so a "pre-wedding cradle" image still gets the cradle phrase.
+const SWS_IMAGE_ALT_KEYWORDS: readonly ImageAltKeyword[] = [
+  { pattern: /cradle|naming ceremony/i, phrase: 'Cradle Ceremony Decoration Sri Lanka' },
+  { pattern: /puberty|manjal|ponnurukku|saree ceremony/i, phrase: 'Puberty Ceremony Decoration Trincomalee & Colombo' },
+  { pattern: /birthday|kids|balloon|party/i, phrase: 'Birthday Decoration Trincomalee & Colombo' },
+  { pattern: /baby shower|gender reveal|housewarming|pooja|puja|temple|church/i, phrase: 'Event Decoration Sri Lanka' },
+  { pattern: /corporate|conference|summit|launch|business|executive|gala|award|agm/i, phrase: 'Corporate Event Planner Trincomalee' },
+  { pattern: /engagement|homecoming|anniversary/i, phrase: 'Engagement & Homecoming Decoration Trincomalee & Colombo' },
+  { pattern: /wedding|manavarai|poruwa|bridal/i, phrase: 'Wedding Decorators Colombo & Trincomalee' },
+  { pattern: /stage|venue|backdrop/i, phrase: 'Stage Decoration Trincomalee & Colombo' },
+];
+
+/** Alt text for an SWS image: its own title plus the local search phrase that fits what it shows. */
+export function getSwsImageAlt(title: string, ...context: Array<string | undefined>): string {
+  return keywordImageAlt(SWS_IMAGE_ALT_KEYWORDS, `${SWS_BUSINESS.name}, Trincomalee & Colombo`, title, ...context);
+}
 
 export const SWS_FAQS = [
   {
@@ -114,6 +155,15 @@ export function getSwsStructuredData(): Array<Record<string, unknown>> {
       },
       hasMap: SWS_BUSINESS.trincomalee.mapsUrl,
       areaServed: ['Trincomalee', 'Nilaveli', 'Uppuveli', 'Colombo'],
+      // The decoration services by name, so searches like "cradle ceremony decoration sri lanka" match the listing.
+      hasOfferCatalog: {
+        '@type': 'OfferCatalog',
+        name: 'Event decoration services',
+        itemListElement: SWS_SERVICE_HIGHLIGHTS.map((service) => ({
+          '@type': 'Offer',
+          itemOffered: { '@type': 'Service', name: service.heading, description: service.body },
+        })),
+      },
       sameAs: [...SWS_BUSINESS.sameAs],
     },
   ];

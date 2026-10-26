@@ -21,13 +21,13 @@ export const DIVISION_SEO = {
     name: 'SWS Event Management',
     title: 'SWS Event Management – Wedding Decorators Trincomalee, Colombo',
     description:
-      'SWS Event Management: luxury wedding, Manavarai and Poruwa decoration, birthday party styling, Manjal Neerattu Vizha ceremonies, photography and catering in Trincomalee and Colombo. Call or WhatsApp 075 092 8078.',
+      'Wedding, birthday, cradle ceremony, puberty ceremony and corporate event decoration in Trincomalee and Colombo, Sri Lanka, by SWS Event Management. Call or WhatsApp 075 092 8078.',
   },
   u1: {
     name: 'U1 Studio',
-    title: 'U1 Studio – Photography & 4K Films, Trincomalee & Colombo',
+    title: 'U1 Studio – Wedding Photographers Trincomalee & Colombo',
     description:
-      'U1 Studio by Mahdev: wedding photography, 4K wedding films, fashion portraits, product imaging and heirloom albums in Trincomalee and Colombo, Sri Lanka.',
+      'Wedding photography and 4K wedding films, pre-shoots, birthday and event photography, portraits, product photography and albums by U1 Studio in Trincomalee and Colombo, Sri Lanka.',
   },
   it: {
     name: 'Mahdev IT Solutions',

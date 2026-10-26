@@ -15,6 +15,7 @@ import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { formatCurrency } from '../../utils/currency';
+import { getImageAlt } from '../../config/imageAlt';
 
 interface TravelsFleetSectionProps {
   onBookTransport: (vehicle: Vehicle) => void;
@@ -80,7 +81,7 @@ export const TravelsFleetSection: React.FC<TravelsFleetSectionProps> = ({
               <div className="relative aspect-[16/10] overflow-hidden bg-slate-950">
                 <img
                   src={v.imageUrl}
-                  alt={v.name}
+                  alt={getImageAlt(v.name, 'travels', v.category)}
                   loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108"
                 />

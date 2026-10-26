@@ -15,8 +15,8 @@
 
 ## Divisions
 
-- [SWS Event Management](https://mahdev-official.vercel.app/sws): Event production and management.
-- [U1 Studio](https://mahdev-official.vercel.app/u1): Photography, cinema, and creative studio services.
+- [SWS Event Management](https://mahdev-official.vercel.app/sws): Wedding decorators in Colombo and Trincomalee; birthday, cradle ceremony, puberty ceremony, engagement and corporate event decoration across Sri Lanka.
+- [U1 Studio](https://mahdev-official.vercel.app/u1): Wedding photographers in Trincomalee and Colombo; pre-shoots, event, portrait and product photography, 4K films and albums.
 - [Mahdev IT](https://mahdev-official.vercel.app/it): IT and digital solutions.
 - [Mahdev Travels](https://mahdev-official.vercel.app/travels): Travel planning and experiences.
 - [Mahdev Online Mart](https://mahdev-official.vercel.app/mart): Online retail and equipment.

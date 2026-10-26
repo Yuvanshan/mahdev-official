@@ -7,7 +7,8 @@
 
 import { initializeTursoDatabase, listTursoDocuments, type TursoDocument } from '../db/tursoDatabase.js';
 import { gallerySeo, productSeo, projectSeo, serviceSeo, type ItemSeo } from '../../src/config/itemSeo.js';
-import { SITE_NAME } from '../../src/config/site.js';
+import { CANONICAL_SITE_ORIGIN, SITE_NAME } from '../../src/config/site.js';
+import { BRANCH_CONTENT_LOCATIONS, getRecordImageAlt } from '../../src/config/imageAlt.js';
 import type { RouteSeo } from './publicRoutes.js';
 
 // Records change rarely (admin edits); the page responses are also cached by the CDN.
@@ -49,7 +50,32 @@ async function findRecord(
   );
 }
 
-function toRouteSeo(seo: ItemSeo, intro: string, structuredData?: Array<Record<string, unknown>>): RouteSeo {
+/**
+ * ImageObject JSON-LD for an item's main photo: the same keyword alt text the page
+ * shows (as the name) and the page description (as the caption), so Google Images
+ * can describe and attribute the photo. Skipped for videos and inline data.
+ */
+function imageStructuredData(seo: ItemSeo, record: Record<string, unknown>): Array<Record<string, unknown>> {
+  const image = seo.image?.trim();
+  if (!image || image.startsWith('data:') || /\.(mp4|webm|mov)(\?|$)/i.test(image)) return [];
+  const contentUrl = /^https?:\/\//i.test(image) ? image : `${CANONICAL_SITE_ORIGIN}${image.startsWith('/') ? '' : '/'}${image}`;
+  return [{
+    '@context': 'https://schema.org',
+    '@type': 'ImageObject',
+    contentUrl,
+    url: contentUrl,
+    name: getRecordImageAlt(record, seo.heading),
+    caption: seo.description,
+    representativeOfPage: true,
+    // Both branch cities, so the photo is tied to Trincomalee and Colombo searches.
+    contentLocation: BRANCH_CONTENT_LOCATIONS,
+    creditText: SITE_NAME,
+    creator: { '@type': 'Organization', name: SITE_NAME },
+    copyrightNotice: `© ${SITE_NAME}`,
+  }];
+}
+
+function toRouteSeo(seo: ItemSeo, intro: string, record: Record<string, unknown>): RouteSeo {
   return {
     path: seo.path,
     title: seo.title,
@@ -57,7 +83,7 @@ function toRouteSeo(seo: ItemSeo, intro: string, structuredData?: Array<Record<s
     heading: seo.heading,
     intro,
     ogImage: seo.image,
-    structuredData,
+    structuredData: imageStructuredData(seo, record),
   };
 }
 
@@ -76,19 +102,19 @@ export async function resolveDynamicRouteSeo(path: string, search: URLSearchPara
     const record = await findRecord('services', key, isListedService);
     if (!record) return null;
     const seo = serviceSeo(record.data, record.id);
-    return toRouteSeo(seo, `${seo.heading} by ${SITE_NAME}.`);
+    return toRouteSeo(seo, `${seo.heading} by ${SITE_NAME}.`, record.data);
   }
 
   if (!rest.length && key && (segment === 'products' || segment === 'product')) {
     const record = await findRecord('products', key, isListedProduct);
     if (!record) return null;
-    return toRouteSeo(productSeo(record.data, record.id), 'Available from Mahdev Online Mart with island-wide delivery.');
+    return toRouteSeo(productSeo(record.data, record.id), 'Available from Mahdev Online Mart with island-wide delivery.', record.data);
   }
 
   if (!rest.length && key && ['projects', 'project', 'work', 'portfolio'].includes(segment)) {
     const record = await findRecord('portfolio', key, isListedProject);
     if (!record) return null;
-    return toRouteSeo(projectSeo(record.data, record.id), `A ${SITE_NAME} project.`);
+    return toRouteSeo(projectSeo(record.data, record.id), `A ${SITE_NAME} project.`, record.data);
   }
 
   const galleryId = search.get('id')?.trim();
@@ -99,7 +125,7 @@ export async function resolveDynamicRouteSeo(path: string, search: URLSearchPara
       (document) => isListedGalleryItem(document) && document.id.toLowerCase() === wanted
     );
     if (!record) return null;
-    return toRouteSeo(gallerySeo(record.data, record.id), `From the ${SITE_NAME} gallery.`);
+    return toRouteSeo(gallerySeo(record.data, record.id), `From the ${SITE_NAME} gallery.`, record.data);
   }
 
   return null;

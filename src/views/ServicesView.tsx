@@ -47,6 +47,7 @@ import {
 } from '../components/common/PriceRangeFilter';
 import { ListingSortSelect } from '../components/common/ListingSortSelect';
 import { ListingSort, sortListing } from '../utils/listingSort';
+import { getRecordImageAlt } from '../config/imageAlt';
 
 /** True when a service belongs to the division (handles aliases like "sws-event-management"). */
 const serviceInDivision = (service: any, divisionId: string) =>
@@ -85,7 +86,7 @@ const ServiceCardItem: React.FC<{
           <div className="w-full md:w-64 lg:w-72 h-48 rounded-xl overflow-hidden bg-slate-100 border border-slate-200/80 shrink-0">
             <ImageWithShimmer
               src={serviceImage}
-              alt={service.title || service.name}
+              alt={getRecordImageAlt(service, service.title || service.name)}
               className="h-full w-full"
               imageClassName="transition-transform duration-300 group-hover:scale-105"
               loading="lazy"

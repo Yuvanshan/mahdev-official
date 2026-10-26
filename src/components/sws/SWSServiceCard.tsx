@@ -1,6 +1,8 @@
 import React from 'react';
 import { SWSService } from '../../data/swsData';
 import { ServiceTile } from '../services/ServiceTile';
+import { getSwsImageAlt } from '../../data/swsLocalSeo';
+import { preferSavedAlt } from '../../config/imageAlt';
 
 interface SWSServiceCardProps {
   service: SWSService;
@@ -24,6 +26,7 @@ export const SWSServiceCard: React.FC<SWSServiceCardProps> = ({
   return (
     <ServiceTile
       title={service.name}
+      imageAlt={preferSavedAlt(service.imageAlt, getSwsImageAlt(service.name, service.tagline))}
       images={images.length ? images : [service.imageUrl].filter(Boolean) as string[]}
       onView={() => onViewDetails(service)}
       href={service.pagePath}

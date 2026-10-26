@@ -13,6 +13,7 @@ import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Caption, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
+import { getImageAlt } from '../../config/imageAlt';
 
 interface TravelsDestinationsSectionProps {
   onPlanTripForDestination: (dest: TravelDestination) => void;
@@ -110,7 +111,7 @@ export const TravelsDestinationsSection: React.FC<TravelsDestinationsSectionProp
             <div className="relative aspect-[16/10] overflow-hidden bg-slate-950">
               <img
                 src={activeDest.imageUrl}
-                alt={activeDest.name}
+                alt={getImageAlt(activeDest.name, 'travels')}
                 className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />

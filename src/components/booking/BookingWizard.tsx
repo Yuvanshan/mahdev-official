@@ -37,6 +37,7 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { evaluateBotRisk, checkActionThrottle } from '../../utils/securityProtection';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { formatCurrency } from '../../utils/currency';
+import { getRecordImageAlt } from '../../config/imageAlt';
 
 interface BookingWizardProps {
   initialDivision?: string;
@@ -400,7 +401,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
                         <div className="aspect-16/9 rounded-lg overflow-hidden mb-3 bg-neutral-100 relative">
                           <img
                             src={service.imageUrl || 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80'}
-                            alt={service.name}
+                            alt={getRecordImageAlt(service)}
                             className="w-full h-full object-cover"
                           />
                           <span className="absolute top-2 left-2 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-neutral-900/90 text-white backdrop-blur-xs">

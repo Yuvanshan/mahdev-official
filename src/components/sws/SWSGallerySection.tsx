@@ -5,6 +5,8 @@ import {
   Share2,
 } from 'lucide-react';
 import { SWSGalleryItem } from '../../data/swsData';
+import { getSwsImageAlt } from '../../data/swsLocalSeo';
+import { preferSavedAlt } from '../../config/imageAlt';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';
@@ -75,6 +77,7 @@ export const SWSGallerySection: React.FC = () => {
               : []);
           return {
             id: g.id,
+            imageAlt: (g as any).imageAlt,
             title: g.title,
             category: cat as any,
             imageUrl: images[0] || (g as any).imageUrl || (g as any).url || '',
@@ -158,7 +161,7 @@ export const SWSGallerySection: React.FC = () => {
             <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
               <SWSGalleryCardImage
                 images={(item.images?.length ? item.images : [item.imageUrl]).filter(Boolean).slice(0, 3)}
-                alt={item.title}
+                alt={preferSavedAlt(item.imageAlt, getSwsImageAlt(item.title, item.category))}
               />
 
               <div className="absolute right-3 top-3 flex items-center gap-2">

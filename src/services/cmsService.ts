@@ -362,6 +362,8 @@ class CmsService {
           features: s.features || [],
           iconName: s.iconName || 'Sparkles',
           popular: Boolean(s.popular),
+          imageAlt: (s as any).imageAlt || '',
+          seoDescription: (s as any).seoDescription || '',
           badge: s.badge || '',
           startingPrice: s.startingPrice || s.price || 0,
           price: s.price || s.startingPrice || 0,
@@ -418,6 +420,8 @@ class CmsService {
           tags: (p as any).tags || [],
           specifications: (p as any).specifications || {},
           isActive: p.status !== 'draft' && p.status !== 'archived',
+          imageAlt: (p as any).imageAlt || '',
+          seoDescription: (p as any).seoDescription || '',
           isDeleted: p.status === 'archived',
           createdAt: p.createdAt || now,
           updatedAt: p.updatedAt || now,
@@ -482,6 +486,8 @@ class CmsService {
           thumbnailUrl: g.thumbnailUrl || primaryImage,
           caption: g.caption || '',
           aspectRatio: (g as any).aspectRatio || '16:9',
+          imageAlt: (g as any).imageAlt || '',
+          seoDescription: (g as any).seoDescription || '',
           tags: (g as any).tags || (g.tag ? [g.tag] : []),
           sortOrder: g.order || (g as any).sortOrder || 1,
           price: typeof (g as any).price === 'number' ? (g as any).price : null,
@@ -1206,6 +1212,8 @@ class CmsService {
           turnaroundTime: item.turnaroundTime,
           popular: item.popular,
           iconName: item.iconName,
+          imageAlt: item.imageAlt || undefined,
+          seoDescription: item.seoDescription || undefined,
         });
       } else if (entity === 'products') {
         const primaryImg = item.imageUrl || (item.images && item.images[0]) || (item.galleryImages && item.galleryImages[0]) || '';
@@ -1235,6 +1243,8 @@ class CmsService {
           listedAt: item.listedAt,
           hasVariants: Boolean(item.variants && item.variants.options && item.variants.options.length > 0),
           variants: item.variants?.options,
+          imageAlt: item.imageAlt || undefined,
+          seoDescription: item.seoDescription || undefined,
         });
       } else if (entity === 'categories') {
         await firestoreCategoriesService.saveCategory(item.id, {
@@ -1285,6 +1295,8 @@ class CmsService {
           thumbnailUrl: item.thumbnailUrl || primaryImage,
           caption: item.caption || '',
           aspectRatio: item.aspectRatio || '16:9',
+          imageAlt: item.imageAlt || undefined,
+          seoDescription: item.seoDescription || undefined,
           tag: item.category || (Array.isArray(item.tags) ? item.tags[0] : (item.tag || 'General')),
           category: item.category || (Array.isArray(item.tags) ? item.tags[0] : (item.tag || 'General')),
           tags: Array.isArray(item.tags) ? item.tags : (item.category ? [item.category] : []),

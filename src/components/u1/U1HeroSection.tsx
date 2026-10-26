@@ -4,6 +4,7 @@ import { ArrowRight } from 'lucide-react';
 import { HeroVideoBackground } from '../common/HeroVideoBackground';
 import { ScrollParallax } from '../motion/ParallelScroll';
 import { AnimatedHeroTitle } from '../common/AnimatedHeroTitle';
+import { U1_PRIMARY_HEADING } from '../../data/u1LocalSeo';
 
 // Sky-300 → blue-200 → white, matching the previous clipped-text gradient.
 const HERO_TITLE_GRADIENT = ['#7dd3fc', '#bfdbfe', '#ffffff'];
@@ -33,8 +34,14 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-28 z-20 w-full">
         <div className="max-w-3xl space-y-6">
           
-          {/* High-Impact Headline */}
-          <motion.h1
+          {/* Page heading for search engines: the business and service keywords. */}
+          {/* Visually hidden (still read by search engines and screen readers). */}
+          <h1 className="sr-only">
+            {U1_PRIMARY_HEADING}
+          </h1>
+
+          {/* High-Impact Headline (tagline, visually unchanged) */}
+          <motion.p
             aria-label="Every Frame Tells a Story."
             initial={{ opacity: 0.85, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -43,7 +50,7 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
           >
             <span className="block"><AnimatedHeroTitle text="Every Frame" /></span>
             <span className="block"><AnimatedHeroTitle text="Tells a Story." delay={0.18} gradient={HERO_TITLE_GRADIENT} /></span>
-          </motion.h1>
+          </motion.p>
 
           <motion.button
             type="button"

@@ -20,6 +20,7 @@ import { H2, Body } from '../ui/Heading';
 import { DecorationShowcaseVideo } from '../../types/cms';
 import { ParallelWatermark } from '../motion/ParallelScroll';
 import { useDeviceMotion } from '../motion/MotionWrappers';
+import { getImageAlt } from '../../config/imageAlt';
 
 type DecorationVideo = DecorationShowcaseVideo;
 
@@ -307,7 +308,7 @@ const DecorationVideoShowcaseContent: React.FC<
                     <div className="relative w-24 h-16 rounded-lg overflow-hidden shrink-0 bg-slate-950 border border-slate-800">
                       <img
                         src={getThumbnail(video)}
-                        alt={video.title}
+                        alt={getImageAlt(video.title, 'sws')}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">

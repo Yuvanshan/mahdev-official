@@ -3,7 +3,7 @@ import { MapPin, Phone, MessageCircle } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body } from '../ui/Heading';
 import { ScrollReveal } from '../motion/MotionWrappers';
-import { SWS_BUSINESS, SWS_SERVICE_HIGHLIGHTS } from '../../data/swsLocalSeo';
+import { SWS_BUSINESS, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS } from '../../data/swsLocalSeo';
 
 /**
  * Local search section for /sws: keyword service headings, the exact business
@@ -21,6 +21,7 @@ export const SWSLocalSection: React.FC = () => {
         <ScrollReveal>
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">Trincomalee &amp; Colombo</p>
           <p className="font-editorial text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">Event decoration and styling services</p>
+          <Body className="mt-3 max-w-3xl text-slate-600">{SWS_SERVICE_AREA_SUMMARY}</Body>
           <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2">
             {SWS_SERVICE_HIGHLIGHTS.map((service) => (
               <article key={service.heading} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">

@@ -16,6 +16,7 @@ import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
+import { getU1ImageAlt } from '../../data/u1LocalSeo';
 
 export const U1StudioExperienceSection: React.FC = () => {
   const { divisions, mediaAssets, loadMediaAssets } = useFirestoreDataContext();
@@ -107,7 +108,7 @@ export const U1StudioExperienceSection: React.FC = () => {
               <div className="relative aspect-[4/3] overflow-hidden bg-slate-950">
                 <ImageWithShimmer
                   src={f.image}
-                  alt={f.title}
+                  alt={getU1ImageAlt(f.title, 'studio')}
                   className="absolute inset-0"
                   imageClassName="transition-transform duration-500 group-hover:scale-105"
                   watermarkLabel="U1 STUDIO"

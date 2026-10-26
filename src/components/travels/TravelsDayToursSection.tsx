@@ -15,6 +15,7 @@ import { ScrollReveal } from '../motion/MotionWrappers';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { formatCurrency } from '../../utils/currency';
 import { DivisionFilterEmptyState, useDivisionFilteredItems } from '../common/DivisionFilter';
+import { getImageAlt } from '../../config/imageAlt';
 
 interface TravelsDayToursSectionProps {
   onBookDayTour: (tour: DayTour) => void;
@@ -90,7 +91,7 @@ export const TravelsDayToursSection: React.FC<TravelsDayToursSectionProps> = ({
               <div className="relative aspect-[4/3] overflow-hidden bg-slate-950">
                 <img
                   src={tour.imageUrl}
-                  alt={tour.title}
+                  alt={getImageAlt(tour.title, 'travels')}
                   loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108"
                 />

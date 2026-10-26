@@ -18,6 +18,7 @@ import { Product, ProductVariant, MART_PRODUCTS } from '../../data/martData';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { formatCurrency } from '../../utils/currency';
+import { getImageAlt, getImageAltForPhoto } from '../../config/imageAlt';
 
 interface MartProductDetailModalProps {
   product: Product | null;
@@ -111,7 +112,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
               <div className="relative aspect-square rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
                 <img
                   src={product.gallery[activeImageIndex] || product.imageUrl}
-                  alt={product.name}
+                  alt={getImageAlt(product.name, 'mart', product.category)}
                   className="w-full h-full object-cover"
                 />
                 {product.discountPercent && (
@@ -134,7 +135,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                           : 'border-slate-200 opacity-70 hover:opacity-100'
                       }`}
                     >
-                      <img src={img} alt="Thumbnail" className="w-full h-full object-cover" />
+                      <img src={img} alt={getImageAltForPhoto(getImageAlt(product.name, 'mart', product.category), idx, product.gallery.length)} className="w-full h-full object-cover" />
                     </button>
                   ))}
                 </div>
@@ -422,7 +423,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                   >
                     <img
                       src={rel.imageUrl}
-                      alt={rel.name}
+                      alt={getImageAlt(rel.name, 'mart', rel.category)}
                       className="w-14 h-14 rounded-lg object-cover bg-slate-100 shrink-0"
                     />
                     <div className="min-w-0">

@@ -102,6 +102,10 @@ export interface FirestoreDivision {
 }
 
 export interface FirestoreService {
+  /** Image alt text from the admin editor (auto-filled; names Trincomalee & Colombo). */
+  imageAlt?: string;
+  /** Search description from the admin editor (auto-filled, ~160 characters). */
+  seoDescription?: string;
   id: string;
   /** Set once when created from the admin portal; newer items list first. */
   listedAt?: string;
@@ -160,6 +164,10 @@ export interface FirestoreProductVariant {
 }
 
 export interface FirestoreProduct {
+  /** Image alt text from the admin editor (auto-filled; names Trincomalee & Colombo). */
+  imageAlt?: string;
+  /** Search description from the admin editor (auto-filled, ~160 characters). */
+  seoDescription?: string;
   id: string;
   /** Set once when created from the admin portal; newer items list first. */
   listedAt?: string;
@@ -569,6 +577,10 @@ export interface FirestorePortfolio {
 }
 
 export interface FirestoreGallery {
+  /** Image alt text from the admin editor (auto-filled; names Trincomalee & Colombo). */
+  imageAlt?: string;
+  /** Search description from the admin editor (auto-filled, ~160 characters). */
+  seoDescription?: string;
   id: string;
   /** Set once when created from the admin portal; newer items list first. */
   listedAt?: string;

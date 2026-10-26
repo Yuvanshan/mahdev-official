@@ -34,6 +34,9 @@ import { QuickCategoryCreator } from '../../components/admin/QuickCategoryCreato
 import { DivisionId } from '../../types';
 import { formatCurrency, formatLKR } from '../../utils/currency';
 import { uploadMediaAsset } from '../../services/mediaUploadService';
+import { AdminSeoFields } from '../../components/admin/AdminSeoFields';
+import { AdminGenerateSeoButton } from '../../components/admin/AdminGenerateSeoButton';
+import { seoFileName } from '../../config/imageAlt';
 
 export const AdminServicesView: React.FC = () => {
   const { refreshAll, isServicesLoading } = useFirestoreDataContext();
@@ -74,6 +77,8 @@ export const AdminServicesView: React.FC = () => {
     currency: 'LKR',
     turnaroundTime: '2-3 Weeks',
     isActive: true,
+    imageAlt: '',
+    seoDescription: '',
   });
 
   const [imageUrlInput, setImageUrlInput] = useState('');
@@ -194,6 +199,8 @@ export const AdminServicesView: React.FC = () => {
       currency: 'LKR',
       turnaroundTime: '2-3 Weeks',
       isActive: true,
+      imageAlt: '',
+      seoDescription: '',
     });
     setImageUrlInput('');
     setFormErrors({});
@@ -224,6 +231,8 @@ export const AdminServicesView: React.FC = () => {
       currency: srv.currency || 'LKR',
       turnaroundTime: srv.turnaroundTime || '2-3 Weeks',
       isActive: srv.isActive,
+      imageAlt: srv.imageAlt || '',
+      seoDescription: srv.seoDescription || '',
     });
     setImageUrlInput('');
     setFormErrors({});
@@ -252,9 +261,13 @@ export const AdminServicesView: React.FC = () => {
     try {
       for (const [index, file] of filesToProcess.entries()) {
         try {
+          // Stored under the keyword alt text (e.g. "...-trincomalee-colombo.jpg") once a title is entered.
+          const fileName = formData.title.trim()
+            ? seoFileName(formData.imageAlt || formData.title, file.name, formData.images.length + index + 1)
+            : undefined;
           const uploadedUrl = await uploadMediaAsset(file, (percent) => {
             setUploadProgress(Math.round(((index + percent / 100) / filesToProcess.length) * 100));
-          });
+          }, { fileName });
           newImages.push(uploadedUrl);
         } catch (err) {
           console.error('[AdminServices] Image upload failed:', err);
@@ -478,6 +491,7 @@ export const AdminServicesView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <AdminGenerateSeoButton entity="services" items={services} notify={addToast} onComplete={loadServices} />
           <Button variant="primary" size="sm" onClick={handleOpenCreate}>
             <Plus className="w-3.5 h-3.5 mr-1.5" />
             Add New Service
@@ -854,6 +868,18 @@ export const AdminServicesView: React.FC = () => {
             />
             {formErrors.description && <p className="text-red-600 text-[10px] mt-0.5">{formErrors.description}</p>}
           </div>
+
+          <AdminSeoFields
+            key={editingService?.id || 'new'}
+            title={formData.title}
+            division={formData.divisionId}
+            divisionName={formData.divisionName}
+            category={formData.category}
+            description={formData.description}
+            imageAlt={formData.imageAlt}
+            seoDescription={formData.seoDescription}
+            onChange={({ imageAlt, seoDescription }) => setFormData((prev) => ({ ...prev, imageAlt, seoDescription }))}
+          />
 
           {/* Service Images / Media (Max 5 Images) */}
           <div className="p-4 bg-purple-50/30 rounded-2xl border border-purple-100 space-y-3">

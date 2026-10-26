@@ -53,10 +53,11 @@ export function renderSeoHtml(baseHtml: string, route: RouteSeo, origin: string)
     html = replaceTag(html, /<meta name="twitter:image" content="[^"]*" \/>/, `<meta name="twitter:image" content="${image}" />`, 'twitter:image');
   }
   // Route-specific crawlable copy inside the (visually hidden) fallback block.
+  const subheadings = (route.subheadings ?? []).map((heading) => `\n        <h2>${escapeHtml(heading)}</h2>`).join('');
   html = replaceTag(
     html,
     /(<main id="seo-fallback"[^>]*>)[\s\S]*?(<\/main>)/,
-    (_match, open, close) => `${open}\n        <h1>${escapeHtml(route.heading)}</h1>\n        <p>${escapeHtml(route.intro)}</p>\n        <p>${description}</p>\n        <p><a href="/">Mahdev home</a> · <a href="/services">Services</a> · <a href="/contact">Contact</a></p>\n        <p>Follow Mahdev: ${SOCIAL_LINKS_HTML}</p>\n      ${close}`,
+    (_match, open, close) => `${open}\n        <h1>${escapeHtml(route.heading)}</h1>\n        <p>${escapeHtml(route.intro)}</p>\n        <p>${description}</p>${subheadings}\n        <p><a href="/">Mahdev home</a> · <a href="/services">Services</a> · <a href="/contact">Contact</a></p>\n        <p>Follow Mahdev: ${SOCIAL_LINKS_HTML}</p>\n      ${close}`,
     'seo-fallback block'
   );
   if (route.structuredData?.length) {

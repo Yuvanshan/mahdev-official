@@ -27,6 +27,8 @@ import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
 import { CrossfadeImage } from '../common/CrossfadeImage';
+import { getU1ImageAlt } from '../../data/u1LocalSeo';
+import { preferSavedAlt } from '../../config/imageAlt';
 import { ImageWatermark } from '../common/ImageWatermark';
 import { getImageSourceCandidates } from '../../utils/imageSources';
 import { newestListedFirst } from '../../utils/listingOrder';
@@ -55,7 +57,7 @@ const U1ServiceCardImage: React.FC<{ service: U1Service }> = ({ service }) => {
     >
       <CrossfadeImage
         src={images[activeIndex] || service.imageUrl}
-        alt={service.name}
+        alt={preferSavedAlt(service.imageAlt, getU1ImageAlt(service.name, service.tagline))}
         className="absolute inset-0"
         imageClassName="transition-transform duration-700 group-hover:scale-105"
       />
@@ -109,6 +111,7 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
           const price = getServiceStartingPrice(s as unknown as Record<string, any>);
           return {
             id: s.id,
+            imageAlt: (s as any).imageAlt,
           pagePath: servicePagePath(s),
             name: s.name,
             category: (((s as any).category && (s as any).category !== 'all' ? (s as any).category : 'media') as 'media' | 'portrait' | 'commercial' | 'print'),
@@ -182,6 +185,7 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
           <ServiceTile
             key={service.id}
             title={service.name}
+            imageAlt={preferSavedAlt(service.imageAlt, getU1ImageAlt(service.name, service.tagline))}
             images={(service.gallery?.length ? service.gallery : [service.imageUrl]).filter(Boolean) as string[]}
             onView={() => setActiveModalService(service)}
             href={service.pagePath}

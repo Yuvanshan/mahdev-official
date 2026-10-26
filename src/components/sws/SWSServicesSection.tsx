@@ -47,6 +47,7 @@ export const SWSServicesSection: React.FC<SWSServicesSectionProps> = ({
           const price = getServiceStartingPrice(s as unknown as Record<string, any>);
           return {
           id: s.id,
+          imageAlt: (s as any).imageAlt,
           pagePath: servicePagePath(s),
           name: s.name,
           category: (s.category || (s as any).categoryId || 'General') as any,

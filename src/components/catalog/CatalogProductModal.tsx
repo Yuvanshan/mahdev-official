@@ -30,6 +30,7 @@ import { useCart } from '../../context/CartContext';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { formatCurrency } from '../../utils/currency';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
+import { getImageAltForPhoto, getRecordImageAlt } from '../../config/imageAlt';
 
 interface CatalogProductModalProps {
   product: CatalogProduct | null;
@@ -125,7 +126,7 @@ const CatalogProductModalContent: React.FC<
                 <div className="relative aspect-4/3 rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200">
                   <ImageWithShimmer
                     src={selectedImage}
-                    alt={product.name}
+                    alt={getRecordImageAlt(product)}
                     className="absolute inset-0"
                   />
                   {product.discountPercent && (
@@ -148,7 +149,7 @@ const CatalogProductModalContent: React.FC<
                             : 'border-neutral-200 opacity-70 hover:opacity-100'
                         }`}
                       >
-                        <ImageWithShimmer src={imgUrl} alt="" className="absolute inset-0" />
+                        <ImageWithShimmer src={imgUrl} alt={getImageAltForPhoto(getRecordImageAlt(product), index, product.gallery.length)} className="absolute inset-0" />
                       </button>
                     ))}
                   </div>
@@ -380,7 +381,7 @@ const CatalogProductModalContent: React.FC<
                       className="group p-3 rounded-xl border border-neutral-200 hover:border-neutral-300 hover:shadow-xs transition-all cursor-pointer bg-neutral-50/50 flex flex-col justify-between"
                     >
                       <div className="relative aspect-16/10 rounded-lg overflow-hidden mb-2 bg-neutral-200">
-                        <ImageWithShimmer src={rel.imageUrl} alt={rel.name} className="absolute inset-0" imageClassName="transition-transform duration-300 group-hover:scale-105" />
+                        <ImageWithShimmer src={rel.imageUrl} alt={getRecordImageAlt(rel)} className="absolute inset-0" imageClassName="transition-transform duration-300 group-hover:scale-105" />
                       </div>
                       <div>
                         <span className="text-[10px] uppercase font-bold text-amber-700 tracking-wider">

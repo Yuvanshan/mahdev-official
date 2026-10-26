@@ -1,4 +1,6 @@
 export interface U1Service {
+  /** Admin-saved image alt text, when set in the editor. */
+  imageAlt?: string;
   id: string;
   /** The service's own page (/services/…); only for services from the database. */
   pagePath?: string;

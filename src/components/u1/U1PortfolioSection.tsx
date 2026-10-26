@@ -20,6 +20,7 @@ import { StartingPriceTag, getStartingPriceDetails } from '../common/StartingPri
 import { DivisionFilterEmptyState, useDivisionFilteredItems } from '../common/DivisionFilter';
 import { newestListedFirst } from '../../utils/listingOrder';
 import { CrossfadeImage } from '../common/CrossfadeImage';
+import { getU1ImageAlt } from '../../data/u1LocalSeo';
 import { ImageWatermark } from '../common/ImageWatermark';
 
 const U1PortfolioCardImage: React.FC<{ item: U1PortfolioItem }> = ({ item }) => {
@@ -30,7 +31,7 @@ const U1PortfolioCardImage: React.FC<{ item: U1PortfolioItem }> = ({ item }) => 
     <div ref={containerRef} className="relative aspect-[4/3] overflow-hidden bg-slate-100">
       <CrossfadeImage
         src={images[activeIndex] || item.imageUrl}
-        alt={item.title}
+        alt={getU1ImageAlt(item.title, item.category)}
         className="absolute inset-0"
         objectFit="contain"
         imageClassName="object-contain transition-transform duration-500 group-hover:scale-[1.02]"

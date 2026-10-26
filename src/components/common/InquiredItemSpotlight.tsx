@@ -20,6 +20,7 @@ import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { shareMediaAsset } from '../../utils/mediaShare';
 import { Badge } from '../ui/Badge';
 import { H1, Body } from '../ui/Heading';
+import { getRecordImageAlt } from '../../config/imageAlt';
 
 interface InquiredItemSpotlightProps {
   item: DisplayGalleryItem;
@@ -134,7 +135,7 @@ export const InquiredItemSpotlight: React.FC<InquiredItemSpotlightProps> = ({
           <div className="lg:col-span-7 bg-slate-950 flex flex-col items-center justify-center relative min-h-[360px] sm:min-h-[460px] group">
             <img
               src={item.url}
-              alt={item.title}
+              alt={getRecordImageAlt(item)}
               className="w-full h-full max-h-[550px] object-contain cursor-zoom-in"
               onClick={() => setIsZoomed(true)}
             />
@@ -272,7 +273,7 @@ export const InquiredItemSpotlight: React.FC<InquiredItemSpotlightProps> = ({
           </button>
           <img
             src={item.url}
-            alt={item.title}
+            alt={getRecordImageAlt(item)}
             className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
           />
         </div>

@@ -13,6 +13,7 @@ import { openWhatsAppInquiry, deriveLookupSku } from '../../utils/whatsapp';
 import { ServiceDetailsModal, wrapIndex } from '../services/ServiceDetailsModal';
 import { StartingPriceTag, getStartingPriceDetails } from '../common/StartingPriceTag';
 import { DivisionFilterEmptyState, useDivisionFilteredItems } from '../common/DivisionFilter';
+import { getImageAlt } from '../../config/imageAlt';
 
 export const TravelsGalleryStoriesSection: React.FC = () => {
   const { gallery: rawGallery, testimonials: rawTestimonials } = useFirestoreDataContext();
@@ -100,7 +101,7 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
             <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
               <img
                 src={img.src}
-                alt={img.title}
+                alt={getImageAlt(img.title, 'travels')}
                 loading="lazy"
                 decoding="async"
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"

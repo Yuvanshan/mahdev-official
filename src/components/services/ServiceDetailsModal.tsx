@@ -5,6 +5,7 @@ import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 import { ImageWatermark } from '../common/ImageWatermark';
 import { getWhatsAppInquiryUrl, type WhatsAppInquiryOptions } from '../../utils/whatsapp';
 import { getServiceStartingPrice, getStartingPriceDetails } from '../common/StartingPriceTag';
+import { getImageAlt } from '../../config/imageAlt';
 
 export interface ServiceDetails {
   title: string;
@@ -179,7 +180,7 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
             {images.length > 0 ? (
               <ImageWithShimmer
                 src={images[imageIndex]}
-                alt={service.title}
+                alt={getImageAlt(service.title, service.divisionName)}
                 className="absolute inset-0"
                 imageFit="contain"
                 fallbackText={service.title}

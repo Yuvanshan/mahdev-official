@@ -8,9 +8,15 @@ export interface UploadMediaProgressCallback {
   (percent: number): void;
 }
 
+export interface UploadMediaOptions {
+  /** Stored file name (e.g. from seoFileName()); defaults to the file's own name. */
+  fileName?: string;
+}
+
 export async function uploadMediaAsset(
   file: File,
-  onProgress?: UploadMediaProgressCallback
+  onProgress?: UploadMediaProgressCallback,
+  options?: UploadMediaOptions
 ): Promise<string> {
   if (!file) {
     throw new Error('No file selected for upload.');
@@ -39,7 +45,7 @@ export async function uploadMediaAsset(
     credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      filename: file.name,
+      filename: options?.fileName || file.name,
       contentType: file.type || (isVideo ? 'video/mp4' : 'image/jpeg'),
       size: file.size,
     }),

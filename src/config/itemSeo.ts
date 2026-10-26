@@ -5,7 +5,8 @@ import { formatPageTitle } from './pageTitles.js';
  * Search title, description and canonical path for single service, product,
  * project and gallery pages. Shared by the React views and the page shell
  * (backend/seo/dynamicRouteSeo.ts), so Google sees the same head before and
- * after JavaScript runs on every URL listed in the sitemap.
+ * after JavaScript runs on every URL listed in the sitemap. A record's own
+ * seoDescription (auto-filled in the admin editors) is used when present.
  */
 export interface ItemSeo {
   /** Canonical path, including ?id= for gallery items. */
@@ -61,7 +62,7 @@ export function serviceSeo(record: ItemRecord, id: string): ItemSeo {
   return {
     path: `/services/${encodeURIComponent(text(record.slug) || id)}`,
     title: `${title} | ${division} | Mahdev`,
-    description: withServiceArea(text(record.description) || `${title} from ${division}.`),
+    description: withServiceArea(text(record.seoDescription) || text(record.description) || `${title} from ${division}.`),
     heading: title,
     image: firstImage(record, 'imageUrl', 'images'),
   };
@@ -73,7 +74,7 @@ export function productSeo(record: ItemRecord, id: string): ItemSeo {
     path: `/products/${encodeURIComponent(text(record.slug) || id)}`,
     title: formatPageTitle(name),
     description: withServiceArea(
-      text(record.shortDescription) || text(record.description) || `${name} from Mahdev Online Mart, with island-wide delivery.`
+      text(record.seoDescription) || text(record.shortDescription) || text(record.description) || `${name} from Mahdev Online Mart, with island-wide delivery.`
     ),
     heading: name,
     image: firstImage(record, 'imageUrl', 'images'),
@@ -86,7 +87,7 @@ export function projectSeo(record: ItemRecord, id: string): ItemSeo {
     path: `/projects/${encodeURIComponent(text(record.slug) || id)}`,
     title: `${title} – Mahdev Case Study`,
     description: withServiceArea(
-      text(record.shortIntroduction) || text(record.summary) || text(record.description) || 'An enterprise showcase engineered by the Mahdev Group.'
+      text(record.seoDescription) || text(record.shortIntroduction) || text(record.summary) || text(record.description) || 'An enterprise showcase engineered by the Mahdev Group.'
     ),
     heading: title,
     image: firstImage(record, 'imageUrl', 'coverImage', 'images'),
@@ -102,7 +103,7 @@ export function gallerySeo(record: ItemRecord, id: string): ItemSeo {
     path: `/gallery?id=${encodeURIComponent(id)}`,
     title: formatPageTitle(label),
     description: withServiceArea(
-      text(record.description) || text(record.caption) || `${title}${category ? ` – ${category}` : ''} by ${divisionName(record)}.`
+      text(record.seoDescription) || text(record.description) || text(record.caption) || `${title}${category ? ` – ${category}` : ''} by ${divisionName(record)}.`
     ),
     heading: title,
     image: firstImage(record, 'images', 'mediaUrl', 'url', 'thumbnailUrl'),

@@ -34,6 +34,9 @@ import { firestoreProductsService } from '../../services/firestore/products';
 import { DivisionId } from '../../types';
 import { formatCurrency, formatLKR } from '../../utils/currency';
 import { uploadMediaAsset } from '../../services/mediaUploadService';
+import { AdminSeoFields } from '../../components/admin/AdminSeoFields';
+import { AdminGenerateSeoButton } from '../../components/admin/AdminGenerateSeoButton';
+import { seoFileName } from '../../config/imageAlt';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
 export const AdminProductsView: React.FC = () => {
@@ -88,6 +91,8 @@ export const AdminProductsView: React.FC = () => {
     specifications: {} as Record<string, string>,
     warrantyInfo: '1-Year Official Manufacturer Warranty',
     isActive: true,
+    imageAlt: '',
+    seoDescription: '',
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -147,6 +152,8 @@ export const AdminProductsView: React.FC = () => {
       specifications: { Warranty: '1-Year Island-wide Official Warranty' },
       warrantyInfo: '1-Year Official Manufacturer Warranty',
       isActive: true,
+      imageAlt: '',
+      seoDescription: '',
     });
     setFormErrors({});
     setIsDirty(false);
@@ -178,6 +185,8 @@ export const AdminProductsView: React.FC = () => {
       specifications: prod.specifications || {},
       warrantyInfo: prod.warrantyInfo || '1-Year Official Manufacturer Warranty',
       isActive: prod.isActive,
+      imageAlt: prod.imageAlt || '',
+      seoDescription: prod.seoDescription || '',
     });
     setFormErrors({});
     setIsDirty(false);
@@ -228,7 +237,9 @@ export const AdminProductsView: React.FC = () => {
     setIsUploadingImage(true);
     setUploadProgress(0);
     try {
-      const uploadedUrl = await uploadMediaAsset(file, setUploadProgress);
+      // Stored under the keyword alt text (e.g. "...-trincomalee-colombo.jpg") once a name is entered.
+      const fileName = formData.name.trim() ? seoFileName(formData.imageAlt || formData.name, file.name) : undefined;
+      const uploadedUrl = await uploadMediaAsset(file, setUploadProgress, { fileName });
       if (uploadedUrl) {
         setFormData((prev) => ({
           ...prev,
@@ -379,6 +390,7 @@ export const AdminProductsView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <AdminGenerateSeoButton entity="products" items={products} notify={addToast} onComplete={loadData} />
           <Button variant="primary" size="sm" onClick={handleOpenCreate}>
             <Plus className="w-3.5 h-3.5 mr-1.5" />
             Add New Product SKU
@@ -1094,6 +1106,18 @@ export const AdminProductsView: React.FC = () => {
               className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
+
+          <AdminSeoFields
+            key={editingProduct?.id || 'new'}
+            title={formData.name}
+            division={formData.divisionId}
+            divisionName={formData.divisionName}
+            category={formData.categoryName}
+            description={formData.description}
+            imageAlt={formData.imageAlt}
+            seoDescription={formData.seoDescription}
+            onChange={({ imageAlt, seoDescription }) => setFormData((prev) => ({ ...prev, imageAlt, seoDescription }))}
+          />
 
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-4">

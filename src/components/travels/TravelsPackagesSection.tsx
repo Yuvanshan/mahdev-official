@@ -24,6 +24,7 @@ import { cmsService } from '../../services/cmsService';
 import { formatCurrency } from '../../utils/currency';
 import { getStartingPrice } from '../common/StartingPriceTag';
 import { DivisionFilterEmptyState, useDivisionFilteredItems } from '../common/DivisionFilter';
+import { getImageAlt } from '../../config/imageAlt';
 
 interface TravelsPackagesSectionProps {
   onSelectPackage: (pkg: TravelPackage) => void;
@@ -154,7 +155,7 @@ export const TravelsPackagesSection: React.FC<TravelsPackagesSectionProps> = ({
               <div className="relative aspect-[16/10] overflow-hidden bg-slate-950">
                 <img
                   src={pkg.heroImage}
-                  alt={pkg.title}
+                  alt={getImageAlt(pkg.title, 'travels')}
                   loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108"
                 />

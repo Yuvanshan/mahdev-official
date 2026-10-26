@@ -23,6 +23,7 @@ import { getDefaultGallery } from '../services/firestore/gallery';
 import { ImageWithShimmer } from '../components/ui/ImageWithShimmer';
 import { ServiceDetailsModal, wrapIndex } from '../components/services/ServiceDetailsModal';
 import { StartingPriceTag, getStartingPriceDetails } from '../components/common/StartingPriceTag';
+import { getRecordImageAlt } from '../config/imageAlt';
 
 interface GalleryPageViewProps {
   onNavigate: (route: string) => void;
@@ -329,7 +330,7 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
                 <div className="aspect-[4/3] w-full overflow-hidden bg-slate-100 relative">
                   <ImageWithShimmer
                     src={item.url}
-                    alt={item.title}
+                    alt={getRecordImageAlt(item)}
                     className="absolute inset-0"
                     imageClassName="transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"

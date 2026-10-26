@@ -11,6 +11,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { SWS_PORTFOLIO_ITEMS, SWSPortfolioItem } from '../../data/swsData';
+import { getSwsImageAlt } from '../../data/swsLocalSeo';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';
@@ -101,7 +102,7 @@ export const SWSPortfolioSection: React.FC<SWSPortfolioSectionProps> = ({
                       ? item.imageUrl.trim()
                       : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=400&q=80'
                   }
-                  alt={item.title}
+                  alt={getSwsImageAlt(item.title, item.eventType)}
                   className="h-14 w-14 shrink-0 rounded-lg"
                   watermarkLabel="SWS EVENT MANAGEMENT"
                 />
@@ -133,7 +134,7 @@ export const SWSPortfolioSection: React.FC<SWSPortfolioSectionProps> = ({
                   ? activeCase.imageUrl.trim()
                   : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80'
               }
-              alt={activeCase.title}
+              alt={getSwsImageAlt(activeCase.title, activeCase.eventType)}
               className="absolute inset-0"
               watermarkLabel="SWS EVENT MANAGEMENT"
             />

@@ -31,6 +31,7 @@ import { H2, Caption, Body } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
+import { getImageAlt } from '../../config/imageAlt';
 
 interface ITServicesSectionProps {
   onSelectService: (service: ITService) => void;
@@ -165,6 +166,7 @@ export const ITServicesSection: React.FC<ITServicesSectionProps> = ({
           <ServiceTile
             key={service.id}
             title={service.name}
+            imageAlt={getImageAlt(service.name, 'it')}
             images={service.images || []}
             onView={() => onSelectService(service)}
             href={service.pagePath}
