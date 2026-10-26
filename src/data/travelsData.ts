@@ -218,7 +218,7 @@ export const TRAVEL_PACKAGES: TravelPackage[] = [
       'Sunset walking tour of Galle Dutch Fort with local historian',
       'Private luxury air-conditioned vehicle & dedicated English-speaking chauffeur',
     ],
-    price: '$1,480',
+    price: 'Rs. 1,480',
     pricePerPerson: 1480,
     priceNote: 'Per person based on twin sharing',
     availability: 'Daily Departures Year-Round',
@@ -336,9 +336,9 @@ export const TRAVEL_PACKAGES: TravelPackage[] = [
       'Optional hot air balloon or helicopter excursions',
     ],
     pricingTiers: [
-      { tier: 'Standard Boutique (4-Star)', price: '$1,480 / Person', description: 'Curated heritage villas and 4-star boutique resorts.' },
-      { tier: 'Luxury Signature (5-Star Luxury)', price: '$2,250 / Person', description: '5-Star luxury properties (98 Acres, Fort Bazaar, Cinnamon Wild).' },
-      { tier: 'Ultra-Luxe & Chateaux', price: '$3,400 / Person', description: 'Tea Trails Relais & Châteaux, Amangalla & Wild Coast Tented Lodge.' },
+      { tier: 'Standard Boutique (4-Star)', price: 'Rs. 1,480 / Person', description: 'Curated heritage villas and 4-star boutique resorts.' },
+      { tier: 'Luxury Signature (5-Star Luxury)', price: 'Rs. 2,250 / Person', description: '5-Star luxury properties (98 Acres, Fort Bazaar, Cinnamon Wild).' },
+      { tier: 'Ultra-Luxe & Chateaux', price: 'Rs. 3,400 / Person', description: 'Tea Trails Relais & Châteaux, Amangalla & Wild Coast Tented Lodge.' },
     ],
     faqs: [
       {
@@ -380,7 +380,7 @@ export const TRAVEL_PACKAGES: TravelPackage[] = [
       'Private sunset sailing catamaran charter in Mirissa Bay',
       'Chilled champagne & tropical fruit basket upon hotel check-ins',
     ],
-    price: '$1,850',
+    price: 'Rs. 1,850',
     pricePerPerson: 1850,
     priceNote: 'Per couple package rate',
     availability: 'Year-Round Romantic Escapes',
@@ -468,8 +468,8 @@ export const TRAVEL_PACKAGES: TravelPackage[] = [
       'Optional aerial helicopter transfers',
     ],
     pricingTiers: [
-      { tier: 'Luxury Honeymoon', price: '$1,850 / Couple', description: 'Curated 5-star private pool suites and boutique villas.' },
-      { tier: 'Ultra-Luxe Relais & Châteaux', price: '$3,600 / Couple', description: 'Tea Trails, Cape Weligama & Amanwella private residences.' },
+      { tier: 'Luxury Honeymoon', price: 'Rs. 1,850 / Couple', description: 'Curated 5-star private pool suites and boutique villas.' },
+      { tier: 'Ultra-Luxe Relais & Châteaux', price: 'Rs. 3,600 / Couple', description: 'Tea Trails, Cape Weligama & Amanwella private residences.' },
     ],
     faqs: [
       {
@@ -501,7 +501,7 @@ export const TRAVEL_PACKAGES: TravelPackage[] = [
       'Blue Whale & Spinner Dolphin marine safari off Mirissa',
       'Photography beanbags & high-powered spotting scopes provided',
     ],
-    price: '$1,620',
+    price: 'Rs. 1,620',
     pricePerPerson: 1620,
     priceNote: 'Per person based on twin sharing',
     availability: 'Best from November to April',
@@ -597,8 +597,8 @@ export const TRAVEL_PACKAGES: TravelPackage[] = [
       'Gratuities for safari jeep drivers and trackers',
     ],
     pricingTiers: [
-      { tier: 'Wild Explorer Tier', price: '$1,620 / Person', description: 'Safari resorts, standard 4x4 open jeeps, and full park permits.' },
-      { tier: 'Luxury Naturalist Tier', price: '$2,480 / Person', description: 'All-inclusive tented bush camps, private chef, and expert naturalist.' },
+      { tier: 'Wild Explorer Tier', price: 'Rs. 1,620 / Person', description: 'Safari resorts, standard 4x4 open jeeps, and full park permits.' },
+      { tier: 'Luxury Naturalist Tier', price: 'Rs. 2,480 / Person', description: 'All-inclusive tented bush camps, private chef, and expert naturalist.' },
     ],
     faqs: [
       {
@@ -621,7 +621,7 @@ export const DAY_TOURS: DayTour[] = [
     description:
       'Climb the 1,200 steps to the 5th-century Sigiriya Sky Citadel, view the ancient frescoes and mirror wall, and explore the golden cave temples of Dambulla.',
     highlights: ['Sigiriya Lion Rock Entry', 'Dambulla 5 Sacred Caves', 'Traditional Village Lunch in Habarana', 'Private AC Chauffeur'],
-    price: '$95 / Person',
+    price: 'Rs. 95 / Person',
     included: ['All entry tickets', 'Private AC Transport', 'English Chauffeur Guide', 'Village Lunch'],
   },
   {
@@ -634,7 +634,7 @@ export const DAY_TOURS: DayTour[] = [
     description:
       'Stroll the UNESCO ramparts of Galle Dutch Fort, witness stilt fishermen in Koggala, take a boat safari on Madu River mangrove tunnels, and visit a sea turtle hatchery.',
     highlights: ['Galle Fort Walking Tour', 'Madu River Mangrove Boat Safari', 'Kosgoda Turtle Conservation Center', 'Stilt Fishermen Twilight Photo Stop'],
-    price: '$85 / Person',
+    price: 'Rs. 85 / Person',
     included: ['Private AC Vehicle', 'Madu River Boat Permit', 'Turtle Hatchery Entry', 'Guided Fort Walk'],
   },
   {
@@ -647,7 +647,7 @@ export const DAY_TOURS: DayTour[] = [
     description:
       'Discover the sacred Temple of the Tooth Relic, stroll through 147 acres of tropical orchids at Peradeniya Gardens, and witness artisanal tea grading at Giragama Tea Estate.',
     highlights: ['Temple of the Sacred Tooth', 'Peradeniya Royal Botanical Gardens', 'Giragama Working Tea Factory', 'Kandyan Gemstone Museum'],
-    price: '$90 / Person',
+    price: 'Rs. 90 / Person',
     included: ['All site entries', 'Private transport', 'Tea tasting session', 'Chauffeur guide'],
   },
   {
@@ -660,7 +660,7 @@ export const DAY_TOURS: DayTour[] = [
     description:
       'Board an open-roof safari jeep for a thrilling late afternoon safari in Yala National Park, tracking wild leopards, sloth bears, spotted deer, and marsh crocodiles.',
     highlights: ['Private 4x4 Safari Jeep', 'Experienced Wildlife Tracker', 'National Park Entry & Service Fees', 'High Leopard Territory Route'],
-    price: '$110 / Person',
+    price: 'Rs. 110 / Person',
     included: ['4x4 Jeep hire', 'Park entry ticket', 'Wildlife tracker', 'Chilled water & snacks'],
   },
 ];
@@ -675,7 +675,7 @@ export const VEHICLES: Vehicle[] = [
     imageUrl:
       'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80',
     features: ['Plush Leather Seats', 'Dual-Zone Air Conditioning', '4x4 High Ground Clearance', 'On-Board 4G Wi-Fi & USB Chargers'],
-    dailyRate: '$120 / Day (Chauffeur-Driven)',
+    dailyRate: 'Rs. 120 / Day (Chauffeur-Driven)',
   },
   {
     id: 'toyota-alphard-vip',
@@ -686,7 +686,7 @@ export const VEHICLES: Vehicle[] = [
     imageUrl:
       'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80',
     features: ['Captain Ottoman Reclining Seats', 'Electric Sliding Doors', 'Ultra-Quiet Luxury Cabin', 'Chilled Mini-Fridge'],
-    dailyRate: '$160 / Day (Chauffeur-Driven)',
+    dailyRate: 'Rs. 160 / Day (Chauffeur-Driven)',
   },
   {
     id: 'toyota-kdh-commuter',
@@ -697,7 +697,7 @@ export const VEHICLES: Vehicle[] = [
     imageUrl:
       'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80',
     features: ['Individual Reclining Seats', 'High Ceiling Airy Cabin', 'Rear Independent AC Controls', 'Spacious Rear Luggage Space'],
-    dailyRate: '$95 / Day (Chauffeur-Driven)',
+    dailyRate: 'Rs. 95 / Day (Chauffeur-Driven)',
   },
   {
     id: 'toyota-coaster-coach',
@@ -708,6 +708,6 @@ export const VEHICLES: Vehicle[] = [
     imageUrl:
       'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
     features: ['PA Microphone System for Tour Guide', 'Air Suspension Ride', 'Ample Overhead Luggage Compartments', 'Cooler Box & Reading Lights'],
-    dailyRate: '$210 / Day (Chauffeur-Driven)',
+    dailyRate: 'Rs. 210 / Day (Chauffeur-Driven)',
   },
 ];

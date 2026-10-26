@@ -44,7 +44,7 @@ export interface CouponCode {
   code: string;
   description: string;
   discountType: 'percentage' | 'fixed' | 'free_shipping';
-  discountValue: number; // e.g. 10 for 10%, 5 for $5
+  discountValue: number; // e.g. 10 for 10%, 5 for Rs. 5
   minOrderAmount?: number;
   maxDiscount?: number;
   expiryDate?: string;

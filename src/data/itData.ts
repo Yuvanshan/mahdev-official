@@ -453,7 +453,7 @@ export const IT_SERVICES: ITService[] = [
       techSummary: 'C4 Architecture Blueprint, Zero-Trust Access Policies, Security Penetration Audits',
       metrics: [
         { label: 'Audit Vulnerabilities', value: 'Zero Highs' },
-        { label: 'Capex Savings', value: '$140,000' },
+        { label: 'Capex Savings', value: 'Rs. 140,000' },
         { label: 'Compliance', value: '100% Passed' },
       ],
     },

@@ -12,7 +12,7 @@ export interface CustomerAddress {
 }
 
 export interface CustomerPreferences {
-  currency: 'USD' | 'LKR';
+  currency: 'LKR' | 'USD';
   preferredContactMethod: 'email' | 'phone' | 'whatsapp';
   orderNotifications: boolean;
   promotionalUpdates: boolean;

@@ -1851,7 +1851,7 @@ export const AdminSettingsView: React.FC = () => {
                   Default Platform Currency
                 </label>
                 <select
-                  value={systemSettings.defaultCurrency || systemSettings.currency || 'USD'}
+                  value={systemSettings.defaultCurrency || systemSettings.currency || 'LKR'}
                   onChange={(e) =>
                     setSystemSettings({
                       ...systemSettings,
@@ -1861,8 +1861,8 @@ export const AdminSettingsView: React.FC = () => {
                   }
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:bg-white focus:outline-none"
                 >
-                  <option value="USD">USD ($)</option>
                   <option value="LKR">LKR (Rs.)</option>
+                  <option value="USD">USD ($)</option>
                   <option value="EUR">EUR (€)</option>
                   <option value="GBP">GBP (£)</option>
                   <option value="AUD">AUD (A$)</option>

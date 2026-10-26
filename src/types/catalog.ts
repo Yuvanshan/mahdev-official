@@ -24,7 +24,7 @@ export interface ProductVariantOption {
   id: string;
   sku: string;
   name: string;
-  priceModifier?: number; // e.g., +$15.00
+  priceModifier?: number; // e.g., +Rs. 15.00
   weight?: string;
   color?: string;
   dimensions?: string;
