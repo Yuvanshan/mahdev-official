@@ -10,7 +10,8 @@ import { gallerySeo, productSeo, projectSeo, serviceSeo, type ItemSeo } from '..
 import { SITE_NAME } from '../../src/config/site.js';
 import type { RouteSeo } from './publicRoutes.js';
 
-const CACHE_MS = 60_000;
+// Records change rarely (admin edits); the page responses are also cached by the CDN.
+const CACHE_MS = 10 * 60_000;
 const MAX_ROWS = 1000;
 const cache = new Map<string, { documents: TursoDocument[]; loadedAt: number }>();
 

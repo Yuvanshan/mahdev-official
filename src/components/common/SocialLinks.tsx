@@ -1,5 +1,6 @@
 import React from 'react';
 import { Facebook, Instagram, Linkedin, Youtube } from 'lucide-react';
+import { SOCIAL_PROFILES } from '../../config/company';
 
 type SocialPlatform = 'facebook' | 'instagram' | 'linkedin' | 'youtube' | 'tiktok' | 'whatsapp';
 
@@ -39,18 +40,35 @@ interface SocialLinksProps {
   variant?: 'dark' | 'light';
 }
 
+// Official profile per platform, used when the admin-entered address is unusable.
+const OFFICIAL_PROFILE: Partial<Record<SocialPlatform, string>> = Object.fromEntries(
+  SOCIAL_PROFILES.map(({ label, url }) => [label.toLowerCase(), url])
+);
+
+/**
+ * The admin-entered address, or the official profile when it cannot point at a
+ * profile: it contains spaces (e.g. "instagram.com/sws_event management") or is a
+ * temporary Facebook share link.
+ */
+function profileHref(id: SocialPlatform, entered?: string): string | null {
+  const href = entered?.trim();
+  const usable = href && !/\s/.test(href) && !(id === 'facebook' && /facebook\.com\/share\//i.test(href));
+  const candidate = usable ? href : OFFICIAL_PROFILE[id];
+  if (!candidate) return null;
+  try {
+    const url = new URL(candidate);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 export const SocialLinks: React.FC<SocialLinksProps> = ({ socials, variant = 'light' }) => {
   const links = SOCIAL_PLATFORMS.flatMap(({ id, label, Icon }) => {
-    const href = socials?.[id]?.trim();
-    if (!href) return [];
-
-    try {
-      const url = new URL(href);
-      if (url.protocol !== 'https:' && url.protocol !== 'http:') return [];
-      return [{ id, label, href: url.href, Icon }];
-    } catch {
-      return [];
-    }
+    // Platforms the admin left empty stay hidden; only faulty entries fall back.
+    if (!socials?.[id]?.trim()) return [];
+    const href = profileHref(id, socials[id]);
+    return href ? [{ id, label, href, Icon }] : [];
   });
 
   if (links.length === 0) return null;

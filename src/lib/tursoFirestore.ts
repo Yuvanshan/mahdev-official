@@ -687,7 +687,11 @@ export async function setDocWithResult(
   reference: DocumentReference,
   data: DocumentData,
   options: { merge?: boolean } = {}
-): Promise<{ reference?: string }> {
+): Promise<{
+  reference?: string;
+  /** Customer profile writes: the NIC and the date of birth and gender read from it. */
+  identity?: { nic: string; dateOfBirth: string | null; gender: 'male' | 'female' | null };
+}> {
   return request('write', {
     write: {
       type: 'set',

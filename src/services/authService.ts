@@ -16,7 +16,7 @@ import {
   User as FirebaseUser,
   updateProfile as updateFirebaseProfile,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from '../lib/tursoFirestore';
+import { doc, getDoc, setDoc, setDocWithResult } from '../lib/tursoFirestore';
 import { auth, db } from '../lib/firebase';
 import {
   CustomerUser,
@@ -35,6 +35,23 @@ type ProfileRecord = FirestoreUser & Record<string, any>;
 type Result = { success: boolean; error?: string };
 
 export const MIN_PASSWORD_LENGTH = 8;
+
+/** How long a loaded profile is reused before asking the server again. */
+const PROFILE_CACHE_MS = 60_000;
+/**
+ * Tab copy of the signed-in profile, so a refresh shows the account at once while a
+ * fresh copy loads. Same lifetime as the sign-in itself (sessionStorage); cleared on sign-out.
+ */
+const PROFILE_TAB_KEY = 'mahdev_profile_tab_cache';
+
+function readTabProfile(uid: string): ProfileRecord | null {
+  try {
+    const saved = JSON.parse(safeStorage.getItem(PROFILE_TAB_KEY) || 'null') as { uid?: string; profile?: ProfileRecord } | null;
+    return saved?.uid === uid && saved.profile ? saved.profile : null;
+  } catch {
+    return null;
+  }
+}
 
 /** Set while a Google sign-in is away on a full-page redirect (popup was blocked). */
 const GOOGLE_REDIRECT_FLAG = 'mahdev_google_redirect_pending';
@@ -93,8 +110,17 @@ function authErrorMessage(error: unknown, fallback: string): string {
     case 'auth/invalid-oauth-client-id':
     case 'auth/invalid-oauth-provider':
       return 'Google sign-in is not configured correctly yet. Please use email for now.';
+    case 'auth/popup-blocked':
+      return 'Your browser blocked the sign-in window. Please allow pop-ups for this site and try again.';
+    case 'auth/argument-error':
+    case 'auth/internal-error':
+      console.error('[Firebase Auth] Sign-in setup error:', error);
+      return `${fallback} (${code})`;
     default:
-      return error instanceof Error && !code ? error.message : fallback;
+      if (error instanceof Error && !code) return error.message;
+      // Unknown Firebase codes are logged and shown, so a failure can be traced.
+      console.error('[Firebase Auth] Unhandled error:', error);
+      return code ? `${fallback} (${code})` : fallback;
   }
 }
 
@@ -165,8 +191,43 @@ class AuthService {
     return error;
   }
 
+  // Sign-in and Firebase's session listener both ask for the profile at the same moment:
+  // identical lookups share one request, and the result is reused for a short time.
+  private profileCache: { uid: string; profile: ProfileRecord | null; loadedAt: number } | null = null;
+  private profileRequest: { uid: string; promise: Promise<ProfileRecord | null> } | null = null;
+
+  /** Forgets the cached profile, so the next read comes from the server. */
+  private forgetProfile() {
+    this.profileCache = null;
+    this.profileRequest = null;
+    safeStorage.removeItem(PROFILE_TAB_KEY);
+  }
+
+  /** users/{uid}, from the short-lived cache or a shared in-flight request when possible. */
+  private loadProfile(firebaseUser: FirebaseUser): Promise<ProfileRecord | null> {
+    const { uid } = firebaseUser;
+    if (this.profileCache?.uid === uid && Date.now() - this.profileCache.loadedAt < PROFILE_CACHE_MS) {
+      return Promise.resolve(this.profileCache.profile);
+    }
+    if (this.profileRequest?.uid === uid) return this.profileRequest.promise;
+    const promise = this.fetchProfile(firebaseUser)
+      .then((profile) => {
+        // A profile still being created during registration is not cached.
+        if (profile) {
+          this.profileCache = { uid, profile, loadedAt: Date.now() };
+          safeStorage.setItem(PROFILE_TAB_KEY, JSON.stringify({ uid, profile }));
+        }
+        return profile;
+      })
+      .finally(() => {
+        if (this.profileRequest?.promise === promise) this.profileRequest = null;
+      });
+    this.profileRequest = { uid, promise };
+    return promise;
+  }
+
   /** Reads users/{uid}, creating a minimal profile when it does not exist yet. */
-  private async loadProfile(firebaseUser: FirebaseUser): Promise<ProfileRecord | null> {
+  private async fetchProfile(firebaseUser: FirebaseUser): Promise<ProfileRecord | null> {
     const userDocRef = doc(db, 'users', firebaseUser.uid);
     const snapshot = await getDoc(userDocRef);
     if (snapshot.exists()) return snapshot.data() as ProfileRecord;
@@ -189,8 +250,20 @@ class AuthService {
   private setupFirebaseListener() {
     try {
       onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+        // Registration creates and sets the profile itself: no lookup needed meanwhile.
+        if (firebaseUser && this.registering) {
+          this.markReady();
+          return;
+        }
         // Anonymous sessions (guest checkout) are not customer accounts.
         if (firebaseUser && !firebaseUser.isAnonymous) {
+          // After a refresh: show the tab copy at once, then update from the server below.
+          const tabProfile = !this.currentUser ? readTabProfile(firebaseUser.uid) : null;
+          if (tabProfile) {
+            this.currentUser = toCustomerUser(firebaseUser, tabProfile);
+            this.markReady();
+            this.notifyListeners();
+          }
           try {
             const profile = await this.loadProfile(firebaseUser);
             if (profile || !this.registering) this.currentUser = toCustomerUser(firebaseUser, profile);
@@ -200,6 +273,7 @@ class AuthService {
           }
         } else if (!this.registering) {
           this.currentUser = null;
+          if (!firebaseUser) safeStorage.removeItem(PROFILE_TAB_KEY);
         }
         this.markReady();
         this.notifyListeners();
@@ -314,7 +388,7 @@ class AuthService {
 
     try {
       const uid = current.uid || current.id;
-      await setDoc(
+      const { identity } = await setDocWithResult(
         doc(db, 'users', uid),
         {
           name: fullName,
@@ -325,14 +399,48 @@ class AuthService {
         },
         { merge: true }
       );
+      this.forgetProfile();
       if (fbUser.displayName !== fullName) await updateFirebaseProfile(fbUser, { displayName: fullName });
-      const saved = await getDoc(doc(db, 'users', uid));
-      this.currentUser = toCustomerUser(fbUser, saved.exists() ? (saved.data() as ProfileRecord) : null);
+      // No read-back: the write response carries any newly derived identity fields.
+      this.currentUser = {
+        ...current,
+        fullName,
+        phone,
+        address: input.address ? { ...current.address, ...input.address } : current.address,
+        ...(identity ? { nic: identity.nic, dateOfBirth: identity.dateOfBirth || undefined, gender: identity.gender || undefined } : {}),
+      };
       this.notifyListeners();
       return { success: true };
     } catch (err) {
       console.error('[Turso] Profile completion failed:', err);
       return { success: false, error: err instanceof Error ? err.message : 'Could not save your details.' };
+    }
+  }
+
+  /** Adds a NIC to an account that has none (once). One write; no reload or read-back. */
+  public async addNic(nicInput: string): Promise<Result> {
+    const current = this.currentUser;
+    if (!current) return { success: false, error: 'Please sign in again.' };
+    if (current.nic) return { success: false, error: 'Your NIC number is already saved.' };
+    const nic = parseNic(nicInput);
+    if (!nic) return { success: false, error: 'Please enter a valid NIC number.' };
+    try {
+      const { identity } = await setDocWithResult(
+        doc(db, 'users', current.uid || current.id),
+        { nic: nic.nic, updatedAt: new Date().toISOString() },
+        { merge: true }
+      );
+      this.forgetProfile();
+      this.currentUser = {
+        ...current,
+        nic: identity?.nic || nic.nic,
+        dateOfBirth: identity?.dateOfBirth || nic.dateOfBirth,
+        gender: identity?.gender || nic.gender,
+      };
+      this.notifyListeners();
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : 'Could not save your NIC.' };
     }
   }
 
@@ -386,10 +494,10 @@ class AuthService {
         createdAt: now,
         updatedAt: now,
       };
-      await setDoc(doc(db, 'users', fbUser.uid), profile, { merge: true });
-      // Read back the server's record, which holds the date of birth and gender from the NIC.
-      const saved = await getDoc(doc(db, 'users', fbUser.uid));
-      this.currentUser = toCustomerUser(fbUser, saved.exists() ? (saved.data() as ProfileRecord) : profile);
+      // One write; the response includes the date of birth and gender read from the NIC.
+      const { identity } = await setDocWithResult(doc(db, 'users', fbUser.uid), profile, { merge: true });
+      this.forgetProfile();
+      this.currentUser = toCustomerUser(fbUser, { ...profile, ...(identity || {}) } as ProfileRecord);
     } catch (err) {
       console.error('[Turso] Customer profile creation failed:', err);
       await deleteUser(fbUser).catch(() => signOut(auth));
@@ -410,6 +518,7 @@ class AuthService {
    * Firebase Authentication - Logout
    */
   public async logout(): Promise<void> {
+    this.forgetProfile();
     try {
       await signOut(auth);
     } catch (err) {
@@ -514,6 +623,7 @@ class AuthService {
         },
         { merge: true }
       );
+      this.forgetProfile();
       if (fbUser.displayName !== fullName) await updateFirebaseProfile(fbUser, { displayName: fullName });
       this.currentUser = {
         ...current,

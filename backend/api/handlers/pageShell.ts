@@ -95,11 +95,15 @@ async function serveShell(req: IncomingMessage, res: ServerResponse, forcedStatu
     return;
   }
 
+  let isItemPage = false;
   if (status === 200) {
     // Single service/product/project/gallery URLs get their own title, description and canonical.
     try {
       const seo = await resolveDynamicRouteSeo(path, url.searchParams);
-      if (seo) html = renderSeoHtml(html, seo, CANONICAL_SITE_ORIGIN);
+      if (seo) {
+        html = renderSeoHtml(html, seo, CANONICAL_SITE_ORIGIN);
+        isItemPage = true;
+      }
     } catch (error) {
       console.error('[PageShell] Could not add page SEO; serving the plain shell:', error);
     }
@@ -113,7 +117,12 @@ async function serveShell(req: IncomingMessage, res: ServerResponse, forcedStatu
   res.statusCode = status;
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
-  res.setHeader('CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=86400');
-  res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=86400');
+  // Item pages change only when an admin edits them, so the CDN keeps them for an hour
+  // (crawlers walking hundreds of them are then served from the edge, not the function).
+  const cdnCache = isItemPage
+    ? 'public, s-maxage=3600, stale-while-revalidate=86400'
+    : 'public, s-maxage=300, stale-while-revalidate=86400';
+  res.setHeader('CDN-Cache-Control', cdnCache);
+  res.setHeader('Vercel-CDN-Cache-Control', cdnCache);
   res.end(html);
 }

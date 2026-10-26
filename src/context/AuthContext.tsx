@@ -29,6 +29,8 @@ interface AuthContextType {
   refreshEmailVerification: () => Promise<boolean>;
   /** Sign in or sign up with Google (popup, or redirect when popups are blocked). */
   signInWithGoogle: () => Promise<SocialSignInResult>;
+  /** Adds a NIC to an account without one (set once). */
+  addNic: (nic: string) => Promise<{ success: boolean; error?: string }>;
   /** Saves missing name, contact number and NIC in one step. */
   completeProfile: (input: ProfileCompletionInput) => Promise<{ success: boolean; error?: string }>;
   /** Error from a Google sign-in that returned by redirect, cleared once read. */
@@ -156,6 +158,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshEmailVerification = () => authService.refreshEmailVerification();
   const signInWithGoogle = () => authService.signInWithGoogle();
   const completeProfile = (input: ProfileCompletionInput) => authService.completeProfile(input);
+  const addNic = (nic: string) => authService.addNic(nic);
   const consumeRedirectError = () => authService.consumeRedirectError();
 
   const isPrivileged = Boolean(
@@ -191,6 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         refreshEmailVerification,
         signInWithGoogle,
         completeProfile,
+        addNic,
         consumeRedirectError,
         refreshUser,
       }}

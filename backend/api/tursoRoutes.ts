@@ -450,6 +450,10 @@ async function verifyCustomerIdentityFields(
     verified.phone = phone;
   }
 
+  // Saves that do not touch identity fields need no extra read: the merge leaves the
+  // stored NIC, date of birth and gender as they are.
+  if (data.nic === undefined && data.dateOfBirth === undefined && data.gender === undefined) return verified;
+
   const existing = await getTursoDocument('users', '', identity.uid);
   const storedNic = typeof existing?.data.nic === 'string' ? existing.data.nic : '';
   if (data.nic === undefined || data.nic === storedNic) {
@@ -877,6 +881,11 @@ export async function handleTursoAction(
         write = await preparePublicWrite(write);
       }
       await writeTursoDocument(write);
+      // A customer's own profile write returns the identity read from their NIC, so the
+      // browser does not need a second request to show date of birth and gender.
+      const savedNic = access.role === 'customer' && write.collection === 'users' && typeof write.data?.nic === 'string'
+        ? { nic: write.data.nic, dateOfBirth: write.data.dateOfBirth ?? null, gender: write.data.gender ?? null }
+        : null;
       return {
         status: 200,
         body: {
@@ -884,6 +893,7 @@ export async function handleTursoAction(
           ...(write.collection === 'careerApplications' && typeof write.data?.reference === 'string'
             ? { reference: write.data.reference }
             : {}),
+          ...(savedNic ? { identity: savedNic } : {}),
         },
       };
     }

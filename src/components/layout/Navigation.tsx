@@ -17,7 +17,11 @@ import {
   Mail,
   MessageCircle,
   MapPin,
+  Activity,
+  LayoutDashboard,
+  AlertTriangle,
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { BrandLogo } from './BrandLogo';
 import { Button } from '../ui/Button';
 import { MAIN_NAV_ITEMS as ALL_NAV_ITEMS } from '../../config/navigation';
@@ -32,6 +36,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getTelLink, getMailtoLink } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { getDivisionWhatsAppUrl } from '../../utils/whatsapp';
+import { getProfileCompletion, hasRealName } from '../../utils/profileCompletion';
 
 interface NavigationProps {
   currentPath: string;
@@ -40,7 +45,7 @@ interface NavigationProps {
 
 export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate }) => {
   const { totalQuantity, openCart } = useCart();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isLoading: isAuthLoading, logout } = useAuth();
   const { companySettings, siteSettings, divisions } = useFirestoreDataContext();
 
   const primaryPhone = companySettings?.primaryPhone || '075 092 8078';
@@ -56,6 +61,33 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
   const servicesDropdownRef = useRef<HTMLDivElement>(null);
   const accountDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Account button: initials or photo when signed in, and a dot while required details are missing.
+  const profileIncomplete = Boolean(isAuthenticated && user && !getProfileCompletion(user).isComplete);
+  const accountInitials = user
+    ? (hasRealName(user) ? user.fullName : user.email)
+        .split(/[\s@.]+/)
+        .filter(Boolean)
+        .map((part) => part[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
+    : '';
+  const isAuthPage = ['/login', '/register', '/forgot-password'].includes(currentPath.split('?')[0]);
+  const signInHref = isAuthPage || currentPath === '/' ? '/login' : `/login?redirect=${encodeURIComponent(currentPath)}`;
+  const ACCOUNT_LINKS = [
+    { label: 'My account', href: '/account', icon: LayoutDashboard },
+    { label: 'Orders', href: '/account/orders', icon: ShoppingBag },
+    { label: 'Bookings', href: '/account/bookings', icon: Calendar },
+    { label: 'Activity', href: '/account/activity', icon: Activity },
+    { label: 'Profile', href: '/account/profile', icon: User },
+  ];
+  const handleSignOut = async () => {
+    setIsAccountMenuOpen(false);
+    setIsMobileMenuOpen(false);
+    await logout();
+    onNavigate('/');
+  };
 
   // Dynamic divisions sorted by order
   const displayDivisions = useMemo(() => {
@@ -354,7 +386,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
             </nav>
 
             {/* Right: Phone Hotline, WhatsApp & Mobile Hamburger Toggle */}
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
               {/* Phone Hotline Link */}
               <a
                 href={getTelLink(primaryPhone)}
@@ -398,6 +430,107 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                 )}
               </button>
 
+              {/* Account: sign-in link, or the signed-in customer's menu. */}
+              {isAuthLoading ? (
+                <span className="h-9 w-9 shrink-0 animate-pulse rounded-xl bg-slate-200" aria-hidden="true" />
+              ) : isAuthenticated && user ? (
+                <div className="relative shrink-0" ref={accountDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      setIsAccountMenuOpen((open) => !open);
+                    }}
+                    className="relative inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-1 pr-1 shadow-2xs transition-colors hover:border-blue-300 hover:bg-blue-50 xl:pr-2.5"
+                    aria-label={`Account menu for ${user.fullName}${profileIncomplete ? ', profile incomplete' : ''}`}
+                    aria-haspopup="menu"
+                    aria-expanded={isAccountMenuOpen}
+                  >
+                    {user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt="" className="h-7 w-7 rounded-lg object-cover" />
+                    ) : (
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#0052FF] to-indigo-600 text-[11px] font-bold text-white">
+                        {accountInitials}
+                      </span>
+                    )}
+                    <span className="hidden max-w-[7rem] truncate text-xs font-semibold text-slate-800 xl:inline">
+                      {hasRealName(user) ? user.fullName.split(' ')[0] : 'Account'}
+                    </span>
+                    <ChevronDown className={`hidden h-3.5 w-3.5 text-slate-500 transition-transform xl:block ${isAccountMenuOpen ? 'rotate-180' : ''}`} />
+                    {profileIncomplete && (
+                      <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-amber-500 ring-2 ring-white" aria-hidden="true" />
+                    )}
+                  </button>
+
+                  <AnimatePresence>
+                    {isAccountMenuOpen && (
+                      <motion.div
+                        role="menu"
+                        initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                        transition={{ duration: 0.16, ease: 'easeOut' }}
+                        className="absolute right-0 top-full z-[70] mt-2 w-[min(17rem,calc(100vw-1.5rem))] origin-top-right overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10"
+                      >
+                        <div className="border-b border-slate-100 bg-gradient-to-br from-slate-50 to-blue-50/60 p-4">
+                          <p className="truncate text-sm font-bold text-slate-900">{hasRealName(user) ? user.fullName : 'Your account'}</p>
+                          <p className="truncate text-xs text-slate-500">{user.email}</p>
+                        </div>
+                        {profileIncomplete && (
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => handleLinkClick('/account/complete')}
+                            className="flex w-full items-center gap-2.5 border-b border-amber-100 bg-amber-50 px-4 py-3 text-left text-xs font-semibold text-amber-900 hover:bg-amber-100"
+                          >
+                            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" aria-hidden="true" />
+                            Complete your profile
+                            <ArrowRight className="ml-auto h-3.5 w-3.5" aria-hidden="true" />
+                          </button>
+                        )}
+                        <div className="p-1.5">
+                          {ACCOUNT_LINKS.map(({ label, href, icon: Icon }) => (
+                            <button
+                              key={href}
+                              type="button"
+                              role="menuitem"
+                              onClick={() => handleLinkClick(href)}
+                              className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+                                currentPath === href ? 'bg-blue-50 text-[#0052FF]' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                              }`}
+                            >
+                              <Icon className="h-4 w-4 text-slate-400" aria-hidden="true" />
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="border-t border-slate-100 p-1.5">
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={handleSignOut}
+                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-rose-600 hover:bg-rose-50"
+                          >
+                            <LogOut className="h-4 w-4" aria-hidden="true" /> Sign out
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <a
+                  href={signInHref}
+                  onClick={(event) => handleAnchorClick(event, signInHref)}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-2xs transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-[#0052FF]"
+                  title="Sign in"
+                  aria-label="Sign in to your account"
+                >
+                  <User className="h-4 w-4 shrink-0 text-slate-800" aria-hidden="true" />
+                  <span className="hidden xl:inline">Sign in</span>
+                </a>
+              )}
+
               {/* Mobile Hamburger Button */}
               <button
                 type="button"
@@ -422,6 +555,45 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
             className="lg:hidden absolute inset-x-0 top-full h-[100svh] z-[55] bg-slate-950/30"
           />
           <div className="lg:hidden absolute inset-x-3 top-full z-[61] mt-2 max-h-[calc(100svh-6rem)] overflow-y-auto overscroll-contain rounded-2xl border border-blue-200/80 bg-[#FAF9F6] px-4 pt-4 pb-6 space-y-4 shadow-2xl animate-in slide-in-from-top-2 duration-200">
+            {/* Account */}
+            {!isAuthLoading && (
+              isAuthenticated && user ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleLinkClick(profileIncomplete ? '/account/complete' : '/account')}
+                    className="flex min-w-0 flex-1 items-center gap-3 rounded-xl border border-blue-100 bg-white px-3 py-2.5 text-left shadow-2xs"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#0052FF] to-indigo-600 text-xs font-bold text-white">
+                      {accountInitials}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold text-slate-900">{hasRealName(user) ? user.fullName : 'My account'}</span>
+                      <span className={`block truncate text-xs ${profileIncomplete ? 'font-semibold text-amber-700' : 'text-slate-500'}`}>
+                        {profileIncomplete ? 'Complete your profile' : 'View account'}
+                      </span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="rounded-xl border border-rose-200 bg-white p-3 text-rose-600 shadow-2xs"
+                    aria-label="Sign out"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <a
+                  href={signInHref}
+                  onClick={(event) => handleAnchorClick(event, signInHref)}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0052FF] px-3 py-3 text-sm font-semibold text-white shadow-md shadow-blue-500/20"
+                >
+                  <User className="h-4 w-4" aria-hidden="true" /> Sign in or create an account
+                </a>
+              )
+            )}
+
             {/* Primary Navigation Links */}
             <div className="space-y-1">
               {MAIN_NAV_ITEMS.map((item) => (

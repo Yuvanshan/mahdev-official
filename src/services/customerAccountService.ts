@@ -11,9 +11,12 @@ import { collection, getDocs } from '../lib/tursoFirestore';
 import { db } from '../lib/firebase';
 import { orderService } from './orderService';
 import { bookingService, mapFirestoreBookingToUniversal } from './bookingService';
+import { authService } from './authService';
+import { safeStorage } from '../utils/safeStorage';
 import type { Order } from '../types/order';
 import type { Booking } from '../types/booking';
 import type { CustomerUser } from '../types/customer';
+import type { PaymentGatewayType, PaymentState, PaymentTransaction } from '../types/payment';
 
 const newestFirst = <T extends { createdAt: string }>(items: T[]) =>
   items.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
@@ -39,6 +42,138 @@ export async function loadMyBookings(user: CustomerUser): Promise<Booking[]> {
   const saved = snapshot.docs.map((document) => mapFirestoreBookingToUniversal({ ...document.data(), id: document.id }));
   return mergeById(saved, session);
 }
+
+const PAYMENT_STATES: PaymentState[] = ['pending', 'processing', 'paid', 'failed', 'cancelled', 'refunded'];
+const PAYMENT_GATEWAYS: PaymentGatewayType[] = ['stripe_card', 'lankapay_ipg', 'bank_wire'];
+
+/** The customer's payment records, in one request (the server returns only their own). */
+export async function loadMyPayments(user: CustomerUser): Promise<PaymentTransaction[]> {
+  const snapshot = await getDocs(collection(db, 'payments'));
+  return snapshot.docs
+    .map((document): PaymentTransaction => {
+      const data = document.data();
+      const status = String(data.paymentStatus || data.status || 'pending') as PaymentState;
+      const gateway = String(data.gateway || data.gatewayId || 'bank_wire') as PaymentGatewayType;
+      const timestamp = String(data.timestamp || data.createdAt || data.updatedAt || '');
+      return {
+        transactionId: String(data.transactionId || document.id),
+        orderId: String(data.orderId || data.bookingId || ''),
+        amount: Number(data.amount) || 0,
+        currency: String(data.currency || 'LKR'),
+        gateway: PAYMENT_GATEWAYS.includes(gateway) ? gateway : 'bank_wire',
+        gatewayName: String(data.gatewayName || gateway),
+        paymentStatus: PAYMENT_STATES.includes(status) ? status : 'pending',
+        timestamp,
+        updatedAt: String(data.updatedAt || timestamp),
+        customerEmail: String(data.customerEmail || data.email || user.email),
+        customerName: String(data.customerName || user.fullName),
+      };
+    })
+    .sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
+}
+
+// ---------------------------------------------------------------------------
+// Cached account history
+// ---------------------------------------------------------------------------
+
+export interface AccountData {
+  orders: Order[];
+  bookings: Booking[];
+  payments: PaymentTransaction[];
+  /** Set when part of the history could not be loaded. */
+  error: string | null;
+  loadedAt: number;
+}
+
+/** Fresh enough to show without asking the server again. */
+const ACCOUNT_CACHE_MS = 2 * 60_000;
+
+// Kept in memory, with a copy in this tab's sessionStorage so a refresh shows the history
+// at once. That copy has the same lifetime as the sign-in (the tab) and is cleared on
+// sign-out; nothing is kept in long-lived storage on shared computers.
+const ACCOUNT_TAB_KEY = 'mahdev_account_tab_cache';
+let accountCache: { uid: string; data: AccountData; stale: boolean } | null = readTabCache();
+let accountRequest: { uid: string; promise: Promise<AccountData> } | null = null;
+
+/** Writes the cache to this tab's storage (cleared when the tab closes or on sign-out). */
+function saveTabCache() {
+  if (accountCache) safeStorage.setItem(ACCOUNT_TAB_KEY, JSON.stringify(accountCache));
+  else safeStorage.removeItem(ACCOUNT_TAB_KEY);
+}
+
+function readTabCache(): typeof accountCache {
+  try {
+    const saved = JSON.parse(safeStorage.getItem(ACCOUNT_TAB_KEY) || 'null');
+    return saved && typeof saved.uid === 'string' && saved.data ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Cached history for this customer, if any (may be older than the refresh window). */
+export function peekAccountData(uid: string): AccountData | null {
+  return accountCache?.uid === uid ? accountCache.data : null;
+}
+
+/** Whether cached history should be refreshed in the background. */
+export function isAccountDataStale(uid: string): boolean {
+  if (accountCache?.uid !== uid) return true;
+  return accountCache.stale || Date.now() - accountCache.data.loadedAt > ACCOUNT_CACHE_MS;
+}
+
+/**
+ * Orders, bookings and payments for the signed-in customer: three requests in
+ * parallel, shared by everyone asking at the same time and reused for two minutes.
+ * If the server cannot be reached, the last loaded history (or this session's
+ * records) is kept rather than showing an empty account.
+ */
+export function loadAccountData(user: CustomerUser, { force = false } = {}): Promise<AccountData> {
+  const uid = user.uid || user.id;
+  if (!force && accountCache?.uid === uid && !isAccountDataStale(uid)) return Promise.resolve(accountCache.data);
+  if (accountRequest?.uid === uid) return accountRequest.promise;
+
+  const promise = (async (): Promise<AccountData> => {
+    const previous = peekAccountData(uid);
+    const [orders, bookings, payments] = await Promise.allSettled([loadMyOrders(user), loadMyBookings(user), loadMyPayments(user)]);
+    const failed = [orders, bookings, payments].some((result) => result.status === 'rejected');
+    if (failed) console.warn('[Account] Could not load part of the account history:', { orders, bookings, payments });
+    const data: AccountData = {
+      orders: orders.status === 'fulfilled' ? orders.value : previous?.orders ?? orderService.getOrdersByEmail(user.email),
+      bookings: bookings.status === 'fulfilled' ? bookings.value : previous?.bookings ?? bookingService.getBookingsByCustomerEmail(user.email),
+      payments: payments.status === 'fulfilled' ? payments.value : previous?.payments ?? [],
+      error: failed ? 'Some of your history could not be loaded. Please try again shortly.' : null,
+      loadedAt: Date.now(),
+    };
+    // A partly failed load is shown but retried on the next visit.
+    if (authService.getCurrentUser()?.uid === uid || authService.getCurrentUser()?.id === uid) {
+      accountCache = { uid, data, stale: failed };
+      saveTabCache();
+    }
+    return data;
+  })().finally(() => {
+    if (accountRequest?.promise === promise) accountRequest = null;
+  });
+  accountRequest = { uid, promise };
+  return promise;
+}
+
+/** Marks the cached history out of date (e.g. after a new order); the next visit refreshes it. */
+export function markAccountDataStale() {
+  if (!accountCache || accountCache.stale) return;
+  accountCache.stale = true;
+  saveTabCache();
+}
+
+// New orders and bookings in this session make the cache stale; signing out clears it.
+orderService.subscribe(markAccountDataStale);
+bookingService.subscribe(markAccountDataStale);
+authService.subscribe((signedIn) => {
+  if (!signedIn || (accountCache && accountCache.uid !== (signedIn.uid || signedIn.id))) {
+    accountCache = null;
+    accountRequest = null;
+    saveTabCache();
+  }
+});
 
 // ---------------------------------------------------------------------------
 // Progress steps

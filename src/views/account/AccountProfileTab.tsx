@@ -22,8 +22,6 @@ import { ImageUploader } from '../../components/common/ImageUploader';
 import { AuthAlert, AuthField, PasswordField } from '../../components/auth/AuthFields';
 import { MIN_PASSWORD_LENGTH } from '../../services/authService';
 import { ageFromDateOfBirth, formatSriLankaPhone, normaliseSriLankaPhone, parseNic } from '../../utils/sriLankaIdentity';
-import { doc, setDoc } from '../../lib/tursoFirestore';
-import { db } from '../../lib/firebase';
 
 interface AccountProfileTabProps {
   user: CustomerUser;
@@ -66,7 +64,7 @@ const Section: React.FC<{ icon: React.ElementType; title: string; subtitle?: str
 };
 
 export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) => {
-  const { updateProfile, changePassword, sendVerificationEmail, refreshEmailVerification, refreshUser } = useAuth();
+  const { updateProfile, changePassword, sendVerificationEmail, refreshEmailVerification, refreshUser, addNic } = useAuth();
 
   // ---- Personal details, address and preferences ----
   const [formData, setFormData] = useState({
@@ -138,14 +136,9 @@ export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) =>
       return;
     }
     setIsSavingNic(true);
-    try {
-      await setDoc(doc(db, 'users', user.uid || user.id), { nic: nicPreview.nic, updatedAt: new Date().toISOString() }, { merge: true });
-      // Reload the profile so the server-derived date of birth and gender appear.
-      window.location.reload();
-    } catch (err) {
-      setNicError(err instanceof Error ? err.message : 'Could not save your NIC.');
-      setIsSavingNic(false);
-    }
+    const result = await addNic(nicPreview.nic);
+    setIsSavingNic(false);
+    if (!result.success) setNicError(result.error || 'Could not save your NIC.');
   };
 
   // ---- Security ----

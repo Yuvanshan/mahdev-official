@@ -7,6 +7,10 @@ import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import {
   initializeAuth,
   inMemoryPersistence,
+  browserSessionPersistence,
+  browserLocalPersistence,
+  indexedDBLocalPersistence,
+  browserPopupRedirectResolver,
   getAuth,
   setPersistence,
   Auth,
@@ -48,24 +52,29 @@ export const firebaseConfig = {
 export const app: FirebaseApp =
   getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
+/**
+ * Sign-in stays on this device: it survives refreshes, new tabs and browser restarts,
+ * and ends only when the customer signs out or clears the site's data. Firebase keeps
+ * it in IndexedDB, falling back to localStorage, then the tab, then memory where a
+ * browser blocks storage (some private modes).
+ */
+const DEVICE_PERSISTENCE = [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence, inMemoryPersistence];
+
 export const auth: Auth = (() => {
   if (typeof window === 'undefined') return getAuth(app);
   try {
-    const inMemoryAuth = initializeAuth(app, {
-      persistence: inMemoryPersistence,
+    return initializeAuth(app, {
+      persistence: DEVICE_PERSISTENCE,
+      // Required for signInWithPopup / signInWithRedirect (Google sign-in). Without it,
+      // initializeAuth leaves popups unsupported and they fail with auth/argument-error.
+      popupRedirectResolver: browserPopupRedirectResolver,
     });
-    window.localStorage.removeItem(`firebase:authUser:${firebaseConfig.apiKey}:[DEFAULT]`);
-    return inMemoryAuth;
   } catch {
+    // Auth was already created (e.g. hot reload): keep it on the device as well.
     const existingAuth = getAuth(app);
-    void setPersistence(existingAuth, inMemoryPersistence).catch((error) => {
-      console.error('[Firebase Auth] Could not use in-memory persistence:', error);
+    void setPersistence(existingAuth, indexedDBLocalPersistence).catch((error) => {
+      console.error('[Firebase Auth] Could not keep the sign-in on this device:', error);
     });
-    try {
-      window.localStorage.removeItem(`firebase:authUser:${firebaseConfig.apiKey}:[DEFAULT]`);
-    } catch (error) {
-      console.error('[Firebase Auth] Could not clear legacy persisted credentials:', error);
-    }
     return existingAuth;
   }
 })();
