@@ -579,11 +579,6 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
               <span className="text-slate-400 font-medium">Real-time ledger</span>
             )}
           </div>
-          <div className="text-[11px] text-slate-400 mt-1 font-mono">
-            {currentCurrency === 'LKR'
-              ? `USD $${report.revenueByCurrency.USD.toLocaleString()}`
-              : `LKR Rs. ${report.revenueByCurrency.LKR.toLocaleString()}`}
-          </div>
         </div>
 
         {/* Total Orders & AOV */}
@@ -1126,7 +1121,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
             {/* Currency Breakdown */}
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">
-                Dual-Currency Breakdown
+                Revenue (LKR)
               </h3>
               <div className="space-y-4">
                 <div className={`p-4 rounded-xl border transition-all ${
@@ -1148,24 +1143,6 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
                   <div className="text-xs text-slate-500 mt-1">LankaPay National Switch & Local Settled</div>
                 </div>
 
-                <div className={`p-4 rounded-xl border transition-all ${
-                  currentCurrency === 'USD'
-                    ? 'bg-blue-50/70 border-blue-300 ring-2 ring-blue-500/20'
-                    : 'bg-slate-50/80 border-slate-200'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs font-semibold text-blue-700 uppercase">United States Dollars (USD)</div>
-                    {currentCurrency === 'USD' && (
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-blue-600 text-white rounded-full">
-                        Active Currency
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-2xl font-bold text-slate-900 mt-1">
-                    ${report.revenueByCurrency.USD.toLocaleString()}
-                  </div>
-                  <div className="text-xs text-slate-500 mt-1">International & Card Transactions</div>
-                </div>
               </div>
             </div>
 
