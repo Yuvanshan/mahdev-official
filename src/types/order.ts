@@ -127,6 +127,12 @@ export interface Order {
   refunds?: OrderRefundRecord[];
   trackingNumber?: string;
   carrier?: string;
+  /** 'design_confirmation' when created from an admin design confirmation link. */
+  source?: string;
+  designTitle?: string;
+  designImages?: string[];
+  /** Advance the customer pays to reserve the date (design orders). */
+  advanceAmount?: number;
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601
 }

@@ -200,7 +200,32 @@ const ORDER_STEPS: ProgressStep[] = [
   { key: 'completed', label: 'Delivered' },
 ];
 
+// Orders confirmed from a design link: decorations are prepared and set up, not shipped.
+const DESIGN_ORDER_STEPS: ProgressStep[] = [
+  { key: 'confirmed', label: 'Confirmed' },
+  { key: 'advance', label: 'Advance paid' },
+  { key: 'preparing', label: 'In preparation' },
+  { key: 'setup', label: 'Setup day' },
+  { key: 'completed', label: 'Completed' },
+];
+
+function designOrderProgress(order: Order): Progress {
+  if (order.status === 'cancelled') return { steps: DESIGN_ORDER_STEPS, current: 0, stopped: 'Cancelled' };
+  const statusStep: Record<Order['status'], number> = {
+    pending_payment: 1,
+    confirmed: 1,
+    processing: 2,
+    dispatched: 3,
+    completed: 4,
+    cancelled: 0,
+  };
+  // A paid confirmed order is already waiting on preparation.
+  const current = Math.max(statusStep[order.status], order.paymentStatus === 'paid' ? 2 : 0);
+  return { steps: DESIGN_ORDER_STEPS, current };
+}
+
 export function orderProgress(order: Order): Progress {
+  if (order.source === 'design_confirmation') return designOrderProgress(order);
   if (order.status === 'cancelled') return { steps: ORDER_STEPS, current: 0, stopped: 'Cancelled' };
   const paid = order.paymentStatus === 'paid';
   const statusStep: Record<Order['status'], number> = {

@@ -442,3 +442,60 @@ export async function sendAdminAlertEmail(payload: {
     };
   }
 }
+
+/**
+ * Sends a transactional email to a customer (e.g. an order confirmation link or
+ * receipt). Unlike enquiries, nothing is "delivered" when SMTP is not configured,
+ * so callers can tell the admin to share the message another way.
+ */
+export async function sendCustomerEmail(payload: {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+}): Promise<EmailDispatchResult> {
+  const config = getServerConfig();
+  const smtpFromEmail = process.env.SMTP_FROM_EMAIL || config.notifications.smtpUser || DEFAULT_SENDER_EMAIL;
+  const subject = payload.subject.replace(/[\r\n]+/g, ' ').slice(0, 180);
+  const transporter = getMailTransporter();
+
+  if (!transporter) {
+    console.warn('[EmailService] Customer email not sent: SMTP credentials are not configured.');
+    return {
+      success: false,
+      delivered: false,
+      targetEmail: payload.to,
+      deliveryMethod: 'sandbox_logged',
+      timestamp: new Date().toISOString(),
+      notice: 'Configure GMAIL_USER and GMAIL_APP_PASSWORD to email customers.',
+    };
+  }
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"Mahdev Pvt Ltd" <${smtpFromEmail}>`,
+      to: payload.to,
+      subject,
+      text: payload.text,
+      html: payload.html,
+    });
+    return {
+      success: true,
+      delivered: true,
+      targetEmail: payload.to,
+      deliveryMethod: 'smtp',
+      messageId: info.messageId,
+      timestamp: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error('[EmailService] Customer email failed:', error instanceof Error ? error.message : error);
+    return {
+      success: false,
+      delivered: false,
+      targetEmail: payload.to,
+      deliveryMethod: 'sandbox_logged',
+      timestamp: new Date().toISOString(),
+      notice: 'SMTP delivery failed. Check the sender account and its app password.',
+    };
+  }
+}

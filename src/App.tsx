@@ -195,6 +195,7 @@ const CatalogView = lazy(() => import('./views/CatalogView').then((module) => ({
 const BookingView = lazy(() => import('./views/BookingView').then((module) => ({ default: module.BookingView })));
 const CheckoutView = lazy(() => import('./views/CheckoutView').then((module) => ({ default: module.CheckoutView })));
 const OrderConfirmationView = lazy(() => import('./views/OrderConfirmationView').then((module) => ({ default: module.OrderConfirmationView })));
+const ConfirmOrderView = lazy(() => import('./views/ConfirmOrderView').then((module) => ({ default: module.ConfirmOrderView })));
 const OrderLookupView = lazy(() => import('./views/OrderLookupView').then((module) => ({ default: module.OrderLookupView })));
 const AboutView = lazy(() => import('./views/AboutView').then((module) => ({ default: module.AboutView })));
 const PortfolioView = lazy(() => import('./views/PortfolioView').then((module) => ({ default: module.PortfolioView })));
@@ -666,6 +667,13 @@ function AppContent() {
 
   // Render view based on route
   const renderCurrentView = () => {
+    // Design order confirmation link shared by the admin (/confirm-order/{token})
+    if (normalizedPath.startsWith('/confirm-order/')) {
+      // Read from the original path: route normalising lowercases, and tokens are case-sensitive.
+      const token = basePath.replace(/^\/+confirm-order\//i, '').split('/')[0];
+      return <ConfirmOrderView token={token} onNavigate={navigate} />;
+    }
+
     // Authentication Routes
     if (normalizedPath === '/login') {
       return <LoginView onNavigate={navigate} redirectPath={redirectParam || '/account'} />;

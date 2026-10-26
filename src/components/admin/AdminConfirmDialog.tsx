@@ -67,14 +67,14 @@ export const AdminConfirmDialog: React.FC<AdminConfirmDialogProps> = ({
           <div className="flex items-center gap-3">
             <div
               className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                isDestructive ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'
+                actualIsDestructive ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'
               }`}
             >
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div>
               <h3 className="font-display font-bold text-slate-900 text-base">{title}</h3>
-              <p className="text-xs text-slate-500">Irreversible Action Guard</p>
+              <p className="text-xs text-slate-500">{actualIsDestructive ? 'Irreversible Action Guard' : 'Please confirm'}</p>
             </div>
           </div>
           <button
@@ -175,9 +175,9 @@ export const AdminConfirmDialog: React.FC<AdminConfirmDialogProps> = ({
           >
             {deleteMode === 'hard' || isCurrentlyDeleted ? (
               <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-            ) : (
+            ) : actualIsDestructive ? (
               <Archive className="w-3.5 h-3.5 mr-1.5" />
-            )}
+            ) : null}
             {deleteMode === 'hard' || isCurrentlyDeleted ? 'Permanently Delete' : actualConfirmLabel}
           </Button>
         </div>

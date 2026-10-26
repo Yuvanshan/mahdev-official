@@ -258,7 +258,7 @@ export const PRERENDERED_ROUTES: RouteSeo[] = ROUTES.map((route) => ({
  */
 export const APP_ROUTE_SEGMENTS = new Set([
   '', 'about', 'about-us', 'account', 'admin-yuvan1709', 'articles', 'auth', 'blog', 'book', 'bookings', 'careers', 'cart',
-  'catalog', 'checkout', 'cinema', 'clients', 'companies', 'company', 'contact', 'cookie-policy', 'decor',
+  'catalog', 'checkout', 'cinema', 'clients', 'companies', 'company', 'confirm-order', 'contact', 'cookie-policy', 'decor',
   'decorations', 'division', 'divisions', 'event-management', 'events', 'events-management', 'featured-services',
   'forgot-password', 'gallery', 'insights', 'it', 'it-services', 'it-solutions', 'jobs', 'journey', 'login',
   'mahdev-it', 'mahdev-mart', 'mahdev-travels', 'mart', 'media', 'milestones', 'online-mart', 'order', 'orders',
@@ -274,7 +274,7 @@ export const APP_ROUTE_SEGMENTS = new Set([
  * the HTML itself, so crawlers that do not run JavaScript keep them out of results too.
  */
 export const PRIVATE_ROUTE_SEGMENTS = new Set([
-  'account', 'admin-yuvan1709', 'auth', 'bookings', 'cart', 'checkout', 'forgot-password', 'login', 'order', 'orders',
+  'account', 'admin-yuvan1709', 'auth', 'bookings', 'cart', 'checkout', 'confirm-order', 'forgot-password', 'login', 'order', 'orders',
   'register', 'track-order',
 ]);
 

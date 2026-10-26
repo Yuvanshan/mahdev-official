@@ -125,6 +125,7 @@ export type AdminSectionId =
   | 'coupons'
   | 'enquiries'
   | 'orders'
+  | 'order-confirmations'
   | 'bookings'
   | 'customers'
   | 'inventory'

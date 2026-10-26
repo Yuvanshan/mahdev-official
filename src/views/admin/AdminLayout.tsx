@@ -33,6 +33,7 @@ import {
   Loader2,
   Mail,
   HelpCircle,
+  Link2,
 } from 'lucide-react';
 import { activeDatabaseName } from '../../lib/firebase';
 import { AdminSectionId } from '../../types/admin';
@@ -68,6 +69,7 @@ const AdminBannersView = React.lazy(() => import('./AdminBannersView').then((mod
 const AdminCouponsView = React.lazy(() => import('./AdminCouponsView').then((module) => ({ default: module.AdminCouponsView })));
 const AdminEnquiriesView = React.lazy(() => import('./AdminEnquiriesView').then((module) => ({ default: module.AdminEnquiriesView })));
 const AdminOrdersView = React.lazy(() => import('./AdminOrdersView').then((module) => ({ default: module.AdminOrdersView })));
+const AdminOrderConfirmationsView = React.lazy(() => import('./AdminOrderConfirmationsView').then((module) => ({ default: module.AdminOrderConfirmationsView })));
 const AdminBookingsView = React.lazy(() => import('./AdminBookingsView').then((module) => ({ default: module.AdminBookingsView })));
 const AdminCustomersView = React.lazy(() => import('./AdminCustomersView').then((module) => ({ default: module.AdminCustomersView })));
 const AdminInventoryView = React.lazy(() => import('./AdminInventoryView').then((module) => ({ default: module.AdminInventoryView })));
@@ -132,6 +134,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { id: 'coupons', label: 'Coupons', icon: Tag },
   { id: 'enquiries', label: 'Website Enquiries', icon: Mail, badge: 'Live' },
   { id: 'orders', label: 'Orders', icon: ShoppingBag, badge: 'Live' },
+  { id: 'order-confirmations', label: 'Design Confirmations', icon: Link2 },
   { id: 'bookings', label: 'Bookings', icon: Calendar },
   { id: 'customers', label: 'Customers', icon: Users },
   { id: 'inventory', label: 'Inventory', icon: Boxes },
@@ -289,6 +292,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
         return <AdminEnquiriesView />;
       case 'orders':
         return <AdminOrdersView />;
+      case 'order-confirmations':
+        return <AdminOrderConfirmationsView />;
       case 'bookings':
         return <AdminBookingsView />;
       case 'customers':

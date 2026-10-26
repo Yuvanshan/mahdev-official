@@ -89,6 +89,10 @@ class OrderService {
       refunds: fo.refunds || [],
       trackingNumber: fo.trackingNumber,
       carrier: fo.carrier,
+      source: fo.source,
+      designTitle: fo.designTitle,
+      designImages: Array.isArray(fo.designImages) ? fo.designImages : undefined,
+      advanceAmount: fo.advanceAmount,
       createdAt: fo.createdAt || new Date().toISOString(),
       updatedAt: fo.updatedAt || new Date().toISOString(),
     };

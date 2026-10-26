@@ -71,6 +71,9 @@ export const AdminGenerateSeoButton: React.FC<AdminGenerateSeoButtonProps> = ({ 
         title="Generate image SEO"
         message={`Add keyword alt text and an SEO description (naming Trincomalee and Colombo) to ${missing.length} item(s) that do not have them yet. Existing alt text and descriptions are not changed.`}
         confirmLabel="Generate"
+        // Not a delete: no soft/permanent delete choice, no "type DELETE" box.
+        allowSoftDelete={false}
+        isDestructive={false}
         onConfirm={handleGenerate}
         onCancel={() => setIsConfirmOpen(false)}
         onClose={() => setIsConfirmOpen(false)}

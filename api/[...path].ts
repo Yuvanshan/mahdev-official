@@ -15,6 +15,7 @@ import sitemapHandler from '../backend/api/handlers/sitemap.js';
 import publicSnapshotHandler, { publicInlineMediaHandler } from '../backend/api/handlers/publicSnapshot.js';
 import analyticsHandler from '../backend/api/handlers/analytics.js';
 import whatsappWebhookHandler from '../backend/api/handlers/whatsappWebhook.js';
+import orderConfirmationsHandler from '../backend/api/handlers/orderConfirmations.js';
 import pageShellHandler, { sendNotFoundPage } from '../backend/api/handlers/pageShell.js';
 
 interface ApiRequest extends IncomingMessage {
@@ -147,6 +148,10 @@ export default async function handler(req: ApiRequest, res: ServerResponse): Pro
   }
   if (pathname === '/api/webhook/whatsapp') {
     await whatsappWebhookHandler(req, res);
+    return;
+  }
+  if (pathname === '/api/order-confirmations' || pathname.startsWith('/api/order-confirmations/')) {
+    await orderConfirmationsHandler(req, res);
     return;
   }
   if (pathname === '/api/contact/submit' || pathname === '/api/inquiries/submit') {

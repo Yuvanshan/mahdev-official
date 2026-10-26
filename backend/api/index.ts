@@ -21,6 +21,7 @@ import careerApplicationHandler from './handlers/careers/application.js';
 import publicSnapshotHandler, { publicInlineMediaHandler } from './handlers/publicSnapshot.js';
 import analyticsHandler from './handlers/analytics.js';
 import whatsappWebhookHandler from './handlers/whatsappWebhook.js';
+import orderConfirmationsHandler from './handlers/orderConfirmations.js';
 
 const apiRouter = Router();
 
@@ -43,6 +44,11 @@ apiRouter.delete('/careers/application', async (req: Request, res: Response) => 
 
 apiRouter.all('/webhook/whatsapp', async (req: Request, res: Response) => {
   await whatsappWebhookHandler(req, res);
+});
+
+// Design order confirmation links (admin create/share, customer confirm).
+apiRouter.all(/^\/order-confirmations(\/.*)?$/, async (req: Request, res: Response) => {
+  await orderConfirmationsHandler(req, res);
 });
 
 apiRouter.post('/analytics', (req: Request, res: Response) => {

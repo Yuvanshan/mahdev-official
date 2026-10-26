@@ -183,6 +183,24 @@ export const AccountOrdersTab: React.FC<AccountOrdersTabProps> = ({ orders, onNa
               {/* Where the order is now */}
               <ProgressTracker progress={orderProgress(order)} className="px-1 py-1" />
 
+              {/* Approved design (orders confirmed from a design link) */}
+              {order.designImages && order.designImages.length > 0 && (
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1.5 shrink-0">
+                    {order.designImages.slice(0, 3).map((image) => (
+                      <img key={image} src={image} alt={order.designTitle || 'Approved design'} className="w-16 h-16 rounded-xl object-cover border border-slate-200" />
+                    ))}
+                  </div>
+                  <div className="text-xs text-slate-600 min-w-0">
+                    <div className="font-semibold text-slate-900 truncate">{order.designTitle}</div>
+                    {order.bookingInfo?.preferredDate && <div>Event date: {order.bookingInfo.preferredDate}</div>}
+                    {order.paymentStatus !== 'paid' && Number(order.advanceAmount) > 0 && (
+                      <div className="text-amber-700">Advance due: {formatCurrency(Number(order.advanceAmount), 'LKR')}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Items Preview */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                 <div className="md:col-span-8 space-y-2">
