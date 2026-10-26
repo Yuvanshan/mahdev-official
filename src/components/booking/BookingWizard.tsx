@@ -16,7 +16,7 @@ import {
   ShieldCheck,
   Check,
   Info,
-  DollarSign,
+  Banknote,
   ArrowRight,
   Layers,
   Camera,

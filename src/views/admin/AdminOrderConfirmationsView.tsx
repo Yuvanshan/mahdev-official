@@ -20,10 +20,12 @@ import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { ImageUploader } from '../../components/common/ImageUploader';
 import { DIVISIONS } from '../../config/divisions';
+import { BANK_DETAILS } from '../../config/company';
 import { formatCurrency } from '../../utils/currency';
 import {
   cancelConfirmation,
   createConfirmation,
+  deleteConfirmation,
   listConfirmations,
   logWhatsAppShare,
   sendConfirmationLink,
@@ -93,18 +95,25 @@ function linkMessage(confirmation: OrderConfirmation): string {
 /** The order confirmation reply, sent after the customer confirms. */
 function receiptMessage(confirmation: OrderConfirmation): string {
   const name = confirmation.confirmedCustomer?.name || confirmation.customerName;
-  const accountUrl = `${new URL(confirmation.shareUrl).origin}/account/orders`;
+  const accountUrl = `${new URL(confirmation.shareUrl).origin}/account/bookings`;
   return [
     `Hello ${name.split(' ')[0]},`,
     '',
-    `Your order ${confirmation.orderId} for "${confirmation.title}" is confirmed. Thank you!`,
+    `Your booking ${confirmation.bookingId} for "${confirmation.title}" is confirmed. Thank you!`,
     '',
     ...confirmation.items.map((item) => `- ${item.name} x${item.quantity}: ${formatCurrency(item.quantity * item.unitPrice, 'LKR')}`),
     `Total: ${formatCurrency(confirmation.total, 'LKR')}`,
     ...(confirmation.advanceAmount > 0 ? [`Advance to reserve the date: ${formatCurrency(confirmation.advanceAmount, 'LKR')}`] : []),
     ...(confirmation.eventDate ? [`Event date: ${formatDay(confirmation.eventDate)}`] : []),
     '',
-    `Track your order and view your invoice: ${accountUrl}`,
+    'Payment details (bank transfer):',
+    `Account name: ${BANK_DETAILS.accountName}`,
+    `Bank: ${BANK_DETAILS.bankName}`,
+    ...(BANK_DETAILS.branch ? [`Branch: ${BANK_DETAILS.branch}`] : []),
+    ...(BANK_DETAILS.accountNumber ? [`Account number: ${BANK_DETAILS.accountNumber}`] : []),
+    'Please send the transfer slip here with your booking reference.',
+    '',
+    `Track your booking and view your invoice: ${accountUrl}`,
     '',
     ...signature(confirmation.divisionName),
   ].join('\n');
@@ -130,6 +139,7 @@ export const AdminOrderConfirmationsView: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState<OrderConfirmation | null>(null);
+  const [deleting, setDeleting] = useState<OrderConfirmation | null>(null);
 
   const addToast = useCallback((type: ToastMessage['type'], title: string, message: string) => {
     const id = `${Date.now()}-${Math.random()}`;
@@ -156,7 +166,7 @@ export const AdminOrderConfirmationsView: React.FC = () => {
     return confirmations.filter((c) =>
       (statusFilter === 'all' || c.status === statusFilter) &&
       (!query ||
-        [c.id, c.title, c.customerName, c.customerPhone, c.customerEmail, c.orderId]
+        [c.id, c.title, c.customerName, c.customerPhone, c.customerEmail, c.bookingId]
           .some((value) => String(value || '').toLowerCase().includes(query)))
     );
   }, [confirmations, searchQuery, statusFilter]);
@@ -260,6 +270,21 @@ export const AdminOrderConfirmationsView: React.FC = () => {
       .catch((err) => console.warn('[DesignConfirmations] Could not record WhatsApp share:', err));
   };
 
+  const handleDelete = async () => {
+    if (!deleting) return;
+    try {
+      await deleteConfirmation(deleting.id);
+      addToast('success', 'Link Deleted', deleting.status === 'confirmed'
+        ? `${deleting.id} was deleted. Booking ${deleting.bookingId} is kept in Bookings.`
+        : `${deleting.id} was deleted and can no longer be opened.`);
+      setConfirmations((current) => current.filter((c) => c.id !== deleting.id));
+      if (sharing?.id === deleting.id) setSharing(null);
+      setDeleting(null);
+    } catch (err) {
+      addToast('error', 'Delete Failed', err instanceof Error ? err.message : 'Could not delete the link.');
+    }
+  };
+
   const handleCancel = async () => {
     if (!cancelling) return;
     try {
@@ -343,7 +368,7 @@ export const AdminOrderConfirmationsView: React.FC = () => {
                         {c.designImages[0] && <img src={c.designImages[0]} alt="" className="w-12 h-12 rounded-lg object-cover border border-slate-200" />}
                         <div>
                           <div className="font-semibold text-slate-900">{c.title}</div>
-                          <div className="text-[11px] text-slate-500 font-mono">{c.id}{c.status === 'confirmed' ? ` → ${c.orderId}` : ''}</div>
+                          <div className="text-[11px] text-slate-500 font-mono">{c.id}{c.status === 'confirmed' ? ` → ${c.bookingId}` : ''}</div>
                         </div>
                       </div>
                     </td>
@@ -365,9 +390,12 @@ export const AdminOrderConfirmationsView: React.FC = () => {
                         </Button>
                         {c.status === 'pending' && (
                           <Button variant="ghost" size="sm" onClick={() => setCancelling(c)} title="Cancel link">
-                            <Ban className="w-3.5 h-3.5 text-rose-600" />
+                            <Ban className="w-3.5 h-3.5 text-amber-600" />
                           </Button>
                         )}
+                        <Button variant="ghost" size="sm" onClick={() => setDeleting(c)} title="Delete link">
+                          <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -561,7 +589,7 @@ export const AdminOrderConfirmationsView: React.FC = () => {
             {sharing.status === 'confirmed' ? (
               <div className="space-y-3">
                 <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-900">
-                  Confirmed{sharing.confirmedAt ? ` on ${new Date(sharing.confirmedAt).toLocaleString('en-GB')}` : ''}. Order <strong className="font-mono">{sharing.orderId}</strong> is in Orders, where you can update its progress.
+                  Confirmed{sharing.confirmedAt ? ` on ${new Date(sharing.confirmedAt).toLocaleString('en-GB')}` : ''}. Booking <strong className="font-mono">{sharing.bookingId}</strong> is in Bookings, where you can update its progress and record the advance and balance.
                 </div>
                 {(sharing.confirmedCustomer?.phone || sharing.customerPhone) ? (
                   <a
@@ -639,6 +667,19 @@ export const AdminOrderConfirmationsView: React.FC = () => {
           </div>
         )}
       </AdminModal>
+
+      <AdminConfirmDialog
+        isOpen={Boolean(deleting)}
+        title="Delete confirmation link"
+        message={deleting?.status === 'confirmed'
+          ? `Delete the link for "${deleting.title}"? The customer's booking ${deleting.bookingId} stays in Bookings with its payments and invoice.`
+          : `Delete the link for "${deleting?.title}"? The customer will no longer be able to open or confirm it.`}
+        confirmLabel="Delete Link"
+        allowSoftDelete={false}
+        requireKeywordConfirm={false}
+        onConfirm={handleDelete}
+        onClose={() => setDeleting(null)}
+      />
 
       <AdminConfirmDialog
         isOpen={Boolean(cancelling)}

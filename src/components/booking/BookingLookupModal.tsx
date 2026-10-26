@@ -16,7 +16,7 @@ import {
   RotateCcw,
   CheckCheck,
   Building,
-  DollarSign,
+  Banknote,
   Shield,
   Send,
   Sparkles,

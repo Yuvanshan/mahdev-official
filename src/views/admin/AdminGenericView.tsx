@@ -28,6 +28,7 @@ import { authService } from '../../services/authService';
 import { Button } from '../../components/ui/Button';
 import { CustomerUser } from '../../types/customer';
 import { CANONICAL_SITE_ORIGIN } from '../../config/site';
+import { formatCurrency } from '../../utils/currency';
 
 interface AdminGenericViewProps {
   sectionId: AdminSectionId;
@@ -145,7 +146,7 @@ export const AdminGenericView: React.FC<AdminGenericViewProps> = ({
                     </td>
                     <td className="py-3 px-4 font-sans font-semibold text-slate-900">{s.name}</td>
                     <td className="py-3 px-4 font-bold text-slate-900">
-                      ${s.price || 0} {s.currency || 'USD'}
+                      {formatCurrency(Number(s.price) || 0)}
                     </td>
                     <td className="py-3 px-4 text-right">
                       <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded font-bold">
@@ -410,7 +411,7 @@ export const AdminGenericView: React.FC<AdminGenericViewProps> = ({
           <div className="space-y-2">
             <label className="block font-bold text-slate-700">Payment Processing Gateways:</label>
             <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100 text-emerald-900 font-mono text-xs">
-              Stripe 3DS2 • LankaPay IPG National Switch • Commercial Bank B2B Wire
+              Stripe 3DS2 • LankaPay IPG National Switch • Bank Transfer
             </div>
           </div>
         </div>

@@ -12,7 +12,7 @@ import {
   XCircle,
   Eye,
   ExternalLink,
-  DollarSign,
+  Banknote,
   Clock,
   Sparkles,
   Award,
@@ -33,6 +33,7 @@ import { Booking } from '../../types/booking';
 import { Button } from '../../components/ui/Button';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { AdminModal } from '../../components/admin/AdminModal';
+import { formatCurrency } from '../../utils/currency';
 
 export const AdminCustomersView: React.FC = () => {
   const [customers, setCustomers] = useState<CustomerUser[]>([]);
@@ -232,7 +233,7 @@ export const AdminCustomersView: React.FC = () => {
                         <span className="font-mono text-slate-500 block text-[10px]">{cust.phone}</span>
                       </td>
                       <td className="p-4 font-mono font-bold text-emerald-600 text-sm">
-                        ${ltv.toFixed(2)} USD
+                        {formatCurrency(ltv)}
                       </td>
                       <td className="p-4 text-right">
                         <Button
@@ -382,7 +383,7 @@ export const AdminCustomersView: React.FC = () => {
                           2FA Verified
                         </span>
                         <span className="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded">
-                          Currency: {selectedCustomer.preferences?.currency || 'USD'}
+                          Currency: {selectedCustomer.preferences?.currency || 'LKR'}
                         </span>
                       </div>
                     </div>
@@ -422,7 +423,7 @@ export const AdminCustomersView: React.FC = () => {
                                 <span className="text-[10px] text-slate-500 ml-1">+{o.items.length - 1} more</span>
                               )}
                             </td>
-                            <td className="p-3 font-mono font-bold text-slate-900">${o.total.toFixed(2)}</td>
+                            <td className="p-3 font-mono font-bold text-slate-900">{formatCurrency(o.total)}</td>
                             <td className="p-3">
                               <span className="capitalize font-semibold text-[11px] text-slate-700">
                                 {String(o.status || 'pending').replace(/_/g, ' ')}
@@ -469,7 +470,7 @@ export const AdminCustomersView: React.FC = () => {
                             <td className="p-3 font-bold text-slate-900">{b.serviceName}</td>
                             <td className="p-3 font-mono text-blue-600 font-semibold">{b.date}</td>
                             <td className="p-3 text-slate-700">{b.packageName}</td>
-                            <td className="p-3 font-mono font-bold text-slate-900">${b.price.toFixed(2)}</td>
+                            <td className="p-3 font-mono font-bold text-slate-900">{formatCurrency(b.price)}</td>
                             <td className="p-3">
                               <span className="capitalize font-semibold text-[11px] text-slate-700">
                                 {b.status}
@@ -491,7 +492,7 @@ export const AdminCustomersView: React.FC = () => {
                   <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 text-emerald-950">
                     <span className="text-[10px] uppercase font-bold text-emerald-700 block">Total Lifetime Value</span>
                     <span className="font-mono text-xl font-bold text-emerald-800 mt-1 block">
-                      ${calculateCustomerLtv(selectedCustomer.email).toFixed(2)} USD
+                      {formatCurrency(calculateCustomerLtv(selectedCustomer.email))}
                     </span>
                   </div>
                   <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 text-blue-950">

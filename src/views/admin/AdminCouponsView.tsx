@@ -8,7 +8,7 @@ import {
   RotateCcw,
   Sparkles,
   Percent,
-  DollarSign,
+  Banknote,
   Calendar,
   CheckCircle2,
   XCircle,
@@ -24,6 +24,7 @@ import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { DivisionId } from '../../types';
 import { DIVISIONS } from '../../config/divisions';
+import { formatCurrency } from '../../utils/currency';
 
 export const AdminCouponsView: React.FC = () => {
   const [coupons, setCoupons] = useState<CmsCoupon[]>([]);
@@ -47,7 +48,7 @@ export const AdminCouponsView: React.FC = () => {
     description: '',
     discountType: 'percentage' as 'percentage' | 'fixed',
     discountValue: 10,
-    currency: 'USD',
+    currency: 'LKR',
     minSpend: 0,
     maxDiscount: 0,
     validFrom: '',
@@ -97,7 +98,7 @@ export const AdminCouponsView: React.FC = () => {
       description: 'Exclusive client promotional discount.',
       discountType: 'percentage',
       discountValue: 15,
-      currency: 'USD',
+      currency: 'LKR',
       minSpend: 50,
       maxDiscount: 500,
       validFrom: new Date().toISOString().split('T')[0],
@@ -118,7 +119,7 @@ export const AdminCouponsView: React.FC = () => {
       description: coupon.description,
       discountType: coupon.discountType,
       discountValue: coupon.discountValue,
-      currency: coupon.currency || 'USD',
+      currency: coupon.currency || 'LKR',
       minSpend: coupon.minSpend || 0,
       maxDiscount: coupon.maxDiscount || 0,
       validFrom: coupon.validFrom ? coupon.validFrom.split('T')[0] : '',
@@ -333,7 +334,7 @@ export const AdminCouponsView: React.FC = () => {
                     <span className="font-display text-xl font-bold text-slate-900">
                       {coupon.discountType === 'percentage'
                         ? `${coupon.discountValue}% OFF`
-                        : `$${coupon.discountValue} OFF`}
+                        : `${formatCurrency(coupon.discountValue)} OFF`}
                     </span>
                     <span className="text-xs font-mono text-slate-500">
                       {coupon.usageCount || 0} / {coupon.usageLimit} used
@@ -352,7 +353,7 @@ export const AdminCouponsView: React.FC = () => {
                     {coupon.minSpend ? (
                       <div className="flex justify-between">
                         <span>Min spend:</span>
-                        <strong className="text-slate-800">${coupon.minSpend}</strong>
+                        <strong className="text-slate-800">{formatCurrency(coupon.minSpend)}</strong>
                       </div>
                     ) : null}
                     <div className="flex justify-between">
@@ -512,7 +513,7 @@ export const AdminCouponsView: React.FC = () => {
                 className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none"
               >
                 <option value="percentage">Percentage (%)</option>
-                <option value="fixed">Fixed Amount ($)</option>
+                <option value="fixed">Fixed Amount (Rs.)</option>
               </select>
             </div>
 
@@ -589,7 +590,7 @@ export const AdminCouponsView: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Minimum Spend ($)
+                Minimum Spend (Rs.)
               </label>
               <input
                 type="number"
@@ -605,7 +606,7 @@ export const AdminCouponsView: React.FC = () => {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Max Discount Cap ($)
+                Max Discount Cap (Rs.)
               </label>
               <input
                 type="number"

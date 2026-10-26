@@ -7,6 +7,7 @@ import {
   PaymentTransaction,
 } from '../types/payment';
 import { notificationService } from './notificationService';
+import { BANK_DETAILS } from '../config/company';
 
 export const paymentService = {
   // 1. Fetch available gateways
@@ -37,7 +38,7 @@ export const paymentService = {
             name: 'LankaPay / Sri Lanka National Switch IPG',
             badge: 'National Payment Network',
             description:
-              'Direct instant debit from all Sri Lankan banks (Commercial Bank, Sampath, HNB, BOC, Nations Trust) and JustPay QR.',
+              'Direct instant debit from Sri Lankan banks and JustPay QR.',
             icon: 'Building2',
             supportedCurrencies: ['LKR', 'USD'],
             processingFee: '0% Surcharge',
@@ -46,10 +47,10 @@ export const paymentService = {
           },
           {
             id: 'bank_wire',
-            name: 'Corporate Telegraphic Transfer / Bank Wire',
-            badge: 'B2B Enterprise Invoicing',
+            name: 'Bank Transfer',
+            badge: 'Direct Transfer',
             description:
-              'Direct wire transfer to Mahdev corporate accounts at Commercial Bank of Ceylon PLC. Remittance slip verification required.',
+              `Direct bank transfer to ${BANK_DETAILS.accountName}, ${BANK_DETAILS.bankName}. Remittance slip verification required.`,
             icon: 'FileCheck',
             supportedCurrencies: ['USD', 'LKR', 'EUR', 'GBP'],
             processingFee: 'No Processing Fee',

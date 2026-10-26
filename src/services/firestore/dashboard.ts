@@ -185,8 +185,8 @@ export interface RealFirestoreDashboardTelemetry {
 /**
  * Maps currency code to symbol representation
  */
-export function getCurrencySymbol(currencyCode = 'USD'): string {
-  const code = (currencyCode || 'USD').toUpperCase().trim();
+export function getCurrencySymbol(currencyCode = 'LKR'): string {
+  const code = (currencyCode || 'LKR').toUpperCase().trim();
   switch (code) {
     case 'LKR':
       return 'Rs.';
@@ -214,7 +214,7 @@ export function getCurrencySymbol(currencyCode = 'USD'): string {
 /**
  * Formats monetary amounts with the configured Firestore currency
  */
-export function formatDashboardCurrency(amount: number, currencyCode = 'USD'): string {
+export function formatDashboardCurrency(amount: number, currencyCode = 'LKR'): string {
   const symbol = getCurrencySymbol(currencyCode);
   const formattedNumber = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 2,
@@ -302,7 +302,7 @@ export function computeDashboardTelemetry(
   const currency =
     (companySettings as FirestoreSiteSettings)?.currency ||
     (companySettings as FirestoreSiteSettings)?.defaultCurrency ||
-    'USD';
+    'LKR';
   const currencySymbol = getCurrencySymbol(currency);
   const dateRange = calculateFilterBounds(filter, customRange);
   const startMs = dateRange.startDate.getTime();

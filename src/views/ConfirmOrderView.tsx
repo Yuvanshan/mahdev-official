@@ -30,6 +30,7 @@ import {
 import { normaliseNic, normaliseSriLankaPhone, parseNic } from '../utils/sriLankaIdentity';
 import { formatCurrency } from '../utils/currency';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
+import { BANK_DETAILS } from '../config/company';
 
 interface ConfirmOrderViewProps {
   token: string;
@@ -90,7 +91,7 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [result, setResult] = useState<{ orderId: string; emailSent?: boolean } | null>(null);
+  const [result, setResult] = useState<{ bookingId: string; emailSent?: boolean } | null>(null);
   const prefilled = useRef(false);
 
   const loginPath = `/login?redirect=${encodeURIComponent(`/confirm-order/${token}`)}`;
@@ -141,7 +142,7 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
     const confirmed = await confirmOrder(token, { address: form.address.trim(), notes: form.notes.trim() });
     markAccountDataStale();
     setResult(confirmed);
-    setConfirmation((current) => (current ? { ...current, status: 'confirmed', orderId: confirmed.orderId } : current));
+    setConfirmation((current) => (current ? { ...current, status: 'confirmed', bookingId: confirmed.bookingId } : current));
   };
 
   const validateNewCustomer = (): FieldErrors => {
@@ -369,8 +370,8 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
                 <div className="space-y-1">
-                  <h2 className="font-display text-lg font-bold text-slate-900">Your order is confirmed</h2>
-                  {confirmation.orderId && <p className="text-sm text-slate-600">Order reference <strong className="font-mono">{confirmation.orderId}</strong></p>}
+                  <h2 className="font-display text-lg font-bold text-slate-900">Your booking is confirmed</h2>
+                  {confirmation.bookingId && <p className="text-sm text-slate-600">Booking reference <strong className="font-mono">{confirmation.bookingId}</strong></p>}
                   {result && (
                     <p className="text-xs text-slate-500">
                       {result.emailSent
@@ -379,9 +380,10 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
                     </p>
                   )}
                 </div>
+                <BankDetailsCard advanceAmount={confirmation.advanceAmount} total={confirmation.total} />
                 {isAuthenticated ? (
                   <div className="grid grid-cols-2 gap-2">
-                    <button type="button" onClick={() => onNavigate('/account/orders')} className="rounded-xl bg-[#0052FF] text-white text-sm font-semibold py-3 hover:bg-blue-700">
+                    <button type="button" onClick={() => onNavigate('/account/bookings')} className="rounded-xl bg-[#0052FF] text-white text-sm font-semibold py-3 hover:bg-blue-700">
                       Track progress
                     </button>
                     <button type="button" onClick={() => onNavigate('/account/invoices')} className="rounded-xl border border-slate-300 text-slate-800 text-sm font-semibold py-3 hover:bg-slate-50 inline-flex items-center justify-center gap-1.5">
@@ -389,8 +391,8 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
                     </button>
                   </div>
                 ) : (
-                  <button type="button" onClick={() => onNavigate('/login?redirect=/account/orders')} className="w-full rounded-xl bg-[#0052FF] text-white text-sm font-semibold py-3 hover:bg-blue-700">
-                    Sign in to see your order
+                  <button type="button" onClick={() => onNavigate('/login?redirect=/account/bookings')} className="w-full rounded-xl bg-[#0052FF] text-white text-sm font-semibold py-3 hover:bg-blue-700">
+                    Sign in to see your booking
                   </button>
                 )}
               </div>
@@ -532,6 +534,27 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
     </div>
   );
 };
+
+/** Where to pay the advance and balance (bank transfer only for now). */
+const BankDetailsCard: React.FC<{ advanceAmount: number; total: number }> = ({ advanceAmount, total }) => (
+  <div className="text-left rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs space-y-1.5">
+    <div className="font-bold text-slate-900 text-sm">
+      {advanceAmount > 0 ? `Pay the advance of ${formatCurrency(advanceAmount, 'LKR')}` : `Pay ${formatCurrency(total, 'LKR')}`} by bank transfer
+    </div>
+    {[
+      ['Account name', BANK_DETAILS.accountName],
+      ['Bank', BANK_DETAILS.bankName],
+      ['Branch', BANK_DETAILS.branch],
+      ['Account number', BANK_DETAILS.accountNumber],
+    ].filter(([, value]) => value).map(([label, value]) => (
+      <div key={label} className="flex justify-between gap-3">
+        <span className="text-slate-500">{label}</span>
+        <strong className="text-slate-900 font-mono">{value}</strong>
+      </div>
+    ))}
+    <p className="text-slate-500 pt-1">Please send the transfer slip to us on WhatsApp with your booking reference.</p>
+  </div>
+);
 
 /** Event address and notes, shared by the new-customer and signed-in forms. */
 const ExtraFields: React.FC<{

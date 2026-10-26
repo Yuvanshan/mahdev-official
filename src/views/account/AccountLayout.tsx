@@ -440,7 +440,7 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
                 {activeTab === 'orders' && <AccountOrdersTab orders={orders} onNavigate={onNavigate} />}
                 {activeTab === 'bookings' && <AccountBookingsTab bookings={bookings} onNavigate={onNavigate} />}
                 {activeTab === 'payments' && <AccountPaymentsTab transactions={transactions} onNavigate={onNavigate} />}
-                {activeTab === 'invoices' && <AccountInvoicesTab user={user} orders={orders} onNavigate={onNavigate} />}
+                {activeTab === 'invoices' && <AccountInvoicesTab user={user} orders={orders} bookings={bookings} onNavigate={onNavigate} />}
                 </>
                 )}
                 {activeTab === 'profile' && <AccountProfileTab user={user} />}

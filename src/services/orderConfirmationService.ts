@@ -41,7 +41,8 @@ export interface OrderConfirmation extends ConfirmationInput {
   subtotal: number;
   total: number;
   currency: string;
-  orderId: string;
+  /** Booking created when the customer confirms (allocated up front). */
+  bookingId: string;
   shareUrl: string;
   expiresAt: string;
   createdAt: string;
@@ -73,7 +74,7 @@ export interface PublicConfirmation {
   total: number;
   currency: string;
   expiresAt: string;
-  orderId?: string;
+  bookingId?: string;
 }
 
 export type AvailabilityResult = 'available' | 'taken' | 'invalid';
@@ -125,6 +126,11 @@ export function cancelConfirmation(id: string) {
   return post<Record<string, never>>('/cancel', { id });
 }
 
+/** Removes the link. A confirmed link's booking stays in Bookings. */
+export function deleteConfirmation(id: string) {
+  return post<Record<string, never>>('/delete', { id });
+}
+
 // Customer --------------------------------------------------------------------
 
 export async function getPublicConfirmation(token: string): Promise<PublicConfirmation> {
@@ -139,7 +145,7 @@ export function checkCustomerDetails(token: string, details: { email?: string; n
 export async function confirmOrder(token: string, details: { address: string; notes: string }) {
   const user = auth.currentUser;
   if (!user) throw new Error('Please sign in to confirm your order.');
-  return post<{ orderId: string; emailSent?: boolean; alreadyConfirmed?: boolean }>(
+  return post<{ bookingId: string; emailSent?: boolean; alreadyConfirmed?: boolean }>(
     '/confirm',
     { token, ...details },
     { Authorization: `Bearer ${await user.getIdToken()}` }

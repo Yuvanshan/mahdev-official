@@ -6,7 +6,7 @@ import {
   Mail,
   Phone,
   MapPin,
-  DollarSign,
+  Banknote,
   Shield,
   RotateCcw,
   CheckCircle2,
@@ -635,7 +635,7 @@ export const AdminSettingsView: React.FC = () => {
               : 'border-transparent text-slate-600 hover:text-slate-900'
           }`}
         >
-          <DollarSign className="w-4 h-4" />
+          <Banknote className="w-4 h-4" />
           Commerce & Policies
         </button>
 
@@ -1841,7 +1841,7 @@ export const AdminSettingsView: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <DollarSign className="w-4 h-4 text-blue-600" />
+              <Banknote className="w-4 h-4 text-blue-600" />
               <h3 className="font-display text-sm font-bold text-slate-900">Commerce & Currency Setup</h3>
             </div>
 

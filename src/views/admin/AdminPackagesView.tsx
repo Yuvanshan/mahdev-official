@@ -9,7 +9,7 @@ import {
   CheckCircle2,
   XCircle,
   Tag,
-  DollarSign,
+  Banknote,
   Sparkles,
   Check,
   X,

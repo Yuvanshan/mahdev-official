@@ -322,7 +322,7 @@ class AnalyticsService {
     }
   }
 
-  public trackCheckoutStarted(cartTotalOrQty: number, countOrTotal?: number, currency: string = 'USD'): void {
+  public trackCheckoutStarted(cartTotalOrQty: number, countOrTotal?: number, currency: string = 'LKR'): void {
     this.trackEvent('checkout_started', '/checkout', {
       cartTotal: typeof countOrTotal === 'number' ? countOrTotal : cartTotalOrQty,
       itemCount: typeof countOrTotal === 'number' ? cartTotalOrQty : countOrTotal || 1,
@@ -334,13 +334,13 @@ class AnalyticsService {
     orderOrId: { id: string; total: number; currency?: string; paymentMethod?: string; itemCount?: number } | string,
     total?: number,
     itemCount?: number,
-    currency: string = 'USD'
+    currency: string = 'LKR'
   ): void {
     if (typeof orderOrId === 'object') {
       this.trackEvent('purchase_completed', '/order-confirmation', {
         orderId: orderOrId.id,
         total: orderOrId.total,
-        currency: orderOrId.currency || 'USD',
+        currency: orderOrId.currency || 'LKR',
         paymentMethod: orderOrId.paymentMethod || 'standard',
         itemCount: orderOrId.itemCount || 1,
       }, 'mart');

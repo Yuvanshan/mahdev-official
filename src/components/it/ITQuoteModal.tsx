@@ -11,7 +11,7 @@ import {
   Phone,
   Mail,
   Building,
-  DollarSign,
+  Banknote,
   Calendar,
   Layers,
   ArrowRight,

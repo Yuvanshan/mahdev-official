@@ -17,6 +17,7 @@ import { notificationService } from './notificationService';
 import { db, sanitizeForFirestore } from '../lib/firebase';
 import { doc, setDoc, deleteDoc } from '../lib/tursoFirestore';
 import { firestoreOrdersService } from './firestore/orders';
+import { formatCurrency } from '../utils/currency';
 
 export const SHIPPING_METHODS: ShippingMethod[] = [
   {
@@ -76,7 +77,7 @@ class OrderService {
       shippingFee: fo.shippingFee || 0,
       tax: fo.tax || 0,
       total: fo.total || 0,
-      currency: fo.currency || 'USD',
+      currency: fo.currency || 'LKR',
       status: fo.status || fo.orderStatus || 'pending_payment',
       paymentStatus: fo.paymentStatus || 'payment_pending',
       paymentMethod: fo.paymentMethod || 'credit_card',
@@ -368,7 +369,7 @@ class OrderService {
     const maxRefundable = order.total - totalRefundedSoFar;
 
     if (amount <= 0 || amount > maxRefundable + 0.01) {
-      return { success: false, error: `Refund amount must be between $0.01 and $${maxRefundable.toFixed(2)}.` };
+      return { success: false, error: `Refund amount must be between ${formatCurrency(0.01)} and ${formatCurrency(maxRefundable)}.` };
     }
 
     const refundRecord: OrderRefundRecord = {
@@ -392,7 +393,7 @@ class OrderService {
         {
           id: `NOTE-${Date.now()}`,
           author: author || 'Finance Lead',
-          note: `Processed ${isFullyRefunded ? 'Full' : 'Partial'} refund of $${amount.toFixed(2)}: ${reason}`,
+          note: `Processed ${isFullyRefunded ? 'Full' : 'Partial'} refund of ${formatCurrency(amount)}: ${reason}`,
           createdAt: new Date().toISOString(),
         },
         ...(order.adminNotesList || []),

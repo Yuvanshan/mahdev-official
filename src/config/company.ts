@@ -95,6 +95,23 @@ export const COMPANY_INFO: CompanyInformation = {
 };
 
 /**
+ * Bank account customers pay into (bank transfer at checkout, advances and
+ * balances on invoices). Leave a field empty to hide it.
+ */
+export const BANK_DETAILS = {
+  accountName: 'Yuvanshan Prabakaran',
+  bankName: 'Bank of Ceylon',
+  accountNumber: '81672247',
+  branch: 'Trincomalee',
+};
+
+/**
+ * Card / LankaPay online payments. Off until the payment gateway is implemented;
+ * until then "Pay now" shows bank transfer to BANK_DETAILS only.
+ */
+export const ONLINE_PAYMENT_GATEWAY_ENABLED = false;
+
+/**
  * Official social profiles, as clean profile addresses (no share links or tracking
  * parameters). Search engines read these from the Organization's "sameAs" in
  * index.html and from the links in each page's server-sent HTML; a test keeps

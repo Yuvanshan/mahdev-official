@@ -7,7 +7,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Truck,
-  DollarSign,
+  Banknote,
   Printer,
   ChevronDown,
   ChevronLeft,
@@ -38,6 +38,7 @@ import { Button } from '../../components/ui/Button';
 import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
+import { formatCurrency } from '../../utils/currency';
 
 export const AdminOrdersView: React.FC = () => {
   const { admin, logAuditAction } = useAdminAuth();
@@ -334,9 +335,9 @@ export const AdminOrdersView: React.FC = () => {
         'ORDER_REFUND_PROCESSED',
         'Order',
         selectedOrder.id,
-        `Processed refund of $${Number(refundAmount).toFixed(2)}. Reason: ${refundReason}`
+        `Processed refund of ${formatCurrency(Number(refundAmount))}. Reason: ${refundReason}`
       );
-      addToast('warning', 'Refund Processed', `Issued refund of $${Number(refundAmount).toFixed(2)} for ${selectedOrder.id}.`);
+      addToast('warning', 'Refund Processed', `Issued refund of ${formatCurrency(Number(refundAmount))} for ${selectedOrder.id}.`);
       setIsRefundModalOpen(false);
       loadOrders();
     } else {
@@ -735,7 +736,7 @@ export const AdminOrdersView: React.FC = () => {
                   const customerName = order.customer?.fullName || (order as any).customerName || 'Customer';
                   const customerEmail = order.customer?.email || (order as any).customerEmail || '';
                   const customerPhone = order.customer?.phone || (order as any).customerPhone || '';
-                  const currencyLabel = order.currency === 'USD' ? '$' : 'Rs.';
+                  const currencyLabel = 'Rs.';
                   const formattedTotal = (order.total || 0).toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
@@ -1046,23 +1047,23 @@ export const AdminOrdersView: React.FC = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500">Subtotal:</span>
-                    <span className="font-mono text-slate-900">${selectedOrder.subtotal.toFixed(2)}</span>
+                    <span className="font-mono text-slate-900">{formatCurrency(selectedOrder.subtotal)}</span>
                   </div>
                   {selectedOrder.couponDiscount > 0 && (
                     <div className="flex justify-between text-emerald-600">
                       <span>Discount ({selectedOrder.appliedCouponCode}):</span>
-                      <span className="font-mono">-${selectedOrder.couponDiscount.toFixed(2)}</span>
+                      <span className="font-mono">-{formatCurrency(selectedOrder.couponDiscount)}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
                     <span className="text-slate-500">Shipping Fee:</span>
                     <span className="font-mono text-slate-900">
-                      {selectedOrder.shippingFee === 0 ? 'FREE' : `$${selectedOrder.shippingFee.toFixed(2)}`}
+                      {selectedOrder.shippingFee === 0 ? 'FREE' : formatCurrency(selectedOrder.shippingFee)}
                     </span>
                   </div>
                   <div className="flex justify-between pt-2 border-t border-slate-100 font-bold text-sm text-slate-900">
                     <span>Total Settled:</span>
-                    <span className="font-mono text-emerald-600">${selectedOrder.total.toFixed(2)} USD</span>
+                    <span className="font-mono text-emerald-600">{formatCurrency(selectedOrder.total)} LKR</span>
                   </div>
                 </div>
               </div>
@@ -1107,10 +1108,10 @@ export const AdminOrdersView: React.FC = () => {
                           </div>
                         </td>
                         <td className="py-2.5 px-3 font-mono text-[11px] text-slate-600">{item.sku}</td>
-                        <td className="py-2.5 px-3 text-right font-mono">${item.unitPrice.toFixed(2)}</td>
+                        <td className="py-2.5 px-3 text-right font-mono">{formatCurrency(item.unitPrice)}</td>
                         <td className="py-2.5 px-3 text-center font-mono font-bold">{item.quantity}</td>
                         <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
-                          ${item.lineTotal.toFixed(2)}
+                          {formatCurrency(item.lineTotal)}
                         </td>
                       </tr>
                     ))}
@@ -1130,7 +1131,7 @@ export const AdminOrdersView: React.FC = () => {
                   {selectedOrder.refunds.map((ref) => (
                     <div key={ref.id} className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-rose-200/80 text-xs">
                       <div>
-                        <span className="font-bold text-rose-700">Refund #{ref.id}: -${ref.amount.toFixed(2)}</span>
+                        <span className="font-bold text-rose-700">Refund #{ref.id}: -{formatCurrency(ref.amount)}</span>
                         <p className="text-[11px] text-slate-600 mt-0.5">Reason: {ref.reason}</p>
                       </div>
                       <div className="text-right text-[10px] text-slate-500 font-mono">
@@ -1202,12 +1203,12 @@ export const AdminOrdersView: React.FC = () => {
           isOpen={isRefundModalOpen}
           onClose={() => setIsRefundModalOpen(false)}
           title={`Process Refund: Order ${selectedOrder.id}`}
-          subtitle={`Total order amount: $${selectedOrder.total.toFixed(2)} USD`}
+          subtitle={`Total order amount: ${formatCurrency(selectedOrder.total)} LKR`}
           maxWidth="md"
         >
           <form onSubmit={handleProcessRefund} className="space-y-4 text-xs">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Refund Amount ($ USD) *</label>
+              <label className="block font-semibold text-slate-700 mb-1">Refund Amount (LKR) *</label>
               <input
                 type="number"
                 step="0.01"
@@ -1218,7 +1219,7 @@ export const AdminOrdersView: React.FC = () => {
                 className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-rose-500 focus:outline-none font-mono text-sm"
               />
               <span className="text-[10px] text-slate-500 mt-1 block">
-                Max refundable: ${selectedOrder.total.toFixed(2)}
+                Max refundable: {formatCurrency(selectedOrder.total)}
               </span>
             </div>
 
@@ -1256,7 +1257,7 @@ export const AdminOrdersView: React.FC = () => {
                 Cancel
               </Button>
               <Button variant="danger" size="sm" type="submit">
-                Execute ${Number(refundAmount).toFixed(2)} Refund
+                Execute {formatCurrency(Number(refundAmount))} Refund
               </Button>
             </div>
           </form>

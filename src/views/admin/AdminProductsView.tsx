@@ -8,7 +8,7 @@ import {
   RotateCcw,
   Boxes,
   Tag,
-  DollarSign,
+  Banknote,
   CheckCircle2,
   XCircle,
   AlertTriangle,

@@ -9,7 +9,7 @@ import {
   Clock,
   MapPin,
   MessageSquare,
-  DollarSign,
+  Banknote,
   User,
   Building,
   RefreshCw,
@@ -34,6 +34,8 @@ import { Button } from '../../components/ui/Button';
 import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
+import { AdminBookingPaymentsPanel } from '../../components/admin/AdminBookingPaymentsPanel';
+import { formatCurrency } from '../../utils/currency';
 
 export const AdminBookingsView: React.FC = () => {
   const { admin, logAuditAction } = useAdminAuth();
@@ -553,7 +555,10 @@ export const AdminBookingsView: React.FC = () => {
                       </div>
                     </td>
                     <td className="py-3.5 px-4 font-mono font-bold text-slate-900 text-sm">
-                      ${b.price.toFixed(2)}
+                      {formatCurrency(b.price, b.currency || 'LKR')}
+                      {b.price > 0 && (b.amountPaid || 0) > 0 && (b.amountPaid || 0) < b.price && (
+                        <div className="text-[10px] font-normal text-amber-700">Balance {formatCurrency(b.price - (b.amountPaid || 0), b.currency || 'LKR')}</div>
+                      )}
                       <div className="mt-1">{getPaymentBadge(b.paymentStatus)}</div>
                     </td>
                     <td className="py-3.5 px-4">{getStatusBadge(b.status)}</td>
@@ -738,9 +743,9 @@ export const AdminBookingsView: React.FC = () => {
                     </p>
                   </div>
                   <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
-                    <span className="text-slate-500">Service Fee:</span>
+                    <span className="text-slate-500">Total:</span>
                     <span className="font-mono font-bold text-base text-emerald-600">
-                      ${selectedBooking.price.toFixed(2)} USD
+                      {formatCurrency(selectedBooking.price, selectedBooking.currency || 'LKR')}
                     </span>
                   </div>
                 </div>
@@ -782,6 +787,45 @@ export const AdminBookingsView: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Approved design (bookings from a design confirmation link) */}
+            {selectedBooking.designImages && selectedBooking.designImages.length > 0 && (
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3">
+                <div className="font-bold text-slate-900">Approved design{selectedBooking.confirmationId ? ` (${selectedBooking.confirmationId})` : ''}</div>
+                <div className="flex flex-wrap gap-2">
+                  {selectedBooking.designImages.map((image) => (
+                    <a key={image} href={image} target="_blank" rel="noopener noreferrer">
+                      <img src={image} alt="" className="w-24 h-24 rounded-lg object-cover border border-slate-200" />
+                    </a>
+                  ))}
+                </div>
+                {selectedBooking.lineItems && selectedBooking.lineItems.length > 0 && (
+                  <div className="rounded-lg border border-slate-200 divide-y divide-slate-100">
+                    {selectedBooking.lineItems.map((item, index) => (
+                      <div key={index} className="flex justify-between gap-3 px-3 py-2">
+                        <div>
+                          <span className="font-semibold text-slate-900">{item.name}</span> × {item.quantity}
+                          {item.description && <div className="text-[11px] text-slate-500 whitespace-pre-line">{item.description}</div>}
+                        </div>
+                        <span className="font-mono shrink-0">{formatCurrency(item.quantity * item.unitPrice, selectedBooking.currency || 'LKR')}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Advance & balance */}
+            <AdminBookingPaymentsPanel
+              booking={selectedBooking}
+              recordedBy={admin?.name || 'Admin'}
+              notify={addToast}
+              onSaved={() => {
+                const updated = bookingService.getBookingById(selectedBooking.id);
+                if (updated) setSelectedBooking({ ...updated });
+                logAuditAction('BOOKING_PAYMENT_UPDATED', 'Booking', selectedBooking.id, 'Advance / payments updated');
+              }}
+            />
 
             {/* Admin Notes Thread */}
             <div className="space-y-3 pt-2 border-t border-slate-200">

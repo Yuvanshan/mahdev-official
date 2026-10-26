@@ -6,6 +6,7 @@ import {
   BookingStatus,
   PaymentStatus,
   BookingType,
+  BookingPaymentRecord,
 } from '../types/booking';
 import { FirestoreService, FirestoreBooking } from '../types/firestore';
 import { notificationService } from './notificationService';
@@ -37,7 +38,7 @@ export function mapFirestoreBookingToUniversal(fb: any): Booking {
   const date = fb.date || fb.bookingDate || fb.eventDate || (fb.createdAt ? fb.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]);
   const time = fb.time || fb.bookingTime || fb.slot || '09:00 AM - 12:00 PM';
   const price = Number(fb.price ?? fb.amount ?? 0);
-  const currency = fb.currency || 'USD';
+  const currency = fb.currency || 'LKR';
   const status: BookingStatus = fb.status || 'pending';
   const paymentStatus: PaymentStatus = fb.paymentStatus || 'unpaid';
 
@@ -79,7 +80,26 @@ export function mapFirestoreBookingToUniversal(fb: any): Booking {
     updatedAt: fb.updatedAt || new Date().toISOString(),
     cancellationReason: fb.cancellationReason,
     rejectionReason: fb.rejectionReason,
+    source: fb.source,
+    confirmationId: fb.confirmationId,
+    designTitle: fb.designTitle,
+    designImages: Array.isArray(fb.designImages) ? fb.designImages : undefined,
+    lineItems: Array.isArray(fb.lineItems) ? fb.lineItems : undefined,
+    subtotal: fb.subtotal,
+    discount: fb.discount,
+    deliveryFee: fb.deliveryFee,
+    advanceAmount: fb.advanceAmount,
+    amountPaid: fb.amountPaid,
+    payments: Array.isArray(fb.payments) ? fb.payments : undefined,
+    invoiceNumber: fb.invoiceNumber,
+    termsNotes: fb.termsNotes,
   };
+}
+
+/** Payment status implied by what has been paid against the total. */
+export function paymentStatusFor(total: number, paid: number): PaymentStatus {
+  if (paid <= 0) return 'unpaid';
+  return paid >= total - 0.005 ? 'paid' : 'deposit_paid';
 }
 
 export function mapFirestoreServiceToBookable(fs: FirestoreService): BookableServiceItem {
@@ -119,7 +139,7 @@ export function mapFirestoreServiceToBookable(fs: FirestoreService): BookableSer
             description: fs.description || 'Comprehensive turnkey execution package',
             duration: meta.duration || 'Full Session',
             price: fs.price || 0,
-            currency: fs.currency || 'USD',
+            currency: fs.currency || 'LKR',
             features: ['Professional consultation', 'Execution SLA', 'Dedicated management'],
           },
         ],
@@ -413,7 +433,7 @@ class UniversalBookingService {
       },
       notes: input.notes?.trim() || 'No additional notes provided.',
       price: pkg.price,
-      currency: pkg.currency || 'USD',
+      currency: pkg.currency || 'LKR',
       paymentStatus: 'unpaid',
       status: 'pending',
       createdAt: nowIso,
@@ -625,6 +645,46 @@ class UniversalBookingService {
       } as any)
       .catch((err) => console.warn('[BookingService] Firestore payment update error:', err));
 
+    return { success: true, booking };
+  }
+
+  /**
+   * Replaces the advance amount and payment records of a booking, and derives the
+   * amount paid and payment status from them (used for advance / balance tracking).
+   */
+  public async updateBookingPayments(
+    id: string,
+    changes: { advanceAmount?: number; payments?: BookingPaymentRecord[] }
+  ): Promise<{ success: boolean; booking?: Booking; error?: string }> {
+    const booking = this.getBookingById(id);
+    if (!booking) return { success: false, error: 'Booking not found.' };
+
+    const payments = changes.payments ?? booking.payments ?? [];
+    const amountPaid = Math.round(payments.reduce((sum, payment) => sum + payment.amount, 0) * 100) / 100;
+    if (amountPaid > booking.price + 0.005) {
+      return { success: false, error: 'Payments cannot be more than the booking total.' };
+    }
+    const advanceAmount = changes.advanceAmount ?? booking.advanceAmount ?? 0;
+    if (advanceAmount < 0 || advanceAmount > booking.price) {
+      return { success: false, error: 'The advance must be between zero and the booking total.' };
+    }
+    const updates = {
+      advanceAmount,
+      payments,
+      amountPaid,
+      paymentStatus: paymentStatusFor(booking.price, amountPaid),
+      updatedAt: new Date().toISOString(),
+    };
+    try {
+      // Saved first: payment records must not exist only in this browser.
+      await firestoreBookingsService.updateBooking(id, updates as any);
+    } catch (err) {
+      console.warn('[BookingService] Firestore payment update error:', err);
+      return { success: false, error: err instanceof Error ? err.message : 'Could not save the payment.' };
+    }
+    Object.assign(booking, updates);
+    this.saveToStorage();
+    this.notifySubscribers();
     return { success: true, booking };
   }
 

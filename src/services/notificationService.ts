@@ -14,6 +14,7 @@ import { Booking } from '../types/booking';
 import { PaymentTransaction } from '../types/payment';
 import { COMPANY_INFO } from '../config/company';
 import { getAdminPortalPath } from '../config/adminRoutes';
+import { formatCurrency } from '../utils/currency';
 
 class NotificationService {
   private notifications: AppNotification[] = [];
@@ -324,7 +325,7 @@ class NotificationService {
       'admin_new_booking',
       { name: 'Operations Team', email: 'operations@mahdev.lk', role: 'admin' },
       `📅 New Booking: #${booking.id} (${divIdStr})`,
-      `${booking.customer.fullName} submitted a new booking for "${booking.serviceName}" on ${booking.date} (${booking.time}). Package: ${booking.packageName} ($${booking.price}).`,
+      `${booking.customer.fullName} submitted a new booking for "${booking.serviceName}" on ${booking.date} (${booking.time}). Package: ${booking.packageName} (${formatCurrency(Number(booking.price) || 0)}).`,
       {
         bookingId: booking.id,
         divisionId: booking.divisionId,

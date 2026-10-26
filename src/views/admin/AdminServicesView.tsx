@@ -10,7 +10,7 @@ import {
   CheckCircle2,
   XCircle,
   Tag,
-  DollarSign,
+  Banknote,
   Clock,
   Check,
   X,

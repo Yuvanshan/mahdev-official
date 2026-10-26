@@ -17,7 +17,7 @@ import {
   ExternalLink,
   ChevronRight,
   Info,
-  DollarSign,
+  Banknote,
 } from 'lucide-react';
 import { Order } from '../../types/order';
 import {
@@ -33,6 +33,7 @@ import { orderService } from '../../services/orderService';
 import { Button } from '../ui/Button';
 import { formatCurrency } from '../../utils/currency';
 import { Badge } from '../ui/Badge';
+import { BANK_DETAILS } from '../../config/company';
 
 interface PaymentGatewayModalProps {
   order: Order;
@@ -71,7 +72,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
   >('success');
 
   // LankaPay State
-  const [selectedBank, setSelectedBank] = useState('Commercial Bank of Ceylon');
+  const [selectedBank, setSelectedBank] = useState('LankaPay member bank');
   const [lankaPayMethod, setLankaPayMethod] = useState<'online_debit' | 'justpay_qr'>('online_debit');
 
   // Bank Wire State
@@ -184,7 +185,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
   };
 
   const handleCopyAccount = () => {
-    navigator.clipboard.writeText('100089412300');
+    navigator.clipboard.writeText(BANK_DETAILS.accountNumber.replace(/\s+/g, ''));
     setCopiedAcc(true);
     setTimeout(() => setCopiedAcc(false), 2000);
   };
@@ -429,13 +430,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
                         onChange={(e) => setSelectedBank(e.target.value)}
                         className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                       >
-                        <option value="Commercial Bank of Ceylon">Commercial Bank of Ceylon PLC (Combank IPG)</option>
-                        <option value="Sampath Bank">Sampath Bank PLC (Sampath Vishwa / Paycorp)</option>
-                        <option value="Hatton National Bank">Hatton National Bank (HNB Momo / IPG)</option>
-                        <option value="Bank of Ceylon">Bank of Ceylon (BOC SmartPay)</option>
-                        <option value="Nations Trust Bank">Nations Trust Bank (NTB FriMi Gateway)</option>
-                        <option value="DFCC Bank">DFCC Bank PLC</option>
-                        <option value="Seylan Bank">Seylan Bank PLC</option>
+                        <option value="LankaPay member bank">Any LankaPay member bank</option>
                       </select>
                       <p className="text-[11px] text-slate-500">
                         You will authenticate securely using your bank’s two-factor OTP authentication.
@@ -449,7 +444,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
                       <div className="text-xs space-y-1">
                         <span className="font-bold text-slate-900 block">Scan with any LankaQR Enabled App</span>
                         <p className="text-slate-500 text-[11px]">
-                          Combank Q+, FriMi, Genie, Flash, or BOC SmartPay to settle instantly.
+                          Any LankaQR-enabled banking or wallet app settles instantly.
                         </p>
                       </div>
                     </div>
@@ -464,7 +459,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
                     <div className="flex items-center gap-2">
                       <FileCheck className="w-4 h-4 text-[#0052FF]" />
                       <span className="text-xs font-bold text-slate-900">
-                        Telegraphic Transfer / Business Bank Wire
+                        Bank Transfer
                       </span>
                     </div>
                     <Badge size="sm" variant="default" className="bg-[#0052FF]/10 text-[#0052FF] text-[10px]">
@@ -474,17 +469,24 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
 
                   <div className="p-3 bg-white rounded-xl border border-slate-200 text-xs space-y-1.5 font-mono">
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Beneficiary:</span>
-                      <strong className="text-slate-900 font-sans">MAHDEV PRIVATE LIMITED</strong>
+                      <span className="text-slate-500">Account Name:</span>
+                      <strong className="text-slate-900 font-sans">{BANK_DETAILS.accountName}</strong>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-500">Bank Name:</span>
-                      <strong className="text-slate-900 font-sans">Commercial Bank of Ceylon PLC</strong>
+                      <strong className="text-slate-900 font-sans">{BANK_DETAILS.bankName}</strong>
                     </div>
+                    {BANK_DETAILS.branch && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Branch:</span>
+                        <strong className="text-slate-900 font-sans">{BANK_DETAILS.branch}</strong>
+                      </div>
+                    )}
+                    {BANK_DETAILS.accountNumber && (
                     <div className="flex justify-between items-center">
                       <span className="text-slate-500">Account No:</span>
                       <div className="flex items-center gap-1.5">
-                        <strong className="text-blue-700">1000 8941 2300</strong>
+                        <strong className="text-blue-700">{BANK_DETAILS.accountNumber}</strong>
                         <button
                           onClick={handleCopyAccount}
                           className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
@@ -494,15 +496,12 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
                         </button>
                       </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">SWIFT Code:</span>
-                      <strong className="text-slate-900">CCEYLKLX</strong>
-                    </div>
+                    )}
                   </div>
 
                   <div className="space-y-1 text-xs">
                     <label className="text-[11px] font-semibold text-slate-700">
-                      Bank Wire Reference / TT Slip Number *
+                      Bank Transfer Reference / Slip Number *
                     </label>
                     <input
                       type="text"

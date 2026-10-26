@@ -102,6 +102,44 @@ export interface Booking {
   adminNotes?: string;
   rejectionReason?: string;
   cancellationReason?: string;
+  /** 'design_confirmation' when created from an admin design confirmation link. */
+  source?: string;
+  confirmationId?: string;
+  designTitle?: string;
+  designImages?: string[];
+  /** Itemised decoration details; `price` is the total after discount and fees. */
+  lineItems?: BookingLineItem[];
+  subtotal?: number;
+  discount?: number;
+  deliveryFee?: number;
+  /** Advance the customer pays to reserve the date. */
+  advanceAmount?: number;
+  /** Sum of `payments`; the balance is `price - amountPaid`. */
+  amountPaid?: number;
+  payments?: BookingPaymentRecord[];
+  invoiceNumber?: string;
+  /** Terms or notes from the admin, shown to the customer and on the invoice. */
+  termsNotes?: string;
+}
+
+export interface BookingLineItem {
+  name: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export type BookingPaymentKind = 'advance' | 'balance' | 'other';
+
+export interface BookingPaymentRecord {
+  id: string;
+  kind: BookingPaymentKind;
+  amount: number;
+  method: string;
+  note?: string;
+  /** ISO date the money was received. */
+  paidAt: string;
+  recordedBy?: string;
 }
 
 export interface BookingSubmissionInput {

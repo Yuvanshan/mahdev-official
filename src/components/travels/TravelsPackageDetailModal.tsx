@@ -14,7 +14,7 @@ import {
   Award,
   Users,
   Compass,
-  DollarSign,
+  Banknote,
 } from 'lucide-react';
 import { TravelPackage } from '../../data/travelsData';
 import { Button } from '../ui/Button';

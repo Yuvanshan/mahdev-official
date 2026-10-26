@@ -15,12 +15,25 @@ import {
   Plus,
   ShieldCheck,
   RotateCcw,
+  Download,
 } from 'lucide-react';
 import { Booking } from '../../types/booking';
 import { ProgressTracker } from '../../components/account/ProgressTracker';
 import { bookingProgress } from '../../services/customerAccountService';
 import { Button } from '../../components/ui/Button';
 import { formatCurrency } from '../../utils/currency';
+import { BankTransferModal } from '../../components/payment/BankTransferModal';
+import { bookingHasInvoice, invoiceFromBooking } from '../../utils/invoiceDocument';
+import { downloadInvoicePdf } from '../../utils/invoicePdf';
+
+/** What to pay next: the advance until it is covered, then the balance. */
+function amountDue(booking: Booking): { amount: number; label: string } {
+  const paid = booking.amountPaid || 0;
+  const balance = Math.max(0, booking.price - paid);
+  const advance = booking.advanceAmount || 0;
+  if (advance > 0 && paid < advance) return { amount: Math.round((advance - paid) * 100) / 100, label: 'Advance to reserve the date' };
+  return { amount: balance, label: 'Balance due' };
+}
 
 interface AccountBookingsTabProps {
   bookings: Booking[];
@@ -33,6 +46,19 @@ export const AccountBookingsTab: React.FC<AccountBookingsTabProps> = ({
 }) => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [paying, setPaying] = useState<Booking | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const handleDownloadInvoice = async (booking: Booking) => {
+    setDownloadingId(booking.id);
+    try {
+      await downloadInvoicePdf(invoiceFromBooking(booking));
+    } catch (error) {
+      console.error('[Bookings] Invoice download failed:', error);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const filteredBookings = bookings.filter((b) => {
     const matchesFilter = filterStatus === 'all' || b.status === filterStatus || b.paymentStatus === filterStatus;
@@ -185,6 +211,27 @@ export const AccountBookingsTab: React.FC<AccountBookingsTabProps> = ({
               {/* Where the booking is now */}
               <ProgressTracker progress={bookingProgress(b)} className="px-1 py-1" />
 
+              {/* Approved design and decoration items (bookings from a design confirmation) */}
+              {b.designImages && b.designImages.length > 0 && (
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex gap-2 shrink-0">
+                    {b.designImages.slice(0, 3).map((image) => (
+                      <img key={image} src={image} alt={b.designTitle || 'Approved design'} className="w-20 h-20 rounded-xl object-cover border border-slate-200" />
+                    ))}
+                  </div>
+                  {b.lineItems && b.lineItems.length > 0 && (
+                    <ul className="text-xs text-slate-600 space-y-1 min-w-0 flex-1">
+                      {b.lineItems.map((item, index) => (
+                        <li key={index} className="flex justify-between gap-3">
+                          <span className="truncate">{item.name} × {item.quantity}</span>
+                          <span className="font-mono shrink-0">{formatCurrency(item.quantity * item.unitPrice, b.currency)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
               {/* Service & Reservation Details */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                 <div className="md:col-span-8 space-y-2.5">
@@ -226,14 +273,41 @@ export const AccountBookingsTab: React.FC<AccountBookingsTabProps> = ({
 
                 {/* Price & Actions */}
                 <div className="md:col-span-4 flex flex-col justify-between items-start md:items-end gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
-                  <div className="text-left md:text-right">
-                    <span className="text-[10px] text-slate-400 block">Reservation Fee:</span>
+                  <div className="text-left md:text-right space-y-0.5">
+                    <span className="text-[10px] text-slate-400 block">Total:</span>
                     <span className="font-mono text-lg font-bold text-slate-900">
-                      {formatCurrency(b.price, 'LKR')}
+                      {formatCurrency(b.price, b.currency || 'LKR')}
                     </span>
+                    {b.price > 0 && (
+                      <div className="text-[11px] text-slate-500">
+                        Paid {formatCurrency(b.amountPaid || 0, b.currency || 'LKR')} · Balance{' '}
+                        <strong className={b.price - (b.amountPaid || 0) > 0 ? 'text-amber-700' : 'text-emerald-700'}>
+                          {formatCurrency(Math.max(0, b.price - (b.amountPaid || 0)), b.currency || 'LKR')}
+                        </strong>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                  <div className="flex flex-wrap gap-2 w-full md:w-auto md:justify-end">
+                    {b.price > 0 && amountDue(b).amount > 0 && !['cancelled', 'rejected'].includes(b.status) && (
+                      <button
+                        type="button"
+                        onClick={() => setPaying(b)}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1e1b4b] hover:bg-[#312e81] text-white text-xs font-bold transition-colors"
+                      >
+                        Pay now
+                      </button>
+                    )}
+                    {bookingHasInvoice(b) && (
+                      <button
+                        type="button"
+                        onClick={() => void handleDownloadInvoice(b)}
+                        disabled={downloadingId === b.id}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-colors disabled:opacity-60"
+                      >
+                        <Download className="w-3.5 h-3.5" /> {downloadingId === b.id ? 'Preparing…' : 'Invoice'}
+                      </button>
+                    )}
                     <a
                       href={getWhatsAppConciergeLink(b)}
                       target="_blank"
@@ -249,6 +323,17 @@ export const AccountBookingsTab: React.FC<AccountBookingsTabProps> = ({
             </div>
           ))}
         </div>
+      )}
+
+      {paying && (
+        <BankTransferModal
+          isOpen
+          onClose={() => setPaying(null)}
+          reference={paying.id}
+          amount={amountDue(paying).amount}
+          amountLabel={amountDue(paying).label}
+          currency={paying.currency || 'LKR'}
+        />
       )}
     </div>
   );

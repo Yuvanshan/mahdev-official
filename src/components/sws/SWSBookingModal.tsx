@@ -12,7 +12,7 @@ import {
   ArrowRight,
   ShieldCheck,
   MessageSquare,
-  DollarSign,
+  Banknote,
   Layers,
 } from 'lucide-react';
 import {

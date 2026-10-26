@@ -9,7 +9,7 @@ import {
   Check,
   ShoppingBag,
   Calendar,
-  DollarSign,
+  Banknote,
   ShieldCheck,
   Clock,
   Trash2,
@@ -57,7 +57,7 @@ export const AccountNotificationsTab: React.FC<AccountNotificationsTabProps> = (
         return <Calendar className="w-5 h-5 text-purple-600" />;
       case 'payment_confirmation':
       case 'payment_failure':
-        return <DollarSign className="w-5 h-5 text-emerald-600" />;
+        return <Banknote className="w-5 h-5 text-emerald-600" />;
       case 'registration':
       case 'password_reset':
         return <ShieldCheck className="w-5 h-5 text-amber-600" />;

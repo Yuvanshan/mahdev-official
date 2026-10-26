@@ -33,7 +33,8 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { SEOHead } from '../components/layout/SEOHead';
 import { PaymentGatewayModal } from '../components/payment/PaymentGatewayModal';
-import { COMPANY_INFO } from '../config/company';
+import { BankTransferModal } from '../components/payment/BankTransferModal';
+import { BANK_DETAILS, COMPANY_INFO, ONLINE_PAYMENT_GATEWAY_ENABLED } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { formatCurrency } from '../utils/currency';
 
@@ -300,14 +301,13 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
                   </div>
                   <div>
                     <h3 className="font-display text-sm font-bold text-white">
-                      Phase 13: Secure Payment Gateway Ready
+                      {ONLINE_PAYMENT_GATEWAY_ENABLED ? 'Secure Online Payment' : 'Pay by Bank Transfer'}
                     </h3>
                     <span className="text-[11px] text-slate-400">
                       Amount Payable:{' '}
                       <strong className="text-emerald-400 font-mono">
                         {formatCurrency(order.total, 'LKR')}
-                      </strong>{' '}
-                      • Server-side HMAC verified
+                      </strong>
                     </span>
                   </div>
                 </div>
@@ -319,18 +319,20 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
                   rightIcon={<Zap className="w-4 h-4" />}
                   className="text-xs px-5 py-2.5 font-bold shadow-lg shadow-blue-500/20"
                 >
-                  Pay Now with Gateway
+                  Pay Now
                 </Button>
               </div>
 
               <p className="text-xs text-slate-300 leading-relaxed">
-                Connect directly to our multi-gateway transaction processor (Stripe International Cards, LankaPay National Switch IPG, and Bank Telegraphic Transfer). Payment status is verified cryptographically on the server before updating your order.
+                {ONLINE_PAYMENT_GATEWAY_ENABLED
+                  ? 'Connect directly to our multi-gateway transaction processor (international cards, LankaPay and bank transfer). Payment status is verified on the server before updating your order.'
+                  : 'Pay by bank transfer and send us the slip on WhatsApp. We update your order once the payment is received.'}
               </p>
 
               <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2 text-slate-300 text-[11px]">
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span>3D Secure 2.0 Strong Customer Authentication (SCA) Protected</span>
+                  <span>{ONLINE_PAYMENT_GATEWAY_ENABLED ? '3D Secure 2.0 protected' : `${BANK_DETAILS.bankName}, ${BANK_DETAILS.branch} · ${BANK_DETAILS.accountNumber}`}</span>
                 </div>
                 <a
                   href={getWhatsAppConciergeLink()}
@@ -682,7 +684,16 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
       </div>
 
       {/* Payment Gateway Modal */}
-      {isPaymentModalOpen && (
+      {isPaymentModalOpen && !ONLINE_PAYMENT_GATEWAY_ENABLED && (
+        <BankTransferModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          reference={order.id}
+          amount={order.total}
+          currency={order.currency}
+        />
+      )}
+      {isPaymentModalOpen && ONLINE_PAYMENT_GATEWAY_ENABLED && (
         <PaymentGatewayModal
           order={order}
           isOpen={isPaymentModalOpen}

@@ -13,6 +13,7 @@ import { FirebaseTokenError, verifyFirebaseIdToken } from '../../auth/firebaseId
 import { consumeRateLimit, getClientIp, RateLimitError } from '../../security/rateLimit.js';
 import { sendAdminAlertEmail, sendCustomerEmail } from '../../services/emailService.js';
 import { normaliseSriLankaPhone, parseNic } from '../../../src/utils/sriLankaIdentity.js';
+import { BANK_DETAILS } from '../../../src/config/company.js';
 
 /**
  * Design order confirmations.
@@ -20,8 +21,8 @@ import { normaliseSriLankaPhone, parseNic } from '../../../src/utils/sriLankaIde
  * After a customer approves a design, an admin creates a confirmation (design
  * images + decoration line items) and shares its one-time link. The customer
  * opens /confirm-order/{token}, creates an account (or signs in) and confirms;
- * that creates their order, which then shows in their account with its progress
- * and invoice, and a confirmation is emailed to them. WhatsApp messages are
+ * that creates their booking, which then shows in their account with its progress,
+ * payments and invoice, and a confirmation is emailed to them. WhatsApp messages are
  * sent by the admin with click-to-chat buttons (the Cloud API is not used yet).
  *
  *   Admin (session cookie)
@@ -30,6 +31,7 @@ import { normaliseSriLankaPhone, parseNic } from '../../../src/utils/sriLankaIde
  *     POST /api/order-confirmations/send     email the link to the customer
  *     POST /api/order-confirmations/log-whatsapp   record a manual WhatsApp share
  *     POST /api/order-confirmations/cancel   withdraw a pending link
+ *     POST /api/order-confirmations/delete   remove a link (a confirmed link's booking is kept)
  *   Customer (link token)
  *     GET  /api/order-confirmations/public?token=   what the customer sees
  *     POST /api/order-confirmations/check           is this email / NIC already registered?
@@ -210,7 +212,7 @@ function publicView(document: TursoDocument) {
     total: data.total,
     currency: data.currency,
     expiresAt: data.expiresAt,
-    orderId: data.status === 'confirmed' ? data.orderId : undefined,
+    bookingId: data.status === 'confirmed' ? bookingIdFor(data) : undefined,
   };
 }
 
@@ -229,6 +231,7 @@ async function listConfirmations(): Promise<Record<string, unknown>> {
       ...document.data,
       id: document.id,
       status: effectiveStatus(document.data),
+      bookingId: bookingIdFor(document.data),
       shareUrl: shareUrl(document.data),
     })),
   };
@@ -282,8 +285,8 @@ async function createConfirmation(body: Record<string, unknown>, adminEmail: str
     advanceAmount,
     total,
     currency: 'LKR',
-    // Allocated now so a repeated confirm can never create a second order.
-    orderId: `ORD-${now.getFullYear()}-DC${suffix}`,
+    // Allocated now so a repeated confirm can never create a second booking.
+    bookingId: `BK-${now.getFullYear()}-DC${suffix}`,
     siteOrigin: siteOrigin(body.siteOrigin),
     expiresAt: new Date(now.getTime() + expiryDays * 86_400_000).toISOString(),
     createdBy: adminEmail,
@@ -364,6 +367,18 @@ async function cancelConfirmation(body: Record<string, unknown>): Promise<Record
   return {};
 }
 
+/**
+ * Deletes a confirmation link. A confirmed link's booking is kept (it is the
+ * customer's record); only the link and its share history are removed.
+ */
+async function deleteConfirmation(body: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const id = text(body.id, 40);
+  const document = id ? await getTursoDocument(COLLECTION, '', id) : null;
+  if (!document) throw new RequestError('Confirmation not found.', 404);
+  await writeTursoDocument({ type: 'delete', collection: COLLECTION, parentPath: '', id });
+  return {};
+}
+
 /** The admin opened WhatsApp with the link or receipt; kept in the share history. */
 async function logWhatsAppShare(body: Record<string, unknown>): Promise<Record<string, unknown>> {
   const id = text(body.id, 40);
@@ -419,65 +434,58 @@ async function checkDetails(body: Record<string, unknown>): Promise<Record<strin
   return result;
 }
 
-function orderFromConfirmation(
+/**
+ * The confirmation's booking ID. Links created before bookings were used only
+ * stored an order ID; the same suffix keeps one booking per link either way.
+ */
+function bookingIdFor(data: Record<string, unknown>): string {
+  return typeof data.bookingId === 'string' && data.bookingId
+    ? data.bookingId
+    : String(data.orderId || '').replace(/^ORD-/, 'BK-');
+}
+
+function bookingFromConfirmation(
   confirmationId: string,
   data: Record<string, unknown>,
   customer: { uid: string; name: string; email: string; phone: string },
   extras: { address: string; notes: string }
 ): Record<string, unknown> {
   const now = new Date().toISOString();
-  const items = data.items as ConfirmationItem[];
+  const bookingId = bookingIdFor(data);
   const images = data.designImages as string[];
+  const venue = String(data.venue || '');
   return {
-    id: data.orderId,
+    id: bookingId,
     customerId: customer.uid,
     customerEmail: customer.email,
     customerName: customer.name,
     customerPhone: customer.phone,
-    customer: { fullName: customer.name, email: customer.email, phone: customer.phone, preferredContact: 'whatsapp' },
-    items: items.map((item, index) => ({
-      id: `${data.orderId}-${index + 1}`,
-      productId: `${confirmationId}-${index + 1}`,
-      sku: `${confirmationId}-${index + 1}`,
-      name: item.name,
-      slug: '',
-      divisionId: data.divisionId,
-      divisionName: data.divisionName,
-      productType: 'service',
-      unitPrice: item.unitPrice,
-      quantity: item.quantity,
-      lineTotal: Math.round(item.unitPrice * item.quantity * 100) / 100,
-      discountAmount: 0,
-      imageUrl: images[0] || '',
-      description: item.description,
-    })),
-    totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
-    subtotal: data.subtotal,
-    productDiscounts: data.discount,
-    couponDiscount: 0,
-    shippingFee: data.deliveryFee,
-    tax: 0,
-    total: data.total,
-    advanceAmount: data.advanceAmount,
+    customer: { fullName: customer.name, email: customer.email, phone: customer.phone, preferredContactMethod: 'whatsapp' },
+    divisionId: data.divisionId,
+    divisionName: data.divisionName,
+    bookingType: 'event',
+    serviceId: confirmationId,
+    serviceName: data.title,
+    serviceImageUrl: images[0] || '',
+    packageId: 'design-confirmation',
+    packageName: 'Custom design',
+    date: data.eventDate || '',
+    time: data.eventTime || 'To be confirmed',
+    location: { type: 'venue', address: extras.address || venue || 'To be confirmed', venueName: venue || undefined },
+    notes: extras.notes,
+    price: data.total,
     currency: data.currency,
     status: 'confirmed',
     paymentStatus: 'unpaid',
-    paymentMethod: 'bank_transfer',
-    paymentGatewayReady: false,
-    deliveryInfo: {
-      methodId: 'on_site',
-      methodName: 'On-site setup',
-      cost: data.deliveryFee,
-      estimatedDelivery: String(data.eventDate || ''),
-      specialInstructions: extras.address,
-    },
-    bookingInfo: {
-      preferredDate: data.eventDate || undefined,
-      preferredTimeSlot: data.eventTime || undefined,
-      venueOrLocation: data.venue || extras.address || undefined,
-      specialRequirements: data.notes || undefined,
-    },
-    customerNotes: extras.notes || undefined,
+    lineItems: data.items,
+    subtotal: data.subtotal,
+    discount: data.discount,
+    deliveryFee: data.deliveryFee,
+    advanceAmount: data.advanceAmount,
+    amountPaid: 0,
+    payments: [],
+    invoiceNumber: bookingId.replace(/^BK-/, 'INV-'),
+    termsNotes: data.notes || undefined,
     designTitle: data.title,
     designImages: images,
     source: 'design_confirmation',
@@ -487,20 +495,33 @@ function orderFromConfirmation(
   };
 }
 
-function receipt(order: Record<string, unknown>, origin: string, divisionName: unknown) {
-  const items = order.items as Array<{ name: string; quantity: number; lineTotal: number; description?: string }>;
-  const firstName = String(order.customerName).split(' ')[0];
-  const accountUrl = `${origin}/account/orders`;
-  const lines = items.map((item) => `- ${item.name} x${item.quantity}: ${formatLkr(item.lineTotal)}`);
-  const advance = Number(order.advanceAmount) || 0;
+function bankLines(): string[] {
+  return [
+    'Payment details:',
+    `Account name: ${BANK_DETAILS.accountName}`,
+    `Bank: ${BANK_DETAILS.bankName}`,
+    ...(BANK_DETAILS.branch ? [`Branch: ${BANK_DETAILS.branch}`] : []),
+    ...(BANK_DETAILS.accountNumber ? [`Account number: ${BANK_DETAILS.accountNumber}`] : []),
+  ];
+}
+
+function receipt(booking: Record<string, unknown>, origin: string, divisionName: unknown) {
+  const items = booking.lineItems as ConfirmationItem[];
+  const firstName = String(booking.customerName).split(' ')[0];
+  const accountUrl = `${origin}/account/bookings`;
+  const lineTotal = (item: ConfirmationItem) => Math.round(item.quantity * item.unitPrice * 100) / 100;
+  const advance = Number(booking.advanceAmount) || 0;
+  const total = Number(booking.price);
   const textBody = [
     `Hello ${firstName},`,
     '',
-    `Your order ${order.id} for "${order.designTitle}" is confirmed. Thank you!`,
+    `Your booking ${booking.id} for "${booking.designTitle}" is confirmed. Thank you!`,
     '',
-    ...lines,
-    `Total: ${formatLkr(Number(order.total))}`,
-    ...(advance ? [`Advance to confirm the date: ${formatLkr(advance)}`] : []),
+    ...items.map((item) => `- ${item.name} x${item.quantity}: ${formatLkr(lineTotal(item))}`),
+    `Total: ${formatLkr(total)}`,
+    ...(advance ? [`Advance to reserve the date: ${formatLkr(advance)}`] : []),
+    '',
+    ...bankLines(),
     '',
     `Track progress and view your invoice: ${accountUrl}`,
     '',
@@ -508,15 +529,16 @@ function receipt(order: Record<string, unknown>, origin: string, divisionName: u
   ].join('\n');
   const rows = items.map((item) => `<tr><td style="padding:8px;border-bottom:1px solid #e2e8f0">${escapeHtml(item.name)}${
     item.description ? `<br><span style="color:#64748b;font-size:12px">${escapeHtml(item.description)}</span>` : ''
-  }</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:center">${item.quantity}</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right">${formatLkr(item.lineTotal)}</td></tr>`).join('');
-  const image = (order.designImages as string[])[0];
+  }</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:center">${item.quantity}</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right">${formatLkr(lineTotal(item))}</td></tr>`).join('');
+  const image = (booking.designImages as string[])[0];
   const html = `<div style="font-family:Arial,sans-serif;font-size:14px;color:#0f172a;max-width:620px;margin:auto">
-<h2 style="margin:0 0 8px">Your order is confirmed</h2>
-<p>Hello ${escapeHtml(firstName)}, thank you for confirming <strong>${escapeHtml(String(order.designTitle))}</strong>. Your order reference is <strong>${escapeHtml(String(order.id))}</strong>.</p>
+<h2 style="margin:0 0 8px">Your booking is confirmed</h2>
+<p>Hello ${escapeHtml(firstName)}, thank you for confirming <strong>${escapeHtml(String(booking.designTitle))}</strong>. Your booking reference is <strong>${escapeHtml(String(booking.id))}</strong>.</p>
 ${image && /^https?:\/\//.test(image) ? `<img src="${escapeHtml(image)}" alt="Your approved design" style="width:100%;border-radius:12px;margin:8px 0">` : ''}
 <table style="width:100%;border-collapse:collapse;margin:12px 0"><thead><tr style="background:#f1f5f9"><th style="padding:8px;text-align:left">Item</th><th style="padding:8px">Qty</th><th style="padding:8px;text-align:right">Amount</th></tr></thead><tbody>${rows}</tbody></table>
-<p style="text-align:right;font-size:16px"><strong>Total: ${formatLkr(Number(order.total))}</strong>${advance ? `<br><span style="font-size:13px">Advance to confirm the date: ${formatLkr(advance)}</span>` : ''}</p>
-<p><a href="${escapeHtml(accountUrl)}" style="display:inline-block;background:#0052FF;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Track my order &amp; invoice</a></p>
+<p style="text-align:right;font-size:16px"><strong>Total: ${formatLkr(total)}</strong>${advance ? `<br><span style="font-size:13px">Advance to reserve the date: ${formatLkr(advance)}</span>` : ''}</p>
+<p style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;font-size:13px">${bankLines().map(escapeHtml).join('<br>')}</p>
+<p><a href="${escapeHtml(accountUrl)}" style="display:inline-block;background:#0052FF;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Track my booking &amp; invoice</a></p>
 <p style="color:#64748b;font-size:12px">${signature(divisionName).map(escapeHtml).join('<br>')}</p></div>`;
   return { text: textBody, html };
 }
@@ -526,9 +548,9 @@ async function confirmOrder(req: IncomingMessage, body: Record<string, unknown>)
   const document = await findByToken(body.token);
   const data = document.data;
 
-  // Confirming twice (double click, retry after a lost response) returns the same order.
+  // Confirming twice (double click, retry after a lost response) returns the same booking.
   if (data.status === 'confirmed') {
-    if (data.customerId === identity.uid) return { orderId: data.orderId, alreadyConfirmed: true };
+    if (data.customerId === identity.uid) return { bookingId: bookingIdFor(data), alreadyConfirmed: true };
     throw new RequestError('This order has already been confirmed.', 409);
   }
   const status = effectiveStatus(data);
@@ -551,14 +573,14 @@ async function confirmOrder(req: IncomingMessage, body: Record<string, unknown>)
     throw new RequestError('Please add your contact number and NIC to your account, then confirm again.', 409);
   }
 
-  const order = orderFromConfirmation(document.id, data, customer, {
+  const booking = bookingFromConfirmation(document.id, data, customer, {
     address: text(body.address, 300),
     notes: text(body.notes, 1000),
   });
-  const confirmedAt = String(order.createdAt);
-  // Order and link status change together.
+  const confirmedAt = String(booking.createdAt);
+  // Booking and link status change together.
   await writeTursoBatch([
-    { type: 'set', collection: 'orders', parentPath: '', id: String(order.id), data: order },
+    { type: 'set', collection: 'bookings', parentPath: '', id: String(booking.id), data: booking },
     {
       type: 'update',
       collection: COLLECTION,
@@ -568,6 +590,7 @@ async function confirmOrder(req: IncomingMessage, body: Record<string, unknown>)
         status: 'confirmed',
         confirmedAt,
         customerId: identity.uid,
+        bookingId: booking.id,
         // The account's details, used by the admin's WhatsApp confirmation button.
         confirmedCustomer: { name: customer.name, email: customer.email, phone: customer.phone },
         updatedAt: confirmedAt,
@@ -575,17 +598,17 @@ async function confirmOrder(req: IncomingMessage, body: Record<string, unknown>)
     },
   ]);
 
-  // Order is saved; messages are best effort and reported back to the page.
-  const message = receipt(order, siteOrigin(data.siteOrigin), data.divisionName);
+  // Booking is saved; messages are best effort and reported back to the page.
+  const message = receipt(booking, siteOrigin(data.siteOrigin), data.divisionName);
   const [email] = await Promise.all([
     customer.email
-      ? sendCustomerEmail({ to: customer.email, subject: `Order confirmed: ${order.id}`, html: message.html, text: message.text })
+      ? sendCustomerEmail({ to: customer.email, subject: `Booking confirmed: ${booking.id}`, html: message.html, text: message.text })
       : Promise.resolve({ delivered: false, notice: 'No email on the account.' }),
     sendAdminAlertEmail({
-      type: 'admin_new_order',
-      subject: `Design order confirmed: ${order.id} (${data.title})`,
-      message: `${customer.name} confirmed "${data.title}" for ${formatLkr(Number(order.total))}. Send the WhatsApp confirmation from Design Confirmations.`,
-      data: { orderId: order.id, confirmationId: document.id, customerPhone: customer.phone, eventDate: data.eventDate },
+      type: 'admin_new_booking',
+      subject: `Design booking confirmed: ${booking.id} (${data.title})`,
+      message: `${customer.name} confirmed "${data.title}" for ${formatLkr(Number(booking.price))}. Record the advance in Bookings and send the WhatsApp confirmation from Design Confirmations.`,
+      data: { bookingId: booking.id, confirmationId: document.id, customerPhone: customer.phone, eventDate: data.eventDate },
     }).catch((error: unknown) => console.error('[OrderConfirmation] Admin alert failed:', error)),
   ]);
   await writeTursoDocument({
@@ -596,7 +619,7 @@ async function confirmOrder(req: IncomingMessage, body: Record<string, unknown>)
     data: { confirmationSent: { email: email.delivered } },
   }).catch((error: unknown) => console.error('[OrderConfirmation] Could not record delivery:', error));
 
-  return { orderId: order.id, emailSent: email.delivered };
+  return { bookingId: booking.id, emailSent: email.delivered };
 }
 
 // ---------------------------------------------------------------------------
@@ -621,6 +644,9 @@ export default async function handler(req: ConfirmationRequest, res: ServerRespo
     } else if (action === 'send' && req.method === 'POST') {
       requireAdmin(req);
       result = await sendLink(body);
+    } else if (action === 'delete' && req.method === 'POST') {
+      requireAdmin(req);
+      result = await deleteConfirmation(body);
     } else if (action === 'log-whatsapp' && req.method === 'POST') {
       requireAdmin(req);
       result = await logWhatsAppShare(body);

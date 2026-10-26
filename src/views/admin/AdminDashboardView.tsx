@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  DollarSign,
+  Banknote,
   ShoppingBag,
   Calendar,
   Users,
@@ -831,7 +831,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               Settled Revenue ({String(dateFilter || 'all_time').replace(/_/g, ' ')})
             </span>
             <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <DollarSign className="w-4 h-4" />
+              <Banknote className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">

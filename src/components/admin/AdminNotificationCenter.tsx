@@ -12,7 +12,7 @@ import {
   ExternalLink,
   ShoppingBag,
   Calendar,
-  DollarSign,
+  Banknote,
   UserPlus,
   AlertTriangle,
   Mail,
@@ -174,7 +174,7 @@ export const AdminNotificationCenter: React.FC<AdminNotificationCenterProps> = (
         return <Calendar className="w-4 h-4 text-purple-500" />;
       case 'admin_payment_received':
       case 'payment_confirmation':
-        return <DollarSign className="w-4 h-4 text-emerald-500" />;
+        return <Banknote className="w-4 h-4 text-emerald-500" />;
       case 'admin_new_customer':
       case 'registration':
         return <UserPlus className="w-4 h-4 text-cyan-500" />;

@@ -30,6 +30,7 @@ import { Button } from '../../components/ui/Button';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { AdminModal } from '../../components/admin/AdminModal';
 import { adminService } from '../../services/adminService';
+import { formatCurrency } from '../../utils/currency';
 
 interface StockAdjustmentLog {
   id: string;
@@ -363,7 +364,7 @@ export const AdminInventoryView: React.FC = () => {
                             <span className="font-mono text-[10px] text-blue-600 font-bold bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
                               {p.sku}
                             </span>
-                            <span className="text-[10px] text-slate-400">${p.price.toFixed(2)} USD</span>
+                            <span className="text-[10px] text-slate-400">{formatCurrency(p.price)}</span>
                           </div>
                         </div>
                       </div>

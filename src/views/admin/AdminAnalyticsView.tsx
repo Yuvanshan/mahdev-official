@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   TrendingUp,
-  DollarSign,
+  Banknote,
   ShoppingBag,
   Calendar,
   Users,
@@ -509,7 +509,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
                   onClick={() => handleExport('revenue')}
                   className="w-full text-left px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 font-medium cursor-pointer"
                 >
-                  <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                  <Banknote className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Revenue & Daily Trends</span>
                 </button>
                 <button
@@ -560,7 +560,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
           <div className="flex items-center justify-between text-slate-400 mb-3">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Gross Revenue</span>
             <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-              <DollarSign className="w-4 h-4" />
+              <Banknote className="w-4 h-4" />
             </div>
           </div>
           <div className="text-xl font-bold text-slate-900 tracking-tight">
@@ -767,7 +767,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
           [
             { id: 'overview', label: 'Executive Overview', icon: BarChart2 },
             { id: 'traffic', label: 'Website Traffic', icon: Globe },
-            { id: 'revenue', label: 'Revenue & Finance', icon: DollarSign },
+            { id: 'revenue', label: 'Revenue & Finance', icon: Banknote },
             { id: 'divisions', label: 'Divisions Matrix', icon: Building },
             { id: 'products', label: 'Popular Products', icon: Package },
             { id: 'services', label: 'Popular Services', icon: Briefcase },
