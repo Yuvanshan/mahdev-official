@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
   BadgeCheck,
@@ -19,6 +19,7 @@ import {
 import { CustomerUser } from '../../types/customer';
 import { useAuth } from '../../context/AuthContext';
 import { ImageUploader } from '../../components/common/ImageUploader';
+import { Avatar } from '../../components/account/Avatar';
 import { AuthAlert, AuthField, PasswordField } from '../../components/auth/AuthFields';
 import { MIN_PASSWORD_LENGTH } from '../../services/authService';
 import { ageFromDateOfBirth, formatSriLankaPhone, normaliseSriLankaPhone, parseNic } from '../../utils/sriLankaIdentity';
@@ -89,6 +90,32 @@ export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) =>
     },
   });
   const [profileErrors, setProfileErrors] = useState<{ fullName?: string; phone?: string }>({});
+
+  // The page opens with the saved profile; when the fresh copy arrives, update every
+  // field the customer has not changed (their own edits are kept).
+  const shownValues = useRef({
+    fullName: user.fullName || '',
+    phone: user.phone ? formatSriLankaPhone(user.phone) : '',
+    company: user.company || '',
+    avatarUrl: user.avatarUrl || '',
+  });
+  useEffect(() => {
+    const fresh = {
+      fullName: user.fullName || '',
+      phone: user.phone ? formatSriLankaPhone(user.phone) : '',
+      company: user.company || '',
+      avatarUrl: user.avatarUrl || '',
+    };
+    const previous = shownValues.current;
+    setFormData((current) => ({
+      ...current,
+      fullName: current.fullName === previous.fullName ? fresh.fullName : current.fullName,
+      phone: current.phone === previous.phone ? fresh.phone : current.phone,
+      company: current.company === previous.company ? fresh.company : current.company,
+      avatarUrl: current.avatarUrl === previous.avatarUrl ? fresh.avatarUrl : current.avatarUrl,
+    }));
+    shownValues.current = fresh;
+  }, [user.fullName, user.phone, user.company, user.avatarUrl]);
   const [isSaving, setIsSaving] = useState(false);
   const [profileMessage, setProfileMessage] = useState<{ tone: 'error' | 'success'; text: string } | null>(null);
 
@@ -203,13 +230,13 @@ export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) =>
       >
         <div aria-hidden="true" className="absolute -right-12 -top-12 h-48 w-48 rounded-full border border-white/10" />
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center">
-          {formData.avatarUrl ? (
-            <img src={formData.avatarUrl} alt={user.fullName} className="h-20 w-20 rounded-2xl object-cover ring-4 ring-white/20" />
-          ) : (
-            <span className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/15 font-display text-2xl font-bold ring-4 ring-white/10">
-              {user.fullName.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase()}
-            </span>
-          )}
+          <Avatar
+            name={user.fullName}
+            email={user.email}
+            src={formData.avatarUrl}
+            className="h-20 w-20 rounded-2xl ring-4 ring-white/20"
+            textClassName="font-display text-2xl"
+          />
           <div className="min-w-0 flex-1">
             <h2 className="truncate font-display text-2xl font-bold">{user.fullName}</h2>
             <p className="truncate text-sm text-blue-100/90">{user.email}</p>

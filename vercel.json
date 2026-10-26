@@ -43,6 +43,10 @@
   ],
   "rewrites": [
     {
+      "source": "/__/auth/:path*",
+      "destination": "https://for-her-33ea9.firebaseapp.com/__/auth/:path*"
+    },
+    {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap"
     },
@@ -126,10 +130,6 @@
       "source": "/(.*)",
       "headers": [
         {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self' https:; script-src 'self' https://apis.google.com https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://www.googletagmanager.com https://va.vercel-scripts.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseapp.com https://*.firebasestorage.app https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://vitals.vercel-insights.com https://va.vercel-scripts.com https://www.facebook.com https://connect.facebook.net; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://*.google.com https://*.youtube.com https://*.youtube-nocookie.com https://player.vimeo.com https://www.recaptcha.net; worker-src 'self' blob:; upgrade-insecure-requests"
-        },
-        {
           "key": "X-Content-Type-Options",
           "value": "nosniff"
         },
@@ -144,6 +144,15 @@
         {
           "key": "Permissions-Policy",
           "value": "camera=(), microphone=(), geolocation=(), payment=(self), usb=()"
+        }
+      ]
+    },
+    {
+      "source": "/((?!__/auth/).*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self' https:; script-src 'self' https://apis.google.com https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://www.googletagmanager.com https://va.vercel-scripts.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseapp.com https://*.firebasestorage.app https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://vitals.vercel-insights.com https://va.vercel-scripts.com https://www.facebook.com https://connect.facebook.net; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://*.google.com https://*.youtube.com https://*.youtube-nocookie.com https://player.vimeo.com https://www.recaptcha.net; worker-src 'self' blob:; upgrade-insecure-requests"
         }
       ]
     },

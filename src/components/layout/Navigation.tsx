@@ -37,6 +37,8 @@ import { getTelLink, getMailtoLink } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { getDivisionWhatsAppUrl } from '../../utils/whatsapp';
 import { getProfileCompletion, hasRealName } from '../../utils/profileCompletion';
+import { Avatar } from '../account/Avatar';
+import { readDeviceProfile } from '../../services/authService';
 
 interface NavigationProps {
   currentPath: string;
@@ -64,15 +66,8 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
   // Account button: initials or photo when signed in, and a dot while required details are missing.
   const profileIncomplete = Boolean(isAuthenticated && user && !getProfileCompletion(user).isComplete);
-  const accountInitials = user
-    ? (hasRealName(user) ? user.fullName : user.email)
-        .split(/[\s@.]+/)
-        .filter(Boolean)
-        .map((part) => part[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
-    : '';
+  // Saved on this device at the last visit; shown while Firebase restores the session.
+  const savedProfile = isAuthLoading ? readDeviceProfile() : null;
   const isAuthPage = ['/login', '/register', '/forgot-password'].includes(currentPath.split('?')[0]);
   const signInHref = isAuthPage || currentPath === '/' ? '/login' : `/login?redirect=${encodeURIComponent(currentPath)}`;
   const ACCOUNT_LINKS = [
@@ -432,7 +427,14 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
               {/* Account: sign-in link, or the signed-in customer's menu. */}
               {isAuthLoading ? (
-                <span className="h-9 w-9 shrink-0 animate-pulse rounded-xl bg-slate-200" aria-hidden="true" />
+                // While the session restores, show the saved profile photo instead of a shimmer.
+                savedProfile ? (
+                  <span className="inline-flex shrink-0 rounded-xl border border-slate-200 bg-white p-1 shadow-2xs" aria-hidden="true">
+                    <Avatar name={savedProfile.fullName} email={savedProfile.email} src={savedProfile.avatarUrl} className="h-7 w-7 rounded-lg" textClassName="text-[11px]" />
+                  </span>
+                ) : (
+                  <span className="h-9 w-9 shrink-0 animate-pulse rounded-xl bg-slate-200" aria-hidden="true" />
+                )
               ) : isAuthenticated && user ? (
                 <div className="relative shrink-0" ref={accountDropdownRef}>
                   <button
@@ -446,13 +448,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                     aria-haspopup="menu"
                     aria-expanded={isAccountMenuOpen}
                   >
-                    {user.avatarUrl ? (
-                      <img src={user.avatarUrl} alt="" className="h-7 w-7 rounded-lg object-cover" />
-                    ) : (
-                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#0052FF] to-indigo-600 text-[11px] font-bold text-white">
-                        {accountInitials}
-                      </span>
-                    )}
+                    <Avatar name={user.fullName} email={user.email} src={user.avatarUrl} className="h-7 w-7 rounded-lg" textClassName="text-[11px]" />
                     <span className="hidden max-w-[7rem] truncate text-xs font-semibold text-slate-800 xl:inline">
                       {hasRealName(user) ? user.fullName.split(' ')[0] : 'Account'}
                     </span>
@@ -564,9 +560,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                     onClick={() => handleLinkClick(profileIncomplete ? '/account/complete' : '/account')}
                     className="flex min-w-0 flex-1 items-center gap-3 rounded-xl border border-blue-100 bg-white px-3 py-2.5 text-left shadow-2xs"
                   >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#0052FF] to-indigo-600 text-xs font-bold text-white">
-                      {accountInitials}
-                    </span>
+                    <Avatar name={user.fullName} email={user.email} src={user.avatarUrl} className="h-9 w-9 rounded-lg" textClassName="text-xs" />
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-semibold text-slate-900">{hasRealName(user) ? user.fullName : 'My account'}</span>
                       <span className={`block truncate text-xs ${profileIncomplete ? 'font-semibold text-amber-700' : 'text-slate-500'}`}>

@@ -19,6 +19,7 @@ import { getStorage, FirebaseStorage } from 'firebase/storage';
 import rawConfig from '../../firebase-applet-config.json';
 import { db } from './tursoFirestore';
 import { initAppCheck, getAppCheckAttestationToken } from './appCheck';
+import { CANONICAL_SITE_HOST } from '../config/site';
 
 export const TARGET_FIREBASE_PROJECT_ID = 'for-her-33ea9';
 export const TARGET_STORAGE_BUCKET = 'for-her-33ea9.firebasestorage.app';
@@ -39,9 +40,22 @@ function getEnvVar(key: string): string | undefined {
   return undefined;
 }
 
+/**
+ * On the live site, sign-in pages are served from the site's own domain (vercel.json
+ * proxies /__/auth/* to Firebase), so the Google window and email links show the
+ * website's address instead of the Firebase project's, and the sign-in window can
+ * hand its result back (browsers block that across different domains). Preview and
+ * local builds keep Firebase's default domain, which Google already accepts.
+ */
+function resolveAuthDomain(): string {
+  const configured = getEnvVar('VITE_FIREBASE_AUTH_DOMAIN') || rawConfig.authDomain || TARGET_AUTH_DOMAIN;
+  if (typeof window !== 'undefined' && window.location.host === CANONICAL_SITE_HOST) return CANONICAL_SITE_HOST;
+  return configured;
+}
+
 export const firebaseConfig = {
   apiKey: getEnvVar('VITE_FIREBASE_API_KEY') || rawConfig.apiKey || '',
-  authDomain: getEnvVar('VITE_FIREBASE_AUTH_DOMAIN') || rawConfig.authDomain || TARGET_AUTH_DOMAIN,
+  authDomain: resolveAuthDomain(),
   projectId: getEnvVar('VITE_FIREBASE_PROJECT_ID') || rawConfig.projectId || TARGET_FIREBASE_PROJECT_ID,
   storageBucket: getEnvVar('VITE_FIREBASE_STORAGE_BUCKET') || rawConfig.storageBucket || TARGET_STORAGE_BUCKET,
   messagingSenderId: getEnvVar('VITE_FIREBASE_MESSAGING_SENDER_ID') || rawConfig.messagingSenderId || TARGET_MESSAGING_SENDER_ID,

@@ -22,6 +22,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { ProfileCompletionCard } from '../../components/account/ProfileCompletionCard';
 import { ProgressRing } from '../../components/account/ProgressRing';
+import { Avatar } from '../../components/account/Avatar';
 import { getProfileCompletion, hasRealName } from '../../utils/profileCompletion';
 import { CANONICAL_SITE_ORIGIN } from '../../config/site';
 import { orderService } from '../../services/orderService';
@@ -214,14 +215,6 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
   const firstName = hasRealName(user) ? user.fullName.split(' ')[0] : '';
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-  const initials = (hasRealName(user) ? user.fullName : user.email)
-    .split(/[\s@.]+/)
-    .filter(Boolean)
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-
   const NAV_ITEMS = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'orders', label: 'Orders', icon: ShoppingBag, count: orders.length },
@@ -266,13 +259,13 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
             transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
           />
           <div className="relative flex items-center gap-4">
-            {user.avatarUrl ? (
-              <img src={user.avatarUrl} alt={user.fullName} className="h-14 w-14 shrink-0 rounded-2xl object-cover ring-4 ring-white/15 sm:h-16 sm:w-16" />
-            ) : (
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 font-display text-xl font-bold ring-4 ring-white/10 sm:h-16 sm:w-16">
-                {initials}
-              </span>
-            )}
+            <Avatar
+              name={user.fullName}
+              email={user.email}
+              src={user.avatarUrl}
+              className="h-14 w-14 rounded-2xl ring-4 ring-white/15 sm:h-16 sm:w-16"
+              textClassName="font-display text-xl"
+            />
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium text-blue-200">{greeting}{firstName ? ',' : ''}</p>
               <h1 className="truncate font-display text-xl font-bold sm:text-2xl">{firstName || 'Welcome'}</h1>

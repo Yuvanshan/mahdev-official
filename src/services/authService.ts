@@ -39,19 +39,47 @@ export const MIN_PASSWORD_LENGTH = 8;
 /** How long a loaded profile is reused before asking the server again. */
 const PROFILE_CACHE_MS = 60_000;
 /**
- * Tab copy of the signed-in profile, so a refresh shows the account at once while a
- * fresh copy loads. Same lifetime as the sign-in itself (sessionStorage); cleared on sign-out.
+ * Device copy of the signed-in customer as shown in their account (photo, name,
+ * contact details), so the top bar and account pages appear at once on every visit
+ * while a fresh copy loads — like the gallery's cached images. It lives as long as
+ * the sign-in on this device and is removed on sign-out. The NIC is stored masked;
+ * the full number only ever comes from the server.
  */
-const PROFILE_TAB_KEY = 'mahdev_profile_tab_cache';
+const DEVICE_PROFILE_KEY = 'mahdev_device_profile';
 
-function readTabProfile(uid: string): ProfileRecord | null {
+function saveDeviceProfile(user: CustomerUser | null) {
   try {
-    const saved = JSON.parse(safeStorage.getItem(PROFILE_TAB_KEY) || 'null') as { uid?: string; profile?: ProfileRecord } | null;
-    return saved?.uid === uid && saved.profile ? saved.profile : null;
+    if (!user) {
+      window.localStorage.removeItem(DEVICE_PROFILE_KEY);
+      return;
+    }
+    const nic = user.nic ? `${'•'.repeat(Math.max(0, user.nic.length - 4))}${user.nic.slice(-4)}` : undefined;
+    window.localStorage.setItem(DEVICE_PROFILE_KEY, JSON.stringify({ ...user, nic }));
+  } catch {
+    // Storage blocked or full: the account still loads from the server.
+  }
+}
+
+/** The saved customer for this device (optionally only if it matches uid). */
+export function readDeviceProfile(uid?: string): CustomerUser | null {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(DEVICE_PROFILE_KEY) || 'null') as CustomerUser | null;
+    if (!saved || typeof saved.uid !== 'string') return null;
+    return !uid || saved.uid === uid ? saved : null;
   } catch {
     return null;
   }
 }
+
+/** Sign-in pages are served from this site (live), so a full-page redirect works reliably. */
+const isSameSiteAuthDomain = () => typeof window !== 'undefined' && auth.config.authDomain === window.location.host;
+/** Phones and tablets: a full-page redirect is smoother than a pop-up tab. */
+const prefersRedirect = () =>
+  typeof window !== 'undefined' &&
+  (window.matchMedia?.('(pointer: coarse)').matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
+/** Where email links (verification, password reset) lead back to; only on the live site. */
+const emailLinkSettings = (path: string) =>
+  isSameSiteAuthDomain() ? { url: `${window.location.origin}${path}` } : undefined;
 
 /** Set while a Google sign-in is away on a full-page redirect (popup was blocked). */
 const GOOGLE_REDIRECT_FLAG = 'mahdev_google_redirect_pending';
@@ -200,7 +228,6 @@ class AuthService {
   private forgetProfile() {
     this.profileCache = null;
     this.profileRequest = null;
-    safeStorage.removeItem(PROFILE_TAB_KEY);
   }
 
   /** users/{uid}, from the short-lived cache or a shared in-flight request when possible. */
@@ -215,7 +242,6 @@ class AuthService {
         // A profile still being created during registration is not cached.
         if (profile) {
           this.profileCache = { uid, profile, loadedAt: Date.now() };
-          safeStorage.setItem(PROFILE_TAB_KEY, JSON.stringify({ uid, profile }));
         }
         return profile;
       })
@@ -257,10 +283,10 @@ class AuthService {
         }
         // Anonymous sessions (guest checkout) are not customer accounts.
         if (firebaseUser && !firebaseUser.isAnonymous) {
-          // After a refresh: show the tab copy at once, then update from the server below.
-          const tabProfile = !this.currentUser ? readTabProfile(firebaseUser.uid) : null;
-          if (tabProfile) {
-            this.currentUser = toCustomerUser(firebaseUser, tabProfile);
+          // Returning visit: show the saved profile at once, then update from the server below.
+          const saved = !this.currentUser ? readDeviceProfile(firebaseUser.uid) : null;
+          if (saved) {
+            this.currentUser = { ...saved, emailVerified: firebaseUser.emailVerified };
             this.markReady();
             this.notifyListeners();
           }
@@ -269,11 +295,11 @@ class AuthService {
             if (profile || !this.registering) this.currentUser = toCustomerUser(firebaseUser, profile);
           } catch (err) {
             console.warn('[Firebase Auth] Profile load error:', err);
-            this.currentUser = toCustomerUser(firebaseUser, null);
+            // Offline or server error: keep the saved profile shown above, if there is one.
+            if (!this.currentUser) this.currentUser = toCustomerUser(firebaseUser, null);
           }
         } else if (!this.registering) {
           this.currentUser = null;
-          if (!firebaseUser) safeStorage.removeItem(PROFILE_TAB_KEY);
         }
         this.markReady();
         this.notifyListeners();
@@ -312,6 +338,8 @@ class AuthService {
   }
 
   private notifyListeners() {
+    // Keep the device copy in step: saved when signed in, removed when signed out.
+    if (!this.registering) saveDeviceProfile(this.currentUser);
     this.listeners.forEach((l) => l(this.currentUser));
   }
 
@@ -349,6 +377,11 @@ class AuthService {
     const provider = new GoogleAuthProvider();
     // Always show the account chooser, so people with several Google accounts can pick.
     provider.setCustomParameters({ prompt: 'select_account' });
+    if (prefersRedirect() && isSameSiteAuthDomain()) {
+      safeStorage.setItem(GOOGLE_REDIRECT_FLAG, '1');
+      await signInWithRedirect(auth, provider);
+      return { success: false, redirecting: true };
+    }
     try {
       const { user: fbUser } = await signInWithPopup(auth, provider);
       this.currentUser = toCustomerUser(fbUser, await this.loadProfile(fbUser));
@@ -509,7 +542,7 @@ class AuthService {
 
     this.registering = false;
     // A failed verification email must not fail the registration; it can be resent from the profile.
-    sendEmailVerification(fbUser).catch((err) => console.warn('[Firebase Auth] Verification email failed:', err));
+    sendEmailVerification(fbUser, emailLinkSettings('/account/profile')).catch((err) => console.warn('[Firebase Auth] Verification email failed:', err));
     this.notifyListeners();
     return { success: true, user: this.currentUser };
   }
@@ -541,7 +574,7 @@ class AuthService {
       message: `If an account exists for ${cleanEmail}, a password reset link is on its way. Please check your inbox and spam folder.`,
     };
     try {
-      await sendPasswordResetEmail(auth, cleanEmail);
+      await sendPasswordResetEmail(auth, cleanEmail, emailLinkSettings('/login'));
       return sent;
     } catch (err) {
       const code = (err as { code?: string })?.code;
@@ -573,7 +606,7 @@ class AuthService {
     const fbUser = auth.currentUser;
     if (!fbUser) return { success: false, error: 'Please sign in again.' };
     try {
-      await sendEmailVerification(fbUser);
+      await sendEmailVerification(fbUser, emailLinkSettings('/account/profile'));
       return { success: true };
     } catch (err) {
       return { success: false, error: authErrorMessage(err, 'Could not send the verification email.') };

@@ -64,7 +64,7 @@ function sanitizePayloadForSessionStorage(value: string): string {
 // caches (mahdev_cached_*) and the cart, so every visit re-downloaded all data.
 const LEGACY_CLEANUP_FLAG = 'mahdev_legacy_storage_cleanup_v1';
 // Current keys that must survive even the one-time cleanup.
-const PRESERVED_KEY_PREFIXES = ['mahdev_cart_'];
+const PRESERVED_KEY_PREFIXES = ['mahdev_cart_', 'mahdev_device_'];
 
 function clearLegacyPersistentAppData(): void {
   if (typeof window === 'undefined') return;
