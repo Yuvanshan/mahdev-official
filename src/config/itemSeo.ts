@@ -49,6 +49,12 @@ const firstImage = (record: ItemRecord, ...fields: string[]) => {
   return undefined;
 };
 
+/** /services/{slug or id} for a database service record, or undefined without either. */
+export function servicePagePath(record: { id?: unknown; slug?: unknown }): string | undefined {
+  const key = text(record.slug) || text(record.id);
+  return key ? `/services/${encodeURIComponent(key)}` : undefined;
+}
+
 export function serviceSeo(record: ItemRecord, id: string): ItemSeo {
   const title = text(record.title) || text(record.name) || 'Service';
   const division = divisionName(record);

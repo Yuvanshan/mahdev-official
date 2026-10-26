@@ -59,7 +59,7 @@ export const PromotionsView: React.FC<PromotionsViewProps> = ({ onNavigate, sele
             {selectedOffer.imageUrl ? (
               <img
                 src={selectedOffer.imageUrl}
-                alt=""
+                alt={selectedOffer.title}
                 className="max-h-[min(55vh,32rem)] w-full bg-slate-200 object-cover"
               />
             ) : (
@@ -143,7 +143,7 @@ export const PromotionsView: React.FC<PromotionsViewProps> = ({ onNavigate, sele
                     <div className="relative h-52 bg-slate-200">
                       <img
                         src={banner.imageUrl}
-                        alt=""
+                        alt={banner.title}
                         loading="lazy"
                         className="h-full w-full object-cover"
                       />

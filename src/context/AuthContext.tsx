@@ -5,7 +5,7 @@ import {
   RegisterInput,
   AuthStatus,
 } from '../types/customer';
-import { authService } from '../services/authService';
+import { authService, type ProfileCompletionInput, type SocialSignInResult } from '../services/authService';
 
 interface AuthContextType {
   user: CustomerUser | null;
@@ -23,26 +23,37 @@ interface AuthContextType {
   logout: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<{ success: boolean; message: string; error?: string }>;
   updateProfile: (updates: Partial<CustomerUser>) => Promise<{ success: boolean; error?: string }>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
+  sendVerificationEmail: () => Promise<{ success: boolean; error?: string }>;
+  /** Re-reads whether the email address is confirmed; returns the new status. */
+  refreshEmailVerification: () => Promise<boolean>;
+  /** Sign in or sign up with Google (popup, or redirect when popups are blocked). */
+  signInWithGoogle: () => Promise<SocialSignInResult>;
+  /** Saves missing name, contact number and NIC in one step. */
+  completeProfile: (input: ProfileCompletionInput) => Promise<{ success: boolean; error?: string }>;
+  /** Error from a Google sign-in that returned by redirect, cleared once read. */
+  consumeRedirectError: () => string | null;
   refreshUser: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<CustomerUser | null>(null);
-  const [status, setStatus] = useState<AuthStatus>('loading');
+  const [user, setUser] = useState<CustomerUser | null>(() => authService.getCurrentUser());
+  // Stay "loading" until Firebase has restored any saved session, so a page refresh on
+  // /account does not briefly count as signed out and redirect to the login page.
+  const [status, setStatus] = useState<AuthStatus>(() => {
+    if (!authService.isReady()) return 'loading';
+    return authService.getCurrentUser() ? 'authenticated' : 'unauthenticated';
+  });
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Initial fetch from authService
-    const current = authService.getCurrentUser();
-    if (current) {
+    const unsubscribeReady = authService.onReady(() => {
+      const current = authService.getCurrentUser();
       setUser(current);
-      setStatus('authenticated');
-    } else {
-      setUser(null);
-      setStatus('unauthenticated');
-    }
+      setStatus(current ? 'authenticated' : 'unauthenticated');
+    });
 
     // Subscribe to auth state changes
     const unsubscribe = authService.subscribe((updatedUser) => {
@@ -56,7 +67,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeReady();
+      unsubscribe();
+    };
   }, []);
 
   const refreshUser = () => {
@@ -136,6 +150,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const changePassword = (currentPassword: string, newPassword: string) =>
+    authService.changePassword(currentPassword, newPassword);
+  const sendVerificationEmail = () => authService.sendVerificationEmail();
+  const refreshEmailVerification = () => authService.refreshEmailVerification();
+  const signInWithGoogle = () => authService.signInWithGoogle();
+  const completeProfile = (input: ProfileCompletionInput) => authService.completeProfile(input);
+  const consumeRedirectError = () => authService.consumeRedirectError();
+
   const isPrivileged = Boolean(
     user && ['admin', 'superAdmin', 'manager', 'staff'].includes(user.role)
   );
@@ -164,6 +186,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         requestPasswordReset,
         updateProfile,
+        changePassword,
+        sendVerificationEmail,
+        refreshEmailVerification,
+        signInWithGoogle,
+        completeProfile,
+        consumeRedirectError,
         refreshUser,
       }}
     >

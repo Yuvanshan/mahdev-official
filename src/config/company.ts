@@ -82,7 +82,7 @@ export const COMPANY_INFO: CompanyInformation = {
   socials: {
     linkedin: 'https://www.linkedin.com/company/mahdev-pvt-ltd/',
     facebook: 'https://www.facebook.com/SWSEventsManagement/',
-    instagram: 'https://www.instagram.com/sws_event_management?exln=MW5kamxsczNlOXlxbg==',
+    instagram: 'https://www.instagram.com/sws_event_management/',
     youtube: 'https://www.youtube.com/@swseventmanagement5126',
     tiktok: 'https://www.tiktok.com/@yuvan.shan5',
     whatsapp: 'https://wa.me/94750928078?text=Hello%20Mahdev%20Pvt%20Ltd',
@@ -93,6 +93,20 @@ export const COMPANY_INFO: CompanyInformation = {
     support: '24/7 Dedicated Event & Cloud Infrastructure Support',
   },
 };
+
+/**
+ * Official social profiles, as clean profile addresses (no share links or tracking
+ * parameters). Search engines read these from the Organization's "sameAs" in
+ * index.html and from the links in each page's server-sent HTML; a test keeps
+ * index.html in step with this list.
+ */
+export const SOCIAL_PROFILES: Array<{ label: string; url: string }> = [
+  { label: 'Facebook', url: 'https://www.facebook.com/SWSEventsManagement/' },
+  { label: 'Instagram', url: 'https://www.instagram.com/sws_event_management/' },
+  { label: 'LinkedIn', url: 'https://www.linkedin.com/company/mahdev-pvt-ltd/' },
+  { label: 'YouTube', url: 'https://www.youtube.com/@swseventmanagement5126' },
+  { label: 'TikTok', url: 'https://www.tiktok.com/@yuvan.shan5' },
+];
 
 export const OFFICE_LIST: OfficeLocation[] = [
   COMPANY_INFO.offices.colombo,

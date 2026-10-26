@@ -21,6 +21,7 @@ import {
   type FirebaseIdentity,
   verifyFirebaseIdToken,
 } from '../auth/firebaseIdToken.js';
+import { normaliseSriLankaPhone, parseNic } from '../../src/utils/sriLankaIdentity.js';
 
 export interface DatabaseAccess {
   role: 'admin' | 'customer' | 'public';
@@ -183,7 +184,12 @@ const CUSTOMER_PROFILE_FIELDS = new Set([
   'company',
   'accountType',
   'preferences',
+  // Set once at registration; date of birth and gender are derived from it on the server.
+  'nic',
+  'dateOfBirth',
+  'gender',
 ]);
+const MAX_PROFILE_NAME_LENGTH = 100;
 const PRIVATE_PUBLIC_SETTINGS_FIELDS = new Set([
   'superAdminEmail',
   'superAdminName',
@@ -421,6 +427,55 @@ function customerOwnsDocument(document: TursoDocument, identity: FirebaseIdentit
       .some((email) => typeof email === 'string' && email.toLowerCase() === identity.email));
 }
 
+/**
+ * Checks the identity fields of a customer's own profile write and returns the
+ * values to store. The NIC can be set once and never changed by the customer,
+ * belongs to one account only, and is the only source of date of birth and
+ * gender (values sent by the browser are ignored). Phone numbers are stored as +94….
+ */
+async function verifyCustomerIdentityFields(
+  data: Record<string, unknown>,
+  identity: FirebaseIdentity,
+): Promise<Record<string, unknown>> {
+  const verified: Record<string, unknown> = {};
+
+  if (data.name !== undefined) {
+    const name = typeof data.name === 'string' ? data.name.trim() : '';
+    if (!name || name.length > MAX_PROFILE_NAME_LENGTH) throw new Error('Enter your full name (up to 100 characters).');
+    verified.name = name;
+  }
+  if (data.phone !== undefined && data.phone !== '') {
+    const phone = typeof data.phone === 'string' ? normaliseSriLankaPhone(data.phone) : null;
+    if (!phone) throw new Error('Enter a valid Sri Lankan contact number.');
+    verified.phone = phone;
+  }
+
+  const existing = await getTursoDocument('users', '', identity.uid);
+  const storedNic = typeof existing?.data.nic === 'string' ? existing.data.nic : '';
+  if (data.nic === undefined || data.nic === storedNic) {
+    // Keep the stored identity: date of birth and gender cannot be edited on their own.
+    if (storedNic) {
+      verified.dateOfBirth = existing?.data.dateOfBirth;
+      verified.gender = existing?.data.gender;
+    } else {
+      verified.dateOfBirth = null;
+      verified.gender = null;
+    }
+    return verified;
+  }
+
+  if (storedNic) {
+    throw new AdminSessionAuthError('Your NIC number cannot be changed. Please contact us if it is wrong.', 403);
+  }
+  const nic = typeof data.nic === 'string' ? parseNic(data.nic) : null;
+  if (!nic) throw new Error('Enter a valid NIC number (e.g. 951234567V or 199512345678).');
+  const holders = await listTursoDocuments('users', '', [{ field: 'nic', operator: '==', value: nic.nic }], undefined, 2);
+  if (holders.some((holder) => holder.id !== identity.uid)) {
+    throw new Error('This NIC number is already registered to another account. Please sign in or contact us.');
+  }
+  return { ...verified, nic: nic.nic, dateOfBirth: nic.dateOfBirth, gender: nic.gender };
+}
+
 async function prepareCustomerWrite(write: TursoWrite, identity: FirebaseIdentity): Promise<TursoWrite> {
   if (write.parentPath) {
     throw new AdminSessionAuthError('Customer writes must target their own top-level record.', 403);
@@ -435,6 +490,7 @@ async function prepareCustomerWrite(write: TursoWrite, identity: FirebaseIdentit
     }
     const data = {
       ...write.data,
+      ...(await verifyCustomerIdentityFields(write.data, identity)),
       uid: identity.uid,
       ...(identity.email ? { email: identity.email } : {}),
       role: 'customer',

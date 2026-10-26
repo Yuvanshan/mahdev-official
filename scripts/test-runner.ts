@@ -24,6 +24,11 @@ import { filterSnapshotDocuments, whereAnyToFilterGroups } from '../src/lib/publ
 import { PRERENDERED_ROUTES } from '../backend/seo/publicRoutes';
 import { getDefaultTrustedCompanies, isPublishedTrustedCompany } from '../src/services/firestore/trustedCompanies';
 import { buildSitemapXml } from '../backend/api/handlers/sitemap';
+import { INDEXNOW_KEY } from '../backend/seo/indexNow';
+import { renderSeoHtml } from '../backend/seo/renderSeoHtml';
+import { SOCIAL_PROFILES } from '../src/config/company';
+import { normaliseSriLankaPhone, parseNic } from '../src/utils/sriLankaIdentity';
+import { getProfileCompletion, postSignInPath } from '../src/utils/profileCompletion';
 import { analyticsService } from '../src/services/analyticsService';
 import { CANONICAL_SITE_ORIGIN, SITE_NAME, resolveSiteOrigin } from '../src/config/site';
 import { ADMIN_PORTAL_PATH, canonicalizeAdminPath, isAdminPortalPath, isRetiredAdminPath } from '../src/config/adminRoutes';
@@ -339,6 +344,89 @@ async function runTestSuite() {
           !xml.includes('gallery-hidden') &&
           !xml.includes('unpublished-project') &&
           xml.includes('<lastmod>2026-10-13</lastmod>');
+      },
+    },
+    {
+      category: 'Customer Accounts',
+      name: 'Accounts missing name, phone or NIC (e.g. new Google sign-ins) are sent to complete their profile',
+      fn: () => {
+        const base = {
+          id: 'u1', uid: 'u1', email: 'nimal.perera@gmail.com', phone: '', accountType: 'individual' as const,
+          role: 'customer' as const, address: { street: '', city: '', postalCode: '', country: 'Sri Lanka' },
+          preferences: { currency: 'LKR' as const, preferredContactMethod: 'whatsapp' as const, orderNotifications: true, promotionalUpdates: true, smsAlerts: true, twoFactorEnabled: false },
+          createdAt: '', lastLogin: '',
+        };
+        // Google sign-in: the Google name counts, but phone and NIC are still missing.
+        const google = { ...base, fullName: 'Nimal Perera' };
+        // A name that is just the email's local part is a placeholder, not a real name.
+        const placeholder = { ...base, fullName: 'nimal.perera' };
+        const done = { ...base, fullName: 'Nimal Perera', phone: '+94771234567', nic: '199512304567' };
+        const googleCompletion = getProfileCompletion(google);
+        return !googleCompletion.isComplete &&
+          googleCompletion.missingRequired.map((item) => item.key).join(',') === 'phone,nic' &&
+          getProfileCompletion(placeholder).missingRequired[0]?.key === 'fullName' &&
+          postSignInPath(google, '/account/orders') === '/account/complete?redirect=%2Faccount%2Forders' &&
+          getProfileCompletion(done).isComplete &&
+          postSignInPath(done, '/account/orders') === '/account/orders' &&
+          postSignInPath(done, '//evil.example.com') === '/account';
+      },
+    },
+    {
+      category: 'Customer Accounts',
+      name: 'NIC numbers give the right date of birth and gender, and phone numbers normalise to +94',
+      fn: () => {
+        const today = new Date('2026-10-26T00:00:00Z');
+        const born = (nic: string) => {
+          const details = parseNic(nic, today);
+          return details ? `${details.dateOfBirth} ${details.gender}` : null;
+        };
+        // Day 123 is 2 May: NIC day numbers count February as 29 days in every year.
+        return born('951234567V') === '1995-05-02 male' &&
+          born('956234567v') === '1995-05-02 female' &&
+          born('199512304567') === '1995-05-02 male' &&
+          born('200056012345') === '2000-02-29 female' &&
+          born('990601234V') === null && // 29 February 1999 does not exist
+          born('993671234V') === null &&
+          born('203012304567') === null && // in the future
+          born('12345') === null &&
+          normaliseSriLankaPhone('075 092 8078') === '+94750928078' &&
+          normaliseSriLankaPhone('+94 75 092 8078') === '+94750928078' &&
+          normaliseSriLankaPhone('0112345678') === '+94112345678' &&
+          normaliseSriLankaPhone('07509280') === null;
+      },
+    },
+    {
+      category: 'SEO & Marketing',
+      name: 'Social profiles are linked for search engines (Organization sameAs and plain links)',
+      fn: () => {
+        const html = readFileSync('index.html', 'utf8');
+        const organization = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+          .map((match) => JSON.parse(match[1]))
+          .find((block) => block['@type'] === 'Organization');
+        const urls = SOCIAL_PROFILES.map((profile) => profile.url);
+        const page = renderSeoHtml(html, { path: '/x', title: 'X', description: 'Y', heading: 'X', intro: 'Y' }, CANONICAL_SITE_ORIGIN);
+        return JSON.stringify(organization?.sameAs) === JSON.stringify(urls) &&
+          urls.every((url) => !/[\s?]/.test(url) && !url.includes('/share/')) &&
+          urls.every((url) => html.includes(`href="${url}"`) && page.includes(`href="${url}"`));
+      },
+    },
+    {
+      category: 'SEO & Marketing',
+      name: 'Sitemap lists item photos for Google Images and the IndexNow key file is published',
+      fn: () => {
+        const xml = buildSitemapXml({
+          pages: [],
+          divisions: [],
+          services: [{ id: 'ser-1', data: { slug: 'birthday-decor', imageUrl: '/uploads/birthday.webp', images: ['https://cdn.example.com/a.jpg?x=1&y=2'] } }],
+          portfolio: [],
+          gallery: [{ id: 'gal-1', data: { title: 'Stage', images: ['/uploads/stage.webp', '/uploads/stage-film.mp4'] } }],
+        });
+        return xml.includes('xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"') &&
+          xml.includes('<image:loc>https://mahdev-official.vercel.app/uploads/birthday.webp</image:loc>') &&
+          xml.includes('<image:loc>https://cdn.example.com/a.jpg?x=1&amp;y=2</image:loc>') &&
+          xml.includes('<image:loc>https://mahdev-official.vercel.app/uploads/stage.webp</image:loc>') &&
+          !xml.includes('stage-film.mp4') &&
+          readFileSync(`public/${INDEXNOW_KEY}.txt`, 'utf8').trim() === INDEXNOW_KEY;
       },
     },
     {

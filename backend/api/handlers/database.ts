@@ -9,6 +9,7 @@ import {
 } from '../tursoRoutes.js';
 import { getTursoDocument } from '../../db/tursoDatabase.js';
 import { dispatchServerNotification } from '../../services/secureNotificationService.js';
+import { changedPublicUrls, isIndexNowEnabled, submitToIndexNow } from '../../seo/indexNow.js';
 import {
   consumeRateLimit,
   getClientIp,
@@ -199,6 +200,14 @@ export async function handleTursoDatabaseRequest(
       await notifyForVerifiedSubmission(req.body, access);
     } catch (error) {
       console.error('[Turso API] Verified submission alert failed:', error);
+    }
+    // Admin content changes: tell IndexNow search engines (Bing etc.) which public pages changed.
+    if (access.role === 'admin' && isIndexNowEnabled()) {
+      try {
+        await submitToIndexNow(await changedPublicUrls(req.body));
+      } catch (error) {
+        console.error('[Turso API] IndexNow URLs could not be collected:', error);
+      }
     }
   }
   res.statusCode = result.status;

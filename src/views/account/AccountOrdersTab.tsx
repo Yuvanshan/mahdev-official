@@ -16,6 +16,8 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { Order } from '../../types/order';
+import { ProgressTracker } from '../../components/account/ProgressTracker';
+import { orderProgress } from '../../services/customerAccountService';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { formatCurrency } from '../../utils/currency';
@@ -177,6 +179,9 @@ export const AccountOrdersTab: React.FC<AccountOrdersTabProps> = ({ orders, onNa
                   </span>
                 </div>
               </div>
+
+              {/* Where the order is now */}
+              <ProgressTracker progress={orderProgress(order)} className="px-1 py-1" />
 
               {/* Items Preview */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">

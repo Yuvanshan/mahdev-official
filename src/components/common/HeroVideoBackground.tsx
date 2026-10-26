@@ -178,8 +178,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
       {fallbackImage && (
         <img
           src={fallbackImage}
-          alt=""
-          aria-hidden="true"
+          alt={title}
           className="absolute inset-0 h-full w-full object-cover"
         />
       )}

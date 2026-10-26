@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { servicePagePath } from '../../config/itemSeo';
 import {
   Compass,
   Plane,
@@ -113,6 +114,7 @@ export const TravelsServicesSection: React.FC = () => {
             title={svc.title}
             images={toServiceDetails(svc.record).images}
             onView={() => setSelectedService(svc.record)}
+            href={svc.record ? servicePagePath(svc.record) : undefined}
             price={getServiceStartingPrice(svc.record)}
           />
         ))}

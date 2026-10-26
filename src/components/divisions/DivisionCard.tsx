@@ -85,7 +85,7 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate
         ) : mediaUrl ? (
           <img
             src={mediaUrl}
-            alt=""
+            alt={division.name}
             loading="lazy"
             decoding="async"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"

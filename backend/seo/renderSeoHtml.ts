@@ -7,6 +7,12 @@
  */
 
 import type { RouteSeo } from './publicRoutes.js';
+import { SOCIAL_PROFILES } from '../../src/config/company.js';
+
+// Official profiles as plain links, so crawlers that do not run JavaScript still find them.
+const SOCIAL_LINKS_HTML = SOCIAL_PROFILES
+  .map(({ label, url }) => `<a href="${escapeHtml(url)}" rel="me noopener">${escapeHtml(label)}</a>`)
+  .join(' · ');
 
 function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -50,7 +56,7 @@ export function renderSeoHtml(baseHtml: string, route: RouteSeo, origin: string)
   html = replaceTag(
     html,
     /(<main id="seo-fallback"[^>]*>)[\s\S]*?(<\/main>)/,
-    (_match, open, close) => `${open}\n        <h1>${escapeHtml(route.heading)}</h1>\n        <p>${escapeHtml(route.intro)}</p>\n        <p>${description}</p>\n        <p><a href="/">Mahdev home</a> · <a href="/services">Services</a> · <a href="/contact">Contact</a></p>\n      ${close}`,
+    (_match, open, close) => `${open}\n        <h1>${escapeHtml(route.heading)}</h1>\n        <p>${escapeHtml(route.intro)}</p>\n        <p>${description}</p>\n        <p><a href="/">Mahdev home</a> · <a href="/services">Services</a> · <a href="/contact">Contact</a></p>\n        <p>Follow Mahdev: ${SOCIAL_LINKS_HTML}</p>\n      ${close}`,
     'seo-fallback block'
   );
   if (route.structuredData?.length) {

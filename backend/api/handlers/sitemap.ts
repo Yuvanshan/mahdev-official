@@ -93,26 +93,58 @@ function isValidDate(value: unknown): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
 }
 
+const MAX_IMAGES_PER_URL = 10;
+const VIDEO_FILE = /\.(mp4|webm|mov|m4v|ogv)(\?|#|$)/i;
+
+/**
+ * Photo URLs of a record (image sitemap), absolute and without videos or inline
+ * data, so Google Images can find gallery, service, product and project photos.
+ */
+function recordImages(data: Record<string, unknown>, origin: string): string[] {
+  const urls = new Set<string>();
+  for (const field of ['imageUrl', 'coverImage', 'images', 'mediaUrl', 'url', 'thumbnailUrl']) {
+    const value = data[field];
+    for (const item of Array.isArray(value) ? value : [value]) {
+      if (typeof item !== 'string' || !item.trim() || VIDEO_FILE.test(item)) continue;
+      try {
+        const url = new URL(item.trim(), origin);
+        if (url.protocol === 'https:' || url.protocol === 'http:') urls.add(url.href);
+      } catch {
+        // Not a usable URL; skip it.
+      }
+    }
+  }
+  return [...urls].slice(0, MAX_IMAGES_PER_URL);
+}
+
 function entry(
   path: string,
   origin: string,
-  lastmod?: string | null
+  lastmod?: string | null,
+  images: string[] = []
 ): string {
   const location = escapeXml(new URL(path, origin).href);
-  return `  <url><loc>${location}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}</url>`;
+  const imageTags = images.map((image) => `<image:image><image:loc>${escapeXml(image)}</image:loc></image:image>`).join('');
+  return `  <url><loc>${location}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}${imageTags}</url>`;
 }
 
 function recordsToEntries(
   documents: TursoDocument[],
   pathForDocument: (document: TursoDocument) => string | null,
   origin: string,
+  withImages = false,
 ): Array<[string, string]> {
   return documents.flatMap((document) => {
     const path = pathForDocument(document);
     if (!path || RESERVED_PATHS.has(path) || !isPublicPath(path)) return [];
     return [[
       path,
-      entry(path, origin, isValidDate(document.data.updatedAt || document.data.publishedAt)),
+      entry(
+        path,
+        origin,
+        isValidDate(document.data.updatedAt || document.data.publishedAt),
+        withImages ? recordImages(document.data, origin) : [],
+      ),
     ]];
   });
 }
@@ -215,6 +247,7 @@ export function buildSitemapXml(
         return slug && !slug.includes('/') ? `/services/${slug}` : null;
       },
       origin,
+      true,
     ),
     ...recordsToEntries(
       (content.products || []).filter(({ data }) =>
@@ -229,6 +262,7 @@ export function buildSitemapXml(
         return slug && !slug.includes('/') ? `/products/${slug}` : null;
       },
       origin,
+      true,
     ),
     ...recordsToEntries(
       [...(content.gallery || []), ...(content.mediaAssets || [])].filter(({ data }) =>
@@ -240,6 +274,7 @@ export function buildSitemapXml(
       ),
       ({ id }) => `/gallery?id=${encodeURIComponent(id)}`,
       origin,
+      true,
     ),
     ...recordsToEntries(
       content.portfolio.filter(({ data }) =>
@@ -250,6 +285,7 @@ export function buildSitemapXml(
         return slug ? `/projects/${slug}` : null;
       },
       origin,
+      true,
     ),
   ];
 
@@ -259,7 +295,7 @@ export function buildSitemapXml(
 
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">',
     ...[...entries.values()].sort((left, right) => left.localeCompare(right)),
     '</urlset>',
     '',

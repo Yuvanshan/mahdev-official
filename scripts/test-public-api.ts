@@ -275,6 +275,41 @@ try {
     assert.equal(order.data.paymentStatus, 'unpaid');
   });
 
+  await test('Customer NIC is verified on the server: derived fields, set once, one account per NIC', async () => {
+    const alice = { role: 'customer' as const, identity: { uid: 'cust-alice', email: 'alice@example.com' } };
+    const bob = { role: 'customer' as const, identity: { uid: 'cust-bob', email: 'bob@example.com' } };
+    const save = (access: typeof alice, data: Record<string, unknown>) =>
+      handleTursoAction({ action: 'write', write: { type: 'set', collection: 'users', parentPath: '', id: access.identity.uid, data } }, access);
+
+    // Date of birth and gender sent by the browser are ignored; the NIC decides them.
+    let result = await save(alice, { name: 'Alice', phone: '077 123 4567', nic: '956234567v', dateOfBirth: '2010-01-01', gender: 'male' });
+    assert.equal(result.status, 200, JSON.stringify(result.body));
+    let [profile] = (await listTursoDocuments('users', '')).filter((d) => d.id === 'cust-alice');
+    assert.equal(profile.data.nic, '956234567V');
+    assert.equal(profile.data.dateOfBirth, '1995-05-02');
+    assert.equal(profile.data.gender, 'female');
+    assert.equal(profile.data.phone, '+94771234567');
+
+    // A later profile edit cannot alter the identity fields.
+    result = await save(alice, { name: 'Alice P', dateOfBirth: '2000-01-01', gender: 'male' });
+    assert.equal(result.status, 200, JSON.stringify(result.body));
+    [profile] = (await listTursoDocuments('users', '')).filter((d) => d.id === 'cust-alice');
+    assert.equal(profile.data.dateOfBirth, '1995-05-02');
+    assert.equal(profile.data.gender, 'female');
+
+    // The NIC cannot be changed, and cannot be reused by another account.
+    result = await save(alice, { nic: '199512304567' });
+    assert.equal(result.status, 403, JSON.stringify(result.body));
+    result = await save(bob, { name: 'Bob', nic: '956234567V' });
+    assert.notEqual(result.status, 200, 'a second account must not register the same NIC');
+
+    // Invalid NIC and phone numbers are refused.
+    result = await save(bob, { name: 'Bob', nic: '990601234V' });
+    assert.notEqual(result.status, 200, 'an impossible date (29 Feb 1999) must be refused');
+    result = await save(bob, { name: 'Bob', phone: '12345' });
+    assert.notEqual(result.status, 200, 'an invalid phone number must be refused');
+  });
+
   await test('Admin sign-in has no built-in fallback credentials', async () => {
     const res = makeRes();
     await adminLoginHandler(makeReq({ method: 'POST', url: '/api/admin/auth/login', body: { email: 'anyone@example.com', password: 'x' } }), res);

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react';
+import { servicePagePath } from '../../config/itemSeo';
 import { ArrowRight, CheckCircle2, Filter, Sparkles } from 'lucide-react';
 import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import { SectionContainer } from '../ui/SectionContainer';
@@ -109,6 +110,7 @@ const FeaturedServiceCard: React.FC<{
         title={service.title || service.name}
         images={serviceImages}
         onView={() => setIsDetailsOpen(true)}
+        href={servicePagePath(service)}
         imageLoading={idx < 3 ? 'eager' : 'lazy'}
         price={getServiceStartingPrice(service)}
       />

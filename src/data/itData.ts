@@ -1,4 +1,6 @@
 export interface ITService {
+  /** The service's own page (/services/…); only for services from the database. */
+  pagePath?: string;
   /** Service photos from the database (card and details images). */
   images?: string[];
   /** Numeric starting price from the database (null when not set). */

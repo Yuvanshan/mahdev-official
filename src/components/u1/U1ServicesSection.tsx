@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { servicePagePath } from '../../config/itemSeo';
 import {
   Camera,
   Film,
@@ -108,6 +109,7 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
           const price = getServiceStartingPrice(s as unknown as Record<string, any>);
           return {
             id: s.id,
+          pagePath: servicePagePath(s),
             name: s.name,
             category: (((s as any).category && (s as any).category !== 'all' ? (s as any).category : 'media') as 'media' | 'portrait' | 'commercial' | 'print'),
             tagline: (s as any).tagline || s.description?.slice(0, 60) || '',
@@ -182,6 +184,7 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
             title={service.name}
             images={(service.gallery?.length ? service.gallery : [service.imageUrl]).filter(Boolean) as string[]}
             onView={() => setActiveModalService(service)}
+            href={service.pagePath}
             price={service.price}
           />
         ))}

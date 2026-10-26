@@ -19,6 +19,14 @@ export interface FirestoreUser {
   status: AccountStatus | string;
   createdAt: string;
   updatedAt: string;
+  company?: string;
+  accountType?: 'individual' | 'corporate';
+  avatarUrl?: string;
+  /** Sri Lankan NIC; set once at registration (see src/utils/sriLankaIdentity.ts). */
+  nic?: string;
+  /** Derived from the NIC on the server: YYYY-MM-DD. */
+  dateOfBirth?: string | null;
+  gender?: 'male' | 'female' | null;
 }
 
 export type DivisionId = 'sws' | 'u1-studio' | 'it-solutions' | 'travels' | 'online-mart' | 'u1' | 'it' | 'mart';

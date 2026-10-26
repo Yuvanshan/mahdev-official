@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
+import { servicePagePath } from '../config/itemSeo';
 import {
   ArrowRight,
   Sparkles,
@@ -527,6 +528,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
               title={service.title}
               images={service.record ? toServiceDetails(service.record).images : []}
               onView={() => setSelectedCoreService(service)}
+              href={service.record ? servicePagePath(service.record) : undefined}
               price={getServiceStartingPrice(service.record)}
             />
           ))}

@@ -17,6 +17,8 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { Booking } from '../../types/booking';
+import { ProgressTracker } from '../../components/account/ProgressTracker';
+import { bookingProgress } from '../../services/customerAccountService';
 import { Button } from '../../components/ui/Button';
 import { formatCurrency } from '../../utils/currency';
 
@@ -179,6 +181,9 @@ export const AccountBookingsTab: React.FC<AccountBookingsTabProps> = ({
                   </span>
                 </div>
               </div>
+
+              {/* Where the booking is now */}
+              <ProgressTracker progress={bookingProgress(b)} className="px-1 py-1" />
 
               {/* Service & Reservation Details */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4">

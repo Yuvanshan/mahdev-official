@@ -1,5 +1,7 @@
 export interface SWSService {
   id: string;
+  /** The service's own page (/services/…); only for services from the database. */
+  pagePath?: string;
   name: string;
   category: 'decor' | 'production' | 'media' | 'hospitality' | 'rentals' | 'packages';
   tagline: string;

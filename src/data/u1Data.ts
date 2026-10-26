@@ -1,5 +1,7 @@
 export interface U1Service {
   id: string;
+  /** The service's own page (/services/…); only for services from the database. */
+  pagePath?: string;
   name: string;
   tagline: string;
   category: 'media' | 'portrait' | 'commercial' | 'print';

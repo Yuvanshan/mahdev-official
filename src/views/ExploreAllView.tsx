@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowRight, BadgeDollarSign, Camera, Image as ImageIcon, Layers, RotateCcw, Search, SlidersHorizontal, X } from 'lucide-react';
 import { SEOHead } from '../components/layout/SEOHead';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
-import { ServiceTile } from '../components/services/ServiceTile';
+import { ServiceTile, inAppLinkClick } from '../components/services/ServiceTile';
+import { gallerySeo, productSeo, servicePagePath } from '../config/itemSeo';
 import { ServiceDetailsModal, toServiceDetails, wrapIndex } from '../components/services/ServiceDetailsModal';
 import { CatalogProductModal } from '../components/catalog/CatalogProductModal';
 import { GallerySectionShimmer } from '../components/common/GallerySectionShimmer';
@@ -94,12 +95,22 @@ const BrowseCard: React.FC<{
   imageLoading: 'eager' | 'lazy';
 }> = ({ item, onSelect, onNavigate, imageLoading }) => {
   const imageSources = getImageSourceCandidates(item.image, item.images);
+  // Each card links to the item's own page (listed in the sitemap), so search engines can
+  // follow it; a plain click opens the details pop-up instead.
+  const record = item.data as unknown as Record<string, unknown>;
+  const href = item.type === 'service'
+    ? servicePagePath(record)
+    : item.type === 'product'
+      ? productSeo(record, item.data.id).path
+      : gallerySeo(record, item.data.id).path;
+  const openDetails = inAppLinkClick(() => onSelect(item));
   // Services: image, title and View only; full details open in the modal below.
   if (item.type === 'service') {
     return (
       <ServiceTile
         title={item.title}
         images={imageSources}
+        href={href}
         onView={() => onSelect(item)}
         imageLoading={imageLoading}
         price={getServiceStartingPrice(item.data as unknown as Record<string, any>)}
@@ -110,9 +121,9 @@ const BrowseCard: React.FC<{
 
   return (
     <article className="group flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg">
-      <button
-        type="button"
-        onClick={() => onSelect(item)}
+      <a
+        href={href}
+        onClick={openDetails}
         className="relative block aspect-[4/3] w-full overflow-hidden bg-slate-100 text-left"
         aria-label={`View ${item.title}`}
       >
@@ -138,7 +149,7 @@ const BrowseCard: React.FC<{
             {item.images.length} photos
           </span>
         )}
-      </button>
+      </a>
 
       <div className="flex flex-1 flex-col p-4">
         <div className="mb-2 flex items-center justify-between gap-2">
@@ -156,13 +167,13 @@ const BrowseCard: React.FC<{
                 ? formatCurrency(price, 'LKR')
                 : 'Contact for details'}
           </span>
-          <button
-            type="button"
-            onClick={() => onSelect(item)}
+          <a
+            href={href}
+            onClick={openDetails}
             className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 transition hover:gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
           >
             View details <ArrowRight className="h-3.5 w-3.5" />
-          </button>
+          </a>
         </div>
         <div aria-hidden="true" className="mt-2 h-4" />
       </div>

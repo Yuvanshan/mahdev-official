@@ -35,6 +35,12 @@ export interface CustomerUser {
   createdAt: string;
   lastLogin: string;
   corporateTier?: 'Silver' | 'Gold' | 'Platinum' | 'Enterprise VIP';
+  /** Sri Lankan NIC and the date of birth and gender it encodes (read-only for customers). */
+  nic?: string;
+  dateOfBirth?: string;
+  gender?: 'male' | 'female';
+  /** Whether the customer has confirmed their email address. */
+  emailVerified?: boolean;
 }
 
 export interface LoginCredentials {
@@ -47,6 +53,7 @@ export interface RegisterInput {
   fullName: string;
   email: string;
   phone: string;
+  nic: string;
   company?: string;
   accountType: 'individual' | 'corporate';
   password: string;

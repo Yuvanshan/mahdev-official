@@ -238,7 +238,10 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     );
 
     setMetaTag('name', 'description', effectiveDesc);
-    setMetaTag('name', 'keywords', effectiveKeywords.join(', '));
+    // An empty keywords tag is flagged by SEO checkers, so remove it when a page has none.
+    const keywordList = effectiveKeywords.filter(Boolean).join(', ');
+    if (keywordList) setMetaTag('name', 'keywords', keywordList);
+    else document.querySelector('meta[name="keywords"]')?.remove();
     const googleVerification = import.meta.env.VITE_GOOGLE_SITE_VERIFICATION;
     const bingVerification = import.meta.env.VITE_BING_SITE_VERIFICATION;
     if (googleVerification) setMetaTag('name', 'google-site-verification', googleVerification);

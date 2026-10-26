@@ -3,137 +3,233 @@ import {
   signInWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
+  sendEmailVerification,
   onAuthStateChanged,
+  deleteUser,
+  reauthenticateWithCredential,
+  updatePassword,
+  EmailAuthProvider,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   User as FirebaseUser,
   updateProfile as updateFirebaseProfile,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from '../lib/tursoFirestore';
+import { doc, getDoc, setDoc } from '../lib/tursoFirestore';
 import { auth, db } from '../lib/firebase';
 import {
   CustomerUser,
   LoginCredentials,
   RegisterInput,
-  CustomerAddress,
-  CustomerPreferences,
   CustomerRole,
 } from '../types/customer';
 import { FirestoreUser } from '../types/firestore';
 import { Order } from '../types/order';
 import { Booking } from '../types/booking';
+import { normaliseSriLankaPhone, parseNic } from '../utils/sriLankaIdentity';
+import { safeStorage } from '../utils/safeStorage';
 
 type AuthListener = (user: CustomerUser | null) => void;
+type ProfileRecord = FirestoreUser & Record<string, any>;
+type Result = { success: boolean; error?: string };
+
+export const MIN_PASSWORD_LENGTH = 8;
+
+/** Set while a Google sign-in is away on a full-page redirect (popup was blocked). */
+const GOOGLE_REDIRECT_FLAG = 'mahdev_google_redirect_pending';
+
+export interface SocialSignInResult {
+  success: boolean;
+  user?: CustomerUser;
+  error?: string;
+  /** The customer closed the Google window; show nothing. */
+  cancelled?: boolean;
+  /** The page is leaving for Google's sign-in page and will come back signed in. */
+  redirecting?: boolean;
+}
+
+export interface ProfileCompletionInput {
+  fullName: string;
+  phone: string;
+  /** Only used when the account has no NIC yet. */
+  nic?: string;
+  address?: Partial<CustomerUser['address']>;
+}
+
+// One message for wrong email and wrong password, so sign-in never reveals which emails have accounts.
+const INVALID_LOGIN_MESSAGE = 'Incorrect email or password. Please try again.';
+
+/** Friendly message for a Firebase Auth error code. */
+function authErrorMessage(error: unknown, fallback: string): string {
+  const code = (error as { code?: string } | null)?.code || '';
+  switch (code) {
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password':
+    case 'auth/user-not-found':
+    case 'auth/invalid-login-credentials':
+      return INVALID_LOGIN_MESSAGE;
+    case 'auth/invalid-email':
+      return 'Please enter a valid email address.';
+    case 'auth/email-already-in-use':
+      return 'An account with this email already exists. Please sign in instead.';
+    case 'auth/weak-password':
+      return `Please choose a stronger password (at least ${MIN_PASSWORD_LENGTH} characters).`;
+    case 'auth/too-many-requests':
+      return 'Too many attempts. Please wait a few minutes and try again.';
+    case 'auth/network-request-failed':
+      return 'Network error. Please check your connection and try again.';
+    case 'auth/requires-recent-login':
+      return 'For your security, please sign in again and retry.';
+    case 'auth/user-disabled':
+      return 'This account has been disabled. Please contact us.';
+    case 'auth/operation-not-allowed':
+      return 'This sign-in method is not enabled yet. Please contact us.';
+    case 'auth/account-exists-with-different-credential':
+    case 'auth/credential-already-in-use':
+      return 'This email already has a Mahdev account. Please sign in with your email and password.';
+    case 'auth/unauthorized-domain':
+      return 'Google sign-in is not set up for this website address yet. Please use email for now.';
+    case 'auth/invalid-oauth-client-id':
+    case 'auth/invalid-oauth-provider':
+      return 'Google sign-in is not configured correctly yet. Please use email for now.';
+    default:
+      return error instanceof Error && !code ? error.message : fallback;
+  }
+}
+
+/** Maps a Firebase user and their profile record to the app's customer shape. */
+function toCustomerUser(firebaseUser: FirebaseUser, data: Partial<ProfileRecord> | null): CustomerUser {
+  const now = new Date().toISOString();
+  return {
+    id: firebaseUser.uid,
+    uid: firebaseUser.uid,
+    fullName: data?.name || data?.displayName || firebaseUser.displayName || 'Mahdev Customer',
+    email: firebaseUser.email || data?.email || '',
+    phone: data?.phone || '',
+    company: data?.company || '',
+    accountType: data?.accountType === 'corporate' ? 'corporate' : 'individual',
+    role: (data?.role as CustomerRole) || 'customer',
+    avatarUrl: data?.avatarUrl || data?.photoURL || data?.photoUrl || firebaseUser.photoURL || '',
+    address: data?.address || { street: '', city: '', postalCode: '', country: 'Sri Lanka' },
+    preferences: {
+      currency: 'LKR',
+      preferredContactMethod: data?.preferences?.preferredContactMethod || 'whatsapp',
+      orderNotifications: data?.preferences?.orderNotifications ?? true,
+      promotionalUpdates: data?.preferences?.promotionalUpdates ?? true,
+      smsAlerts: data?.preferences?.smsAlerts ?? true,
+      twoFactorEnabled: data?.preferences?.twoFactorEnabled ?? false,
+    },
+    nic: data?.nic || undefined,
+    dateOfBirth: data?.dateOfBirth || undefined,
+    gender: data?.gender || undefined,
+    emailVerified: firebaseUser.emailVerified,
+    createdAt: data?.createdAt || firebaseUser.metadata.creationTime || now,
+    lastLogin: firebaseUser.metadata.lastSignInTime || now,
+  };
+}
 
 class AuthService {
   private currentUser: CustomerUser | null = null;
   private listeners: Set<AuthListener> = new Set();
+  private readyListeners: Set<() => void> = new Set();
   private authInitialized = false;
+  // Registration writes the profile itself; the auth listener must not create a blank one first.
+  private registering = false;
+
+  // Error from a Google sign-in that came back by redirect, shown once on the sign-in page.
+  private redirectError: string | null = null;
 
   constructor() {
-    this.init();
     this.setupFirebaseListener();
+    this.completeGoogleRedirect();
   }
 
-  private init() {
-    this.currentUser = null;
+  /**
+   * Finishes a Google sign-in that went by full-page redirect. Only runs when one was
+   * started, so ordinary page loads do not load Firebase's sign-in frame.
+   */
+  private completeGoogleRedirect() {
+    if (!safeStorage.getItem(GOOGLE_REDIRECT_FLAG)) return;
+    safeStorage.removeItem(GOOGLE_REDIRECT_FLAG);
+    getRedirectResult(auth).catch((err) => {
+      this.redirectError = authErrorMessage(err, 'Google sign-in failed. Please try again.');
+      this.notifyListeners();
+    });
+  }
+
+  /** Returns (and clears) the error from a Google redirect sign-in, if there was one. */
+  public consumeRedirectError(): string | null {
+    const error = this.redirectError;
+    this.redirectError = null;
+    return error;
+  }
+
+  /** Reads users/{uid}, creating a minimal profile when it does not exist yet. */
+  private async loadProfile(firebaseUser: FirebaseUser): Promise<ProfileRecord | null> {
+    const userDocRef = doc(db, 'users', firebaseUser.uid);
+    const snapshot = await getDoc(userDocRef);
+    if (snapshot.exists()) return snapshot.data() as ProfileRecord;
+    if (this.registering) return null;
+    const now = new Date().toISOString();
+    const profile: FirestoreUser = {
+      uid: firebaseUser.uid,
+      name: firebaseUser.displayName || (firebaseUser.email || '').split('@')[0] || 'Mahdev Customer',
+      email: firebaseUser.email || '',
+      phone: '',
+      role: 'customer',
+      status: 'active',
+      createdAt: now,
+      updatedAt: now,
+    };
+    await setDoc(userDocRef, profile, { merge: true });
+    return profile as ProfileRecord;
   }
 
   private setupFirebaseListener() {
     try {
       onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-        this.authInitialized = true;
-        if (firebaseUser) {
+        // Anonymous sessions (guest checkout) are not customer accounts.
+        if (firebaseUser && !firebaseUser.isAnonymous) {
           try {
-            // Fetch Firestore profile at users/{uid}
-            const userDocRef = doc(db, 'users', firebaseUser.uid);
-            const userDocSnap = await getDoc(userDocRef);
-
-            if (userDocSnap.exists()) {
-              const data = userDocSnap.data() as FirestoreUser;
-              const mappedUser: CustomerUser = {
-                id: firebaseUser.uid,
-                uid: firebaseUser.uid,
-                fullName: data.name || firebaseUser.displayName || 'Mahdev Customer',
-                email: firebaseUser.email || data.email || '',
-                phone: data.phone || '',
-                company: (data as any).company || '',
-                accountType: 'individual',
-                role: (data.role as CustomerRole) || 'customer',
-                avatarUrl: firebaseUser.photoURL || data.photoURL || '',
-                address: (data as any).address || {
-                  street: '',
-                  city: 'Colombo',
-                  postalCode: '',
-                  country: 'Sri Lanka',
-                },
-                preferences: {
-                  currency: (data as any).preferences?.currency || 'LKR',
-                  preferredContactMethod: (data as any).preferences?.preferredContactMethod || 'whatsapp',
-                  orderNotifications: (data as any).preferences?.orderNotifications ?? true,
-                  promotionalUpdates: (data as any).preferences?.promotionalUpdates ?? true,
-                  smsAlerts: (data as any).preferences?.smsAlerts ?? true,
-                  twoFactorEnabled: (data as any).preferences?.twoFactorEnabled ?? false,
-                },
-                createdAt: data.createdAt || new Date().toISOString(),
-                lastLogin: new Date().toISOString(),
-              };
-
-              this.currentUser = mappedUser;
-              this.notifyListeners();
-            } else {
-              // Profile doc doesn't exist yet, provision it now
-              const now = new Date().toISOString();
-              const newFirestoreProfile: FirestoreUser = {
-                uid: firebaseUser.uid,
-                name: firebaseUser.displayName || 'Mahdev Customer',
-                email: firebaseUser.email || '',
-                phone: '',
-                photoURL: firebaseUser.photoURL || '',
-                role: 'customer',
-                status: 'active',
-                createdAt: now,
-                updatedAt: now,
-              };
-
-              await setDoc(userDocRef, newFirestoreProfile, { merge: true });
-
-              const mappedUser: CustomerUser = {
-                id: firebaseUser.uid,
-                uid: firebaseUser.uid,
-                fullName: newFirestoreProfile.name,
-                email: newFirestoreProfile.email,
-                phone: '',
-                accountType: 'individual',
-                role: 'customer',
-                avatarUrl: newFirestoreProfile.photoURL,
-                address: {
-                  street: '',
-                  city: 'Colombo',
-                  postalCode: '',
-                  country: 'Sri Lanka',
-                },
-                preferences: {
-                  currency: 'LKR',
-                  preferredContactMethod: 'whatsapp',
-                  orderNotifications: true,
-                  promotionalUpdates: true,
-                  smsAlerts: true,
-                  twoFactorEnabled: false,
-                },
-                createdAt: now,
-                lastLogin: now,
-              };
-
-              this.currentUser = mappedUser;
-              this.notifyListeners();
-            }
+            const profile = await this.loadProfile(firebaseUser);
+            if (profile || !this.registering) this.currentUser = toCustomerUser(firebaseUser, profile);
           } catch (err) {
-            console.warn('[Firebase Auth] Firestore profile fetch error:', err);
+            console.warn('[Firebase Auth] Profile load error:', err);
+            this.currentUser = toCustomerUser(firebaseUser, null);
           }
+        } else if (!this.registering) {
+          this.currentUser = null;
         }
+        this.markReady();
+        this.notifyListeners();
       });
     } catch (err) {
       console.warn('[Firebase Auth] Listener initialization error:', err);
+      this.markReady();
     }
+  }
+
+  private markReady() {
+    if (this.authInitialized) return;
+    this.authInitialized = true;
+    this.readyListeners.forEach((listener) => listener());
+    this.readyListeners.clear();
+  }
+
+  /** True once Firebase has restored (or ruled out) a saved session. */
+  public isReady(): boolean {
+    return this.authInitialized;
+  }
+
+  /** Runs once Firebase has restored the session; returns an unsubscribe function. */
+  public onReady(listener: () => void): () => void {
+    if (this.authInitialized) {
+      listener();
+      return () => undefined;
+    }
+    this.readyListeners.add(listener);
+    return () => this.readyListeners.delete(listener);
   }
 
   public subscribe(listener: AuthListener): () => void {
@@ -150,230 +246,164 @@ class AuthService {
   }
 
   /**
-   * Firebase Authentication - Login
+   * Firebase Authentication - Login with email and password.
    */
   public async login(
     credentials: LoginCredentials
   ): Promise<{ success: boolean; user?: CustomerUser; error?: string }> {
     const emailClean = credentials.email.trim().toLowerCase();
-    if (!emailClean) {
-      return { success: false, error: 'Email address is required.' };
-    }
+    if (!emailClean) return { success: false, error: 'Please enter your email address.' };
+    if (!credentials.password) return { success: false, error: 'Please enter your password.' };
 
     try {
-      // 1. Primary: Attempt Firebase Authentication with Email & Password
-      if (credentials.password) {
-        try {
-          const userCredential = await signInWithEmailAndPassword(
-            auth,
-            emailClean,
-            credentials.password
-          );
-          const fbUser = userCredential.user;
-
-          // Fetch Firestore user doc
-          const userDocRef = doc(db, 'users', fbUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
-          let profile = userDocSnap.exists() ? (userDocSnap.data() as FirestoreUser) : null;
-
-          if (!profile) {
-            // Create user document if missing
-            const now = new Date().toISOString();
-            profile = {
-              uid: fbUser.uid,
-              name: fbUser.displayName || emailClean.split('@')[0],
-              email: fbUser.email || emailClean,
-              phone: '',
-              photoURL: fbUser.photoURL || '',
-              role: 'customer',
-              status: 'active',
-              createdAt: now,
-              updatedAt: now,
-            };
-            await setDoc(userDocRef, profile, { merge: true });
-          }
-
-          const customerUser: CustomerUser = {
-            id: fbUser.uid,
-            uid: fbUser.uid,
-            fullName: profile.name || fbUser.displayName || 'Mahdev Customer',
-            email: fbUser.email || emailClean,
-            phone: profile.phone || '',
-            company: '',
-            accountType: 'individual',
-            role: (profile.role as CustomerRole) || 'customer',
-            avatarUrl: fbUser.photoURL || profile.photoURL || '',
-            address: {
-              street: '',
-              city: 'Colombo',
-              postalCode: '',
-              country: 'Sri Lanka',
-            },
-            preferences: {
-              currency: 'LKR',
-              preferredContactMethod: 'whatsapp',
-              orderNotifications: true,
-              promotionalUpdates: true,
-              smsAlerts: true,
-              twoFactorEnabled: false,
-            },
-            createdAt: profile.createdAt || new Date().toISOString(),
-            lastLogin: new Date().toISOString(),
-          };
-
-          this.currentUser = customerUser;
-          this.notifyListeners();
-          return { success: true, user: customerUser };
-        } catch (firebaseErr: any) {
-          // Check for standard Firebase Auth error codes
-          if (
-            firebaseErr.code === 'auth/wrong-password' ||
-            firebaseErr.code === 'auth/invalid-credential'
-          ) {
-            return { success: false, error: 'Incorrect password. Please verify your credentials.' };
-          }
-          if (firebaseErr.code === 'auth/user-not-found') {
-            return { success: false, error: 'No account found with this email. Please register.' };
-          }
-          if (firebaseErr.code === 'auth/invalid-email') {
-            return { success: false, error: 'Please enter a valid email address.' };
-          }
-          if (firebaseErr.code === 'auth/too-many-requests') {
-            return { success: false, error: 'Too many attempts. Please try again in a few moments.' };
-          }
-          console.error('[Firebase Auth] Login failed:', firebaseErr);
-          return { success: false, error: firebaseErr.message || 'Firebase sign-in failed.' };
-        }
-      }
-      return { success: false, error: 'Password is required.' };
-    } catch (err: any) {
-      return { success: false, error: err.message || 'Login failed.' };
+      const { user: fbUser } = await signInWithEmailAndPassword(auth, emailClean, credentials.password);
+      this.currentUser = toCustomerUser(fbUser, await this.loadProfile(fbUser));
+      this.notifyListeners();
+      return { success: true, user: this.currentUser };
+    } catch (err) {
+      if (!(err as { code?: string })?.code) console.error('[Firebase Auth] Login failed:', err);
+      return { success: false, error: authErrorMessage(err, 'Sign-in failed. Please try again.') };
     }
   }
 
   /**
-   * Firebase Authentication - Register
-   * Creates user in Firebase Auth and profile in Firestore users/{uid}
+   * Sign in (or sign up) with Google. Uses a popup; if the browser blocks it, falls back
+   * to a full-page redirect that returns signed in. New Google accounts get a profile
+   * with their Google name and are asked for their contact number and NIC afterwards.
+   */
+  public async signInWithGoogle(): Promise<SocialSignInResult> {
+    const provider = new GoogleAuthProvider();
+    // Always show the account chooser, so people with several Google accounts can pick.
+    provider.setCustomParameters({ prompt: 'select_account' });
+    try {
+      const { user: fbUser } = await signInWithPopup(auth, provider);
+      this.currentUser = toCustomerUser(fbUser, await this.loadProfile(fbUser));
+      this.notifyListeners();
+      return { success: true, user: this.currentUser };
+    } catch (err) {
+      const code = (err as { code?: string })?.code || '';
+      if (['auth/popup-closed-by-user', 'auth/cancelled-popup-request', 'auth/user-cancelled'].includes(code)) {
+        return { success: false, cancelled: true };
+      }
+      if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
+        safeStorage.setItem(GOOGLE_REDIRECT_FLAG, '1');
+        await signInWithRedirect(auth, provider);
+        return { success: false, redirecting: true };
+      }
+      if (!code) console.error('[Firebase Auth] Google sign-in failed:', err);
+      return { success: false, error: authErrorMessage(err, 'Google sign-in failed. Please try again.') };
+    }
+  }
+
+  /**
+   * Saves the details an account is missing (typically after Google sign-in) in one
+   * write. The server checks the NIC, keeps one account per NIC and derives the date
+   * of birth and gender from it; the saved record is read back to show them.
+   */
+  public async completeProfile(input: ProfileCompletionInput): Promise<Result> {
+    const fbUser = auth.currentUser;
+    const current = this.currentUser;
+    if (!fbUser || !current) return { success: false, error: 'Please sign in again.' };
+
+    const fullName = input.fullName.trim().replace(/\s+/g, ' ');
+    const phone = normaliseSriLankaPhone(input.phone);
+    const nic = current.nic ? null : parseNic(input.nic || '');
+    if (fullName.length < 3) return { success: false, error: 'Please enter your full name.' };
+    if (!phone) return { success: false, error: 'Please enter a valid Sri Lankan contact number.' };
+    if (!current.nic && !nic) return { success: false, error: 'Please enter a valid NIC number.' };
+
+    try {
+      const uid = current.uid || current.id;
+      await setDoc(
+        doc(db, 'users', uid),
+        {
+          name: fullName,
+          phone,
+          ...(nic ? { nic: nic.nic } : {}),
+          ...(input.address ? { address: { ...current.address, ...input.address } } : {}),
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+      if (fbUser.displayName !== fullName) await updateFirebaseProfile(fbUser, { displayName: fullName });
+      const saved = await getDoc(doc(db, 'users', uid));
+      this.currentUser = toCustomerUser(fbUser, saved.exists() ? (saved.data() as ProfileRecord) : null);
+      this.notifyListeners();
+      return { success: true };
+    } catch (err) {
+      console.error('[Turso] Profile completion failed:', err);
+      return { success: false, error: err instanceof Error ? err.message : 'Could not save your details.' };
+    }
+  }
+
+  /**
+   * Firebase Authentication - Register.
+   * Creates the Firebase login, then the profile at users/{uid}. The server checks
+   * the NIC, keeps one account per NIC and derives date of birth and gender from it.
+   * If the profile cannot be saved, the new login is deleted so the email can be reused.
    */
   public async register(
     input: RegisterInput
   ): Promise<{ success: boolean; user?: CustomerUser; error?: string }> {
     const emailClean = input.email.trim().toLowerCase();
-    const fullNameClean = input.fullName.trim();
+    const fullNameClean = input.fullName.trim().replace(/\s+/g, ' ');
+    const nic = parseNic(input.nic);
+    const phone = normaliseSriLankaPhone(input.phone);
 
-    if (!fullNameClean) {
-      return { success: false, error: 'Full name is required.' };
+    if (!fullNameClean) return { success: false, error: 'Full name is required.' };
+    if (!nic) return { success: false, error: 'Please enter a valid NIC number.' };
+    if (!phone) return { success: false, error: 'Please enter a valid Sri Lankan contact number.' };
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailClean)) return { success: false, error: 'A valid email address is required.' };
+    if (input.password.length < MIN_PASSWORD_LENGTH) {
+      return { success: false, error: `Password must contain at least ${MIN_PASSWORD_LENGTH} characters.` };
     }
+    if (input.password !== input.confirmPassword) return { success: false, error: 'Passwords do not match.' };
+    if (!input.agreeToTerms) return { success: false, error: 'Please accept the Terms and Privacy Policy.' };
 
-    if (!emailClean || !emailClean.includes('@')) {
-      return { success: false, error: 'A valid email address is required.' };
-    }
-
-    if (input.password.length < 6) {
-      return { success: false, error: 'Password must contain at least 6 characters.' };
-    }
-
-    if (input.password !== input.confirmPassword) {
-      return { success: false, error: 'Passwords do not match.' };
+    this.registering = true;
+    let fbUser: FirebaseUser;
+    try {
+      ({ user: fbUser } = await createUserWithEmailAndPassword(auth, emailClean, input.password));
+    } catch (err) {
+      this.registering = false;
+      if (!(err as { code?: string })?.code) console.error('[Firebase Auth] Registration failed:', err);
+      return { success: false, error: authErrorMessage(err, 'Registration failed. Please try again.') };
     }
 
     try {
-      let uid: string;
-
-      // 1. Primary: Create User in Firebase Auth
-      try {
-        const userCredential = await createUserWithEmailAndPassword(
-          auth,
-          emailClean,
-          input.password
-        );
-        const fbUser = userCredential.user;
-        uid = fbUser.uid;
-
-        // Update Firebase Auth profile displayName
-        await updateFirebaseProfile(fbUser, { displayName: fullNameClean });
-      } catch (authErr: any) {
-        if (authErr.code === 'auth/email-already-in-use') {
-          return {
-            success: false,
-            error: 'An account with this email already exists. Please sign in instead.',
-          };
-        }
-        if (authErr.code === 'auth/weak-password') {
-          return {
-            success: false,
-            error: 'Password is too weak. Please use a stronger password.',
-          };
-        }
-        if (authErr.code === 'auth/invalid-email') {
-          return {
-            success: false,
-            error: 'The provided email address is invalid.',
-          };
-        }
-        console.error('[Firebase Auth] Registration failed:', authErr);
-        return { success: false, error: authErr.message || 'Firebase registration failed.' };
-      }
-
-      // 2. Create Firestore Customer Profile Document at users/{uid}
+      await updateFirebaseProfile(fbUser, { displayName: fullNameClean });
       const now = new Date().toISOString();
-      const firestoreUserProfile: FirestoreUser = {
-        uid: uid,
+      const profile: FirestoreUser = {
+        uid: fbUser.uid,
         name: fullNameClean,
         email: emailClean,
-        phone: input.phone.trim(),
-        role: 'customer', // Security: Strictly locked to customer role on public registration
+        phone,
+        nic: nic.nic,
+        company: input.accountType === 'corporate' ? input.company?.trim() || '' : '',
+        accountType: input.accountType || 'individual',
+        role: 'customer', // The server also locks public registrations to the customer role.
         status: 'active',
         createdAt: now,
         updatedAt: now,
       };
-
-      try {
-        await setDoc(doc(db, 'users', uid), firestoreUserProfile, { merge: true });
-      } catch (firestoreErr) {
-        console.error('[Turso] Customer profile creation failed:', firestoreErr);
-        await signOut(auth);
-        return {
-          success: false,
-          error: firestoreErr instanceof Error ? firestoreErr.message : 'Could not save the customer profile.',
-        };
-      }
-
-      const newCustomerUser: CustomerUser = {
-        id: uid,
-        uid: uid,
-        fullName: fullNameClean,
-        email: emailClean,
-        phone: input.phone.trim(),
-        company: input.company?.trim(),
-        accountType: input.accountType || 'individual',
-        role: 'customer',
-        corporateTier: input.accountType === 'corporate' ? 'Silver' : undefined,
-        address: {
-          street: '',
-          city: 'Colombo',
-          postalCode: '',
-          country: 'Sri Lanka',
-        },
-        preferences: {
-          currency: 'LKR',
-          preferredContactMethod: 'whatsapp',
-          orderNotifications: true,
-          promotionalUpdates: true,
-          smsAlerts: true,
-          twoFactorEnabled: false,
-        },
-        createdAt: now,
-        lastLogin: now,
-      };
-
-      this.currentUser = newCustomerUser;
+      await setDoc(doc(db, 'users', fbUser.uid), profile, { merge: true });
+      // Read back the server's record, which holds the date of birth and gender from the NIC.
+      const saved = await getDoc(doc(db, 'users', fbUser.uid));
+      this.currentUser = toCustomerUser(fbUser, saved.exists() ? (saved.data() as ProfileRecord) : profile);
+    } catch (err) {
+      console.error('[Turso] Customer profile creation failed:', err);
+      await deleteUser(fbUser).catch(() => signOut(auth));
+      this.currentUser = null;
+      this.registering = false;
       this.notifyListeners();
-
-      return { success: true, user: newCustomerUser };
-    } catch (err: any) {
-      return { success: false, error: err.message || 'Registration failed.' };
+      return { success: false, error: authErrorMessage(err, 'Could not create your profile. Please try again.') };
     }
+
+    this.registering = false;
+    // A failed verification email must not fail the registration; it can be resent from the profile.
+    sendEmailVerification(fbUser).catch((err) => console.warn('[Firebase Auth] Verification email failed:', err));
+    this.notifyListeners();
+    return { success: true, user: this.currentUser };
   }
 
   /**
@@ -390,83 +420,115 @@ class AuthService {
   }
 
   /**
-   * Firebase Authentication - Forgot Password / Password Reset Email
+   * Firebase Authentication - Password reset email.
+   * The same confirmation is shown whether or not the email has an account.
    */
   public async requestPasswordReset(
     email: string
   ): Promise<{ success: boolean; message: string; error?: string }> {
     const cleanEmail = email.trim().toLowerCase();
+    const sent = {
+      success: true,
+      message: `If an account exists for ${cleanEmail}, a password reset link is on its way. Please check your inbox and spam folder.`,
+    };
     try {
       await sendPasswordResetEmail(auth, cleanEmail);
-      return {
-        success: true,
-        message: `Password reset instructions have been dispatched to ${cleanEmail}. Check your inbox for the secure verification link.`,
-      };
-    } catch (err: any) {
-      if (err.code === 'auth/user-not-found') {
-        return {
-          success: false,
-          error: 'No account found with this email address. Please check your spelling or register.',
-          message: '',
-        };
-      }
-      if (err.code === 'auth/invalid-email') {
-        return {
-          success: false,
-          error: 'Please enter a valid email address.',
-          message: '',
-        };
-      }
-      console.error('[Firebase Auth] Password reset request failed:', err);
-      return {
-        success: false,
-        error: err instanceof Error ? err.message : 'Could not send password reset instructions.',
-        message: '',
-      };
+      return sent;
+    } catch (err) {
+      const code = (err as { code?: string })?.code;
+      if (code === 'auth/user-not-found') return sent;
+      if (!code) console.error('[Firebase Auth] Password reset request failed:', err);
+      return { success: false, message: '', error: authErrorMessage(err, 'Could not send the reset link. Please try again.') };
     }
+  }
+
+  /** Changes the password after confirming the current one. */
+  public async changePassword(currentPassword: string, newPassword: string): Promise<Result> {
+    const fbUser = auth.currentUser;
+    if (!fbUser?.email) return { success: false, error: 'Please sign in again.' };
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      return { success: false, error: `New password must contain at least ${MIN_PASSWORD_LENGTH} characters.` };
+    }
+    try {
+      await reauthenticateWithCredential(fbUser, EmailAuthProvider.credential(fbUser.email, currentPassword));
+      await updatePassword(fbUser, newPassword);
+      return { success: true };
+    } catch (err) {
+      const message = authErrorMessage(err, 'Could not change your password.');
+      return { success: false, error: message === INVALID_LOGIN_MESSAGE ? 'Your current password is incorrect.' : message };
+    }
+  }
+
+  /** Sends (or resends) the email address confirmation link. */
+  public async sendVerificationEmail(): Promise<Result> {
+    const fbUser = auth.currentUser;
+    if (!fbUser) return { success: false, error: 'Please sign in again.' };
+    try {
+      await sendEmailVerification(fbUser);
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: authErrorMessage(err, 'Could not send the verification email.') };
+    }
+  }
+
+  /** Re-reads the email verification status after the customer clicks the link. */
+  public async refreshEmailVerification(): Promise<boolean> {
+    const fbUser = auth.currentUser;
+    if (!fbUser || !this.currentUser) return false;
+    await fbUser.reload();
+    this.currentUser = { ...this.currentUser, emailVerified: fbUser.emailVerified };
+    this.notifyListeners();
+    return fbUser.emailVerified;
   }
 
   public async updateProfile(
     userId: string,
     updates: Partial<CustomerUser>
   ): Promise<{ success: boolean; user?: CustomerUser; error?: string }> {
-    if (!this.currentUser || (this.currentUser.id !== userId && this.currentUser.uid !== userId)) {
+    const fbUser = auth.currentUser;
+    if (!fbUser || !this.currentUser || (this.currentUser.id !== userId && this.currentUser.uid !== userId)) {
       return { success: false, error: 'Customer account not found.' };
     }
 
     const current = this.currentUser;
-    const updated: CustomerUser = {
-      ...current,
-      ...updates,
-      address: {
-        ...current.address,
-        ...(updates.address || {}),
-      },
-      preferences: {
-        ...current.preferences,
-        ...(updates.preferences || {}),
-      },
-    };
+    const fullName = (updates.fullName ?? current.fullName).trim().replace(/\s+/g, ' ');
+    const phoneInput = updates.phone ?? current.phone;
+    const phone = phoneInput ? normaliseSriLankaPhone(phoneInput) : '';
+    if (!fullName) return { success: false, error: 'Full name is required.' };
+    if (phone === null) return { success: false, error: 'Please enter a valid Sri Lankan contact number.' };
 
+    const address = { ...current.address, ...(updates.address || {}) };
+    const preferences = { ...current.preferences, ...(updates.preferences || {}) };
     try {
-      const targetUid = current.uid || current.id;
-      const userRef = doc(db, 'users', targetUid);
+      // NIC, date of birth and gender are not sent: they are fixed at registration.
       await setDoc(
-        userRef,
+        doc(db, 'users', current.uid || current.id),
         {
-          name: updated.fullName,
-          phone: updated.phone,
-          company: updated.company || '',
-          avatarUrl: updated.avatarUrl || '',
-          address: updated.address || {},
-          preferences: updated.preferences || {},
+          name: fullName,
+          phone,
+          company: updates.company ?? current.company ?? '',
+          avatarUrl: updates.avatarUrl ?? current.avatarUrl ?? '',
+          address,
+          preferences,
           updatedAt: new Date().toISOString(),
         },
         { merge: true }
       );
-      this.currentUser = updated;
+      if (fbUser.displayName !== fullName) await updateFirebaseProfile(fbUser, { displayName: fullName });
+      this.currentUser = {
+        ...current,
+        ...updates,
+        fullName,
+        phone,
+        address,
+        preferences,
+        // Never taken from the update.
+        nic: current.nic,
+        dateOfBirth: current.dateOfBirth,
+        gender: current.gender,
+      };
       this.notifyListeners();
-      return { success: true, user: updated };
+      return { success: true, user: this.currentUser };
     } catch (err) {
       console.error('[Turso] Customer profile update failed:', err);
       return {
@@ -512,6 +574,9 @@ class AuthService {
           smsAlerts: false,
           twoFactorEnabled: false,
         },
+        nic: data.nic || undefined,
+        dateOfBirth: data.dateOfBirth || undefined,
+        gender: data.gender || undefined,
         createdAt: data.createdAt || '',
         lastLogin: data.lastLogin || data.updatedAt || data.createdAt || '',
       } satisfies CustomerUser;

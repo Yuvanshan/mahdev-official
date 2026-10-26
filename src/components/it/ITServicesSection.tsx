@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { servicePagePath } from '../../config/itemSeo';
 import {
   Globe,
   Smartphone,
@@ -87,6 +88,7 @@ export const ITServicesSection: React.FC<ITServicesSectionProps> = ({
       if (itServices.length > 0) {
         return itServices.map((s) => ({
           id: s.id,
+          pagePath: servicePagePath(s),
           name: s.name,
           images: toServiceDetails(s as unknown as Record<string, any>).images,
           price: getServiceStartingPrice(s as unknown as Record<string, any>),
@@ -165,6 +167,7 @@ export const ITServicesSection: React.FC<ITServicesSectionProps> = ({
             title={service.name}
             images={service.images || []}
             onView={() => onSelectService(service)}
+            href={service.pagePath}
             price={service.price}
           />
         ))}

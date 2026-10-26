@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { servicePagePath } from '../../config/itemSeo';
 import {
   Sparkles,
 } from 'lucide-react';
@@ -46,6 +47,7 @@ export const SWSServicesSection: React.FC<SWSServicesSectionProps> = ({
           const price = getServiceStartingPrice(s as unknown as Record<string, any>);
           return {
           id: s.id,
+          pagePath: servicePagePath(s),
           name: s.name,
           category: (s.category || (s as any).categoryId || 'General') as any,
           tagline: (s as any).tagline || s.description?.slice(0, 60) || '',

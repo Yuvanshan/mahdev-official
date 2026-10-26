@@ -217,6 +217,7 @@ const LoginView = lazy(() => import('./views/auth/LoginView').then((module) => (
 const RegisterView = lazy(() => import('./views/auth/RegisterView').then((module) => ({ default: module.RegisterView })));
 const ForgotPasswordView = lazy(() => import('./views/auth/ForgotPasswordView').then((module) => ({ default: module.ForgotPasswordView })));
 const AccountLayout = lazy(() => import('./views/account/AccountLayout').then((module) => ({ default: module.AccountLayout })));
+const CompleteProfileView = lazy(() => import('./views/account/CompleteProfileView').then((module) => ({ default: module.CompleteProfileView })));
 const AdminLayout = lazy(() => import('./views/admin/AdminLayout').then(({ AdminLayout }) => ({ default: AdminLayout })));
 const MaintenanceView = lazy(() => import('./views/MaintenanceView').then((module) => ({ default: module.MaintenanceView })));
 import { DocumentScrollProgress } from './components/motion/ParallelScroll';
@@ -678,6 +679,14 @@ function AppContent() {
     }
 
     // Protected Customer Account Routes
+    if (normalizedPath === '/account/complete') {
+      return (
+        <ProtectedRoute onNavigate={navigate} currentPath="/account/complete">
+          <CompleteProfileView onNavigate={navigate} redirectPath={redirectParam || '/account'} />
+        </ProtectedRoute>
+      );
+    }
+
     if (normalizedPath === '/account') {
       return (
         <ProtectedRoute onNavigate={navigate} currentPath="/account">
@@ -730,6 +739,14 @@ function AppContent() {
       return (
         <ProtectedRoute onNavigate={navigate} currentPath="/account/notifications">
           <AccountLayout currentTab="notifications" onNavigate={navigate} />
+        </ProtectedRoute>
+      );
+    }
+
+    if (normalizedPath === '/account/activity') {
+      return (
+        <ProtectedRoute onNavigate={navigate} currentPath="/account/activity">
+          <AccountLayout currentTab="activity" onNavigate={navigate} />
         </ProtectedRoute>
       );
     }
