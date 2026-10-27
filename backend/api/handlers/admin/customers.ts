@@ -1,5 +1,4 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { getAuth } from 'firebase-admin/auth';
 import {
   AdminSessionAuthError,
   getAdminSessionFromCookie,
@@ -48,13 +47,36 @@ async function assignMissingCustomerCodes(records: Awaited<ReturnType<typeof lis
   }
 }
 
-/** Removes the customer's sign-in account; returns a warning when that was not possible. */
+function firebaseProjectId(): string {
+  return process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || 'for-her-33ea9';
+}
+
+/**
+ * Removes the customer's sign-in account; returns a warning when that was not possible.
+ * Calls the Identity Toolkit REST API with the server's service-account token instead of
+ * firebase-admin/auth: that module loads jwks-rsa, which require()s the ESM-only `jose`
+ * package and crashes the bundled Vercel function on start-up (ERR_REQUIRE_ESM).
+ */
 async function deleteSignInAccount(uid: string): Promise<string | undefined> {
   try {
-    await getAuth(getFirebaseAdminApp()).deleteUser(uid);
-    return undefined;
+    const credential = getFirebaseAdminApp().options.credential;
+    if (!credential) throw new Error('No Firebase service-account credential is configured.');
+    const { access_token: accessToken } = await credential.getAccessToken();
+    const response = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/projects/${encodeURIComponent(firebaseProjectId())}/accounts:delete`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ localId: uid }),
+        signal: AbortSignal.timeout(10_000),
+      }
+    );
+    if (response.ok) return undefined;
+    const detail = await response.text();
+    // Already gone (or never had a sign-in account): nothing left to remove.
+    if (detail.includes('USER_NOT_FOUND')) return undefined;
+    throw new Error(`Identity Toolkit responded ${response.status}: ${detail.slice(0, 300)}`);
   } catch (error) {
-    if ((error as { code?: string } | null)?.code === 'auth/user-not-found') return undefined;
     console.error(`[Admin Customers] Could not delete Firebase sign-in account ${uid}:`, error);
     return 'The customer profile was deleted, but their sign-in account could not be removed. They can sign in again to create a new profile.';
   }
