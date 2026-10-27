@@ -14,6 +14,7 @@ import {
   updateCareerApplicationStatus,
 } from '../../services/careerService';
 import { DIVISIONS } from '../../config/divisions';
+import { buildCareerSeoDescription, CAREER_DEFAULT_LOCATION, careerLocation } from '../../config/careerSeo';
 
 type AdminTab = 'openings' | 'applications';
 type OpeningForm = Omit<CareerOpening, 'id' | 'createdAt' | 'updatedAt'>;
@@ -21,11 +22,12 @@ type OpeningForm = Omit<CareerOpening, 'id' | 'createdAt' | 'updatedAt'>;
 const EMPTY_OPENING: OpeningForm = {
   title: '',
   divisionId: 'sws',
-  location: 'Colombo',
+  location: CAREER_DEFAULT_LOCATION,
   employmentType: 'Full-time',
   experience: '',
   description: '',
   responsibilities: [],
+  seoDescription: '',
   status: 'draft',
 };
 
@@ -65,6 +67,10 @@ export const AdminCareersView: React.FC = () => {
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  // The SEO description follows the title, division, location and description until edited by hand.
+  const [seoIsManual, setSeoIsManual] = useState(false);
+  const autoSeoDescription = buildCareerSeoDescription(openingDraft);
+  const seoDescription = seoIsManual ? openingDraft.seoDescription || '' : autoSeoDescription;
 
   const refreshData = async (initial = false) => {
     if (initial) setIsLoading(true);
@@ -111,14 +117,18 @@ export const AdminCareersView: React.FC = () => {
   const startCreate = () => {
     setEditingId(null);
     setOpeningDraft(EMPTY_OPENING);
+    setSeoIsManual(false);
     setError('');
     setIsEditorOpen(true);
   };
 
   const startEdit = (opening: CareerOpening) => {
-    const { title, divisionId, location, employmentType, experience, description, responsibilities, status } = opening;
+    const { title, divisionId, location, employmentType, experience, description, responsibilities, seoDescription: savedSeo, status } = opening;
+    const draft = { title, divisionId, location: careerLocation(location), employmentType, experience, description, responsibilities, seoDescription: savedSeo || '', status };
     setEditingId(opening.id);
-    setOpeningDraft({ title, divisionId, location, employmentType, experience, description, responsibilities, status });
+    setOpeningDraft(draft);
+    // A saved description that differs from the auto text was written by hand, so keep it.
+    setSeoIsManual(Boolean(savedSeo?.trim()) && savedSeo !== buildCareerSeoDescription(draft));
     setError('');
     setIsEditorOpen(true);
   };
@@ -138,10 +148,12 @@ export const AdminCareersView: React.FC = () => {
         ...openingDraft,
         id,
         title: openingDraft.title.trim(),
-        location: openingDraft.location.trim(),
+        location: careerLocation(openingDraft.location),
         employmentType: openingDraft.employmentType.trim(),
         experience: openingDraft.experience.trim(),
         description: openingDraft.description.trim(),
+        // Generated automatically when the admin has not written one.
+        seoDescription: seoDescription.trim() || autoSeoDescription,
       }, previousOpening?.createdAt);
       setIsEditorOpen(false);
       setNotice(openingDraft.status === 'published' ? 'Opportunity published.' : 'Opportunity saved.');
@@ -262,7 +274,7 @@ export const AdminCareersView: React.FC = () => {
                   <div>
                     <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize ${statusClass(opening.status)}`}>{opening.status}</span>
                     <h3 className="mt-3 font-semibold text-slate-900">{opening.title}</h3>
-                    <p className="mt-1 text-xs text-slate-500">{divisionLabel(opening.divisionId)} · {opening.location} · {opening.employmentType}</p>
+                    <p className="mt-1 text-xs text-slate-500">{divisionLabel(opening.divisionId)} · {careerLocation(opening.location)} · {opening.employmentType}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <button type="button" onClick={() => startEdit(opening)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-600 hover:border-blue-300 hover:text-blue-700">
@@ -390,6 +402,28 @@ export const AdminCareersView: React.FC = () => {
             <label className="block text-sm font-medium text-slate-700">Description *
               <textarea required rows={5} value={openingDraft.description} onChange={(event) => setOpeningDraft({ ...openingDraft, description: event.target.value })} className="mt-1.5 w-full resize-y rounded-xl border border-slate-200 px-3.5 py-2.5 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" />
             </label>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-slate-700">SEO meta description</span>
+                {seoIsManual ? (
+                  <button type="button" onClick={() => setSeoIsManual(false)} className="text-[11px] font-semibold text-blue-600 hover:underline">Use auto text</button>
+                ) : (
+                  <span className="text-[11px] font-semibold text-emerald-600">Auto</span>
+                )}
+              </div>
+              <textarea
+                aria-label="SEO meta description"
+                rows={2}
+                value={seoDescription}
+                onChange={(event) => {
+                  setSeoIsManual(true);
+                  setOpeningDraft({ ...openingDraft, seoDescription: event.target.value });
+                }}
+                placeholder="Filled in automatically from the title, location and description"
+                className="mt-1.5 w-full resize-y rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              />
+              <p className="mt-0.5 text-[11px] text-slate-500">{seoDescription.length}/160 characters · shown under the job title in Google (Trincomalee &amp; Colombo)</p>
+            </div>
             <label className="block text-sm font-medium text-slate-700">Visibility
               <select value={openingDraft.status} onChange={(event) => setOpeningDraft({ ...openingDraft, status: event.target.value as CareerOpeningStatus })} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5">
                 <option value="draft">Draft</option><option value="published">Published</option><option value="closed">Closed</option>

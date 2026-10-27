@@ -25,6 +25,8 @@ export interface CareerOpening {
   experience: string;
   description: string;
   responsibilities?: string[];
+  /** Meta description for search results, auto-generated in the admin editor. */
+  seoDescription?: string;
   status: CareerOpeningStatus;
   createdAt: string;
   updatedAt: string;

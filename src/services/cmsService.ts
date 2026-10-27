@@ -17,6 +17,7 @@ import {
   HomepageCmsConfig,
 } from '../types/cms';
 import { DIVISIONS } from '../config/divisions';
+import { generateImageSeo } from '../config/imageAlt';
 import { COMPANY_MILESTONES } from '../data/homeData';
 import { adminService } from './adminService';
 import { DivisionId } from '../types';
@@ -56,6 +57,29 @@ export interface CmsFilterOptions {
   includeDeleted?: boolean;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+}
+
+
+/** Entities whose records carry image alt text and an SEO description. */
+const IMAGE_SEO_ENTITIES: ReadonlySet<CmsEntityType> = new Set(['gallery', 'services', 'products']);
+
+/**
+ * Fills in a gallery item's, service's or product's image alt text and SEO
+ * description when they are empty, so every record saved from the admin portal
+ * gets them automatically (both name Trincomalee and Colombo). Hand-written
+ * values are kept.
+ */
+function withAutoImageSeo(entity: CmsEntityType, item: any): any {
+  if (!IMAGE_SEO_ENTITIES.has(entity)) return item;
+  const hasAlt = typeof item.imageAlt === 'string' && item.imageAlt.trim();
+  const hasDescription = typeof item.seoDescription === 'string' && item.seoDescription.trim();
+  if (hasAlt && hasDescription) return item;
+  const generated = generateImageSeo(item);
+  return {
+    ...item,
+    imageAlt: hasAlt ? item.imageAlt : generated.imageAlt,
+    seoDescription: hasDescription ? item.seoDescription : generated.seoDescription,
+  };
 }
 
 class CmsService {
@@ -1094,7 +1118,7 @@ class CmsService {
   public async create<T = any>(entity: CmsEntityType, data: Partial<T>): Promise<T> {
     const now = new Date().toISOString();
     const id = (data as any).id || `${entity.slice(0, 3)}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
-    const newItem: any = {
+    const newItem: any = withAutoImageSeo(entity, {
       ...data,
       id,
       createdAt: now,
@@ -1103,7 +1127,7 @@ class CmsService {
       deletedAt: null,
       // Only new records get this, so the existing catalogue keeps its order (see utils/listingOrder).
       ...((NEWEST_FIRST_ENTITIES as readonly string[]).includes(entity) ? { [LISTED_AT_FIELD]: now } : {}),
-    };
+    });
 
     await this.syncEntityItemToFirestore(entity, newItem);
     const updated = [newItem, ...(this.cache[entity] || [])];
@@ -1396,12 +1420,12 @@ class CmsService {
 
     const existing = current[index];
     const now = new Date().toISOString();
-    const updatedItem: any = {
+    const updatedItem: any = withAutoImageSeo(entity, {
       ...existing,
       ...data,
       id,
       updatedAt: now,
-    };
+    });
 
     await this.syncEntityItemToFirestore(entity, updatedItem);
     current[index] = updatedItem;

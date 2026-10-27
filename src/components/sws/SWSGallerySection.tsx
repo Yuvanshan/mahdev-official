@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { SWSGalleryItem } from '../../data/swsData';
 import { getSwsImageAlt } from '../../data/swsLocalSeo';
-import { preferSavedAlt } from '../../config/imageAlt';
+import { branchLocationTag, preferSavedAlt } from '../../config/imageAlt';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { isSameDivision } from '../../services/firestore/divisions';
 import { SectionContainer } from '../ui/SectionContainer';
@@ -82,7 +82,7 @@ export const SWSGallerySection: React.FC = () => {
             category: cat as any,
             imageUrl: images[0] || (g as any).imageUrl || (g as any).url || '',
             images: images,
-            location: (g as any).location || 'Colombo, Sri Lanka',
+            location: branchLocationTag((g as any).location),
             year: !galleryYear || String(galleryYear) === '2024' ? '2026' : String(galleryYear),
             description: (g as any).description || (g as any).caption || '',
             tags: (g as any).tags || [cat],

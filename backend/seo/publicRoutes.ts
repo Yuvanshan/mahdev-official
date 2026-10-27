@@ -11,6 +11,7 @@ import { CANONICAL_SITE_ORIGIN, SITE_NAME } from '../../src/config/site.js';
 import { DIVISION_SEO } from '../../src/config/divisionSeo.js';
 import { getPageTitle } from '../../src/config/pageTitles.js';
 import { withServiceArea } from '../../src/config/itemSeo.js';
+import { CAREERS_PAGE_SEO } from '../../src/config/careerSeo.js';
 import { getSwsStructuredData, SWS_BUSINESS, SWS_PRIMARY_HEADING, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS } from '../../src/data/swsLocalSeo.js';
 import { U1_PRIMARY_HEADING, U1_SERVICE_AREA_SUMMARY, U1_SERVICE_HIGHLIGHTS } from '../../src/data/u1LocalSeo.js';
 
@@ -182,9 +183,19 @@ const ROUTES: RouteSeo[] = [
   {
     path: '/careers',
     title: titleFor('/careers'),
-    description: 'Explore current career opportunities at Mahdev and apply securely with your CV.',
-    heading: 'Careers at Mahdev',
-    intro: 'Join our event, studio, technology and travel teams.',
+    description: CAREERS_PAGE_SEO.description,
+    heading: CAREERS_PAGE_SEO.heading,
+    intro: CAREERS_PAGE_SEO.intro,
+    subheadings: ['Open positions in Trincomalee and Colombo', 'Apply online with your CV', 'Check your application status'],
+    // Each published opening's JobPosting is added in the browser (src/views/CareersView.tsx).
+    structuredData: [{
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: SITE_NAME, item: `${SITE_ORIGIN}/` },
+        { '@type': 'ListItem', position: 2, name: 'Careers', item: `${SITE_ORIGIN}/careers` },
+      ],
+    }],
   },
   {
     path: '/clients',

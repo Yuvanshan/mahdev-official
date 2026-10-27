@@ -20,6 +20,7 @@ import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
+import { branchLocationTag } from '../../config/imageAlt';
 
 interface SWSPortfolioSectionProps {
   onConsultationClick: () => void;
@@ -42,7 +43,7 @@ export const SWSPortfolioSection: React.FC<SWSPortfolioSectionProps> = ({
           client: p.client || 'Distinguished Client',
           eventType: (p as any).eventType || (p as any).category || 'Signature Event',
           date: (p as any).date || (p as any).completionDate || '2024',
-          location: (p as any).location || 'Colombo, Sri Lanka',
+          location: branchLocationTag((p as any).location),
           guestCount: (p as any).guestCount || '350+ Guests',
           summary: p.description || '',
           detailedCase: (p as any).detailedCase || (p as any).challenge || p.description || '',

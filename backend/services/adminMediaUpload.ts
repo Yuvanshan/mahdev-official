@@ -59,25 +59,32 @@ function parseServiceAccount(value: string): Record<string, unknown> {
   return account;
 }
 
-function getStorageBucket() {
-  const bucketName =
-    process.env.FIREBASE_STORAGE_BUCKET ||
+function storageBucketName(): string {
+  return process.env.FIREBASE_STORAGE_BUCKET ||
     process.env.VITE_FIREBASE_STORAGE_BUCKET ||
     'for-her-33ea9.firebasestorage.app';
+}
+
+/** The server's firebase-admin app (storage and auth), initialised once from FIREBASE_SERVICE_ACCOUNT_JSON. */
+export function getFirebaseAdminApp() {
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 
   if (!getApps().length) {
     if (serviceAccountJson) {
       const serviceAccount = parseServiceAccount(serviceAccountJson);
-      initializeApp({ credential: cert(serviceAccount), storageBucket: bucketName });
+      initializeApp({ credential: cert(serviceAccount), storageBucket: storageBucketName() });
     } else if (process.env.NODE_ENV === 'production') {
       throw new Error('Server Firebase storage is not configured. Set FIREBASE_SERVICE_ACCOUNT_JSON.');
     } else {
-      initializeApp({ storageBucket: bucketName });
+      initializeApp({ storageBucket: storageBucketName() });
     }
   }
 
-  return getStorage(getApp()).bucket(bucketName);
+  return getApp();
+}
+
+function getStorageBucket() {
+  return getStorage(getFirebaseAdminApp()).bucket(storageBucketName());
 }
 
 export async function createAdminMediaUpload(input: {

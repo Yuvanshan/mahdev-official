@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import {
   checkTursoConnection,
   clearTursoCollection,
+  ensureCustomerCode,
   getTursoDocument,
   nextCareerApplicationReference,
   listTursoDocuments,
@@ -962,6 +963,10 @@ export async function handleTursoAction(
       const savedNic = access.role === 'customer' && write.collection === 'users' && typeof write.data?.nic === 'string'
         ? { nic: write.data.nic, dateOfBirth: write.data.dateOfBirth ?? null, gender: write.data.gender ?? null }
         : null;
+      // A customer's profile gets its readable customer ID ("mahdev-cus-001") on first save.
+      const customerCode = access.role === 'customer' && write.collection === 'users'
+        ? await ensureCustomerCode(write.id)
+        : null;
       return {
         status: 200,
         body: {
@@ -970,6 +975,7 @@ export async function handleTursoAction(
             ? { reference: write.data.reference }
             : {}),
           ...(savedNic ? { identity: savedNic } : {}),
+          ...(customerCode ? { customerCode } : {}),
         },
       };
     }
@@ -1023,6 +1029,12 @@ export async function handleTursoAction(
         access.role !== 'customer' ||
         (access.identity && customerOwnsDocument(document, access.identity, collection))
       ) ? document : null;
+      // Existing customers get their readable customer ID the next time their profile loads.
+      if (access.role === 'customer' && collection === 'users' && visibleDocument && !parentPath &&
+        !(typeof visibleDocument.data.customerCode === 'string' && visibleDocument.data.customerCode)) {
+        const customerCode = await ensureCustomerCode(visibleDocument.id);
+        if (customerCode) visibleDocument.data.customerCode = customerCode;
+      }
       const publicDocument = access.role === 'public' && collection === 'settings' && visibleDocument
         ? sanitizePublicSettingsDocument(visibleDocument)
         : access.role === 'public' &&

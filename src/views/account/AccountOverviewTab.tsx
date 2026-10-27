@@ -78,7 +78,7 @@ export const AccountOverviewTab: React.FC<AccountOverviewTabProps> = ({
               </div>
               <p className="text-xs text-slate-300">
                 {user.company ? `${user.company} • ` : ''}
-                {user.email} • ID: <span className="font-mono text-blue-300">{user.id}</span>
+                {user.email} • Customer ID: <span className="font-mono text-blue-300">{user.customerCode || user.id}</span>
               </p>
               <p className="text-[11px] text-slate-400">
                 Member since {new Date(user.createdAt).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}

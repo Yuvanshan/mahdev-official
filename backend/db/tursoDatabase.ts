@@ -270,11 +270,12 @@ export async function getTursoDocument(
   return { id: String(row.id), data: JSON.parse(String(row.data)) as Record<string, unknown> };
 }
 
-export async function nextCareerApplicationReference(): Promise<string> {
+/** Atomically increments the named counter in system_metadata and returns the new value. */
+async function nextSequence(counterId: string, label: string): Promise<number> {
   const table = await ensureCollectionTable('system_metadata');
   const result = await getTursoClient().execute({
     sql: `INSERT INTO "${table}" (parent_path, id, data, updated_at)
-      VALUES ('', 'career_application_sequence', json_object('sequence', 1), CURRENT_TIMESTAMP)
+      VALUES ('', ?, json_object('sequence', 1), CURRENT_TIMESTAMP)
       ON CONFLICT(parent_path, id) DO UPDATE SET
         data = json_set(
           data,
@@ -283,12 +284,46 @@ export async function nextCareerApplicationReference(): Promise<string> {
         ),
         updated_at = CURRENT_TIMESTAMP
       RETURNING json_extract(data, '$.sequence') AS sequence`,
+    args: [counterId],
   });
   const sequence = Number(result.rows[0]?.sequence);
   if (!Number.isSafeInteger(sequence) || sequence < 1) {
-    throw new Error('Could not allocate a career application reference.');
+    throw new Error(`Could not allocate a ${label}.`);
   }
+  return sequence;
+}
+
+export async function nextCareerApplicationReference(): Promise<string> {
+  const sequence = await nextSequence('career_application_sequence', 'career application reference');
   return `mahdev-app-${String(sequence).padStart(3, '0')}`;
+}
+
+/**
+ * Gives users/{id} a readable customer ID ("mahdev-cus-001") when it has none and
+ * returns the saved one. The document ID (the Firebase UID) is never changed, so
+ * orders, bookings and sign-in keep working with the old ID. Returns null when
+ * the profile does not exist.
+ */
+export async function ensureCustomerCode(id: string): Promise<string | null> {
+  const existing = await getTursoDocument('users', '', id);
+  if (!existing) return null;
+  if (typeof existing.data.customerCode === 'string' && existing.data.customerCode) return existing.data.customerCode;
+
+  const sequence = await nextSequence('customer_code_sequence', 'customer ID');
+  const code = `mahdev-cus-${String(sequence).padStart(3, '0')}`;
+  const table = await ensureCollectionTable('users');
+  // Only set when still empty, so two requests at once cannot give one customer two IDs.
+  const result = await getTursoClient().execute({
+    sql: `UPDATE "${table}" SET data = json_set(data, '$.customerCode', ?), updated_at = CURRENT_TIMESTAMP
+      WHERE parent_path = '' AND id = ? AND json_extract(data, '$.customerCode') IS NULL
+      RETURNING json_extract(data, '$.customerCode') AS code`,
+    args: [code, id],
+  });
+  if (result.rows[0]?.code) return String(result.rows[0].code);
+  // Another request assigned one first; use that (this number is left unused).
+  const current = await getTursoDocument('users', '', id);
+  const saved = current?.data.customerCode;
+  return typeof saved === 'string' && saved ? saved : null;
 }
 
 export async function listTursoDocuments(

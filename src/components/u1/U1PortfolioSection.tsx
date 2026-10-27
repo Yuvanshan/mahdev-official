@@ -22,6 +22,7 @@ import { newestListedFirst } from '../../utils/listingOrder';
 import { CrossfadeImage } from '../common/CrossfadeImage';
 import { getU1ImageAlt } from '../../data/u1LocalSeo';
 import { ImageWatermark } from '../common/ImageWatermark';
+import { BRANCH_LOCATION_LABEL, branchLocationTag } from '../../config/imageAlt';
 
 const U1PortfolioCardImage: React.FC<{ item: U1PortfolioItem }> = ({ item }) => {
   const images = (item.images?.length ? item.images : [item.imageUrl]).filter(Boolean);
@@ -97,7 +98,7 @@ export const U1PortfolioSection: React.FC = () => {
           category: (((p as any).category && (p as any).category !== 'All' ? (p as any).category : 'Portraits') as any),
           imageUrl: p.imageUrl || (p.images && p.images.length > 0 ? p.images[0] : ''),
           images: (p.images || [p.imageUrl]).filter(Boolean).slice(0, 3),
-          location: p.location || 'Colombo, Sri Lanka',
+          location: branchLocationTag(p.location),
           year: '2026',
           description: p.description || p.summary || '',
           client: p.client || 'Creative Client',
@@ -120,7 +121,7 @@ export const U1PortfolioSection: React.FC = () => {
             category: ((g.category || 'Portraits') as any),
             imageUrl: galUrl,
             images: ((g as any).images || [galUrl]).filter(Boolean).slice(0, 3),
-            location: 'Colombo Studio',
+            location: BRANCH_LOCATION_LABEL,
             year: '2026',
             description: g.caption || (g as any).description || '',
             client: 'U1 Gallery Collection',

@@ -23,6 +23,8 @@ export interface CustomerPreferences {
 export interface CustomerUser {
   id: string; // e.g. "CUST-2026-8941" or Firebase UID
   uid?: string;
+  /** Readable customer ID shown to customers and admins ("mahdev-cus-001"); `id` keeps the original ID. */
+  customerCode?: string;
   fullName: string;
   email: string;
   phone: string;

@@ -185,6 +185,7 @@ function toCustomerUser(firebaseUser: FirebaseUser, data: Partial<ProfileRecord>
   return {
     id: firebaseUser.uid,
     uid: firebaseUser.uid,
+    customerCode: data?.customerCode || undefined,
     fullName: data?.name || data?.displayName || firebaseUser.displayName || 'Mahdev Customer',
     email: firebaseUser.email || data?.email || '',
     phone: data?.phone || '',
@@ -554,9 +555,9 @@ class AuthService {
         updatedAt: now,
       };
       // One write; the response includes the date of birth and gender read from the NIC.
-      const { identity } = await setDocWithResult(doc(db, 'users', fbUser.uid), profile, { merge: true });
+      const { identity, customerCode } = await setDocWithResult(doc(db, 'users', fbUser.uid), profile, { merge: true });
       this.forgetProfile();
-      this.currentUser = toCustomerUser(fbUser, { ...profile, ...(identity || {}) } as ProfileRecord);
+      this.currentUser = toCustomerUser(fbUser, { ...profile, ...(identity || {}), ...(customerCode ? { customerCode } : {}) } as ProfileRecord);
     } catch (err) {
       console.error('[Turso] Customer profile creation failed:', err);
       await deleteUser(fbUser).catch(() => signOut(auth));
@@ -753,6 +754,7 @@ class AuthService {
       return {
         id: data.id,
         uid: data.uid || data.id,
+        customerCode: data.customerCode || undefined,
         fullName: data.name || data.displayName || 'Mahdev Customer',
         email: data.email || '',
         phone: data.phone || '',
@@ -781,6 +783,19 @@ class AuthService {
         lastLogin: data.lastLogin || data.updatedAt || data.createdAt || '',
       } satisfies CustomerUser;
     });
+  }
+
+  /**
+   * Deletes a customer's profile and sign-in account (admin only). Their orders,
+   * bookings and payments are kept. Resolves to a warning when only part succeeded.
+   */
+  public async deleteCustomer(id: string): Promise<string | undefined> {
+    const response = await fetch(`/api/admin/customers?id=${encodeURIComponent(id)}`, { method: 'DELETE', cache: 'no-store' });
+    const result = await response.json().catch(() => ({})) as { success?: boolean; error?: string; warning?: string };
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'The customer could not be deleted.');
+    }
+    return result.warning;
   }
 
   // ==========================================

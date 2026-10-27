@@ -23,6 +23,7 @@ Allow: /catalog
 Allow: /about
 Allow: /portfolio
 Allow: /contact
+Allow: /careers
 Allow: /book
 Allow: /privacy-policy
 Allow: /terms-and-conditions

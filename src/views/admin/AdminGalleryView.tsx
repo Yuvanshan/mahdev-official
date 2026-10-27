@@ -510,7 +510,8 @@ export const AdminGalleryView: React.FC = () => {
       {/* Header */}
       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          {/* Slides sideways on narrow screens instead of squeezing or wrapping the buttons. */}
+        <div className="flex min-w-0 max-w-full items-center gap-2 overflow-x-auto overscroll-x-contain whitespace-nowrap pb-1 sm:pb-0 [scrollbar-width:thin] [&>*]:shrink-0">
             <h2 className="font-display text-lg font-bold text-slate-900">Media Gallery CMS</h2>
             <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
               {galleryItems.length} Assets

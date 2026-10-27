@@ -23,6 +23,7 @@ import {
   Send,
   UserCheck,
   TrendingUp,
+  Trash2,
 } from 'lucide-react';
 import { authService } from '../../services/authService';
 import { orderService } from '../../services/orderService';
@@ -33,6 +34,7 @@ import { Booking } from '../../types/booking';
 import { Button } from '../../components/ui/Button';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { AdminModal } from '../../components/admin/AdminModal';
+import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { formatCurrency } from '../../utils/currency';
 
 export const AdminCustomersView: React.FC = () => {
@@ -41,6 +43,8 @@ export const AdminCustomersView: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerUser | null>(null);
   const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'bookings' | 'payments' | 'activity'>('profile');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [customerToDelete, setCustomerToDelete] = useState<CustomerUser | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Customer Orders & Bookings
   const [customerOrders, setCustomerOrders] = useState<Order[]>([]);
@@ -70,6 +74,24 @@ export const AdminCustomersView: React.FC = () => {
   useEffect(() => {
     void loadCustomers();
   }, []);
+
+  const handleDeleteCustomer = async () => {
+    const customer = customerToDelete;
+    setCustomerToDelete(null);
+    if (!customer) return;
+    setDeletingId(customer.id);
+    try {
+      const warning = await authService.deleteCustomer(customer.id);
+      setCustomers((prev) => prev.filter((c) => c.id !== customer.id));
+      if (selectedCustomer?.id === customer.id) setSelectedCustomer(null);
+      if (warning) addToast('warning', 'Customer Partly Deleted', warning);
+      else addToast('success', 'Customer Deleted', `${customer.fullName} (${customer.customerCode || customer.id}) was deleted. Their orders and bookings are kept.`);
+    } catch (error) {
+      addToast('error', 'Delete Failed', error instanceof Error ? error.message : 'The customer could not be deleted.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const handleOpenCustomer = (customer: CustomerUser) => {
     setSelectedCustomer(customer);
@@ -110,6 +132,8 @@ export const AdminCustomersView: React.FC = () => {
     const q = searchQuery.toLowerCase();
     return (
       c.fullName?.toLowerCase().includes(q) ||
+      c.customerCode?.toLowerCase().includes(q) ||
+      c.id.toLowerCase().includes(q) ||
       c.email?.toLowerCase().includes(q) ||
       c.company?.toLowerCase().includes(q) ||
       c.phone?.toLowerCase().includes(q) ||
@@ -153,7 +177,7 @@ export const AdminCustomersView: React.FC = () => {
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search customers by name, email, company, tier..."
+            placeholder="Search customers by name, customer ID, email, company, tier..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -202,7 +226,11 @@ export const AdminCustomersView: React.FC = () => {
                           )}
                           <div>
                             <span className="font-bold text-slate-900 block">{cust.fullName}</span>
-                            <span className="text-[10px] text-slate-400 font-mono">{cust.id}</span>
+                            {cust.customerCode && (
+                              <span className="text-[11px] text-blue-700 font-mono font-bold block">{cust.customerCode}</span>
+                            )}
+                            {/* The original ID is kept: orders, bookings and sign-in still use it. */}
+                            <span className="text-[10px] text-slate-400 font-mono" title="Original customer ID">{cust.id}</span>
                           </div>
                         </div>
                       </td>
@@ -236,15 +264,27 @@ export const AdminCustomersView: React.FC = () => {
                         {formatCurrency(ltv)}
                       </td>
                       <td className="p-4 text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOpenCustomer(cust)}
-                          className="h-8 px-2.5 text-xs text-blue-600 hover:bg-blue-50 font-semibold"
-                        >
-                          <Eye className="w-3.5 h-3.5 mr-1" />
-                          View Dossier
-                        </Button>
+                        <div className="inline-flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenCustomer(cust)}
+                            className="h-8 px-2.5 text-xs text-blue-600 hover:bg-blue-50 font-semibold"
+                          >
+                            <Eye className="w-3.5 h-3.5 mr-1" />
+                            View Dossier
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCustomerToDelete(cust)}
+                            disabled={deletingId === cust.id}
+                            aria-label={`Delete customer ${cust.fullName}`}
+                            className="h-8 px-2.5 text-xs text-rose-600 border-rose-200 hover:bg-rose-50 font-semibold"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -255,12 +295,26 @@ export const AdminCustomersView: React.FC = () => {
         </div>
       </div>
 
+      <AdminConfirmDialog
+        isOpen={!!customerToDelete}
+        title="Delete customer"
+        message={`Permanently delete ${customerToDelete?.fullName || 'this customer'}'s profile and sign-in account? Their orders, bookings and payments are kept. This cannot be undone.`}
+        itemIdentifier={customerToDelete ? customerToDelete.customerCode || customerToDelete.id : undefined}
+        confirmLabel="Delete customer"
+        // A hard delete only: there is no soft-delete for customer accounts.
+        allowSoftDelete={false}
+        isCurrentlyDeleted
+        requireKeywordConfirm
+        onConfirm={() => void handleDeleteCustomer()}
+        onCancel={() => setCustomerToDelete(null)}
+      />
+
       {/* Comprehensive Customer Dossier Modal */}
       {selectedCustomer && (
         <AdminModal
           isOpen={!!selectedCustomer}
           onClose={() => setSelectedCustomer(null)}
-          title={`Client Dossier: ${selectedCustomer.fullName}`}
+          title={`Client Dossier: ${selectedCustomer.fullName}${selectedCustomer.customerCode ? ` (${selectedCustomer.customerCode})` : ""}`}
           subtitle={`${selectedCustomer.company ? `${selectedCustomer.company} • ` : ''}${selectedCustomer.accountType.toUpperCase()} ACCOUNT`}
           maxWidth="4xl"
         >

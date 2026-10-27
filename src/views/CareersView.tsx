@@ -11,6 +11,24 @@ import {
   uploadCareerCv,
 } from '../services/careerService';
 import { DIVISIONS } from '../config/divisions';
+import {
+  buildCareerSeoDescription,
+  careerLocation,
+  careerOpeningPath,
+  CAREERS_PAGE_SEO,
+  jobPostingStructuredData,
+} from '../config/careerSeo';
+
+const JOB_POSTINGS_SCRIPT_ID = 'mahdev-careers-json-ld';
+
+/** The ?role= opening id from a shared careers link, read once on load. */
+const readLinkedRoleId = () => {
+  try {
+    return new URLSearchParams(window.location.search).get('role')?.trim() || '';
+  } catch {
+    return '';
+  }
+};
 
 interface CareersViewProps {
   onNavigate: (route: string) => void;
@@ -51,6 +69,8 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
   const [statusResult, setStatusResult] = useState<CareerApplicationStatusResult | null>(null);
   const [statusError, setStatusError] = useState('');
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+  const [linkedRoleId] = useState(readLinkedRoleId);
+  const linkedOpening = openings.find((opening) => opening.id === linkedRoleId) || null;
 
   useEffect(() => {
     let isMounted = true;
@@ -70,6 +90,23 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
       isMounted = false;
     };
   }, []);
+
+  // JobPosting JSON-LD for every published opening, so roles can appear in Google's job search.
+  useEffect(() => {
+    if (!openings.length) return;
+    const script = document.createElement('script');
+    script.id = JOB_POSTINGS_SCRIPT_ID;
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify(openings.map((opening) => jobPostingStructuredData(opening)));
+    document.getElementById(JOB_POSTINGS_SCRIPT_ID)?.remove();
+    document.head.appendChild(script);
+    return () => script.remove();
+  }, [openings]);
+
+  // A shared role link (/careers?role=<id>) scrolls to that opening once it has loaded.
+  useEffect(() => {
+    if (linkedOpening) document.getElementById(`role-${linkedOpening.id}`)?.scrollIntoView({ block: 'center' });
+  }, [linkedOpening]);
 
   const startApplication = (opening: CareerOpening) => {
     setSelectedOpening(opening);
@@ -132,10 +169,12 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
 
   return (
     <main className="min-h-screen bg-white pt-16 sm:pt-[72px]">
+      {/* A shared role link gets that opening's own title and auto-generated description. */}
       <SEOHead
-        title="Careers | Join the Mahdev team"
-        description="Explore current career opportunities at Mahdev and apply securely with your CV."
-        canonicalUrl="https://mahdev.lk/careers"
+        title={linkedOpening ? `${linkedOpening.title} – Careers at Mahdev` : CAREERS_PAGE_SEO.title}
+        description={linkedOpening ? linkedOpening.seoDescription || buildCareerSeoDescription(linkedOpening) : CAREERS_PAGE_SEO.description}
+        canonicalUrl={linkedOpening ? careerOpeningPath(linkedOpening.id) : '/careers'}
+        keywords={[...CAREERS_PAGE_SEO.keywords]}
       />
 
       <section className="relative isolate overflow-hidden bg-[#07152f] text-white">
@@ -183,7 +222,7 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
           ) : openings.length ? (
             <div className="grid gap-4 md:grid-cols-2">
               {openings.map((opening) => (
-                <article key={opening.id} className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg sm:p-6">
+                <article key={opening.id} id={`role-${opening.id}`} className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg sm:p-6">
                   <div className="flex items-start justify-between gap-3">
                     <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold text-blue-800">{divisionName(opening.divisionId)}</span>
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-blue-700 transition group-hover:bg-blue-600 group-hover:text-white"><Briefcase className="h-4 w-4" /></span>
@@ -191,7 +230,7 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
                   <h3 className="mt-4 text-lg font-semibold tracking-tight text-slate-950">{opening.title}</h3>
                   <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">{opening.description}</p>
                   <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs font-medium text-slate-500">
-                    {opening.location && <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{opening.location}</span>}
+                    <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{careerLocation(opening.location)}</span>
                     {opening.employmentType && <span className="inline-flex items-center gap-1.5"><Clock3 className="h-3.5 w-3.5" />{opening.employmentType}</span>}
                     {opening.experience && <span>{opening.experience}</span>}
                   </div>
@@ -274,7 +313,7 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
             <div className="mb-6">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">Your next step</p>
               <h2 className="mt-2 font-editorial text-3xl font-medium text-slate-950">Apply for {selectedOpening.title}</h2>
-              <p className="mt-2 text-sm text-slate-500">{divisionName(selectedOpening.divisionId)} · {selectedOpening.location}</p>
+              <p className="mt-2 text-sm text-slate-500">{divisionName(selectedOpening.divisionId)} · {careerLocation(selectedOpening.location)}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60 sm:p-8">
               {isSubmitted ? (

@@ -9,7 +9,7 @@
 - [Services](https://mahdev-official.vercel.app/services): Services available across Mahdev.
 - [Projects](https://mahdev-official.vercel.app/portfolio): Selected projects and work.
 - [Gallery](https://mahdev-official.vercel.app/gallery): Photography and visual work.
-- [Careers](https://mahdev-official.vercel.app/careers): Current career opportunities.
+- [Careers](https://mahdev-official.vercel.app/careers): Current job openings in Trincomalee and Colombo, Sri Lanka, with online applications.
 - [Contact](https://mahdev-official.vercel.app/contact): Contact and enquiry information.
 - [Insights](https://mahdev-official.vercel.app/insights): Company articles and insights.
 

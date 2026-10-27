@@ -691,6 +691,8 @@ export async function setDocWithResult(
   reference?: string;
   /** Customer profile writes: the NIC and the date of birth and gender read from it. */
   identity?: { nic: string; dateOfBirth: string | null; gender: 'male' | 'female' | null };
+  /** Customer profile writes: the readable customer ID ("mahdev-cus-001"). */
+  customerCode?: string;
 }> {
   return request('write', {
     write: {

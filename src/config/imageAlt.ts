@@ -184,10 +184,25 @@ export function preferSavedAlt(savedAlt: string | undefined, computedAlt: string
   return savedAlt?.trim() ? withBranchLocations(savedAlt) : computedAlt;
 }
 
+/** Both branch cities, for location tags on images, gallery items, services and projects. */
+export const BRANCH_LOCATION_LABEL = 'Trincomalee & Colombo, Sri Lanka';
+
 /**
- * Auto alt text and SEO description for a saved gallery item, service or product,
- * matching what the admin editor fills in. Used by the "Generate image SEO" button
- * for records created before these fields existed.
+ * Location tag for a content card: the record's own venue when it names one
+ * ("Shangri-La Ballroom, Colombo"), otherwise both branch cities. A bare
+ * "Colombo" (the old default) is widened to both cities too.
+ */
+export function branchLocationTag(location: unknown): string {
+  const value = typeof location === 'string' ? location.trim() : '';
+  if (!value || /^colombo(\s+studio)?(,?\s*sri lanka)?$/i.test(value)) return BRANCH_LOCATION_LABEL;
+  return value;
+}
+
+/**
+ * Auto alt text and SEO description for a gallery item, service or product,
+ * matching what the admin editor fills in. cmsService fills in any that are
+ * empty whenever one of these records is created or updated, and the
+ * "Generate Image SEO" button finds and fills any records still missing them.
  */
 export function generateImageSeo(record: object): { imageAlt: string; seoDescription: string } {
   const data = record as Record<string, unknown>;

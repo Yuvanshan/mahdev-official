@@ -27,6 +27,8 @@ export interface FirestoreUser {
   /** Derived from the NIC on the server: YYYY-MM-DD. */
   dateOfBirth?: string | null;
   gender?: 'male' | 'female' | null;
+  /** Readable customer ID ("mahdev-cus-001"), assigned by the server; the uid stays the record ID. */
+  customerCode?: string;
 }
 
 export type DivisionId = 'sws' | 'u1-studio' | 'it-solutions' | 'travels' | 'online-mart' | 'u1' | 'it' | 'mart';
