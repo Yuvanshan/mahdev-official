@@ -283,13 +283,36 @@ function AppContent() {
     const blockCopy = (event: ClipboardEvent) => {
       if (!isEditableTarget(event.target)) event.preventDefault();
     };
+    // Block DevTools / view-source shortcuts across Chrome, Edge, Firefox, Safari and Opera.
+    // Uses event.code because on macOS the Option key changes event.key (e.g. Option+I => "ˆ").
+    const blockDevToolsShortcuts = (event: KeyboardEvent) => {
+      const { code } = event;
+      const ctrlOrCmd = event.ctrlKey || event.metaKey;
+      const devToolsModifier = (event.ctrlKey && event.shiftKey) || (event.metaKey && event.altKey);
+
+      const isDevToolsShortcut =
+        code === 'F12' ||
+        // Ctrl+Shift+X (Windows/Linux) or Cmd+Option+X (macOS):
+        // I = DevTools, J = console, C = inspect element, K = Firefox console,
+        // E = Firefox network, M = Firefox responsive mode, U = Safari view source
+        (devToolsModifier && ['KeyI', 'KeyJ', 'KeyC', 'KeyK', 'KeyE', 'KeyM', 'KeyU'].includes(code)) ||
+        // Ctrl+U / Cmd+U = view page source
+        (ctrlOrCmd && !event.shiftKey && !event.altKey && code === 'KeyU');
+
+      if (isDevToolsShortcut) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
 
     document.addEventListener('contextmenu', blockContextMenu, true);
     document.addEventListener('copy', blockCopy, true);
+    window.addEventListener('keydown', blockDevToolsShortcuts, true);
 
     return () => {
       document.removeEventListener('contextmenu', blockContextMenu, true);
       document.removeEventListener('copy', blockCopy, true);
+      window.removeEventListener('keydown', blockDevToolsShortcuts, true);
     };
   }, []);
 
