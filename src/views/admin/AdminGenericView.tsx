@@ -47,7 +47,7 @@ export const AdminGenericView: React.FC<AdminGenericViewProps> = ({
     if (sectionId !== 'customers') return;
     authService.getAllCustomers()
       .then(setCustomers)
-      .catch((error) => console.error('[AdminGenericView] Could not load customers from Turso:', error));
+      .catch((error) => console.error('[AdminGenericView] Could not load customers from the database:', error));
   }, [sectionId]);
 
   // 1. DIVISIONS VIEW
@@ -122,7 +122,7 @@ export const AdminGenericView: React.FC<AdminGenericViewProps> = ({
             </div>
             <h3 className="font-display text-base font-bold text-slate-900">No Services in Catalog</h3>
             <p className="text-xs text-slate-500 max-w-md mx-auto">
-              Real service offerings are synchronized from Firestore. Use the Admin Services manager to create verified services.
+              Real service offerings are synchronized from the database. Use the Admin Services manager to create verified services.
             </p>
           </div>
         ) : (
@@ -193,7 +193,7 @@ export const AdminGenericView: React.FC<AdminGenericViewProps> = ({
             </div>
             <h3 className="font-display text-base font-bold text-slate-900">No Categories Found</h3>
             <p className="text-xs text-slate-500 max-w-md mx-auto">
-              No categories have been added yet in Firestore. Create taxonomy categories to organize your product inventory.
+              No categories have been added yet in the database. Create taxonomy categories to organize your product inventory.
             </p>
           </div>
         ) : (

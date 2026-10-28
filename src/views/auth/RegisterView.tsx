@@ -25,6 +25,7 @@ import { ageFromDateOfBirth, normaliseNic, normaliseSriLankaPhone, parseNic } fr
 import { CANONICAL_SITE_ORIGIN } from '../../config/site';
 import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton';
 import { postSignInPath } from '../../utils/profileCompletion';
+import { checkAccountDetails, takenDetailErrors } from '../../services/accountCheckService';
 import type { CustomerUser } from '../../types/customer';
 
 interface RegisterViewProps {
@@ -68,6 +69,9 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Set when the email, phone or NIC already has an account.
+  const [accountExists, setAccountExists] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
 
   // Date of birth and gender read from the NIC as it is typed.
   const nicDetails = useMemo(() => parseNic(formData.nic), [formData.nic]);
@@ -96,11 +100,22 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
     return errors;
   };
 
-  const goToStepTwo = (e: React.FormEvent) => {
+  const goToStepTwo = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors = validateStepOne();
     setFieldErrors(errors);
     if (Object.keys(errors).length) return;
+    // NIC or contact number that already has an account: sign in instead.
+    setIsChecking(true);
+    const taken = takenDetailErrors(await checkAccountDetails({ nic: formData.nic, phone: formData.phone }));
+    setIsChecking(false);
+    if (Object.keys(taken).length) {
+      setFieldErrors(taken);
+      setAccountExists(true);
+      setErrorMessage('You already have a Mahdev account. Please sign in instead.');
+      return;
+    }
+    setAccountExists(false);
     setErrorMessage(null);
     setDirection(1);
     setStep(2);
@@ -132,6 +147,16 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
     }
 
     setIsLoading(true);
+    // Email that already has an account: sign in instead.
+    const taken = takenDetailErrors(await checkAccountDetails({ email: formData.email }));
+    if (taken.email) {
+      setIsLoading(false);
+      setFieldErrors(taken);
+      setAccountExists(true);
+      setErrorMessage('You already have a Mahdev account. Please sign in instead.');
+      return;
+    }
+    setAccountExists(false);
     emailRegistrationStarted.current = true;
     const result = await register({ ...formData });
     setIsLoading(false);
@@ -139,11 +164,12 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
 
     if (!result.success) {
       const message = result.error || 'Could not create your account. Please try again.';
-      // NIC problems are fixed on step 1, so take the customer back there.
-      if (/NIC/i.test(message)) {
+      setAccountExists(/already/i.test(message));
+      // NIC and contact number problems are fixed on step 1, so take the customer back there.
+      if (/NIC|contact number/i.test(message)) {
         setDirection(-1);
         setStep(1);
-        setFieldErrors({ nic: message });
+        setFieldErrors(/NIC/i.test(message) ? { nic: message } : { phone: message });
       } else {
         setErrorMessage(message);
       }
@@ -203,6 +229,15 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
         )}
 
         <AuthAlert tone="error" message={errorMessage} />
+        {accountExists && (
+          <button
+            type="button"
+            onClick={() => onNavigate('/login')}
+            className="mb-4 w-full rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm font-semibold py-2.5 hover:bg-amber-100"
+          >
+            Sign in to my account
+          </button>
+        )}
         {step === 1 && <GoogleSignInButton label="Sign up with Google" onSignedIn={goOn} onError={setErrorMessage} />}
 
         {/* Honeypot: hidden from people, filled in only by spam bots. */}
@@ -302,7 +337,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
                   error={fieldErrors.phone}
                   hint="We use this for booking updates and WhatsApp."
                 />
-                <AuthSubmit busy={false} busyLabel="">
+                <AuthSubmit busy={isChecking} busyLabel="Checking your details…">
                   Continue <ArrowRight className="h-4 w-4" />
                 </AuthSubmit>
               </motion.form>

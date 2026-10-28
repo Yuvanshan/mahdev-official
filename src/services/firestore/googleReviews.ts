@@ -111,7 +111,7 @@ export const firestoreGoogleReviewsService = {
         return data;
       }
     } catch (err) {
-      console.warn('[Firestore GoogleReviews] getConfig error:', err);
+      console.warn('[database GoogleReviews] getConfig error:', err);
     }
 
     return DEFAULT_GOOGLE_REVIEWS_CONFIG;
@@ -160,7 +160,7 @@ export const firestoreGoogleReviewsService = {
         allReviews = normalizeGoogleReviews(documents);
         cachedReviews = { data: allReviews, timestamp: now };
       } catch (err) {
-        console.warn('[Firestore GoogleReviews] getReviews error:', err);
+        console.warn('[database GoogleReviews] getReviews error:', err);
         allReviews = cachedReviews?.data || [];
       }
     }
@@ -277,7 +277,7 @@ export const firestoreGoogleReviewsService = {
           }
         }
       } catch (proxyErr) {
-        console.warn('[Firestore GoogleReviews] Backend proxy sync not reachable, using direct verified provider sync', proxyErr);
+        console.warn('[database GoogleReviews] Backend proxy sync not reachable, using direct verified provider sync', proxyErr);
       }
 
       // If backend returned verified genuine Google reviews, write to Firestore
@@ -332,7 +332,7 @@ export const firestoreGoogleReviewsService = {
         totalReviews: fetchedTotal,
       };
     } catch (err: any) {
-      console.error('[Firestore GoogleReviews] syncGoogleReviews failure:', err);
+      console.error('[database GoogleReviews] syncGoogleReviews failure:', err);
       await this.saveConfig({
         syncStatus: 'error',
         errorMessage: err.message || 'Failed to sync with Google Business Profile',
@@ -364,7 +364,7 @@ export const firestoreGoogleReviewsService = {
         }
       },
       (err) => {
-        console.warn('[Firestore GoogleReviews] Config subscription error:', err);
+        console.warn('[database GoogleReviews] Config subscription error:', err);
         onData(cachedConfig?.data || DEFAULT_GOOGLE_REVIEWS_CONFIG);
       }
     );
@@ -413,7 +413,7 @@ export const firestoreGoogleReviewsService = {
         onData(reviews);
       },
       (err) => {
-        console.warn('[Firestore GoogleReviews] Reviews subscription error:', err);
+        console.warn('[database GoogleReviews] Reviews subscription error:', err);
         onData(cachedReviews?.data || []);
       }
     );

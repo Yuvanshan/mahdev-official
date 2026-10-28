@@ -83,7 +83,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
         }
       })
       .catch((err) => {
-        console.warn('[AboutView] Error loading from Firestore, using baseline:', err);
+        console.warn('[AboutView] Error loading from the database, using baseline:', err);
         if (isMounted) {
           setIsLoading(false);
         }

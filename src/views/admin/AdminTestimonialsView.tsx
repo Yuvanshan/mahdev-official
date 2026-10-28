@@ -308,7 +308,7 @@ export const AdminTestimonialsView: React.FC = () => {
       await firestoreTestimonialsService.deleteTestimonial(deletingReview.id);
       setReviews((prev) => prev.filter((r) => r.id !== deletingReview.id));
       setDeletingReview(null);
-      addToast('success', 'Review Deleted', `Review from "${deletingReview.authorName}" deleted from Firestore cache.`);
+      addToast('success', 'Review Deleted', `Review from "${deletingReview.authorName}" deleted from cache.`);
     } catch (err: any) {
       addToast('error', 'Deletion Error', err.message || 'Could not delete review.');
     }

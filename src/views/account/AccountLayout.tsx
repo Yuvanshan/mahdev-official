@@ -39,6 +39,7 @@ import { AccountInvoicesTab } from './AccountInvoicesTab';
 import { AccountNotificationsTab } from './AccountNotificationsTab';
 import { AccountActivityTab } from './AccountActivityTab';
 import {
+  bookingAlerts,
   buildActivity,
   isAccountDataStale,
   loadAccountData,
@@ -51,7 +52,7 @@ import { Bell } from 'lucide-react';
 import { SEOHead } from '../../components/layout/SEOHead';
 
 /** Tabs that show order, booking or payment history (the profile and alerts do not). */
-const DATA_TABS = new Set(['overview', 'orders', 'bookings', 'payments', 'invoices', 'activity']);
+const DATA_TABS = new Set(['overview', 'orders', 'bookings', 'payments', 'invoices', 'activity', 'notifications']);
 
 /** "just now", "3 min ago", "2 h ago" */
 function formatAge(timestamp: number): string {
@@ -90,6 +91,8 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
   const [activeTab, setActiveTab] = useState<string>(currentTab);
   const [orders, setOrders] = useState<Order[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  // Bumped when alerts are marked read, so the Alerts badge recounts.
+  const [, setAlertsReadTick] = useState(0);
   const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
@@ -210,7 +213,9 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
     );
   }
 
-  const unreadNotifs = notificationService.getUnreadCount(user.email, 'customer');
+  // Session alerts plus unread booking updates from our team.
+  const unreadNotifs =
+    notificationService.getUnreadCount(user.email, 'customer') + bookingAlerts(bookings).filter((alert) => !alert.read).length;
   const completion = getProfileCompletion(user);
   const firstName = hasRealName(user) ? user.fullName.split(' ')[0] : '';
   const hour = new Date().getHours();
@@ -444,7 +449,14 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
                 </>
                 )}
                 {activeTab === 'profile' && <AccountProfileTab user={user} />}
-                {activeTab === 'notifications' && <AccountNotificationsTab userEmail={user.email} onNavigate={onNavigate} />}
+                {activeTab === 'notifications' && (
+                  <AccountNotificationsTab
+                    userEmail={user.email}
+                    bookings={bookings}
+                    onNavigate={onNavigate}
+                    onAlertsRead={() => setAlertsReadTick((tick) => tick + 1)}
+                  />
+                )}
               </motion.div>
             </AnimatePresence>
           </main>

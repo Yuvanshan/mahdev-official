@@ -184,7 +184,7 @@ export const AdminUsersView: React.FC = () => {
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            This Turso directory does not grant portal access. Admin sign-in is controlled by server-only Vercel credentials.
+            This database directory does not grant portal access. Admin sign-in is controlled by server-only Vercel credentials.
           </p>
         </div>
 

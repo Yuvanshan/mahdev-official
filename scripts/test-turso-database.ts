@@ -18,7 +18,8 @@ const {
 } = await import('../backend/db/tursoDatabase');
 const {
   authenticateAdminCredentials,
-  getAdminSessionFromCookie,
+  requireAdminSession,
+  revokeAdminSessions,
   hashAdminPassword,
 } = await import('../backend/auth/adminCredentialAuth');
 const {
@@ -76,7 +77,7 @@ async function run(): Promise<void> {
     signer.end();
     const token = `${tokenHeader}.${tokenClaims}.${signer.sign(privateKey).toString('base64url')}`;
     const identity = await verifyFirebaseIdToken(`Bearer ${token}`);
-    assert.deepEqual(identity, { uid: 'test-customer-1', email: 'customer@example.com' });
+    assert.deepEqual(identity, { uid: 'test-customer-1', email: 'customer@example.com', accountEmail: 'customer@example.com' });
     const unverifiedClaims = Buffer.from(JSON.stringify({
       aud: 'for-her-33ea9',
       auth_time: now,
@@ -92,7 +93,9 @@ async function run(): Promise<void> {
     unverifiedSigner.end();
     const unverifiedToken = `${tokenHeader}.${unverifiedClaims}.${unverifiedSigner.sign(privateKey).toString('base64url')}`;
     const unverifiedIdentity = await verifyFirebaseIdToken(`Bearer ${unverifiedToken}`);
-    assert.deepEqual(unverifiedIdentity, { uid: 'unverified-customer' });
+    // An unverified email is kept only as the account's own address, never as `email`
+    // (the field access checks use).
+    assert.deepEqual(unverifiedIdentity, { uid: 'unverified-customer', accountEmail: 'customer@example.com' });
     await assert.rejects(
       () => verifyFirebaseIdToken(undefined),
       FirebaseTokenError
@@ -151,8 +154,8 @@ async function run(): Promise<void> {
       'local-test-admin-password',
       'test-runner'
     );
-    const adminCookie = login.cookie.split(';')[0];
-    assert.equal(getAdminSessionFromCookie(adminCookie).user.role, 'super_admin');
+    let adminCookie = login.cookie.split(';')[0];
+    assert.equal((await requireAdminSession(adminCookie)).user.role, 'super_admin');
     assert.throws(
       () => authenticateAdminCredentials(process.env.ADMIN_LOGIN_EMAIL, 'incorrect-password', 'test-runner'),
       /Invalid admin email or password/
@@ -165,6 +168,17 @@ async function run(): Promise<void> {
     assert.ok(migration.collections >= 35, 'Expected the backend migration to provision core collections.');
     assert.equal(databaseStatus.database, 'turso');
     assert.equal(databaseStatus.status, 'ready');
+
+    // Signing out ends every session issued before it; a new sign-in works straight away.
+    await revokeAdminSessions();
+    await assert.rejects(() => requireAdminSession(adminCookie), /signed out/);
+    const freshCookie = authenticateAdminCredentials(
+      process.env.ADMIN_LOGIN_EMAIL,
+      'local-test-admin-password',
+      'test-runner-2'
+    ).cookie.split(';')[0];
+    assert.equal((await requireAdminSession(freshCookie)).user.role, 'super_admin');
+    adminCookie = freshCookie;
     await importMigratedDocuments('analyticsEvents', [
       { id: 'cursor-event-04', data: { timestamp: '2025-04-04T00:00:00.000Z' } },
       { id: 'cursor-event-03', data: { timestamp: '2025-03-03T00:00:00.000Z' } },

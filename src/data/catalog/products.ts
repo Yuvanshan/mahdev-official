@@ -489,7 +489,7 @@ export const MASTER_CATALOG_PRODUCTS: CatalogProduct[] = [
     stockStatus: 'unlimited',
     brand: 'Mahdev Enterprise IT',
     specifications: [
-      { label: 'Architecture', value: 'Offline-First SQLite + Cloud Firestore Sync', group: 'Architecture' },
+      { label: 'Architecture', value: 'Offline-First SQLite + Cloud Sync', group: 'Architecture' },
       { label: 'Hardware Support', value: 'Epson POS Printers, Sunmi, Datalogic Barcode Scanners', group: 'Hardware' },
       { label: 'Support SLA', value: '99.9% Uptime with 24/7 Remote Monitoring', group: 'SLA' },
     ],
@@ -541,7 +541,7 @@ export const MASTER_CATALOG_PRODUCTS: CatalogProduct[] = [
       ],
     },
     specifications: [
-      { label: 'Technology Stack', value: 'React, TypeScript, Tailwind, Node.js / Go, Cloud SQL / Firestore', group: 'Engineering' },
+      { label: 'Technology Stack', value: 'React, TypeScript, Tailwind, Node.js / Go, Cloud SQL / NoSQL', group: 'Engineering' },
       { label: 'Deliverables', value: 'Source Code Repository, Docker Container, CI/CD Pipeline, Architecture Docs', group: 'Deliverables' },
       { label: 'Warranty & Support', value: '60 Days Post-Launch Critical Bug Fix Warranty', group: 'Warranty' },
     ],

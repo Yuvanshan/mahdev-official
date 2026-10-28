@@ -153,12 +153,12 @@ export const AdminOrdersView: React.FC = () => {
         }
       }
     } catch (err: any) {
-      console.warn('[AdminOrdersView] Firestore fetch warning:', err);
+      console.warn('[AdminOrdersView] database fetch warning:', err);
       const fallback = orderService.getAllOrders();
       if (fallback.length > 0) {
         setOrders(fallback);
       } else {
-        setFetchError('Unable to load orders from Firestore. Please check connection and retry.');
+        setFetchError('Unable to load orders from the database. Please check connection and retry.');
       }
     } finally {
       setIsLoading(false);
@@ -202,7 +202,7 @@ export const AdminOrdersView: React.FC = () => {
   useEffect(() => {
     let isMounted = true;
 
-    // Trigger explicit full collection load from Firestore immediately on mount
+    // One load when the page opens (the list refreshes on reload or with the Refresh button).
     loadOrders();
 
     // Load initial cached orders immediately to avoid visual lag
@@ -211,37 +211,6 @@ export const AdminOrdersView: React.FC = () => {
       setOrders(initial);
       setIsLoading(false);
     }
-
-    // Direct live subscription to Firestore orders collection (Single Source of Truth)
-    const unsubFirestore = firestoreOrdersService.subscribeAllOrders(
-      (firestoreOrders) => {
-        if (!isMounted) return;
-        if (Array.isArray(firestoreOrders)) {
-          const mapped = firestoreOrders.map(mapFirestoreOrder);
-          const map = new Map<string, Order>();
-          for (const local of orderService.getAllOrders()) {
-            map.set(local.id, local);
-          }
-          for (const remote of mapped) {
-            map.set(remote.id, remote);
-          }
-          const sorted = Array.from(map.values()).sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-          setOrders(sorted);
-          setIsLoading(false);
-          setFetchError(null);
-        }
-      },
-      (error) => {
-        if (!isMounted) return;
-        console.warn('[AdminOrdersView] Firestore subscription error:', error);
-        if (orders.length === 0) {
-          setFetchError('Failed to establish live connection to orders feed.');
-        }
-        setIsLoading(false);
-      }
-    );
 
     // Merge changes if local state changes (e.g. offline edits), without wiping remote orders
     const unsubService = orderService.subscribe(() => {
@@ -261,7 +230,6 @@ export const AdminOrdersView: React.FC = () => {
 
     return () => {
       isMounted = false;
-      unsubFirestore();
       unsubService();
     };
   }, []);
@@ -900,6 +868,24 @@ export const AdminOrdersView: React.FC = () => {
           maxWidth="4xl"
         >
           <div className="space-y-6 text-xs text-slate-700">
+            {/* The server found prices that do not match the catalogue: check before confirming. */}
+            {selectedOrder.pricingVerification && !selectedOrder.pricingVerification.verified && (
+              <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-rose-800 space-y-1">
+                <p className="font-bold">Check the prices before confirming this order</p>
+                <p>
+                  The prices sent by the customer's browser do not match the catalogue. Catalogue subtotal:{' '}
+                  <strong className="font-mono">{formatCurrency(selectedOrder.pricingVerification.verifiedSubtotal, 'LKR')}</strong>
+                  {selectedOrder.pricingVerification.clientSubtotal !== null && (
+                    <> · Order subtotal: <strong className="font-mono">{formatCurrency(selectedOrder.pricingVerification.clientSubtotal, 'LKR')}</strong></>
+                  )}
+                </p>
+                <ul className="list-disc pl-4">
+                  {selectedOrder.pricingVerification.mismatches.slice(0, 5).map((mismatch, index) => (
+                    <li key={index}>{mismatch.productId || 'Item'}: {mismatch.reason}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {/* Quick Status Bar */}
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">

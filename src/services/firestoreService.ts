@@ -74,7 +74,7 @@ class FirestoreServiceRepository {
       const snap = await getDoc(doc(db, COLLECTIONS.USERS, uid));
       return snap.exists() ? (snap.data() as FirestoreUser) : null;
     } catch (err) {
-      console.warn('[Firestore] getUser error:', err);
+      console.warn('[database] getUser error:', err);
       return null;
     }
   }
@@ -108,7 +108,7 @@ class FirestoreServiceRepository {
       }
       return snap.docs.map((d) => d.data() as FirestoreDivision);
     } catch (err) {
-      console.warn('[Firestore] getDivisions error:', err);
+      console.warn('[database] getDivisions error:', err);
       return this.getDefaultDivisions();
     }
   }
@@ -121,7 +121,7 @@ class FirestoreServiceRepository {
       }
       return this.getDefaultDivisions().find((d) => d.id === id) || null;
     } catch (err) {
-      console.warn('[Firestore] getDivision error:', err);
+      console.warn('[database] getDivision error:', err);
       return this.getDefaultDivisions().find((d) => d.id === id) || null;
     }
   }
@@ -145,7 +145,7 @@ class FirestoreServiceRepository {
       const snap = await getDocs(q);
       return snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreService));
     } catch (err) {
-      console.warn('[Firestore] getServices error:', err);
+      console.warn('[database] getServices error:', err);
       return [];
     }
   }
@@ -169,7 +169,7 @@ class FirestoreServiceRepository {
       const snap = await getDocs(q);
       return snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreProduct));
     } catch (err) {
-      console.warn('[Firestore] getProducts error:', err);
+      console.warn('[database] getProducts error:', err);
       return [];
     }
   }
@@ -190,7 +190,7 @@ class FirestoreServiceRepository {
       const snap = await getDocs(q);
       return snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreCategory));
     } catch (err) {
-      console.warn('[Firestore] getCategories error:', err);
+      console.warn('[database] getCategories error:', err);
       return [];
     }
   }
@@ -213,7 +213,7 @@ class FirestoreServiceRepository {
       const snap = await getDocs(q);
       return snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreBooking));
     } catch (err) {
-      console.warn('[Firestore] getBookings error:', err);
+      console.warn('[database] getBookings error:', err);
       return [];
     }
   }
@@ -223,7 +223,7 @@ class FirestoreServiceRepository {
       const snap = await getDoc(doc(db, COLLECTIONS.BOOKINGS, id));
       return snap.exists() ? ({ id: snap.id, ...snap.data() } as FirestoreBooking) : null;
     } catch (err) {
-      console.warn('[Firestore] getBooking error:', err);
+      console.warn('[database] getBooking error:', err);
       return null;
     }
   }
@@ -257,7 +257,7 @@ class FirestoreServiceRepository {
       const snap = await getDocs(q);
       return snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreOrder));
     } catch (err) {
-      console.warn('[Firestore] getOrders error:', err);
+      console.warn('[database] getOrders error:', err);
       return [];
     }
   }
@@ -267,7 +267,7 @@ class FirestoreServiceRepository {
       const snap = await getDoc(doc(db, COLLECTIONS.ORDERS, id));
       return snap.exists() ? ({ id: snap.id, ...snap.data() } as FirestoreOrder) : null;
     } catch (err) {
-      console.warn('[Firestore] getOrder error:', err);
+      console.warn('[database] getOrder error:', err);
       return null;
     }
   }
@@ -298,7 +298,7 @@ class FirestoreServiceRepository {
         return snap.data() as FirestoreCompanySettings;
       }
     } catch (err) {
-      console.warn('[Firestore] getCompanySettings error, using defaults:', err);
+      console.warn('[database] getCompanySettings error, using defaults:', err);
     }
     // Fallback to Phase 21 official single source of truth
     return {
@@ -349,7 +349,7 @@ class FirestoreServiceRepository {
         return snap.data() as FirestoreSiteSettings;
       }
     } catch (err) {
-      console.warn('[Firestore] getSiteSettings error:', err);
+      console.warn('[database] getSiteSettings error:', err);
     }
     return {
       siteName: 'Mahdev Pvt Ltd',
@@ -409,7 +409,7 @@ class FirestoreServiceRepository {
         timestamp: new Date().toISOString(),
       }));
     } catch (err) {
-      console.warn('[Firestore] logAudit non-fatal error:', err);
+      console.warn('[database] logAudit non-fatal error:', err);
     }
   }
 
@@ -443,9 +443,9 @@ class FirestoreServiceRepository {
         }
       }
 
-      return { success: true, message: 'Firestore baseline seeded successfully.' };
+      return { success: true, message: 'Database baseline seeded successfully.' };
     } catch (err) {
-      console.error('[Firestore] Seeding error:', err);
+      console.error('[database] Seeding error:', err);
       return { success: false, message: String(err) };
     }
   }

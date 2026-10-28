@@ -18,33 +18,67 @@ import {
 } from 'lucide-react';
 import { notificationService } from '../../services/notificationService';
 import { AppNotification } from '../../types/notification';
+import { Booking } from '../../types/booking';
+import { bookingAlerts, markBookingAlertsRead } from '../../services/customerAccountService';
 import { Button } from '../../components/ui/Button';
 
 interface AccountNotificationsTabProps {
   userEmail: string;
+  /** The customer's bookings; changes our team made to them are listed as alerts. */
+  bookings: Booking[];
   onNavigate: (path: string) => void;
+  /** Called after alerts are marked read, so the unread count can update. */
+  onAlertsRead?: () => void;
 }
+
+const BOOKING_ALERT_PREFIX = 'booking-update-';
 
 export const AccountNotificationsTab: React.FC<AccountNotificationsTabProps> = ({
   userEmail,
+  bookings,
   onNavigate,
+  onAlertsRead,
 }) => {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
+  // Alerts from this session plus the booking updates saved by our team, newest first.
   const refresh = () => {
-    const list = notificationService.getNotifications(userEmail, 'customer');
-    setNotifications(list);
+    const sessionAlerts = notificationService.getNotifications(userEmail, 'customer');
+    const bookingUpdates: AppNotification[] = bookingAlerts(bookings).map((alert) => ({
+      id: alert.id,
+      type: 'booking_update',
+      recipient: { name: userEmail, email: userEmail, role: 'customer' },
+      title: alert.title,
+      message: alert.message,
+      status: alert.read ? 'read' : 'sent',
+      readAt: alert.read ? alert.at : null,
+      createdAt: alert.at,
+      data: { bookingId: alert.bookingId },
+      channels: ['in_app'],
+      actionUrl: '/account/bookings',
+    }));
+    setNotifications(
+      [...bookingUpdates, ...sessionAlerts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    );
   };
 
   useEffect(() => {
     refresh();
     const unsub = notificationService.subscribe(refresh);
     return unsub;
-  }, [userEmail]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userEmail, bookings]);
+
+  const markRead = (ids: string[]) => {
+    markBookingAlertsRead(ids.filter((id) => id.startsWith(BOOKING_ALERT_PREFIX)));
+    ids.filter((id) => !id.startsWith(BOOKING_ALERT_PREFIX)).forEach((id) => notificationService.markAsRead(id));
+    refresh();
+    onAlertsRead?.();
+  };
 
   const handleMarkAllRead = () => {
     notificationService.markAllAsRead(userEmail, 'customer');
-    refresh();
+    markRead(notifications.filter((n) => !n.readAt).map((n) => n.id));
   };
 
   const getIcon = (type: string) => {
@@ -108,8 +142,7 @@ export const AccountNotificationsTab: React.FC<AccountNotificationsTabProps> = (
             <div
               key={n.id}
               onClick={() => {
-                notificationService.markAsRead(n.id);
-                refresh();
+                markRead([n.id]);
                 if (n.actionUrl) onNavigate(n.actionUrl);
               }}
               className={`p-5 hover:bg-slate-50/80 transition-colors cursor-pointer flex items-start gap-4 ${

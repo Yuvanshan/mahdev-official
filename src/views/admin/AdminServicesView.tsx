@@ -447,7 +447,7 @@ export const AdminServicesView: React.FC = () => {
     try {
       if (permanent) {
         await cmsService.hardDelete('services', deletingService.id);
-        addToast('warning', 'Permanent Deletion', `"${deletingService.title}" was permanently removed from Firestore.`);
+        addToast('warning', 'Permanent Deletion', `"${deletingService.title}" was permanently removed from the database.`);
       } else {
         await cmsService.softDelete('services', deletingService.id);
         addToast('info', 'Service Archived', `"${deletingService.title}" was archived.`);
@@ -890,7 +890,7 @@ export const AdminServicesView: React.FC = () => {
                   Service Images (Max 5 Images)
                 </label>
                 <p className="text-[11px] text-purple-700/80">
-                  Upload up to 5 photos to Firebase Storage. Save this service to publish its image links from Turso. The first image is the cover.
+                  Upload up to 5 photos to cloud storage. Save this service to publish its image links from the database. The first image is the cover.
                 </p>
               </div>
               <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
@@ -1022,7 +1022,7 @@ export const AdminServicesView: React.FC = () => {
               </div>
             ) : (
               <div className="p-4 border-2 border-dashed border-purple-200/80 rounded-xl text-center bg-white/60 text-purple-900/70 text-xs">
-                No images added yet. Upload up to 5 images to Firebase Storage, then save this service to publish them on the website.
+                No images added yet. Upload up to 5 images to cloud storage, then save this service to publish them on the website.
               </div>
             )}
           </div>

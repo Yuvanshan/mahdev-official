@@ -96,7 +96,7 @@ export const firestorePortfolioService = {
           );
           const stale = cachedDivision?.length ? cachedDivision : cachedFullList?.length ? cachedFullList : undefined;
           if (stale) {
-            console.warn(`[Firestore Portfolio] Using cached ${canonicalId} portfolio after refresh failure:`, error);
+            console.warn(`[database Portfolio] Using cached ${canonicalId} portfolio after refresh failure:`, error);
             return stale;
           }
           throw error;
@@ -140,7 +140,7 @@ export const firestorePortfolioService = {
           return [];
         }
       } catch (err) {
-        console.warn('[Firestore Portfolio] Optimized fetch error:', err);
+        console.warn('[database Portfolio] Optimized fetch error:', err);
         // Serve the last good copy without refreshing its timestamp; never cache a failure as empty.
         if (cachedPortfolio) return cachedPortfolio.data;
         throw err;
@@ -232,7 +232,7 @@ export const firestorePortfolioService = {
         onData(data);
       },
       (err) => {
-        console.warn('[Firestore Portfolio] Listener fallback error:', err);
+        console.warn('[database Portfolio] Listener fallback error:', err);
         onData(cachedPortfolio?.data || []);
       }
     );

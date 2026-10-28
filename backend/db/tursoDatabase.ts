@@ -92,7 +92,7 @@ export function getTursoClient(): Client {
   const url = process.env.TURSO_DATABASE_URL_ACTIVE || process.env.TURSO_DATABASE_URL;
   const authToken = process.env.TURSO_AUTH_TOKEN_ACTIVE || process.env.TURSO_AUTH_TOKEN;
   if (!url || !authToken) {
-    throw new Error('Turso is not configured. Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN.');
+    throw new Error('Database is not configured. Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN.');
   }
 
   client = createClient({ url, authToken });
@@ -219,7 +219,7 @@ function sqlValue(value: unknown): SqlValue {
   if (value instanceof ArrayBuffer) return value;
   if (value instanceof Date) return value.toISOString();
   if (typeof value === 'object') return JSON.stringify(value);
-  throw new Error('Unsupported Turso query value.');
+  throw new Error('Unsupported database query value.');
 }
 
 function whereSql(filter: TursoFilter): { sql: string; args: SqlValue[] } {
@@ -251,7 +251,7 @@ function whereSql(filter: TursoFilter): { sql: string; args: SqlValue[] } {
         args: [path, sqlValue(filter.value)],
       };
     default:
-      throw new Error(`Unsupported Turso query operator: ${filter.operator}`);
+      throw new Error(`Unsupported database query operator: ${filter.operator}`);
   }
 }
 
@@ -491,7 +491,7 @@ export async function writeTursoDocument(write: TursoWrite): Promise<void> {
 }
 
 export async function writeTursoBatch(writes: TursoWrite[]): Promise<void> {
-  if (writes.length > 500) throw new Error('A Turso write batch cannot exceed 500 operations.');
+  if (writes.length > 500) throw new Error('A database write batch cannot exceed 500 operations.');
   const collections = [...new Set(writes.map((write) => validateCollection(write.collection)))];
   const tables = new Map(
     await Promise.all(collections.map(async (collection) => [

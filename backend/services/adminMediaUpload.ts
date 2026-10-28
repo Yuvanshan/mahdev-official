@@ -35,12 +35,12 @@ function parseServiceAccount(value: string): Record<string, unknown> {
       serviceAccount = JSON.parse(escapedPrivateKey);
     } catch {
       console.error('[AdminMediaUpload] FIREBASE_SERVICE_ACCOUNT_JSON is not a valid service-account JSON document.');
-      throw new Error('Server Firebase service account configuration is invalid. Provide the complete service-account JSON.');
+      throw new Error('Server database service account configuration is invalid. Provide the complete service-account JSON.');
     }
   }
 
   if (!serviceAccount || typeof serviceAccount !== 'object' || Array.isArray(serviceAccount)) {
-    throw new Error('Server Firebase service account configuration must be a JSON object.');
+    throw new Error('Server database service account configuration must be a JSON object.');
   }
 
   const account = serviceAccount as Record<string, unknown>;
@@ -52,7 +52,7 @@ function parseServiceAccount(value: string): Record<string, unknown> {
     typeof account.private_key !== 'string' ||
     !account.private_key.includes('PRIVATE KEY')
   ) {
-    throw new Error('Server Firebase service account JSON must include project_id, client_email, and private_key.');
+    throw new Error('Server database service account JSON must include project_id, client_email, and private_key.');
   }
 
   account.private_key = account.private_key.replace(/\\n/g, '\n');
@@ -74,7 +74,7 @@ export function getFirebaseAdminApp() {
       const serviceAccount = parseServiceAccount(serviceAccountJson);
       initializeApp({ credential: cert(serviceAccount), storageBucket: storageBucketName() });
     } else if (process.env.NODE_ENV === 'production') {
-      throw new Error('Server Firebase storage is not configured. Set FIREBASE_SERVICE_ACCOUNT_JSON.');
+      throw new Error('Server database storage is not configured. Set FIREBASE_SERVICE_ACCOUNT_JSON.');
     } else {
       initializeApp({ storageBucket: storageBucketName() });
     }
@@ -157,7 +157,7 @@ export async function forwardAdminMediaUploadChunk(input: {
     parsedUrl.searchParams.get('uploadType') !== 'resumable' ||
     (!objectName.startsWith('images/') && !objectName.startsWith('videos/'))
   ) {
-    throw new Error('Invalid Firebase Storage upload session.');
+    throw new Error('Invalid cloud storage upload session.');
   }
 
   const start = Number(rangeMatch[1]);
@@ -209,7 +209,7 @@ export async function forwardAdminMediaUploadChunk(input: {
             : null;
           const receivedBytes = acknowledgedMatch ? Number(acknowledgedMatch[1]) + 1 : 0;
           if (!Number.isSafeInteger(receivedBytes) || receivedBytes < end + 1) {
-            reject(new Error('Firebase Storage did not acknowledge the uploaded chunk.'));
+            reject(new Error('Cloud storage did not acknowledge the uploaded chunk.'));
             return;
           }
           resolve({ receivedBytes, complete: false });
@@ -222,13 +222,13 @@ export async function forwardAdminMediaUploadChunk(input: {
 
         const responseBody = Buffer.concat(responseChunks).toString('utf8');
         console.error('[AdminMediaUpload] Firebase Storage rejected a chunk:', status, responseBody);
-        reject(new Error(`Firebase Storage rejected the upload chunk (HTTP ${status}).`));
+        reject(new Error(`Cloud storage rejected the upload chunk (HTTP ${status}).`));
       });
     });
 
     request.on('error', (error) => {
       console.error('[AdminMediaUpload] Could not forward upload chunk to Firebase Storage:', error);
-      reject(new Error('Server could not forward the media chunk to Firebase Storage.'));
+      reject(new Error('Server could not forward the media chunk to cloud storage.'));
     });
     request.end(input.body);
   });

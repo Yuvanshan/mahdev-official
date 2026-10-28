@@ -264,6 +264,30 @@ export const AccountBookingsTab: React.FC<AccountBookingsTabProps> = ({
                     </div>
                   </div>
 
+                  {/* Charges set by our team (design bookings list their items beside the photos) */}
+                  {(!b.designImages?.length && (b.lineItems?.length || b.deliveryFee || b.discount)) ? (
+                    <ul className="text-xs text-slate-600 space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                      {(b.lineItems || []).map((item, index) => (
+                        <li key={index} className="flex justify-between gap-3">
+                          <span className="truncate">{item.name} × {item.quantity}</span>
+                          <span className="font-mono shrink-0">{formatCurrency(item.quantity * item.unitPrice, b.currency)}</span>
+                        </li>
+                      ))}
+                      {b.discount ? (
+                        <li className="flex justify-between gap-3 text-emerald-700">
+                          <span>Discount</span>
+                          <span className="font-mono shrink-0">-{formatCurrency(b.discount, b.currency)}</span>
+                        </li>
+                      ) : null}
+                      {b.deliveryFee ? (
+                        <li className="flex justify-between gap-3">
+                          <span>Transport / delivery</span>
+                          <span className="font-mono shrink-0">{formatCurrency(b.deliveryFee, b.currency)}</span>
+                        </li>
+                      ) : null}
+                    </ul>
+                  ) : null}
+
                   {b.notes && (
                     <div className="text-[11px] text-slate-500 italic bg-amber-50/60 p-2 rounded-lg border border-amber-100">
                       <strong>Client Notes:</strong> {b.notes}

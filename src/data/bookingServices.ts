@@ -304,7 +304,7 @@ export const MASTER_BOOKABLE_SERVICES: BookableServiceItem[] = [
     bookingType: 'it_service',
     divisionId: 'it',
     divisionName: 'Mahdev IT & Solutions',
-    description: 'Deep-dive architectural review of cloud infrastructure, PostgreSQL/Firestore data schemas, and cybersecurity posture.',
+    description: 'Deep-dive architectural review of cloud infrastructure, PostgreSQL/NoSQL data schemas, and cybersecurity posture.',
     imageUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80',
     locationTypeDefault: 'remote_online',
     leadTimeDays: 1,

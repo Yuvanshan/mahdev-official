@@ -279,7 +279,7 @@ export const MediaPickerModal: React.FC<MediaPickerModalProps> = ({
         })
         .catch(() => {});
     } else {
-      setUploadError(result.error || 'Failed to upload image to Firebase Storage.');
+      setUploadError(result.error || 'Failed to upload image to cloud storage.');
     }
   };
 
@@ -477,7 +477,7 @@ export const MediaPickerModal: React.FC<MediaPickerModalProps> = ({
             </div>
           )}
 
-          {/* Tab 3: Upload to Firebase Storage */}
+          {/* Tab 3: Upload to cloud storage */}
           {activeTab === 'upload' && (
             <div className="space-y-4 max-w-md mx-auto py-4 text-center">
               <label
@@ -492,7 +492,7 @@ export const MediaPickerModal: React.FC<MediaPickerModalProps> = ({
                     <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
                     <div className="space-y-1">
                       <span className="font-display font-bold text-slate-900 text-sm block">
-                        Uploading to Firebase Storage ({uploadProgress}%)
+                        Uploading to cloud storage ({uploadProgress}%)
                       </span>
                       <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                         <div

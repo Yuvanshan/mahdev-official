@@ -13,19 +13,23 @@ service firebase.storage {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Role verification supporting custom claims, token metadata, verified admin emails, or administrative staff
+    // An email only counts once its owner has verified it: anyone can create an
+    // unverified account using someone else's address.
+    function hasVerifiedEmail(emails) {
+      return request.auth.token.email != null &&
+        request.auth.token.email_verified == true &&
+        request.auth.token.email in emails;
+    }
+
+    // Role verification: custom claims, or one of the listed staff emails once verified.
+    // (A pattern such as "any @mahdev.lk address" is not used: it would trust addresses
+    // nobody has checked.)
     function isStaff() {
       return isSignedIn() && (
         request.auth.token.role in ['staff', 'manager', 'admin', 'superAdmin', 'operations_admin', 'super_admin'] ||
         request.auth.token.admin == true ||
         request.auth.token.super_admin == true ||
-        (request.auth.token.email != null && (
-          request.auth.token.email == 'admin@mahdev.lk' ||
-          request.auth.token.email == 'operations@mahdev.lk' ||
-          request.auth.token.email == 'sales@mahdev.lk' ||
-          request.auth.token.email == 'yuvanshan875@gmail.com' ||
-          request.auth.token.email.matches('.*@mahdev\\.lk$')
-        ))
+        hasVerifiedEmail(['admin@mahdev.lk', 'operations@mahdev.lk', 'sales@mahdev.lk', 'yuvanshan875@gmail.com'])
       );
     }
 
@@ -34,12 +38,7 @@ service firebase.storage {
         request.auth.token.role in ['admin', 'superAdmin', 'operations_admin', 'super_admin'] ||
         request.auth.token.admin == true ||
         request.auth.token.super_admin == true ||
-        request.auth.token.email in [
-          'admin@mahdev.lk',
-          'operations@mahdev.lk',
-          'sales@mahdev.lk',
-          'yuvanshan875@gmail.com'
-        ]
+        hasVerifiedEmail(['admin@mahdev.lk', 'operations@mahdev.lk', 'sales@mahdev.lk', 'yuvanshan875@gmail.com'])
       );
     }
 
@@ -48,8 +47,9 @@ service firebase.storage {
       return request.resource.contentType.matches('image/(jpeg|jpg|png|webp)');
     }
 
+    // SVG is not accepted: an SVG file can contain script that runs when opened.
     function isValidVectorOrImage() {
-      return request.resource.contentType.matches('image/(jpeg|jpg|png|webp|svg\\+xml|x-icon|vnd\\.microsoft\\.icon|ico)');
+      return request.resource.contentType.matches('image/(jpeg|jpg|png|webp|x-icon|vnd\\.microsoft\\.icon|ico)');
     }
 
     function isValidVideo() {

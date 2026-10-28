@@ -52,7 +52,7 @@ export const firestoreAuditLogsService = {
       const snap = await getDocs(q);
       return snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreAuditLog[];
     } catch (err) {
-      console.warn('[Firestore AuditLogs] getAuditLogs error:', err);
+      console.warn('[database AuditLogs] getAuditLogs error:', err);
       return [];
     }
   },
@@ -92,7 +92,7 @@ export const firestoreAuditLogsService = {
         onData(snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreAuditLog[]);
       },
       (err) => {
-        console.warn('[Firestore AuditLogs] subscribe error:', err);
+        console.warn('[database AuditLogs] subscribe error:', err);
         onData([]);
       }
     );

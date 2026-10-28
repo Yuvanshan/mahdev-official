@@ -801,7 +801,7 @@ export const AdminDivisionsView: React.FC = () => {
         addToast('success', 'Division Saved Successfully', `"${formData.name}" division settings saved & live on the site.`);
       } else {
         savedCmsItem = await cmsService.create<CmsDivision>('divisions', payload);
-        addToast('success', 'Division Created Successfully', `"${formData.name}" registered & live synced with Firestore.`);
+        addToast('success', 'Division Created Successfully', `"${formData.name}" registered & live synced with the database.`);
       }
 
       // Immediately update local divisions state with the new item so UI reflects logo and image instantly

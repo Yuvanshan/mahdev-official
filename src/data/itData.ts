@@ -134,7 +134,7 @@ export const IT_SERVICES: ITService[] = [
       { name: 'Flutter', category: 'Framework' },
       { name: 'React Native', category: 'Framework' },
       { name: 'Dart / Swift / Kotlin', category: 'Languages' },
-      { name: 'Firebase / Supabase', category: 'BaaS' },
+      { name: 'Supabase / Google Cloud', category: 'BaaS' },
       { name: 'SQLite / Room', category: 'Local DB' },
       { name: 'Fastlane', category: 'CI/CD' },
     ],

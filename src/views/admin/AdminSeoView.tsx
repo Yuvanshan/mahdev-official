@@ -98,7 +98,7 @@ export const AdminSeoView: React.FC = () => {
         if (Array.isArray(storedConfigs)) setConfigs(storedConfigs as PageSeoEntry[]);
       })
       .catch((error) => {
-        console.error('[Admin SEO] Could not load SEO settings from Turso:', error);
+        console.error('[Admin SEO] Could not load SEO settings from the database:', error);
         addToast('error', 'Load Failed', 'Could not load SEO configuration from the database.');
       });
   }, []);

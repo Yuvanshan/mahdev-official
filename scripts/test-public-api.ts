@@ -15,7 +15,7 @@ delete process.env.ADMIN_LOGIN_PASSWORD_HASH;
 delete process.env.ADMIN_SESSION_SECRET;
 
 const { initializeTursoDatabase, writeTursoBatch, listTursoDocuments } = await import('../backend/db/tursoDatabase');
-const { handleTursoAction } = await import('../backend/api/tursoRoutes');
+const { handleTursoAction, authorizeDatabaseAction } = await import('../backend/api/tursoRoutes');
 const { default: publicSnapshotHandler, publicInlineMediaHandler } = await import('../backend/api/handlers/publicSnapshot');
 const { default: pageShellHandler } = await import('../backend/api/handlers/pageShell');
 const { default: apiDispatcher } = await import('../api/[...path]');
@@ -339,6 +339,143 @@ try {
     result = await save({ name: 'Carol B', status: 'active' });
     assert.equal(result.status, 403, JSON.stringify(result.body));
     assert.equal((await load()).data.status, 'suspended');
+  });
+
+  await test('Bookings cannot be created for, or emailed to, someone else', async () => {
+    // A brand-new account whose email is not verified yet.
+    const mallory = { role: 'customer' as const, identity: { uid: 'cust-mallory', accountEmail: 'mallory@example.com' } };
+    const result = await handleTursoAction({
+      action: 'write',
+      write: {
+        type: 'set', collection: 'bookings', parentPath: '', id: 'BK-SPOOF-1',
+        data: {
+          source: 'online_booking', serviceName: 'Stage', price: 1000,
+          customerEmail: 'victim@example.com', email: 'victim@example.com', contactEmail: 'victim@example.com',
+          customer: { fullName: 'M', email: 'victim@example.com' },
+          customerId: 'someone-else', status: 'confirmed', paymentStatus: 'paid',
+        },
+      },
+    }, mallory);
+    assert.equal(result.status, 200, JSON.stringify(result.body));
+    const [booking] = (await listTursoDocuments('bookings', '')).filter((d) => d.id === 'BK-SPOOF-1');
+    assert.equal(JSON.stringify(booking.data).includes('victim@example.com'), false, 'no browser-sent email may be stored');
+    assert.equal(booking.data.contactEmail, 'mallory@example.com');
+    assert.equal(booking.data.customerEmail, undefined, 'an unverified email must not be stored where it grants access');
+    assert.equal(booking.data.customerId, 'cust-mallory');
+    assert.equal(booking.data.status, 'pending');
+    assert.equal(booking.data.paymentStatus, 'unpaid');
+
+    // The profile email always comes from the sign-in account.
+    const profile = await handleTursoAction({
+      action: 'write',
+      write: { type: 'set', collection: 'users', parentPath: '', id: 'cust-mallory', data: { name: 'Mallory', email: 'victim@example.com' } },
+    }, mallory);
+    assert.equal(profile.status, 200, JSON.stringify(profile.body));
+    const [user] = (await listTursoDocuments('users', '')).filter((d) => d.id === 'cust-mallory');
+    assert.equal(user.data.email, 'mallory@example.com');
+  });
+
+  await test('Customers only see their own bookings and cannot change them; the public sees none', async () => {
+    const dave = { role: 'customer' as const, identity: { uid: 'cust-dave', email: 'dave@example.com', accountEmail: 'dave@example.com' } };
+    const erin = { role: 'customer' as const, identity: { uid: 'cust-erin', email: 'erin@example.com', accountEmail: 'erin@example.com' } };
+    const create = await handleTursoAction({
+      action: 'write',
+      write: { type: 'set', collection: 'bookings', parentPath: '', id: 'BK-DAVE-1', data: { serviceName: 'Photo', price: 500 } },
+    }, dave);
+    assert.equal(create.status, 200, JSON.stringify(create.body));
+
+    const erinList = await handleTursoAction({ action: 'list', collection: 'bookings' }, erin);
+    assert.equal((erinList.body.documents as Array<{ id: string }>).some((d) => d.id === 'BK-DAVE-1'), false, 'another customer must not see it');
+    const erinGet = await handleTursoAction({ action: 'get', collection: 'bookings', id: 'BK-DAVE-1' }, erin);
+    assert.equal(erinGet.body.document, null);
+    const daveList = await handleTursoAction({ action: 'list', collection: 'bookings' }, dave);
+    assert.equal((daveList.body.documents as Array<{ id: string }>).some((d) => d.id === 'BK-DAVE-1'), true, 'the owner must see it');
+
+    // Customers cannot confirm, re-price or overwrite their booking.
+    const update = await handleTursoAction({
+      action: 'write',
+      write: { type: 'update', collection: 'bookings', parentPath: '', id: 'BK-DAVE-1', data: { status: 'confirmed', price: 1, paymentStatus: 'paid' } },
+    }, dave);
+    assert.notEqual(update.status, 200, 'a customer update must be refused');
+    const overwrite = await handleTursoAction({
+      action: 'write',
+      write: { type: 'set', collection: 'bookings', parentPath: '', id: 'BK-DAVE-1', data: { price: 1 } },
+    }, dave);
+    assert.notEqual(overwrite.status, 200, 'overwriting an existing booking must be refused');
+
+    // Bookings, users and payments are never listed for the public.
+    for (const collection of ['bookings', 'users', 'payments', 'orderConfirmations']) {
+      await assert.rejects(
+        () => authorizeDatabaseAction({ action: 'list', collection }, undefined, undefined),
+        `public listing of ${collection} must be refused`
+      );
+    }
+  });
+
+  await test('Nested collection paths are refused for non-admins (except media chunks)', async () => {
+    await assert.rejects(
+      () => authorizeDatabaseAction({ action: 'get', collection: 'products/abc/x', parentPath: 'products/abc', id: 'a' }, undefined, undefined),
+      'a made-up nested path must be refused'
+    );
+    const chunks = await authorizeDatabaseAction(
+      { action: 'list', collection: 'media_blobs/chunks', parentPath: 'media_blobs/vid_1' }, undefined, undefined
+    );
+    assert.equal(chunks.role, 'public', 'media chunks must still load for visitors');
+  });
+
+  await test('Unpublished drafts are hidden from the public', async () => {
+    await writeTursoBatch([
+      { type: 'set', collection: 'legalPages', parentPath: '', id: 'termsAndConditions', data: { title: 'Terms', sections: [{ heading: 'Live' }], draftSections: [{ heading: 'Secret draft' }], draftTitle: 'Draft title' } },
+    ]);
+    const legal = await handleTursoAction({ action: 'get', collection: 'legalPages', id: 'termsAndConditions' }, { role: 'public' });
+    const doc = legal.body.document as { data: Record<string, unknown> };
+    assert.equal(doc.data.draftSections, undefined);
+    assert.equal(doc.data.draftTitle, undefined);
+    assert.deepEqual(doc.data.sections, [{ heading: 'Live' }]);
+
+    const pages = await handleTursoAction({ action: 'list', collection: 'pages' }, { role: 'public' });
+    const ids = (pages.body.documents as Array<{ id: string }>).map((d) => d.id);
+    assert.ok(ids.includes('p1'));
+    assert.equal(ids.includes('p2'), false, 'an unpublished page must not be listed');
+    const draftPage = await handleTursoAction({ action: 'get', collection: 'pages', id: 'p2' }, { role: 'public' });
+    assert.equal(draftPage.body.document, null);
+    const adminView = await handleTursoAction({ action: 'get', collection: 'legalPages', id: 'termsAndConditions' }, { role: 'admin' });
+    assert.ok((adminView.body.document as { data: Record<string, unknown> }).data.draftSections, 'admins still see drafts');
+  });
+
+  await test('Account check answers the website only, is rate limited, and new accounts need a unique phone', async () => {
+    const check = async (body: Record<string, unknown>, headers: Record<string, string>) => {
+      const res = makeRes();
+      await apiDispatcher(makeReq({
+        method: 'POST', url: '/api/account/check', raw: JSON.stringify(body),
+        headers: { host: 'example.test', 'content-type': 'application/json', 'x-real-ip': '198.51.100.20', ...headers },
+      }), res);
+      return res;
+    };
+    const fromSite = { 'sec-fetch-site': 'same-origin', 'sec-fetch-dest': 'empty' };
+    const found = await check({ email: 'alice@example.com', phone: '0771234567', nic: '956234567V' }, fromSite);
+    assert.equal(found.statusCode, 200, found.body);
+    assert.deepEqual(
+      (({ email, phone, nic }) => ({ email, phone, nic }))(JSON.parse(found.body)),
+      { email: 'taken', phone: 'taken', nic: 'taken' }
+    );
+    const fresh = JSON.parse((await check({ email: 'nobody@example.com', phone: '0719999999', nic: '200012345678' }, fromSite)).body);
+    assert.equal(fresh.email, 'available');
+    assert.equal(fresh.phone, 'available');
+
+    const otherSite = await check({ email: 'alice@example.com' }, { 'sec-fetch-site': 'cross-site' });
+    assert.equal(otherSite.statusCode, 404, 'other websites and scripts must not be answered');
+
+    let limited = 0;
+    for (let i = 0; i < 25; i += 1) if ((await check({ email: 'x@example.com' }, fromSite)).statusCode === 429) limited += 1;
+    assert.ok(limited > 0, 'repeated checks must be rate limited');
+
+    // The server itself refuses a second new account with a registered contact number.
+    const result = await handleTursoAction({
+      action: 'write',
+      write: { type: 'set', collection: 'users', parentPath: '', id: 'cust-frank', data: { name: 'Frank', phone: '077 123 4567' } },
+    }, { role: 'customer', identity: { uid: 'cust-frank', accountEmail: 'frank@example.com' } });
+    assert.notEqual(result.status, 200, 'a registered contact number must not open a second account');
   });
 
   await test('Admin sign-in has no built-in fallback credentials', async () => {

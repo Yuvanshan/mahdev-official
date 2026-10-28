@@ -35,7 +35,7 @@ export const firestoreUsersService = {
       const snap = await getDoc(doc(db, 'users', uid));
       return snap.exists() ? (snap.data() as FirestoreUser) : null;
     } catch (err) {
-      console.warn('[Firestore Users] getUser error:', err);
+      console.warn('[database Users] getUser error:', err);
       return null;
     }
   },
@@ -80,7 +80,7 @@ export const firestoreUsersService = {
       const snap = await getDocs(q);
       return snap.docs.map((d) => d.data() as FirestoreUser);
     } catch (err) {
-      console.warn('[Firestore Users] getUsers error:', err);
+      console.warn('[database Users] getUsers error:', err);
       return [];
     }
   },
@@ -115,7 +115,7 @@ export const firestoreUsersService = {
         onData(snap.docs.map((d) => ({ ...d.data(), uid: d.id })) as FirestoreUser[]);
       },
       (err) => {
-        console.warn('[Firestore Users] subscribeUsers error:', err);
+        console.warn('[database Users] subscribeUsers error:', err);
         if (onError) onError(err);
         else onData([]);
       }
@@ -131,7 +131,7 @@ export const firestoreUsersService = {
       const snap = await getDocs(q);
       return snap.docs.map((d) => ({ ...d.data(), uid: d.id })) as FirestoreUser[];
     } catch (err) {
-      console.warn('[Firestore Users] getAllUsers error:', err);
+      console.warn('[database Users] getAllUsers error:', err);
       return [];
     }
   },

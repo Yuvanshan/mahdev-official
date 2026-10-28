@@ -69,7 +69,7 @@ export const firestoreBookingsService = {
       const snap = await getDocs(q);
       return snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreBooking[];
     } catch (err) {
-      console.warn('[Firestore Bookings] Optimized getBookings error:', err);
+      console.warn('[database Bookings] Optimized getBookings error:', err);
       return [];
     }
   },
@@ -110,7 +110,7 @@ export const firestoreBookingsService = {
       const snap = await getDoc(doc(db, 'bookings', id));
       return snap.exists() ? ({ ...snap.data(), id: snap.id } as FirestoreBooking) : null;
     } catch (err) {
-      console.warn('[Firestore Bookings] getBookingById error:', err);
+      console.warn('[database Bookings] getBookingById error:', err);
       return null;
     }
   },
@@ -163,7 +163,7 @@ export const firestoreBookingsService = {
         }
       },
       (err) => {
-        console.warn(`[Firestore Bookings] subscribeToBooking error for ${bookingId}:`, err);
+        console.warn(`[database Bookings] subscribeToBooking error for ${bookingId}:`, err);
         onData(null);
       }
     );
@@ -184,7 +184,7 @@ export const firestoreBookingsService = {
         onData(bookings);
       },
       (err) => {
-        console.warn('[Firestore Bookings] subscribeAllBookings error:', err);
+        console.warn('[database Bookings] subscribeAllBookings error:', err);
         if (onError) onError(err);
         else onData([]);
       }
@@ -207,7 +207,7 @@ export const firestoreBookingsService = {
         onData(snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreBooking[]);
       },
       (err) => {
-        console.warn('[Firestore Bookings] subscribeRecentBookings error:', err);
+        console.warn('[database Bookings] subscribeRecentBookings error:', err);
         onData([]);
       }
     );
@@ -222,7 +222,7 @@ export const firestoreBookingsService = {
       const items = snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreBooking[];
       return items.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     } catch (err) {
-      console.warn('[Firestore Bookings] getAllBookings error:', err);
+      console.warn('[database Bookings] getAllBookings error:', err);
       return [];
     }
   },
@@ -235,7 +235,7 @@ export const firestoreBookingsService = {
       await deleteDoc(doc(db, 'bookings', id));
       return true;
     } catch (err) {
-      console.warn(`[Firestore Bookings] deleteBooking error for ${id}:`, err);
+      console.warn(`[database Bookings] deleteBooking error for ${id}:`, err);
       return false;
     }
   },

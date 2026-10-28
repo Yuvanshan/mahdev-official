@@ -182,7 +182,7 @@ export const DEFAULT_PRIVACY_CONTENT: LegalDocument = buildDocument(
       heading: 'Google Services and Other Third Parties',
       content: [
         'Our website may integrate with third-party services such as:',
-        '• Firebase and Google Cloud services.',
+        '• Google Cloud services.',
         '• Google Analytics.',
         '• Google Maps.',
         '• WhatsApp.',

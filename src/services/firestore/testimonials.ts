@@ -44,7 +44,7 @@ export const firestoreTestimonialsService = {
           cachedTestimonials = { data: [], timestamp: now };
         }
       } catch (err) {
-        console.warn('[Firestore Testimonials] getTestimonials error:', err);
+        console.warn('[database Testimonials] getTestimonials error:', err);
         allTestimonials = cachedTestimonials?.data || [];
       }
     }
@@ -106,7 +106,7 @@ export const firestoreTestimonialsService = {
         onData(data);
       },
       (err) => {
-        console.warn('[Firestore Testimonials] Listener error:', err);
+        console.warn('[database Testimonials] Listener error:', err);
         onData(cachedTestimonials?.data || []);
       }
     );

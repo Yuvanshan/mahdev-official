@@ -114,10 +114,10 @@ export class DatabaseHealthService {
       const siteDocRef = doc(db, 'settings', 'site');
       await getDocFromServer(siteDocRef);
       serverReachable = true;
-      serverMessage = `Connected to Turso database '${activeDbId}'.`;
+      serverMessage = `Connected to database '${activeDbId}'.`;
     } catch (err) {
       serverReachable = false;
-      serverMessage = err instanceof Error ? err.message : 'Turso database is unreachable.';
+      serverMessage = err instanceof Error ? err.message : 'Database is unreachable.';
     }
 
     // 5. Auth State
@@ -223,12 +223,12 @@ export class DatabaseHealthService {
 
     if (!isProjectMatch) {
       recommendations.push(
-        `Firebase Project mismatch: Currently connected to '${activeProjectId}', expected '${TARGET_FIREBASE_PROJECT_ID}'.`
+        `Project mismatch: Currently connected to '${activeProjectId}', expected '${TARGET_FIREBASE_PROJECT_ID}'.`
       );
     }
     if (!isDatabaseMatch) {
       recommendations.push(
-        `Turso database configuration is invalid: '${activeDbId}'.`
+        `Database configuration is invalid: '${activeDbId}'.`
       );
     }
     if (!serverReachable) {

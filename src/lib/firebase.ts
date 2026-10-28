@@ -28,7 +28,7 @@ export const TARGET_APP_ID = '1:1062826041810:web:2905a8e9f7bc3243dfa80b';
 export const TARGET_MESSAGING_SENDER_ID = '1062826041810';
 export const activeDatabaseName =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_TURSO_DATABASE_NAME) ||
-  'Turso';
+  'Database';
 
 function getEnvVar(key: string): string | undefined {
   if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[key]) {
@@ -87,7 +87,7 @@ export const auth: Auth = (() => {
     // Auth was already created (e.g. hot reload): keep it on the device as well.
     const existingAuth = getAuth(app);
     void setPersistence(existingAuth, indexedDBLocalPersistence).catch((error) => {
-      console.error('[Firebase Auth] Could not keep the sign-in on this device:', error);
+      console.error('[database Auth] Could not keep the sign-in on this device:', error);
     });
     return existingAuth;
   }
@@ -128,20 +128,20 @@ export async function testTursoConnection(): Promise<{
     });
     const result = await response.json() as { success?: boolean; error?: string };
     if (!response.ok || !result.success) {
-      throw new Error(result.error || `Turso health check failed (${response.status}).`);
+      throw new Error(result.error || `Database health check failed (${response.status}).`);
     }
     return {
       success: true,
-      message: 'Turso database connection verified.',
-      projectId: 'Turso',
+      message: 'Database connection verified.',
+      projectId: 'Database',
       databaseId: activeDatabaseName,
       latencyMs: Date.now() - startedAt,
     };
   } catch (error) {
     return {
       success: false,
-      message: error instanceof Error ? error.message : 'Turso database connection failed.',
-      projectId: 'Turso',
+      message: error instanceof Error ? error.message : 'Database connection failed.',
+      projectId: 'Database',
       databaseId: activeDatabaseName,
       latencyMs: Date.now() - startedAt,
     };

@@ -52,7 +52,7 @@ export const firestoreCategoriesService = {
           cachedCategories = { data: [], timestamp: now };
         }
       } catch (err) {
-        console.warn('[Firestore Categories] getCategories error:', err);
+        console.warn('[database Categories] getCategories error:', err);
         // Never report a failed read as "no categories"; callers must not cache it.
         if (!cachedCategories) throw err;
         allCategories = cachedCategories.data;
@@ -121,7 +121,7 @@ export const firestoreCategoriesService = {
         onData(data);
       },
       (err) => {
-        console.warn('[Firestore Categories] Listener error:', err);
+        console.warn('[database Categories] Listener error:', err);
         onData(cachedCategories?.data || []);
       }
     );

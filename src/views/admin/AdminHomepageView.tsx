@@ -252,7 +252,7 @@ export const AdminHomepageView: React.FC = () => {
       setConfig(updatedConfig);
       await updateHomepageConfig(updatedConfig);
       setIsDirty(false);
-      addToast('success', 'Media Uploaded & Saved', `${isVideo ? 'Hero video' : 'Picture'} saved to Firestore. Live on website!`);
+      addToast('success', 'Media Uploaded & Saved', `${isVideo ? 'Hero video' : 'Picture'} saved to the database. Live on website!`);
     } catch (err: any) {
       console.error('Failed to process media upload:', err);
       addToast('error', 'Upload Notice', err.message || 'Could not upload media file.');
@@ -287,7 +287,7 @@ export const AdminHomepageView: React.FC = () => {
       setConfig(updatedConfig);
       await updateHomepageConfig(updatedConfig);
       setIsDirty(false);
-      addToast('success', 'Default Poster Saved', 'Default image saved to Firestore. Displays while video loads.');
+      addToast('success', 'Default Poster Saved', 'Default image saved to the database. Displays while video loads.');
     } catch (err: any) {
       console.error('Failed to upload default poster:', err);
       addToast('error', 'Upload Notice', err.message || 'Could not upload default image.');
@@ -303,7 +303,7 @@ export const AdminHomepageView: React.FC = () => {
     try {
       await updateHomepageConfig(config);
       setIsDirty(false);
-      addToast('success', 'Hero Media Published', 'Hero video, poster image, and headlines saved to Firestore.');
+      addToast('success', 'Hero Media Published', 'Hero video, poster image, and headlines saved to the database.');
     } catch (err: any) {
       addToast('error', 'Save Notice', err.message || 'Could not save hero media settings.');
     } finally {
@@ -608,7 +608,7 @@ export const AdminHomepageView: React.FC = () => {
                         Full-Screen Hero Media Backdrop
                       </h4>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                        Firestore Sync Active
+                        Database Sync Active
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5">
@@ -652,7 +652,7 @@ export const AdminHomepageView: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <label className="block font-bold text-slate-800 text-xs uppercase tracking-wider">
-                        1. Hero Video Loop URL (MP4, WebM, MOV, YouTube, Vimeo, Firebase)
+                        1. Hero Video Loop URL (MP4, WebM, MOV, YouTube, Vimeo, uploaded video)
                       </label>
                       <p className="text-[11px] text-slate-500">
                         Plays seamlessly in background, auto-looping without sound.
@@ -1489,9 +1489,9 @@ export const AdminHomepageView: React.FC = () => {
                           setIsDirty(false);
                           try {
                             await updateHomepageConfig(updatedConfig);
-                            addToast('success', 'Achievements Cleared', 'All achievement cards permanently deleted and removed from Firestore.');
+                            addToast('success', 'Achievements Cleared', 'All achievement cards permanently deleted and removed from the database.');
                           } catch (err: any) {
-                            addToast('error', 'Sync Failed', err.message || 'Could not update Firestore.');
+                            addToast('error', 'Sync Failed', err.message || 'Could not update database.');
                           }
                         }
                       }}
@@ -1527,9 +1527,9 @@ export const AdminHomepageView: React.FC = () => {
                       setIsDirty(true);
                       try {
                         await updateHomepageConfig(updatedConfig);
-                        addToast('success', 'Metric Added', 'New achievement card created and saved to Firestore.');
+                        addToast('success', 'Metric Added', 'New achievement card created and saved to the database.');
                       } catch (err: any) {
-                        addToast('error', 'Notice', err.message || 'Could not update Firestore.');
+                        addToast('error', 'Notice', err.message || 'Could not update database.');
                       }
                     }}
                     className="text-xs font-semibold cursor-pointer"
@@ -1601,9 +1601,9 @@ export const AdminHomepageView: React.FC = () => {
                             setIsDirty(false);
                             try {
                               await updateHomepageConfig(updatedConfig);
-                              addToast('success', 'Card Removed', `Card #${idx + 1} permanently deleted and removed from Firestore.`);
+                              addToast('success', 'Card Removed', `Card #${idx + 1} permanently deleted and removed from the database.`);
                             } catch (err: any) {
-                              addToast('error', 'Error', err.message || 'Failed to sync with Firestore.');
+                              addToast('error', 'Error', err.message || 'Failed to sync with the database.');
                             }
                           }}
                           className="text-red-500 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 cursor-pointer"

@@ -28,9 +28,13 @@ export default async function handler(req: AdminLoginRequest, res: ServerRespons
     // Platform-provided IP (not the spoofable X-Forwarded-For header).
     const clientKey = getClientIp(req);
     try {
-      // Shared across all serverless instances: 10 attempts per IP and 100 in total per 15 minutes.
+      // Shared across all serverless instances, per 15 minutes: 10 attempts per IP and 30 per
+      // email address. The overall cap is a high backstop only, so strangers guessing from many
+      // addresses cannot lock the real admin out (as a low global cap allowed).
+      const email = typeof body.email === 'string' ? body.email.trim().toLowerCase().slice(0, 254) : '';
       await consumeRateLimit(`admin-login:ip:${clientKey}`, 10, LOGIN_WINDOW_MS);
-      await consumeRateLimit('admin-login:global', 100, LOGIN_WINDOW_MS);
+      if (email) await consumeRateLimit(`admin-login:email:${email}`, 30, LOGIN_WINDOW_MS);
+      await consumeRateLimit('admin-login:global', 2000, LOGIN_WINDOW_MS);
     } catch (limitError) {
       if (limitError instanceof RateLimitError) {
         res.statusCode = 429;

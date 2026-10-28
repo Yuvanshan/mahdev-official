@@ -25,7 +25,7 @@ export default async function handler(req: HealthRequest, res: ServerResponse): 
       success: false,
       service: 'mahdev-backend',
       database: 'unavailable',
-      error: 'Turso is not configured or cannot be reached.',
+      error: 'Database is not configured or cannot be reached.',
     }));
   }
 }

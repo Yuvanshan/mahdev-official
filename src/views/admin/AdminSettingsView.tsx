@@ -209,7 +209,7 @@ export const AdminSettingsView: React.FC = () => {
         action: 'ADMIN_BRANDING_UPLOAD',
         entityType: 'StorageAsset',
         entityId: field,
-        details: `Administrator updated ${field} with asset ${file.name} in Firebase Storage repository.`,
+        details: `Administrator updated ${field} with asset ${file.name} in cloud storage.`,
         status: 'success',
       });
 
@@ -222,7 +222,7 @@ export const AdminSettingsView: React.FC = () => {
             : field === 'maintenanceImage'
             ? 'maintenance cover image'
             : 'brand logo'
-        } was verified, stored in Firebase Storage, and published live across the site.`
+        } was verified, stored in cloud storage, and published live across the site.`
       );
     } catch (err: any) {
       console.error('[AdminSettings] Asset upload error:', err);
@@ -377,7 +377,7 @@ export const AdminSettingsView: React.FC = () => {
         'Your custom logos and favicon are now updated and synchronized live across all public portals.'
       );
     } catch (err: any) {
-      addToast('error', 'Error Publishing Branding', err?.message || 'Firestore error');
+      addToast('error', 'Error Publishing Branding', err?.message || 'Database error');
     } finally {
       setIsSaving(false);
     }
@@ -401,7 +401,7 @@ export const AdminSettingsView: React.FC = () => {
         'The top announcement banner is now broadcasted in real-time to all website visitors.'
       );
     } catch (err: any) {
-      addToast('error', 'Error Saving Banner', err?.message || 'Firestore error');
+      addToast('error', 'Error Saving Banner', err?.message || 'Database error');
     } finally {
       setIsSaving(false);
     }
@@ -424,10 +424,10 @@ export const AdminSettingsView: React.FC = () => {
       addToast(
         'success',
         'Maintenance Settings Saved',
-        'Maintenance configuration parameters have been synchronized with Firestore.'
+        'Maintenance configuration parameters have been synchronized with the database.'
       );
     } catch (err: any) {
-      addToast('error', 'Error Saving Maintenance', err?.message || 'Firestore error');
+      addToast('error', 'Error Saving Maintenance', err?.message || 'Database error');
     } finally {
       setIsSaving(false);
     }
@@ -492,7 +492,7 @@ export const AdminSettingsView: React.FC = () => {
       addToast(
         'success',
         'Security & Alerts Saved',
-        'Maintenance status, corporate SMS alerts, and audit settings have been committed to Cloud Firestore.'
+        'Maintenance status, corporate SMS alerts, and audit settings have been committed to the database.'
       );
     } catch (err: any) {
       addToast('error', 'Save Failed', err?.message || 'Failed to save security settings.');
@@ -504,7 +504,7 @@ export const AdminSettingsView: React.FC = () => {
   const handleResetToDefaults = async () => {
     if (
       window.confirm(
-        'Are you sure you want to reset company and site settings to official Mahdev default values in Firestore?'
+        'Are you sure you want to reset company and site settings to official Mahdev default values in the database?'
       )
     ) {
       setIsSaving(true);
@@ -530,13 +530,13 @@ export const AdminSettingsView: React.FC = () => {
         addToast(
           'info',
           'Defaults Restored',
-          'Official Mahdev corporate details and system settings have been restored in Cloud Firestore.'
+          'Official Mahdev corporate details and system settings have been restored in the database.'
         );
       } catch (err: any) {
         addToast(
           'error',
           'Reset Failed',
-          err?.message || 'Could not reset default settings in Firestore.'
+          err?.message || 'Could not reset default settings in the database.'
         );
       } finally {
         setIsSaving(false);
@@ -548,7 +548,7 @@ export const AdminSettingsView: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-2xl border border-slate-200 p-8 space-y-4">
         <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-        <p className="text-sm font-semibold text-slate-700">Connecting to Cloud Firestore...</p>
+        <p className="text-sm font-semibold text-slate-700">Connecting to the database...</p>
         <p className="text-xs text-slate-400">Loading authoritative company & system configuration</p>
       </div>
     );
@@ -572,7 +572,7 @@ export const AdminSettingsView: React.FC = () => {
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Cloud Firestore Single Source of Truth • Real-time synchronization across all devices and public visitors.
+            Single Source of Truth • Real-time synchronization across all devices and public visitors.
           </p>
         </div>
 
@@ -596,7 +596,7 @@ export const AdminSettingsView: React.FC = () => {
             leftIcon={isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             className="text-xs font-bold shrink-0"
           >
-            {isSaving ? 'Saving to Firestore...' : 'Save All Settings'}
+            {isSaving ? 'Saving to the database...' : 'Save All Settings'}
           </Button>
         </div>
       </div>
@@ -1232,7 +1232,7 @@ export const AdminSettingsView: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <h4 className="text-sm font-bold text-slate-900">
-                    Firebase Storage Authorization: Active & Synchronized
+                    Cloud storage Authorization: Active & Synchronized
                   </h4>
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                     <Check className="w-3 h-3" /> Verified Admin
@@ -1645,7 +1645,7 @@ export const AdminSettingsView: React.FC = () => {
                 </div>
 
                 <p className="text-xs text-slate-500">
-                  Displayed on user browser tabs, bookmarks, and mobile home screen shortcuts. Synchronized live in Firestore.
+                  Displayed on user browser tabs, bookmarks, and mobile home screen shortcuts. Synchronized live in the database.
                 </p>
 
                 {/* Upload & Progress UI */}
@@ -2225,7 +2225,7 @@ export const AdminSettingsView: React.FC = () => {
                     : 'System is back ONLINE. Public visitors can access all pages and portals.'
                 );
               } catch (err: any) {
-                addToast('error', 'Error updating maintenance mode', err?.message || 'Firestore error');
+                addToast('error', 'Error updating maintenance mode', err?.message || 'Database error');
               } finally {
                 setIsSaving(false);
               }
@@ -2650,7 +2650,7 @@ export const AdminSettingsView: React.FC = () => {
                         </div>
                         <div>
                           <h4 className="text-xs font-bold font-display text-white">Save Maintenance Configuration</h4>
-                          <p className="text-[11px] text-slate-400">Commit headline, explanation copy, cover image, and emergency contacts to Firestore.</p>
+                          <p className="text-[11px] text-slate-400">Commit headline, explanation copy, cover image, and emergency contacts to the database.</p>
                         </div>
                       </div>
                       <Button

@@ -91,7 +91,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
           }
         })
         .catch((err) => {
-          console.warn('[HeroVideoBackground] Firestore blob resolution notice:', err);
+          console.warn('[HeroVideoBackground] database blob resolution notice:', err);
           if (isMounted) setVideoFailed(true);
         });
     } else {

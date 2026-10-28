@@ -106,17 +106,17 @@ export async function uploadMediaAsset(
       uploadRequest.send(chunk);
     });
     if (chunkResult.receivedBytes <= receivedBytes || chunkResult.receivedBytes > file.size) {
-      throw new Error('Firebase Storage returned an invalid upload offset.');
+      throw new Error('Cloud storage returned an invalid upload offset.');
     }
     receivedBytes = chunkResult.receivedBytes;
     if (chunkResult.complete) {
       if (receivedBytes !== file.size) {
-        throw new Error('Firebase Storage completed the upload at an unexpected file size.');
+        throw new Error('Cloud storage completed the upload at an unexpected file size.');
       }
       break;
     }
     if (receivedBytes <= end) {
-      throw new Error('Firebase Storage did not acknowledge the full uploaded chunk.');
+      throw new Error('Cloud storage did not acknowledge the full uploaded chunk.');
     }
   }
 

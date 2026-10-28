@@ -317,7 +317,7 @@ class AdminService {
         id: document.id,
       })) as AuditLogEntry[];
     } catch (error) {
-      console.error('[AdminService] Turso audit-log read failed:', error);
+      console.error('[AdminService] database audit-log read failed:', error);
       throw error;
     }
   }
@@ -336,7 +336,7 @@ class AdminService {
       await setDoc(doc(db, 'auditLogs', newEntry.id), newEntry);
       return true;
     } catch (error) {
-      console.error('[AdminService] Failed to persist audit log in Turso:', error);
+      console.error('[AdminService] Failed to persist audit log in the database:', error);
       return false;
     }
   }

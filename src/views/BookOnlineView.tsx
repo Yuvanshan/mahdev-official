@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
   CalendarCheck,
@@ -41,6 +41,8 @@ import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { safeStorage } from '../utils/safeStorage';
 import { useOnlineBookingEnabled } from '../hooks/useOnlineBookingEnabled';
 import { openWhatsAppInquiry } from '../utils/whatsapp';
+import { checkAccountDetails, takenDetailErrors } from '../services/accountCheckService';
+import { BANK_DETAILS } from '../config/company';
 
 interface BookOnlineViewProps {
   kind: OnlineBookingKind;
@@ -194,7 +196,7 @@ function servicePackages(service?: FirestoreService): BookingPackage[] {
 export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, onNavigate }) => {
   const { user, isAuthenticated, isLoading: authLoading, register } = useAuth();
   const onlineBookingEnabled = useOnlineBookingEnabled();
-  const { services, gallery, products, isServicesLoading, isGalleryLoading, isProductsLoading, isInitialLoading } =
+  const { services, gallery, products, siteSettings, isServicesLoading, isGalleryLoading, isProductsLoading, isInitialLoading } =
     useFirestoreDataContext();
 
   // The live record wins; the snapshot covers items built from division data.
@@ -240,6 +242,26 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
   const [confirmed, setConfirmed] = useState<Booking | null>(null);
   // Set when registration fails because the email or NIC already has an account.
   const [accountExists, setAccountExists] = useState(false);
+  // The booking panel; on phones it sits below the item, so errors and the
+  // success message are scrolled into view instead of staying off screen.
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [revealTick, setRevealTick] = useState(0);
+  const revealProblem = () => setRevealTick((tick) => tick + 1);
+
+  // After a failed submit: scroll to the first field with an error, or the error message.
+  useEffect(() => {
+    if (revealTick === 0) return;
+    const frame = window.requestAnimationFrame(() => {
+      const panel = panelRef.current;
+      const target =
+        panel?.querySelector<HTMLElement>('[aria-invalid="true"]') ||
+        panel?.querySelector<HTMLElement>('[role="alert"]');
+      if (!target) return;
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (target.matches('input, select, textarea')) target.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [revealTick]);
 
   useEffect(() => setActiveImage(0), [kind, itemId]);
   useEffect(() => {
@@ -352,8 +374,14 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
     });
     markAccountDataStale();
     setConfirmed(booking);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Show the success message (on phones the panel is below the item details).
+  useEffect(() => {
+    if (!confirmed) return;
+    const frame = window.requestAnimationFrame(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    return () => window.cancelAnimationFrame(frame);
+  }, [confirmed]);
 
   const handleNewCustomer = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -361,11 +389,23 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
     setAccountExists(false);
     const errors = { ...validateBookingDetails(), ...validateNewCustomer() };
     setFieldErrors(errors);
-    if (Object.keys(errors).length) return;
+    if (Object.keys(errors).length) {
+      revealProblem();
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      // 1. Create the account (the server refuses an email or NIC that is already registered).
+      // 1. Email, phone or NIC that already has an account: ask the customer to sign in instead.
+      const taken = takenDetailErrors(await checkAccountDetails({ email: form.email, phone: form.phone, nic: form.nic }));
+      if (Object.keys(taken).length) {
+        setFieldErrors(taken);
+        setAccountExists(true);
+        setErrorMessage('You already have a Mahdev account. Please sign in to book; your booking details will be kept.');
+        revealProblem();
+        return;
+      }
+      // 2. Create the account (the server also refuses an email, phone or NIC that is already registered).
       const registered = await register({
         fullName: form.fullName,
         nic: form.nic,
@@ -382,9 +422,10 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
         if (/NIC/i.test(message)) setFieldErrors({ nic: message });
         else if (/email/i.test(message)) setFieldErrors({ email: message });
         else setErrorMessage(message);
+        revealProblem();
         return;
       }
-      // 2. Save the booking on the new account.
+      // 3. Save the booking on the new account.
       await submitBooking({
         fullName: form.fullName.trim(),
         email: form.email.trim().toLowerCase(),
@@ -397,6 +438,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
           ? `Your account was created, but the booking could not be sent: ${error.message}`
           : 'Please try booking again.'
       );
+      revealProblem();
     } finally {
       setIsSubmitting(false);
     }
@@ -408,13 +450,17 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
     setErrorMessage(null);
     const errors = validateBookingDetails();
     setFieldErrors(errors);
-    if (Object.keys(errors).length) return;
+    if (Object.keys(errors).length) {
+      revealProblem();
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       await submitBooking({ fullName: user.fullName, email: user.email, phone: user.phone });
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Could not send your booking. Please try again.');
+      revealProblem();
     } finally {
       setIsSubmitting(false);
     }
@@ -629,7 +675,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
 
         {/* Booking panel */}
         <aside className="lg:col-span-5">
-          <div className="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 lg:sticky lg:top-24 space-y-4">
+          <div ref={panelRef} className="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 lg:sticky lg:top-24 space-y-4 scroll-mt-24">
             {confirmed ? (
               <div className="text-center space-y-4 py-4">
                 <div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
@@ -643,9 +689,14 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
                 </div>
                 <ol className="text-left rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600 space-y-2 list-decimal list-inside">
                   <li>Our team checks availability for {new Date(`${confirmed.date}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}.</li>
-                  <li>We confirm the final price and any advance on WhatsApp or email.</li>
-                  <li>Your booking is confirmed once we accept it; you can follow it in your account.</li>
+                  <li>We confirm the final price and the advance on WhatsApp or email.</li>
+                  <li>Pay the advance to the account below to reserve your date.</li>
                 </ol>
+                <AdvancePaymentCard
+                  reference={confirmed.id}
+                  total={confirmed.price}
+                  depositPercent={siteSettings?.bookingDepositPercent ?? 30}
+                />
                 <div className="grid grid-cols-2 gap-2">
                   <button type="button" onClick={() => onNavigate('/account/bookings')} className="rounded-xl bg-[#0052FF] text-white text-sm font-semibold py-3 hover:bg-blue-700">
                     Track my booking
@@ -859,6 +910,7 @@ const BookingDetailsFields: React.FC<{
             onChange={(e) => update('quantity', Math.floor(Number(e.target.value)) || 1)}
             className={`${INPUT_CLASS} w-24 text-center`}
             aria-label="Quantity"
+            aria-invalid={errors.quantity ? true : undefined}
           />
           <button type="button" onClick={() => update('quantity', Math.min(MAX_QUANTITY, form.quantity + 1))} className="h-11 w-11 rounded-xl border border-slate-300 flex items-center justify-center hover:bg-slate-50" aria-label="Increase quantity">
             <Plus className="h-4 w-4" />
@@ -889,6 +941,7 @@ const TermsCheckbox: React.FC<{ checked: boolean; onChange: (checked: boolean) =
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
+        aria-invalid={error ? true : undefined}
         className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
       />
       <span>
@@ -901,3 +954,41 @@ const TermsCheckbox: React.FC<{ checked: boolean; onChange: (checked: boolean) =
     {error && <p className="mt-1.5 text-xs font-medium text-rose-600">{error}</p>}
   </div>
 );
+
+/**
+ * Where to pay the advance once the booking is sent. The final advance is
+ * confirmed by our team; until then an estimate from the booking deposit rate
+ * (Admin → Settings → Commerce) is shown when the item has a price.
+ */
+const AdvancePaymentCard: React.FC<{ reference: string; total: number; depositPercent: number }> = ({
+  reference,
+  total,
+  depositPercent,
+}) => {
+  const estimate = total > 0 ? Math.round((total * depositPercent) / 100) : 0;
+  return (
+    <div className="text-left rounded-2xl border border-blue-100 bg-blue-50/50 p-4 text-xs space-y-1.5">
+      <div className="font-bold text-slate-900 text-sm">Pay the advance by bank transfer</div>
+      <p className="text-slate-600">
+        {estimate > 0
+          ? `Estimated advance (${depositPercent}%): ${formatCurrency(estimate, 'LKR')}. We will confirm the exact amount before you pay.`
+          : 'We will confirm the advance amount with you before you pay.'}
+      </p>
+      {[
+        ['Account name', BANK_DETAILS.accountName],
+        ['Bank', BANK_DETAILS.bankName],
+        ['Branch', BANK_DETAILS.branch],
+        ['Account number', BANK_DETAILS.accountNumber],
+        ['Reference', reference],
+      ]
+        .filter(([, value]) => value)
+        .map(([label, value]) => (
+          <div key={label} className="flex justify-between gap-3">
+            <span className="text-slate-500">{label}</span>
+            <strong className="text-slate-900 font-mono text-right break-all">{value}</strong>
+          </div>
+        ))}
+      <p className="text-slate-500 pt-1">Please send the transfer slip on WhatsApp (075 092 8078) with your booking reference.</p>
+    </div>
+  );
+};

@@ -121,7 +121,7 @@ export function validateServerSecrets(): {
   diagnostics.push({
     category: 'Security Kernel',
     status: 'configured',
-    description: 'HMAC-SHA256 order signing and Firebase admin token verification active',
+    description: 'HMAC-SHA256 order signing and database admin token verification active',
   });
 
   // 3. Communications

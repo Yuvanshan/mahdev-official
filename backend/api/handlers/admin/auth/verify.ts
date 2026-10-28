@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import {
   AdminSessionAuthError,
-  getAdminSessionFromCookie,
+  requireAdminSession,
 } from '../../../../auth/adminCredentialAuth.js';
 
 interface AdminAuthRequest extends IncomingMessage {
@@ -18,7 +18,7 @@ export default async function handler(req: AdminAuthRequest, res: ServerResponse
   }
 
   try {
-    const session = getAdminSessionFromCookie(req.headers.cookie);
+    const session = await requireAdminSession(req.headers.cookie);
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({ success: true, ...session }));

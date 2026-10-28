@@ -242,7 +242,7 @@ export const firestoreServicesService = {
           );
           const stale = cachedDivision?.length ? cachedDivision : cachedFullList?.length ? cachedFullList : undefined;
           if (stale) {
-            console.warn(`[Firestore Services] Using cached ${canonicalId} services after refresh failure:`, error);
+            console.warn(`[database Services] Using cached ${canonicalId} services after refresh failure:`, error);
             return stale;
           }
           throw error;
@@ -278,7 +278,7 @@ export const firestoreServicesService = {
             return [];
           }
         } catch (err) {
-          console.warn('[Firestore Services] getServices error:', err);
+          console.warn('[database Services] getServices error:', err);
           // Never report a failed read as "no services"; callers must not cache it.
           if (cachedServices) return cachedServices.data;
           throw err;
@@ -401,7 +401,7 @@ export const firestoreServicesService = {
         }
       },
       (err) => {
-        console.warn('[Firestore Services] Listener error:', err);
+        console.warn('[database Services] Listener error:', err);
         if (onError) onError(err);
         const fallback = cachedServices?.data || [];
         if (division) {

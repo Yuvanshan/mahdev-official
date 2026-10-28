@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { AdminSessionAuthError, getAdminSessionFromCookie } from '../../../auth/adminCredentialAuth.js';
+import { AdminSessionAuthError, requireAdminSession } from '../../../auth/adminCredentialAuth.js';
 import {
   getTursoDocument,
   initializeTursoDatabase,
@@ -31,9 +31,7 @@ export default async function handler(
   }
 
   try {
-    getAdminSessionFromCookie(
-      Array.isArray(request.headers.cookie) ? request.headers.cookie[0] : request.headers.cookie
-    );
+    await requireAdminSession(request.headers.cookie);
     const url = new URL(request.url || '/', 'http://localhost');
     const applicationId = url.searchParams.get('id') || '';
     if (!/^[0-9a-f-]{36}$/i.test(applicationId)) {

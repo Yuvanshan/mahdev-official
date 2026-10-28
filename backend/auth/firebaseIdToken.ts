@@ -6,7 +6,13 @@ const MAX_CLOCK_SKEW_SECONDS = 5 * 60;
 
 export interface FirebaseIdentity {
   uid: string;
+  /** Set only when the email is verified; the only email trusted for access checks. */
   email?: string;
+  /**
+   * The sign-in account's email, verified or not. Used for the account's own
+   * profile and contact details, never to grant access to records.
+   */
+  accountEmail?: string;
 }
 
 interface FirebaseTokenClaims {
@@ -147,5 +153,6 @@ export async function verifyFirebaseIdToken(authorization: string | undefined): 
     ...(claims.email_verified === true && typeof claims.email === 'string'
       ? { email: claims.email.toLowerCase() }
       : {}),
+    ...(typeof claims.email === 'string' ? { accountEmail: claims.email.toLowerCase() } : {}),
   };
 }

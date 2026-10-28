@@ -7,12 +7,15 @@ import {
   PaymentStatus,
   BookingType,
   BookingPaymentRecord,
+  BookingLineItem,
+  BookingCustomerUpdate,
 } from '../types/booking';
 import { FirestoreService, FirestoreBooking } from '../types/firestore';
 import { notificationService } from './notificationService';
 import { firestoreBookingsService } from './firestore/bookings';
 import { db } from '../lib/firebase';
 import { doc, deleteDoc } from '../lib/tursoFirestore';
+import { formatCurrency } from '../utils/currency';
 
 export function mapFirestoreBookingToUniversal(fb: any): Booking {
   const rawCustomer = fb.customer || {};
@@ -21,7 +24,8 @@ export function mapFirestoreBookingToUniversal(fb: any): Booking {
     rawCustomer.name ||
     fb.customerName ||
     'Valued Client';
-  const customerEmail = (rawCustomer.email || fb.customerEmail || '').toLowerCase();
+  // contactEmail: the customer's sign-in email before they verify it (set by the server).
+  const customerEmail = (rawCustomer.email || fb.customerEmail || fb.contactEmail || '').toLowerCase();
   const customerPhone = rawCustomer.phone || fb.customerPhone || '';
   const customerCompany = rawCustomer.company || fb.company;
   const preferredContact = rawCustomer.preferredContactMethod || rawCustomer.preferredContact || 'whatsapp';
@@ -94,8 +98,27 @@ export function mapFirestoreBookingToUniversal(fb: any): Booking {
     payments: Array.isArray(fb.payments) ? fb.payments : undefined,
     invoiceNumber: fb.invoiceNumber,
     termsNotes: fb.termsNotes,
+    customerUpdates: Array.isArray(fb.customerUpdates) ? fb.customerUpdates : undefined,
   };
 }
+
+function formatBookingDate(iso: string): string {
+  const date = new Date(`${iso.slice(0, 10)}T00:00:00`);
+  return Number.isNaN(date.getTime())
+    ? iso
+    : date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+/** What the customer is told when the admin moves their booking to a step. */
+const STATUS_MESSAGES: Record<BookingStatus, (booking: Booking, reason?: string) => { title: string; message: string }> = {
+  pending: (b) => ({ title: 'Booking under review', message: `Your booking for ${b.serviceName} is being reviewed by our team.` }),
+  confirmed: (b) => ({ title: 'Booking confirmed', message: `We have confirmed your booking for ${b.serviceName} on ${formatBookingDate(b.date)}.` }),
+  scheduled: (b) => ({ title: 'Booking scheduled', message: `Your booking for ${b.serviceName} is scheduled for ${formatBookingDate(b.date)}${b.time ? ` (${b.time})` : ''}.` }),
+  in_progress: (b) => ({ title: 'Work has started', message: `Our team has started work on your booking for ${b.serviceName}.` }),
+  completed: (b) => ({ title: 'Booking completed', message: `Your booking for ${b.serviceName} is complete. Thank you for choosing Mahdev.` }),
+  cancelled: (b, reason) => ({ title: 'Booking cancelled', message: `Your booking for ${b.serviceName} was cancelled.${reason ? ` Reason: ${reason}` : ''}` }),
+  rejected: (b, reason) => ({ title: 'Booking not available', message: `We could not accept your booking for ${b.serviceName}.${reason ? ` Reason: ${reason}` : ''}` }),
+};
 
 /** Payment status implied by what has been paid against the total. */
 export function paymentStatusFor(total: number, paid: number): PaymentStatus {
@@ -449,7 +472,7 @@ class UniversalBookingService {
     // Persist to Cloud Firestore bookings collection in realtime
     firestoreBookingsService
       .createBooking(newBooking as any)
-      .catch((err) => console.warn('[BookingService] Firestore booking create error:', err));
+      .catch((err) => console.warn('[BookingService] database booking create error:', err));
 
     // Trigger the non-blocking customer confirmation notification.
     notificationService.notifyBookingConfirmation(newBooking).catch(() => {});
@@ -564,7 +587,7 @@ class UniversalBookingService {
         rejectionReason: reason,
         updatedAt: booking.updatedAt,
       } as any)
-      .catch((err) => console.warn('[BookingService] Firestore reject error:', err));
+      .catch((err) => console.warn('[BookingService] database reject error:', err));
 
     return { success: true, booking };
   }
@@ -604,7 +627,7 @@ class UniversalBookingService {
         ...(booking.adminNotes ? { adminNotes: booking.adminNotes } : {}),
         updatedAt: booking.updatedAt,
       } as any)
-      .catch((err) => console.warn('[BookingService] Firestore reschedule error:', err));
+      .catch((err) => console.warn('[BookingService] database reschedule error:', err));
 
     // Dispatch update notification
     notificationService.notifyBookingUpdate(booking, `Rescheduled to ${newDate} (${newTime})`).catch(() => {});
@@ -628,7 +651,7 @@ class UniversalBookingService {
         cancellationReason: reason,
         updatedAt: booking.updatedAt,
       } as any)
-      .catch((err) => console.warn('[BookingService] Firestore cancel error:', err));
+      .catch((err) => console.warn('[BookingService] database cancel error:', err));
 
     // Dispatch cancellation notification
     notificationService.notifyBookingCancellation(booking, reason).catch(() => {});
@@ -654,7 +677,7 @@ class UniversalBookingService {
         ...(booking.adminNotes ? { adminNotes: booking.adminNotes } : {}),
         updatedAt: booking.updatedAt,
       } as any)
-      .catch((err) => console.warn('[BookingService] Firestore complete error:', err));
+      .catch((err) => console.warn('[BookingService] database complete error:', err));
 
     return { success: true, booking };
   }
@@ -673,7 +696,7 @@ class UniversalBookingService {
         paymentStatus,
         updatedAt: booking.updatedAt,
       } as any)
-      .catch((err) => console.warn('[BookingService] Firestore payment update error:', err));
+      .catch((err) => console.warn('[BookingService] database payment update error:', err));
 
     return { success: true, booking };
   }
@@ -684,7 +707,8 @@ class UniversalBookingService {
    */
   public async updateBookingPayments(
     id: string,
-    changes: { advanceAmount?: number; payments?: BookingPaymentRecord[] }
+    changes: { advanceAmount?: number; payments?: BookingPaymentRecord[] },
+    customerUpdate?: { title: string; message: string }
   ): Promise<{ success: boolean; booking?: Booking; error?: string }> {
     const booking = this.getBookingById(id);
     if (!booking) return { success: false, error: 'Booking not found.' };
@@ -698,24 +722,158 @@ class UniversalBookingService {
     if (advanceAmount < 0 || advanceAmount > booking.price) {
       return { success: false, error: 'The advance must be between zero and the booking total.' };
     }
-    const updates = {
-      advanceAmount,
-      payments,
-      amountPaid,
-      paymentStatus: paymentStatusFor(booking.price, amountPaid),
-      updatedAt: new Date().toISOString(),
-    };
+    return this.saveAdminChange(
+      id,
+      {
+        advanceAmount,
+        payments,
+        amountPaid,
+        paymentStatus: paymentStatusFor(booking.price, amountPaid),
+      },
+      customerUpdate
+    );
+  }
+
+  // ----------------------------------------------------
+  // ADMIN CHANGES (saved before the screen updates; the customer is told)
+  // ----------------------------------------------------
+
+  /**
+   * Saves an admin change to the database first and only then updates this
+   * browser, so a failed save is reported instead of silently undone on reload.
+   * `customerUpdate` is added to the booking's Alerts in the customer's account.
+   */
+  private async saveAdminChange(
+    id: string,
+    updates: Partial<Booking>,
+    customerUpdate?: { title: string; message: string }
+  ): Promise<{ success: boolean; booking?: Booking; error?: string }> {
+    const booking = this.getBookingById(id);
+    if (!booking) return { success: false, error: 'Booking not found.' };
+
+    const now = new Date().toISOString();
+    const customerUpdates: BookingCustomerUpdate[] | undefined = customerUpdate
+      ? [
+          ...(booking.customerUpdates || []),
+          { id: `UPD-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`, at: now, ...customerUpdate },
+        ].slice(-50) // Keep the latest 50 so the record stays small.
+      : undefined;
+    const payload: Partial<Booking> = { ...updates, ...(customerUpdates ? { customerUpdates } : {}), updatedAt: now };
+
     try {
-      // Saved first: payment records must not exist only in this browser.
-      await firestoreBookingsService.updateBooking(id, updates as any);
+      await firestoreBookingsService.updateBooking(id, payload as any);
     } catch (err) {
-      console.warn('[BookingService] Firestore payment update error:', err);
-      return { success: false, error: err instanceof Error ? err.message : 'Could not save the payment.' };
+      console.warn('[BookingService] Admin booking update failed:', err);
+      return { success: false, error: err instanceof Error ? err.message : 'The change could not be saved. Please try again.' };
     }
-    Object.assign(booking, updates);
+    Object.assign(booking, payload);
     this.saveToStorage();
     this.notifySubscribers();
     return { success: true, booking };
+  }
+
+  /** Moves a booking to any step of the process (or cancels / rejects it). */
+  public async adminSetStatus(
+    id: string,
+    status: BookingStatus,
+    options: { reason?: string; adminNote?: string } = {}
+  ): Promise<{ success: boolean; booking?: Booking; error?: string }> {
+    const booking = this.getBookingById(id);
+    if (!booking) return { success: false, error: 'Booking not found.' };
+    if (booking.status === status) return { success: true, booking };
+
+    const reason = options.reason?.trim();
+    const adminNotes = options.adminNote
+      ? (booking.adminNotes ? `${booking.adminNotes}
+` : '') + options.adminNote
+      : undefined;
+    const message = STATUS_MESSAGES[status](booking, reason);
+    return this.saveAdminChange(
+      id,
+      {
+        status,
+        ...(status === 'cancelled' && reason ? { cancellationReason: reason } : {}),
+        ...(status === 'rejected' && reason ? { rejectionReason: reason } : {}),
+        ...(adminNotes ? { adminNotes } : {}),
+      },
+      message
+    );
+  }
+
+  /** New date and time chosen by the admin (no availability limits: the admin decides). */
+  public async adminReschedule(
+    id: string,
+    date: string,
+    time: string,
+    reason?: string
+  ): Promise<{ success: boolean; booking?: Booking; error?: string }> {
+    const booking = this.getBookingById(id);
+    if (!booking) return { success: false, error: 'Booking not found.' };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { success: false, error: 'Choose a valid date.' };
+
+    const note = reason?.trim();
+    return this.saveAdminChange(
+      id,
+      {
+        date,
+        bookingDate: date,
+        time,
+        bookingTime: time,
+        ...(booking.status === 'pending' || booking.status === 'confirmed' ? { status: 'scheduled' as BookingStatus } : {}),
+        ...(note ? { adminNotes: (booking.adminNotes ? `${booking.adminNotes}\n` : '') + `[Rescheduled]: ${note}` } : {}),
+      } as Partial<Booking>,
+      {
+        title: 'Booking date changed',
+        message: `Your booking for ${booking.serviceName} is now on ${formatBookingDate(date)}${time ? ` (${time})` : ''}.${note ? ` ${note}` : ''}`,
+      }
+    );
+  }
+
+  /**
+   * Replaces the charges: invoice lines, discount and transport / delivery fee.
+   * The total becomes subtotal - discount + delivery fee, and the payment status
+   * is worked out again from what has already been paid.
+   */
+  public async adminUpdateCharges(
+    id: string,
+    charges: { lineItems: BookingLineItem[]; discount: number; deliveryFee: number; note?: string }
+  ): Promise<{ success: boolean; booking?: Booking; error?: string }> {
+    const booking = this.getBookingById(id);
+    if (!booking) return { success: false, error: 'Booking not found.' };
+
+    const round = (value: number) => Math.round(value * 100) / 100;
+    const lineItems = charges.lineItems
+      .map((item) => ({
+        name: item.name.trim(),
+        description: (item.description || '').trim(),
+        quantity: Math.max(0, Math.floor(Number(item.quantity) || 0)),
+        unitPrice: round(Math.max(0, Number(item.unitPrice) || 0)),
+      }))
+      .filter((item) => item.name && item.quantity > 0);
+    if (lineItems.length === 0) return { success: false, error: 'Add at least one item with a name and quantity.' };
+
+    const subtotal = round(lineItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0));
+    const discount = round(Math.max(0, Number(charges.discount) || 0));
+    const deliveryFee = round(Math.max(0, Number(charges.deliveryFee) || 0));
+    if (discount > subtotal) return { success: false, error: 'The discount cannot be more than the items subtotal.' };
+    const price = round(subtotal - discount + deliveryFee);
+    const amountPaid = booking.amountPaid || 0;
+    if (price + 0.005 < amountPaid) {
+      return { success: false, error: `The total cannot be less than the ${formatCurrency(amountPaid)} already paid.` };
+    }
+    if ((booking.advanceAmount || 0) > price) {
+      return { success: false, error: 'The total cannot be less than the advance. Lower the advance first.' };
+    }
+
+    const note = charges.note?.trim();
+    return this.saveAdminChange(
+      id,
+      { lineItems, subtotal, discount, deliveryFee, price, paymentStatus: paymentStatusFor(price, amountPaid) },
+      {
+        title: 'Booking charges updated',
+        message: `The total for ${booking.serviceName} is now ${formatCurrency(price)}${deliveryFee > 0 ? ` (including ${formatCurrency(deliveryFee)} transport / delivery)` : ''}.${note ? ` ${note}` : ''}`,
+      }
+    );
   }
 
   public updateBookingStatus(
@@ -740,7 +898,7 @@ class UniversalBookingService {
         ...(adminNotes ? { adminNotes } : {}),
         updatedAt: booking.updatedAt,
       } as any)
-      .catch((err) => console.warn('[BookingService] Firestore status update error:', err));
+      .catch((err) => console.warn('[BookingService] database status update error:', err));
 
     return { success: true, booking };
   }
@@ -756,7 +914,7 @@ class UniversalBookingService {
     try {
       await firestoreBookingsService.deleteBooking(cleanId);
     } catch (e) {
-      console.warn(`[BookingService] Firestore booking delete error for ${cleanId}:`, e);
+      console.warn(`[BookingService] database booking delete error for ${cleanId}:`, e);
     }
     return { success: true };
   }

@@ -206,7 +206,7 @@ export const firestoreMilestonesService = {
         }
         return [];
       } catch (err) {
-        console.error('[Turso Milestones] Could not load milestones:', err);
+        console.error('[database Milestones] Could not load milestones:', err);
         throw err;
       } finally {
         if (inFlightMilestonesPromise === requestPromise) {
@@ -329,7 +329,7 @@ export const firestoreMilestonesService = {
         onData(data);
       },
       (err) => {
-        console.error('[Turso Milestones] Subscription failed:', err);
+        console.error('[database Milestones] Subscription failed:', err);
         if (onError) {
           onError(err);
         }

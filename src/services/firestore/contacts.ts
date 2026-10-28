@@ -36,7 +36,7 @@ function startContactFeed(): void {
     (err) => {
       if (!errorNotified) {
         errorNotified = true;
-        console.warn('[Firestore Contacts] subscribeContacts error:', err);
+        console.warn('[database Contacts] subscribeContacts error:', err);
         contactSubscribers.forEach(({ onError }) => onError?.(err));
       }
     }

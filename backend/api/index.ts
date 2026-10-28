@@ -6,9 +6,7 @@ import {
 } from '../db/index.js';
 import {
   AdminSessionAuthError,
-  authenticateAdminCredentials,
-  clearAdminSessionCookie,
-  getAdminSessionFromCookie,
+  requireAdminSession,
 } from '../auth/adminCredentialAuth.js';
 import {
   ADMIN_MEDIA_CHUNK_BYTES,
@@ -22,7 +20,11 @@ import publicSnapshotHandler, { publicInlineMediaHandler } from './handlers/publ
 import analyticsHandler from './handlers/analytics.js';
 import whatsappWebhookHandler from './handlers/whatsappWebhook.js';
 import orderConfirmationsHandler from './handlers/orderConfirmations.js';
+import accountCheckHandler from './handlers/accountCheck.js';
 import adminCustomersHandler from './handlers/admin/customers.js';
+import { sanitizePublicSettingsDocument } from './tursoRoutes.js';
+import adminLoginHandler from './handlers/admin/auth/login.js';
+import adminLogoutHandler from './handlers/admin/auth/logout.js';
 
 const apiRouter = Router();
 
@@ -57,6 +59,11 @@ apiRouter.all(/^\/order-confirmations(\/.*)?$/, async (req: Request, res: Respon
   await orderConfirmationsHandler(req, res);
 });
 
+// Is this email / phone / NIC already registered? (sign-up, Book online, password reset)
+apiRouter.post('/account/check', async (req: Request, res: Response) => {
+  await accountCheckHandler(req, res);
+});
+
 apiRouter.post('/analytics', (req: Request, res: Response) => {
   void analyticsHandler(req, res);
 });
@@ -84,14 +91,14 @@ apiRouter.get('/health', async (_req, res) => {
       success: false,
       service: 'mahdev-backend',
       status: 'unavailable',
-      error: error instanceof Error ? error.message : 'Turso connection failed.',
+      error: error instanceof Error ? error.message : 'Database connection failed.',
     });
   }
 });
 
 apiRouter.post('/upload/media', async (req: Request, res: Response) => {
   try {
-    getAdminSessionFromCookie(req.header('cookie'));
+    await requireAdminSession(req.header('cookie'));
     const upload = await createAdminMediaUpload(req.body || {});
     res.setHeader('Cache-Control', 'no-store');
     res.json({ success: true, ...upload });
@@ -115,7 +122,7 @@ apiRouter.put(
   express.raw({ limit: ADMIN_MEDIA_CHUNK_BYTES, type: () => true }),
   async (req: Request, res: Response) => {
     try {
-      getAdminSessionFromCookie(req.header('cookie'));
+      await requireAdminSession(req.header('cookie'));
       if (!Buffer.isBuffer(req.body)) {
         res.status(400).json({ success: false, error: 'Media upload chunk is required.' });
         return;
@@ -143,25 +150,14 @@ apiRouter.put(
   }
 );
 
-apiRouter.post('/admin/auth/login', (req: Request, res: Response) => {
-  try {
-    const clientKey = req.ip || req.socket.remoteAddress || 'unknown';
-    const session = authenticateAdminCredentials(req.body?.email, req.body?.password, clientKey);
-    res.setHeader('Cache-Control', 'no-store');
-    res.setHeader('Set-Cookie', session.cookie);
-    res.json({ success: true, user: session.user, expiresAt: session.expiresAt });
-  } catch (error) {
-    const status = error instanceof AdminSessionAuthError ? error.statusCode : 500;
-    res.status(status).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Admin sign-in failed.',
-    });
-  }
+// Same handler as the serverless API, so both use the shared database-backed login limits.
+apiRouter.post('/admin/auth/login', async (req: Request, res: Response) => {
+  await adminLoginHandler(req, res);
 });
 
-apiRouter.get('/admin/auth/verify', (req: Request, res: Response) => {
+apiRouter.get('/admin/auth/verify', async (req: Request, res: Response) => {
   try {
-    const session = getAdminSessionFromCookie(req.header('cookie'));
+    const session = await requireAdminSession(req.header('cookie'));
     res.setHeader('Cache-Control', 'no-store');
     res.json({
       success: true,
@@ -182,25 +178,27 @@ apiRouter.get('/admin/auth/verify', (req: Request, res: Response) => {
   }
 });
 
-apiRouter.post('/admin/auth/logout', (_req: Request, res: Response) => {
-  res.setHeader('Cache-Control', 'no-store');
-  res.setHeader('Set-Cookie', clearAdminSessionCookie());
-  res.json({ success: true });
+// Same handler as the serverless API: signing out also ends earlier sessions.
+apiRouter.post('/admin/auth/logout', async (req: Request, res: Response) => {
+  await adminLogoutHandler(req, res);
 });
 
 apiRouter.get('/db/status', async (_req, res) => {
   try {
+    // Database details are for administrators only.
+    await requireAdminSession(_req.header('cookie'));
     const status = await getDatabaseStatus();
     res.json({ success: true, data: status });
   } catch (error) {
+    const status = error instanceof AdminSessionAuthError ? error.statusCode : 500;
     const message = error instanceof Error ? error.message : 'Database status unavailable';
-    res.status(500).json({ success: false, error: message });
+    res.status(status).json({ success: false, error: message });
   }
 });
 
 apiRouter.get('/users', async (_req, res) => {
   try {
-    getAdminSessionFromCookie(_req.header('cookie'));
+    await requireAdminSession(_req.header('cookie'));
     const records = await listCustomersForAdmin();
     res.json({
       success: true,
@@ -231,7 +229,8 @@ apiRouter.get('/settings', async (_req, res) => {
     const records = await listPublicCollection('settings');
     res.json({
       success: true,
-      data: records.map((record) => ({ ...record.data, id: record.id })),
+      // Same filtering as public database reads: private fields (e.g. super admin) removed.
+      data: records.map(sanitizePublicSettingsDocument).map((record) => ({ ...record.data, id: record.id })),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Settings unavailable';

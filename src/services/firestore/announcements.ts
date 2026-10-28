@@ -54,7 +54,7 @@ export const firestoreAnnouncementsService = {
       cachedAnnouncements = { data: [], timestamp: now };
       return [];
     } catch (err) {
-      console.warn('[Firestore Announcements] getAnnouncements fallback:', err);
+      console.warn('[database Announcements] getAnnouncements fallback:', err);
       return cachedAnnouncements?.data || [];
     }
   },
@@ -105,7 +105,7 @@ export const firestoreAnnouncementsService = {
         onData(data);
       },
       (err) => {
-        console.warn('[Firestore Announcements] Realtime error:', err);
+        console.warn('[database Announcements] Realtime error:', err);
         onData(cachedAnnouncements?.data || []);
       }
     );

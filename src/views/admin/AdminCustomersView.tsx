@@ -66,7 +66,7 @@ export const AdminCustomersView: React.FC = () => {
     try {
       setCustomers(await authService.getAllCustomers());
     } catch (error) {
-      console.error('[AdminCustomers] Could not load customer records from Turso:', error);
+      console.error('[AdminCustomers] Could not load customer records from the database:', error);
       addToast('error', 'Customers Unavailable', 'Could not load customers from the database.');
     }
   };

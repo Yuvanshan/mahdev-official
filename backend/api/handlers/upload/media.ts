@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 import {
   AdminSessionAuthError,
-  getAdminSessionFromCookie,
+  requireAdminSession,
 } from '../../../auth/adminCredentialAuth.js';
 import {
   ADMIN_MEDIA_CHUNK_BYTES,
@@ -54,7 +54,7 @@ export default async function handler(req: IncomingMessage & { method?: string }
 
   if (req.method === 'PUT') {
     try {
-      getAdminSessionFromCookie(req.headers.cookie);
+      await requireAdminSession(req.headers.cookie);
       const body = await readChunkBody(req);
       const result = await forwardAdminMediaUploadChunk({
         uploadUrl: req.headers['x-upload-session'],
@@ -93,7 +93,7 @@ export default async function handler(req: IncomingMessage & { method?: string }
   }
 
   try {
-    getAdminSessionFromCookie(req.headers.cookie);
+    await requireAdminSession(req.headers.cookie);
     const body = await readJsonBody(req);
     const upload = await createAdminMediaUpload(body);
     res.statusCode = 200;

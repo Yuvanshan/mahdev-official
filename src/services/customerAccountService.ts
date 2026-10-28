@@ -257,6 +257,65 @@ export function bookingProgress(booking: Booking): Progress {
 }
 
 // ---------------------------------------------------------------------------
+// Booking alerts (changes our team made, saved on each booking)
+// ---------------------------------------------------------------------------
+
+const BOOKING_ALERT_READS_KEY = 'mahdev_customer_booking_alert_reads_v1';
+
+export interface BookingAlert {
+  id: string;
+  bookingId: string;
+  title: string;
+  message: string;
+  at: string;
+  read: boolean;
+}
+
+function readBookingAlertReceipts(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(BOOKING_ALERT_READS_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, string>) : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Every update our team made to the customer's bookings, newest first. */
+export function bookingAlerts(bookings: Booking[]): BookingAlert[] {
+  const receipts = readBookingAlertReceipts();
+  return bookings
+    .flatMap((booking) =>
+      (booking.customerUpdates || []).map((update) => ({
+        id: `booking-update-${update.id}`,
+        bookingId: booking.id,
+        title: update.title,
+        message: `${update.message} (Booking ${booking.id})`,
+        at: update.at,
+        read: Boolean(receipts[`booking-update-${update.id}`]),
+      }))
+    )
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+}
+
+/** Remembers on this device that the customer has seen these alerts. */
+export function markBookingAlertsRead(ids: string[]): void {
+  if (ids.length === 0) return;
+  try {
+    const receipts = readBookingAlertReceipts();
+    const now = new Date().toISOString();
+    ids.forEach((id) => {
+      receipts[id] = now;
+    });
+    // Keep the most recent 500 so the record stays small.
+    const recent = Object.entries(receipts).sort((a, b) => b[1].localeCompare(a[1])).slice(0, 500);
+    localStorage.setItem(BOOKING_ALERT_READS_KEY, JSON.stringify(Object.fromEntries(recent)));
+  } catch (error) {
+    console.warn('[Account] Could not save alert read state:', error);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Activity timeline
 // ---------------------------------------------------------------------------
 

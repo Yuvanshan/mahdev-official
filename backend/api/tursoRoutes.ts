@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { notifyForVerifiedSubmission } from '../services/submissionAlerts.js';
+import { notifyCustomerOfConfirmation, notifyForVerifiedSubmission } from '../services/submissionAlerts.js';
+import { consumeRateLimit, getClientIp, PUBLIC_SUBMISSION_LIMITS, RateLimitError } from '../security/rateLimit.js';
 import {
   checkTursoConnection,
   clearTursoCollection,
@@ -16,7 +17,7 @@ import {
 } from '../db/tursoDatabase.js';
 import {
   AdminSessionAuthError,
-  getAdminSessionFromCookie,
+  requireAdminSession,
 } from '../auth/adminCredentialAuth.js';
 import {
   FirebaseTokenError,
@@ -46,6 +47,20 @@ export function sanitizePublicSettingsDocument(document: TursoDocument): TursoDo
     ...document,
     data: sanitizePublicSettingsValue(document.data) as Record<string, unknown>,
   };
+}
+
+// Unpublished admin drafts must not reach visitors: draft legal text is stripped,
+// and CMS pages that are not published are hidden.
+const PUBLIC_LEGAL_DRAFT_FIELDS = ['draftSections', 'draftTitle', 'draftSubtitle', 'draftRevision', 'hasUnpublishedChanges', 'updatedBy'];
+
+function hidePublicDrafts(collection: string, document: TursoDocument): TursoDocument | null {
+  if (collection === 'pages' && (document.data.isPublished === false || document.data.status === 'draft')) return null;
+  if (collection === 'legalPages') {
+    const data = { ...document.data };
+    PUBLIC_LEGAL_DRAFT_FIELDS.forEach((field) => delete data[field]);
+    return { ...document, data };
+  }
+  return document;
 }
 
 function sanitizePublicMediaDeletionRegistryDocument(document: TursoDocument): TursoDocument {
@@ -148,6 +163,9 @@ const PUBLIC_READ_COLLECTIONS = new Set([
   'trustedCompanies',
   'websiteContent',
 ]);
+// The only nested collection non-admins may read: chunks of a stored media file.
+const MEDIA_CHUNK_COLLECTION = 'media_blobs/chunks';
+const MEDIA_CHUNK_PARENT = /^media_blobs\/[A-Za-z0-9_-]{1,128}$/;
 const MAX_PUBLIC_READ_BATCH_SIZE = 8;
 const MAX_PUBLIC_LIST_ROWS = 1000;
 const MAX_PUBLIC_READ_BATCH_RESPONSE_BYTES = 3_500_000;
@@ -356,7 +374,7 @@ export async function authorizeDatabaseAction(
 
   if (cookieHeader) {
     try {
-      const { user } = getAdminSessionFromCookie(cookieHeader);
+      const { user } = await requireAdminSession(cookieHeader);
       if (requiresSuperAdminForDatabaseAction(input) && user.role !== 'super_admin') {
         throw new AdminSessionAuthError('Super administrator access is required for this action.', 403);
       }
@@ -371,6 +389,17 @@ export async function authorizeDatabaseAction(
 
   if (isPrivilegedAction) {
     throw new AdminSessionAuthError('An administrator session is required.', 401);
+  }
+
+  // Non-admins use top-level collections only, plus the media chunk list the site reads to
+  // show images. Any other nested path would make the database create a new table.
+  const requestedPaths = [body.collection, ...writes.map((write) =>
+    write && typeof write === 'object' ? (write as Record<string, unknown>).collection : undefined)]
+    .filter((path): path is string => typeof path === 'string');
+  const nestedPaths = requestedPaths.filter((path) => path.includes('/'));
+  if (nestedPaths.some((path) => path !== MEDIA_CHUNK_COLLECTION) ||
+    (nestedPaths.length > 0 && !(typeof body.parentPath === 'string' && MEDIA_CHUNK_PARENT.test(body.parentPath)))) {
+    throw new AdminSessionAuthError('This collection path is not allowed.', 400);
   }
 
   const isRead = body.action === 'get' || body.action === 'list';
@@ -450,6 +479,13 @@ async function verifyCustomerIdentityFields(
   if (data.phone !== undefined && data.phone !== '') {
     const phone = typeof data.phone === 'string' ? normaliseSriLankaPhone(data.phone) : null;
     if (!phone) throw new Error('Enter a valid Sri Lankan contact number.');
+    // New accounts: one account per contact number (email and NIC are already unique).
+    if (!existing) {
+      const holders = await listTursoDocuments('users', '', [{ field: 'phone', operator: '==', value: phone }], undefined, 2);
+      if (holders.some((holder) => holder.id !== identity.uid)) {
+        throw new Error('This contact number is already registered to another account. Please sign in instead.');
+      }
+    }
     verified.phone = phone;
   }
 
@@ -566,15 +602,17 @@ async function prepareCustomerWrite(write: TursoWrite, identity: FirebaseIdentit
     if (existing && existing.data.status === 'suspended') {
       throw new AdminSessionAuthError('This account is suspended. Please contact us.', 403);
     }
-    // Role, status and creation date are server-owned: whatever the browser sends is dropped.
-    const { role: _role, status: _status, createdAt: _createdAt, ...customerData } = write.data;
+    // Role, status, creation date and email are server-owned: whatever the browser sends is
+    // dropped. The email always comes from the sign-in account, so a profile cannot claim
+    // someone else's address.
+    const { role: _role, status: _status, createdAt: _createdAt, email: _email, ...customerData } = write.data;
     const now = new Date().toISOString();
     const data = {
       ...customerData,
       ...verifyCustomerProfileFields(customerData, existing),
       ...(await verifyCustomerIdentityFields(customerData, identity, existing)),
       uid: identity.uid,
-      ...(identity.email ? { email: identity.email } : {}),
+      ...(identity.email || identity.accountEmail ? { email: identity.email || identity.accountEmail } : {}),
       role: 'customer',
       ...(existing ? {} : { status: 'active', createdAt: now }),
       updatedAt: now,
@@ -589,12 +627,35 @@ async function prepareCustomerWrite(write: TursoWrite, identity: FirebaseIdentit
   if (await getTursoDocument(write.collection, '', write.id)) {
     throw new Error(`The ${write.collection.slice(0, -1)} already exists.`);
   }
+  // Email fields are never taken from the browser: ownership and emails follow the
+  // signed-in account. Only a verified email is stored where it grants access;
+  // an unverified one is kept as contactEmail so the team can still reply.
+  const {
+    customerEmail: _customerEmail,
+    email: _email,
+    contactEmail: _contactEmail,
+    customer: rawCustomer,
+    ...clientData
+  } = write.data;
+  const customer = rawCustomer && typeof rawCustomer === 'object' && !Array.isArray(rawCustomer)
+    ? {
+        ...Object.fromEntries(
+          Object.entries(rawCustomer as Record<string, unknown>).filter(([field]) => field !== 'email' && field !== 'customerEmail')
+        ),
+        ...(identity.email ? { email: identity.email } : {}),
+      }
+    : rawCustomer;
   const data = {
-    ...write.data,
+    ...clientData,
+    ...(customer === undefined ? {} : { customer }),
     customerId: identity.uid,
     userId: identity.uid,
     uid: identity.uid,
     ...(identity.email ? { customerEmail: identity.email, email: identity.email } : {}),
+    ...(!identity.email && identity.accountEmail ? { contactEmail: identity.accountEmail } : {}),
+    // Prices in an order come from the browser: check each line against the catalogue (as for
+    // guest orders) so the admin sees any difference before confirming.
+    ...(write.collection === 'orders' ? { pricingVerification: await verifyOrderPricing(clientData) } : {}),
     ...(write.collection === 'orders'
       ? { paymentStatus: 'unpaid', status: 'pending_payment', orderStatus: 'pending_payment' }
       : { paymentStatus: 'unpaid', status: 'pending' }),
@@ -1048,7 +1109,7 @@ export async function handleTursoAction(
           : visibleDocument;
       return {
         status: 200,
-        body: { document: publicDocument },
+        body: { document: access.role === 'public' && publicDocument ? hidePublicDrafts(collection, publicDocument) : publicDocument },
       };
     }
     if (action === 'list') {
@@ -1098,6 +1159,8 @@ export async function handleTursoAction(
             ? documents.map(sanitizePublicSettingsDocument)
             : access.role === 'public' && PUBLIC_IMAGE_COLLECTIONS.has(collection)
               ? documents.map((document) => compactPublicImageDocument(collection, document))
+            : access.role === 'public'
+              ? documents.map((document) => hidePublicDrafts(collection, document)).filter((document): document is TursoDocument => document !== null)
             : documents,
         },
       };
@@ -1107,7 +1170,7 @@ export async function handleTursoAction(
     }
     throw new Error(`Unsupported database action: ${action}`);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Turso database request failed.';
+    const message = error instanceof Error ? error.message : 'Database request failed.';
     console.error('[Turso API] Database operation failed:', error);
     if (error instanceof AdminSessionAuthError || error instanceof FirebaseTokenError) {
       return { status: error.statusCode, body: { success: false, error: message } };
@@ -1119,7 +1182,7 @@ export async function handleTursoAction(
       message.includes(' is required.') ||
       message.includes(' is invalid.') ||
       message.includes('no longer accepting applications') ||
-      message.startsWith('A Turso write batch') ||
+      message.startsWith('A database write batch') ||
       message.includes('cannot be changed:') ||
       message.endsWith('already exists.');
     return {
@@ -1138,13 +1201,35 @@ export function createTursoRouter(): Router {
         req.header('cookie'),
         req.header('authorization')
       );
+      // Same per-IP limits on public submissions as the serverless API.
+      const body = req.body as Record<string, unknown> | undefined;
+      const write = body?.action === 'write' && body.write && typeof body.write === 'object'
+        ? (body.write as Record<string, unknown>)
+        : null;
+      const rule = access.role !== 'admin' && write && typeof write.collection === 'string'
+        ? PUBLIC_SUBMISSION_LIMITS[write.collection]
+        : undefined;
+      if (rule) {
+        try {
+          await consumeRateLimit(`submit:${String(write!.collection)}:${getClientIp(req)}`, rule.limit, rule.windowMs);
+        } catch (error) {
+          if (error instanceof RateLimitError) {
+            res.setHeader('Retry-After', String(Math.ceil(rule.windowMs / 1000)));
+            res.status(429).json({ success: false, error: error.message });
+            return;
+          }
+          console.error('[Turso API] Rate limiter unavailable:', error);
+        }
+      }
       const result = await handleTursoAction(req.body, access);
       res.status(result.status).json(result.body);
       // Same alert emails as the serverless API, sent after the response.
       if (result.status === 200 && result.body.success === true) {
-        void notifyForVerifiedSubmission(req.body, access).catch((error: unknown) => {
-          console.error('[Turso API] Verified submission alert failed:', error);
-        });
+        void notifyForVerifiedSubmission(req.body, access)
+          .then(() => notifyCustomerOfConfirmation(req.body, access))
+          .catch((error: unknown) => {
+            console.error('[Turso API] Verified submission alert failed:', error);
+          });
       }
     } catch (error) {
       const status = error instanceof AdminSessionAuthError || error instanceof FirebaseTokenError

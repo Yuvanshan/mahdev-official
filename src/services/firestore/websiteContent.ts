@@ -422,7 +422,7 @@ export const websiteContentService = {
       writePublicContentCache(ABOUT_CONTENT_CACHE_KEY, DEFAULT_ABOUT_US_CONTENT);
       return DEFAULT_ABOUT_US_CONTENT;
     } catch (err) {
-      console.warn('[WebsiteContentService] Error fetching About Us content from Firestore, using baseline:', err);
+      console.warn('[WebsiteContentService] Error fetching About Us content from the database, using baseline:', err);
       return cached ? normalizeAboutUsContent(cached) : DEFAULT_ABOUT_US_CONTENT;
     }
   },

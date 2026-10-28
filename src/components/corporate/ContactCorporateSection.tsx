@@ -127,7 +127,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
         division: formData.division,
         subject: formData.serviceType || 'General Contact Inquiry',
         message: formData.message,
-      }).catch((err) => console.warn('[Contact] Firestore save notice:', err));
+      }).catch((err) => console.warn('[Contact] database save notice:', err));
 
       // Dispatch notifications safely
       if (formData.division !== 'general' || formData.serviceType) {

@@ -210,7 +210,7 @@ export const AdminPortfolioView: React.FC = () => {
         try {
           await firestorePortfolioService.savePortfolio(editingItem.id, payload as any);
         } catch (fErr) {
-          console.warn('[AdminPortfolio] Firestore save notice:', fErr);
+          console.warn('[AdminPortfolio] database save notice:', fErr);
         }
         addToast('success', 'Case Study Saved', `"${formData.title}" updated.`);
       } else {
@@ -218,7 +218,7 @@ export const AdminPortfolioView: React.FC = () => {
         try {
           await firestorePortfolioService.savePortfolio(created.id, payload as any);
         } catch (fErr) {
-          console.warn('[AdminPortfolio] Firestore create notice:', fErr);
+          console.warn('[AdminPortfolio] database create notice:', fErr);
         }
         addToast('success', 'Case Study Created', `"${formData.title}" added to portfolio.`);
       }
@@ -237,7 +237,7 @@ export const AdminPortfolioView: React.FC = () => {
     try {
       if (permanent) {
         await cmsService.hardDelete('portfolio', deletingItem.id);
-        addToast('warning', 'Permanent Deletion', `"${deletingItem.title}" removed permanently from Firestore & CMS.`);
+        addToast('warning', 'Permanent Deletion', `"${deletingItem.title}" removed permanently from the database & CMS.`);
       } else {
         await cmsService.softDelete('portfolio', deletingItem.id);
         addToast('info', 'Case Study Archived', `"${deletingItem.title}" archived.`);
@@ -252,7 +252,7 @@ export const AdminPortfolioView: React.FC = () => {
   const [isPurgingStudio, setIsPurgingStudio] = useState(false);
 
   const handlePurgeStudioPosts = async () => {
-    if (!window.confirm('Are you sure you want to permanently delete all removed/archived Studio posts from Firestore? This cannot be undone.')) {
+    if (!window.confirm('Are you sure you want to permanently delete all removed/archived Studio posts from the database? This cannot be undone.')) {
       return;
     }
     setIsPurgingStudio(true);
@@ -261,7 +261,7 @@ export const AdminPortfolioView: React.FC = () => {
       addToast(
         res.success ? 'success' : 'warning',
         'Studio Posts Cleaned',
-        `Cleaned ${res.galleryDeleted} gallery items and ${res.portfolioDeleted} portfolio items from Firestore.`
+        `Cleaned ${res.galleryDeleted} gallery items and ${res.portfolioDeleted} portfolio items from the database.`
       );
       loadData();
     } catch (err: any) {
@@ -309,7 +309,7 @@ export const AdminPortfolioView: React.FC = () => {
             className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200"
           >
             <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-            {isPurgingStudio ? 'Cleaning Firestore...' : 'Purge Removed Studio Posts'}
+            {isPurgingStudio ? 'Cleaning database...' : 'Purge Removed Studio Posts'}
           </Button>
           <Button variant="electric" size="sm" onClick={handleOpenCreate}>
             <Plus className="w-3.5 h-3.5 mr-1.5" />

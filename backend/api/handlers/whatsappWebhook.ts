@@ -1,9 +1,30 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 
 interface WebhookRequest extends IncomingMessage {
   method?: string;
   url?: string;
   body?: unknown;
+  /** Exact request bytes, kept by the JSON body parser for signature checks. */
+  rawBody?: Buffer;
+}
+
+/**
+ * True when Meta signed this exact body with the app secret (X-Hub-Signature-256).
+ * Without the secret nothing is trusted, so anyone else's POSTs are refused.
+ */
+function hasValidMetaSignature(req: WebhookRequest): boolean {
+  const appSecret = process.env.WHATSAPP_APP_SECRET;
+  if (!appSecret) {
+    console.error('[WhatsApp Webhook] WHATSAPP_APP_SECRET is not set; incoming messages are refused.');
+    return false;
+  }
+  const header = req.headers['x-hub-signature-256'];
+  const signature = Array.isArray(header) ? header[0] : header;
+  if (!signature?.startsWith('sha256=') || !req.rawBody) return false;
+  const expected = Buffer.from(`sha256=${createHmac('sha256', appSecret).update(req.rawBody).digest('hex')}`);
+  const supplied = Buffer.from(signature);
+  return supplied.length === expected.length && timingSafeEqual(supplied, expected);
 }
 
 interface WhatsAppInboundPayload {
@@ -52,6 +73,12 @@ export default async function handler(req: WebhookRequest, res: ServerResponse):
   }
 
   if (req.method === 'POST') {
+    if (!hasValidMetaSignature(req)) {
+      res.statusCode = 401;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ success: false, error: 'Invalid signature.' }));
+      return;
+    }
     const body = (req.body ?? {}) as WhatsAppInboundPayload;
     const message = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
     const fromPhone = message?.from;

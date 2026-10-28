@@ -83,7 +83,7 @@ export const firestoreProductsService = {
           return [];
         }
       } catch (err) {
-        console.warn('[Firestore Products] Optimized fetch fallback:', err);
+        console.warn('[database Products] Optimized fetch fallback:', err);
         // Serve the last good copy without refreshing its timestamp; never cache a failure as empty.
         if (cachedProducts) return cachedProducts.data;
         throw err;
@@ -239,7 +239,7 @@ export const firestoreProductsService = {
         onData(data);
       },
       (err) => {
-        console.warn('[Firestore Products] Listener fallback error:', err);
+        console.warn('[database Products] Listener fallback error:', err);
         onData(cachedProducts?.data || []);
       }
     );

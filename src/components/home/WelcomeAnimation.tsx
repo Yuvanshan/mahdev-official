@@ -40,14 +40,8 @@ export const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({ onComplete }
     const increment = isReady ? 4 : 2;
 
     timerRef.current = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(timerRef.current);
-          handleDismiss();
-          return 100;
-        }
-        return prev + increment;
-      });
+      // Pure updater: the close step runs from the effect below, once.
+      setProgress((prev) => Math.min(100, prev + increment));
     }, stepInterval);
 
     return () => {
@@ -55,13 +49,28 @@ export const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({ onComplete }
     };
   }, [isVisible, isReady]);
 
+  const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleDismiss = () => {
+    if (exitTimerRef.current) return;
     setIsExiting(true);
-    setTimeout(() => {
+    exitTimerRef.current = setTimeout(() => {
       setIsVisible(false);
       onComplete?.();
     }, 500);
   };
+
+  // At 100% stop the counter and close (once).
+  useEffect(() => {
+    if (progress < 100) return;
+    if (timerRef.current) clearInterval(timerRef.current);
+    handleDismiss();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progress]);
+
+  // Leaving the page before the close animation ends cancels its timer.
+  useEffect(() => () => {
+    if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
+  }, []);
 
   if (!isVisible) return null;
 
@@ -191,7 +200,7 @@ export const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({ onComplete }
               {tagline}
             </motion.p>
 
-            {/* Dynamic Divisions Badges from Firestore */}
+            {/* Dynamic Divisions Badges from the database */}
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}

@@ -143,7 +143,7 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
       } catch (err) {
         console.error('Error loading website content:', err);
         if (isMounted) {
-          addToast('Failed to load content from Firestore. Using baseline data.', 'error');
+          addToast('Failed to load content from the database. Using baseline data.', 'error');
           setIsLoading(false);
         }
       }
@@ -251,13 +251,13 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
             <Badge variant="electric" size="sm">
               Website Content CMS
             </Badge>
-            <span className="text-xs font-mono text-slate-500">Live Firestore Sync</span>
+            <span className="text-xs font-mono text-slate-500">Live Sync</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-display font-bold text-slate-900 tracking-tight">
             Company & Legal Information Management
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-3xl">
-            Manage public production content for About Us, Terms & Conditions, Privacy Policy, Refund & Cancellation, Shipping & Delivery, and Cookie Policy. All changes are stored directly in Firestore with instant preview and version control.
+            Manage public production content for About Us, Terms & Conditions, Privacy Policy, Refund & Cancellation, Shipping & Delivery, and Cookie Policy. All changes are stored directly in the database with instant preview and version control.
           </p>
         </div>
 

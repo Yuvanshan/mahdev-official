@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import {
   AdminSessionAuthError,
-  getAdminSessionFromCookie,
+  requireAdminSession,
 } from '../../../auth/adminCredentialAuth.js';
 import {
   ensureCustomerCode,
@@ -60,7 +60,7 @@ function firebaseProjectId(): string {
 async function deleteSignInAccount(uid: string): Promise<string | undefined> {
   try {
     const credential = getFirebaseAdminApp().options.credential;
-    if (!credential) throw new Error('No Firebase service-account credential is configured.');
+    if (!credential) throw new Error('No database service-account credential is configured.');
     const { access_token: accessToken } = await credential.getAccessToken();
     const response = await fetch(
       `https://identitytoolkit.googleapis.com/v1/projects/${encodeURIComponent(firebaseProjectId())}/accounts:delete`,
@@ -90,7 +90,7 @@ export default async function handler(req: AdminCustomersRequest, res: ServerRes
   }
 
   try {
-    getAdminSessionFromCookie(Array.isArray(req.headers.cookie) ? req.headers.cookie[0] : req.headers.cookie);
+    await requireAdminSession(req.headers.cookie);
     await ensureDatabaseInitialized();
 
     if (req.method === 'DELETE') {

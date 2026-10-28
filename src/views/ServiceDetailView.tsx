@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, CalendarDays, CheckCircle2, MessageCircle } from 'lucide-react';
 import { SEOHead } from '../components/layout/SEOHead';
 import { SectionContainer } from '../components/ui/SectionContainer';
@@ -44,8 +44,13 @@ export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ slug, onNa
 
   useEffect(() => {
     let active = true;
-    setHasResolved(false);
     setLoadedService(null);
+    // Already loaded with the page's data: no separate request.
+    if (findService(services, slug)) {
+      setHasResolved(true);
+      return;
+    }
+    setHasResolved(false);
     void firestoreServicesService.getServices()
       .then((records) => {
         if (active) setLoadedService(findService(records, slug));
@@ -59,10 +64,15 @@ export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ slug, onNa
     return () => {
       active = false;
     };
+    // Only a new address needs a lookup; later list updates are read through `service`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
+  // One page view per service: refreshed data creates a new object for the same service.
+  const trackedServiceId = useRef<string | null>(null);
   useEffect(() => {
-    if (!service) return;
+    if (!service || trackedServiceId.current === service.id) return;
+    trackedServiceId.current = service.id;
     const route = `/services/${encodeURIComponent(service.slug || service.id)}`;
     analyticsService.trackEvent('service_view', route, {
       serviceId: service.id,

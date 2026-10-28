@@ -30,7 +30,7 @@ import {
   AdminSessionAuthError,
   authenticateAdminCredentials,
   clearAdminSessionCookie,
-  getAdminSessionFromCookie,
+  requireAdminSession,
 } from './backend/auth/adminCredentialAuth';
 import {
   sendEnquiryEmail,
@@ -148,9 +148,9 @@ const serverAuditLogs: any[] = [];
 
 // Authentication & Authorization Guard Middleware
 function requireAdminAuth(allowedRoles?: string[]) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const verification = getAdminSessionFromCookie(req.header('cookie'));
+      const verification = await requireAdminSession(req.header('cookie'));
       if (
         allowedRoles?.length &&
         verification.user.role !== 'super_admin' &&
@@ -246,7 +246,7 @@ async function startServer() {
     express.json({ limit: '16kb' }),
     async (req: Request, res: Response) => {
       try {
-        getAdminSessionFromCookie(req.header('cookie'));
+        await requireAdminSession(req.header('cookie'));
         const upload = await createAdminMediaUpload(req.body || {});
         res.setHeader('Cache-Control', 'no-store');
         res.json({ success: true, ...upload });
@@ -805,9 +805,9 @@ async function startServer() {
     }
   });
 
-  app.get('/api/admin/auth/verify', (req: Request, res: Response) => {
+  app.get('/api/admin/auth/verify', async (req: Request, res: Response) => {
     try {
-      const session = getAdminSessionFromCookie(req.header('cookie'));
+      const session = await requireAdminSession(req.header('cookie'));
       res.setHeader('Cache-Control', 'no-store');
       res.json({
         success: true,

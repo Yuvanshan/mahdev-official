@@ -223,7 +223,7 @@ let publicReadBatchTimer: number | null = null;
 
 function normalizeSegments(segments: string[]): string[] {
   if (!segments.length || segments.some((segment) => !segment || segment.includes('/'))) {
-    throw new Error('Invalid Turso collection or document path.');
+    throw new Error('Invalid database collection or document path.');
   }
   return segments;
 }
@@ -381,12 +381,12 @@ async function request<T>(
         result = JSON.parse(responseText) as ApiResponse<T>;
       } catch {
         throw new Error(
-          `Turso API returned a non-JSON response (HTTP ${response.status}). Check the Vercel API route configuration.`
+          `Database API returned a non-JSON response (HTTP ${response.status}). Check the Vercel API route configuration.`
         );
       }
       if (!response.ok) {
         throw new TursoApiError(
-          result.error || `Turso request failed (${response.status}).`,
+          result.error || `Database request failed (${response.status}).`,
           response.status
         );
       }
@@ -401,13 +401,13 @@ async function request<T>(
       if (
         error instanceof Error &&
         (error.message.startsWith('The database request is too large') ||
-          error.message.startsWith('Turso API returned a non-JSON response'))
+          error.message.startsWith('Database API returned a non-JSON response'))
       ) {
         throw error;
       }
       const detail = error instanceof Error ? ` ${error.message}` : '';
       throw new Error(
-        `Cannot reach the database API at /api/database. Check that the backend/API is deployed and reachable, then verify its Turso configuration.${detail}`
+        `Cannot reach the database API at /api/database. Check that the backend/API is deployed and reachable, then verify its database configuration.${detail}`
       );
     } finally {
       window.clearTimeout(timeoutId);
@@ -494,10 +494,10 @@ async function sendPublicReadBatch(reads: PendingPublicRead[]): Promise<void> {
     try {
       result = JSON.parse(responseText);
     } catch {
-      throw new Error(`Turso API returned a non-JSON response (HTTP ${response.status}). Check the Vercel API route configuration.`);
+      throw new Error(`Database API returned a non-JSON response (HTTP ${response.status}). Check the Vercel API route configuration.`);
     }
     if (!response.ok) {
-      throw new TursoApiError(result.error || `Turso request failed (${response.status}).`, response.status);
+      throw new TursoApiError(result.error || `Database request failed (${response.status}).`, response.status);
     }
     if (result.fallbackToIndividualReads) {
       await Promise.all(reads.map(async ({ action, payload, resolve, reject }) => {
@@ -510,12 +510,12 @@ async function sendPublicReadBatch(reads: PendingPublicRead[]): Promise<void> {
       return;
     }
     if (!Array.isArray(result.results) || result.results.length !== reads.length) {
-      throw new Error('Turso API returned an invalid batched read response.');
+      throw new Error('Database API returned an invalid batched read response.');
     }
     result.results.forEach((item, index) => {
       if (item.status < 200 || item.status >= 300) {
         reads[index].reject(new TursoApiError(
-          item.body.error || `Turso request failed (${item.status}).`,
+          item.body.error || `Database request failed (${item.status}).`,
           item.status
         ));
       } else {
@@ -552,15 +552,15 @@ async function requestWithoutBatch(
       result = JSON.parse(text) as ApiResponse<unknown>;
     } catch {
       throw new Error(
-        `Turso API returned a non-JSON response (HTTP ${response.status}). Check the Vercel API route configuration.`
+        `Database API returned a non-JSON response (HTTP ${response.status}). Check the Vercel API route configuration.`
       );
     }
     if (!response.ok) {
-      throw new TursoApiError(result.error || `Turso request failed (${response.status}).`, response.status);
+      throw new TursoApiError(result.error || `Database request failed (${response.status}).`, response.status);
     }
     return result;
   } catch (error) {
-    if (error instanceof TursoApiError || error instanceof Error && error.message.startsWith('Turso API returned')) {
+    if (error instanceof TursoApiError || error instanceof Error && error.message.startsWith('Database API returned')) {
       throw error;
     }
     if (controller.signal.aborted) {
@@ -570,7 +570,7 @@ async function requestWithoutBatch(
     }
     const detail = error instanceof Error ? ` ${error.message}` : '';
     throw new Error(
-      `Cannot reach the database API at /api/database. Check that the backend/API is deployed and reachable, then verify its Turso configuration.${detail}`
+      `Cannot reach the database API at /api/database. Check that the backend/API is deployed and reachable, then verify its database configuration.${detail}`
     );
   } finally {
     window.clearTimeout(timeoutId);
@@ -775,7 +775,7 @@ export function onSnapshot<T extends DocumentData = DocumentData>(
       (onNext as (value: DocumentSnapshot<T> | QuerySnapshot<T>) => void)(snapshot);
     } catch (error) {
       if (onError) onError(error instanceof Error ? error : new Error(String(error)));
-      else console.error('[Turso] Database subscription failed:', error);
+      else console.error('[database] Database subscription failed:', error);
     }
   };
 

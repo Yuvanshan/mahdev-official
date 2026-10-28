@@ -16,6 +16,7 @@ import publicSnapshotHandler, { publicInlineMediaHandler } from '../backend/api/
 import analyticsHandler from '../backend/api/handlers/analytics.js';
 import whatsappWebhookHandler from '../backend/api/handlers/whatsappWebhook.js';
 import orderConfirmationsHandler from '../backend/api/handlers/orderConfirmations.js';
+import accountCheckHandler from '../backend/api/handlers/accountCheck.js';
 import pageShellHandler, { sendNotFoundPage } from '../backend/api/handlers/pageShell.js';
 
 interface ApiRequest extends IncomingMessage {
@@ -53,7 +54,10 @@ async function parseJsonBody(req: ApiRequest, res: ServerResponse, pathname: str
       }
       chunks.push(data);
     }
-    const rawBody = Buffer.concat(chunks).toString('utf8');
+    const rawBuffer = Buffer.concat(chunks);
+    // Kept for handlers that verify a signature over the exact bytes (WhatsApp webhook).
+    (req as ApiRequest & { rawBody?: Buffer }).rawBody = rawBuffer;
+    const rawBody = rawBuffer.toString('utf8');
     req.body = rawBody ? JSON.parse(rawBody) : {};
     return true;
   } catch (error) {
@@ -99,7 +103,8 @@ function isBrowserPageRequest(req: ApiRequest): boolean {
 
 // Data APIs used only by the website itself.
 // Images under /api/public/media/ stay public so link previews and image search work.
-const SITE_ONLY_API_PREFIXES = ['/api/public/snapshot', '/api/database', '/api/data/', '/api/analytics'];
+// '/api/account/check' reveals whether an account exists, so only this site's pages may ask.
+const SITE_ONLY_API_PREFIXES = ['/api/public/snapshot', '/api/database', '/api/data/', '/api/analytics', '/api/account/check'];
 
 function headerValue(req: ApiRequest, name: string): string {
   const value = req.headers[name];
@@ -152,6 +157,10 @@ export default async function handler(req: ApiRequest, res: ServerResponse): Pro
   }
   if (pathname === '/api/order-confirmations' || pathname.startsWith('/api/order-confirmations/')) {
     await orderConfirmationsHandler(req, res);
+    return;
+  }
+  if (pathname === '/api/account/check') {
+    await accountCheckHandler(req, res);
     return;
   }
   if (pathname === '/api/contact/submit' || pathname === '/api/inquiries/submit') {

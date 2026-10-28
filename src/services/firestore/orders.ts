@@ -65,7 +65,7 @@ export const firestoreOrdersService = {
       const snap = await getDocs(q);
       return snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreOrder[];
     } catch (err) {
-      console.warn('[Firestore Orders] Optimized getOrders error, falling back to full collection fetch:', err);
+      console.warn('[database Orders] Optimized getOrders error, falling back to full collection fetch:', err);
       try {
         const snap = await getDocs(collection(db, 'orders'));
         let orders = snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreOrder[];
@@ -81,7 +81,7 @@ export const firestoreOrdersService = {
         }
         return orders;
       } catch (fallbackErr) {
-        console.warn('[Firestore Orders] Fallback orders fetch error:', fallbackErr);
+        console.warn('[database Orders] Fallback orders fetch error:', fallbackErr);
         return [];
       }
     }
@@ -122,7 +122,7 @@ export const firestoreOrdersService = {
       const snap = await getDoc(doc(db, 'orders', id));
       return snap.exists() ? ({ ...snap.data(), id: snap.id } as FirestoreOrder) : null;
     } catch (err) {
-      console.warn('[Firestore Orders] getOrderById error:', err);
+      console.warn('[database Orders] getOrderById error:', err);
       return null;
     }
   },
@@ -172,7 +172,7 @@ export const firestoreOrdersService = {
         }
       },
       (err) => {
-        console.warn(`[Firestore Orders] subscribeToOrder error for ${orderId}:`, err);
+        console.warn(`[database Orders] subscribeToOrder error for ${orderId}:`, err);
         onData(null);
       }
     );
@@ -194,7 +194,7 @@ export const firestoreOrdersService = {
         onData(orders);
       },
       (err) => {
-        console.warn('[Firestore Orders] subscribeAllOrders error:', err);
+        console.warn('[database Orders] subscribeAllOrders error:', err);
         if (onError) onError(err);
         else onData([]);
       }
@@ -217,7 +217,7 @@ export const firestoreOrdersService = {
         onData(snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestoreOrder[]);
       },
       (err) => {
-        console.warn('[Firestore Orders] subscribeRecentOrders error:', err);
+        console.warn('[database Orders] subscribeRecentOrders error:', err);
         onData([]);
       }
     );
@@ -233,7 +233,7 @@ export const firestoreOrdersService = {
       orders.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       return orders;
     } catch (err) {
-      console.warn('[Firestore Orders] getAllOrders error:', err);
+      console.warn('[database Orders] getAllOrders error:', err);
       return [];
     }
   },
@@ -246,7 +246,7 @@ export const firestoreOrdersService = {
       await deleteDoc(doc(db, 'orders', id));
       return true;
     } catch (err) {
-      console.warn(`[Firestore Orders] deleteOrder error for ${id}:`, err);
+      console.warn(`[database Orders] deleteOrder error for ${id}:`, err);
       return false;
     }
   },

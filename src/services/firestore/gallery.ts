@@ -215,7 +215,7 @@ export const firestoreGalleryService = {
           );
           const stale = cachedDivision?.length ? cachedDivision : cachedFullList?.length ? cachedFullList : undefined;
           if (stale) {
-            console.warn(`[Firestore Gallery] Using cached ${canonicalId} gallery after refresh failure:`, error);
+            console.warn(`[database Gallery] Using cached ${canonicalId} gallery after refresh failure:`, error);
             return stale;
           }
           throw error;
@@ -247,7 +247,7 @@ export const firestoreGalleryService = {
             return [];
           }
         } catch (err) {
-          console.warn('[Firestore Gallery] getGallery error:', err);
+          console.warn('[database Gallery] getGallery error:', err);
           // Never report a failed read as "no gallery items"; callers must not cache it.
           if (cachedGallery) return cachedGallery.data;
           throw err;
@@ -310,7 +310,7 @@ export const firestoreGalleryService = {
         }
       },
       (err) => {
-        console.warn('[Firestore Gallery] Listener error:', err);
+        console.warn('[database Gallery] Listener error:', err);
         const fallback = cachedGallery?.data || [];
         if (division) {
           onData(

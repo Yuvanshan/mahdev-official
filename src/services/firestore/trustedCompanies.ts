@@ -47,7 +47,7 @@ export const firestoreTrustedCompaniesService = {
       cachedCompanies = { data: [], timestamp: now };
       return [];
     } catch (err) {
-      console.warn('[Firestore TrustedCompanies] getTrustedCompanies error:', err);
+      console.warn('[database TrustedCompanies] getTrustedCompanies error:', err);
       if (!forceRefresh && cachedCompanies) return cachedCompanies.data;
       throw err;
     }
@@ -98,7 +98,7 @@ export const firestoreTrustedCompaniesService = {
         onData(data);
       },
       (err) => {
-        console.warn('[Firestore TrustedCompanies] Listener error:', err);
+        console.warn('[database TrustedCompanies] Listener error:', err);
         onData(cachedCompanies?.data || []);
       }
     );

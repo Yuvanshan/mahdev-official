@@ -36,6 +36,7 @@ import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { AdminBookingPaymentsPanel } from '../../components/admin/AdminBookingPaymentsPanel';
+import { AdminBookingWorkflowPanel } from '../../components/admin/AdminBookingWorkflowPanel';
 import { formatCurrency } from '../../utils/currency';
 
 export const AdminBookingsView: React.FC = () => {
@@ -179,51 +180,24 @@ export const AdminBookingsView: React.FC = () => {
       }
     });
 
-    // 2. Direct Firestore realtime listener (instant cloud sync across tabs/devices)
-    const unsubFirestore = firestoreBookingsService.subscribeAllBookings(
-      (remoteDocs) => {
-        if (!isMounted) return;
-        if (Array.isArray(remoteDocs)) {
-          const mapped = remoteDocs.map(mapFirestoreBookingToUniversal);
-          const map = new Map<string, Booking>();
-          for (const local of bookingService.getAllBookings()) {
-            map.set(local.id, local);
-          }
-          for (const r of mapped) {
-            map.set(r.id, r);
-          }
-          const sorted = Array.from(map.values()).sort(
-            (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-          );
-          setBookings(sorted);
-          bookingService.setBookings(sorted);
-          setIsLiveConnected(true);
-          setIsLoading(false);
-        }
-      },
-      (err) => {
-        if (!isMounted) return;
-        console.warn('[AdminBookingsView] Firestore subscription error:', err);
-        setIsLiveConnected(false);
-        setIsLoading(false);
-      }
-    );
-
-    // Initial manual load from Firestore
-    loadBookings(false);
+    // One load when the page opens (the list refreshes on reload or with the Refresh button).
+    void loadBookings(false).then(() => {
+      if (isMounted) setIsLiveConnected(true);
+    });
 
     return () => {
       isMounted = false;
       unsubLocal();
-      unsubFirestore();
     };
   }, []);
 
   // Action Handlers
-  const handleConfirmBooking = (booking: Booking) => {
+  // Status changes are saved to the database before the screen updates, and the
+  // customer sees each change in their account Alerts.
+  const handleConfirmBooking = async (booking: Booking) => {
     const author = admin ? admin.name : 'Operations Lead';
     const note = `[Confirmed by ${author} on ${new Date().toLocaleDateString()}] Production crew & assets reserved.`;
-    const res = bookingService.confirmBooking(booking.id, note);
+    const res = await bookingService.adminSetStatus(booking.id, 'confirmed', { adminNote: note });
     if (res.success && res.booking) {
       logAuditAction('BOOKING_CONFIRMED', 'Booking', booking.id, `Confirmed reservation for ${booking.serviceName}`);
       addToast('success', 'Booking Confirmed', `Reservation #${booking.id} confirmed for ${booking.customer.fullName}.`);
@@ -239,11 +213,11 @@ export const AdminBookingsView: React.FC = () => {
     setIsRejectModalOpen(true);
   };
 
-  const handleExecuteReject = (e: React.FormEvent) => {
+  const handleExecuteReject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBooking || !rejectReason.trim()) return;
 
-    const res = bookingService.rejectBooking(selectedBooking.id, rejectReason.trim());
+    const res = await bookingService.adminSetStatus(selectedBooking.id, 'rejected', { reason: rejectReason.trim() });
     if (res.success) {
       logAuditAction('BOOKING_REJECTED', 'Booking', selectedBooking.id, `Rejection reason: ${rejectReason}`);
       addToast('warning', 'Booking Rejected', `Reservation #${selectedBooking.id} marked as rejected.`);
@@ -262,11 +236,11 @@ export const AdminBookingsView: React.FC = () => {
     setIsRescheduleModalOpen(true);
   };
 
-  const handleExecuteReschedule = (e: React.FormEvent) => {
+  const handleExecuteReschedule = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBooking || !newDate.trim()) return;
 
-    const res = bookingService.rescheduleBooking(selectedBooking.id, newDate, newTime, rescheduleReason);
+    const res = await bookingService.adminReschedule(selectedBooking.id, newDate, newTime, rescheduleReason);
     if (res.success) {
       logAuditAction(
         'BOOKING_RESCHEDULED',
@@ -288,11 +262,11 @@ export const AdminBookingsView: React.FC = () => {
     setIsCancelModalOpen(true);
   };
 
-  const handleExecuteCancel = (e: React.FormEvent) => {
+  const handleExecuteCancel = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBooking || !cancelReason.trim()) return;
 
-    const res = bookingService.cancelBooking(selectedBooking.id, cancelReason.trim());
+    const res = await bookingService.adminSetStatus(selectedBooking.id, 'cancelled', { reason: cancelReason.trim() });
     if (res.success) {
       logAuditAction('BOOKING_CANCELLED', 'Booking', selectedBooking.id, `Cancellation reason: ${cancelReason}`);
       addToast('warning', 'Booking Cancelled', `Reservation #${selectedBooking.id} cancelled.`);
@@ -303,10 +277,10 @@ export const AdminBookingsView: React.FC = () => {
     }
   };
 
-  const handleCompleteBooking = (booking: Booking) => {
+  const handleCompleteBooking = async (booking: Booking) => {
     const author = admin ? admin.name : 'Lead Supervisor';
-    const note = `Service delivered and verified on ${new Date().toLocaleDateString()} by ${author}.`;
-    const res = bookingService.completeBooking(booking.id, note);
+    const note = `[Completed]: Service delivered and verified on ${new Date().toLocaleDateString()} by ${author}.`;
+    const res = await bookingService.adminSetStatus(booking.id, 'completed', { adminNote: note });
     if (res.success) {
       logAuditAction('BOOKING_COMPLETED', 'Booking', booking.id, 'Marked session as delivered and completed');
       addToast('success', 'Session Completed', `Reservation #${booking.id} marked as completed.`);
@@ -842,6 +816,20 @@ export const AdminBookingsView: React.FC = () => {
                 )}
               </div>
             )}
+
+            {/* Process steps and charges (total fare, transport, invoice lines) */}
+            <AdminBookingWorkflowPanel
+              booking={selectedBooking}
+              adminName={admin?.name || 'Admin'}
+              notify={addToast}
+              onSaved={() => {
+                const updated = bookingService.getBookingById(selectedBooking.id);
+                if (updated) setSelectedBooking({ ...updated });
+                logAuditAction('BOOKING_UPDATED', 'Booking', selectedBooking.id, 'Process step or charges updated');
+              }}
+              onCancel={() => handleOpenCancel(selectedBooking)}
+              onReject={() => handleOpenReject(selectedBooking)}
+            />
 
             {/* Advance & balance */}
             <AdminBookingPaymentsPanel

@@ -819,7 +819,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         )}
       </div>
 
-      {/* Primary KPI Grid (High-Signal Firestore Numbers) */}
+      {/* Primary KPI Grid (High-Signal database Numbers) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* 1. REVENUE */}
         <div
@@ -1148,7 +1148,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         )}
       </div>
 
-      {/* Real Firestore Financial & Transaction Timeline Chart */}
+      {/* Real database Financial & Transaction Timeline Chart */}
       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
           <div>
@@ -1157,7 +1157,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <span>Realtime Transactions & Revenue Timeline</span>
             </h3>
             <p className="text-[11px] text-slate-500">
-              Computed strictly from verified Firestore order & booking timestamps in the active date filter.
+              Computed strictly from verified database order & booking timestamps in the active date filter.
             </p>
           </div>
           <span className="text-xs font-mono font-bold text-slate-900">
@@ -1180,7 +1180,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             <Clock className="w-8 h-8 text-slate-400 mx-auto" />
             <h4 className="font-bold text-xs text-slate-700">No sufficient data yet.</h4>
             <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
-              No orders or bookings were recorded in Firestore for the selected period ({String(dateFilter || 'all_time').replace(/_/g, ' ')}). New transactions will automatically plot here in real-time.
+              No orders or bookings were recorded in the database for the selected period ({String(dateFilter || 'all_time').replace(/_/g, ' ')}). New transactions will automatically plot here in real-time.
             </p>
           </div>
         ) : (
@@ -1287,7 +1287,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <span>Warehouse Low-Stock Telemetry</span>
               </h3>
               <p className="text-[11px] text-slate-500">
-                Products reaching critical safety replenishment limits in Firestore catalog.
+                Products reaching critical safety replenishment limits in the catalogue.
               </p>
             </div>
             <Button

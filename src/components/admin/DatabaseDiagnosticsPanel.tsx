@@ -76,7 +76,7 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
       await runDiagnostics();
     } catch (err: any) {
       setActionMessage({
-        text: `Failed to clear Turso data: ${err?.message || err}`,
+        text: `Failed to clear database data: ${err?.message || err}`,
         type: 'error',
       });
     } finally {
@@ -91,7 +91,7 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
     try {
       await seedPristineProductionSettings();
       setActionMessage({
-        text: 'Successfully seeded pristine Mahdev Pvt Ltd production settings into Turso.',
+        text: 'Successfully seeded pristine Mahdev Pvt Ltd production settings into the database.',
         type: 'success',
       });
       await runDiagnostics();
@@ -133,7 +133,7 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
     try {
       const res = await purgeRemovedStudioPostsFromFirestore(false);
       setActionMessage({
-        text: `Purged removed Studio posts from Turso: ${res.galleryDeleted} gallery records and ${res.portfolioDeleted} portfolio records permanently deleted.`,
+        text: `Purged removed Studio posts from the database: ${res.galleryDeleted} gallery records and ${res.portfolioDeleted} portfolio records permanently deleted.`,
         type: res.success ? 'success' : 'error',
       });
       await runDiagnostics();
@@ -200,8 +200,8 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
               )}
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Firebase Authentication project{' '}
-              <code className="font-mono text-blue-600 font-semibold">{TARGET_FIREBASE_PROJECT_ID}</code> with application data in Turso{' '}
+              Database Authentication project{' '}
+              <code className="font-mono text-blue-600 font-semibold">{TARGET_FIREBASE_PROJECT_ID}</code> with application data in the database{' '}
               <code className="font-mono text-blue-600 font-semibold">{activeDatabaseName}</code>.
             </p>
           </div>
@@ -264,7 +264,7 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
             leftIcon={<Trash2 className="w-3.5 h-3.5 text-rose-600" />}
             className="text-xs font-semibold text-rose-700 hover:bg-rose-50 border-rose-200"
           >
-            Clear Turso Data
+            Clear Database Data
           </Button>
 
           <a
@@ -306,7 +306,7 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
               <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 <span className="flex items-center gap-1.5">
                   <Server className="w-3.5 h-3.5 text-blue-600" />
-                  Firebase Project
+                  Project
                 </span>
                 {report.firebaseApp.isProjectMatch ? (
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -329,12 +329,12 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
               </div>
             </div>
 
-            {/* Card 2: Turso Database */}
+            {/* Card 2: Database */}
             <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
               <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 <span className="flex items-center gap-1.5">
                   <Database className="w-3.5 h-3.5 text-indigo-600" />
-                  Turso Database
+                  Database
                 </span>
                 {report.tursoDatabase.isDatabaseMatch ? (
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -446,8 +446,8 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
       {/* Confirmation Dialog for Complete Database Clear */}
       <AdminConfirmDialog
         isOpen={showClearDialog}
-        title="Wipe & Clear Turso Data"
-        message="This will completely clear and delete all documents across the managed Turso collection tables (products, services, categories, milestones, portfolio, projects, gallery, trustedCompanies, testimonials, orders, bookings, inquiries, contactMessages, navigation, heroSections, pages, statistics, team, faqs, blog). This resets your database to an empty zero-state."
+        title="Wipe & Clear Database Data"
+        message="This will completely clear and delete all documents across the managed database collection tables (products, services, categories, milestones, portfolio, projects, gallery, trustedCompanies, testimonials, orders, bookings, inquiries, contactMessages, navigation, heroSections, pages, statistics, team, faqs, blog). This resets your database to an empty zero-state."
         confirmLabel="Clear Database"
         cancelLabel="Cancel"
         isDestructive

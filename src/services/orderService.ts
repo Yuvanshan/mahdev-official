@@ -91,6 +91,7 @@ class OrderService {
       trackingNumber: fo.trackingNumber,
       carrier: fo.carrier,
       source: fo.source,
+      pricingVerification: fo.pricingVerification,
       designTitle: fo.designTitle,
       designImages: Array.isArray(fo.designImages) ? fo.designImages : undefined,
       advanceAmount: fo.advanceAmount,
@@ -122,7 +123,7 @@ class OrderService {
         { merge: true }
       )
         .catch((err) => {
-          console.warn('[OrderService] Firestore order sync error:', err);
+          console.warn('[OrderService] database order sync error:', err);
         })
         .finally(() => {
           setTimeout(() => {
@@ -131,7 +132,7 @@ class OrderService {
         });
     } catch (e) {
       this.syncInFlight.delete(order.id);
-      console.warn('[OrderService] Firestore order sync catch:', e);
+      console.warn('[OrderService] database order sync catch:', e);
     }
   }
 
@@ -230,9 +231,9 @@ class OrderService {
         bookingInfo: newOrder.bookingInfo,
         createdAt: newOrder.createdAt,
         updatedAt: newOrder.updatedAt,
-      })).catch((err) => console.warn('[Turso] Order write error:', err));
+      })).catch((err) => console.warn('[database] Order write error:', err));
     } catch (e) {
-      console.warn('[Firestore] Order sync error:', e);
+      console.warn('[database] Order sync error:', e);
     }
 
     // Trigger the non-blocking customer confirmation notification.
@@ -273,7 +274,7 @@ class OrderService {
         return mapped;
       }
     } catch (err) {
-      console.warn('[OrderService] Error fetching order from Firestore:', err);
+      console.warn('[OrderService] Error fetching order from the database:', err);
     }
     return null;
   }
@@ -438,7 +439,7 @@ class OrderService {
     try {
       await deleteDoc(doc(db, 'orders', cleanId));
     } catch (err) {
-      console.warn(`[OrderService] Firestore order delete error for ${cleanId}:`, err);
+      console.warn(`[OrderService] database order delete error for ${cleanId}:`, err);
     }
     return true;
   }

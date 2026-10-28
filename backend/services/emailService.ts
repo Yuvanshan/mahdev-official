@@ -369,6 +369,23 @@ export async function sendEnquiryEmail(payload: WebsiteEnquiryPayload): Promise<
   };
 }
 
+/** "customerPhone" -> "Customer phone" for the alert's details table. */
+function labelFor(key: string): string {
+  const words = key.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ').toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+/** Readable text for one detail value (objects such as a location show their address). */
+function displayValue(value: unknown): string {
+  if (value === null || value === undefined || value === '') return '';
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    if (typeof record.address === 'string') return record.address;
+    return Object.values(record).filter((item) => typeof item === 'string' || typeof item === 'number').join(', ');
+  }
+  return String(value);
+}
+
 export async function sendAdminAlertEmail(payload: {
   type: string;
   subject: string;
@@ -384,19 +401,23 @@ export async function sendAdminAlertEmail(payload: {
     process.env.SMTP_FROM_EMAIL ||
     config.notifications.smtpUser ||
     DEFAULT_SENDER_EMAIL;
-  const subject = payload.subject.replace(/[\r\n]+/g, ' ').slice(0, 180);
-  const details = payload.data ? JSON.stringify(payload.data, null, 2) : '';
-  const text = [
-    `Mahdev website notification: ${payload.type}`,
-    '',
-    payload.message,
-    details ? `\nSubmitted data:\n${details}` : '',
-  ].join('\n');
-  const html = `<h2>${escapeHtml(payload.subject)}</h2><p>${escapeHtml(payload.message).replace(/\n/g, '<br>')}</p>${
-    details
-      ? `<h3>Submitted data</h3><pre style="white-space:pre-wrap">${escapeHtml(details)}</pre>`
-      : ''
-  }`;
+  const subject = `[Mahdev Website] ${payload.subject.replace(/[\r\n]+/g, ' ')}`.slice(0, 180);
+  // A readable details table (a raw data dump looks like spam to mail filters).
+  const rows = Object.entries(payload.data || {})
+    .map(([key, value]) => [labelFor(key), displayValue(value)] as const)
+    .filter(([, value]) => value);
+  const text = [payload.message, '', ...rows.map(([label, value]) => `${label}: ${value}`)].join('\n');
+  const html = `<div style="font-family:Arial,sans-serif;font-size:15px;color:#0f172a;line-height:1.6;max-width:600px">
+<h2 style="font-size:18px;margin:0 0 8px">${escapeHtml(payload.subject)}</h2>
+<p>${escapeHtml(payload.message).replace(/\n/g, '<br>')}</p>
+<table style="border-collapse:collapse;width:100%;font-size:14px">${rows
+    .map(([label, value]) => `<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;color:#64748b;white-space:nowrap">${escapeHtml(label)}</td><td style="padding:6px 10px;border:1px solid #e2e8f0">${escapeHtml(value)}</td></tr>`)
+    .join('')}</table>
+</div>`;
+  // Replies go to the customer when their email is known.
+  const customerEmail = typeof payload.data?.customerEmail === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.data.customerEmail)
+    ? payload.data.customerEmail
+    : undefined;
   const transporter = getMailTransporter();
 
   if (!transporter) {
@@ -415,10 +436,13 @@ export async function sendAdminAlertEmail(payload: {
     const info = await transporter.sendMail({
       from: `"Mahdev Website" <${smtpFromEmail}>`,
       to: targetEmail,
+      ...(customerEmail ? { replyTo: customerEmail } : {}),
       subject,
       text,
       html,
     });
+    // Logged so a missing email can be told apart from a failed one in the server logs.
+    console.info(`[EmailService] Admin alert (${payload.type}) accepted by SMTP. MessageID: ${info.messageId}`);
     return {
       success: true,
       delivered: true,
@@ -479,6 +503,7 @@ export async function sendCustomerEmail(payload: {
       text: payload.text,
       html: payload.html,
     });
+    console.info(`[EmailService] Customer email accepted by SMTP. MessageID: ${info.messageId}`);
     return {
       success: true,
       delivered: true,

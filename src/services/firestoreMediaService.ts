@@ -407,7 +407,7 @@ export async function deleteMediaBlobFromFirestore(rawUrl: string): Promise<bool
 
     return true;
   } catch (err) {
-    console.error('[FirestoreMedia] Error deleting media blob from Firestore:', err);
+    console.error('[FirestoreMedia] Error deleting media blob from the database:', err);
     return false;
   }
 }

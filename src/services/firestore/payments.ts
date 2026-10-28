@@ -59,7 +59,7 @@ export const firestorePaymentsService = {
       const snap = await getDocs(q);
       return snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestorePayment[];
     } catch (err) {
-      console.warn('[Firestore Payments] getPayments error:', err);
+      console.warn('[database Payments] getPayments error:', err);
       return [];
     }
   },
@@ -72,7 +72,7 @@ export const firestorePaymentsService = {
       const snap = await getDoc(doc(db, 'payments', id));
       return snap.exists() ? ({ ...snap.data(), id: snap.id } as FirestorePayment) : null;
     } catch (err) {
-      console.warn('[Firestore Payments] getPaymentById error:', err);
+      console.warn('[database Payments] getPaymentById error:', err);
       return null;
     }
   },
@@ -125,7 +125,7 @@ export const firestorePaymentsService = {
         onData(snap.docs.map((d) => ({ ...d.data(), id: d.id })) as FirestorePayment[]);
       },
       (err) => {
-        console.warn('[Firestore Payments] subscription error:', err);
+        console.warn('[database Payments] subscription error:', err);
         if (onError) onError(err);
         else onData([]);
       }

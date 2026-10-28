@@ -40,7 +40,7 @@ export default async function handler(
     sendJson(response, 405, { success: false, error: 'Only POST requests are supported.' });
     return;
   }
-  if (!isPublicEmailRequestAllowed(request)) {
+  if (!(await isPublicEmailRequestAllowed(request))) {
     sendJson(response, 429, { success: false, error: 'Too many notification requests. Please try again shortly.' });
     return;
   }

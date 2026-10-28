@@ -28,7 +28,7 @@ export default async function handler(
     sendJson(response, 405, { success: false, error: 'Only POST requests are supported.' });
     return;
   }
-  if (!isPublicEmailRequestAllowed(request)) {
+  if (!(await isPublicEmailRequestAllowed(request))) {
     sendJson(response, 429, { success: false, error: 'Too many email requests. Please try again shortly.' });
     return;
   }
@@ -72,8 +72,7 @@ export default async function handler(
     sendJson(response, 200, {
       success: true,
       referenceId: field(body.referenceId || body.id, 80),
-      targetEmail: result.targetEmail,
-      messageId: result.messageId,
+      // The team mailbox address is not returned to visitors.
     });
   } catch (error) {
     console.error('[Public Email] Inquiry delivery failed:', error);

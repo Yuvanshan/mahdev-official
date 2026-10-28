@@ -38,7 +38,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
           </div>
           <div className="space-y-1">
             <h3 className="font-display text-base font-bold text-slate-900">Verifying Session</h3>
-            <p className="text-xs text-slate-500">Checking authenticated credentials with Firebase...</p>
+            <p className="text-xs text-slate-500">Checking your sign-in...</p>
           </div>
         </div>
       </div>

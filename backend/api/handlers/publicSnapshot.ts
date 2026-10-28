@@ -199,6 +199,26 @@ export default async function publicSnapshotHandler(req: IncomingMessage, res: S
  * are part of public data can be served; the URL changes whenever the image
  * changes, so it can be cached for a year.
  */
+// An unknown image address rebuilds the image index at most once per minute per
+// instance (shared by concurrent requests), so made-up addresses cannot force a full
+// database read on every request.
+const MEDIA_INDEX_REBUILD_INTERVAL_MS = 60_000;
+let mediaIndexRebuiltAt = 0;
+let mediaIndexRebuild: Promise<unknown> | null = null;
+
+async function rebuildMediaIndexIfDue(): Promise<void> {
+  if (mediaIndexRebuild) {
+    await mediaIndexRebuild;
+    return;
+  }
+  if (Date.now() - mediaIndexRebuiltAt < MEDIA_INDEX_REBUILD_INTERVAL_MS) return;
+  mediaIndexRebuiltAt = Date.now();
+  mediaIndexRebuild = buildSnapshot().finally(() => {
+    mediaIndexRebuild = null;
+  });
+  await mediaIndexRebuild;
+}
+
 export async function publicInlineMediaHandler(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const pathname = new URL(req.url || '/', 'http://localhost').pathname;
   // Works for both the Vercel path (/api/public/media/x) and Express' relative one.
@@ -211,7 +231,7 @@ export async function publicInlineMediaHandler(req: IncomingMessage, res: Server
   }
 
   try {
-    if (!inlineImageCache.has(hash)) await buildSnapshot(); // cold instance: rebuild the image index
+    if (!inlineImageCache.has(hash)) await rebuildMediaIndexIfDue(); // cold instance: rebuild the image index
     const image = inlineImageCache.get(hash);
     if (!image) {
       res.statusCode = 404;

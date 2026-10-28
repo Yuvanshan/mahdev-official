@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { CheckCircle2, AlertTriangle, XCircle, Info, X } from 'lucide-react';
+import { displayMessage } from '../../utils/displayMessage';
 
 export interface ToastMessage {
   id: string;
@@ -95,7 +96,7 @@ export const AdminToast: React.FC<AdminToastProps> = ({ toasts, onDismiss }) => 
                 </h4>
               )}
               <p className="text-xs text-slate-600 font-medium leading-relaxed break-words">
-                {toast.message}
+                {displayMessage(toast.message)}
               </p>
             </div>
 

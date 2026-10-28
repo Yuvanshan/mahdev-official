@@ -82,7 +82,7 @@ export const AdminMilestonesView: React.FC = () => {
         setIsLoading(false);
       },
       (err) => {
-        console.error('[AdminMilestonesView] Turso subscription error:', err);
+        console.error('[AdminMilestonesView] database subscription error:', err);
         setLoadError(err.message);
         addToast('error', 'Database Sync Error', err.message);
         setIsLoading(false);
@@ -214,10 +214,10 @@ export const AdminMilestonesView: React.FC = () => {
     try {
       const orderedIds = newOrder.map((item) => item.id);
       await firestoreMilestonesService.reorderMilestones(orderedIds);
-      addToast('info', 'Timeline Reordered', 'New chronological display order saved to Turso.');
+      addToast('info', 'Timeline Reordered', 'New chronological display order saved to the database.');
       await refreshAll(true);
     } catch (err: any) {
-      addToast('error', 'Reorder Error', err.message || 'Failed to reorder milestones in Turso.');
+      addToast('error', 'Reorder Error', err.message || 'Failed to reorder milestones in the database.');
     }
   };
 
@@ -227,7 +227,7 @@ export const AdminMilestonesView: React.FC = () => {
     try {
       if (permanent) {
         await firestoreMilestonesService.deleteMilestone(deletingMilestone.id);
-        addToast('warning', 'Permanent Deletion', `"${deletingMilestone.title}" removed from Turso.`);
+        addToast('warning', 'Permanent Deletion', `"${deletingMilestone.title}" removed from the database.`);
       } else {
         await firestoreMilestonesService.saveMilestone(deletingMilestone.id, {
           status: 'archived',
@@ -301,14 +301,14 @@ export const AdminMilestonesView: React.FC = () => {
           <div className="flex items-center gap-2.5 flex-wrap">
             <h2 className="font-display text-lg font-bold text-slate-900">Corporate Milestones & History</h2>
             <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-200">
-              <Radio className="w-3 h-3 text-emerald-500 animate-pulse" /> Live Turso Sync
+              <Radio className="w-3 h-3 text-emerald-500 animate-pulse" /> Live Sync
             </span>
             <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
               {milestones.length} Total ({publishedCount} Published)
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Live data from the Turso <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-[11px]">milestones</code> table. Saved changes appear on the public website.
+            Live data from the database <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-[11px]">milestones</code> table. Saved changes appear on the public website.
           </p>
         </div>
 
@@ -378,14 +378,14 @@ export const AdminMilestonesView: React.FC = () => {
                   <td colSpan={6} className="py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                      <span>Loading milestones from Turso...</span>
+                      <span>Loading milestones from the database...</span>
                     </div>
                   </td>
                 </tr>
               ) : loadError && milestones.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-rose-600">
-                    <p className="font-semibold">Could not load milestones from Turso.</p>
+                    <p className="font-semibold">Could not load milestones from the database.</p>
                     <p className="mt-1 text-xs">{loadError}</p>
                   </td>
                 </tr>
@@ -555,7 +555,7 @@ export const AdminMilestonesView: React.FC = () => {
         isOpen={isEditorOpen}
         onClose={() => setIsEditorOpen(false)}
         title={editingMilestone ? `Edit Milestone: ${editingMilestone.title}` : 'Add New Corporate Milestone'}
-        subtitle="Saved directly to the Turso milestones table and visible on the public website."
+        subtitle="Saved directly to the database milestones table and visible on the public website."
         isDirty={isDirty}
         maxWidth="lg"
       >
@@ -731,7 +731,7 @@ export const AdminMilestonesView: React.FC = () => {
                 Cancel
               </Button>
               <Button variant="primary" size="sm" type="submit" disabled={isSaving}>
-                {isSaving ? 'Saving to Turso...' : editingMilestone ? 'Update Milestone' : 'Create Milestone'}
+                {isSaving ? 'Saving to the database...' : editingMilestone ? 'Update Milestone' : 'Create Milestone'}
               </Button>
             </div>
           </div>

@@ -96,7 +96,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
         }
       })
       .catch((error) => {
-        console.error('[SEOHead] Could not load SEO overrides from Turso:', error);
+        console.error('[SEOHead] Could not load SEO overrides from the database:', error);
       });
     return () => {
       active = false;

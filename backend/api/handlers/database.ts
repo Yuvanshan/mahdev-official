@@ -7,7 +7,7 @@ import {
   handleTursoAction,
   type DatabaseAccess,
 } from '../tursoRoutes.js';
-import { notifyForVerifiedSubmission } from '../../services/submissionAlerts.js';
+import { notifyCustomerOfConfirmation, notifyForVerifiedSubmission } from '../../services/submissionAlerts.js';
 import { changedPublicUrls, isIndexNowEnabled, submitToIndexNow } from '../../seo/indexNow.js';
 import {
   consumeRateLimit,
@@ -99,7 +99,7 @@ export async function handleTursoDatabaseRequest(
     res.statusCode = 503;
     res.end(JSON.stringify({
       success: false,
-      error: 'Turso is unavailable or not configured. Check the server database environment.',
+      error: 'Database is unavailable or not configured. Check the server database environment.',
     }));
     return;
   }
@@ -128,6 +128,7 @@ export async function handleTursoDatabaseRequest(
   if (result.status === 200 && result.body.success === true) {
     try {
       await notifyForVerifiedSubmission(req.body, access);
+      await notifyCustomerOfConfirmation(req.body, access);
     } catch (error) {
       console.error('[Turso API] Verified submission alert failed:', error);
     }

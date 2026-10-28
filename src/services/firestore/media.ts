@@ -420,7 +420,7 @@ export const mediaService = {
         await setDoc(docRef, { isDeleted: true, deletedAt: new Date().toISOString() }, { merge: true });
         await deleteDoc(docRef);
       } catch (err) {
-        console.warn('[MediaService] Firestore deleteDoc direct notice:', err);
+        console.warn('[MediaService] database deleteDoc direct notice:', err);
       }
 
       // Second: Query and purge any duplicate or auto-generated documents matching ID or URL
@@ -466,7 +466,7 @@ export const mediaService = {
         try {
           await deleteMediaBlobFromFirestore(url);
         } catch (err) {
-          console.warn('[MediaService] Firestore blob purge notice:', err);
+          console.warn('[MediaService] database blob purge notice:', err);
         }
       }
 
@@ -483,7 +483,7 @@ export const mediaService = {
       return { success: true };
     } catch (err: any) {
       console.error('[MediaService] Delete media asset error:', err);
-      return { success: false, error: err.message || 'Failed to delete asset from Firestore.' };
+      return { success: false, error: err.message || 'Failed to delete asset from the database.' };
     }
   },
 };

@@ -99,7 +99,7 @@ export const AuthShell: React.FC<AuthShellProps> = ({ title, subtitle, icon, chi
           {footer && <motion.div {...rise(0.2)} className="mt-5 text-center text-sm text-slate-600">{footer}</motion.div>}
           <motion.p {...rise(0.25)} className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-500">
             <ShieldCheck className="h-4 w-4 text-emerald-600" aria-hidden="true" />
-            Secured by Google Firebase. Your details are only used for your bookings and orders.
+            Secured by Google. Your details are only used for your bookings and orders.
           </motion.p>
         </div>
       </div>

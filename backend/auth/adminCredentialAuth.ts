@@ -5,6 +5,7 @@ import {
   timingSafeEqual,
 } from 'node:crypto';
 import type { AdminRole, AdminUser } from '../../src/types/admin.js';
+import { getTursoDocument, initializeTursoDatabase, writeTursoDocument } from '../db/tursoDatabase.js';
 
 const SESSION_COOKIE = 'mahdev_admin_session';
 const SESSION_LIFETIME_SECONDS = 8 * 60 * 60;
@@ -77,6 +78,8 @@ function issueSession(email: string): { user: AdminUser; expiresAt: string; cook
     role: 'super_admin' satisfies AdminRole,
     exp: expiresAtSeconds,
     iat: issuedAt,
+    // Milliseconds, so a sign-in straight after signing out is not caught by that sign-out.
+    iatMs: Date.now(),
     nonce: randomBytes(16).toString('base64url'),
   })).toString('base64url');
   const token = `${payload}.${sign(payload)}`;
@@ -93,9 +96,14 @@ export function clearAdminSessionCookie(): string {
   return `${SESSION_COOKIE}=; HttpOnly; SameSite=Strict; Path=/api; Max-Age=0${secure}`;
 }
 
-export function getAdminSessionFromCookie(cookieHeader: string | undefined): {
+/**
+ * Checks the cookie's signature, expiry and admin email (no database access).
+ * Not exported: callers use requireAdminSession(), which also honours sign-outs.
+ */
+function readAdminSessionCookie(cookieHeader: string | undefined): {
   user: AdminUser;
   expiresAt: string;
+  issuedAtMs: number;
 } {
   const token = getCookieValue(cookieHeader, SESSION_COOKIE);
   if (!token) throw new AdminSessionAuthError('An admin session is required.', 401);
@@ -126,6 +134,8 @@ export function getAdminSessionFromCookie(cookieHeader: string | undefined): {
       email?: unknown;
       role?: unknown;
       exp?: unknown;
+      iat?: unknown;
+      iatMs?: unknown;
     };
     const configuredEmail = resolveAdminRuntimeConfig().email;
     const email = typeof session.email === 'string' ? session.email.toLowerCase() : '';
@@ -141,6 +151,9 @@ export function getAdminSessionFromCookie(cookieHeader: string | undefined): {
     return {
       user: makeAdminUser(email),
       expiresAt: new Date(expiresAt * 1000).toISOString(),
+      issuedAtMs: typeof session.iatMs === 'number'
+        ? session.iatMs
+        : typeof session.iat === 'number' ? session.iat * 1000 : 0,
     };
   } catch (error) {
     if (error instanceof AdminSessionAuthError) throw error;
@@ -230,4 +243,71 @@ export function hashAdminPassword(password: string): string {
   if (password.length < 12) throw new Error('Admin passwords must be at least 12 characters long.');
   const salt = randomBytes(16);
   return `${salt.toString('base64url')}.${scryptSync(password, salt, PASSWORD_HASH_BYTES).toString('base64url')}`;
+}
+
+// ---------------------------------------------------------------------------
+// Sign-out: sessions issued before the last sign-out are refused everywhere.
+// ---------------------------------------------------------------------------
+
+const SESSION_REVOCATION_ID = 'admin_sessions';
+// Each server instance re-reads the sign-out time at most this often.
+const REVOCATION_CACHE_MS = 15_000;
+let revocationCache: { revokedBeforeMs: number; readAt: number } | null = null;
+let databaseReady: Promise<void> | undefined;
+
+// Admin checks can run before a handler has prepared the database (cold start).
+function ensureDatabaseReady(): Promise<void> {
+  databaseReady ??= initializeTursoDatabase().catch((error: unknown) => {
+    databaseReady = undefined;
+    throw error;
+  });
+  return databaseReady;
+}
+
+async function sessionsRevokedBeforeMs(): Promise<number> {
+  if (revocationCache && Date.now() - revocationCache.readAt < REVOCATION_CACHE_MS) {
+    return revocationCache.revokedBeforeMs;
+  }
+  try {
+    await ensureDatabaseReady();
+    const record = await getTursoDocument('system_metadata', '', SESSION_REVOCATION_ID);
+    const revokedBeforeMs = typeof record?.data.revokedBeforeMs === 'number' ? record.data.revokedBeforeMs : 0;
+    revocationCache = { revokedBeforeMs, readAt: Date.now() };
+    return revokedBeforeMs;
+  } catch (error) {
+    // Fail closed: without the sign-out record a stolen session could not be ruled out.
+    console.error('[Admin Auth] Could not read the admin sign-out record:', error);
+    throw new AdminSessionAuthError('The admin session could not be checked. Please try again.', 503);
+  }
+}
+
+/**
+ * The signed-in admin, or an AdminSessionAuthError. Checks the cookie and that
+ * the session was not ended by a later sign-out.
+ */
+export async function requireAdminSession(cookieHeader: string | string[] | undefined): Promise<{
+  user: AdminUser;
+  expiresAt: string;
+}> {
+  const header = Array.isArray(cookieHeader) ? cookieHeader[0] : cookieHeader;
+  const { user, expiresAt, issuedAtMs } = readAdminSessionCookie(header);
+  if (issuedAtMs < await sessionsRevokedBeforeMs()) {
+    throw new AdminSessionAuthError('You have been signed out. Please sign in again.', 401);
+  }
+  return { user, expiresAt };
+}
+
+/** Ends every admin session issued until now (used by sign-out). */
+export async function revokeAdminSessions(): Promise<void> {
+  await ensureDatabaseReady();
+  const revokedBeforeMs = Date.now();
+  await writeTursoDocument({
+    type: 'set',
+    collection: 'system_metadata',
+    parentPath: '',
+    id: SESSION_REVOCATION_ID,
+    merge: true,
+    data: { revokedBeforeMs, updatedAt: new Date(revokedBeforeMs).toISOString() },
+  });
+  revocationCache = { revokedBeforeMs, readAt: Date.now() };
 }

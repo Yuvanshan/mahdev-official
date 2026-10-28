@@ -8,7 +8,7 @@ import {
   writeTursoDocument,
   type TursoDocument,
 } from '../../db/tursoDatabase.js';
-import { AdminSessionAuthError, getAdminSessionFromCookie } from '../../auth/adminCredentialAuth.js';
+import { AdminSessionAuthError, requireAdminSession } from '../../auth/adminCredentialAuth.js';
 import { FirebaseTokenError, verifyFirebaseIdToken } from '../../auth/firebaseIdToken.js';
 import { consumeRateLimit, getClientIp, RateLimitError } from '../../security/rateLimit.js';
 import { sendAdminAlertEmail, sendCustomerEmail } from '../../services/emailService.js';
@@ -220,8 +220,8 @@ function publicView(document: TursoDocument) {
 // Admin
 // ---------------------------------------------------------------------------
 
-function requireAdmin(req: IncomingMessage) {
-  return getAdminSessionFromCookie(header(req, 'cookie')).user;
+async function requireAdmin(req: IncomingMessage) {
+  return (await requireAdminSession(header(req, 'cookie'))).user;
 }
 
 async function listConfirmations(): Promise<Record<string, unknown>> {
@@ -637,21 +637,21 @@ export default async function handler(req: ConfirmationRequest, res: ServerRespo
     await ensureDatabase();
     let result: Record<string, unknown>;
     if (action === '' && req.method === 'GET') {
-      requireAdmin(req);
+      await requireAdmin(req);
       result = await listConfirmations();
     } else if (action === '' && req.method === 'POST') {
-      result = await createConfirmation(body, requireAdmin(req).email);
+      result = await createConfirmation(body, (await requireAdmin(req)).email);
     } else if (action === 'send' && req.method === 'POST') {
-      requireAdmin(req);
+      await requireAdmin(req);
       result = await sendLink(body);
     } else if (action === 'delete' && req.method === 'POST') {
-      requireAdmin(req);
+      await requireAdmin(req);
       result = await deleteConfirmation(body);
     } else if (action === 'log-whatsapp' && req.method === 'POST') {
-      requireAdmin(req);
+      await requireAdmin(req);
       result = await logWhatsAppShare(body);
     } else if (action === 'cancel' && req.method === 'POST') {
-      requireAdmin(req);
+      await requireAdmin(req);
       result = await cancelConfirmation(body);
     } else if (action === 'public' && req.method === 'GET') {
       await consumeRateLimit(`order-confirmation-view:${ip}`, 60, 10 * 60_000);

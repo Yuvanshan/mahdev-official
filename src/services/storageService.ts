@@ -70,7 +70,7 @@ export function translateStorageError(err: any): string {
     return 'Upload timed out: Network connection was lost. Please check your internet connection and try again.';
   }
   if (code === 'storage/object-not-found') {
-    return 'Asset not found in Firebase Storage.';
+    return 'Asset not found in cloud storage.';
   }
   if (msg.includes('too large') || msg.includes('exceeds')) {
     return 'File size is too large. Maximum allowed size is 5 MB.';

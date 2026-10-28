@@ -300,13 +300,13 @@ export async function ensureAllCanonicalDivisionsInFirestore(): Promise<void> {
     for (const def of defaults) {
       const { canonicalDocId, shortId } = normalizeDivisionId(def.id);
       if (!existingShortIds.has(shortId)) {
-        console.log(`[Firestore Divisions] Auto-seeding missing canonical division: ${canonicalDocId}`);
+        console.log(`[database Divisions] Auto-seeding missing canonical division: ${canonicalDocId}`);
         const docRef = doc(db, 'divisions', canonicalDocId);
         await setDoc(docRef, sanitizeForFirestore({ ...def, id: canonicalDocId }), { merge: true });
       }
     }
   } catch (err) {
-    console.warn('[Firestore Divisions] Auto-seeding check notice:', err);
+    console.warn('[database Divisions] Auto-seeding check notice:', err);
   }
 }
 
@@ -338,16 +338,16 @@ export const firestoreDivisionsService = {
               try {
                 sessionStorage.setItem('mahdev_cached_divisions', JSON.stringify(sorted));
               } catch (error) {
-                console.warn('[Firestore Divisions] Could not refresh session cache:', error);
+                console.warn('[database Divisions] Could not refresh session cache:', error);
               }
             }).catch((error) => {
-              console.error('[Firestore Divisions] Background refresh failed:', error);
+              console.error('[database Divisions] Background refresh failed:', error);
             });
             return data;
           }
         }
       } catch (error) {
-        console.warn('[Firestore Divisions] Session cache could not be read:', error);
+        console.warn('[database Divisions] Session cache could not be read:', error);
       }
     }
 
@@ -365,12 +365,12 @@ export const firestoreDivisionsService = {
         try {
           sessionStorage.setItem('mahdev_cached_divisions', JSON.stringify(data));
         } catch (error) {
-          console.warn('[Firestore Divisions] Could not cache database records for this session:', error);
+          console.warn('[database Divisions] Could not cache database records for this session:', error);
         }
       }
       return data;
     } catch (err) {
-      console.warn('[Firestore Divisions] getDivisions error:', err);
+      console.warn('[database Divisions] getDivisions error:', err);
       if (cachedDivisions) return cachedDivisions.data;
       throw err;
     }
@@ -448,7 +448,7 @@ export const firestoreDivisionsService = {
       const docRef = doc(db, 'divisions', canonicalDocId);
       await setDoc(docRef, payload, { merge: true });
     } catch (fsErr) {
-      console.error(`[Turso Divisions] Could not save "${canonicalDocId}":`, fsErr);
+      console.error(`[database Divisions] Could not save "${canonicalDocId}":`, fsErr);
       throw fsErr;
     }
 
@@ -462,7 +462,7 @@ export const firestoreDivisionsService = {
       try {
         sessionStorage.setItem('mahdev_cached_divisions', JSON.stringify(next));
       } catch (error) {
-        console.warn('[Firestore Divisions] Could not update session cache:', error);
+        console.warn('[database Divisions] Could not update session cache:', error);
       }
       window.dispatchEvent(
         new CustomEvent('mahdev_division_updated', {
@@ -504,7 +504,7 @@ export const firestoreDivisionsService = {
         try {
           sessionStorage.setItem('mahdev_cached_divisions', JSON.stringify(cachedDivisions.data));
         } catch (error) {
-          console.warn('[Firestore Divisions] Could not update session cache after delete:', error);
+          console.warn('[database Divisions] Could not update session cache after delete:', error);
         }
       }
     }
@@ -530,13 +530,13 @@ export const firestoreDivisionsService = {
           try {
             sessionStorage.setItem('mahdev_cached_divisions', JSON.stringify(data));
           } catch (error) {
-            console.warn('[Firestore Divisions] Could not cache subscription data:', error);
+            console.warn('[database Divisions] Could not cache subscription data:', error);
           }
         }
         callback(data);
       },
       (err) => {
-        console.warn('[Firestore Divisions] subscribe error:', err);
+        console.warn('[database Divisions] subscribe error:', err);
         if (cachedDivisions) callback(cachedDivisions.data);
       }
     );

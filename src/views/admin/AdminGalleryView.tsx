@@ -426,7 +426,7 @@ export const AdminGalleryView: React.FC = () => {
         try {
           await firestoreGalleryService.saveGallery(editingItem.id, firestoreData);
         } catch (fErr) {
-          console.warn('[AdminGallery] Firestore background sync notice:', fErr);
+          console.warn('[AdminGallery] database background sync notice:', fErr);
         }
         addToast('success', 'Gallery Item Saved', `"${formData.title}" saved successfully.`);
       } else {
@@ -434,7 +434,7 @@ export const AdminGalleryView: React.FC = () => {
         try {
           await firestoreGalleryService.saveGallery(created.id, firestoreData);
         } catch (fErr) {
-          console.warn('[AdminGallery] Firestore background sync notice:', fErr);
+          console.warn('[AdminGallery] database background sync notice:', fErr);
         }
         addToast('success', 'Gallery Item Created', `"${formData.title}" saved successfully.`);
       }
@@ -460,7 +460,7 @@ export const AdminGalleryView: React.FC = () => {
     try {
       if (permanent) {
         await cmsService.hardDelete('gallery', itemToDelete.id);
-        addToast('warning', 'Permanent Deletion', `"${itemToDelete.title}" permanently removed from Firestore & storage.`);
+        addToast('warning', 'Permanent Deletion', `"${itemToDelete.title}" permanently removed from the database & storage.`);
       } else {
         await cmsService.softDelete('gallery', itemToDelete.id);
         addToast('info', 'Gallery Item Archived', `"${itemToDelete.title}" archived.`);
@@ -473,7 +473,7 @@ export const AdminGalleryView: React.FC = () => {
   };
 
   const handlePurgeStudioPosts = async () => {
-    if (!window.confirm('Are you sure you want to permanently delete all removed/archived Studio posts from Firestore? This cannot be undone.')) {
+    if (!window.confirm('Are you sure you want to permanently delete all removed/archived Studio posts from the database? This cannot be undone.')) {
       return;
     }
     setIsPurgingStudio(true);
@@ -482,7 +482,7 @@ export const AdminGalleryView: React.FC = () => {
       addToast(
         res.success ? 'success' : 'warning',
         'Studio Posts Cleaned',
-        `Cleaned ${res.galleryDeleted} gallery items and ${res.portfolioDeleted} portfolio items from Firestore.`
+        `Cleaned ${res.galleryDeleted} gallery items and ${res.portfolioDeleted} portfolio items from the database.`
       );
       loadData();
     } catch (err: any) {
@@ -531,7 +531,7 @@ export const AdminGalleryView: React.FC = () => {
             className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200"
           >
             <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-            {isPurgingStudio ? 'Cleaning Firestore...' : 'Purge Removed Studio Posts'}
+            {isPurgingStudio ? 'Cleaning database...' : 'Purge Removed Studio Posts'}
           </Button>
           <AdminGenerateSeoButton entity="gallery" items={galleryItems} notify={addToast} onComplete={loadData} />
           <Button variant="primary" size="sm" onClick={handleOpenCreate}>
@@ -890,7 +890,7 @@ export const AdminGalleryView: React.FC = () => {
                   Gallery Photos (Max 3 Images) *
                 </label>
                 <p className="text-[11px] text-purple-700/80">
-                  Upload up to 3 showcase photos to Firebase Storage. Save this gallery item to publish its image links from Turso. First image acts as primary cover.
+                  Upload up to 3 showcase photos to cloud storage. Save this gallery item to publish its image links from the database. First image acts as primary cover.
                 </p>
               </div>
               <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
@@ -1024,7 +1024,7 @@ export const AdminGalleryView: React.FC = () => {
               </div>
             ) : (
               <div className="p-4 border-2 border-dashed border-purple-200/80 rounded-xl text-center bg-white/60 text-purple-900/70 text-xs">
-                No gallery photos added yet. Upload up to 3 images to Firebase Storage, then save this gallery item to publish them on the website.
+                No gallery photos added yet. Upload up to 3 images to cloud storage, then save this gallery item to publish them on the website.
               </div>
             )}
           </div>

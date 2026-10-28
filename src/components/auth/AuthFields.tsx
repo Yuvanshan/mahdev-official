@@ -1,6 +1,7 @@
 import React, { forwardRef, useId, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { AlertCircle, CheckCircle2, Eye, EyeOff, Lock } from 'lucide-react';
+import { displayMessage } from '../../utils/displayMessage';
 
 interface AuthFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -157,7 +158,7 @@ export const AuthAlert: React.FC<{ tone: 'error' | 'success'; message: string | 
           ) : (
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
           )}
-          <span>{message}</span>
+          <span>{displayMessage(message)}</span>
         </motion.div>
       </motion.div>
     )}

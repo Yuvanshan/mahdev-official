@@ -96,14 +96,14 @@ export function initAppCheck(): AppCheckStatus {
         return { initialized: true, provider: RECAPTCHA_PROVIDER, environment: 'production' };
       } else {
         console.error(
-          '[AppCheck] Production App Check is not initialized. Set VITE_FIREBASE_RECAPTCHA_SITE_KEY and enable App Check enforcement in Firebase Console.'
+          '[AppCheck] Production App Check is not initialized. Set VITE_FIREBASE_RECAPTCHA_SITE_KEY and enable App Check enforcement in the hosting console.'
         );
         return { initialized: false, provider: 'none', environment: 'production' };
       }
     }
   } catch (err) {
     console.error(
-      '[AppCheck] Could not initialize attestation. Protected Firebase requests may be rejected; verify the site key and Firebase Console registration.',
+      '[AppCheck] Could not initialize attestation. Protected requests may be rejected; verify the site key and the hosting console registration.',
       err
     );
     return { initialized: false, provider: 'none', environment: isDev ? 'development' : 'production' };
@@ -116,7 +116,7 @@ export function initAppCheck(): AppCheckStatus {
 export async function getAppCheckAttestationToken(): Promise<string | null> {
   if (!appCheckInstance) {
     if (import.meta.env.PROD) {
-      throw new Error('Firebase App Check is not initialized; no attestation token is available.');
+      throw new Error('App Check is not initialized; no attestation token is available.');
     }
     return null;
   }
@@ -126,7 +126,7 @@ export async function getAppCheckAttestationToken(): Promise<string | null> {
   } catch (err) {
     if (import.meta.env.PROD) {
       console.error('[AppCheck] Could not retrieve a production attestation token:', err);
-      throw new Error('Firebase App Check could not issue an attestation token.');
+      throw new Error('App Check could not issue an attestation token.');
     }
     console.warn('[AppCheck] Token retrieval notice:', err);
     return null;

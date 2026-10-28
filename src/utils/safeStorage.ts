@@ -243,7 +243,7 @@ export const safeStorage = {
         return true;
       } catch (finalErr) {
         console.warn(
-          `[SafeStorage] Browser storage quota completely exhausted for "${key}". Data safely maintained in memory and Firestore.`,
+          `[SafeStorage] Browser storage quota completely exhausted for "${key}". Data safely maintained in memory and database.`,
           finalErr
         );
         return false;

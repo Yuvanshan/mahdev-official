@@ -121,7 +121,7 @@ export const AdminMediaView: React.FC = () => {
         setIsLoading(false);
       },
       (err) => {
-        console.error('[AdminMediaView] Firestore sync notice:', err);
+        console.error('[AdminMediaView] database sync notice:', err);
         setIsLoading(false);
       }
     );
@@ -189,7 +189,7 @@ export const AdminMediaView: React.FC = () => {
     try {
       await mediaService.saveMediaAsset(newItem);
       setIsUploadOpen(false);
-      addToast('success', `Media asset "${newItem.title}" saved to Turso (${newItem.category}); the image is in Firebase Storage.`);
+      addToast('success', `Media asset "${newItem.title}" saved to the database (${newItem.category}); the image is in cloud storage.`);
     } catch (err: any) {
       addToast('error', `Failed to save media asset: ${err?.message || err}`);
     }
@@ -291,13 +291,13 @@ export const AdminMediaView: React.FC = () => {
       );
 
       if (result.success) {
-        addToast('success', `Permanently deleted "${targetItem.title}" from Firestore and storage.`);
+        addToast('success', `Permanently deleted "${targetItem.title}" from the database and storage.`);
       } else {
         addToast('warning', `Deleted locally: ${result.error}`);
       }
     } catch (err: any) {
       console.error('[AdminMediaView] Delete error:', err);
-      addToast('error', `Failed to delete from Firestore: ${err?.message || err}`);
+      addToast('error', `Failed to delete from the database: ${err?.message || err}`);
     } finally {
       setIsDeleting(false);
       setItemToDelete(null);
@@ -340,7 +340,7 @@ export const AdminMediaView: React.FC = () => {
             </h2>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Turso Synced
+              Database Synced
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -767,7 +767,7 @@ export const AdminMediaView: React.FC = () => {
                   category={editCategory}
                   onUploadSuccess={handleEditUploadSuccess}
                   label="Upload Replacement Image"
-                  helperText="Replaces the image asset in Firebase Storage with automatic WebP conversion."
+                  helperText="Replaces the image asset in cloud storage with automatic WebP conversion."
                   options={{
                     maxWidth: 1920,
                     maxHeight: 1920,
@@ -891,7 +891,7 @@ export const AdminMediaView: React.FC = () => {
         isOpen={isUploadOpen}
         onClose={() => setIsUploadOpen(false)}
         title="Upload & Optimize Media Asset"
-        description="Upload an asset to Firebase Storage with automatic WebP conversion, dimension normalization, and path organization."
+        description="Upload an asset to cloud storage with automatic WebP conversion, dimension normalization, and path organization."
         size="lg"
         footer={
           <div className="flex items-center justify-end gap-2 w-full">
@@ -1120,7 +1120,7 @@ export const AdminMediaView: React.FC = () => {
         onClose={() => setDeleteConfirmOpen(false)}
         onConfirm={confirmDelete}
         title="Delete Media Asset"
-        message={`Are you sure you want to permanently remove "${itemToDelete?.title}" from Firebase Storage repository? Any pages referencing this URL will need updating.`}
+        message={`Are you sure you want to permanently remove "${itemToDelete?.title}" from cloud storage? Any pages referencing this URL will need updating.`}
         confirmText="Delete Asset"
         variant="danger"
       />

@@ -54,7 +54,7 @@ export const InquiryItemNotFound: React.FC<InquiryItemNotFoundProps> = ({
                 title: query ? `Inquiry regarding code: ${query}` : 'General Inquiry',
                 sku: query || 'UNKNOWN',
                 category: 'Customer Support',
-                description: `Client navigated to inquiry link with query: ${query || 'N/A'}. Item was not located in Firestore catalog.`,
+                description: `Client navigated to inquiry link with query: ${query || 'N/A'}. Item was not located in the catalogue.`,
                 type: 'general',
               });
             }}

@@ -260,7 +260,7 @@ class CmsService {
         }
       });
     } catch (e) {
-      console.warn('[CmsService] Firestore multi-entity auto-sync initialization:', e);
+      console.warn('[CmsService] database multi-entity auto-sync initialization:', e);
     }
   }
 
@@ -613,7 +613,7 @@ class CmsService {
         }));
         this.syncEntityFromFirestore(entity, items);
       } catch (error) {
-        console.error(`[CmsService] Could not load public ${entity} from Turso:`, error);
+        console.error(`[CmsService] Could not load public ${entity} from the database:`, error);
         throw error;
       }
     }));
@@ -647,7 +647,7 @@ class CmsService {
       })
       .catch((error: unknown) => {
         this.couponsLoadStarted = false;
-        console.error('[CmsService] Could not load coupons from Turso:', error);
+        console.error('[CmsService] Could not load coupons from the database:', error);
       });
   }
 
@@ -1379,7 +1379,7 @@ class CmsService {
         });
       }
     } catch (err) {
-      console.error(`[Turso CMS] Failed to sync ${entity}/${item.id}:`, err);
+      console.error(`[database CMS] Failed to sync ${entity}/${item.id}:`, err);
       throw err;
     }
   }
@@ -1408,7 +1408,7 @@ class CmsService {
         await firestoreTestimonialsService.deleteTestimonial(id);
       }
     } catch (err) {
-      console.error(`[Turso CMS] Failed to delete ${entity}/${id}:`, err);
+      console.error(`[database CMS] Failed to delete ${entity}/${id}:`, err);
       throw err;
     }
   }
@@ -2050,7 +2050,7 @@ class CmsService {
       socials: merged.socials,
       workingHours: merged.workingHours,
     }).catch((err) => {
-      console.warn('[Firestore Sync] Company settings sync error:', err);
+      console.warn('[database Sync] Company settings sync error:', err);
     });
 
     return merged;

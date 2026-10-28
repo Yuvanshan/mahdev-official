@@ -33,6 +33,7 @@ import { Order } from '../types/order';
 import { Booking } from '../types/booking';
 import { normaliseSriLankaPhone, parseNic } from '../utils/sriLankaIdentity';
 import { safeStorage } from '../utils/safeStorage';
+import { checkAccountDetails } from './accountCheckService';
 
 type AuthListener = (user: CustomerUser | null) => void;
 type ProfileRecord = FirestoreUser & Record<string, any>;
@@ -123,6 +124,8 @@ export interface ProfileCompletionInput {
 
 // One message for wrong email and wrong password, so sign-in never reveals which emails have accounts.
 const INVALID_LOGIN_MESSAGE = 'Incorrect email or password. Please try again.';
+/** Shown when a password reset is requested for an email with no account. */
+export const NO_ACCOUNT_FOR_EMAIL = 'There is no Mahdev account for this email. Please check it or create an account.';
 
 /** Friendly message for a Firebase Auth error code. */
 function authErrorMessage(error: unknown, fallback: string): string {
@@ -161,12 +164,12 @@ function authErrorMessage(error: unknown, fallback: string): string {
       return 'Your browser blocked the sign-in window. Please allow pop-ups for this site and try again.';
     case 'auth/argument-error':
     case 'auth/internal-error':
-      console.error('[Firebase Auth] Sign-in setup error:', error);
+      console.error('[database Auth] Sign-in setup error:', error);
       return `${fallback} (${code})`;
     default:
       if (error instanceof Error && !code) return error.message;
       // Unknown Firebase codes are logged and shown, so a failure can be traced.
-      console.error('[Firebase Auth] Unhandled error:', error);
+      console.error('[database Auth] Unhandled error:', error);
       return code ? `${fallback} (${code})` : fallback;
   }
 }
@@ -322,7 +325,7 @@ class AuthService {
             const profile = await this.loadProfile(firebaseUser);
             if (profile || !this.registering) this.currentUser = toCustomerUser(firebaseUser, profile);
           } catch (err) {
-            console.warn('[Firebase Auth] Profile load error:', err);
+            console.warn('[database Auth] Profile load error:', err);
             // Offline or server error: keep the saved profile shown above, if there is one.
             if (!this.currentUser) this.currentUser = toCustomerUser(firebaseUser, null);
           }
@@ -333,7 +336,7 @@ class AuthService {
         this.notifyListeners();
       });
     } catch (err) {
-      console.warn('[Firebase Auth] Listener initialization error:', err);
+      console.warn('[database Auth] Listener initialization error:', err);
       this.markReady();
     }
   }
@@ -391,7 +394,7 @@ class AuthService {
       this.notifyListeners();
       return { success: true, user: this.currentUser };
     } catch (err) {
-      if (!(err as { code?: string })?.code) console.error('[Firebase Auth] Login failed:', err);
+      if (!(err as { code?: string })?.code) console.error('[database Auth] Login failed:', err);
       return { success: false, error: authErrorMessage(err, 'Sign-in failed. Please try again.') };
     }
   }
@@ -425,7 +428,7 @@ class AuthService {
         await signInWithRedirect(auth, provider);
         return { success: false, redirecting: true };
       }
-      if (!code) console.error('[Firebase Auth] Google sign-in failed:', err);
+      if (!code) console.error('[database Auth] Google sign-in failed:', err);
       return { success: false, error: authErrorMessage(err, 'Google sign-in failed. Please try again.') };
     }
   }
@@ -473,7 +476,7 @@ class AuthService {
       this.notifyListeners();
       return { success: true };
     } catch (err) {
-      console.error('[Turso] Profile completion failed:', err);
+      console.error('[database] Profile completion failed:', err);
       return { success: false, error: err instanceof Error ? err.message : 'Could not save your details.' };
     }
   }
@@ -534,7 +537,7 @@ class AuthService {
       ({ user: fbUser } = await createUserWithEmailAndPassword(auth, emailClean, input.password));
     } catch (err) {
       this.registering = false;
-      if (!(err as { code?: string })?.code) console.error('[Firebase Auth] Registration failed:', err);
+      if (!(err as { code?: string })?.code) console.error('[database Auth] Registration failed:', err);
       return { success: false, error: authErrorMessage(err, 'Registration failed. Please try again.') };
     }
 
@@ -559,7 +562,7 @@ class AuthService {
       this.forgetProfile();
       this.currentUser = toCustomerUser(fbUser, { ...profile, ...(identity || {}), ...(customerCode ? { customerCode } : {}) } as ProfileRecord);
     } catch (err) {
-      console.error('[Turso] Customer profile creation failed:', err);
+      console.error('[database] Customer profile creation failed:', err);
       await deleteUser(fbUser).catch(() => signOut(auth));
       this.currentUser = null;
       this.registering = false;
@@ -569,7 +572,7 @@ class AuthService {
 
     this.registering = false;
     // A failed verification email must not fail the registration; it can be resent from the profile.
-    sendEmailVerification(fbUser, emailLinkSettings('/account/profile')).catch((err) => console.warn('[Firebase Auth] Verification email failed:', err));
+    sendEmailVerification(fbUser, emailLinkSettings('/account/profile')).catch((err) => console.warn('[database Auth] Verification email failed:', err));
     this.notifyListeners();
     return { success: true, user: this.currentUser };
   }
@@ -582,7 +585,7 @@ class AuthService {
     try {
       await signOut(auth);
     } catch (err) {
-      console.warn('[Firebase Auth] Logout notice:', err);
+      console.warn('[database Auth] Logout notice:', err);
     }
     this.currentUser = null;
     this.notifyListeners();
@@ -598,15 +601,21 @@ class AuthService {
     const cleanEmail = email.trim().toLowerCase();
     const sent = {
       success: true,
-      message: `If an account exists for ${cleanEmail}, a password reset link is on its way. Please check your inbox and spam folder.`,
+      message: `A password reset link has been sent to ${cleanEmail}. Please check your inbox and spam folder.`,
     };
+    // Only send a link for an email that has an account. If the check cannot be made,
+    // the link is requested anyway (the email provider ignores unknown addresses).
+    const check = await checkAccountDetails({ email: cleanEmail });
+    if (check?.email === 'available') {
+      return { success: false, message: '', error: NO_ACCOUNT_FOR_EMAIL };
+    }
     try {
       await sendPasswordResetEmail(auth, cleanEmail, emailLinkSettings('/login'));
       return sent;
     } catch (err) {
       const code = (err as { code?: string })?.code;
       if (code === 'auth/user-not-found') return sent;
-      if (!code) console.error('[Firebase Auth] Password reset request failed:', err);
+      if (!code) console.error('[database Auth] Password reset request failed:', err);
       return { success: false, message: '', error: authErrorMessage(err, 'Could not send the reset link. Please try again.') };
     }
   }
@@ -731,7 +740,7 @@ class AuthService {
       this.notifyListeners();
       return { success: true, user: this.currentUser };
     } catch (err) {
-      console.error('[Turso] Customer profile update failed:', err);
+      console.error('[database] Customer profile update failed:', err);
       return {
         success: false,
         error: err instanceof Error ? err.message : 'Could not save customer profile changes.',

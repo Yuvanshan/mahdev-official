@@ -42,9 +42,14 @@ export const AdminBookingPaymentsPanel: React.FC<AdminBookingPaymentsPanelProps>
     setAdvanceInput(String(booking.advanceAmount || 0));
   }, [booking.id, booking.advanceAmount]);
 
-  const save = async (changes: { advanceAmount?: number; payments?: BookingPaymentRecord[] }, success: string) => {
+  const save = async (
+    changes: { advanceAmount?: number; payments?: BookingPaymentRecord[] },
+    success: string,
+    customerUpdate: { title: string; message: string }
+  ) => {
     setIsSaving(true);
-    const result = await bookingService.updateBookingPayments(booking.id, changes);
+    // customerUpdate appears in the customer's account Alerts.
+    const result = await bookingService.updateBookingPayments(booking.id, changes, customerUpdate);
     setIsSaving(false);
     if (result.success) {
       notify('success', 'Payments Updated', success);
@@ -61,7 +66,10 @@ export const AdminBookingPaymentsPanel: React.FC<AdminBookingPaymentsPanelProps>
       notify('warning', 'Check the Advance', 'Enter a valid advance amount.');
       return;
     }
-    void save({ advanceAmount: round(value) }, `Advance set to ${formatCurrency(value, currency)}.`);
+    void save({ advanceAmount: round(value) }, `Advance set to ${formatCurrency(value, currency)}.`, {
+      title: 'Advance amount updated',
+      message: `The advance to reserve your date for ${booking.serviceName} is ${formatCurrency(value, currency)}.`,
+    });
   };
 
   const prefill = (kind: BookingPaymentKind, amount: number) => setForm((current) => ({ ...current, kind, amount: String(amount) }));
@@ -86,13 +94,19 @@ export const AdminBookingPaymentsPanel: React.FC<AdminBookingPaymentsPanelProps>
       paidAt: form.paidAt,
       recordedBy,
     };
-    const saved = await save({ payments: [...payments, record] }, `${KIND_LABELS[form.kind]} of ${formatCurrency(amount, currency)} recorded.`);
+    const saved = await save({ payments: [...payments, record] }, `${KIND_LABELS[form.kind]} of ${formatCurrency(amount, currency)} recorded.`, {
+      title: 'Payment received',
+      message: `We received your ${KIND_LABELS[form.kind].toLowerCase()} payment of ${formatCurrency(amount, currency)} for ${booking.serviceName}. Thank you.`,
+    });
     if (saved) setForm((current) => ({ ...current, amount: '', note: '', kind: 'balance' }));
   };
 
   const handleRemove = (record: BookingPaymentRecord) => {
     if (!window.confirm(`Remove the ${KIND_LABELS[record.kind].toLowerCase()} payment of ${formatCurrency(record.amount, currency)}?`)) return;
-    void save({ payments: payments.filter((payment) => payment.id !== record.id) }, 'Payment removed.');
+    void save({ payments: payments.filter((payment) => payment.id !== record.id) }, 'Payment removed.', {
+      title: 'Payment record corrected',
+      message: `A payment of ${formatCurrency(record.amount, currency)} on your booking for ${booking.serviceName} was corrected by our team.`,
+    });
   };
 
   const handleDownload = async () => {

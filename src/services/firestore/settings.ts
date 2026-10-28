@@ -384,7 +384,7 @@ function broadcastUpdate(type: 'company' | 'site' | 'homepage', data: any) {
       );
     }
   } catch (err) {
-    console.warn('[Firestore Settings] Broadcast notification warning:', err);
+    console.warn('[database Settings] Broadcast notification warning:', err);
   }
 }
 
@@ -433,7 +433,7 @@ export const firestoreSettingsService = {
       cachedCompanySettings = { data: defaultSettings, timestamp: now };
       return defaultSettings;
     } catch (err) {
-      console.warn('[Firestore Settings] getCompanySettings fallback to local defaults:', err);
+      console.warn('[database Settings] getCompanySettings fallback to local defaults:', err);
       return cachedCompanySettings?.data || getDefaultCompanySettings();
     }
   },
@@ -513,7 +513,7 @@ export const firestoreSettingsService = {
         }
       },
       (err) => {
-        console.warn('[Firestore Settings] Realtime listener notice:', err);
+        console.warn('[database Settings] Realtime listener notice:', err);
         if (onError) onError(err);
         onData(cachedCompanySettings?.data || getDefaultCompanySettings());
       }
@@ -573,7 +573,7 @@ export const firestoreSettingsService = {
       cachedSiteSettings = { data: defaultSite, timestamp: now };
       return defaultSite;
     } catch (err) {
-      console.warn('[Firestore Settings] getSiteSettings fallback:', err);
+      console.warn('[database Settings] getSiteSettings fallback:', err);
       return cachedSiteSettings?.data || getDefaultSiteSettings();
     }
   },
@@ -651,7 +651,7 @@ export const firestoreSettingsService = {
         }
       },
       (err) => {
-        console.warn('[Firestore Settings] Site settings listener notice:', err);
+        console.warn('[database Settings] Site settings listener notice:', err);
         if (onError) onError(err);
         onData(cachedSiteSettings?.data || getDefaultSiteSettings());
       }
@@ -746,7 +746,7 @@ export const firestoreSettingsService = {
       cachedHomepageSettings = { data: defaultHome, timestamp: now };
       return defaultHome;
     } catch (err) {
-      console.warn('[Firestore Settings] getHomepageSettings fallback:', err);
+      console.warn('[database Settings] getHomepageSettings fallback:', err);
       return localSaved || cachedHomepageSettings?.data || getDefaultHomepageSettings();
     }
   },
@@ -796,7 +796,7 @@ export const firestoreSettingsService = {
     try {
       await setDoc(docRef, writePayload, { merge: true });
     } catch (err) {
-      console.error('[Turso Settings] Homepage update failed:', err);
+      console.error('[database Settings] Homepage update failed:', err);
       throw err;
     }
 
@@ -902,7 +902,7 @@ export const firestoreSettingsService = {
         }
       },
       (err) => {
-        console.warn('[Firestore Settings] Homepage settings listener notice:', err);
+        console.warn('[database Settings] Homepage settings listener notice:', err);
         if (onError) onError(err);
         onData(cachedHomepageSettings?.data || getDefaultHomepageSettings());
       }

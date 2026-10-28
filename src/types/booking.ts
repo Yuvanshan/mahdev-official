@@ -125,6 +125,16 @@ export interface Booking {
   invoiceNumber?: string;
   /** Terms or notes from the admin, shown to the customer and on the invoice. */
   termsNotes?: string;
+  /** Changes made by the admin that the customer sees in their account Alerts. */
+  customerUpdates?: BookingCustomerUpdate[];
+}
+
+export interface BookingCustomerUpdate {
+  id: string;
+  /** ISO time of the change. */
+  at: string;
+  title: string;
+  message: string;
 }
 
 export interface BookingLineItem {

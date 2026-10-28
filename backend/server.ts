@@ -8,8 +8,15 @@ import sitemapHandler from './api/handlers/sitemap.js';
 const app = express();
 const port = Number(process.env.BACKEND_PORT || process.env.PORT || 4000);
 
-app.use(express.json({ limit: '100mb' }));
-app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+// Same cap as the serverless API: large uploads go straight to storage, not through JSON.
+app.use(express.json({
+  limit: '4mb',
+  // Kept for handlers that verify a signature over the exact bytes (WhatsApp webhook).
+  verify: (req, _res, buffer) => {
+    (req as typeof req & { rawBody?: Buffer }).rawBody = buffer;
+  },
+}));
+app.use(express.urlencoded({ extended: true, limit: '4mb' }));
 app.get('/sitemap.xml', (req, res) => {
   void sitemapHandler(req, res);
 });

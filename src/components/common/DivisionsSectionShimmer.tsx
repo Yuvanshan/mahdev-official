@@ -11,7 +11,7 @@ export const DivisionsSectionShimmer: React.FC = () => {
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-semibold">
               <Sparkles className="w-3.5 h-3.5 text-blue-500 animate-spin" />
-              <span>Loading Divisions from Cloud Firestore...</span>
+              <span>Loading Divisions from the database...</span>
             </div>
             <div className="h-9 w-64 sm:w-96 bg-slate-200 rounded-xl" />
             <div className="h-4 w-52 sm:w-80 bg-slate-200/70 rounded-md" />

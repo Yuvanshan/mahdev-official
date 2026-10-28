@@ -129,6 +129,13 @@ export interface Order {
   carrier?: string;
   /** 'design_confirmation' when created from an admin design confirmation link. */
   source?: string;
+  /** Server check of the browser's prices against the catalogue (set when the order is placed). */
+  pricingVerification?: {
+    verified: boolean;
+    verifiedSubtotal: number;
+    clientSubtotal: number | null;
+    mismatches: Array<{ productId: string; reason: string; clientUnitPrice?: number; catalogueUnitPrice?: number }>;
+  };
   designTitle?: string;
   designImages?: string[];
   /** Advance the customer pays to reserve the date (design orders). */

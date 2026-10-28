@@ -1400,7 +1400,7 @@ function AppContent() {
           initial={false}
           onExitComplete={() => window.scrollTo({ top: 0, behavior: 'instant' })}
         >
-          {/* Fade only on first paint; avoid a layout-shifting entrance while Firestore hydrates. */}
+          {/* Fade only on first paint; avoid a layout-shifting entrance while database hydrates. */}
           <motion.div
             key={normalizedPath}
             initial={{ opacity: 0 }}
