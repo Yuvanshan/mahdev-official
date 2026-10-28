@@ -37,6 +37,7 @@ import { Booking, BookingLineItem, BookingLocation, BookingPaymentSlip, BookingT
 import type { CartItem } from '../types/cart';
 import { FirestoreGallery, FirestoreProduct, FirestoreService } from '../types/firestore';
 import { normaliseSriLankaPhone, parseNic } from '../utils/sriLankaIdentity';
+import { startAccountRecovery, verifyAccountRecovery } from '../services/accountRecoveryService';
 import { formatCurrency } from '../utils/currency';
 import {
   divisionIdFromName,
@@ -49,7 +50,6 @@ import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { safeStorage } from '../utils/safeStorage';
 import { useOnlineBookingEnabled } from '../hooks/useOnlineBookingEnabled';
 import { openWhatsAppInquiry } from '../utils/whatsapp';
-import { checkAccountDetails, takenDetailErrors } from '../services/accountCheckService';
 import { BANK_DETAILS } from '../config/company';
 
 interface BookOnlineViewProps {
@@ -223,7 +223,7 @@ function servicePackages(service?: FirestoreService): BookingPackage[] {
 }
 
 export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, onNavigate }) => {
-  const { user, isAuthenticated, isLoading: authLoading, register } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, register, login } = useAuth();
   const { cartItems, appliedCoupon, clearCart } = useCart();
   // The cart is emptied once it is booked; the booked lines stay on screen.
   const [bookedCart, setBookedCart] = useState<CartItem[] | null>(null);
@@ -288,8 +288,11 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
   const [uploadedSlip, setUploadedSlip] = useState<BookingPaymentSlip | null>(null);
   // Set when the booking was saved but its slip upload failed (retry from the success panel).
   const [slipUploadError, setSlipUploadError] = useState<string | null>(null);
-  // Set when registration fails because the email or NIC already has an account.
-  const [accountExists, setAccountExists] = useState(false);
+  const [accountMode, setAccountMode] = useState<'create' | 'login' | 'recover'>('create');
+  const [recoveryIdentifier, setRecoveryIdentifier] = useState('');
+  const [recoveryChallengeId, setRecoveryChallengeId] = useState('');
+  const [recoveryCode, setRecoveryCode] = useState('');
+  const [recoveryMessage, setRecoveryMessage] = useState('');
   // The booking panel; on phones it sits below the item, so errors and the
   // success message are scrolled into view instead of staying off screen.
   const panelRef = useRef<HTMLDivElement>(null);
@@ -362,7 +365,6 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
   const depositPercent = siteSettings?.bookingDepositPercent ?? 30;
   const advanceEstimate = estimatedTotal > 0 ? Math.round((estimatedTotal * depositPercent) / 100) : 0;
   const minDate = tomorrowIso();
-  const loginPath = `/login?redirect=${encodeURIComponent(onlineBookingPath(kind, itemId))}`;
   const addressLabel =
     isProducts
       ? 'Delivery address'
@@ -483,11 +485,10 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
     return () => window.cancelAnimationFrame(frame);
   }, [confirmed, step]);
 
-  /** New customer, step 1: check the details (and that no account exists yet) before payment. */
+  /** New customer, step 1: validate the booking and registration details before payment. */
   const handleNewCustomer = async (event: React.FormEvent) => {
     event.preventDefault();
     setErrorMessage(null);
-    setAccountExists(false);
     const errors = { ...validateBookingDetails(), ...validateNewCustomer() };
     setFieldErrors(errors);
     if (Object.keys(errors).length) {
@@ -497,15 +498,6 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
 
     setIsSubmitting(true);
     try {
-      // Email, phone or NIC that already has an account: ask the customer to sign in instead.
-      const taken = takenDetailErrors(await checkAccountDetails({ email: form.email, phone: form.phone, nic: form.nic }));
-      if (Object.keys(taken).length) {
-        setFieldErrors(taken);
-        setAccountExists(true);
-        setErrorMessage('You already have a Mahdev account. Please sign in to book; your booking details will be kept.');
-        revealProblem();
-        return;
-      }
       goToPayment();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Please try again.');
@@ -527,6 +519,70 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
       return;
     }
     goToPayment();
+  };
+
+  const handleExistingLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setErrorMessage(null);
+    const email = form.email.trim();
+    if (!EMAIL_PATTERN.test(email)) {
+      setFieldErrors({ email: 'Enter the email address used for your account.' });
+      return;
+    }
+    if (!form.password) {
+      setFieldErrors({ password: 'Enter your password.' });
+      return;
+    }
+    setIsSubmitting(true);
+    const result = await login({ email, password: form.password });
+    setIsSubmitting(false);
+    if (!result.success) setErrorMessage(result.error || 'Sign-in failed. Please try again.');
+  };
+
+  const handleStartRecovery = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setErrorMessage(null);
+    setRecoveryMessage('');
+    if (!recoveryIdentifier.trim()) {
+      setErrorMessage('Enter the email, phone number, or NIC from your account.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const result = await startAccountRecovery(recoveryIdentifier);
+      setRecoveryChallengeId(result.challengeId);
+      setRecoveryCode('');
+      setRecoveryMessage(result.message);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Could not start account recovery.');
+      revealProblem();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleVerifyRecovery = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setErrorMessage(null);
+    if (!/^\d{8}$/.test(recoveryCode.trim())) {
+      setErrorMessage('Enter the 8-digit verification code from your email.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const result = await verifyAccountRecovery(recoveryChallengeId, recoveryCode.trim());
+      setForm((current) => ({ ...current, email: result.email, password: '' }));
+      setAccountMode('login');
+      setRecoveryChallengeId('');
+      setRecoveryCode('');
+      setRecoveryMessage('Email verified. Sign in with this account email and your password to continue booking.');
+      setErrorMessage('');
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Could not verify the code.');
+      revealProblem();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   /** Step 2: create the account if needed, save the booking, then attach the slip. */
@@ -559,8 +615,12 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
       if (!registered.success) {
         // Back to the details so the customer can correct them.
         const message = registered.error || 'Could not create your account. Please try again.';
-        setAccountExists(/already|in use|registered|exists/i.test(message));
-        if (/NIC/i.test(message)) setFieldErrors({ nic: message });
+        const possibleExistingAccount = /already|in use|registered|exists/i.test(message);
+        if (possibleExistingAccount) {
+          setAccountMode('recover');
+          setErrorMessage('An account already exists with one or more of those details. Verify your registered email to sign in, or check your details and try again.');
+        } else if (/NIC/i.test(message)) setFieldErrors({ nic: message });
+        else if (/phone|contact/i.test(message)) setFieldErrors({ phone: message });
         else if (/email/i.test(message)) setFieldErrors({ email: message });
         else setErrorMessage(message);
         setStep('details');
@@ -982,98 +1042,191 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
                 )}
               </form>
             ) : (
-              <form onSubmit={handleNewCustomer} noValidate className="space-y-4">
+              <div className="space-y-4">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-wide text-blue-700">Step 1 of 2</p>
                   <h2 className="font-display text-lg font-bold text-slate-900">Book online</h2>
                   <p className="text-xs text-slate-500 mt-1">
-                    Choose your date, then we will create your Mahdev account so you can follow your booking and download your invoice.
+                    Sign in to your account or create one to save and follow your booking.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onNavigate(loginPath)}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-300 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                >
-                  <LogIn className="w-4 h-4" /> I already have an account
-                </button>
-                <AuthAlert tone="error" message={errorMessage} />
-                {bookingFields}
-                <div className="pt-2 border-t border-slate-100">
-                  <h3 className="text-sm font-bold text-slate-900 pt-2">Your details</h3>
+                <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1">
+                  {([
+                    ['create', 'Create account'],
+                    ['login', 'Sign in'],
+                    ['recover', 'Recover account'],
+                  ] as const).map(([mode, label]) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => {
+                        setAccountMode(mode);
+                        setErrorMessage(null);
+                        setRecoveryMessage('');
+                      }}
+                      className={`rounded-lg px-2 py-2 text-xs font-semibold transition-colors ${
+                        accountMode === mode ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
-                <AuthField
-                  label="Full name"
-                  autoComplete="name"
-                  icon={<User className="h-4 w-4" />}
-                  placeholder="As shown on your NIC"
-                  value={form.fullName}
-                  onChange={(e) => update('fullName', e.target.value)}
-                  error={fieldErrors.fullName}
-                />
-                <AuthField
-                  label="NIC number"
-                  icon={<CreditCard className="h-4 w-4" />}
-                  placeholder="951234567V or 199512345678"
-                  autoComplete="off"
-                  maxLength={14}
-                  value={form.nic}
-                  onChange={(e) => update('nic', e.target.value.toUpperCase())}
-                  error={fieldErrors.nic}
-                />
-                <AuthField
-                  label="Contact number (WhatsApp)"
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel"
-                  icon={<Phone className="h-4 w-4" />}
-                  placeholder="077 123 4567"
-                  value={form.phone}
-                  onChange={(e) => update('phone', e.target.value)}
-                  error={fieldErrors.phone}
-                />
-                <AuthField
-                  label="Email address"
-                  type="email"
-                  inputMode="email"
-                  autoComplete="email"
-                  icon={<Mail className="h-4 w-4" />}
-                  placeholder="name@example.com"
-                  value={form.email}
-                  onChange={(e) => update('email', e.target.value)}
-                  error={fieldErrors.email}
-                />
-                {accountExists && (
-                  <button
-                    type="button"
-                    onClick={() => onNavigate(loginPath)}
-                    className="w-full rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm font-semibold py-2.5 hover:bg-amber-100"
-                  >
-                    Sign in to book with your existing account
-                  </button>
+                <AuthAlert tone="error" message={errorMessage} />
+                {recoveryMessage && (
+                  <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
+                    {recoveryMessage}
+                  </p>
                 )}
-                <PasswordField
-                  label="Create a password"
-                  autoComplete="new-password"
-                  placeholder={`${MIN_PASSWORD_LENGTH}+ characters, letters and numbers`}
-                  value={form.password}
-                  onChange={(e) => update('password', e.target.value)}
-                  error={fieldErrors.password}
-                  showStrength
-                />
-                <PasswordField
-                  label="Confirm password"
-                  autoComplete="new-password"
-                  placeholder="Type it again"
-                  value={form.confirmPassword}
-                  onChange={(e) => update('confirmPassword', e.target.value)}
-                  error={fieldErrors.confirmPassword}
-                />
-                <TermsCheckbox checked={form.agreeToTerms} onChange={(checked) => update('agreeToTerms', checked)} error={fieldErrors.agreeToTerms} />
-                <AuthSubmit busy={isSubmitting} busyLabel="Checking your details…">
-                  <ShieldCheck className="h-4 w-4" /> Continue to payment
-                </AuthSubmit>
-              </form>
+                {accountMode === 'create' && (
+                  <form onSubmit={handleNewCustomer} noValidate className="space-y-4">
+                    {bookingFields}
+                    <div className="pt-2 border-t border-slate-100">
+                      <h3 className="text-sm font-bold text-slate-900 pt-2">Your details</h3>
+                    </div>
+                    <AuthField
+                      label="Full name"
+                      autoComplete="name"
+                      icon={<User className="h-4 w-4" />}
+                      placeholder="As shown on your NIC"
+                      value={form.fullName}
+                      onChange={(e) => update('fullName', e.target.value)}
+                      error={fieldErrors.fullName}
+                    />
+                    <AuthField
+                      label="NIC number"
+                      icon={<CreditCard className="h-4 w-4" />}
+                      placeholder="951234567V or 199512345678"
+                      autoComplete="off"
+                      maxLength={14}
+                      value={form.nic}
+                      onChange={(e) => update('nic', e.target.value.toUpperCase())}
+                      error={fieldErrors.nic}
+                    />
+                    <AuthField
+                      label="Contact number (WhatsApp)"
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      icon={<Phone className="h-4 w-4" />}
+                      placeholder="077 123 4567"
+                      value={form.phone}
+                      onChange={(e) => update('phone', e.target.value)}
+                      error={fieldErrors.phone}
+                    />
+                    <AuthField
+                      label="Email address"
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      icon={<Mail className="h-4 w-4" />}
+                      placeholder="name@example.com"
+                      value={form.email}
+                      onChange={(e) => update('email', e.target.value)}
+                      error={fieldErrors.email}
+                    />
+                    <PasswordField
+                      label="Create a password"
+                      autoComplete="new-password"
+                      placeholder={`${MIN_PASSWORD_LENGTH}+ characters, letters and numbers`}
+                      value={form.password}
+                      onChange={(e) => update('password', e.target.value)}
+                      error={fieldErrors.password}
+                      showStrength
+                    />
+                    <PasswordField
+                      label="Confirm password"
+                      autoComplete="new-password"
+                      placeholder="Type it again"
+                      value={form.confirmPassword}
+                      onChange={(e) => update('confirmPassword', e.target.value)}
+                      error={fieldErrors.confirmPassword}
+                    />
+                    <TermsCheckbox checked={form.agreeToTerms} onChange={(checked) => update('agreeToTerms', checked)} error={fieldErrors.agreeToTerms} />
+                    <AuthSubmit busy={isSubmitting} busyLabel="Checking your details…">
+                      <ShieldCheck className="h-4 w-4" /> Continue to payment
+                    </AuthSubmit>
+                  </form>
+                )}
+                {accountMode === 'login' && (
+                  <form onSubmit={handleExistingLogin} noValidate className="space-y-4">
+                    <AuthField
+                      label="Account email"
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      icon={<Mail className="h-4 w-4" />}
+                      placeholder="name@example.com"
+                      value={form.email}
+                      onChange={(e) => update('email', e.target.value)}
+                      error={fieldErrors.email}
+                    />
+                    <PasswordField
+                      label="Password"
+                      autoComplete="current-password"
+                      placeholder="Your password"
+                      value={form.password}
+                      onChange={(e) => update('password', e.target.value)}
+                      error={fieldErrors.password}
+                    />
+                    <button type="button" onClick={() => onNavigate('/forgot-password')} className="text-xs font-semibold text-blue-700 underline-offset-4 hover:underline">
+                      Forgot password?
+                    </button>
+                    <AuthSubmit busy={isSubmitting} busyLabel="Signing in…">
+                      <LogIn className="h-4 w-4" /> Sign in and continue
+                    </AuthSubmit>
+                  </form>
+                )}
+                {accountMode === 'recover' && (
+                  <div className="space-y-4">
+                    <p className="text-xs text-slate-600">
+                      Verify the email, phone number, or NIC on your account. We will email a one-time code to the address registered with that account. The same confirmation is shown whether or not an account matches.
+                    </p>
+                    {!recoveryChallengeId ? (
+                      <form onSubmit={handleStartRecovery} noValidate className="space-y-4">
+                        <AuthField
+                          label="Email, phone number, or NIC"
+                          autoComplete="off"
+                          icon={<ShieldCheck className="h-4 w-4" />}
+                          placeholder="Enter one account detail"
+                          value={recoveryIdentifier}
+                          onChange={(e) => setRecoveryIdentifier(e.target.value)}
+                        />
+                        <AuthSubmit busy={isSubmitting} busyLabel="Checking securely…">
+                          Send verification code
+                        </AuthSubmit>
+                      </form>
+                    ) : (
+                      <form onSubmit={handleVerifyRecovery} noValidate className="space-y-4">
+                        <AuthField
+                          label="8-digit email verification code"
+                          inputMode="numeric"
+                          autoComplete="one-time-code"
+                          maxLength={8}
+                          icon={<ShieldCheck className="h-4 w-4" />}
+                          placeholder="Enter the code"
+                          value={recoveryCode}
+                          onChange={(e) => setRecoveryCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                        />
+                        <AuthSubmit busy={isSubmitting} busyLabel="Verifying code…">
+                          Verify and continue to sign in
+                        </AuthSubmit>
+                        <button
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => {
+                            setRecoveryChallengeId('');
+                            setRecoveryMessage('');
+                          }}
+                          className="w-full text-xs font-semibold text-blue-700 underline-offset-4 hover:underline disabled:opacity-50"
+                        >
+                          Request another code
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </aside>

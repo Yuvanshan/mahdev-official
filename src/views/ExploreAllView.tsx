@@ -10,6 +10,7 @@ import { GallerySectionShimmer } from '../components/common/GallerySectionShimme
 import { ImageWithShimmer } from '../components/ui/ImageWithShimmer';
 import { SectionContainer } from '../components/ui/SectionContainer';
 import { mapFirestoreProductToCatalog } from '../services/catalogService';
+import { analyticsService } from '../services/analyticsService';
 import { CatalogProduct } from '../types/catalog';
 import { FirestoreGallery, FirestoreProduct, FirestoreService } from '../types/firestore';
 import { StartingPriceTag, getServiceStartingPrice, getStartingPrice, getStartingPriceDetails } from '../components/common/StartingPriceTag';
@@ -361,12 +362,41 @@ export const ExploreAllView: React.FC<{
     positionLabel: `${openGalleryIndex + 1} of ${listedGalleryItems.length}`,
   } : undefined;
 
+  useEffect(() => {
+    if (!selectedGalleryItem) return;
+    analyticsService.trackGalleryView({
+      id: selectedGalleryItem.data.id,
+      title: selectedGalleryItem.data.title || 'Gallery project',
+      category: selectedGalleryItem.data.category || selectedGalleryItem.data.tag || 'Gallery',
+      sku: selectedGalleryItem.data.sku,
+      divisionId: String(selectedGalleryItem.data.division || ''),
+    });
+  }, [selectedGalleryItem]);
+
+  const handleSelectProduct = (product: CatalogProduct) => {
+    analyticsService.trackProductView({
+      id: product.id,
+      name: product.name,
+      sku: product.sku,
+      price: product.price,
+      category: product.categoryName,
+    });
+    setSelectedProduct(product);
+  };
+
   const handleSelect = (item: BrowseItem) => {
-    if (item.type === 'service') setSelectedService(item.data);
+    if (item.type === 'service') {
+      analyticsService.trackEvent('service_view', servicePagePath(item.data as unknown as Record<string, unknown>), {
+        serviceId: item.id,
+        serviceName: item.title,
+        category: item.category,
+      }, item.division);
+      setSelectedService(item.data);
+    }
     if (item.type === 'gallery') {
       setSelectedGalleryItem({ data: item.data, images: item.images });
     }
-    if (item.type === 'product') setSelectedProduct(item.data);
+    if (item.type === 'product') handleSelectProduct(item.data);
   };
 
   const isLoading = isServicesLoading || isProductsLoading || isGalleryLoading;
@@ -622,7 +652,7 @@ export const ExploreAllView: React.FC<{
       />
 
       {selectedProduct && (
-        <CatalogProductModal product={selectedProduct} onClose={() => setSelectedProduct(null)} onSelectRelated={setSelectedProduct} />
+        <CatalogProductModal product={selectedProduct} onClose={() => setSelectedProduct(null)} onSelectRelated={handleSelectProduct} />
       )}
 
       {/* Shared full-screen service details (images left, details right; full screen on mobile). */}

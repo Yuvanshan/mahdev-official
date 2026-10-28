@@ -37,10 +37,11 @@ export async function loadMyOrders(user: CustomerUser): Promise<Order[]> {
 }
 
 export async function loadMyBookings(user: CustomerUser): Promise<Booking[]> {
-  const session = bookingService.getBookingsByCustomerEmail(user.email);
   const snapshot = await getDocs(collection(db, 'bookings'));
   const saved = snapshot.docs.map((document) => mapFirestoreBookingToUniversal({ ...document.data(), id: document.id }));
-  return mergeById(saved, session);
+  // A successful server read is authoritative: merging browser copies here can
+  // resurrect a booking that an administrator has deleted.
+  return newestFirst(saved);
 }
 
 const PAYMENT_STATES: PaymentState[] = ['pending', 'processing', 'paid', 'failed', 'cancelled', 'refunded'];
@@ -104,7 +105,9 @@ function saveTabCache() {
 function readTabCache(): typeof accountCache {
   try {
     const saved = JSON.parse(safeStorage.getItem(ACCOUNT_TAB_KEY) || 'null');
-    return saved && typeof saved.uid === 'string' && saved.data ? saved : null;
+    // A page reload may restore stale history, so show it immediately but always
+    // verify it against the server before treating it as current.
+    return saved && typeof saved.uid === 'string' && saved.data ? { ...saved, stale: true } : null;
   } catch {
     return null;
   }

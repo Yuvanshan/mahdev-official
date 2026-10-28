@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Search } from 'lucide-react';
 import { SEOHead } from '../components/layout/SEOHead';
 import { CatalogProductGrid } from '../components/catalog/CatalogProductGrid';
@@ -17,6 +17,7 @@ import { normalizeCode } from '../utils/itemLookup';
 import { deriveLookupSku } from '../utils/whatsapp';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { productSeo } from '../config/itemSeo';
+import { analyticsService } from '../services/analyticsService';
 
 const CATALOG_DIVISION = 'mart';
 
@@ -105,11 +106,31 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     );
   }, [targetSkuOrId, catalogVersion]);
 
+  const trackedInquiredProductId = useRef<string | null>(null);
   useEffect(() => {
-    if (!inquiredProduct) return;
+    if (!inquiredProduct || trackedInquiredProductId.current === inquiredProduct.id) return;
+    trackedInquiredProductId.current = inquiredProduct.id;
     setSelectedProduct(inquiredProduct);
     setShowFullCatalog(false);
+    analyticsService.trackProductView({
+      id: inquiredProduct.id,
+      name: inquiredProduct.name,
+      sku: inquiredProduct.sku,
+      price: inquiredProduct.price,
+      category: inquiredProduct.categoryName,
+    });
   }, [inquiredProduct]);
+
+  const handleSelectProduct = (product: CatalogProduct) => {
+    analyticsService.trackProductView({
+      id: product.id,
+      name: product.name,
+      sku: product.sku,
+      price: product.price,
+      category: product.categoryName,
+    });
+    setSelectedProduct(product);
+  };
 
 
   // Query categories for active filters
@@ -314,7 +335,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
             currentPage={isSingleItemMode ? 1 : paginatedResult.page}
             totalPages={isSingleItemMode ? 1 : paginatedResult.totalPages}
             onPageChange={setCurrentPage}
-            onSelectProduct={setSelectedProduct}
+            onSelectProduct={handleSelectProduct}
             onResetFilters={() => {
               setShowFullCatalog(true);
               handleResetFilters();
@@ -328,7 +349,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
       <CatalogProductModal
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
-        onSelectRelated={(product) => setSelectedProduct(product)}
+        onSelectRelated={handleSelectProduct}
       />
     </div>
   );

@@ -1,4 +1,5 @@
 import { openWhatsAppInquiry, deriveLookupSku } from './whatsapp';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 
 export interface MediaAssetSharePayload {
   id?: string;
@@ -25,7 +26,7 @@ export interface ShareResult {
  * Resolves a direct canonical share URL for a media asset
  */
 export function getMediaAssetShareUrl(asset: MediaAssetSharePayload): string {
-  const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://mahdev.lk';
+  const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : CANONICAL_SITE_ORIGIN;
   if (asset.id && asset.division?.toLowerCase().includes('u1')) {
     return `${origin}/u1?sku=${encodeURIComponent(asset.id)}`;
   }

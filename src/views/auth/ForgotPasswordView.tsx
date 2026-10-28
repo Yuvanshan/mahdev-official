@@ -6,7 +6,6 @@ import { SEOHead } from '../../components/layout/SEOHead';
 import { AuthShell } from '../../components/auth/AuthShell';
 import { AuthAlert, AuthField, AuthSubmit } from '../../components/auth/AuthFields';
 import { checkActionThrottle } from '../../utils/securityProtection';
-import { NO_ACCOUNT_FOR_EMAIL } from '../../services/authService';
 import { CANONICAL_SITE_ORIGIN } from '../../config/site';
 
 interface ForgotPasswordViewProps {
@@ -20,9 +19,6 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({ onNaviga
   const [isLoading, setIsLoading] = useState(false);
   const [sentMessage, setSentMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  // The email has no account: offer to create one instead.
-  const [noAccount, setNoAccount] = useState(false);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -37,7 +33,6 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({ onNaviga
     setIsLoading(true);
     const result = await requestPasswordReset(email);
     setIsLoading(false);
-    setNoAccount(result.error === NO_ACCOUNT_FOR_EMAIL);
     if (result.success) setSentMessage(result.message);
     else setErrorMessage(result.error || 'Could not send the reset link. Please try again.');
   };
@@ -84,15 +79,6 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({ onNaviga
           ) : (
             <motion.form key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onSubmit={handleSubmit} noValidate className="space-y-4">
               <AuthAlert tone="error" message={errorMessage} />
-              {noAccount && (
-                <button
-                  type="button"
-                  onClick={() => onNavigate('/register')}
-                  className="w-full rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm font-semibold py-2.5 hover:bg-amber-100"
-                >
-                  Create an account
-                </button>
-              )}
               <AuthField
                 label="Email address"
                 type="email"
@@ -104,7 +90,6 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({ onNaviga
                 onChange={(e) => {
                   setEmail(e.target.value);
                   setEmailError(null);
-                  setNoAccount(false);
                 }}
                 error={emailError}
                 autoFocus

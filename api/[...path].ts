@@ -18,6 +18,7 @@ import analyticsHandler from '../backend/api/handlers/analytics.js';
 import whatsappWebhookHandler from '../backend/api/handlers/whatsappWebhook.js';
 import orderConfirmationsHandler from '../backend/api/handlers/orderConfirmations.js';
 import accountCheckHandler from '../backend/api/handlers/accountCheck.js';
+import accountRecoveryHandler from '../backend/api/handlers/accountRecovery.js';
 import firebaseAuthProxy from '../backend/api/handlers/firebaseAuthProxy.js';
 import { isFromThisSite } from '../backend/security/sameSite.js';
 import pageShellHandler, { sendNotFoundPage } from '../backend/api/handlers/pageShell.js';
@@ -113,7 +114,7 @@ function isBrowserPageRequest(req: ApiRequest): boolean {
 // Data APIs used only by the website itself.
 // Images under /api/public/media/ stay public so link previews and image search work.
 // '/api/account/check' reveals whether an account exists, so only this site's pages may ask.
-const SITE_ONLY_API_PREFIXES = ['/api/public/snapshot', '/api/database', '/api/data/', '/api/analytics', '/api/account/check'];
+const SITE_ONLY_API_PREFIXES = ['/api/public/snapshot', '/api/database', '/api/data/', '/api/analytics', '/api/account/check', '/api/account/recovery'];
 
 
 export default async function handler(req: ApiRequest, res: ServerResponse): Promise<void> {
@@ -160,6 +161,10 @@ export default async function handler(req: ApiRequest, res: ServerResponse): Pro
   }
   if (pathname === '/api/account/check') {
     await accountCheckHandler(req, res);
+    return;
+  }
+  if (pathname === '/api/account/recovery') {
+    await accountRecoveryHandler(req, res);
     return;
   }
   if (pathname === '/api/contact/submit' || pathname === '/api/inquiries/submit') {

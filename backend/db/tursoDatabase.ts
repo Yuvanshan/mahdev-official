@@ -4,6 +4,7 @@ import type { FirebaseIdentity } from '../auth/firebaseIdToken.js';
 
 const CORE_COLLECTIONS = [
   'admins',
+  'accountRecoveryChallenges',
   'announcements',
   'auditLogs',
   'blog',
@@ -305,6 +306,49 @@ export async function getTursoDocument(
   const row = result.rows[0];
   if (!row) return null;
   return { id: String(row.id), data: JSON.parse(String(row.data)) as Record<string, unknown> };
+}
+
+export async function consumeAccountRecoveryAttempt(
+  id: string,
+  now: string,
+  maxAttempts: number,
+): Promise<TursoDocument | null> {
+  const table = await ensureCollectionTable('accountRecoveryChallenges');
+  const result = await getTursoClient().execute({
+    sql: `UPDATE "${table}"
+      SET data = json_set(data, '$.attempts', CAST(COALESCE(json_extract(data, '$.attempts'), 0) AS INTEGER) + 1),
+          updated_at = CURRENT_TIMESTAMP
+      WHERE parent_path = '' AND id = ?
+        AND COALESCE(json_extract(data, '$.used'), 0) = 0
+        AND json_extract(data, '$.expiresAt') > ?
+        AND CAST(COALESCE(json_extract(data, '$.attempts'), 0) AS INTEGER) < ?
+      RETURNING id, data`,
+    args: [id, now, maxAttempts],
+  });
+  const row = result.rows[0];
+  return row
+    ? { id: String(row.id), data: JSON.parse(String(row.data)) as Record<string, unknown> }
+    : null;
+}
+
+export async function markAccountRecoveryChallengeUsed(id: string): Promise<boolean> {
+  const table = await ensureCollectionTable('accountRecoveryChallenges');
+  const result = await getTursoClient().execute({
+    sql: `UPDATE "${table}"
+      SET data = json_set(data, '$.used', 1), updated_at = CURRENT_TIMESTAMP
+      WHERE parent_path = '' AND id = ? AND COALESCE(json_extract(data, '$.used'), 0) = 0
+      RETURNING id`,
+    args: [id],
+  });
+  return result.rows.length > 0;
+}
+
+export async function pruneExpiredAccountRecoveryChallenges(now: string): Promise<void> {
+  const table = await ensureCollectionTable('accountRecoveryChallenges');
+  await getTursoClient().execute({
+    sql: `DELETE FROM "${table}" WHERE json_extract(data, '$.expiresAt') <= ?`,
+    args: [now],
+  });
 }
 
 /** Atomically increments the named counter in system_metadata and returns the new value. */

@@ -29,6 +29,7 @@ import { cmsService } from './cmsService';
 import { DIVISION_LIST } from '../config/divisions';
 import { trackMarketingEvent } from './marketingAnalytics';
 import { isAdminPortalPath } from '../config/adminRoutes';
+import { trafficSourceLabel } from '../utils/analyticsTraffic';
 
 const MAX_SESSION_EVENTS = 600;
 const CAMPAIGN_ATTRIBUTION_KEY = 'mahdev_utm_attribution';
@@ -294,6 +295,21 @@ class AnalyticsService {
         price: price || 0,
       }, 'mart');
     }
+  }
+
+  public trackGalleryView(item: {
+    id: string;
+    title: string;
+    category?: string;
+    sku?: string;
+    divisionId?: string;
+  }): void {
+    this.trackEvent('gallery_view', '/gallery', {
+      galleryId: item.id,
+      galleryTitle: item.title,
+      category: item.category || 'General',
+      sku: item.sku || '',
+    }, item.divisionId);
   }
 
   public trackAddToCart(
@@ -886,10 +902,7 @@ class AnalyticsService {
       dailyTrends,
       traffic: {
         topPages: aggregateTraffic(pageViewEvents, (event) => event.path, 10),
-        topReferrers: aggregateTraffic(pageViewEvents, (event) =>
-          typeof event.metadata?.referrerHost === 'string' ? event.metadata.referrerHost : 'Unknown',
-          8
-        ),
+        topReferrers: aggregateTraffic(pageViewEvents, (event) => trafficSourceLabel(event.metadata), 8),
         deviceBreakdown: aggregateTraffic(pageViewEvents, (event) =>
           typeof event.metadata?.deviceType === 'string' ? event.metadata.deviceType : 'Unknown',
           3

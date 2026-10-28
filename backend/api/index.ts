@@ -22,6 +22,7 @@ import analyticsHandler from './handlers/analytics.js';
 import whatsappWebhookHandler from './handlers/whatsappWebhook.js';
 import orderConfirmationsHandler from './handlers/orderConfirmations.js';
 import accountCheckHandler from './handlers/accountCheck.js';
+import accountRecoveryHandler from './handlers/accountRecovery.js';
 import { isFromThisSite } from '../security/sameSite.js';
 import adminCustomersHandler from './handlers/admin/customers.js';
 import { sanitizePublicSettingsDocument } from './tursoRoutes.js';
@@ -73,7 +74,7 @@ apiRouter.all(/^\/order-confirmations(\/.*)?$/, async (req: Request, res: Respon
   await orderConfirmationsHandler(req, res);
 });
 
-// Is this email / phone / NIC already registered? (sign-up, Book online, password reset)
+// Legacy account lookup is neutral; recovery requires a verified one-time email code.
 apiRouter.post('/account/check', async (req: Request, res: Response) => {
   // Same as the serverless API: only this website's own pages are answered.
   if (!isFromThisSite(req)) {
@@ -81,6 +82,13 @@ apiRouter.post('/account/check', async (req: Request, res: Response) => {
     return;
   }
   await accountCheckHandler(req, res);
+});
+apiRouter.post('/account/recovery', async (req: Request, res: Response) => {
+  if (!isFromThisSite(req)) {
+    res.status(404).json({ success: false, error: 'Not found.' });
+    return;
+  }
+  await accountRecoveryHandler(req, res);
 });
 
 apiRouter.post('/analytics', (req: Request, res: Response) => {

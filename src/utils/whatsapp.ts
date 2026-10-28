@@ -58,6 +58,22 @@ export interface WhatsAppOrderPayload {
   grandTotal: number;
 }
 
+function addWhatsAppAttribution(rawUrl: string, campaign: string): string {
+  const origin = typeof window !== 'undefined' && window.location.origin
+    ? window.location.origin
+    : 'https://mahdev.lk';
+  try {
+    const url = new URL(rawUrl, origin);
+    if (url.origin !== origin) return rawUrl;
+    url.searchParams.set('utm_source', 'whatsapp');
+    url.searchParams.set('utm_medium', 'messaging');
+    url.searchParams.set('utm_campaign', campaign);
+    return url.toString();
+  } catch {
+    return rawUrl;
+  }
+}
+
 /**
  * Derives a clean, lookup-friendly SKU code from titles when an explicit SKU is omitted
  */
@@ -232,7 +248,10 @@ export function buildWhatsAppMessage(options: WhatsAppInquiryOptions): string {
   }
 
   // Direct Product / Item Web Link
-  const directLink = resolveItemDirectUrl(options, effectiveSku);
+  const directLink = addWhatsAppAttribution(
+    resolveItemDirectUrl(options, effectiveSku),
+    'shared_item_inquiry'
+  );
   if (directLink) {
     lines.push('');
     lines.push(`🔗 *View on Website:* ${directLink}`);
@@ -261,7 +280,7 @@ export function buildWhatsAppOrderMessage(payload: WhatsAppOrderPayload): string
   lines.push('================================');
   if (payload.orderId) {
     lines.push(`🆔 *Order Reference:* \`${payload.orderId}\``);
-    lines.push(`🔗 *View / Track Order:* ${origin}/order/${payload.orderId}`);
+    lines.push(`🔗 *View / Track Order:* ${addWhatsAppAttribution(`${origin}/order/${payload.orderId}`, 'order_tracking')}`);
   }
   lines.push(`👤 *Customer:* ${payload.customerName || 'Valued Customer'}`);
   lines.push(`📞 *Contact Phone:* ${payload.customerPhone || 'Not provided'}`);
@@ -284,11 +303,12 @@ export function buildWhatsAppOrderMessage(payload: WhatsAppOrderPayload): string
           ? `${origin}/mart?product=${encodeURIComponent(item.slug)}`
           : `${origin}/mart?sku=${encodeURIComponent(itemSku)}`
       );
+    const trackedItemUrl = addWhatsAppAttribution(itemDirectUrl, 'shared_order_item');
 
     let line = `${index + 1}. ${skuTag} *${item.name}*` +
       (item.selectedVariant ? ` (${item.selectedVariant})` : '') +
       `\n   • Qty: ${item.quantity} × Rs. ${item.price.toLocaleString()} = *Rs. ${itemTotal}*` +
-      `\n   • Link: ${itemDirectUrl}`;
+      `\n   • Link: ${trackedItemUrl}`;
 
     lines.push(line);
   });

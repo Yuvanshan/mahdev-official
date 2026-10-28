@@ -2,6 +2,7 @@ import { deriveLookupSku } from './whatsapp';
 
 export interface DisplayGalleryItem {
   id: string;
+  recordId?: string;
   sku: string;
   url: string;
   title: string;

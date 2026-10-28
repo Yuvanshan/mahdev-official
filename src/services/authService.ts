@@ -33,7 +33,6 @@ import { Order } from '../types/order';
 import { Booking } from '../types/booking';
 import { normaliseSriLankaPhone, parseNic } from '../utils/sriLankaIdentity';
 import { safeStorage } from '../utils/safeStorage';
-import { checkAccountDetails } from './accountCheckService';
 
 type AuthListener = (user: CustomerUser | null) => void;
 type ProfileRecord = FirestoreUser & Record<string, any>;
@@ -124,9 +123,8 @@ export interface ProfileCompletionInput {
 
 // One message for wrong email and wrong password, so sign-in never reveals which emails have accounts.
 const INVALID_LOGIN_MESSAGE = 'Incorrect email or password. Please try again.';
-/** Shown when a password reset is requested for an email with no account. */
-export const NO_ACCOUNT_FOR_EMAIL = 'There is no Mahdev account for this email. Please check it or create an account.';
-
+const EXISTING_ACCOUNT_MESSAGE =
+  'One or more of these details (email, phone number, or NIC) is already associated with an account. Please sign in or recover access.';
 /** Friendly message for a Firebase Auth error code. */
 function authErrorMessage(error: unknown, fallback: string): string {
   const code = (error as { code?: string } | null)?.code || '';
@@ -139,7 +137,7 @@ function authErrorMessage(error: unknown, fallback: string): string {
     case 'auth/invalid-email':
       return 'Please enter a valid email address.';
     case 'auth/email-already-in-use':
-      return 'An account with this email already exists. Please sign in instead.';
+      return EXISTING_ACCOUNT_MESSAGE;
     case 'auth/weak-password':
       return `Please choose a stronger password (at least ${MIN_PASSWORD_LENGTH} characters).`;
     case 'auth/too-many-requests':
@@ -601,14 +599,8 @@ class AuthService {
     const cleanEmail = email.trim().toLowerCase();
     const sent = {
       success: true,
-      message: `A password reset link has been sent to ${cleanEmail}. Please check your inbox and spam folder.`,
+      message: `If an account exists for ${cleanEmail}, a password reset link has been sent. Please check your inbox and spam folder.`,
     };
-    // Only send a link for an email that has an account. If the check cannot be made,
-    // the link is requested anyway (the email provider ignores unknown addresses).
-    const check = await checkAccountDetails({ email: cleanEmail });
-    if (check?.email === 'available') {
-      return { success: false, message: '', error: NO_ACCOUNT_FOR_EMAIL };
-    }
     try {
       await sendPasswordResetEmail(auth, cleanEmail, emailLinkSettings('/login'));
       return sent;

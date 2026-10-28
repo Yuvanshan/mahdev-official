@@ -25,7 +25,6 @@ import { ageFromDateOfBirth, normaliseNic, normaliseSriLankaPhone, parseNic } fr
 import { CANONICAL_SITE_ORIGIN } from '../../config/site';
 import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton';
 import { postSignInPath } from '../../utils/profileCompletion';
-import { checkAccountDetails, takenDetailErrors } from '../../services/accountCheckService';
 import type { CustomerUser } from '../../types/customer';
 
 interface RegisterViewProps {
@@ -71,7 +70,6 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // Set when the email, phone or NIC already has an account.
   const [accountExists, setAccountExists] = useState(false);
-  const [isChecking, setIsChecking] = useState(false);
 
   // Date of birth and gender read from the NIC as it is typed.
   const nicDetails = useMemo(() => parseNic(formData.nic), [formData.nic]);
@@ -105,16 +103,6 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
     const errors = validateStepOne();
     setFieldErrors(errors);
     if (Object.keys(errors).length) return;
-    // NIC or contact number that already has an account: sign in instead.
-    setIsChecking(true);
-    const taken = takenDetailErrors(await checkAccountDetails({ nic: formData.nic, phone: formData.phone }));
-    setIsChecking(false);
-    if (Object.keys(taken).length) {
-      setFieldErrors(taken);
-      setAccountExists(true);
-      setErrorMessage('You already have a Mahdev account. Please sign in instead.');
-      return;
-    }
     setAccountExists(false);
     setErrorMessage(null);
     setDirection(1);
@@ -147,16 +135,6 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
     }
 
     setIsLoading(true);
-    // Email that already has an account: sign in instead.
-    const taken = takenDetailErrors(await checkAccountDetails({ email: formData.email }));
-    if (taken.email) {
-      setIsLoading(false);
-      setFieldErrors(taken);
-      setAccountExists(true);
-      setErrorMessage('You already have a Mahdev account. Please sign in instead.');
-      return;
-    }
-    setAccountExists(false);
     emailRegistrationStarted.current = true;
     const result = await register({ ...formData });
     setIsLoading(false);
@@ -337,7 +315,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
                   error={fieldErrors.phone}
                   hint="We use this for booking updates and WhatsApp."
                 />
-                <AuthSubmit busy={isChecking} busyLabel="Checking your details…">
+                <AuthSubmit busy={false} busyLabel="Continuing…">
                   Continue <ArrowRight className="h-4 w-4" />
                 </AuthSubmit>
               </motion.form>

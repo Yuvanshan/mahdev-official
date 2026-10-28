@@ -24,6 +24,7 @@ import { ImageWithShimmer } from '../components/ui/ImageWithShimmer';
 import { ServiceDetailsModal, wrapIndex } from '../components/services/ServiceDetailsModal';
 import { StartingPriceTag, getStartingPrice, getStartingPriceDetails } from '../components/common/StartingPriceTag';
 import { getRecordImageAlt } from '../config/imageAlt';
+import { analyticsService } from '../services/analyticsService';
 
 interface GalleryPageViewProps {
   onNavigate: (route: string) => void;
@@ -87,6 +88,7 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
               const itemSku = (item as any).sku || `GAL-${skuPrefix}-${String(itemIdx + 1).padStart(3, '0')}${index > 0 ? `-${index + 1}` : ''}`;
               items.push({
                 id: `${item.id}-${index}`,
+                recordId: item.id,
                 sku: itemSku,
                 url,
                 title: item.title || 'Mahdev Production Showcase',
@@ -113,6 +115,7 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
             const sku = resolveMediaAssetSku(m);
             items.push({
               id: m.id || `med-${idx}`,
+              recordId: m.id || `med-${idx}`,
               sku,
               url: m.url,
               title: m.title,
@@ -161,6 +164,7 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
     if (!url) return null;
     return {
       id: `${bundledRecord.id}-0`,
+      recordId: bundledRecord.id,
       sku: bundledRecord.sku || targetQuery,
       url,
       title: bundledRecord.title || targetTitle,
@@ -176,7 +180,25 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
     if (!inquiredItem) return;
     setActiveItem(inquiredItem);
     setShowFullGallery(false);
+    analyticsService.trackGalleryView({
+      id: inquiredItem.recordId || inquiredItem.id,
+      title: inquiredItem.title,
+      category: inquiredItem.category,
+      sku: inquiredItem.sku,
+      divisionId: inquiredItem.divisionId,
+    });
   }, [inquiredItem]);
+
+  useEffect(() => {
+    if (!activeItem || targetQuery) return;
+    analyticsService.trackGalleryView({
+      id: activeItem.recordId || activeItem.id,
+      title: activeItem.title,
+      category: activeItem.category,
+      sku: activeItem.sku,
+      divisionId: activeItem.divisionId,
+    });
+  }, [activeItem, targetQuery]);
 
   const categories = useMemo<string[]>(() => {
     const set = new Set<string>();

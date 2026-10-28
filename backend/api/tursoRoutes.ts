@@ -505,7 +505,7 @@ async function verifyCustomerIdentityFields(
     if (!existing) {
       const holders = await listTursoDocuments('users', '', [{ field: 'phone', operator: '==', value: phone }], undefined, 2);
       if (holders.some((holder) => holder.id !== identity.uid)) {
-        throw new Error('This contact number is already registered to another account. Please sign in instead.');
+        throw new Error(EXISTING_ACCOUNT_IDENTITY_MESSAGE);
       }
     }
     verified.phone = phone;
@@ -535,7 +535,7 @@ async function verifyCustomerIdentityFields(
   if (!nic) throw new Error('Enter a valid NIC number (e.g. 951234567V or 199512345678).');
   const holders = await listTursoDocuments('users', '', [{ field: 'nic', operator: '==', value: nic.nic }], undefined, 2);
   if (holders.some((holder) => holder.id !== identity.uid)) {
-    throw new Error('This NIC number is already registered to another account. Please sign in or contact us.');
+    throw new Error(EXISTING_ACCOUNT_IDENTITY_MESSAGE);
   }
   return { ...verified, nic: nic.nic, dateOfBirth: nic.dateOfBirth, gender: nic.gender };
 }
@@ -544,6 +544,8 @@ const MAX_PROFILE_TEXT_LENGTH = 200;
 const MAX_AVATAR_URL_LENGTH = 2048;
 const CUSTOMER_PREFERENCE_FLAGS = ['orderNotifications', 'promotionalUpdates', 'smsAlerts', 'twoFactorEnabled'];
 const CUSTOMER_CONTACT_METHODS = new Set(['whatsapp', 'email', 'phone']);
+const EXISTING_ACCOUNT_IDENTITY_MESSAGE =
+  'One or more of these details (email, phone number, or NIC) is already associated with an account. Please sign in or recover access.';
 
 function profileText(value: unknown, label: string, maxLength = MAX_PROFILE_TEXT_LENGTH): string {
   if (value === null || value === undefined) return '';
@@ -766,6 +768,7 @@ async function preparePublicWrite(write: TursoWrite): Promise<TursoWrite> {
       'division_view',
       'product_view',
       'service_view',
+      'gallery_view',
       'add_to_cart',
       'remove_from_cart',
       'checkout_started',
@@ -1213,6 +1216,7 @@ export async function handleTursoAction(
       message.includes('no longer accepting applications') ||
       message.startsWith('A database write batch') ||
       message.includes('cannot be changed:') ||
+      message.startsWith('These details could not be used to create the account.') ||
       message.endsWith('already exists.');
     return {
       status: clientError ? 400 : 500,

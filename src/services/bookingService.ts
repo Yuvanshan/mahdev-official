@@ -250,14 +250,8 @@ class UniversalBookingService {
     if (!Array.isArray(remoteDocs)) return;
     const mapped = remoteDocs.map(mapFirestoreBookingToUniversal);
     const map = new Map<string, Booking>();
-    // Start with existing
-    for (const b of this.bookings) {
-      map.set(b.id, b);
-    }
-    // Remote documents update or add
-    for (const b of mapped) {
-      map.set(b.id, b);
-    }
+    for (const booking of this.bookings) map.set(booking.id, booking);
+    for (const booking of mapped) map.set(booking.id, booking);
     this.bookings = Array.from(map.values()).sort(
       (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
     );
@@ -1042,17 +1036,22 @@ class UniversalBookingService {
 
   public async deleteBooking(id: string): Promise<{ success: boolean; error?: string }> {
     const cleanId = id.trim();
-    const index = this.bookings.findIndex((b) => b.id.toLowerCase() === cleanId.toLowerCase());
-    if (index !== -1) {
-      this.bookings.splice(index, 1);
-      this.saveToStorage();
-      this.notifySubscribers();
-    }
     try {
-      await firestoreBookingsService.deleteBooking(cleanId);
+      const deleted = await firestoreBookingsService.deleteBooking(cleanId);
+      if (!deleted) {
+        return { success: false, error: 'The booking could not be deleted from the database. Please refresh and try again.' };
+      }
     } catch (e) {
       console.warn(`[BookingService] database booking delete error for ${cleanId}:`, e);
+      return {
+        success: false,
+        error: e instanceof Error ? e.message : 'The booking could not be deleted. Please try again.',
+      };
     }
+
+    this.bookings = this.bookings.filter((booking) => booking.id.toLowerCase() !== cleanId.toLowerCase());
+    this.saveToStorage();
+    this.notifySubscribers();
     return { success: true };
   }
 

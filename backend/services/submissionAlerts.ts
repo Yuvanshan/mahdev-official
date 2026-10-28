@@ -10,7 +10,7 @@
 import { getTursoDocument, writeTursoDocument } from '../db/tursoDatabase.js';
 import type { DatabaseAccess } from '../api/tursoRoutes.js';
 import { dispatchServerNotification } from './secureNotificationService.js';
-import { sendCustomerEmail, sendEnquiryEmail } from './emailService.js';
+import { sendAdminAlertEmail, sendCustomerEmail, sendEnquiryEmail } from './emailService.js';
 import { bookingDetailSections, bookingDetailsPdf } from './bookingDetailsPdf.js';
 import { BANK_DETAILS } from '../../src/config/company.js';
 import { CANONICAL_SITE_ORIGIN } from '../../src/config/site.js';
@@ -126,8 +126,8 @@ export async function notifyForVerifiedSubmission(input: unknown, access: Databa
         // The email still goes out with the details table if the PDF fails.
         console.error(`[Submission alerts] Booking PDF for ${recordId} could not be created:`, error);
       }
-      const result = await sendEnquiryEmail({
-        kind: 'Booking',
+      const emailPayload = {
+        kind: 'Booking' as const,
         senderName: customerName,
         senderEmail: customerEmail,
         senderPhone: safeText(customer.phone, '', 32),
@@ -141,8 +141,25 @@ export async function notifyForVerifiedSubmission(input: unknown, access: Databa
         preferredDate: [safeText(data.date || data.bookingDate, '', 40), safeText(data.time || data.bookingTime, '', 60)].filter(Boolean).join(', '),
         budget: formatLkr(data.price),
         receivedAt: new Date().toISOString(),
+      };
+      try {
+        const result = await sendEnquiryEmail(emailPayload);
+        if (result.delivered) return { success: true };
+        console.error(`[Submission alerts] Booking enquiry-style email for ${recordId} was not delivered: ${result.notice}`);
+      } catch (error) {
+        console.error(`[Submission alerts] Booking enquiry-style email for ${recordId} failed:`, error);
+      }
+
+      // Fall back to the admin-alert channel if the shared enquiry-mail route
+      // cannot deliver. This uses the configured admin mailbox and avoids losing
+      // the booking notification when the enquiry recipient is misconfigured.
+      const fallback = await sendAdminAlertEmail({
+        type: 'admin_new_booking',
+        subject: `${isOnlineBooking ? 'New Online Booking' : 'New Booking'}: ${recordId}`,
+        message,
+        data: alertData,
       });
-      return { success: result.delivered, message: result.notice };
+      return { success: fallback.delivered, message: fallback.notice };
     }
     return dispatchServerNotification({
       type,

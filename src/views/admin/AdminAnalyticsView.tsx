@@ -38,6 +38,7 @@ import { firestoreBookingsService } from '../../services/firestore/bookings';
 import { collection, getDocs, limit, orderBy, query, startAfter, type DocumentSnapshot } from '../../lib/tursoFirestore';
 import { db } from '../../lib/firebase';
 import { AnalyticsEvent } from '../../types/analytics';
+import { isWhatsAppTraffic, trafficSourceLabel } from '../../utils/analyticsTraffic';
 
 interface AdminAnalyticsViewProps {
   onNavigateSection: (sectionId: string) => void;
@@ -70,6 +71,27 @@ function summarizeTrafficEvents(
   return [...counts.entries()]
     .map(([label, views]) => ({ label, views }))
     .sort((left, right) => right.views - left.views || left.label.localeCompare(right.label));
+}
+
+function summarizeItemViews(
+  events: AnalyticsEvent[],
+  eventType: AnalyticsEvent['type'],
+  idKey: string,
+  nameKey: string
+): Array<{ label: string; views: number }> {
+  const counts = new Map<string, { label: string; views: number }>();
+  events.filter((event) => event.type === eventType).forEach((event) => {
+    const id = typeof event.metadata?.[idKey] === 'string' ? event.metadata[idKey].trim() : '';
+    const name = typeof event.metadata?.[nameKey] === 'string' ? event.metadata[nameKey].trim() : '';
+    const label = name || id;
+    if (!label) return;
+    const key = id || label;
+    const current = counts.get(key);
+    counts.set(key, { label, views: (current?.views || 0) + 1 });
+  });
+  return [...counts.values()]
+    .sort((left, right) => right.views - left.views || left.label.localeCompare(right.label))
+    .slice(0, 10);
 }
 
 export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
@@ -112,6 +134,23 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
     [filteredTrafficEvents]
   );
 
+  const whatsappPageViews = useMemo(
+    () => trafficPageViews.filter((event) => isWhatsAppTraffic(event.metadata)),
+    [trafficPageViews]
+  );
+  const topViewedProducts = useMemo(
+    () => summarizeItemViews(filteredTrafficEvents, 'product_view', 'productId', 'productName'),
+    [filteredTrafficEvents]
+  );
+  const topViewedServices = useMemo(
+    () => summarizeItemViews(filteredTrafficEvents, 'service_view', 'serviceId', 'serviceName'),
+    [filteredTrafficEvents]
+  );
+  const topViewedGallery = useMemo(
+    () => summarizeItemViews(filteredTrafficEvents, 'gallery_view', 'galleryId', 'galleryTitle'),
+    [filteredTrafficEvents]
+  );
+
   const trafficEventTypes = useMemo(() => {
     const counts = new Map<string, number>();
     filteredTrafficEvents.forEach((event) => counts.set(event.type, (counts.get(event.type) || 0) + 1));
@@ -125,7 +164,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
   const trafficSources = useMemo(
     () => summarizeTrafficEvents(
       trafficPageViews,
-      (event) => String(event.metadata?.referrerHost || 'Unknown')
+      (event) => trafficSourceLabel(event.metadata)
     ),
     [trafficPageViews]
   );
@@ -161,6 +200,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
       event.type,
       event.path,
       event.title || '',
+      trafficSourceLabel(event.metadata),
       event.metadata?.referrerHost || '',
       event.metadata?.deviceType || '',
       event.metadata?.utm_source || '',
@@ -791,12 +831,16 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
 
       {activeTab === 'traffic' && (
         <div className="space-y-6">
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Website traffic summary">
+          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5" aria-label="Website traffic summary">
             {[
               { label: 'Page views', value: trafficPageViews.length.toLocaleString() },
               {
                 label: 'Unique visitors',
                 value: new Set(trafficPageViews.map((event) => event.sessionId)).size.toLocaleString(),
+              },
+              {
+                label: 'WhatsApp visitors',
+                value: new Set(whatsappPageViews.map((event) => event.sessionId)).size.toLocaleString(),
               },
               { label: 'Tracked events', value: filteredTrafficEvents.length.toLocaleString() },
               { label: 'Search visits', value: report.traffic.organicSearchVisits.toLocaleString() },
@@ -807,6 +851,9 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
               </div>
             ))}
           </section>
+          <p className="text-xs text-slate-500">
+            Visitor counts use anonymous browser session IDs, not personal identities. WhatsApp visits are identified from tagged links or available referrers; shares without tags or a browser referrer cannot always be attributed.
+          </p>
 
           {hasMoreEvents && (
             <p className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-blue-900">
@@ -857,6 +904,43 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
                     </table>
                   ) : (
                     <p className="px-5 py-8 text-center text-xs text-slate-400">No data for this period.</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </section>
+
+          <section className="grid gap-4 xl:grid-cols-3" aria-label="Most viewed content">
+            {[
+              { label: 'Most-viewed products', rows: topViewedProducts },
+              { label: 'Most-viewed services', rows: topViewedServices },
+              { label: 'Most-viewed gallery items', rows: topViewedGallery },
+            ].map(({ label, rows }) => (
+              <div key={label} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+                <div className="border-b border-slate-100 px-5 py-4">
+                  <h2 className="text-sm font-bold text-slate-900">{label}</h2>
+                  <p className="mt-1 text-xs text-slate-500">Item detail views in the selected period</p>
+                </div>
+                <div className="max-h-72 overflow-auto">
+                  {rows.length ? (
+                    <table className="w-full text-left text-xs">
+                      <thead className="sticky top-0 bg-slate-50 text-[10px] uppercase tracking-wide text-slate-500">
+                        <tr>
+                          <th className="px-5 py-2 font-semibold">Item</th>
+                          <th className="px-5 py-2 text-right font-semibold">Views</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {rows.map((row) => (
+                          <tr key={row.label}>
+                            <td className="max-w-0 truncate px-5 py-2.5 font-medium text-slate-700" title={row.label}>{row.label}</td>
+                            <td className="whitespace-nowrap px-5 py-2.5 text-right font-bold tabular-nums text-slate-900">{row.views.toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="px-5 py-8 text-center text-xs text-slate-400">No item views for this period.</p>
                   )}
                 </div>
               </div>
@@ -917,7 +1001,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
                           <div className="truncate font-medium text-slate-800" title={event.path}>{event.path}</div>
                           {event.title && <div className="mt-1 truncate text-slate-500" title={event.title}>{event.title}</div>}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">{event.metadata?.referrerHost || '—'}</td>
+                        <td className="px-4 py-3 text-slate-600">{trafficSourceLabel(event.metadata)}</td>
                         <td className="px-4 py-3 capitalize text-slate-600">{event.metadata?.deviceType || '—'}</td>
                         <td className="max-w-48 px-4 py-3 text-slate-600">{campaign || '—'}</td>
                         <td className="px-4 py-3 font-mono text-[10px] text-slate-500">{event.sessionId}</td>
