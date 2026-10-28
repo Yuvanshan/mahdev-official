@@ -371,6 +371,7 @@ export const U1PortfolioSection: React.FC = () => {
         } : null}
         watermarkLabel="U1 STUDIO"
         onClose={() => setActiveLightboxIndex(null)}
+        bookOnline={activeItem ? { kind: 'gallery', id: activeItem.id, price: activeItem.price, divisionId: 'u1' } : undefined}
         itemNavigation={activeLightboxIndex !== null && filteredItems.length > 1 ? {
           onPrevious: () => setActiveLightboxIndex((index) => wrapIndex(index ?? 0, -1, filteredItems.length)),
           onNext: () => setActiveLightboxIndex((index) => wrapIndex(index ?? 0, 1, filteredItems.length)),

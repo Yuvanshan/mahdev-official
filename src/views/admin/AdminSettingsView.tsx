@@ -1949,6 +1949,27 @@ export const AdminSettingsView: React.FC = () => {
                 <p className="mt-1 text-[11px] text-slate-500">Set to 0 to turn off free delivery.</p>
               </div>
             </div>
+
+            <label className="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer">
+              <div>
+                <span className="text-xs font-bold text-slate-800 block">Book online</span>
+                <span className="text-[11px] text-slate-500">
+                  Shows the &quot;Book online&quot; button on services, gallery items and products. When off, visitors use
+                  WhatsApp and the enquiry forms instead.
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={systemSettings.onlineBookingEnabled !== false}
+                onChange={(e) =>
+                  setSystemSettings({
+                    ...systemSettings,
+                    onlineBookingEnabled: e.target.checked,
+                  })
+                }
+                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 shrink-0"
+              />
+            </label>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">

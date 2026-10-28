@@ -30,6 +30,8 @@ import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { DivisionFilterBar, DivisionFilterProvider } from '../components/common/DivisionFilter';
+import { parsePriceText, startOnlineBooking } from '../utils/onlineBooking';
+import { useOnlineBookingEnabled } from '../hooks/useOnlineBookingEnabled';
 
 interface SWSViewProps {
   onNavigate: (route: string) => void;
@@ -47,6 +49,7 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
     loadDivisionData('sws');
   }, [loadDivisionData]);
 
+  const onlineBookingEnabled = useOnlineBookingEnabled();
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [isQuoteMode, setIsQuoteMode] = useState(false);
   const [activeServiceForBooking, setActiveServiceForBooking] = useState<SWSService | null>(null);
@@ -54,6 +57,21 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
   const [activeRentalForBooking, setActiveRentalForBooking] = useState<SWSRentalItem | null>(null);
 
   const handleBookNow = (service?: SWSService) => {
+    // A chosen service is booked online; the general "Book now" keeps the enquiry form.
+    if (service && onlineBookingEnabled) {
+      startOnlineBooking({
+        kind: 'service',
+        id: service.id,
+        title: service.name,
+        images: service.gallery?.length ? service.gallery : [service.imageUrl],
+        description: service.description,
+        divisionId: 'sws',
+        divisionName: 'SWS Event Management',
+        price: service.price ?? parsePriceText(service.startingPrice),
+        features: service.features,
+      }, onNavigate);
+      return;
+    }
     setActiveServiceForBooking(service || null);
     setActivePackageForBooking(null);
     setActiveRentalForBooking(null);
@@ -70,6 +88,21 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
   };
 
   const handleBookRental = (rentalItem?: SWSRentalItem) => {
+    if (rentalItem && onlineBookingEnabled) {
+      // Rentals are booked like products: quantity plus delivery address.
+      startOnlineBooking({
+        kind: 'product',
+        id: rentalItem.id,
+        title: rentalItem.name,
+        images: rentalItem.gallery?.length ? rentalItem.gallery : [rentalItem.imageUrl],
+        description: rentalItem.description,
+        divisionId: 'sws',
+        divisionName: 'SWS Event Management',
+        price: rentalItem.price ?? parsePriceText(rentalItem.dailyRate),
+        features: rentalItem.features,
+      }, onNavigate);
+      return;
+    }
     setActiveRentalForBooking(rentalItem || null);
     setActiveServiceForBooking(null);
     setActivePackageForBooking(null);
@@ -86,11 +119,25 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
   };
 
   const handleBookPackage = (pkg: SWSPackage) => {
-    setActivePackageForBooking(pkg);
-    setActiveServiceForBooking(null);
-    setActiveRentalForBooking(null);
-    setIsQuoteMode(false);
-    setBookingModalOpen(true);
+    if (!onlineBookingEnabled) {
+      setActivePackageForBooking(pkg);
+      setActiveServiceForBooking(null);
+      setActiveRentalForBooking(null);
+      setIsQuoteMode(false);
+      setBookingModalOpen(true);
+      return;
+    }
+    startOnlineBooking({
+      kind: 'service',
+      id: pkg.id,
+      title: pkg.name,
+      images: pkg.images,
+      description: pkg.description,
+      divisionId: 'sws',
+      divisionName: 'SWS Event Management',
+      price: parsePriceText(pkg.price),
+      features: pkg.includedServices,
+    }, onNavigate);
   };
 
   const scrollToAnchor = (id: string) => {

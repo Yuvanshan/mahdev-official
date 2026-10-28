@@ -2,11 +2,13 @@ import React from 'react';
 import { U1Service } from '../../data/u1Data';
 import { ServiceDetailsModal } from '../services/ServiceDetailsModal';
 import { getStartingPriceDetails, getStartingPriceInquiryText } from '../common/StartingPriceTag';
+import { useOnlineBookingEnabled } from '../../hooks/useOnlineBookingEnabled';
 
 interface U1ServiceDetailModalProps {
   service: U1Service | null;
   isOpen: boolean;
   onClose: () => void;
+  /** Used when "Book online" is switched off in the admin. */
   onBookNow: (service: U1Service) => void;
 }
 
@@ -17,6 +19,7 @@ export const U1ServiceDetailModal: React.FC<U1ServiceDetailModalProps> = ({
   onClose,
   onBookNow,
 }) => {
+  const onlineBookingEnabled = useOnlineBookingEnabled();
   const details = isOpen && service
     ? {
         title: service.name,
@@ -37,7 +40,8 @@ export const U1ServiceDetailModal: React.FC<U1ServiceDetailModalProps> = ({
     <ServiceDetailsModal
       service={details}
       onClose={onClose}
-      primaryAction={service ? { label: 'Book Session', onClick: () => onBookNow(service) } : undefined}
+      bookOnline={service ? { kind: 'service', id: service.id, price: service.price, divisionId: 'u1' } : undefined}
+      primaryAction={service && !onlineBookingEnabled ? { label: 'Book Session', onClick: () => onBookNow(service) } : undefined}
       whatsappInquiry={service ? { category: service.category, price: getStartingPriceInquiryText(service.price), description: service.description } : undefined}
     />
   );

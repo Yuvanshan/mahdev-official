@@ -304,6 +304,7 @@ export function getDefaultSiteSettings(): FirestoreSiteSettings {
     faviconUrl: '',
     currencyCode: 'LKR',
     currencySymbol: 'Rs. ',
+    onlineBookingEnabled: true,
     phoneNumbers: [COMPANY_INFO.primaryPhone || '075 092 8078'].filter(Boolean),
     email: COMPANY_INFO.email || 'info@mahdev.lk',
     addresses: [

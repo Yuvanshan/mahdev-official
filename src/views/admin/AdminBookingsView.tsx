@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { OPEN_BOOKING_EVENT, TARGET_BOOKING_KEY } from '../../components/admin/AdminNotificationCenter';
 import {
   Calendar,
   Search,
@@ -50,6 +51,14 @@ export const AdminBookingsView: React.FC = () => {
 
   // Modals & Action States
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  // Booking id chosen from an admin notification, opened once the bookings have loaded.
+  const [targetBookingId, setTargetBookingId] = useState<string | null>(() => sessionStorage.getItem(TARGET_BOOKING_KEY));
+
+  useEffect(() => {
+    const onOpenBooking = () => setTargetBookingId(sessionStorage.getItem(TARGET_BOOKING_KEY));
+    window.addEventListener(OPEN_BOOKING_EVENT, onOpenBooking);
+    return () => window.removeEventListener(OPEN_BOOKING_EVENT, onOpenBooking);
+  }, []);
   const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
@@ -112,6 +121,15 @@ export const AdminBookingsView: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!targetBookingId) return;
+    const target = bookings.find((b) => b.id === targetBookingId);
+    if (!target) return;
+    setSelectedBooking(target);
+    setTargetBookingId(null);
+    sessionStorage.removeItem(TARGET_BOOKING_KEY);
+  }, [targetBookingId, bookings]);
 
   const handleDeleteBooking = async () => {
     if (!bookingToDelete) return;
@@ -546,6 +564,11 @@ export const AdminBookingsView: React.FC = () => {
                     <td className="py-3.5 px-4 max-w-xs">
                       <span className="font-bold text-slate-900 block truncate">{b.serviceName}</span>
                       <span className="text-[11px] text-blue-600 font-semibold">{b.packageName}</span>
+                      {b.source === 'online_booking' && (
+                        <span className="ml-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                          Booked online
+                        </span>
+                      )}
                       <span className="text-[10px] text-slate-400 block uppercase font-mono">{b.divisionName}</span>
                     </td>
                     <td className="py-3.5 px-4 max-w-[160px]">
@@ -723,6 +746,11 @@ export const AdminBookingsView: React.FC = () => {
                     <span className="text-slate-500 block text-[10px]">Service:</span>
                     <span className="font-bold text-slate-900 text-sm block">{selectedBooking.serviceName}</span>
                     <span className="text-[11px] text-blue-600 font-semibold">{selectedBooking.packageName}</span>
+                    {selectedBooking.source === 'online_booking' && (
+                      <span className="ml-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                        Booked online
+                      </span>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
                     <div>

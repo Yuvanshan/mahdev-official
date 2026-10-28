@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { notifyForVerifiedSubmission } from '../services/submissionAlerts.js';
 import {
   checkTursoConnection,
   clearTursoCollection,
@@ -1139,6 +1140,12 @@ export function createTursoRouter(): Router {
       );
       const result = await handleTursoAction(req.body, access);
       res.status(result.status).json(result.body);
+      // Same alert emails as the serverless API, sent after the response.
+      if (result.status === 200 && result.body.success === true) {
+        void notifyForVerifiedSubmission(req.body, access).catch((error: unknown) => {
+          console.error('[Turso API] Verified submission alert failed:', error);
+        });
+      }
     } catch (error) {
       const status = error instanceof AdminSessionAuthError || error instanceof FirebaseTokenError
         ? error.statusCode

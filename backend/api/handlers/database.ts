@@ -7,8 +7,7 @@ import {
   handleTursoAction,
   type DatabaseAccess,
 } from '../tursoRoutes.js';
-import { getTursoDocument } from '../../db/tursoDatabase.js';
-import { dispatchServerNotification } from '../../services/secureNotificationService.js';
+import { notifyForVerifiedSubmission } from '../../services/submissionAlerts.js';
 import { changedPublicUrls, isIndexNowEnabled, submitToIndexNow } from '../../seo/indexNow.js';
 import {
   consumeRateLimit,
@@ -26,75 +25,6 @@ let initialization: Promise<void> | undefined;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
-}
-
-function safeText(value: unknown, fallback: string, maxLength = 160): string {
-  return typeof value === 'string' && value.trim()
-    ? value.trim().replace(/[\r\n]+/g, ' ').slice(0, maxLength)
-    : fallback;
-}
-
-async function notifyForVerifiedSubmission(
-  input: unknown,
-  access: DatabaseAccess
-): Promise<void> {
-  if (access.role === 'admin' || !isRecord(input) || input.action !== 'write' || !isRecord(input.write)) {
-    return;
-  }
-
-  const write = input.write;
-  const collection = write.collection;
-  if (
-    (collection !== 'orders' && collection !== 'bookings') ||
-    write.type !== 'set' ||
-    write.merge === true ||
-    typeof write.id !== 'string'
-  ) {
-    return;
-  }
-
-  const document = await getTursoDocument(collection, '', write.id);
-  if (!document) {
-    console.error(`[Turso API] Created ${collection} record ${write.id} could not be reloaded for its admin alert.`);
-    return;
-  }
-
-  const data = document.data;
-  const customer = isRecord(data.customer) ? data.customer : {};
-  const customerName = safeText(customer.fullName || customer.name, 'Website customer');
-  const recordId = safeText(document.id, 'unknown', 100);
-  const type = collection === 'orders' ? 'admin_new_order' : 'admin_new_booking';
-  const alertData = collection === 'orders'
-    ? {
-        orderId: recordId,
-        customerName,
-        customerEmail: safeText(customer.email || data.customerEmail || data.email, '', 254),
-        total: typeof data.total === 'number' && Number.isFinite(data.total) ? data.total : undefined,
-        currency: safeText(data.currency, '', 12),
-        itemCount: Array.isArray(data.items) ? data.items.length : 0,
-      }
-    : {
-        bookingId: recordId,
-        customerName,
-        customerEmail: safeText(customer.email || data.customerEmail || data.email, '', 254),
-        serviceName: safeText(data.serviceName, 'Service booking'),
-        date: safeText(data.date || data.bookingDate, 'Not specified', 40),
-        time: safeText(data.time || data.bookingTime, 'Not specified', 40),
-      };
-  const message = collection === 'orders'
-    ? `A new order was submitted by ${customerName}. Order reference: ${recordId}.`
-    : `A new booking was submitted by ${customerName} for ${safeText(data.serviceName, 'a service')} on ${safeText(data.date || data.bookingDate, 'a date to be confirmed')}.`;
-  const result = await dispatchServerNotification({
-    type,
-    recipient: { name: 'Mahdev Operations', email: 'admin@mahdev.lk', role: 'admin' },
-    title: collection === 'orders' ? `New Order: ${recordId}` : `New Booking: ${recordId}`,
-    message,
-    data: alertData,
-    channels: ['email'],
-  });
-  if (!result.success) {
-    console.error(`[Turso API] Admin alert for ${collection} record ${recordId} was not delivered: ${result.message}`);
-  }
 }
 
 function ensureDatabaseInitialized(): Promise<void> {

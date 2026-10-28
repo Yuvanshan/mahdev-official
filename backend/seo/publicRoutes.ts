@@ -236,14 +236,14 @@ const ROUTES: RouteSeo[] = [
     path: '/refund-policy',
     title: titleFor('/refund-policy'),
     description: 'Refund and cancellation policy for Mahdev (Pvt) Ltd services and products.',
-    heading: 'Refund policy',
+    heading: 'Refund and cancellation policy',
     intro: 'How refunds and cancellations work.',
   },
   {
     path: '/shipping-policy',
     title: titleFor('/shipping-policy'),
     description: 'Delivery and shipping policy for Mahdev Online Mart orders across Sri Lanka.',
-    heading: 'Shipping policy',
+    heading: 'Shipping and delivery policy',
     intro: 'How and when we deliver your orders.',
   },
   {

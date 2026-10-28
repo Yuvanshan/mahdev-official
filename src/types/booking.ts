@@ -102,8 +102,13 @@ export interface Booking {
   adminNotes?: string;
   rejectionReason?: string;
   cancellationReason?: string;
-  /** 'design_confirmation' when created from an admin design confirmation link. */
+  /**
+   * 'design_confirmation' when created from an admin design confirmation link;
+   * 'online_booking' when the customer used "Book online".
+   */
   source?: string;
+  /** What was booked online: a service, a gallery design or a product. */
+  itemKind?: 'service' | 'gallery' | 'product';
   confirmationId?: string;
   designTitle?: string;
   designImages?: string[];

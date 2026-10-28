@@ -125,6 +125,7 @@ export const TravelsServicesSection: React.FC = () => {
       <ServiceDetailsModal
         service={selectedService ? toServiceDetails(selectedService, 'Mahdev Travels') : null}
         onClose={() => setSelectedService(null)}
+        bookOnline={selectedService?.id ? { kind: 'service', id: String(selectedService.id), price: getServiceStartingPrice(selectedService), divisionId: 'travels' } : undefined}
       />
     </SectionContainer>
   );

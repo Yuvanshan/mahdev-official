@@ -24,11 +24,17 @@ import { notificationService } from '../../services/notificationService';
 import { AppNotification } from '../../types/notification';
 import { firestoreInquiriesService } from '../../services/firestore/inquiries';
 import { firestoreContactsService } from '../../services/firestore/contacts';
+import { firestoreBookingsService } from '../../services/firestore/bookings';
+import { mapFirestoreBookingToUniversal } from '../../services/bookingService';
 import { getAdminPortalPath } from '../../config/adminRoutes';
 
 interface AdminNotificationCenterProps {
   onNavigate?: (path: string) => void;
 }
+
+// Session key the Bookings page reads to open a booking from a notification.
+export const TARGET_BOOKING_KEY = 'mahdev_target_booking_id';
+export const OPEN_BOOKING_EVENT = 'mahdev:admin-open-booking';
 
 export const AdminNotificationCenter: React.FC<AdminNotificationCenterProps> = ({ onNavigate }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -107,12 +113,27 @@ export const AdminNotificationCenter: React.FC<AdminNotificationCenterProps> = (
       processIncomingInquiries();
     });
 
+    // Bookings awaiting review (pending) become notifications, loaded once when the portal opens.
+    let stopped = false;
+    firestoreBookingsService
+      .getAllBookings()
+      .then((docs) => {
+        if (stopped) return;
+        docs
+          .map(mapFirestoreBookingToUniversal)
+          .filter((booking) => booking.status === 'pending')
+          .forEach((booking) => notificationService.notifyAdminBookingReceived(booking));
+      })
+      .catch((error: unknown) => console.error('[Admin Notifications] Could not load bookings:', error));
+
     return () => {
+      stopped = true;
       unsub();
       unsubInquiries();
       unsubContacts();
     };
   }, []);
+
 
   useEffect(() => {
     if (!isOpen) return;
@@ -150,6 +171,12 @@ export const AdminNotificationCenter: React.FC<AdminNotificationCenterProps> = (
       } else if (n.title) {
         sessionStorage.setItem('mahdev_target_inquiry_query', n.title.replace(/🚨|📩|📋|New Inquiry:|RFP Quote Request:/gi, '').trim());
       }
+    }
+
+    // Booking alerts open that booking on the Bookings page.
+    if (n.data?.bookingId) {
+      sessionStorage.setItem(TARGET_BOOKING_KEY, String(n.data.bookingId));
+      window.dispatchEvent(new Event(OPEN_BOOKING_EVENT));
     }
 
     if (onNavigate) {
@@ -270,7 +297,7 @@ export const AdminNotificationCenter: React.FC<AdminNotificationCenterProps> = (
                           <h4 className="text-xs font-bold text-slate-900 truncate">{n.title}</h4>
                           <span className="text-[10px] text-slate-400 whitespace-nowrap flex items-center gap-0.5 shrink-0">
                             <Clock className="w-2.5 h-2.5" />
-                            {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {formatAlertTime(n.createdAt)}
                           </span>
                         </div>
                         <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
@@ -291,6 +318,17 @@ export const AdminNotificationCenter: React.FC<AdminNotificationCenterProps> = (
         </>,
         document.body
       )}
+
     </div>
   );
 };
+
+/** "14:05" for today, otherwise "28 Oct, 14:05". */
+function formatAlertTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return date.toDateString() === new Date().toDateString()
+    ? time
+    : `${date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}, ${time}`;
+}

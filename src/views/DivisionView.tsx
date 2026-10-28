@@ -542,6 +542,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
           ? toServiceDetails(selectedCoreService.record || { title: selectedCoreService.title, description: selectedCoreService.description }, division.shortName)
           : null}
         onClose={() => setSelectedCoreService(null)}
+        bookOnline={selectedCoreService?.record?.id ? { kind: 'service', id: String(selectedCoreService.record.id), price: getServiceStartingPrice(selectedCoreService.record) } : undefined}
         primaryAction={selectedCoreService ? {
           label: 'Enquire about this service',
           onClick: () => {

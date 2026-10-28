@@ -22,11 +22,8 @@ import { Button } from '../components/ui/Button';
 import { ScrollReveal } from '../components/motion/MotionWrappers';
 import { LegalPolicyType } from '../types';
 import { LegalDocument, LegalSection } from '../types/websiteContent';
-import {
-  websiteContentService,
-  DEFAULT_TERMS_CONTENT,
-  DEFAULT_PRIVACY_CONTENT,
-} from '../services/firestore/websiteContent';
+import { websiteContentService } from '../services/firestore/websiteContent';
+import { LegalDocumentId } from '../data/legalDocuments';
 
 interface LegalPageViewProps {
   policyType: LegalPolicyType;
@@ -35,34 +32,49 @@ interface LegalPageViewProps {
 
 const POLICY_METADATA: Record<
   LegalPolicyType,
-  { name: string; route: string; refCode: string; docId?: 'termsAndConditions' | 'privacyPolicy' }
+  { name: string; route: string; refCode: string; docId: LegalDocumentId; seoTitle: string; seoDescription: string }
 > = {
   terms: {
     name: 'Terms & Conditions',
     route: '/terms-and-conditions',
     refCode: 'MDV-LEG-TRM-2026',
     docId: 'termsAndConditions',
+    seoTitle: 'Terms and Conditions | MAHDEV Pvt Ltd',
+    seoDescription:
+      'Terms and Conditions for using the MAHDEV Pvt Ltd website and booking events, studio, IT, travel and Online Mart services.',
   },
   privacy: {
     name: 'Privacy Policy',
     route: '/privacy-policy',
     refCode: 'MDV-LEG-PRV-2026',
     docId: 'privacyPolicy',
+    seoTitle: 'Privacy Policy | MAHDEV Pvt Ltd',
+    seoDescription: 'How MAHDEV Pvt Ltd collects, uses, shares and protects personal information.',
   },
   refund: {
-    name: 'Refund Policy',
+    name: 'Refund & Cancellation',
     route: '/refund-policy',
     refCode: 'MDV-LEG-RFD-2026',
+    docId: 'refundPolicy',
+    seoTitle: 'Refund and Cancellation Policy | MAHDEV Pvt Ltd',
+    seoDescription:
+      'How MAHDEV Pvt Ltd handles cancellations, refunds, returns and replacements across its services and Online Mart.',
   },
   shipping: {
-    name: 'Shipping Policy',
+    name: 'Shipping & Delivery',
     route: '/shipping-policy',
     refCode: 'MDV-LEG-SHP-2026',
+    docId: 'shippingPolicy',
+    seoTitle: 'Shipping and Delivery Policy | MAHDEV Pvt Ltd',
+    seoDescription: 'Delivery and collection arrangements for products sold through MAHDEV Online Mart.',
   },
   cookie: {
     name: 'Cookie Policy',
     route: '/cookie-policy',
     refCode: 'MDV-LEG-CKI-2026',
+    docId: 'cookiePolicy',
+    seoTitle: 'Cookie Policy | MAHDEV Pvt Ltd',
+    seoDescription: 'How MAHDEV Pvt Ltd may use cookies and similar technologies on its website.',
   },
 };
 
@@ -75,7 +87,7 @@ export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavi
   const [copied, setCopied] = useState(false);
 
   const meta = POLICY_METADATA[policyType] || POLICY_METADATA.terms;
-  const docId = meta.docId || (policyType === 'privacy' ? 'privacyPolicy' : 'termsAndConditions');
+  const docId = meta.docId;
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -150,25 +162,13 @@ export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavi
     window.print();
   };
 
-  const seoTitle =
-    policyType === 'privacy'
-      ? 'Privacy Policy | MAHDEV Pvt Ltd'
-      : policyType === 'terms'
-      ? 'Terms and Conditions | MAHDEV Pvt Ltd'
-      : `${meta.name} | MAHDEV Pvt Ltd`;
-
-  const seoDesc =
-    policyType === 'privacy'
-      ? 'Official Privacy Policy and Personal Data Protection guidelines of MAHDEV Pvt Ltd.'
-      : 'Official Terms and Conditions, Commercial Agreement, and Service Governance of MAHDEV Pvt Ltd.';
-
   const currentSections = legalDoc?.sections || [];
 
   return (
     <div className="pt-20 sm:pt-24 pb-20 bg-slate-50 min-h-screen text-slate-900 font-sans">
       <SEOHead
-        title={seoTitle}
-        description={seoDesc}
+        title={meta.seoTitle}
+        description={meta.seoDescription}
         canonicalUrl={`https://mahdev.lk${meta.route}`}
       />
 
@@ -229,7 +229,7 @@ export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavi
 
                 <p className="text-sm sm:text-base text-slate-600 mt-2 font-medium max-w-3xl">
                   {legalDoc?.subtitle ||
-                    'Official governance and transparency agreement of MAHDEV Pvt Ltd.'}
+                    'Website policies and customer terms of MAHDEV Pvt Ltd.'}
                 </p>
 
                 <div className="flex items-center gap-4 text-xs font-mono text-slate-500 mt-4">
@@ -237,7 +237,7 @@ export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavi
                     <Clock className="w-3.5 h-3.5 text-blue-600" />
                     Last Updated:{' '}
                     <strong className="text-slate-800">
-                      {legalDoc?.lastUpdated || 'March 2026'}
+                      {legalDoc?.lastUpdated || '27 October 2026'}
                     </strong>
                   </span>
                   {legalDoc?.effectiveDate && (
@@ -446,6 +446,18 @@ export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavi
                     {/* Paragraphs and styled bullets */}
                     <div className="space-y-3.5 text-sm sm:text-base text-slate-600 leading-relaxed max-w-[72ch]">
                       {sec.content.map((para, pIdx) => {
+                        // "### " marks a sub-heading within the section
+                        if (para.startsWith('### ')) {
+                          return (
+                            <H3
+                              key={pIdx}
+                              className="text-base sm:text-lg font-bold text-slate-900 pt-2"
+                            >
+                              {para.slice(4)}
+                            </H3>
+                          );
+                        }
+
                         const isBullet = para.startsWith('•') || para.startsWith('-');
                         if (isBullet) {
                           return (
@@ -485,10 +497,10 @@ export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavi
               <div className="p-6 bg-slate-100/80 rounded-2xl border border-slate-200 text-xs text-slate-600 space-y-2">
                 <div className="flex items-center gap-2 text-slate-900 font-bold">
                   <ShieldCheck className="w-4 h-4 text-blue-600" />
-                  <span>MAHDEV Pvt Ltd — Corporate Compliance Seal</span>
+                  <span>MAHDEV Pvt Ltd — Website Policies and Customer Terms</span>
                 </div>
                 <p>
-                  This official document is certified by the Executive Board of MAHDEV Pvt Ltd, Colombo and Trincomalee, Sri Lanka. Document Ref: {meta.refCode} • Stored dynamically on Cloud Firestore.
+                  Questions about this document can be sent to info.mahdev.lk@gmail.com or 075 092 8078 / 076 898 8970. Document Ref: {meta.refCode}
                 </p>
               </div>
             </main>

@@ -629,14 +629,7 @@ export const ExploreAllView: React.FC<{
       <ServiceDetailsModal
         service={selectedService ? toServiceDetails(selectedService as unknown as Record<string, any>, selectedService.divisionName) : null}
         onClose={() => setSelectedService(null)}
-        primaryAction={selectedService ? {
-          label: 'Book',
-          onClick: () => {
-            const id = selectedService.id;
-            setSelectedService(null);
-            onNavigate(`/book/service/${id}`);
-          },
-        } : undefined}
+        bookOnline={selectedService ? { kind: 'service', id: selectedService.id, price: getServiceStartingPrice(selectedService) } : undefined}
         actions={selectedService ? [{
           label: 'Full service page',
           onClick: () => {
@@ -662,6 +655,7 @@ export const ExploreAllView: React.FC<{
           ...getStartingPriceDetails(selectedGalleryItem.data.price),
         } : null}
         onClose={() => setSelectedGalleryItem(null)}
+        bookOnline={selectedGalleryItem ? { kind: 'gallery', id: selectedGalleryItem.data.id, price: selectedGalleryItem.data.price } : undefined}
         itemNavigation={galleryNavigation}
         whatsappInquiry={selectedGalleryItem ? {
           category: selectedGalleryItem.data.category || selectedGalleryItem.data.tag,

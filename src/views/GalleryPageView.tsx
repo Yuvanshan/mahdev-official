@@ -22,7 +22,7 @@ import { InquiryItemNotFound } from '../components/common/InquiryItemNotFound';
 import { getDefaultGallery } from '../services/firestore/gallery';
 import { ImageWithShimmer } from '../components/ui/ImageWithShimmer';
 import { ServiceDetailsModal, wrapIndex } from '../components/services/ServiceDetailsModal';
-import { StartingPriceTag, getStartingPriceDetails } from '../components/common/StartingPriceTag';
+import { StartingPriceTag, getStartingPrice, getStartingPriceDetails } from '../components/common/StartingPriceTag';
 import { getRecordImageAlt } from '../config/imageAlt';
 
 interface GalleryPageViewProps {
@@ -401,6 +401,7 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
           ...getStartingPriceDetails(activeItem.price),
         } : null}
         onClose={() => setActiveItem(null)}
+        bookOnline={activeItem ? { kind: 'gallery', id: activeItem.id, price: getStartingPrice(activeItem.price), sku: activeItem.sku } : undefined}
         itemNavigation={(() => {
           const index = activeItem ? filteredItems.findIndex((item) => item.id === activeItem.id) : -1;
           if (index < 0 || filteredItems.length < 2) return undefined;

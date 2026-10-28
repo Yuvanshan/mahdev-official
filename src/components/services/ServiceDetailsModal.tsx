@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, MessageCircle, Truck, X } from 'lucide-react';
+import { ArrowRight, CalendarCheck, CheckCircle2, ChevronLeft, ChevronRight, MessageCircle, Truck, X } from 'lucide-react';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 import { ImageWatermark } from '../common/ImageWatermark';
 import { getWhatsAppInquiryUrl, type WhatsAppInquiryOptions } from '../../utils/whatsapp';
 import { getServiceStartingPrice, getStartingPriceDetails } from '../common/StartingPriceTag';
 import { getImageAlt } from '../../config/imageAlt';
+import { divisionIdFromName, startOnlineBooking, type OnlineBookingKind } from '../../utils/onlineBooking';
+import { useOnlineBookingEnabled } from '../../hooks/useOnlineBookingEnabled';
 
 export interface ServiceDetails {
   title: string;
@@ -51,6 +53,15 @@ interface ServiceDetailsModalProps {
     /** e.g. "3 of 126" */
     positionLabel?: string;
   };
+  /** Shows a "Book online" button that opens the online booking page for this item. */
+  bookOnline?: {
+    kind: OnlineBookingKind;
+    id: string;
+    /** Numeric starting/unit price in LKR, when known. */
+    price?: number | null;
+    divisionId?: string;
+    sku?: string;
+  };
 }
 
 /** Index after moving `delta` steps through `length` items, wrapping at both ends. */
@@ -80,8 +91,10 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
   initialImageIndex = 0,
   watermarkLabel,
   itemNavigation,
+  bookOnline,
 }) => {
   const [imageIndex, setImageIndex] = useState(0);
+  const onlineBookingEnabled = useOnlineBookingEnabled();
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const images = service ? service.images.filter(Boolean) : [];
   // Pages pass a new `service` object on every render, so reset the photo only when the
@@ -289,6 +302,31 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
           </div>
 
           <div className="flex flex-col gap-2 border-t border-slate-200 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-5">
+            {bookOnline && onlineBookingEnabled && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  startOnlineBooking({
+                    kind: bookOnline.kind,
+                    id: bookOnline.id,
+                    title: service.title,
+                    // The photo on screen first, so the booking page opens on the same image.
+                    images: [images[imageIndex], ...images.filter((_, index) => index !== imageIndex)],
+                    description: service.description,
+                    divisionId: bookOnline.divisionId || divisionIdFromName(service.divisionName),
+                    divisionName: service.divisionName,
+                    price: bookOnline.price,
+                    priceLabel: service.priceLabel,
+                    sku: bookOnline.sku,
+                    features: service.features,
+                  });
+                }}
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#0052FF] px-5 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                <CalendarCheck className="h-4 w-4" aria-hidden="true" /> Book online
+              </button>
+            )}
             <a
               href={whatsappHref}
               target="_blank"

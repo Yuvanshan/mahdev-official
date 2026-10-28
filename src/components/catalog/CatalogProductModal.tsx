@@ -28,6 +28,8 @@ import { CatalogProduct, ProductVariantOption } from '../../types/catalog';
 import { catalogService } from '../../services/catalogService';
 import { useCart } from '../../context/CartContext';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
+import { startOnlineBooking } from '../../utils/onlineBooking';
+import { useOnlineBookingEnabled } from '../../hooks/useOnlineBookingEnabled';
 import { formatCurrency } from '../../utils/currency';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 import { getImageAltForPhoto, getRecordImageAlt } from '../../config/imageAlt';
@@ -65,6 +67,7 @@ const CatalogProductModalContent: React.FC<
   );
   const [quantity, setQuantity] = useState(1);
   const [actionSuccess, setActionSuccess] = useState(false);
+  const onlineBookingEnabled = useOnlineBookingEnabled();
 
   const relatedProducts = catalogService.getRelatedProducts(product, 3);
 
@@ -310,6 +313,30 @@ const CatalogProductModalContent: React.FC<
                     </button>
                   </div>
 
+                  {/* Book online: choose a date and delivery address, then confirm */}
+                  {onlineBookingEnabled && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      startOnlineBooking({
+                        kind: 'product',
+                        id: product.id,
+                        title: product.name,
+                        images: [...(product.gallery || []), product.imageUrl],
+                        description: product.shortDescription || product.description,
+                        divisionId: product.divisionId,
+                        price: product.price,
+                        sku: product.sku,
+                      });
+                    }}
+                    className="w-full py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-[#0052FF] text-[#0052FF] bg-white hover:bg-blue-50 transition-colors cursor-pointer"
+                  >
+                    <Calendar className="w-4 h-4 shrink-0" />
+                    <span>Book online</span>
+                  </button>
+                  )}
+
                   {/* Direct WhatsApp Instant Inquiry */}
                   <button
                     type="button"
@@ -331,15 +358,6 @@ const CatalogProductModalContent: React.FC<
                     <span>Inquire via WhatsApp</span>
                   </button>
 
-                  {['bookable_service', 'package', 'service'].includes(product.productType) && (
-                    <a
-                      href={`/book?division=${product.divisionId || (product as any).division}`}
-                      className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-center flex items-center justify-center gap-1.5 border border-amber-500/40 bg-amber-50 text-amber-900 hover:bg-amber-100 transition-colors"
-                    >
-                      <Calendar className="w-3.5 h-3.5 text-amber-700" />
-                      <span>Book via Universal Reservation Engine</span>
-                    </a>
-                  )}
                 </div>
               </div>
             </div>

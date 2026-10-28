@@ -59,15 +59,15 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath }) => {
     e.preventDefault();
     const legalContentMap: Record<string, string> = {
       'Privacy Policy':
-        `${companyName} values your privacy. This policy outlines how we collect, safeguard, and use information across our parent enterprise and all child divisions (SWS Event Management, U1 Studio, IT & Solutions, Mahdev Travels, and Mahdev Online Mart). We never sell your personal data.`,
+        `${companyName} respects your privacy. This policy explains what personal information we collect, why we collect it, how we use and protect it, and when we share it across SWS Event Management, U1 Studio, MAHDEV IT & Solutions, MAHDEV Travels and MAHDEV Online Mart. We do not sell customers' personal information as a business practice.`,
       'Terms & Conditions':
-        `By utilizing ${companyName} digital services, consulting divisions, or commercial portals, you agree to our standard terms of service, intellectual property standards, and lawful engagement guidelines.`,
+        `By accessing the ${companyName} website, requesting a quotation, placing an order or confirming a booking, you agree to the terms applicable to the relevant transaction.`,
       'Refund Policy':
-        'Service cancellations and commercial product returns adhere to division-specific terms. Event management and studio productions follow staged milestone retainer agreements, while e-commerce orders qualify for standard 7-day verified returns.',
+        'Cancellations, refunds, returns and replacements are assessed under division-specific rules, the agreed booking terms and applicable law. We aim to process approved refunds within 14 business days.',
       'Shipping Policy':
-        'Mahdev Online Mart provides tracked express delivery across Sri Lanka and priority international freight for authorized enterprise hardware procurements.',
+        'MAHDEV Online Mart delivery and collection options, charges and estimated timeframes are communicated before an order is confirmed.',
       'Cookie Policy':
-        'We use minimal, privacy-first functional cookies to optimize site performance, secure your sessions, and maintain division navigation preferences.',
+        'Our website may use essential cookies and similar technologies for functionality, security, preferences and sessions. Where required by law, non-essential cookies are subject to consent.',
     };
 
     setActiveLegalModal({

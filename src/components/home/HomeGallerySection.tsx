@@ -251,6 +251,7 @@ export const HomeGallerySection: React.FC = () => {
         } : null}
         initialImageIndex={activeImage?.imageIndex}
         onClose={() => setActiveImage(null)}
+        bookOnline={activeImage ? { kind: 'gallery', id: activeImage.item.id, price: activeImage.item.price } : undefined}
         itemNavigation={(() => {
           // Previous/Next move through the gallery items currently shown.
           const index = activeImage ? displayedItems.findIndex((item) => item.id === activeImage.item.id) : -1;

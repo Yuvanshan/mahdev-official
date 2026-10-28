@@ -248,6 +248,7 @@ export const SWSGallerySection: React.FC = () => {
         } : null}
         watermarkLabel="SWS EVENT MANAGEMENT"
         onClose={() => setActiveLightboxIndex(null)}
+        bookOnline={activeItem ? { kind: 'gallery', id: activeItem.id, price: activeItem.price, divisionId: 'sws' } : undefined}
         itemNavigation={activeLightboxIndex !== null && filteredItems.length > 1 ? {
           onPrevious: () => setActiveLightboxIndex((index) => wrapIndex(index ?? 0, -1, filteredItems.length)),
           onNext: () => setActiveLightboxIndex((index) => wrapIndex(index ?? 0, 1, filteredItems.length)),

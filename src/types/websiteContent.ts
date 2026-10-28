@@ -125,6 +125,11 @@ export interface LegalDocument {
   sections: LegalSection[];
   draftSections?: LegalSection[];
   hasUnpublishedChanges?: boolean;
+  /** Matches LEGAL_CONTENT_REVISION when the stored text supersedes the defaults. */
+  contentRevision?: string;
+  draftRevision?: string;
+  draftTitle?: string;
+  draftSubtitle?: string;
   createdAt?: string;
   updatedAt?: string;
   publishedAt?: string;

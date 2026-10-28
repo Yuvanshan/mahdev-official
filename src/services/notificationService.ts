@@ -405,6 +405,42 @@ class NotificationService {
     );
   }
 
+  /**
+   * Admin alert for a booking awaiting review, built from the saved booking so it
+   * shows in every admin's portal. One alert per booking; read state is remembered.
+   */
+  public notifyAdminBookingReceived(booking: Booking): boolean {
+    const id = `admin-booking-${booking.id}`;
+    if (this.notifications.some((notification) => notification.id === id)) return false;
+    const readAt = this.getAdminReadReceipts()[id] || null;
+    const isOnline = booking.source === 'online_booking';
+    const when = booking.date
+      ? new Date(`${booking.date.slice(0, 10)}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+      : 'a date to be confirmed';
+    this.notifications.unshift({
+      id,
+      type: 'admin_new_booking',
+      recipient: { name: 'Mahdev Administration', role: 'admin' },
+      title: `${isOnline ? 'New online booking' : 'New booking'}: ${booking.serviceName}`,
+      message: `${booking.customer.fullName} booked for ${when}${booking.price > 0 ? ` (${formatCurrency(booking.price)})` : ''}. Reference ${booking.id}.`,
+      status: readAt ? 'read' : 'sent',
+      readAt,
+      createdAt: booking.createdAt || new Date().toISOString(),
+      data: {
+        bookingId: booking.id,
+        customerName: booking.customer.fullName,
+        phone: booking.customer.phone,
+      },
+      channels: ['in_app'],
+      actionUrl: getAdminPortalPath('bookings'),
+    });
+    // Newest first, whatever order the alerts arrived in.
+    this.notifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    this.notifications.splice(100);
+    this.notifyStateChanged();
+    return !readAt;
+  }
+
   public notifyAdminInquiryReceived(inquiry: {
     id: string;
     name: string;

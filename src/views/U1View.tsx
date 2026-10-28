@@ -29,6 +29,8 @@ import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { DivisionFilterBar, DivisionFilterProvider } from '../components/common/DivisionFilter';
+import { parsePriceText, startOnlineBooking } from '../utils/onlineBooking';
+import { useOnlineBookingEnabled } from '../hooks/useOnlineBookingEnabled';
 
 interface U1ViewProps {
   onNavigate: (route: string) => void;
@@ -46,20 +48,51 @@ export const U1View: React.FC<U1ViewProps> = ({ onNavigate }) => {
     loadDivisionData('u1');
   }, [loadDivisionData]);
 
+  const onlineBookingEnabled = useOnlineBookingEnabled();
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [activeServiceForBooking, setActiveServiceForBooking] = useState<U1Service | null>(null);
   const [activePackageForBooking, setActivePackageForBooking] = useState<U1Package | null>(null);
 
+  // Chosen services and packages are booked online when it is switched on in the admin;
+  // otherwise the U1 booking pop-up opens as before.
   const handleBookService = (service: U1Service) => {
-    setActiveServiceForBooking(service);
-    setActivePackageForBooking(null);
-    setBookingModalOpen(true);
+    if (!onlineBookingEnabled) {
+      setActiveServiceForBooking(service);
+      setActivePackageForBooking(null);
+      setBookingModalOpen(true);
+      return;
+    }
+    startOnlineBooking({
+      kind: 'service',
+      id: service.id,
+      title: service.name,
+      images: service.gallery?.length ? service.gallery : [service.imageUrl],
+      description: service.description,
+      divisionId: 'u1',
+      divisionName: 'U1 Studio',
+      price: service.price ?? parsePriceText(service.startingPrice),
+      features: service.deliverables,
+    }, onNavigate);
   };
 
   const handleBookPackage = (pkg: U1Package) => {
-    setActivePackageForBooking(pkg);
-    setActiveServiceForBooking(null);
-    setBookingModalOpen(true);
+    if (!onlineBookingEnabled) {
+      setActivePackageForBooking(pkg);
+      setActiveServiceForBooking(null);
+      setBookingModalOpen(true);
+      return;
+    }
+    startOnlineBooking({
+      kind: 'service',
+      id: pkg.id,
+      title: pkg.name,
+      images: pkg.gallery?.length ? pkg.gallery : [pkg.imageUrl],
+      description: pkg.description,
+      divisionId: 'u1',
+      divisionName: 'U1 Studio',
+      price: parsePriceText(pkg.price),
+      features: pkg.deliverables,
+    }, onNavigate);
   };
 
   const scrollToAnchor = (id: string) => {

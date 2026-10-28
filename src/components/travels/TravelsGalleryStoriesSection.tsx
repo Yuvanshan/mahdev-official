@@ -26,6 +26,7 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
       );
       if (travelGal.length > 0) {
         return travelGal.map((g) => ({
+          id: g.id,
           src: (g as any).imageUrl || (g as any).url || '',
           title: g.title,
           location: (g as any).location || 'Sri Lanka',
@@ -202,6 +203,7 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
               ...getStartingPriceDetails(activeImg?.price),
             } : null}
             onClose={() => setLightboxImage(null)}
+            bookOnline={activeImg ? { kind: 'gallery', id: activeImg.id, price: activeImg.price, divisionId: 'travels' } : undefined}
             itemNavigation={(() => {
               const index = lightboxImage ? filteredImages.findIndex((g) => g.src === lightboxImage) : -1;
               if (index < 0 || filteredImages.length < 2) return undefined;

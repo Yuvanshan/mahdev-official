@@ -20,6 +20,7 @@ import { catalogService } from './services/catalogService';
 import { canonicalizeDivisionRoute } from './services/firestore/divisions';
 import { getPageTitle } from './config/pageTitles';
 import { SITE_NAME } from './config/site';
+import type { OnlineBookingKind } from './utils/onlineBooking';
 import {
   ADMIN_PORTAL_PATH,
   canonicalizeAdminPath,
@@ -196,6 +197,7 @@ const BookingView = lazy(() => import('./views/BookingView').then((module) => ({
 const CheckoutView = lazy(() => import('./views/CheckoutView').then((module) => ({ default: module.CheckoutView })));
 const OrderConfirmationView = lazy(() => import('./views/OrderConfirmationView').then((module) => ({ default: module.OrderConfirmationView })));
 const ConfirmOrderView = lazy(() => import('./views/ConfirmOrderView').then((module) => ({ default: module.ConfirmOrderView })));
+const BookOnlineView = lazy(() => import('./views/BookOnlineView').then((module) => ({ default: module.BookOnlineView })));
 const OrderLookupView = lazy(() => import('./views/OrderLookupView').then((module) => ({ default: module.OrderLookupView })));
 const AboutView = lazy(() => import('./views/AboutView').then((module) => ({ default: module.AboutView })));
 const PortfolioView = lazy(() => import('./views/PortfolioView').then((module) => ({ default: module.PortfolioView })));
@@ -378,7 +380,7 @@ function AppContent() {
         'admin-yuvan1709',
         'sws', 'u1', 'it', 'travels', 'mart',
         'sws-events', 'sws-event-management', 'u1-studio', 'it-solutions', 'mahdev-travels', 'online-mart',
-        'about', 'about-us', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'catalog', 'track-order', 'order', 'orders', 'promotion', 'promotions', 'terms-and-conditions', 'privacy-policy'
+        'about', 'about-us', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'catalog', 'track-order', 'order', 'orders', 'promotion', 'promotions', 'terms-and-conditions', 'privacy-policy', 'refund-policy', 'shipping-policy', 'cookie-policy'
       ];
       if (
         directHashRoutes.includes(cleanHash) ||
@@ -1238,30 +1240,36 @@ function AppContent() {
       );
     }
 
-    if (normalizedPath === '/book' || normalizedPath.startsWith('/book/')) {
-      const parts = normalizedPath.split('/').filter(Boolean);
-      let initialDivision: string | undefined;
-      let initialServiceId: string | undefined;
-
-      if (parts[1] === 'service' && parts[2]) {
-        const srvId = parts[2];
-        const found = services.find((s) => s.id === srvId || s.slug === srvId);
-        if (found) {
-          initialServiceId = found.id;
-          initialDivision = typeof found.division === 'string' ? found.division : undefined;
-        } else {
-          initialServiceId = srvId;
-        }
-      } else if (parts[1]) {
-        initialDivision = parts[1];
+    // "Book online" for one item: /book/service/{id}, /book/gallery/{id}, /book/product/{id}
+    const onlineBookingMatch = basePath.match(/^\/+book\/(service|gallery|product)\/([^/]+)/i);
+    if (onlineBookingMatch) {
+      // Read the id from the original path: route normalising lowercases, and ids can be mixed case.
+      const kind = onlineBookingMatch[1].toLowerCase() as OnlineBookingKind;
+      const itemId = decodeURIComponent(onlineBookingMatch[2]);
+      // "Book online" switched off in the admin: services use the general booking wizard as before.
+      if (siteSettings?.onlineBookingEnabled === false && kind === 'service') {
+        const found = services.find((s) => s.id === itemId || s.slug === itemId);
+        return (
+          <BookingView
+            initialServiceId={found?.id || itemId}
+            initialDivision={found && typeof found.division === 'string' ? found.division : undefined}
+          />
+        );
       }
-
       return (
-        <BookingView
-          initialDivision={initialDivision}
-          initialServiceId={initialServiceId}
+        <BookOnlineView
+          key={`${kind}/${onlineBookingMatch[2]}`}
+          kind={kind}
+          itemId={itemId}
+          onNavigate={navigate}
         />
       );
+    }
+
+    // General booking wizard: /book and /book/{division}
+    if (normalizedPath === '/book' || normalizedPath.startsWith('/book/')) {
+      const parts = normalizedPath.split('/').filter(Boolean);
+      return <BookingView initialDivision={parts[1]} />;
     }
 
     if (divisionKey) {

@@ -81,6 +81,7 @@ export function mapFirestoreBookingToUniversal(fb: any): Booking {
     cancellationReason: fb.cancellationReason,
     rejectionReason: fb.rejectionReason,
     source: fb.source,
+    itemKind: fb.itemKind,
     confirmationId: fb.confirmationId,
     designTitle: fb.designTitle,
     designImages: Array.isArray(fb.designImages) ? fb.designImages : undefined,
@@ -454,6 +455,35 @@ class UniversalBookingService {
     notificationService.notifyBookingConfirmation(newBooking).catch(() => {});
 
     return { success: true, booking: newBooking };
+  }
+
+  /**
+   * Saves a booking request made with "Book online". Unlike createBooking(), it
+   * waits for the database so the customer sees an error if saving fails, and
+   * picks a new reference if the generated one is already taken.
+   */
+  public async submitOnlineBooking(draft: Omit<Booking, 'id'>): Promise<Booking> {
+    const MAX_ATTEMPTS = 3;
+    for (let attempt = 1; ; attempt++) {
+      const booking: Booking = {
+        ...draft,
+        id: `BK-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`,
+      };
+      try {
+        await firestoreBookingsService.createBooking(booking as any);
+      } catch (err) {
+        const taken = err instanceof Error && /already exists/i.test(err.message);
+        if (taken && attempt < MAX_ATTEMPTS) continue;
+        throw err;
+      }
+
+      this.bookings = [booking, ...this.bookings];
+      this.saveToStorage();
+      this.notifySubscribers();
+      // Alert the team; the customer hears back once the booking is reviewed.
+      notificationService.notifyAdminNewBooking(booking).catch(() => {});
+      return booking;
+    }
   }
 
   // ----------------------------------------------------

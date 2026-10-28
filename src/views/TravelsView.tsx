@@ -31,6 +31,8 @@ import { DIVISION_SEO } from '../config/divisionSeo';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
+import { parsePriceText, startOnlineBooking } from '../utils/onlineBooking';
+import { useOnlineBookingEnabled } from '../hooks/useOnlineBookingEnabled';
 
 interface TravelsViewProps {
   onNavigate: (route: string) => void;
@@ -45,6 +47,7 @@ export const TravelsView: React.FC<TravelsViewProps> = ({ onNavigate }) => {
   }, [loadDivisionData]);
 
   const [selectedPackageForDetail, setSelectedPackageForDetail] = useState<TravelPackage | null>(null);
+  const onlineBookingEnabled = useOnlineBookingEnabled();
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [bookingPackage, setBookingPackage] = useState<TravelPackage | null>(null);
   const [bookingTour, setBookingTour] = useState<DayTour | null>(null);
@@ -55,6 +58,18 @@ export const TravelsView: React.FC<TravelsViewProps> = ({ onNavigate }) => {
     tour?: DayTour | null,
     vehicle?: Vehicle | null
   ) => {
+    // A chosen package, tour or vehicle is booked online; "Plan a trip" keeps the enquiry form.
+    const travelItem = pkg
+      ? { id: pkg.id, title: pkg.title, images: [pkg.heroImage, ...pkg.gallery], description: pkg.description, price: pkg.pricePerPerson || parsePriceText(pkg.price), features: pkg.highlights }
+      : tour
+        ? { id: tour.id, title: tour.title, images: [tour.imageUrl], description: tour.description, price: parsePriceText(tour.price), features: tour.highlights }
+        : vehicle
+          ? { id: vehicle.id, title: vehicle.name, images: [vehicle.imageUrl], description: `${vehicle.category} · ${vehicle.capacity}`, price: parsePriceText(vehicle.dailyRate), features: vehicle.features }
+          : null;
+    if (travelItem && onlineBookingEnabled) {
+      startOnlineBooking({ kind: 'service', divisionId: 'travels', divisionName: 'MAHDEV Travels', ...travelItem }, onNavigate);
+      return;
+    }
     setBookingPackage(pkg || null);
     setBookingTour(tour || null);
     setBookingVehicle(vehicle || null);

@@ -50,6 +50,7 @@ export const ITServiceDetailModal: React.FC<ITServiceDetailModalProps> = ({
     <ServiceDetailsModal
       service={details}
       onClose={onClose}
+      bookOnline={service ? { kind: 'service', id: service.id, price: service.price, divisionId: 'it' } : undefined}
       primaryAction={service ? { label: 'Request a Quote', onClick: () => onRequestQuote(service) } : undefined}
       actions={service ? [
         { label: 'Start a Project', onClick: () => onStartProject(service) },

@@ -27,6 +27,10 @@ import {
   Upload,
   RefreshCw,
   Image as ImageIcon,
+  RotateCcw,
+  Truck,
+  Cookie,
+  type LucideIcon,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -44,13 +48,36 @@ import {
 import {
   websiteContentService,
   DEFAULT_ABOUT_US_CONTENT,
-  DEFAULT_TERMS_CONTENT,
-  DEFAULT_PRIVACY_CONTENT,
 } from '../../services/firestore/websiteContent';
+import { DEFAULT_LEGAL_DOCUMENTS, LegalDocumentId } from '../../data/legalDocuments';
 import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
 
+type LegalTab = 'terms' | 'privacy' | 'refund' | 'shipping' | 'cookie';
+type ContentTab = 'about' | LegalTab;
+
+// Every legal page that can be edited here, in tab order.
+const LEGAL_TABS: Array<{ id: LegalTab; docId: LegalDocumentId; label: string; icon: LucideIcon }> = [
+  { id: 'terms', docId: 'termsAndConditions', label: 'Terms & Conditions', icon: FileText },
+  { id: 'privacy', docId: 'privacyPolicy', label: 'Privacy Policy', icon: ShieldCheck },
+  { id: 'refund', docId: 'refundPolicy', label: 'Refund & Cancellation', icon: RotateCcw },
+  { id: 'shipping', docId: 'shippingPolicy', label: 'Shipping & Delivery', icon: Truck },
+  { id: 'cookie', docId: 'cookiePolicy', label: 'Cookie Policy', icon: Cookie },
+];
+
+const DEFAULT_LEGAL_TAB_DOCS = Object.fromEntries(
+  LEGAL_TABS.map((tab) => [tab.id, DEFAULT_LEGAL_DOCUMENTS[tab.docId]])
+) as Record<LegalTab, LegalDocument>;
+
+const NO_LEGAL_CHANGES = Object.fromEntries(LEGAL_TABS.map((tab) => [tab.id, false])) as Record<
+  LegalTab,
+  boolean
+>;
+
+const legalDocIdFor = (tab: LegalTab): LegalDocumentId =>
+  LEGAL_TABS.find((item) => item.id === tab)!.docId;
+
 interface AdminWebsiteContentViewProps {
-  initialTab?: 'about' | 'terms' | 'privacy';
+  initialTab?: ContentTab;
   onNavigate?: (route: string) => void;
 }
 
@@ -58,7 +85,7 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
   initialTab = 'about',
   onNavigate,
 }) => {
-  const [activeTab, setActiveTab] = useState<'about' | 'terms' | 'privacy'>(initialTab);
+  const [activeTab, setActiveTab] = useState<ContentTab>(initialTab);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -70,17 +97,18 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
   >('hero');
   const [teamImageMemberId, setTeamImageMemberId] = useState<string | null>(null);
 
-  // Terms State
-  const [termsDoc, setTermsDoc] = useState<LegalDocument>(DEFAULT_TERMS_CONTENT);
-  const [termsHasChanges, setTermsHasChanges] = useState(false);
+  // Legal Pages State (one document per legal tab)
+  const [legalDocs, setLegalDocs] = useState<Record<LegalTab, LegalDocument>>(DEFAULT_LEGAL_TAB_DOCS);
+  const [, setLegalHasChanges] = useState<Record<LegalTab, boolean>>(NO_LEGAL_CHANGES);
 
-  // Privacy State
-  const [privacyDoc, setPrivacyDoc] = useState<LegalDocument>(DEFAULT_PRIVACY_CONTENT);
-  const [privacyHasChanges, setPrivacyHasChanges] = useState(false);
+  const setLegalDoc = (tab: LegalTab, legalDoc: LegalDocument) =>
+    setLegalDocs((prev) => ({ ...prev, [tab]: legalDoc }));
+  const markLegalChanged = (tab: LegalTab, changed: boolean) =>
+    setLegalHasChanges((prev) => ({ ...prev, [tab]: changed }));
 
   // Live Multi-Device Preview Modal
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
-  const [previewType, setPreviewType] = useState<'about' | 'terms' | 'privacy'>('about');
+  const [previewType, setPreviewType] = useState<ContentTab>('about');
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
 
   const addToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -98,15 +126,18 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
     async function loadData() {
       setIsLoading(true);
       try {
-        const [about, terms, privacy] = await Promise.all([
+        const [about, ...legal] = await Promise.all([
           websiteContentService.getAboutUsContent(true),
-          websiteContentService.getLegalDocument('termsAndConditions', true),
-          websiteContentService.getLegalDocument('privacyPolicy', true),
+          ...LEGAL_TABS.map((tab) => websiteContentService.getLegalDocument(tab.docId, true)),
         ]);
         if (isMounted) {
           setAboutContent(about);
-          setTermsDoc(terms);
-          setPrivacyDoc(privacy);
+          setLegalDocs(
+            Object.fromEntries(LEGAL_TABS.map((tab, idx) => [tab.id, legal[idx]])) as Record<
+              LegalTab,
+              LegalDocument
+            >
+          );
           setIsLoading(false);
         }
       } catch (err) {
@@ -159,14 +190,16 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
   };
 
   // Save Legal Draft
-  const handleSaveLegalDraft = async (type: 'terms' | 'privacy') => {
+  const handleSaveLegalDraft = async (type: LegalTab) => {
     setIsSaving(true);
-    const docId = type === 'terms' ? 'termsAndConditions' : 'privacyPolicy';
-    const currentDoc = type === 'terms' ? termsDoc : privacyDoc;
+    const docId = legalDocIdFor(type);
+    const currentDoc = legalDocs[type];
     try {
-      await websiteContentService.saveLegalDraft(docId, currentDoc.sections);
-      if (type === 'terms') setTermsHasChanges(false);
-      else setPrivacyHasChanges(false);
+      await websiteContentService.saveLegalDraft(docId, currentDoc.sections, undefined, {
+        title: currentDoc.title,
+        subtitle: currentDoc.subtitle,
+      });
+      markLegalChanged(type, false);
       addToast(`${currentDoc.title} draft saved successfully.`, 'success');
     } catch (err: any) {
       console.error(`Failed to save draft for ${type}:`, err);
@@ -177,23 +210,20 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
   };
 
   // Publish Legal Document
-  const handlePublishLegal = async (type: 'terms' | 'privacy') => {
+  const handlePublishLegal = async (type: LegalTab) => {
     setIsSaving(true);
-    const docId = type === 'terms' ? 'termsAndConditions' : 'privacyPolicy';
-    const currentDoc = type === 'terms' ? termsDoc : privacyDoc;
+    const docId = legalDocIdFor(type);
+    const currentDoc = legalDocs[type];
     try {
       const published = await websiteContentService.publishLegalDocument(
         docId,
         currentDoc.sections,
-        undefined
+        undefined,
+        undefined,
+        { title: currentDoc.title, subtitle: currentDoc.subtitle }
       );
-      if (type === 'terms') {
-        setTermsDoc(published);
-        setTermsHasChanges(false);
-      } else {
-        setPrivacyDoc(published);
-        setPrivacyHasChanges(false);
-      }
+      setLegalDoc(type, published);
+      markLegalChanged(type, false);
       addToast(`${published.title} published to live website (v${published.version})!`, 'success');
     } catch (err: any) {
       console.error(`Failed to publish ${type}:`, err);
@@ -204,7 +234,7 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
   };
 
   // Open Preview
-  const handleOpenPreview = (type: 'about' | 'terms' | 'privacy') => {
+  const handleOpenPreview = (type: ContentTab) => {
     setPreviewType(type);
     setPreviewModalOpen(true);
   };
@@ -227,7 +257,7 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
             Company & Legal Information Management
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-3xl">
-            Manage public production content for About Us, Terms & Conditions, and Privacy Policy. All changes are stored directly in Firestore with instant preview and version control.
+            Manage public production content for About Us, Terms & Conditions, Privacy Policy, Refund & Cancellation, Shipping & Delivery, and Cookie Policy. All changes are stored directly in Firestore with instant preview and version control.
           </p>
         </div>
 
@@ -290,47 +320,33 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
           <span>About Us Page</span>
         </button>
 
-        <button
-          onClick={() => setActiveTab('terms')}
-          className={`px-4 py-3 text-xs sm:text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer flex items-center gap-2 ${
-            activeTab === 'terms'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
-          }`}
-        >
-          <FileText className="w-4 h-4" />
-          <span>Terms & Conditions</span>
-          {termsDoc.status === 'published' ? (
-            <span className="text-[10px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded font-mono font-bold">
-              v{termsDoc.version}
-            </span>
-          ) : (
-            <span className="text-[10px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded font-mono font-bold">
-              Draft
-            </span>
-          )}
-        </button>
-
-        <button
-          onClick={() => setActiveTab('privacy')}
-          className={`px-4 py-3 text-xs sm:text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer flex items-center gap-2 ${
-            activeTab === 'privacy'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
-          }`}
-        >
-          <ShieldCheck className="w-4 h-4" />
-          <span>Privacy Policy</span>
-          {privacyDoc.status === 'published' ? (
-            <span className="text-[10px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded font-mono font-bold">
-              v{privacyDoc.version}
-            </span>
-          ) : (
-            <span className="text-[10px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded font-mono font-bold">
-              Draft
-            </span>
-          )}
-        </button>
+        {LEGAL_TABS.map((tab) => {
+          const TabIcon = tab.icon;
+          const tabDoc = legalDocs[tab.id];
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-3 text-xs sm:text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer flex items-center gap-2 ${
+                activeTab === tab.id
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+              }`}
+            >
+              <TabIcon className="w-4 h-4" />
+              <span>{tab.label}</span>
+              {tabDoc.status === 'published' ? (
+                <span className="text-[10px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded font-mono font-bold">
+                  v{tabDoc.version}
+                </span>
+              ) : (
+                <span className="text-[10px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded font-mono font-bold">
+                  Draft
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Loading Skeleton */}
@@ -1451,14 +1467,14 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
             </div>
           )}
 
-          {/* TAB 2 & 3: LEGAL PAGES (Terms or Privacy) */}
-          {(activeTab === 'terms' || activeTab === 'privacy') && (
+          {/* LEGAL PAGE TABS (Terms, Privacy, Refund, Shipping, Cookie) */}
+          {activeTab !== 'about' && (
             <div className="space-y-6">
               {(() => {
-                const isTerms = activeTab === 'terms';
-                const doc = isTerms ? termsDoc : privacyDoc;
-                const setDocState = isTerms ? setTermsDoc : setPrivacyDoc;
-                const setHasChanges = isTerms ? setTermsHasChanges : setPrivacyHasChanges;
+                const legalTab = activeTab;
+                const doc = legalDocs[legalTab];
+                const setDocState = (next: LegalDocument) => setLegalDoc(legalTab, next);
+                const setHasChanges = (changed: boolean) => markLegalChanged(legalTab, changed);
 
                 return (
                   <>
@@ -1634,7 +1650,7 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
 
                           <div>
                             <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
-                              Paragraphs & Bullet Content (Use separate paragraphs; lines starting with • render as styled list items)
+                              Paragraphs & Bullet Content (Separate paragraphs with a blank line; lines starting with • render as list items and lines starting with ### render as sub-headings)
                             </label>
                             <textarea
                               rows={4}
@@ -1690,11 +1706,7 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
                 Live Preview:
               </span>
               <span className="text-sm font-semibold">
-                {previewType === 'about'
-                  ? 'About MAHDEV Pvt Ltd'
-                  : previewType === 'terms'
-                  ? termsDoc.title
-                  : privacyDoc.title}
+                {previewType === 'about' ? 'About MAHDEV Pvt Ltd' : legalDocs[previewType].title}
               </span>
             </div>
 
@@ -1888,33 +1900,36 @@ export const AdminWebsiteContentView: React.FC<AdminWebsiteContentViewProps> = (
                 <div className="space-y-6 text-slate-900">
                   <div className="border-b pb-4">
                     <span className="text-[10px] font-mono text-blue-600 font-bold uppercase">
-                      Official Document • v
-                      {previewType === 'terms' ? termsDoc.version : privacyDoc.version}
+                      Official Document • v{legalDocs[previewType].version}
                     </span>
                     <h1 className="text-2xl font-bold font-display text-slate-900 mt-1">
-                      {previewType === 'terms' ? termsDoc.title : privacyDoc.title}
+                      {legalDocs[previewType].title}
                     </h1>
                     <p className="text-xs text-slate-500 mt-1">
-                      Last Updated:{' '}
-                      {previewType === 'terms' ? termsDoc.lastUpdated : privacyDoc.lastUpdated}
+                      Last Updated: {legalDocs[previewType].lastUpdated}
                     </p>
                   </div>
 
                   <div className="space-y-4 text-xs sm:text-sm">
-                    {(previewType === 'terms' ? termsDoc.sections : privacyDoc.sections).map(
-                      (sec, idx) => (
-                        <div key={sec.id} className="space-y-1.5">
-                          <h2 className="text-sm font-bold text-slate-900">
-                            {idx + 1}. {sec.heading}
-                          </h2>
-                          {sec.content.map((p, pIdx) => (
-                            <p key={pIdx} className="text-slate-600 leading-relaxed">
+                    {legalDocs[previewType].sections.map((sec, idx) => (
+                      <div key={sec.id} className="space-y-1.5">
+                        <h2 className="text-sm font-bold text-slate-900">
+                          {idx + 1}. {sec.heading}
+                        </h2>
+                        {sec.content.map((p, pIdx) =>
+                          // Mirror the public page: "###" sub-headings and "•" bullets
+                          p.startsWith('### ') ? (
+                            <h3 key={pIdx} className="text-xs sm:text-sm font-bold text-slate-800 pt-1">
+                              {p.slice(4)}
+                            </h3>
+                          ) : (
+                            <p key={pIdx} className="text-slate-600 leading-relaxed whitespace-pre-line">
                               {p}
                             </p>
-                          ))}
-                        </div>
-                      )
-                    )}
+                          )
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

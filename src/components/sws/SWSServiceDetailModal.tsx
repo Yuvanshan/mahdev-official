@@ -2,11 +2,13 @@ import React from 'react';
 import { SWSService } from '../../data/swsData';
 import { ServiceDetailsModal } from '../services/ServiceDetailsModal';
 import { getStartingPriceDetails, getStartingPriceInquiryText } from '../common/StartingPriceTag';
+import { useOnlineBookingEnabled } from '../../hooks/useOnlineBookingEnabled';
 
 interface SWSServiceDetailModalProps {
   service: SWSService | null;
   isOpen: boolean;
   onClose: () => void;
+  /** Used when "Book online" is switched off in the admin. */
   onBookNow: (service: SWSService) => void;
   onRequestQuote: (service: SWSService) => void;
 }
@@ -19,6 +21,7 @@ export const SWSServiceDetailModal: React.FC<SWSServiceDetailModalProps> = ({
   onBookNow,
   onRequestQuote,
 }) => {
+  const onlineBookingEnabled = useOnlineBookingEnabled();
   const details = isOpen && service
     ? {
         title: service.name,
@@ -41,7 +44,8 @@ export const SWSServiceDetailModal: React.FC<SWSServiceDetailModalProps> = ({
     <ServiceDetailsModal
       service={details}
       onClose={onClose}
-      primaryAction={service ? { label: 'Book Now', onClick: () => onBookNow(service) } : undefined}
+      bookOnline={service ? { kind: 'service', id: service.id, price: service.price, divisionId: 'sws' } : undefined}
+      primaryAction={service && !onlineBookingEnabled ? { label: 'Book Now', onClick: () => onBookNow(service) } : undefined}
       actions={service ? [{ label: 'Request Quote', onClick: () => onRequestQuote(service) }] : []}
       whatsappInquiry={service ? { category: service.category, price: getStartingPriceInquiryText(service.price), description: service.description } : undefined}
     />
