@@ -59,7 +59,7 @@ Turso collection tables are initialized once per function instance and cached in
 
 The admin notification center watches the latest 250 website inquiries and contact submissions and refreshes those feeds every 2.5 seconds while the admin page is visible. New records update the admin inbox and notification badge; this is near-real-time polling, not a persistent WebSocket connection, so delivery depends on the next successful poll.
 
-The backend schema is provisioned in Turso, not in local JSON files. Run `npm run db:migrate` from an environment containing `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` to initialize and verify it. Vercel API functions initialize the schema on first request. The optional `migrate:turso` command is only for intentionally importing a selected legacy JSON backup; it is not run during deployment, skips existing document IDs by default, and overwrites matching IDs only when `--overwrite` is explicitly supplied.
+The backend schema is provisioned inside the existing Turso database named `mahdev`, not in a newly created database or local JSON files. Every deployment that needs database access must use the same `TURSO_DATABASE_URL` and its matching `TURSO_AUTH_TOKEN`. The application initializes collection tables inside `mahdev`; it never creates Turso databases and rejects remote URLs for other database names. Run `npm run db:migrate` from an environment containing these variables to initialize and verify the schema. Vercel API functions initialize the schema on first request. The optional `migrate:turso` command is only for intentionally importing a selected legacy JSON backup; it is not run during deployment, skips existing document IDs by default, and overwrites matching IDs only when `--overwrite` is explicitly supplied.
 
 ---
 
@@ -106,10 +106,8 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 | `VITE_META_PIXEL_ID` | Production | Optional numeric Meta Pixel ID; unset disables Meta Pixel |
 | `VITE_GOOGLE_SITE_VERIFICATION` | Production | Optional HTML-tag verification token from Google Search Console |
 | `VITE_BING_SITE_VERIFICATION` | Production | Optional HTML-tag verification token from Bing Webmaster Tools |
-| `TURSO_DATABASE_URL` | Production, Preview, Development | Server-side Turso connection URL (`libsql://...`) |
-| `TURSO_DATABASE_URL_ACTIVE` | Production, Preview, Development | Optional server-side URL override; when set, it takes precedence over `TURSO_DATABASE_URL` |
+| `TURSO_DATABASE_URL` | Production, Preview, Development | Server-side connection URL for the existing `mahdev` Turso database (`libsql://mahdev-<organization>.turso.io`) |
 | `TURSO_AUTH_TOKEN` | Production, Preview, Development | Server-side Turso auth token; store as a secret |
-| `TURSO_AUTH_TOKEN_ACTIVE` | Production, Preview, Development | Optional server-side token override; when set, it takes precedence over `TURSO_AUTH_TOKEN` |
 | `ADMIN_LOGIN_EMAIL` | Production, Preview, Development | Server-side administrator email |
 | `ADMIN_LOGIN_PASSWORD_HASH` | Production, Preview, Development | scrypt password hash; generate locally with `npm run admin:hash-password` |
 | `ADMIN_SESSION_SECRET` | Production, Preview, Development | Random server-only session signing secret; generate with `openssl rand -base64 48` |

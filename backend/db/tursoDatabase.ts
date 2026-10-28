@@ -86,11 +86,37 @@ export interface TursoWrite {
   merge?: boolean;
 }
 
+export function validateTursoDatabaseUrl(url: string): string {
+  if (url.startsWith('file:')) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Production must connect to the existing Turso database named "mahdev".');
+    }
+    return url;
+  }
+
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(url);
+  } catch {
+    throw new Error('TURSO_DATABASE_URL must point to the existing Turso database named "mahdev".');
+  }
+
+  const hostname = parsedUrl.hostname.toLowerCase();
+  const isTursoHost =
+    hostname.startsWith('mahdev-') && hostname.split('.').length === 3 && hostname.endsWith('.turso.io');
+  if (!['libsql:', 'https:'].includes(parsedUrl.protocol) || !isTursoHost) {
+    throw new Error('TURSO_DATABASE_URL must point to the existing Turso database named "mahdev".');
+  }
+
+  return url;
+}
+
 export function getTursoClient(): Client {
   if (client) return client;
 
-  const url = process.env.TURSO_DATABASE_URL_ACTIVE || process.env.TURSO_DATABASE_URL;
-  const authToken = process.env.TURSO_AUTH_TOKEN_ACTIVE || process.env.TURSO_AUTH_TOKEN;
+  const configuredUrl = process.env.TURSO_DATABASE_URL;
+  const authToken = process.env.TURSO_AUTH_TOKEN;
+  const url = configuredUrl ? validateTursoDatabaseUrl(configuredUrl) : undefined;
   if (!url || !authToken) {
     throw new Error('Database is not configured. Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN.');
   }

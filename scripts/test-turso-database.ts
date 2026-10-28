@@ -15,6 +15,7 @@ const {
   importMigratedDocuments,
   initializeTursoDatabase,
   listTursoDocuments,
+  validateTursoDatabaseUrl,
 } = await import('../backend/db/tursoDatabase');
 const {
   authenticateAdminCredentials,
@@ -53,6 +54,31 @@ async function removeIfPresent(filePath: string): Promise<void> {
 
 async function run(): Promise<void> {
   try {
+    assert.equal(
+      validateTursoDatabaseUrl('libsql://mahdev-example-org.turso.io'),
+      'libsql://mahdev-example-org.turso.io'
+    );
+    assert.equal(
+      validateTursoDatabaseUrl('https://mahdev-example-org.turso.io'),
+      'https://mahdev-example-org.turso.io'
+    );
+    assert.throws(
+      () => validateTursoDatabaseUrl('libsql://other-example-org.turso.io'),
+      /existing Turso database named "mahdev"/
+    );
+    assert.throws(
+      () => validateTursoDatabaseUrl('http://mahdev-example-org.turso.io'),
+      /existing Turso database named "mahdev"/
+    );
+    assert.throws(
+      () => validateTursoDatabaseUrl('libsql://mahdev-example-org.example.turso.io'),
+      /existing Turso database named "mahdev"/
+    );
+    assert.throws(
+      () => validateTursoDatabaseUrl('not-a-valid-database-url'),
+      /existing Turso database named "mahdev"/
+    );
+
     const originalFetch = globalThis.fetch;
     const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
     const publicKeyPem = publicKey.export({ type: 'spki', format: 'pem' }).toString();
