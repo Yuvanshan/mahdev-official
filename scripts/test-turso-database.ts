@@ -62,6 +62,10 @@ async function run(): Promise<void> {
       validateTursoDatabaseUrl('https://mahdev-example-org.turso.io'),
       'https://mahdev-example-org.turso.io'
     );
+    assert.equal(
+      validateTursoDatabaseUrl('libsql://mahdev-yuvanshan.aws-ap-northeast-1.turso.io'),
+      'libsql://mahdev-yuvanshan.aws-ap-northeast-1.turso.io'
+    );
     assert.throws(
       () => validateTursoDatabaseUrl('libsql://other-example-org.turso.io'),
       /existing Turso database named "mahdev"/

@@ -102,8 +102,7 @@ export function validateTursoDatabaseUrl(url: string): string {
   }
 
   const hostname = parsedUrl.hostname.toLowerCase();
-  const isTursoHost =
-    hostname.startsWith('mahdev-') && hostname.split('.').length === 3 && hostname.endsWith('.turso.io');
+  const isTursoHost = /^mahdev-[a-z0-9-]+(?:\.aws-[a-z0-9-]+)?\.turso\.io$/.test(hostname);
   if (!['libsql:', 'https:'].includes(parsedUrl.protocol) || !isTursoHost) {
     throw new Error('TURSO_DATABASE_URL must point to the existing Turso database named "mahdev".');
   }
