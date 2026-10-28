@@ -20,7 +20,15 @@ export interface WebsiteEnquiryPayload {
   budget?: string;
   metadata?: Record<string, any>;
   receivedAt?: string;
+  /** 'Booking' for website bookings; the same email layout, titled as a booking. Defaults to 'Enquiry'. */
+  kind?: 'Enquiry' | 'Booking';
+  /** Extra details shown as tables after the customer card (e.g. the booking). */
+  details?: Array<{ title: string; rows: Array<[string, string]> }>;
+  /** Files attached to the email (e.g. the booking details PDF or the transfer slip). */
+  attachments?: Array<{ filename: string; content: Buffer; contentType: string }>;
 }
+
+const VALID_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export interface EmailDispatchResult {
   success: boolean;
@@ -126,6 +134,7 @@ function generateEnquiryHtmlEmail(data: WebsiteEnquiryPayload, targetEmail: stri
   const budget = escapeHtml(data.budget || '');
   const subject = escapeHtml(data.subject || 'Website Customer Enquiry');
   const message = escapeHtml(data.message);
+  const kind = data.kind || 'Enquiry';
 
   return `
 <!DOCTYPE html>
@@ -133,7 +142,7 @@ function generateEnquiryHtmlEmail(data: WebsiteEnquiryPayload, targetEmail: stri
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Website Enquiry</title>
+  <title>New Website ${kind}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a;">
   <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 32px 16px;">
@@ -148,7 +157,7 @@ function generateEnquiryHtmlEmail(data: WebsiteEnquiryPayload, targetEmail: stri
                 <tr>
                   <td>
                     <span style="font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #38bdf8; text-transform: uppercase;">Mahdev Enterprise Ecosystem</span>
-                    <h1 style="margin: 4px 0 0 0; font-size: 22px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">New Website Customer Enquiry</h1>
+                    <h1 style="margin: 4px 0 0 0; font-size: 22px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">New Website Customer ${kind}</h1>
                     <p style="margin: 4px 0 0 0; font-size: 13px; color: #94a3b8;">Dispatched to ${targetEmailHtml}</p>
                   </td>
                   <td align="right" valign="top">
@@ -220,6 +229,31 @@ function generateEnquiryHtmlEmail(data: WebsiteEnquiryPayload, targetEmail: stri
             </td>
           </tr>
 
+${(data.details || [])
+  .map(
+    (section) => `
+          <!-- ${escapeHtml(section.title)} Details Card -->
+          <tr>
+            <td style="padding: 8px 32px 16px 32px;">
+              <h2 style="margin: 0 0 12px 0; font-size: 15px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; border-left: 3px solid #0052FF; padding-left: 8px;">
+                ${escapeHtml(section.title)} Details
+              </h2>
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                ${section.rows
+                  .map(
+                    ([label, value], index) => `
+                <tr>
+                  <td style="padding: 10px 16px; ${index ? 'border-top: 1px solid #e2e8f0; ' : ''}width: 35%; font-size: 13px; color: #64748b; font-weight: 600; vertical-align: top;">${escapeHtml(label)}</td>
+                  <td style="padding: 10px 16px; ${index ? 'border-top: 1px solid #e2e8f0; ' : ''}font-size: 14px; color: #0f172a; white-space: pre-wrap;">${escapeHtml(value)}</td>
+                </tr>`
+                  )
+                  .join('')}
+              </table>
+            </td>
+          </tr>`
+  )
+  .join('')}
+
           <!-- Message / Requirements Card -->
           <tr>
             <td style="padding: 8px 32px 24px 32px;">
@@ -278,7 +312,7 @@ function generateEnquiryPlainText(data: WebsiteEnquiryPayload, targetEmail: stri
 
   return `
 =====================================================
-MAHDEV PVT LTD — NEW WEBSITE CUSTOMER ENQUIRY
+MAHDEV PVT LTD — NEW WEBSITE CUSTOMER ${(data.kind || 'Enquiry').toUpperCase()}
 =====================================================
 Target Mailbox: ${targetEmail}
 Reference ID:   ${refId}
@@ -294,7 +328,9 @@ Name:  ${data.senderName}
 Email: ${data.senderEmail}
 Phone: ${data.senderPhone || 'Not provided'}
 
-SUBJECT:
+${(data.details || [])
+  .map((section) => `${section.title.toUpperCase()} DETAILS:\n-----------------------------------------------------\n${section.rows.map(([label, value]) => `${label}: ${value}`).join('\n')}\n\n`)
+  .join('')}SUBJECT:
 ${data.subject || 'Website Customer Enquiry'}
 
 MESSAGE:
@@ -315,7 +351,8 @@ export async function sendEnquiryEmail(payload: WebsiteEnquiryPayload): Promise<
   const smtpFromEmail = process.env.SMTP_FROM_EMAIL || config.notifications.smtpUser || DEFAULT_SENDER_EMAIL;
   const senderDisplayName = payload.senderName.replace(/[\r\n"]/g, ' ').slice(0, 100);
   const fromAddress = `"${senderDisplayName} via Mahdev" <${smtpFromEmail}>`;
-  const subjectLine = `[Website Enquiry - ${(payload.division || 'General').replace(/[\r\n]+/g, ' ').toUpperCase()}] ${(payload.subject || payload.service || 'Customer Inquiry').replace(/[\r\n]+/g, ' ')} - from ${senderDisplayName}`;
+  const kind = payload.kind || 'Enquiry';
+  const subjectLine = `[Website ${kind} - ${(payload.division || 'General').replace(/[\r\n]+/g, ' ').toUpperCase()}] ${(payload.subject || payload.service || 'Customer Inquiry').replace(/[\r\n]+/g, ' ')} - from ${senderDisplayName}`;
 
   const htmlContent = generateEnquiryHtmlEmail(payload, targetEmail);
   const textContent = generateEnquiryPlainText(payload, targetEmail);
@@ -327,14 +364,16 @@ export async function sendEnquiryEmail(payload: WebsiteEnquiryPayload): Promise<
       const info = await transporter.sendMail({
         from: fromAddress,
         to: targetEmail,
-        replyTo: payload.senderEmail,
+        // Replies go straight to the customer (bookings may not have a verified email yet).
+        ...(VALID_EMAIL.test(payload.senderEmail) ? { replyTo: payload.senderEmail } : {}),
         subject: subjectLine,
         text: textContent,
         html: htmlContent,
+        ...(payload.attachments?.length ? { attachments: payload.attachments } : {}),
       });
 
       console.info(
-        `[EmailService] SUCCESS: Enquiry sent to ${targetEmail} via SMTP! MessageID: ${info.messageId} | Reply-To: ${payload.senderEmail}`
+        `[EmailService] SUCCESS: ${kind} sent to ${targetEmail} via SMTP! MessageID: ${info.messageId} | Reply-To: ${payload.senderEmail}`
       );
 
       return {

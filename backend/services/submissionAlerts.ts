@@ -11,7 +11,8 @@
 import { getTursoDocument, writeTursoDocument } from '../db/tursoDatabase.js';
 import type { DatabaseAccess } from '../api/tursoRoutes.js';
 import { dispatchServerNotification } from './secureNotificationService.js';
-import { sendCustomerEmail } from './emailService.js';
+import { sendCustomerEmail, sendEnquiryEmail } from './emailService.js';
+import { bookingDetailSections, bookingDetailsPdf } from './bookingDetailsPdf.js';
 import { BANK_DETAILS } from '../../src/config/company.js';
 import { CANONICAL_SITE_ORIGIN } from '../../src/config/site.js';
 
@@ -194,8 +195,37 @@ export async function notifyForVerifiedSubmission(input: unknown, access: Databa
     ? safeText(access.identity?.email, '', 254).toLowerCase()
     : '';
 
-  const [teamAlert, customerMail] = await Promise.all([
-    dispatchServerNotification({
+  // Bookings reach the team the same way as contact-page enquiries: the enquiry email
+  // layout, sent "<customer> via Mahdev" with Reply-To set to the customer.
+  // The booking details are shown in the email and attached as a PDF.
+  const sendTeamAlert = async (): Promise<{ success: boolean; message?: string }> => {
+    if (collection === 'bookings') {
+      let attachments: ReturnType<typeof bookingDetailsPdf>[] = [];
+      try {
+        attachments = [bookingDetailsPdf(recordId, data)];
+      } catch (error) {
+        // The email still goes out with the details table if the PDF fails.
+        console.error(`[Submission alerts] Booking PDF for ${recordId} could not be created:`, error);
+      }
+      const result = await sendEnquiryEmail({
+        kind: 'Booking',
+        senderName: customerName,
+        senderEmail: customerEmail,
+        senderPhone: safeText(customer.phone, '', 32),
+        division: safeText(data.divisionName, '', 80),
+        service: safeText(data.serviceName, 'Service booking'),
+        subject: `${isOnlineBooking ? 'New Online Booking' : 'New Booking'}: ${recordId}`,
+        message: `${isOnlineBooking ? 'A new online booking' : 'A new booking'} was submitted by ${customerName}. The booking details are below and attached as a PDF. Review and confirm it in Admin > Bookings.`,
+        details: bookingDetailSections(recordId, data),
+        attachments,
+        referenceId: recordId,
+        preferredDate: [safeText(data.date || data.bookingDate, '', 40), safeText(data.time || data.bookingTime, '', 60)].filter(Boolean).join(', '),
+        budget: formatLkr(data.price),
+        receivedAt: new Date().toISOString(),
+      });
+      return { success: result.delivered, message: result.notice };
+    }
+    return dispatchServerNotification({
       type,
       recipient: { name: 'Mahdev Operations', email: 'admin@mahdev.lk', role: 'admin' },
       title: collection === 'orders'
@@ -204,7 +234,11 @@ export async function notifyForVerifiedSubmission(input: unknown, access: Databa
       message,
       data: alertData,
       channels: ['email'],
-    }),
+    });
+  };
+
+  const [teamAlert, customerMail] = await Promise.all([
+    sendTeamAlert(),
     // Only to the account's own address, so the email cannot be sent to someone else.
     isOnlineBooking && access.role === 'customer' && receiptEmail
       ? sendCustomerEmail({ to: receiptEmail, ...bookingReceivedEmail(recordId, data, customerName) })

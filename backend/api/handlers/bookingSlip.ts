@@ -5,7 +5,8 @@ import { AdminSessionAuthError, requireAdminSession } from '../../auth/adminCred
 import { FirebaseTokenError, verifyFirebaseIdToken } from '../../auth/firebaseIdToken.js';
 import { consumeRateLimit, RateLimitError } from '../../security/rateLimit.js';
 import { MAX_BOOKING_SLIP_BYTES, readBookingSlip, storeBookingSlip } from '../../services/adminMediaUpload.js';
-import { sendAdminAlertEmail } from '../../services/emailService.js';
+import { sendEnquiryEmail } from '../../services/emailService.js';
+import { bookingDetailSections, bookingDetailsPdf } from '../../services/bookingDetailsPdf.js';
 
 /**
  * Bank transfer slips for bookings.
@@ -137,16 +138,40 @@ async function uploadSlip(req: SlipRequest, url: URL): Promise<Record<string, un
     data: { paymentSlips: [...existing, slip], updatedAt: now },
   });
 
-  // Best effort: the slip is saved even if the email cannot be sent.
+  // Best effort: the slip is saved even if the email cannot be sent. Sent like a
+  // contact-page enquiry, so the team can reply straight to the customer.
   const customer = (booking.data.customer || {}) as Record<string, unknown>;
-  await sendAdminAlertEmail({
-    type: 'admin_booking_payment_slip',
+  const customerName = String(customer.fullName || 'A customer');
+  // The booking as it is now (with this slip), plus the slip file itself.
+  const updated = { ...booking.data, paymentSlips: [...existing, slip], updatedAt: now };
+  const attachments: Array<{ filename: string; content: Buffer; contentType: string }> = [
+    { filename: `${bookingId}-${slip.id}.${storagePath.split('.').pop() || 'bin'}`, content: body, contentType },
+  ];
+  try {
+    attachments.unshift(bookingDetailsPdf(bookingId, updated));
+  } catch (error) {
+    console.error('[BookingSlip] Booking PDF could not be created:', error);
+  }
+  await sendEnquiryEmail({
+    kind: 'Booking',
+    senderName: customerName,
+    senderEmail: String(booking.data.customerEmail || booking.data.contactEmail || customer.email || identity.email || ''),
+    senderPhone: typeof customer.phone === 'string' ? customer.phone : undefined,
+    division: typeof booking.data.divisionName === 'string' ? booking.data.divisionName : undefined,
+    service: typeof booking.data.serviceName === 'string' ? booking.data.serviceName : undefined,
     subject: `Payment slip uploaded: ${bookingId}`,
-    message: `${String(customer.fullName || 'A customer')} uploaded a bank transfer slip of ${formatLkr(amount)} for ${String(
+    message: `${customerName} uploaded a bank transfer slip of ${formatLkr(amount)} for ${String(
       booking.data.serviceName || 'their booking'
-    )}. Check it in Admin → Bookings and accept it to confirm the booking.`,
-    data: { bookingId, slipId: slip.id, amount, customerPhone: customer.phone },
-  }).catch((error: unknown) => console.error('[BookingSlip] Admin alert failed:', error));
+    )} (slip ${slip.id}). The slip and the booking details are attached. Check it in Admin → Bookings and accept it to confirm the booking.`,
+    details: bookingDetailSections(bookingId, updated),
+    attachments,
+    referenceId: bookingId,
+    receivedAt: now,
+  })
+    .then((result) => {
+      if (!result.delivered) console.error(`[BookingSlip] Admin alert not delivered: ${result.notice}`);
+    })
+    .catch((error: unknown) => console.error('[BookingSlip] Admin alert failed:', error));
 
   return { slip };
 }
