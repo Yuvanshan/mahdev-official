@@ -1,20 +1,11 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import * as fs from 'fs';
-import rawConfig from '../firebase-applet-config.json';
+import { getFirebaseConfig } from './firebaseConfig';
 
-const firebaseConfig = {
-  apiKey: rawConfig.apiKey,
-  authDomain: rawConfig.authDomain,
-  projectId: rawConfig.projectId,
-  storageBucket: rawConfig.storageBucket,
-  messagingSenderId: rawConfig.messagingSenderId,
-  appId: rawConfig.appId,
-};
-
-const databaseId = rawConfig.firestoreDatabaseId || 'mahdev-pvt-ldt';
+const { firebaseConfig, firestoreDatabaseId } = getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app, databaseId);
+const db = getFirestore(app, firestoreDatabaseId);
 
 async function main() {
   const result: any = {};

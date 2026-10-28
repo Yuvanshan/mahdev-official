@@ -48,7 +48,9 @@ async function assignMissingCustomerCodes(records: Awaited<ReturnType<typeof lis
 }
 
 function firebaseProjectId(): string {
-  return process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || 'for-her-33ea9';
+  const projectId = process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || '';
+  if (!projectId) throw new Error('Server Firebase project is not configured.');
+  return projectId;
 }
 
 /**

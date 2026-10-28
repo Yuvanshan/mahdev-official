@@ -17,6 +17,7 @@ export interface ClientEnvironmentConfig {
 
   /** Application Base URL */
   appUrl: string;
+  databaseName: string;
 
   /** Firebase Client Configuration */
   firebase: {
@@ -48,11 +49,14 @@ export interface ClientEnvironmentConfig {
   };
 }
 
+const runtimeEnv = typeof process !== 'undefined' ? process.env : {};
+const viteEnv = { ...runtimeEnv, ...(import.meta.env ?? {}) } as ImportMetaEnv;
+
 /**
  * Detects the runtime client environment
  */
 function detectEnvironment(): AppEnvironment {
-  const mode = import.meta.env.MODE;
+  const mode = viteEnv.MODE;
   const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
 
   if (mode === 'production' || hostname.includes('mahdev.lk') || hostname.includes('asia-southeast1.run.app')) {
@@ -77,27 +81,28 @@ export const clientEnv: ClientEnvironmentConfig = {
   isPreview: currentEnv === 'preview',
   isProduction: currentEnv === 'production',
 
-  appUrl: import.meta.env.VITE_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://mahdev.lk'),
+  appUrl: viteEnv.VITE_APP_URL || (typeof window !== 'undefined' ? window.location.origin : ''),
+  databaseName: viteEnv.VITE_TURSO_DATABASE_NAME || '',
 
   firebase: {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'for-her-33ea9.firebaseapp.com',
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'for-her-33ea9',
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'for-her-33ea9.firebasestorage.app',
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '1062826041810',
-    appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:1062826041810:web:2905a8e9f7bc3243dfa80b',
-    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-MWNCCXGY4F',
-    firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || undefined,
-    recaptchaSiteKey: import.meta.env.VITE_FIREBASE_RECAPTCHA_SITE_KEY || undefined,
+    apiKey: viteEnv.VITE_FIREBASE_API_KEY || '',
+    authDomain: viteEnv.VITE_FIREBASE_AUTH_DOMAIN || '',
+    projectId: viteEnv.VITE_FIREBASE_PROJECT_ID || '',
+    storageBucket: viteEnv.VITE_FIREBASE_STORAGE_BUCKET || '',
+    messagingSenderId: viteEnv.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+    appId: viteEnv.VITE_FIREBASE_APP_ID || '',
+    measurementId: viteEnv.VITE_FIREBASE_MEASUREMENT_ID || '',
+    firestoreDatabaseId: viteEnv.VITE_FIREBASE_FIRESTORE_DATABASE_ID || undefined,
+    recaptchaSiteKey: viteEnv.VITE_FIREBASE_RECAPTCHA_SITE_KEY || undefined,
   },
 
   analytics: {
-    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || import.meta.env.VITE_GA_MEASUREMENT_ID || undefined,
+    measurementId: viteEnv.VITE_FIREBASE_MEASUREMENT_ID || viteEnv.VITE_GA_MEASUREMENT_ID || undefined,
     enabled: currentEnv !== 'development',
   },
 
   maps: {
-    apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || undefined,
+    apiKey: viteEnv.VITE_GOOGLE_MAPS_API_KEY || undefined,
   },
 
   api: {

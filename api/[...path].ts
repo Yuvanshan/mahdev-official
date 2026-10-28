@@ -18,6 +18,7 @@ import analyticsHandler from '../backend/api/handlers/analytics.js';
 import whatsappWebhookHandler from '../backend/api/handlers/whatsappWebhook.js';
 import orderConfirmationsHandler from '../backend/api/handlers/orderConfirmations.js';
 import accountCheckHandler from '../backend/api/handlers/accountCheck.js';
+import firebaseAuthProxy from '../backend/api/handlers/firebaseAuthProxy.js';
 import { isFromThisSite } from '../backend/security/sameSite.js';
 import pageShellHandler, { sendNotFoundPage } from '../backend/api/handlers/pageShell.js';
 
@@ -36,6 +37,9 @@ async function parseJsonBody(req: ApiRequest, res: ServerResponse, pathname: str
     pathname === '/api/upload/media' ||
     pathname === '/api/careers/cv' ||
     pathname === '/api/bookings/slip' ||
+    pathname.startsWith('/api/firebase-auth/') ||
+    pathname === '/api/firebase-auth' ||
+    pathname.startsWith('/__/auth/') ||
     !req.headers['content-type']?.toLowerCase().includes('application/json') ||
     (req.method !== 'POST' && req.method !== 'PUT' && req.method !== 'PATCH')
   ) {
@@ -95,6 +99,7 @@ const BROWSER_VISIBLE_API_PATHS = new Set([
   '/api/admin/customers',
   '/api/page-shell',
   '/api/webhook/whatsapp',
+  '/api/firebase-auth',
 ]);
 
 // A top-level browser navigation asks for HTML; fetch() calls from the app do not.
@@ -121,6 +126,7 @@ export default async function handler(req: ApiRequest, res: ServerResponse): Pro
     pathname.startsWith('/api/') &&
     !BROWSER_VISIBLE_API_PATHS.has(pathname) &&
     !pathname.startsWith('/api/public/media/') &&
+    !pathname.startsWith('/api/firebase-auth/') &&
     isBrowserPageRequest(req)
   ) {
     await sendNotFoundPage(req, res);
@@ -128,6 +134,14 @@ export default async function handler(req: ApiRequest, res: ServerResponse): Pro
   }
   if (!(await parseJsonBody(req, res, pathname))) return;
 
+  if (pathname.startsWith('/api/firebase-auth/') || pathname.startsWith('/__/auth/')) {
+    await firebaseAuthProxy(req, res);
+    return;
+  }
+  if (pathname === '/api/firebase-auth') {
+    await firebaseAuthProxy(req, res);
+    return;
+  }
   if (pathname === '/api/sitemap') {
     await sitemapHandler(req, res);
     return;

@@ -84,7 +84,7 @@
   "rewrites": [
     {
       "source": "/__/auth/:path*",
-      "destination": "https://for-her-33ea9.firebaseapp.com/__/auth/:path*"
+      "destination": "/api/firebase-auth/:path*"
     },
     {
       "source": "/sitemap.xml",

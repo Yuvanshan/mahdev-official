@@ -25,10 +25,8 @@ import {
   auth,
   firebaseConfig,
   activeDatabaseName,
-  TARGET_FIREBASE_PROJECT_ID,
-  TARGET_STORAGE_BUCKET,
-  TARGET_AUTH_DOMAIN,
 } from '../lib/firebase';
+import { clientEnv as appClientEnv } from '../config/env';
 
 export interface CollectionProbeResult {
   collectionName: string;
@@ -98,7 +96,8 @@ export class DatabaseHealthService {
 
     // 2. Firebase App & Project ID Verification
     const activeProjectId = firebaseConfig.projectId;
-    const isProjectMatch = activeProjectId === TARGET_FIREBASE_PROJECT_ID;
+    const targetProjectId = appClientEnv.firebase.projectId;
+    const isProjectMatch = activeProjectId === targetProjectId;
 
     // 3. Database ID Verification
     const activeDbId = activeDatabaseName;
@@ -223,7 +222,7 @@ export class DatabaseHealthService {
 
     if (!isProjectMatch) {
       recommendations.push(
-        `Project mismatch: Currently connected to '${activeProjectId}', expected '${TARGET_FIREBASE_PROJECT_ID}'.`
+        `Project mismatch: Currently connected to '${activeProjectId}', expected '${targetProjectId}'.`
       );
     }
     if (!isDatabaseMatch) {
@@ -258,10 +257,10 @@ export class DatabaseHealthService {
       firebaseApp: {
         initialized: true,
         activeProjectId,
-        targetProjectId: TARGET_FIREBASE_PROJECT_ID,
+        targetProjectId,
         isProjectMatch,
-        authDomain: firebaseConfig.authDomain || TARGET_AUTH_DOMAIN,
-        storageBucket: firebaseConfig.storageBucket || TARGET_STORAGE_BUCKET,
+        authDomain: firebaseConfig.authDomain,
+        storageBucket: firebaseConfig.storageBucket,
       },
       tursoDatabase: {
         activeDatabaseId: activeDbId,

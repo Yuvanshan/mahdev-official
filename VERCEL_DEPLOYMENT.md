@@ -36,7 +36,7 @@ This guide documents the end-to-end deployment lifecycle for hosting the **Mahde
 
 The repository keeps browser code in `src/` and backend implementation in `backend/`. The top-level `api/` directory contains thin Vercel function entrypoints that forward requests to backend handlers. This preserves same-origin routes and HttpOnly login cookies while keeping Turso access server-only.
 
-The project includes a root `vercel.json` configured specifically for modern React + Vite single-page applications:
+The project includes a root `vercel.json` configured specifically for modern React + Vite single-page applications. Before deployment, run `npm run lint` and `npm run build`; this repository no longer includes test files or test runner scripts.
 
 - **Framework**: `vite`
 - **Build Command**: `vite build`
@@ -59,7 +59,7 @@ Turso collection tables are initialized once per function instance and cached in
 
 The admin notification center watches the latest 250 website inquiries and contact submissions and refreshes those feeds every 2.5 seconds while the admin page is visible. New records update the admin inbox and notification badge; this is near-real-time polling, not a persistent WebSocket connection, so delivery depends on the next successful poll.
 
-The backend schema is provisioned inside the existing Turso database named `mahdev`, not in a newly created database or local JSON files. Every deployment that needs database access must use the same `TURSO_DATABASE_URL` and its matching `TURSO_AUTH_TOKEN`. The application initializes collection tables inside `mahdev`; it never creates Turso databases and rejects remote URLs for other database names. Run `npm run db:migrate` from an environment containing these variables to initialize and verify the schema. Vercel API functions initialize the schema on first request. The optional `migrate:turso` command is only for intentionally importing a selected legacy JSON backup; it is not run during deployment, skips existing document IDs by default, and overwrites matching IDs only when `--overwrite` is explicitly supplied.
+The backend schema is provisioned inside the existing Turso database selected by `TURSO_DATABASE_NAME`; no deployment creates a new database. Every deployment that needs database access must use the same `TURSO_DATABASE_URL`, its matching `TURSO_AUTH_TOKEN`, and the configured database name. The application initializes collection tables inside that database and rejects URLs for other database names. Run `npm run db:migrate` from an environment containing these variables to initialize and verify the schema. Vercel API functions initialize the schema on first request. The optional `migrate:turso` command is only for intentionally importing a selected legacy JSON backup; it is not run during deployment, skips existing document IDs by default, and overwrites matching IDs only when `--overwrite` is explicitly supplied.
 
 ---
 
@@ -94,10 +94,12 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 | `VITE_SITE_URL` | Production: your live domain, e.g. `https://mahdev-official.vercel.app` | The website's public domain for canonical URLs, Open Graph tags, structured data, sitemap, `robots.txt` and `llms.txt`. Must be an origin with no path. Defaults to `https://mahdev-official.vercel.app` when unset. |
 | `PUBLIC_SITE_URL` | Optional | Legacy alias for `VITE_SITE_URL`, used only when `VITE_SITE_URL` is unset. |
 | `VITE_FIREBASE_API_KEY` | Production, Preview, Development | Public Firebase Web SDK API Key |
-| `VITE_FIREBASE_AUTH_DOMAIN` | Production, Preview, Development | `for-her-33ea9.firebaseapp.com` |
-| `VITE_FIREBASE_PROJECT_ID` | Production, Preview, Development | `for-her-33ea9` |
-| `VITE_FIREBASE_STORAGE_BUCKET` | Production, Preview, Development | `for-her-33ea9.firebasestorage.app` |
-| `FIREBASE_STORAGE_BUCKET` | Production, Preview, Development | Server-side Firebase Storage bucket (defaults to `for-her-33ea9.firebasestorage.app`) |
+| `VITE_FIREBASE_AUTH_DOMAIN` | Production, Preview, Development | Firebase Console Auth domain |
+| `VITE_FIREBASE_PROJECT_ID` | Production, Preview, Development | Firebase Console project ID |
+| `VITE_FIREBASE_STORAGE_BUCKET` | Production, Preview, Development | Firebase Console storage bucket |
+| `FIREBASE_PROJECT_ID` | Production, Preview, Development | Server-side project ID for token validation; same project as the client config |
+| `FIREBASE_AUTH_DOMAIN` | Production, Preview, Development | Server-side Firebase Auth domain for the same-origin auth proxy |
+| `FIREBASE_STORAGE_BUCKET` | Production, Preview, Development | Server-side Firebase Admin Storage bucket |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | Production, Preview, Development | Server-only Firebase service-account JSON used to create admin-authorized resumable uploads; store as a secret and never prefix with `VITE_` |
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | Production, Preview, Development | `1062826041810` |
 | `VITE_FIREBASE_APP_ID` | Production, Preview, Development | Exact Web App ID copied from Firebase Project Settings for the selected registered app; must belong to `VITE_FIREBASE_PROJECT_ID` |
@@ -106,8 +108,9 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 | `VITE_META_PIXEL_ID` | Production | Optional numeric Meta Pixel ID; unset disables Meta Pixel |
 | `VITE_GOOGLE_SITE_VERIFICATION` | Production | Optional HTML-tag verification token from Google Search Console |
 | `VITE_BING_SITE_VERIFICATION` | Production | Optional HTML-tag verification token from Bing Webmaster Tools |
-| `TURSO_DATABASE_URL` | Production, Preview, Development | Server-side connection URL for the existing `mahdev` Turso database (`libsql://mahdev-<organization>.turso.io`) |
+| `TURSO_DATABASE_URL` | Production, Preview, Development | Server-side connection URL for the existing Turso database |
 | `TURSO_AUTH_TOKEN` | Production, Preview, Development | Server-side Turso auth token; store as a secret |
+| `TURSO_DATABASE_NAME` | Production, Preview, Development | Exact existing Turso database name matched against the URL; set the same value in each environment |
 | `ADMIN_LOGIN_EMAIL` | Production, Preview, Development | Server-side administrator email |
 | `ADMIN_LOGIN_PASSWORD_HASH` | Production, Preview, Development | scrypt password hash; generate locally with `npm run admin:hash-password` |
 | `ADMIN_SESSION_SECRET` | Production, Preview, Development | Random server-only session signing secret; generate with `openssl rand -base64 48` |
@@ -122,7 +125,7 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 
 > ⚠️ **Note**: After adding or modifying environment variables in Vercel, you must trigger a redeployment for the changes to take effect.
 
-The live site must use a Firebase Web App ID registered under `for-her-33ea9`. A production App Check verification returned `App not registered` for the currently deployed app ID. Confirm the correct Web App ID in Firebase Project Settings > General, confirm that the reCAPTCHA key is configured for that same app and the production hostname in App Check, update the Vercel Production variables, and redeploy. Do not enable Firebase App Check enforcement until valid tokens are being issued and verified.
+Use values from the same Firebase project for all `VITE_FIREBASE_*` variables, `FIREBASE_PROJECT_ID`, `FIREBASE_AUTH_DOMAIN`, and `FIREBASE_STORAGE_BUCKET`. Confirm the Web App ID is registered in Firebase Project Settings > General and that the reCAPTCHA key is configured for that app and production hostname in App Check. Do not enable Firebase App Check enforcement until valid tokens are being issued and verified.
 
 ### Admin sign-in and database permissions
 
@@ -169,24 +172,18 @@ After deploying SEO changes:
 
 ---
 
-## 7. Pre-Flight Deployment Checklist & Quality Gates
+## 7. Pre-Flight Deployment Checklist
 
-The production pipeline enforces mandatory CI checks before any build is promoted to `main`:
+Run the retained typecheck and production build before deployment:
 
 ```bash
 # Execute local pre-flight checks before pushing PR:
 npm run preflight
 ```
 
-- [x] **Lint & Type Check**: `npm run lint` and `npm run typecheck` pass with zero errors.
-- [x] **Automated Test Matrix**: `npm test` passes all 11 automated test suites.
-- [x] **Security & Storage Protection**: `npm run test:security` and `npm run test:storage` verified.
-- [x] **Disaster Recovery Integrity**: `npm run test:recovery` SHA-256 snapshot drill verified.
-- [x] `vercel.json` exists at repository root with correct framework presets and security headers.
-- [x] `package.json` contains valid `build` script generating files to `dist/`.
-- [x] Client environment variables use the `VITE_` prefix and are defined in `.env.example`.
-- [x] No private secrets or API keys are committed to Git.
-- [x] All application routes resolve properly with SPA fallback rewrite rules.
+- Run `npm run lint` to type-check the source.
+- Run `npm run build` to generate the production bundle.
+- Automated test files and test runner commands have been removed from this repository; historical test reports are not current verification.
 
 ---
 

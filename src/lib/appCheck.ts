@@ -15,7 +15,6 @@ import {
   getToken,
 } from 'firebase/app-check';
 import { app } from './firebase';
-import rawConfig from '../../firebase-applet-config.json';
 
 let appCheckInstance: AppCheck | null = null;
 let isAppCheckInitialized = false;
@@ -55,10 +54,7 @@ export function initAppCheck(): AppCheckStatus {
   }
 
   const isDev = import.meta.env.DEV || window.location.hostname === 'localhost';
-  const siteKey =
-    import.meta.env.VITE_FIREBASE_RECAPTCHA_SITE_KEY ||
-    (rawConfig as any).recaptchaSiteKey ||
-    '';
+  const siteKey = import.meta.env.VITE_FIREBASE_RECAPTCHA_SITE_KEY || '';
 
   try {
     if (isDev) {

@@ -16,29 +16,12 @@ import {
   Auth,
 } from 'firebase/auth';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
-import rawConfig from '../../firebase-applet-config.json';
 import { db } from './tursoFirestore';
 import { initAppCheck, getAppCheckAttestationToken } from './appCheck';
 import { CANONICAL_SITE_HOST } from '../config/site';
+import { clientEnv } from '../config/env';
 
-export const TARGET_FIREBASE_PROJECT_ID = 'for-her-33ea9';
-export const TARGET_STORAGE_BUCKET = 'for-her-33ea9.firebasestorage.app';
-export const TARGET_AUTH_DOMAIN = 'for-her-33ea9.firebaseapp.com';
-export const TARGET_APP_ID = '1:1062826041810:web:2905a8e9f7bc3243dfa80b';
-export const TARGET_MESSAGING_SENDER_ID = '1062826041810';
-export const activeDatabaseName =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_TURSO_DATABASE_NAME) ||
-  'Database';
-
-function getEnvVar(key: string): string | undefined {
-  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[key]) {
-    return import.meta.env[key];
-  }
-  if (typeof process !== 'undefined' && process.env && process.env[key]) {
-    return process.env[key];
-  }
-  return undefined;
-}
+export const activeDatabaseName = clientEnv.databaseName || 'Not configured';
 
 /**
  * On the live site, sign-in pages are served from the site's own domain (vercel.json
@@ -48,19 +31,32 @@ function getEnvVar(key: string): string | undefined {
  * local builds keep Firebase's default domain, which Google already accepts.
  */
 function resolveAuthDomain(): string {
-  const configured = getEnvVar('VITE_FIREBASE_AUTH_DOMAIN') || rawConfig.authDomain || TARGET_AUTH_DOMAIN;
+  const configured = clientEnv.firebase.authDomain;
   if (typeof window !== 'undefined' && window.location.host === CANONICAL_SITE_HOST) return CANONICAL_SITE_HOST;
   return configured;
 }
 
+const missingFirebaseConfig = [
+  ['VITE_FIREBASE_API_KEY', clientEnv.firebase.apiKey],
+  ['VITE_FIREBASE_AUTH_DOMAIN', clientEnv.firebase.authDomain],
+  ['VITE_FIREBASE_PROJECT_ID', clientEnv.firebase.projectId],
+  ['VITE_FIREBASE_STORAGE_BUCKET', clientEnv.firebase.storageBucket],
+  ['VITE_FIREBASE_MESSAGING_SENDER_ID', clientEnv.firebase.messagingSenderId],
+  ['VITE_FIREBASE_APP_ID', clientEnv.firebase.appId],
+].filter(([, value]) => !value).map(([name]) => name);
+
+if (missingFirebaseConfig.length) {
+  throw new Error(`Firebase client configuration is incomplete. Set: ${missingFirebaseConfig.join(', ')}.`);
+}
+
 export const firebaseConfig = {
-  apiKey: getEnvVar('VITE_FIREBASE_API_KEY') || rawConfig.apiKey || '',
+  apiKey: clientEnv.firebase.apiKey,
   authDomain: resolveAuthDomain(),
-  projectId: getEnvVar('VITE_FIREBASE_PROJECT_ID') || rawConfig.projectId || TARGET_FIREBASE_PROJECT_ID,
-  storageBucket: getEnvVar('VITE_FIREBASE_STORAGE_BUCKET') || rawConfig.storageBucket || TARGET_STORAGE_BUCKET,
-  messagingSenderId: getEnvVar('VITE_FIREBASE_MESSAGING_SENDER_ID') || rawConfig.messagingSenderId || TARGET_MESSAGING_SENDER_ID,
-  appId: getEnvVar('VITE_FIREBASE_APP_ID') || rawConfig.appId || TARGET_APP_ID,
-  measurementId: getEnvVar('VITE_FIREBASE_MEASUREMENT_ID') || rawConfig.measurementId || 'G-MWNCCXGY4F',
+  projectId: clientEnv.firebase.projectId,
+  storageBucket: clientEnv.firebase.storageBucket,
+  messagingSenderId: clientEnv.firebase.messagingSenderId,
+  appId: clientEnv.firebase.appId,
+  measurementId: clientEnv.firebase.measurementId,
 };
 
 export const app: FirebaseApp =
@@ -133,7 +129,7 @@ export async function testTursoConnection(): Promise<{
     return {
       success: true,
       message: 'Database connection verified.',
-      projectId: 'Database',
+      projectId: firebaseConfig.projectId,
       databaseId: activeDatabaseName,
       latencyMs: Date.now() - startedAt,
     };
@@ -141,7 +137,7 @@ export async function testTursoConnection(): Promise<{
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Database connection failed.',
-      projectId: 'Database',
+      projectId: firebaseConfig.projectId,
       databaseId: activeDatabaseName,
       latencyMs: Date.now() - startedAt,
     };

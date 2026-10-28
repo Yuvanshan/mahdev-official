@@ -82,7 +82,7 @@ curl -I https://mahdev.lk/mart
 
 ## Account email links (verification and password reset)
 
-Account emails link to the website's own `/auth/action` page (`src/views/auth/AuthActionView.tsx`) rather than `for-her-33ea9.firebaseapp.com`. This needs one setting in the Firebase console:
+Account emails link to the website's own `/auth/action` page (`src/views/auth/AuthActionView.tsx`) rather than the Firebase default handler. Configure the same Firebase Auth domain in the client and server environment variables:
 
 1. Firebase console → **Authentication** → **Templates**.
 2. Open **Email address verification** → edit (pencil) → **Customize action URL**.

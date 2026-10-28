@@ -47,9 +47,13 @@ export class FirebaseTokenError extends Error {
 }
 
 function firebaseProjectId(): string {
-  return process.env.FIREBASE_PROJECT_ID
+  const projectId = process.env.FIREBASE_PROJECT_ID
     || process.env.VITE_FIREBASE_PROJECT_ID
-    || 'for-her-33ea9';
+    || '';
+  if (!projectId) {
+    throw new FirebaseTokenError('Server Firebase project is not configured.', 503);
+  }
+  return projectId;
 }
 
 async function loadCertificates(forceRefresh = false): Promise<CachedCertificates> {

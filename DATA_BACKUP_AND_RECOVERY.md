@@ -9,7 +9,7 @@ This operational manual outlines the enterprise data-protection architecture, sc
 ## Current Turso Migration Notes
 
 - The server provisions a separate Turso table for each application collection.
-- Set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in server runtime secrets before starting the server or migration command.
+- Set `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, and `TURSO_DATABASE_NAME` in server runtime secrets before starting the server or migration command.
 - The migration command upserts the JSON backup and does not delete existing Turso records.
 - Configure and verify database backups for the Turso database in the Turso dashboard before production use.
 
@@ -17,7 +17,7 @@ This operational manual outlines the enterprise data-protection architecture, sc
 
 ## 1. Protected Data Collections & Classification
 
-The previous Firestore deployment stored mission-critical transactional, fiscal, and operational records in Google Cloud Firestore database (`ai-studio-mahdevpvtltd-b6505c20-1d3d-4de0-a4bb-a8fb7ae999dd`):
+The previous Firestore deployment stored mission-critical transactional, fiscal, and operational records in the configured Firestore database:
 
 | Collection | Data Type | Classification | RPO Target | RTO Target |
 | :--- | :--- | :--- | :--- | :--- |
@@ -71,11 +71,12 @@ gcloud firestore databases update \
 
 ### B. Provision the Dedicated Cloud Storage Backup Bucket
 ```bash
-# Create dedicated encrypted multi-region backup bucket in Asia-Southeast1
-gsutil mb -p for-her-33ea9 -c STANDARD -l asia-southeast1 gs://mahdev-firestore-backups-asia-southeast1/
+# Set FIREBASE_PROJECT_ID and FIRESTORE_BACKUP_BUCKET in your shell first.
+# Create the dedicated encrypted multi-region backup bucket in Asia-Southeast1.
+gsutil mb -p "$FIREBASE_PROJECT_ID" -c STANDARD -l asia-southeast1 "gs://$FIRESTORE_BACKUP_BUCKET/"
 
 # Enable Object Versioning for tamper resistance
-gsutil versioning set on gs://mahdev-firestore-backups-asia-southeast1/
+gsutil versioning set on "gs://$FIRESTORE_BACKUP_BUCKET/"
 ```
 
 ### C. Configure Cloud Scheduler Automated Nightly Exports
@@ -84,10 +85,10 @@ Create a Cloud Scheduler job triggering the Firestore automated export endpoint:
 gcloud scheduler jobs create http firestore-nightly-backup \
   --schedule="0 2 * * *" \
   --time-zone="Asia/Colombo" \
-  --uri="https://firestore.googleapis.com/v1/projects/for-her-33ea9/databases/ai-studio-mahdevpvtltd-b6505c20-1d3d-4de0-a4bb-a8fb7ae999dd:exportDocuments" \
+  --uri="https://firestore.googleapis.com/v1/projects/$FIREBASE_PROJECT_ID/databases/$FIRESTORE_DATABASE_ID:exportDocuments" \
   --http-method=POST \
-  --message-body='{"outputUriPrefix": "gs://mahdev-firestore-backups-asia-southeast1/daily"}' \
-  --oauth-service-account-email="firestore-backup-sa@for-her-33ea9.iam.gserviceaccount.com"
+  --message-body="{\"outputUriPrefix\":\"gs://$FIRESTORE_BACKUP_BUCKET/daily\"}" \
+  --oauth-service-account-email="$FIREBASE_BACKUP_SERVICE_ACCOUNT_EMAIL"
 ```
 
 ---
@@ -99,8 +100,8 @@ If an accidental deletion or corruption occurred at `2026-08-19T03:10:00Z`:
 ```bash
 # Restore to a new recovery database instance
 gcloud firestore databases restore \
-  --source-database="ai-studio-mahdevpvtltd-b6505c20-1d3d-4de0-a4bb-a8fb7ae999dd" \
-  --destination-database="mahdev-restored-sandbox" \
+  --source-database="$FIRESTORE_DATABASE_ID" \
+  --destination-database="$FIRESTORE_RECOVERY_DATABASE_ID" \
   --recovery-time="2026-08-19T03:10:00Z"
 ```
 
@@ -108,9 +109,9 @@ gcloud firestore databases restore \
 ```bash
 # Import only the orders collection from a specific daily backup snapshot
 gcloud firestore import \
-  --database="ai-studio-mahdevpvtltd-b6505c20-1d3d-4de0-a4bb-a8fb7ae999dd" \
+  --database="$FIRESTORE_DATABASE_ID" \
   --collection-ids="orders" \
-  gs://mahdev-firestore-backups-asia-southeast1/daily/2026-08-18T02:00:00Z/
+  "gs://$FIRESTORE_BACKUP_BUCKET/daily/$FIRESTORE_BACKUP_TIMESTAMP/"
 ```
 
 ---
@@ -127,7 +128,4 @@ gcloud firestore import \
 
 ## 6. Non-Production Recovery Drill Verification
 
-A non-destructive recovery drill test script (`scripts/test-backup-recovery-drill.ts`) is executed on staging environments before production deployments to verify:
-1. Snapshot JSON integrity and schema conformance.
-2. Cryptographic checksum validation on all exported records.
-3. Isolation of recovery procedures to non-production namespaces.
+Recovery procedures should be rehearsed manually against an isolated non-production database before production use. This repository no longer includes an automated recovery drill test script.

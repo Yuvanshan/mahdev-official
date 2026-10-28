@@ -1,6 +1,6 @@
 # Mahdev Pvt Ltd — Production CI/CD Pipeline & Rollback Operations Manual (Phase 38)
 
-This operations manual governs the automated deployment pipeline from **GitHub** to **Vercel** production hosting for **Mahdev Pvt Ltd** (`https://mahdev.lk`), establishing strict quality gates, automated testing, security validation, and instant rollback procedures.
+This operations manual governs deployment from **GitHub** to **Vercel** production hosting for **Mahdev Pvt Ltd**, including build validation and rollback procedures.
 
 ---
 
@@ -22,19 +22,15 @@ This operations manual governs the automated deployment pipeline from **GitHub**
 │      Deployment         │  ➔ Isolated test sandbox & QA evaluation
 └────────────┬────────────┘
              │
-             ▼ Comprehensive QA & Security Review
+             ▼ Type check and production build
 ┌─────────────────────────┐
-│  Pull Request to `main` │  ➔ Triggers GitHub Actions CI Pipeline
+│  Pull Request to `main`  │  ➔ Vercel Preview deployment
 └────────────┬────────────┘
              │
-             ├── 1. Lint (`npm run lint`)
-             ├── 2. Type check (`npm run typecheck`)
-             ├── 3. Automated Security & Pricing Tests (`npm test`)
-             ├── 4. Storage & MIME Validation (`npm run test:storage`)
-             ├── 5. Disaster Recovery Integrity Drill (`npm run test:recovery`)
-             └── 6. Production Bundle Build (`npm run build`)
+             ├── 1. Type check (`npm run lint`)
+             └── 2. Production bundle build (`npm run build`)
              │
-             ▼ PR Merged to `main` (Only if ALL 6 checks PASS)
+             ▼ PR merged to `main`
 ┌─────────────────────────┐
 │       main branch       │  ➔ Authoritative production codebase
 └────────────┬────────────┘
@@ -48,20 +44,16 @@ This operations manual governs the automated deployment pipeline from **GitHub**
 
 ---
 
-## 2. Pre-Production Automated Checks Matrix
+## 2. Pre-Production Build Checks
 
-Before any build is promoted to production, the continuous integration pipeline executes the following checks sequentially:
+Run the following checks before promoting a build to production:
 
 | Check Category | Command | Pass Criteria | Strict Policy |
 | :--- | :--- | :--- | :--- |
-| **Linting** | `npm run lint` | Zero ESLint / formatting violations. | **Blocker** — PR blocked on failure |
-| **Type Safety** | `npm run typecheck` | `tsc --noEmit` exits with status `0`. Zero type inconsistencies. | **Blocker** — PR blocked on failure |
-| **Automated Tests** | `npm test` | All 11 automated test suites pass (pricing, anti-bot, fiscal invoices). | **Blocker** — PR blocked on failure |
-| **Security Rules** | `npm run test:security` | 20+ Firestore RBAC scenarios pass 100% (anti-escalation & IDOR protection). | **Blocker** — PR blocked on failure |
-| **Storage Rules** | `npm run test:storage` | MIME whitelisting, file size caps (8MB/15MB), and path hierarchy verified. | **Blocker** — PR blocked on failure |
-| **Disaster Recovery** | `npm run test:recovery` | SHA-256 snapshot serialization & sandbox restore verified. | **Blocker** — PR blocked on failure |
-| **Production Build** | `npm run build` | Vite client bundle + Node/Express backend `dist/server.cjs` compiles cleanly. | **Blocker** — PR blocked on failure |
-| **Environment Check**| `serverEnv.ts` | All required runtime keys confirmed against schema. | **Blocker** — PR blocked on failure |
+| **Type Safety** | `npm run lint` | `tsc --noEmit` exits with status `0`. | Required before deployment |
+| **Production Build** | `npm run build` | Vite client and backend bundles compile cleanly. | Required before deployment |
+
+Automated test files and test-runner commands have been removed from this repository. Do not treat historical test reports elsewhere in this manual as current verification.
 
 ---
 
@@ -70,8 +62,8 @@ Before any build is promoted to production, the continuous integration pipeline 
 > ⚠️ **CRITICAL OPERATIONAL DIRECTIVE**:
 > - **DO NOT DEPLOY BROKEN BUILDS.**
 > - **DO NOT BYPASS FAILED CHECKS.**
-> - Merging to `main` with failing CI checks or skipping quality gates is strictly prohibited.
-> - Pull Requests must achieve 100% green status across all automated stages and require authorized peer review before production deployment.
+> - Do not promote a build if type checking or production bundling fails.
+> - Review changes and verify critical application flows before production deployment.
 
 ---
 
@@ -105,13 +97,13 @@ git pull origin main
 git revert -m 1 HEAD   # For merge commits
 # or: git revert <commit_hash>
 
-# 3. Verify locally that preflight passes
+# 3. Verify locally that type checking and build pass
 npm run preflight
 
 # 4. Push revert commit to main
 git push origin main
 ```
-*Pushing the revert to `main` automatically triggers the GitHub Actions CI pipeline and deploys the clean state to Vercel.*
+*A push to the configured production branch triggers the Vercel deployment integration.*
 
 ### Option C: Firestore Security Rules Rollback
 
@@ -119,7 +111,7 @@ If a database rule regression occurs:
 
 ```bash
 # Deploy previously committed firestore.rules
-firebase deploy --only firestore:rules --project for-her-33ea9
+firebase deploy --only firestore:rules --project "$FIREBASE_PROJECT_ID"
 ```
 
 ### Option D: Database State Rollback
@@ -135,12 +127,12 @@ If data corruption occurred:
 
 | Component | Target Provider | Configuration Status | Verification Notes |
 | :--- | :--- | :---: | :--- |
-| **GitHub** | GitHub Repositories | **VERIFIED** | Branch protection enabled on `main`. Automated GitHub Actions workflow (`.github/workflows/production-pipeline.yml`). |
+| **GitHub** | GitHub Repositories | **CONNECTED** | Production source branch is configured in Vercel. |
 | **Vercel** | Vercel Serverless / Edge CDN | **VERIFIED** | Connected to GitHub. Output directory set to `dist/`. SPA rewrite and caching headers configured in `vercel.json`. |
-| **Firebase** | Google Cloud Firebase Platform | **VERIFIED** | Initialized via SDK (`for-her-33ea9`). Config in `firebase-applet-config.json`. |
+| **Firebase** | Google Cloud Firebase Platform | **CONFIGURED VIA ENVIRONMENT** | Client configuration comes from `VITE_FIREBASE_*`; server integrations use Firebase environment variables. |
 | **Application database** | Turso (libSQL) | **CONFIGURED VIA SERVER ENVIRONMENT** | Connection uses `TURSO_DATABASE_URL` and secret `TURSO_AUTH_TOKEN`; app provisions one SQL table per collection. Firebase remains for Authentication and Storage. |
 | **Authentication** | Firebase Auth & HMAC Server Kernel | **VERIFIED** | Multi-factor customer auth, admin HMAC token generation with salt, and role separation. |
-| **Storage** | Firebase Storage Buckets | **VERIFIED** | Bucket `for-her-33ea9.firebasestorage.app`. Partitioned security rules in `storage.rules`. |
+| **Storage** | Firebase Storage Buckets | **CONFIGURED VIA ENVIRONMENT** | Bucket selected by `FIREBASE_STORAGE_BUCKET`; partitioned security rules in `storage.rules`. |
 | **Domain & TLS** | LK Domain / Vercel DNS (`mahdev.lk`) | **VERIFIED** | DNS mapped (`A` -> `76.76.21.21`, `CNAME` -> `cname.vercel-dns.com`). Automated TLS 1.3 certificate. |
 | **Environment Variables** | Vercel Environment Variables | **VERIFIED** | Documented in `.env.example` and `ENV_VARIABLES.md`. Runtime verification via `serverEnv.ts`. |
 

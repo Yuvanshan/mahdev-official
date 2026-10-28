@@ -86,25 +86,36 @@ export interface TursoWrite {
   merge?: boolean;
 }
 
-export function validateTursoDatabaseUrl(url: string): string {
+export function validateTursoDatabaseUrl(
+  url: string,
+  databaseName = process.env.TURSO_DATABASE_NAME
+): string {
   if (url.startsWith('file:')) {
     if (process.env.NODE_ENV === 'production') {
-      throw new Error('Production must connect to the existing Turso database named "mahdev".');
+      throw new Error('Production must connect to the configured Turso database.');
     }
     return url;
+  }
+
+  const expectedDatabaseName = databaseName?.trim().toLowerCase();
+  if (!expectedDatabaseName || !/^[a-z0-9][a-z0-9-]*$/.test(expectedDatabaseName)) {
+    throw new Error('TURSO_DATABASE_NAME must contain the configured database name.');
   }
 
   let parsedUrl: URL;
   try {
     parsedUrl = new URL(url);
   } catch {
-    throw new Error('TURSO_DATABASE_URL must point to the existing Turso database named "mahdev".');
+    throw new Error('TURSO_DATABASE_URL must point to the configured Turso database.');
   }
 
   const hostname = parsedUrl.hostname.toLowerCase();
-  const isTursoHost = /^mahdev-[a-z0-9-]+(?:\.aws-[a-z0-9-]+)?\.turso\.io$/.test(hostname);
+  const databasePrefix = expectedDatabaseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const isTursoHost = new RegExp(
+    `^${databasePrefix}-[a-z0-9-]+(?:\\.aws-[a-z0-9-]+)?\\.turso\\.io$`
+  ).test(hostname);
   if (!['libsql:', 'https:'].includes(parsedUrl.protocol) || !isTursoHost) {
-    throw new Error('TURSO_DATABASE_URL must point to the existing Turso database named "mahdev".');
+    throw new Error('TURSO_DATABASE_URL must point to the configured Turso database.');
   }
 
   return url;
@@ -115,9 +126,10 @@ export function getTursoClient(): Client {
 
   const configuredUrl = process.env.TURSO_DATABASE_URL;
   const authToken = process.env.TURSO_AUTH_TOKEN;
-  const url = configuredUrl ? validateTursoDatabaseUrl(configuredUrl) : undefined;
-  if (!url || !authToken) {
-    throw new Error('Database is not configured. Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN.');
+  const databaseName = process.env.TURSO_DATABASE_NAME;
+  const url = configuredUrl ? validateTursoDatabaseUrl(configuredUrl, databaseName) : undefined;
+  if (!url || !authToken || !databaseName) {
+    throw new Error('Database is not configured. Set TURSO_DATABASE_URL, TURSO_AUTH_TOKEN, and TURSO_DATABASE_NAME.');
   }
 
   client = createClient({ url, authToken });

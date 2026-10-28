@@ -11,25 +11,20 @@ import {
   setDoc,
   getDoc,
 } from 'firebase/firestore';
-import rawConfig from '../firebase-applet-config.json';
 import { COMPANY_INFO } from '../src/config/company';
+import { getFirebaseConfig } from './firebaseConfig';
 
-const firebaseConfig = {
-  apiKey: rawConfig.apiKey,
-  authDomain: rawConfig.authDomain,
-  projectId: rawConfig.projectId,
-  storageBucket: rawConfig.storageBucket,
-  messagingSenderId: rawConfig.messagingSenderId,
-  appId: rawConfig.appId,
-};
-
-const databaseId = rawConfig.firestoreDatabaseId || 'mahdev-pvt-ldt';
+const { firebaseConfig, firestoreDatabaseId } = getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app, databaseId);
+const db = getFirestore(app, firestoreDatabaseId);
 
-const CLEANUP_ADMIN_EMAIL = `superadmin-${Date.now()}@mahdev.lk`;
-const ADMIN_PASS = 'MahdevAdmin2026!#$Secure';
+const CLEANUP_ADMIN_EMAIL = process.env.FIRESTORE_MAINTENANCE_EMAIL;
+const ADMIN_PASS = process.env.FIRESTORE_MAINTENANCE_PASSWORD;
+
+if (!CLEANUP_ADMIN_EMAIL || !ADMIN_PASS) {
+  throw new Error('Set FIRESTORE_MAINTENANCE_EMAIL and FIRESTORE_MAINTENANCE_PASSWORD before running this script.');
+}
 
 async function updateProductionSettings() {
   const cred = await createUserWithEmailAndPassword(auth, CLEANUP_ADMIN_EMAIL, ADMIN_PASS);

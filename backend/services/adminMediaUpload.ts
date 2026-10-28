@@ -60,9 +60,9 @@ function parseServiceAccount(value: string): Record<string, unknown> {
 }
 
 function storageBucketName(): string {
-  return process.env.FIREBASE_STORAGE_BUCKET ||
-    process.env.VITE_FIREBASE_STORAGE_BUCKET ||
-    'for-her-33ea9.firebasestorage.app';
+  const bucketName = process.env.FIREBASE_STORAGE_BUCKET || process.env.VITE_FIREBASE_STORAGE_BUCKET;
+  if (!bucketName) throw new Error('Firebase Storage is not configured. Set FIREBASE_STORAGE_BUCKET.');
+  return bucketName;
 }
 
 /** The server's firebase-admin app (storage and auth), initialised once from FIREBASE_SERVICE_ACCOUNT_JSON. */
@@ -129,10 +129,7 @@ export async function forwardAdminMediaUploadChunk(input: {
   contentType: unknown;
   body: Buffer;
 }): Promise<{ receivedBytes: number; complete: boolean }> {
-  const bucketName =
-    process.env.FIREBASE_STORAGE_BUCKET ||
-    process.env.VITE_FIREBASE_STORAGE_BUCKET ||
-    'for-her-33ea9.firebasestorage.app';
+  const bucketName = storageBucketName();
   const uploadUrl = typeof input.uploadUrl === 'string' ? input.uploadUrl : '';
   const contentRange = typeof input.contentRange === 'string' ? input.contentRange : '';
   const contentType = typeof input.contentType === 'string' ? input.contentType : '';

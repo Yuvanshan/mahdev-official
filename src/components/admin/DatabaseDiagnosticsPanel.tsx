@@ -34,7 +34,7 @@ import { analyticsService } from '../../services/analyticsService';
 import { AdminConfirmDialog } from './AdminConfirmDialog';
 import {
   activeDatabaseName,
-  TARGET_FIREBASE_PROJECT_ID,
+  firebaseConfig,
 } from '../../lib/firebase';
 
 export const DatabaseDiagnosticsPanel: React.FC = () => {
@@ -201,7 +201,7 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
               Database Authentication project{' '}
-              <code className="font-mono text-blue-600 font-semibold">{TARGET_FIREBASE_PROJECT_ID}</code> with application data in the database{' '}
+              <code className="font-mono text-blue-600 font-semibold">{firebaseConfig.projectId}</code> with application data in the database{' '}
               <code className="font-mono text-blue-600 font-semibold">{activeDatabaseName}</code>.
             </p>
           </div>
@@ -268,7 +268,7 @@ export const DatabaseDiagnosticsPanel: React.FC = () => {
           </Button>
 
           <a
-            href="https://app.turso.tech/yuvanshan"
+            href="https://app.turso.tech"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition-colors"
