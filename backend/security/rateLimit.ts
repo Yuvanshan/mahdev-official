@@ -63,7 +63,13 @@ export function getClientIp(req: IncomingMessage): string {
     const value = req.headers[name];
     return (Array.isArray(value) ? value[0] : value)?.split(',')[0]?.trim() || '';
   };
-  return header('x-vercel-forwarded-for') || header('x-real-ip') || req.socket?.remoteAddress || header('x-forwarded-for') || 'unknown';
+  // On Vercel the platform sets these headers itself. Anywhere else a visitor can send
+  // them, so only the connection address is trusted (unless a proxy in front is declared
+  // with TRUST_PROXY_HEADERS=true, e.g. behind a load balancer that overwrites them).
+  if (process.env.VERCEL || process.env.TRUST_PROXY_HEADERS === 'true') {
+    return header('x-vercel-forwarded-for') || header('x-real-ip') || req.socket?.remoteAddress || header('x-forwarded-for') || 'unknown';
+  }
+  return req.socket?.remoteAddress || 'unknown';
 }
 
 // Per-IP limits for anonymous submissions, by collection.

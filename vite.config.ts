@@ -70,7 +70,7 @@ export default defineConfig(({ mode }) => {
           manualChunks(id) {
             if (!id.includes('/node_modules/')) return;
             if (id.includes('/node_modules/@firebase/') || id.includes('/node_modules/firebase/')) {
-              return 'firebase-vendor';
+              return 'auth-vendor';
             }
             if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/') || id.includes('/node_modules/scheduler/')) {
               return 'react-vendor';

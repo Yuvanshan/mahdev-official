@@ -8,11 +8,12 @@
  *   sent to the signed-in account's email (set by the server, not the browser).
  */
 
-import { getTursoDocument } from '../db/tursoDatabase.js';
+import { getTursoDocument, writeTursoDocument } from '../db/tursoDatabase.js';
 import type { DatabaseAccess } from '../api/tursoRoutes.js';
 import { dispatchServerNotification } from './secureNotificationService.js';
 import { sendCustomerEmail } from './emailService.js';
 import { BANK_DETAILS } from '../../src/config/company.js';
+import { CANONICAL_SITE_ORIGIN } from '../../src/config/site.js';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -47,7 +48,9 @@ function formatDate(iso: string): string {
 }
 
 function siteOrigin(): string {
-  return (process.env.APP_URL || 'https://mahdev.lk').replace(/\/+$/, '');
+  // APP_URL when set, otherwise the site's own canonical address (never a domain that
+  // may not be live yet), so links in emails always open the website.
+  return (process.env.APP_URL || CANONICAL_SITE_ORIGIN).replace(/\/+$/, '');
 }
 
 /** Plain-text and HTML "booking request received" email for the customer. */
@@ -183,11 +186,12 @@ export async function notifyForVerifiedSubmission(input: unknown, access: Databa
     ? `A new order was submitted by ${customerName}. Order reference: ${recordId}.`
     : `${isOnlineBooking ? 'A new online booking' : 'A new booking'} was submitted by ${customerName} for ${safeText(data.serviceName, 'a service')} on ${safeText(data.date || data.bookingDate, 'a date to be confirmed')}. Review and confirm it in Admin > Bookings.`;
 
-  // The confirmation goes only to the sign-in account's own email (from its verified
-  // token), never to an address taken from the booking. New accounts are not verified yet,
-  // so their sign-in email is used.
+  // Only to a VERIFIED sign-in email. Anyone can create an account with someone else's
+  // address without verifying it, so an unverified address would let a stranger make this
+  // server email that person. Unverified customers see the confirmation and bank details on
+  // screen, and are emailed when the team confirms the booking.
   const receiptEmail = access.role === 'customer'
-    ? safeText(access.identity?.email || access.identity?.accountEmail, '', 254).toLowerCase()
+    ? safeText(access.identity?.email, '', 254).toLowerCase()
     : '';
 
   const [teamAlert, customerMail] = await Promise.all([
@@ -293,12 +297,14 @@ export async function notifyCustomerOfConfirmation(input: unknown, access: Datab
   const write = input.write;
   const collection = write.collection;
   if ((collection !== 'orders' && collection !== 'bookings') || typeof write.id !== 'string' || !isRecord(write.data)) return;
-  // Only the change to "confirmed" sends the email (not every later edit).
   if (write.data.status !== 'confirmed' && write.data.orderStatus !== 'confirmed') return;
 
   const document = await getTursoDocument(collection, '', write.id);
   if (!document) return;
   const data = document.data;
+  // Sent once: later admin saves of a confirmed record (notes, payments, tracking) re-send
+  // the status too, and must not email the customer again.
+  if (data.confirmationEmailSentAt) return;
   const customer = isRecord(data.customer) ? data.customer : {};
   const to = safeText(data.customerEmail || data.contactEmail || customer.email || data.email, '', 254).toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
@@ -307,7 +313,15 @@ export async function notifyCustomerOfConfirmation(input: unknown, access: Datab
   }
   const customerName = safeText(customer.fullName || customer.name || data.customerName, 'there');
   const result = await sendCustomerEmail({ to, ...confirmedEmail(collection, document.id, data, customerName) });
-  if (!result.delivered) {
+  if (result.delivered) {
+    await writeTursoDocument({
+      type: 'update',
+      collection,
+      parentPath: '',
+      id: document.id,
+      data: { confirmationEmailSentAt: new Date().toISOString() },
+    }).catch((error: unknown) => console.error(`[Submission alerts] Could not record the confirmation email for ${document.id}:`, error));
+  } else {
     console.error(`[Submission alerts] Confirmation email for ${collection} ${document.id} was not delivered: ${result.notice}`);
   }
 }

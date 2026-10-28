@@ -205,6 +205,12 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       '/register',
       '/forgot-password',
       '/auth',
+      // Personal pages: design confirmation links, the bookings list, and "Book online" forms.
+      '/confirm-order',
+      '/bookings',
+      '/book/service',
+      '/book/gallery',
+      '/book/product',
     ];
     const isPrivateRoute = privateRoutePrefixes.some(
       (prefix) => currentPath === prefix || currentPath.startsWith(`${prefix}/`)
@@ -282,7 +288,8 @@ export const SEOHead: React.FC<SEOMetaData> = ({
 
     const organizationSchema = {
       '@context': 'https://schema.org',
-      '@type': 'Corporation',
+      // Same type as the static Organization data in index.html (same @id).
+      '@type': 'Organization',
       '@id': `${SEO_ORIGIN}/#organization`,
       // Must match the static Organization data in index.html (same @id).
       name: ORGANIZATION_LEGAL_NAME,
@@ -293,8 +300,8 @@ export const SEOHead: React.FC<SEOMetaData> = ({
         .map((url) => (typeof url === 'string' && url.startsWith('/') ? `${SEO_ORIGIN}${url}` : url))
         .find((url) => typeof url === 'string' && /^https?:\/\//.test(url)) || `${SEO_ORIGIN}/logo.png`,
       description: siteSettings?.metaDescription || companySettings?.description || 'Mahdev Pvt Ltd – Creating. Capturing. Innovating. Multi-division enterprise group.',
-      email: companySettings?.email || 'info@mahdev.lk',
-      telephone: [companySettings?.primaryPhone || '075 092 8078', companySettings?.secondaryPhone || '075 092 8078'].filter(Boolean),
+      email: companySettings?.email || 'info.mahdev.lk@gmail.com',
+      telephone: [companySettings?.primaryPhone || '075 092 8078', companySettings?.secondaryPhone || '076 898 8970'].filter(Boolean),
       sameAs: [
         companySettings?.socials?.linkedin,
         companySettings?.socials?.facebook,

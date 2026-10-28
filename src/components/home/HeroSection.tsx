@@ -170,7 +170,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           playsInline
           disableRemotePlayback
           muted
-          preload="auto"
+          // The poster shows at once; autoplay still starts the video, without forcing the
+          // whole file to download before the page is usable.
+          preload="metadata"
           aria-hidden="true"
           disablePictureInPicture
           className="absolute inset-0 h-full w-full object-cover object-center brightness-[1.05] contrast-[1.08] saturate-[1.08]"

@@ -23,6 +23,7 @@ import { ScrollReveal } from '../components/motion/MotionWrappers';
 import { LegalPolicyType } from '../types';
 import { LegalDocument, LegalSection } from '../types/websiteContent';
 import { websiteContentService } from '../services/firestore/websiteContent';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { LegalDocumentId } from '../data/legalDocuments';
 
 interface LegalPageViewProps {
@@ -169,7 +170,7 @@ export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavi
       <SEOHead
         title={meta.seoTitle}
         description={meta.seoDescription}
-        canonicalUrl={`https://mahdev.lk${meta.route}`}
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}${meta.route}`}
       />
 
       {/* Header Banner */}

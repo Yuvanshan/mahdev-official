@@ -49,6 +49,11 @@ async function getPublishedSlugs(): Promise<Set<string>> {
   return slugs;
 }
 
+// /services/{slug}, /products/{slug}, /projects/{slug}... (one item per address).
+const ITEM_PAGE_PATTERN = /^\/?(services|service|products|product|projects|project|work|portfolio)\/[^/]+\/?$/i;
+// /book/service/{id}, /book/gallery/{id}, /book/product/{id}: personal booking forms.
+const ONLINE_BOOKING_PATTERN = /^\/?book\/(service|gallery|product)\//i;
+
 async function resolveStatus(path: string): Promise<200 | 404> {
   const normalised = path.replace(/^\/+|\/+$/g, '').toLowerCase();
   // "%" also ends the segment so legacy "/services%{slug}" category links resolve as /services.
@@ -103,13 +108,21 @@ async function serveShell(req: IncomingMessage, res: ServerResponse, forcedStatu
       if (seo) {
         html = renderSeoHtml(html, seo, CANONICAL_SITE_ORIGIN);
         isItemPage = true;
+      } else if (ITEM_PAGE_PATTERN.test(path) && !/^\/?services?\/category\/?$/i.test(path)) {
+        // An item address whose item does not exist is a real 404, not the home page
+        // with a 200 (which search engines treat as a "soft 404").
+        status = 404;
       }
     } catch (error) {
       console.error('[PageShell] Could not add page SEO; serving the plain shell:', error);
     }
   }
 
-  const isPrivatePage = status === 200 && PRIVATE_ROUTE_SEGMENTS.has(path.replace(/^\/+/, '').split('/')[0].toLowerCase());
+  // Private pages: account, sign-in, checkout... and each item's "Book online" form.
+  const isPrivatePage = status === 200 && (
+    PRIVATE_ROUTE_SEGMENTS.has(path.replace(/^\/+/, '').split('/')[0].toLowerCase()) ||
+    ONLINE_BOOKING_PATTERN.test(path)
+  );
   if (status === 404 || isPrivatePage) {
     // Tell crawlers not to index the not-found page or private (account, sign-in, checkout) pages.
     const robots = status === 404 ? 'noindex, follow' : 'noindex, nofollow';

@@ -163,6 +163,28 @@ const PUBLIC_READ_COLLECTIONS = new Set([
   'trustedCompanies',
   'websiteContent',
 ]);
+// Order and booking fields only the admin (or the server) sets. A customer or visitor
+// creating a record cannot preset them (e.g. a fake "paid" amount or admin notes).
+const SERVER_OWNED_RECORD_FIELDS = [
+  'amountPaid', 'payments', 'advanceAmount', 'discount', 'deliveryFee', 'customerUpdates',
+  'adminNotes', 'rejectionReason', 'cancellationReason', 'invoiceNumber',
+  'confirmationEmailSentAt', 'pricingVerification', 'contactEmail',
+];
+function withoutServerOwnedFields(data: Record<string, unknown>): Record<string, unknown> {
+  const copy = { ...data };
+  SERVER_OWNED_RECORD_FIELDS.forEach((field) => delete copy[field]);
+  return copy;
+}
+
+// Internal fields customers never receive when reading their own orders and bookings.
+const CUSTOMER_HIDDEN_RECORD_FIELDS = ['adminNotes', 'pricingVerification', 'confirmationEmailSentAt'];
+function hideInternalRecordFields(collection: string, document: TursoDocument): TursoDocument {
+  if (collection !== 'orders' && collection !== 'bookings') return document;
+  const data = { ...document.data };
+  CUSTOMER_HIDDEN_RECORD_FIELDS.forEach((field) => delete data[field]);
+  return { ...document, data };
+}
+
 // The only nested collection non-admins may read: chunks of a stored media file.
 const MEDIA_CHUNK_COLLECTION = 'media_blobs/chunks';
 const MEDIA_CHUNK_PARENT = /^media_blobs\/[A-Za-z0-9_-]{1,128}$/;
@@ -633,10 +655,9 @@ async function prepareCustomerWrite(write: TursoWrite, identity: FirebaseIdentit
   const {
     customerEmail: _customerEmail,
     email: _email,
-    contactEmail: _contactEmail,
     customer: rawCustomer,
     ...clientData
-  } = write.data;
+  } = withoutServerOwnedFields(write.data);
   const customer = rawCustomer && typeof rawCustomer === 'object' && !Array.isArray(rawCustomer)
     ? {
         ...Object.fromEntries(
@@ -906,7 +927,7 @@ async function preparePublicWrite(write: TursoWrite): Promise<TursoWrite> {
       orderStatus: _orderStatus,
       customer: rawCustomer,
       ...data
-    } = write.data;
+    } = withoutServerOwnedFields(write.data);
     const customer = rawCustomer && typeof rawCustomer === 'object' && !Array.isArray(rawCustomer)
       ? Object.fromEntries(
           Object.entries(rawCustomer as Record<string, unknown>)
@@ -1109,7 +1130,13 @@ export async function handleTursoAction(
           : visibleDocument;
       return {
         status: 200,
-        body: { document: access.role === 'public' && publicDocument ? hidePublicDrafts(collection, publicDocument) : publicDocument },
+        body: {
+          document: access.role === 'public' && publicDocument
+            ? hidePublicDrafts(collection, publicDocument)
+            : access.role === 'customer' && publicDocument
+              ? hideInternalRecordFields(collection, publicDocument)
+              : publicDocument,
+        },
       };
     }
     if (action === 'list') {
@@ -1161,6 +1188,8 @@ export async function handleTursoAction(
               ? documents.map((document) => compactPublicImageDocument(collection, document))
             : access.role === 'public'
               ? documents.map((document) => hidePublicDrafts(collection, document)).filter((document): document is TursoDocument => document !== null)
+            : access.role === 'customer'
+              ? documents.map((document) => hideInternalRecordFields(collection, document))
             : documents,
         },
       };

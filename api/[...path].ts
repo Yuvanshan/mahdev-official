@@ -17,6 +17,7 @@ import analyticsHandler from '../backend/api/handlers/analytics.js';
 import whatsappWebhookHandler from '../backend/api/handlers/whatsappWebhook.js';
 import orderConfirmationsHandler from '../backend/api/handlers/orderConfirmations.js';
 import accountCheckHandler from '../backend/api/handlers/accountCheck.js';
+import { isFromThisSite } from '../backend/security/sameSite.js';
 import pageShellHandler, { sendNotFoundPage } from '../backend/api/handlers/pageShell.js';
 
 interface ApiRequest extends IncomingMessage {
@@ -106,25 +107,6 @@ function isBrowserPageRequest(req: ApiRequest): boolean {
 // '/api/account/check' reveals whether an account exists, so only this site's pages may ask.
 const SITE_ONLY_API_PREFIXES = ['/api/public/snapshot', '/api/database', '/api/data/', '/api/analytics', '/api/account/check'];
 
-function headerValue(req: ApiRequest, name: string): string {
-  const value = req.headers[name];
-  return (Array.isArray(value) ? value[0] : value) || '';
-}
-
-// True when the request comes from a page on this same site. Browsers set
-// Sec-Fetch-Site themselves (pages cannot fake it); older browsers fall back
-// to the Origin/Referer host. Direct visits, other websites and scripts fail.
-function isFromThisSite(req: ApiRequest): boolean {
-  const fetchSite = headerValue(req, 'sec-fetch-site');
-  if (fetchSite) return fetchSite === 'same-origin';
-  const host = headerValue(req, 'x-forwarded-host') || headerValue(req, 'host');
-  const source = headerValue(req, 'origin') || headerValue(req, 'referer');
-  try {
-    return Boolean(host && source && new URL(source).host === host);
-  } catch {
-    return false;
-  }
-}
 
 export default async function handler(req: ApiRequest, res: ServerResponse): Promise<void> {
   const pathname = new URL(req.url || '/', 'http://localhost').pathname;

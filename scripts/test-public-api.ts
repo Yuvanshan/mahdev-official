@@ -10,6 +10,8 @@ import { Readable } from 'node:stream';
 const databasePath = path.join(tmpdir(), `mahdev-public-api-test-${process.pid}.db`);
 process.env.TURSO_DATABASE_URL = `file:${databasePath}`;
 process.env.TURSO_AUTH_TOKEN = 'local-test-token';
+// These tests exercise the Vercel serverless API, where the platform sets the client IP headers.
+process.env.VERCEL = '1';
 delete process.env.ADMIN_LOGIN_EMAIL;
 delete process.env.ADMIN_LOGIN_PASSWORD_HASH;
 delete process.env.ADMIN_SESSION_SECRET;
@@ -188,7 +190,13 @@ try {
       assert.equal((await status('/hidden-draft')).statusCode, 404);
       const notFound = await status('/nope');
       assert.match(notFound.body, /noindex/);
-      assert.equal((await status('/services/wedding-decor')).statusCode, 200);
+      // A single-service address is 200 only when the service exists (no "soft 404").
+      assert.equal((await status('/services/wedding-decor')).statusCode, 404, 'an unknown service must be a real 404');
+      assert.equal((await status('/services/svc-a')).statusCode, 200, 'a listed service must load');
+      // Personal "Book online" forms load, but are never indexed.
+      const bookingForm = await status('/book/service/svc-a');
+      assert.equal(bookingForm.statusCode, 200);
+      assert.match(bookingForm.headers['x-robots-tag'] || '', /noindex/, 'booking forms must not be indexed');
       assert.equal((await status('/admin-yuvan1709/gallery')).statusCode, 200);
       assert.equal((await status('/summer-offer')).statusCode, 200, 'published CMS page must be 200');
       assert.equal((await status('/')).statusCode, 200);
@@ -210,7 +218,8 @@ try {
       const admin = await viaDispatcher('/admin');
       assert.equal(admin.statusCode, 404);
       assert.match(admin.headers['content-type'], /text\/html/, 'must be the HTML 404 page, not JSON');
-      assert.equal((await viaDispatcher('/services/abc')).statusCode, 200);
+      assert.equal((await viaDispatcher('/services/abc')).statusCode, 404, 'an unknown service must be a real 404');
+      assert.equal((await viaDispatcher('/services/svc-a')).statusCode, 200);
       assert.equal((await viaDispatcher('/no-such-page?x=1')).statusCode, 404);
       // Direct call with Vercel's injected catch-all "path" parameter present.
       assert.equal((await viaDispatcher('/api/page-shell?route=%2Fadmin&path=page-shell')).statusCode, 404);
@@ -353,6 +362,7 @@ try {
           customerEmail: 'victim@example.com', email: 'victim@example.com', contactEmail: 'victim@example.com',
           customer: { fullName: 'M', email: 'victim@example.com' },
           customerId: 'someone-else', status: 'confirmed', paymentStatus: 'paid',
+          amountPaid: 1000, payments: [{ amount: 1000 }], advanceAmount: 0, adminNotes: 'VIP', customerUpdates: [{ title: 'Paid' }],
         },
       },
     }, mallory);
@@ -364,6 +374,9 @@ try {
     assert.equal(booking.data.customerId, 'cust-mallory');
     assert.equal(booking.data.status, 'pending');
     assert.equal(booking.data.paymentStatus, 'unpaid');
+    for (const field of ['amountPaid', 'payments', 'advanceAmount', 'adminNotes', 'customerUpdates']) {
+      assert.equal(booking.data[field], undefined, `a customer must not preset ${field}`);
+    }
 
     // The profile email always comes from the sign-in account.
     const profile = await handleTursoAction({
@@ -388,8 +401,18 @@ try {
     assert.equal((erinList.body.documents as Array<{ id: string }>).some((d) => d.id === 'BK-DAVE-1'), false, 'another customer must not see it');
     const erinGet = await handleTursoAction({ action: 'get', collection: 'bookings', id: 'BK-DAVE-1' }, erin);
     assert.equal(erinGet.body.document, null);
+    // Internal admin notes are kept from the customer, but the team's updates reach them.
+    await handleTursoAction({
+      action: 'write',
+      write: { type: 'update', collection: 'bookings', parentPath: '', id: 'BK-DAVE-1', data: { adminNotes: 'Internal: check venue', customerUpdates: [{ id: 'u1', title: 'Booking confirmed' }] } },
+    }, { role: 'admin' });
     const daveList = await handleTursoAction({ action: 'list', collection: 'bookings' }, dave);
-    assert.equal((daveList.body.documents as Array<{ id: string }>).some((d) => d.id === 'BK-DAVE-1'), true, 'the owner must see it');
+    const own = (daveList.body.documents as Array<{ id: string; data: Record<string, unknown> }>).find((d) => d.id === 'BK-DAVE-1');
+    assert.ok(own, 'the owner must see it');
+    assert.equal(own!.data.adminNotes, undefined, 'admin notes must not reach the customer');
+    assert.ok(Array.isArray(own!.data.customerUpdates), 'customer updates must reach the customer');
+    const daveGet = await handleTursoAction({ action: 'get', collection: 'bookings', id: 'BK-DAVE-1' }, dave);
+    assert.equal((daveGet.body.document as { data: Record<string, unknown> }).data.adminNotes, undefined);
 
     // Customers cannot confirm, re-price or overwrite their booking.
     const update = await handleTursoAction({

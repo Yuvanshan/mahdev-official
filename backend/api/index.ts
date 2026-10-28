@@ -21,6 +21,7 @@ import analyticsHandler from './handlers/analytics.js';
 import whatsappWebhookHandler from './handlers/whatsappWebhook.js';
 import orderConfirmationsHandler from './handlers/orderConfirmations.js';
 import accountCheckHandler from './handlers/accountCheck.js';
+import { isFromThisSite } from '../security/sameSite.js';
 import adminCustomersHandler from './handlers/admin/customers.js';
 import { sanitizePublicSettingsDocument } from './tursoRoutes.js';
 import adminLoginHandler from './handlers/admin/auth/login.js';
@@ -61,6 +62,11 @@ apiRouter.all(/^\/order-confirmations(\/.*)?$/, async (req: Request, res: Respon
 
 // Is this email / phone / NIC already registered? (sign-up, Book online, password reset)
 apiRouter.post('/account/check', async (req: Request, res: Response) => {
+  // Same as the serverless API: only this website's own pages are answered.
+  if (!isFromThisSite(req)) {
+    res.status(404).json({ success: false, error: 'Not found.' });
+    return;
+  }
   await accountCheckHandler(req, res);
 });
 

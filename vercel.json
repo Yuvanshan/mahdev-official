@@ -39,6 +39,46 @@
       "source": "/:prefix(divisions|division)/:id(sws|u1|it|travels|mart)",
       "destination": "/:id",
       "permanent": true
+    },
+    {
+      "source": "/:alias(about-us|company)",
+      "destination": "/about",
+      "permanent": true
+    },
+    {
+      "source": "/:alias(projects|work)",
+      "destination": "/portfolio",
+      "permanent": true
+    },
+    {
+      "source": "/journey",
+      "destination": "/milestones",
+      "permanent": true
+    },
+    {
+      "source": "/reviews",
+      "destination": "/testimonials",
+      "permanent": true
+    },
+    {
+      "source": "/jobs",
+      "destination": "/careers",
+      "permanent": true
+    },
+    {
+      "source": "/:alias(partners|companies)",
+      "destination": "/clients",
+      "permanent": true
+    },
+    {
+      "source": "/promotion",
+      "destination": "/promotions",
+      "permanent": true
+    },
+    {
+      "source": "/featured-services",
+      "destination": "/services",
+      "permanent": true
     }
   ],
   "rewrites": [

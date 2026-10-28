@@ -14,6 +14,7 @@ import { consumeRateLimit, getClientIp, RateLimitError } from '../../security/ra
 import { sendAdminAlertEmail, sendCustomerEmail } from '../../services/emailService.js';
 import { normaliseSriLankaPhone, parseNic } from '../../../src/utils/sriLankaIdentity.js';
 import { BANK_DETAILS } from '../../../src/config/company.js';
+import { CANONICAL_SITE_ORIGIN } from '../../../src/config/site.js';
 
 /**
  * Design order confirmations.
@@ -112,7 +113,7 @@ function siteOrigin(value: unknown): string {
   } catch {
     // Fall through to the configured site address.
   }
-  return (process.env.APP_URL || 'https://mahdev.lk').replace(/\/+$/, '');
+  return (process.env.APP_URL || CANONICAL_SITE_ORIGIN).replace(/\/+$/, '');
 }
 
 function shareUrl(data: Record<string, unknown>): string {
