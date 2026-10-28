@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Building2, Check, Copy, MessageCircle, X } from 'lucide-react';
+import { Building2, Check, CheckCircle2, Copy, Loader2, MessageCircle, Upload, X } from 'lucide-react';
 import { BANK_DETAILS } from '../../config/company';
 import { MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
 import { formatCurrency } from '../../utils/currency';
+import { uploadPaymentSlip } from '../../services/bookingService';
+import { PaymentSlipField } from './PaymentSlipField';
+import type { BookingPaymentSlip } from '../../types/booking';
 
 /**
  * "Pay now" while online card / LankaPay payments are switched off
  * (ONLINE_PAYMENT_GATEWAY_ENABLED): shows the bank account to transfer to and
- * lets the customer send the slip on WhatsApp. Nothing is marked as paid here;
- * the admin records the payment once the money is received.
+ * lets the customer send the slip on WhatsApp, or upload it for a booking.
+ * Nothing is marked as paid here; the admin accepts the slip once the money is received.
  */
 interface BankTransferModalProps {
   isOpen: boolean;
@@ -21,6 +24,9 @@ interface BankTransferModalProps {
   /** Shown above the amount, e.g. "Advance" or "Balance due". */
   amountLabel?: string;
   currency?: string;
+  /** For a booking: the slip is uploaded to it here (WhatsApp stays as a fallback). */
+  bookingId?: string;
+  onSlipUploaded?: (slip: BookingPaymentSlip) => void;
 }
 
 export const BankTransferModal: React.FC<BankTransferModalProps> = ({
@@ -30,9 +36,40 @@ export const BankTransferModal: React.FC<BankTransferModalProps> = ({
   amount,
   amountLabel = 'Amount to pay',
   currency = 'LKR',
+  bookingId,
+  onSlipUploaded,
 }) => {
   const [copied, setCopied] = useState<string | null>(null);
+  const [slipFile, setSlipFile] = useState<File | null>(null);
+  const [slipAmount, setSlipAmount] = useState(() => (amount > 0 ? String(amount) : ''));
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploaded, setUploaded] = useState<BookingPaymentSlip | null>(null);
   if (!isOpen || typeof document === 'undefined') return null;
+
+  const handleUpload = async () => {
+    if (!bookingId) return;
+    const value = Number(slipAmount);
+    if (!slipFile) {
+      setUploadError('Choose the slip photo or PDF first.');
+      return;
+    }
+    if (!Number.isFinite(value) || value <= 0) {
+      setUploadError('Enter the amount you transferred.');
+      return;
+    }
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const slip = await uploadPaymentSlip(bookingId, slipFile, value);
+      setUploaded(slip);
+      onSlipUploaded?.(slip);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'The slip could not be uploaded. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const copy = async (label: string, value: string) => {
     try {
@@ -64,7 +101,7 @@ export const BankTransferModal: React.FC<BankTransferModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="bank-transfer-title"
-        className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden"
+        className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-y-auto max-h-[calc(100vh-2rem)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-6 py-5 bg-gradient-to-br from-[#1e1b4b] to-[#312e81] text-white flex items-start justify-between">
@@ -121,16 +158,57 @@ export const BankTransferModal: React.FC<BankTransferModalProps> = ({
           <ol className="text-xs text-slate-600 space-y-1 list-decimal list-inside">
             <li>Transfer the amount to the account above using your bank app or at the bank.</li>
             <li>Use <strong>{reference}</strong> as the payment reference.</li>
-            <li>Send us the transfer slip on WhatsApp. We will update your payment once it is received.</li>
+            <li>
+              {bookingId
+                ? 'Upload the transfer slip below. We will update your booking once the payment is checked.'
+                : 'Send us the transfer slip on WhatsApp. We will update your payment once it is received.'}
+            </li>
           </ol>
+
+          {bookingId && (uploaded ? (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 flex gap-3">
+              <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600" />
+              <div>
+                <div className="font-bold">Slip uploaded: {formatCurrency(uploaded.amount, currency)}</div>
+                <p className="text-xs mt-0.5">Our team will check the payment and update your booking.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <PaymentSlipField
+                file={slipFile}
+                onFileChange={(file) => {
+                  setSlipFile(file);
+                  setUploadError(null);
+                }}
+                amount={slipAmount}
+                onAmountChange={setSlipAmount}
+                currency={currency}
+                fileError={uploadError || undefined}
+              />
+              <button
+                type="button"
+                onClick={() => void handleUpload()}
+                disabled={uploading}
+                className="flex items-center justify-center gap-2 w-full rounded-xl bg-[#0052FF] hover:bg-blue-700 text-white text-sm font-semibold py-3 disabled:opacity-60"
+              >
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                {uploading ? 'Uploading…' : 'Upload slip'}
+              </button>
+            </div>
+          ))}
 
           <a
             href={`https://wa.me/${MAHDEV_WHATSAPP_NUMBER}?text=${encodeURIComponent(slipMessage)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-3"
+            className={
+              bookingId
+                ? 'flex items-center justify-center gap-2 w-full rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold py-2.5'
+                : 'flex items-center justify-center gap-2 w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-3'
+            }
           >
-            <MessageCircle className="w-4 h-4" /> Send transfer slip on WhatsApp
+            <MessageCircle className="w-4 h-4" /> {bookingId ? 'Or send the slip on WhatsApp' : 'Send transfer slip on WhatsApp'}
           </a>
         </div>
       </div>

@@ -16,6 +16,7 @@ import {
 import careerCvHandler from './handlers/careers/cv.js';
 import careerStatusHandler from './handlers/careers/status.js';
 import careerApplicationHandler from './handlers/careers/application.js';
+import bookingSlipHandler from './handlers/bookingSlip.js';
 import publicSnapshotHandler, { publicInlineMediaHandler } from './handlers/publicSnapshot.js';
 import analyticsHandler from './handlers/analytics.js';
 import whatsappWebhookHandler from './handlers/whatsappWebhook.js';
@@ -44,6 +45,18 @@ apiRouter.get('/careers/status', async (req: Request, res: Response) => {
 });
 apiRouter.delete('/careers/application', async (req: Request, res: Response) => {
   await careerApplicationHandler(req, res);
+});
+
+// Bank transfer slips: the customer uploads (raw file body), the admin views.
+apiRouter.post(
+  '/bookings/slip',
+  express.raw({ limit: '10mb', type: () => true }),
+  async (req: Request, res: Response) => {
+    await bookingSlipHandler(req, res);
+  }
+);
+apiRouter.get('/bookings/slip', async (req: Request, res: Response) => {
+  await bookingSlipHandler(req, res);
 });
 
 // Admin customer list (assigns readable customer IDs) and customer delete.

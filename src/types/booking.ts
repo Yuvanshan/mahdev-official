@@ -122,6 +122,8 @@ export interface Booking {
   /** Sum of `payments`; the balance is `price - amountPaid`. */
   amountPaid?: number;
   payments?: BookingPaymentRecord[];
+  /** Bank transfer slips the customer uploaded; added by the server only. */
+  paymentSlips?: BookingPaymentSlip[];
   invoiceNumber?: string;
   /** Terms or notes from the admin, shown to the customer and on the invoice. */
   termsNotes?: string;
@@ -155,6 +157,28 @@ export interface BookingPaymentRecord {
   /** ISO date the money was received. */
   paidAt: string;
   recordedBy?: string;
+}
+
+export type BookingPaymentSlipStatus = 'submitted' | 'accepted' | 'rejected';
+
+/** A transfer slip uploaded by the customer, checked by the admin. */
+export interface BookingPaymentSlip {
+  id: string;
+  /** Private storage path; the file is served only through /api/bookings/slip. */
+  storagePath: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+  /** Amount the customer says they transferred. */
+  amount: number;
+  uploadedAt: string;
+  status: BookingPaymentSlipStatus;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  /** Reason given when a slip is rejected. */
+  reviewNote?: string;
+  /** Payment record created when the slip was accepted. */
+  paymentId?: string;
 }
 
 export interface BookingSubmissionInput {

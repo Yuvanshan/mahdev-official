@@ -557,6 +557,13 @@ export const AdminBookingsView: React.FC = () => {
                         <div className="text-[10px] font-normal text-amber-700">Balance {formatCurrency(b.price - (b.amountPaid || 0), b.currency || 'LKR')}</div>
                       )}
                       <div className="mt-1">{getPaymentBadge(b.paymentStatus)}</div>
+                      {b.paymentSlips?.some((slip) => slip.status === 'submitted') && (
+                        <div className="mt-1">
+                          <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-semibold px-2 py-0.5 rounded-md">
+                            SLIP TO REVIEW
+                          </span>
+                        </div>
+                      )}
                     </td>
                     <td className="py-3.5 px-4">{getStatusBadge(b.status)}</td>
                     <td className="py-3.5 px-4 text-right">

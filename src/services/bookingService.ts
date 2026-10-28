@@ -9,11 +9,12 @@ import {
   BookingPaymentRecord,
   BookingLineItem,
   BookingCustomerUpdate,
+  BookingPaymentSlip,
 } from '../types/booking';
 import { FirestoreService, FirestoreBooking } from '../types/firestore';
 import { notificationService } from './notificationService';
 import { firestoreBookingsService } from './firestore/bookings';
-import { db } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
 import { doc, deleteDoc } from '../lib/tursoFirestore';
 import { formatCurrency } from '../utils/currency';
 
@@ -96,6 +97,7 @@ export function mapFirestoreBookingToUniversal(fb: any): Booking {
     advanceAmount: fb.advanceAmount,
     amountPaid: fb.amountPaid,
     payments: Array.isArray(fb.payments) ? fb.payments : undefined,
+    paymentSlips: Array.isArray(fb.paymentSlips) ? fb.paymentSlips : undefined,
     invoiceNumber: fb.invoiceNumber,
     termsNotes: fb.termsNotes,
     customerUpdates: Array.isArray(fb.customerUpdates) ? fb.customerUpdates : undefined,
@@ -124,6 +126,56 @@ const STATUS_MESSAGES: Record<BookingStatus, (booking: Booking, reason?: string)
 export function paymentStatusFor(total: number, paid: number): PaymentStatus {
   if (paid <= 0) return 'unpaid';
   return paid >= total - 0.005 ? 'paid' : 'deposit_paid';
+}
+
+/** New "Book online" reference; shown to the customer before the booking is saved. */
+export function newBookingReference(): string {
+  return `BK-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+}
+
+export const MAX_PAYMENT_SLIP_BYTES = 10 * 1024 * 1024;
+export const PAYMENT_SLIP_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+
+/** Why a chosen slip file cannot be uploaded, or null when it is fine. */
+export function paymentSlipFileError(file: File): string | null {
+  if (!PAYMENT_SLIP_TYPES.includes(file.type)) return 'Upload the slip as a JPG, PNG, WebP image or a PDF.';
+  if (!file.size || file.size > MAX_PAYMENT_SLIP_BYTES) return 'The slip must be no larger than 10 MB.';
+  return null;
+}
+
+/** Admin-only address of an uploaded slip (opens in the browser). */
+export function paymentSlipUrl(bookingId: string, slipId: string): string {
+  return `/api/bookings/slip?id=${encodeURIComponent(bookingId)}&slip=${encodeURIComponent(slipId)}`;
+}
+
+/**
+ * Uploads a bank transfer slip to the signed-in customer's own booking. The
+ * server checks the file and adds it to the booking for the admin to review.
+ */
+export async function uploadPaymentSlip(bookingId: string, file: File, amount: number): Promise<BookingPaymentSlip> {
+  const problem = paymentSlipFileError(file);
+  if (problem) throw new Error(problem);
+  const user = auth.currentUser;
+  if (!user) throw new Error('Please sign in to upload your slip.');
+
+  const response = await fetch(
+    `/api/bookings/slip?id=${encodeURIComponent(bookingId)}&amount=${encodeURIComponent(String(amount))}`,
+    {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        Authorization: `Bearer ${await user.getIdToken()}`,
+        'Content-Type': file.type,
+        'X-Slip-Filename': encodeURIComponent(file.name),
+      },
+      body: file,
+    }
+  );
+  const result = (await response.json().catch(() => ({}))) as { success?: boolean; slip?: BookingPaymentSlip; error?: string };
+  if (!response.ok || !result.success || !result.slip) {
+    throw new Error(result.error || `The slip could not be uploaded (HTTP ${response.status}).`);
+  }
+  return result.slip;
 }
 
 export function mapFirestoreServiceToBookable(fs: FirestoreService): BookableServiceItem {
@@ -485,12 +537,13 @@ class UniversalBookingService {
    * waits for the database so the customer sees an error if saving fails, and
    * picks a new reference if the generated one is already taken.
    */
-  public async submitOnlineBooking(draft: Omit<Booking, 'id'>): Promise<Booking> {
+  public async submitOnlineBooking(draft: Omit<Booking, 'id'>, preferredId?: string): Promise<Booking> {
     const MAX_ATTEMPTS = 3;
     for (let attempt = 1; ; attempt++) {
+      // The reference the customer already saw (and used on the transfer) is tried first.
       const booking: Booking = {
         ...draft,
-        id: `BK-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`,
+        id: attempt === 1 && preferredId ? preferredId : newBookingReference(),
       };
       try {
         await firestoreBookingsService.createBooking(booking as any);
@@ -770,6 +823,90 @@ class UniversalBookingService {
     this.saveToStorage();
     this.notifySubscribers();
     return { success: true, booking };
+  }
+
+  /**
+   * Accepts a customer's transfer slip: records it as a bank transfer payment
+   * (advance first, then balance) and confirms a booking that is still pending.
+   * Rejecting keeps the slip on record with the reason, which the customer sees.
+   */
+  public async adminReviewPaymentSlip(
+    id: string,
+    slipId: string,
+    decision: { accept: true; amount: number; reviewedBy: string } | { accept: false; reason: string; reviewedBy: string }
+  ): Promise<{ success: boolean; booking?: Booking; error?: string }> {
+    const booking = this.getBookingById(id);
+    if (!booking) return { success: false, error: 'Booking not found.' };
+    const slip = booking.paymentSlips?.find((entry) => entry.id === slipId);
+    if (!slip) return { success: false, error: 'Slip not found. Refresh the bookings and try again.' };
+    if (slip.status !== 'submitted') return { success: false, error: 'This slip has already been reviewed.' };
+
+    const now = new Date().toISOString();
+    const currency = booking.currency || 'LKR';
+    const reviewed = { reviewedAt: now, reviewedBy: decision.reviewedBy };
+
+    if ('reason' in decision) {
+      const reason = decision.reason.trim();
+      if (!reason) return { success: false, error: 'Give a reason so the customer knows what to fix.' };
+      return this.saveAdminChange(
+        id,
+        {
+          paymentSlips: booking.paymentSlips!.map((entry) =>
+            entry.id === slipId ? { ...entry, ...reviewed, status: 'rejected' as const, reviewNote: reason } : entry
+          ),
+        },
+        {
+          title: 'Payment slip not accepted',
+          message: `We could not accept your transfer slip of ${formatCurrency(slip.amount, currency)} for ${booking.serviceName}. ${reason}`,
+        }
+      );
+    }
+
+    const round = (value: number) => Math.round(value * 100) / 100;
+    const amount = round('amount' in decision ? decision.amount : 0);
+    const payments = booking.payments || [];
+    const paidSoFar = booking.amountPaid || 0;
+    if (!Number.isFinite(amount) || amount <= 0) return { success: false, error: 'Enter the amount received.' };
+    // An "on quotation" booking has no total yet; set the charges first.
+    if (booking.price <= 0) return { success: false, error: 'Set the booking charges (total) before accepting a payment.' };
+    if (paidSoFar + amount > booking.price + 0.005) {
+      return { success: false, error: `Only ${formatCurrency(Math.max(0, booking.price - paidSoFar), currency)} is outstanding on this booking.` };
+    }
+
+    const payment: BookingPaymentRecord = {
+      id: `PAY-${Date.now().toString(36).toUpperCase()}`,
+      kind: paidSoFar <= 0 ? 'advance' : 'balance',
+      amount,
+      method: 'Bank transfer',
+      note: `Slip ${slip.id}`,
+      paidAt: slip.uploadedAt.slice(0, 10),
+      recordedBy: decision.reviewedBy,
+    };
+    const amountPaid = round(paidSoFar + amount);
+    const confirm = booking.status === 'pending';
+    return this.saveAdminChange(
+      id,
+      {
+        payments: [...payments, payment],
+        amountPaid,
+        paymentStatus: paymentStatusFor(booking.price, amountPaid),
+        // The first accepted transfer becomes the advance when none was set.
+        ...(booking.advanceAmount ? {} : { advanceAmount: Math.min(amount, booking.price) }),
+        paymentSlips: booking.paymentSlips!.map((entry) =>
+          entry.id === slipId ? { ...entry, ...reviewed, status: 'accepted' as const, paymentId: payment.id } : entry
+        ),
+        ...(confirm ? { status: 'confirmed' as BookingStatus } : {}),
+      },
+      confirm
+        ? {
+            title: 'Payment received, booking confirmed',
+            message: `We received your payment of ${formatCurrency(amount, currency)} and confirmed your booking for ${booking.serviceName} on ${formatBookingDate(booking.date)}.`,
+          }
+        : {
+            title: 'Payment received',
+            message: `We received your payment of ${formatCurrency(amount, currency)} for ${booking.serviceName}. Thank you.`,
+          }
+    );
   }
 
   /** Moves a booking to any step of the process (or cancels / rejects it). */

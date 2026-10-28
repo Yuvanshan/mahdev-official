@@ -503,6 +503,7 @@ function bankLines(): string[] {
     `Bank: ${BANK_DETAILS.bankName}`,
     ...(BANK_DETAILS.branch ? [`Branch: ${BANK_DETAILS.branch}`] : []),
     ...(BANK_DETAILS.accountNumber ? [`Account number: ${BANK_DETAILS.accountNumber}`] : []),
+    'After paying, upload the transfer slip from My bookings (Pay / upload slip).',
   ];
 }
 

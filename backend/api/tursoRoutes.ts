@@ -168,7 +168,7 @@ const PUBLIC_READ_COLLECTIONS = new Set([
 const SERVER_OWNED_RECORD_FIELDS = [
   'amountPaid', 'payments', 'advanceAmount', 'discount', 'deliveryFee', 'customerUpdates',
   'adminNotes', 'rejectionReason', 'cancellationReason', 'invoiceNumber',
-  'confirmationEmailSentAt', 'pricingVerification', 'contactEmail',
+  'confirmationEmailSentAt', 'pricingVerification', 'contactEmail', 'paymentSlips',
 ];
 function withoutServerOwnedFields(data: Record<string, unknown>): Record<string, unknown> {
   const copy = { ...data };

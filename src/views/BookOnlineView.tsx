@@ -1,10 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
+  ArrowLeft,
+  Building2,
   CalendarCheck,
   CalendarDays,
+  Check,
   CheckCircle2,
   Clock,
+  Copy,
   CreditCard,
   Loader2,
   LogIn,
@@ -17,6 +21,7 @@ import {
   ShieldCheck,
   Sparkles,
   User,
+  Wallet,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
@@ -24,9 +29,10 @@ import { SEOHead } from '../components/layout/SEOHead';
 import { AuthAlert, AuthField, AuthSubmit, PasswordField } from '../components/auth/AuthFields';
 import { getServiceStartingPrice } from '../components/common/StartingPriceTag';
 import { MIN_PASSWORD_LENGTH, passwordPolicyError } from '../services/authService';
-import { bookingService } from '../services/bookingService';
+import { bookingService, newBookingReference, uploadPaymentSlip } from '../services/bookingService';
+import { PaymentSlipField } from '../components/payment/PaymentSlipField';
 import { markAccountDataStale } from '../services/customerAccountService';
-import { Booking, BookingLocation, BookingType } from '../types/booking';
+import { Booking, BookingLocation, BookingPaymentSlip, BookingType } from '../types/booking';
 import { FirestoreGallery, FirestoreProduct, FirestoreService } from '../types/firestore';
 import { normaliseSriLankaPhone, parseNic } from '../utils/sriLankaIdentity';
 import { formatCurrency } from '../utils/currency';
@@ -67,7 +73,9 @@ type FieldKey =
   | 'email'
   | 'password'
   | 'confirmPassword'
-  | 'agreeToTerms';
+  | 'agreeToTerms'
+  | 'slip'
+  | 'slipAmount';
 type FieldErrors = Partial<Record<FieldKey, string>>;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -240,6 +248,15 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState<Booking | null>(null);
+  // Step 1: booking and customer details. Step 2: pay the advance, upload the slip, confirm.
+  const [step, setStep] = useState<'details' | 'payment'>('details');
+  // Booking reference quoted on the transfer; the booking is saved under it.
+  const [reference] = useState(newBookingReference);
+  const [slipFile, setSlipFile] = useState<File | null>(null);
+  const [slipAmount, setSlipAmount] = useState('');
+  const [uploadedSlip, setUploadedSlip] = useState<BookingPaymentSlip | null>(null);
+  // Set when the booking was saved but its slip upload failed (retry from the success panel).
+  const [slipUploadError, setSlipUploadError] = useState<string | null>(null);
   // Set when registration fails because the email or NIC already has an account.
   const [accountExists, setAccountExists] = useState(false);
   // The booking panel; on phones it sits below the item, so errors and the
@@ -294,6 +311,10 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
   const unitPrice = selectedPackage?.price || item?.price || 0;
   const quantity = kind === 'product' ? form.quantity : 1;
   const estimatedTotal = unitPrice * quantity;
+  const depositPercent = siteSettings?.bookingDepositPercent ?? 30;
+  const advanceEstimate = estimatedTotal > 0 ? Math.round((estimatedTotal * depositPercent) / 100) : 0;
+  // A priced item needs the advance slip now; a quotation can add it later from My bookings.
+  const slipRequired = estimatedTotal > 0;
   const minDate = tomorrowIso();
   const loginPath = `/login?redirect=${encodeURIComponent(onlineBookingPath(kind, itemId))}`;
   const addressLabel =
@@ -335,9 +356,9 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
     return errors;
   };
 
-  /** Saves the booking request against the signed-in account. */
-  const submitBooking = async (customer: { fullName: string; email: string; phone: string }) => {
-    if (!item) return;
+  /** Saves the booking against the signed-in account, under the reference shown for the transfer. */
+  const submitBooking = async (customer: { fullName: string; email: string; phone: string }): Promise<Booking | null> => {
+    if (!item) return null;
     const divisionId = item.divisionId || divisionIdFromName(item.divisionName);
     const location: BookingLocation = {
       type: kind === 'product' ? 'client_premises' : divisionId === 'travels' ? 'travel_destination' : 'venue',
@@ -371,18 +392,49 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
       itemKind: kind,
       lineItems: [{ name: lineName, description: KIND_LABELS[kind], quantity, unitPrice }],
       subtotal: estimatedTotal,
-    });
+    }, reference);
     markAccountDataStale();
-    setConfirmed(booking);
+    return booking;
   };
 
-  // Show the success message (on phones the panel is below the item details).
+  /** Uploads the chosen slip to the saved booking; a failure can be retried from the success panel. */
+  const sendSlip = async (booking: Booking) => {
+    if (!slipFile) return;
+    try {
+      setUploadedSlip(await uploadPaymentSlip(booking.id, slipFile, Number(slipAmount)));
+      setSlipUploadError(null);
+      markAccountDataStale();
+    } catch (error) {
+      setSlipUploadError(error instanceof Error ? error.message : 'The slip could not be uploaded. Please try again.');
+    }
+  };
+
+  const validateSlip = (): FieldErrors => {
+    const errors: FieldErrors = {};
+    if (slipRequired && !slipFile) errors.slip = 'Upload the transfer slip for the advance to confirm your booking.';
+    const amount = Number(slipAmount);
+    if (slipFile && (!Number.isFinite(amount) || amount <= 0)) errors.slipAmount = 'Enter the amount you transferred.';
+    else if (slipFile && estimatedTotal > 0 && amount > estimatedTotal) {
+      errors.slipAmount = `The amount cannot be more than the total of ${formatCurrency(estimatedTotal, 'LKR')}.`;
+    }
+    return errors;
+  };
+
+  /** Step 1 done: show the bank account and ask for the advance slip. */
+  const goToPayment = () => {
+    if (!slipAmount && advanceEstimate > 0) setSlipAmount(String(advanceEstimate));
+    setErrorMessage(null);
+    setStep('payment');
+  };
+
+  // Show the payment step / success message (on phones the panel is below the item details).
   useEffect(() => {
-    if (!confirmed) return;
+    if (!confirmed && step === 'details') return;
     const frame = window.requestAnimationFrame(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     return () => window.cancelAnimationFrame(frame);
-  }, [confirmed]);
+  }, [confirmed, step]);
 
+  /** New customer, step 1: check the details (and that no account exists yet) before payment. */
   const handleNewCustomer = async (event: React.FormEvent) => {
     event.preventDefault();
     setErrorMessage(null);
@@ -396,7 +448,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
 
     setIsSubmitting(true);
     try {
-      // 1. Email, phone or NIC that already has an account: ask the customer to sign in instead.
+      // Email, phone or NIC that already has an account: ask the customer to sign in instead.
       const taken = takenDetailErrors(await checkAccountDetails({ email: form.email, phone: form.phone, nic: form.nic }));
       if (Object.keys(taken).length) {
         setFieldErrors(taken);
@@ -405,46 +457,17 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
         revealProblem();
         return;
       }
-      // 2. Create the account (the server also refuses an email, phone or NIC that is already registered).
-      const registered = await register({
-        fullName: form.fullName,
-        nic: form.nic,
-        phone: form.phone,
-        email: form.email,
-        password: form.password,
-        confirmPassword: form.confirmPassword,
-        agreeToTerms: form.agreeToTerms,
-        accountType: 'individual',
-      });
-      if (!registered.success) {
-        const message = registered.error || 'Could not create your account. Please try again.';
-        setAccountExists(/already|in use|registered|exists/i.test(message));
-        if (/NIC/i.test(message)) setFieldErrors({ nic: message });
-        else if (/email/i.test(message)) setFieldErrors({ email: message });
-        else setErrorMessage(message);
-        revealProblem();
-        return;
-      }
-      // 3. Save the booking on the new account.
-      await submitBooking({
-        fullName: form.fullName.trim(),
-        email: form.email.trim().toLowerCase(),
-        phone: normaliseSriLankaPhone(form.phone) || form.phone.trim(),
-      });
+      goToPayment();
     } catch (error) {
-      // The account exists now; the signed-in panel lets them retry the booking.
-      setErrorMessage(
-        error instanceof Error
-          ? `Your account was created, but the booking could not be sent: ${error.message}`
-          : 'Please try booking again.'
-      );
+      setErrorMessage(error instanceof Error ? error.message : 'Please try again.');
       revealProblem();
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleSignedIn = async (event: React.FormEvent) => {
+  /** Signed-in customer, step 1: check the booking details before payment. */
+  const handleSignedIn = (event: React.FormEvent) => {
     event.preventDefault();
     if (!user) return;
     setErrorMessage(null);
@@ -454,16 +477,76 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
       revealProblem();
       return;
     }
+    goToPayment();
+  };
+
+  /** Step 2: create the account if needed, save the booking, then attach the slip. */
+  const handleConfirm = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setErrorMessage(null);
+    const errors = validateSlip();
+    setFieldErrors(errors);
+    if (Object.keys(errors).length) {
+      revealProblem();
+      return;
+    }
 
     setIsSubmitting(true);
+    let customer: { fullName: string; email: string; phone: string };
+    if (isAuthenticated && user) {
+      customer = { fullName: user.fullName, email: user.email, phone: user.phone };
+    } else {
+      // The server also refuses an email, phone or NIC that is already registered.
+      const registered = await register({
+        fullName: form.fullName,
+        nic: form.nic,
+        phone: form.phone,
+        email: form.email,
+        password: form.password,
+        confirmPassword: form.confirmPassword,
+        agreeToTerms: form.agreeToTerms,
+        accountType: 'individual',
+      }).catch((error: unknown) => ({ success: false, error: error instanceof Error ? error.message : undefined }));
+      if (!registered.success) {
+        // Back to the details so the customer can correct them.
+        const message = registered.error || 'Could not create your account. Please try again.';
+        setAccountExists(/already|in use|registered|exists/i.test(message));
+        if (/NIC/i.test(message)) setFieldErrors({ nic: message });
+        else if (/email/i.test(message)) setFieldErrors({ email: message });
+        else setErrorMessage(message);
+        setStep('details');
+        setIsSubmitting(false);
+        revealProblem();
+        return;
+      }
+      customer = {
+        fullName: form.fullName.trim(),
+        email: form.email.trim().toLowerCase(),
+        phone: normaliseSriLankaPhone(form.phone) || form.phone.trim(),
+      };
+    }
+
     try {
-      await submitBooking({ fullName: user.fullName, email: user.email, phone: user.phone });
+      const booking = await submitBooking(customer);
+      if (!booking) return;
+      await sendSlip(booking);
+      setConfirmed(booking);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Could not send your booking. Please try again.');
+      // A new account exists now; the signed-in payment step lets them retry.
+      setErrorMessage(
+        error instanceof Error ? `Your booking could not be sent: ${error.message}` : 'Could not send your booking. Please try again.'
+      );
       revealProblem();
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const retrySlipUpload = async () => {
+    if (!confirmed) return;
+    setIsSubmitting(true);
+    await sendSlip(confirmed);
+    setIsSubmitting(false);
   };
 
   const seo = (
@@ -664,7 +747,11 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
               </div>
             </div>
             <div className="mx-5 sm:mx-6 mb-5 text-xs text-slate-600 bg-amber-50/70 border border-amber-100 rounded-xl p-3 space-y-1">
-              <p>No payment is taken now. Our team will check availability and confirm the final price, any advance and delivery or transport charges before your booking is confirmed.</p>
+              <p>
+                {unitPrice > 0
+                  ? `To confirm, pay an advance of ${formatCurrency(advanceEstimate, 'LKR')} (${depositPercent}%) by bank transfer and upload the slip. Our team checks the payment and availability, then confirms your booking and any delivery or transport charges.`
+                  : 'Our team will confirm the final price and the advance. Pay the advance by bank transfer and upload the slip to reserve your date.'}
+              </p>
               <p>
                 Cancellations and refunds follow our{' '}
                 <a href="/refund-policy" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-700 hover:underline">Refund and Cancellation Policy</a>.
@@ -682,21 +769,39 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
                 <div className="space-y-1">
-                  <h2 className="font-display text-lg font-bold text-slate-900">Booking request received</h2>
+                  <h2 className="font-display text-lg font-bold text-slate-900">
+                    {uploadedSlip ? 'Booking and payment slip received' : 'Booking received'}
+                  </h2>
                   <p className="text-sm text-slate-600">
                     Booking reference <strong className="font-mono">{confirmed.id}</strong>
                   </p>
                 </div>
-                <ol className="text-left rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600 space-y-2 list-decimal list-inside">
-                  <li>Our team checks availability for {new Date(`${confirmed.date}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}.</li>
-                  <li>We confirm the final price and the advance on WhatsApp or email.</li>
-                  <li>Pay the advance to the account below to reserve your date.</li>
-                </ol>
-                <AdvancePaymentCard
-                  reference={confirmed.id}
-                  total={confirmed.price}
-                  depositPercent={siteSettings?.bookingDepositPercent ?? 30}
-                />
+                {uploadedSlip && (
+                  <div className="text-left rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 text-xs text-emerald-900 space-y-1">
+                    <div className="font-bold text-sm">Slip uploaded: {formatCurrency(uploadedSlip.amount, 'LKR')}</div>
+                    <p>Our team will check the payment and confirm your booking. You will see the update in your account and on WhatsApp or email.</p>
+                  </div>
+                )}
+                {slipUploadError && (
+                  <div className="text-left rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900 space-y-2" role="alert">
+                    <div className="font-bold text-sm">Your booking is saved, but the slip did not upload</div>
+                    <p>{slipUploadError}</p>
+                    <button
+                      type="button"
+                      onClick={() => void retrySlipUpload()}
+                      disabled={isSubmitting}
+                      className="w-full rounded-xl bg-amber-600 text-white text-sm font-semibold py-2.5 hover:bg-amber-700 disabled:opacity-60"
+                    >
+                      {isSubmitting ? 'Uploading…' : 'Try uploading the slip again'}
+                    </button>
+                  </div>
+                )}
+                {!uploadedSlip && !slipUploadError && (
+                  <p className="text-left rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600">
+                    We will confirm the final price and the advance with you. Then pay the advance and upload the slip from{' '}
+                    <strong>My bookings</strong> to reserve your date.
+                  </p>
+                )}
                 <div className="grid grid-cols-2 gap-2">
                   <button type="button" onClick={() => onNavigate('/account/bookings')} className="rounded-xl bg-[#0052FF] text-white text-sm font-semibold py-3 hover:bg-blue-700">
                     Track my booking
@@ -706,11 +811,58 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
                   </button>
                 </div>
               </div>
+            ) : step === 'payment' ? (
+              <form onSubmit={handleConfirm} noValidate className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setStep('details')}
+                  disabled={isSubmitting}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" /> Edit booking details
+                </button>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-blue-700">Step 2 of 2</p>
+                  <h2 className="font-display text-lg font-bold text-slate-900">Pay the advance & confirm</h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Transfer the advance to the account below, upload the slip and confirm your booking.
+                  </p>
+                </div>
+                <AuthAlert tone="error" message={errorMessage} />
+                <BankTransferDetails
+                  reference={reference}
+                  total={estimatedTotal}
+                  advance={advanceEstimate}
+                  depositPercent={depositPercent}
+                />
+                <PaymentSlipField
+                  file={slipFile}
+                  onFileChange={(file) => {
+                    setSlipFile(file);
+                    setFieldErrors((current) => ({ ...current, slip: undefined }));
+                  }}
+                  amount={slipAmount}
+                  onAmountChange={(value) => {
+                    setSlipAmount(value);
+                    setFieldErrors((current) => ({ ...current, slipAmount: undefined }));
+                  }}
+                  fileError={fieldErrors.slip}
+                  amountError={fieldErrors.slipAmount}
+                  required={slipRequired}
+                />
+                <AuthSubmit busy={isSubmitting} busyLabel={isAuthenticated ? 'Confirming booking…' : 'Creating account & confirming…'}>
+                  <CalendarCheck className="h-4 w-4" /> Confirm booking
+                </AuthSubmit>
+                <p className="text-[11px] text-slate-500 text-center">
+                  Your date is reserved once our team has checked the payment.
+                </p>
+              </form>
             ) : authLoading ? (
               <div className="py-10 flex justify-center"><Loader2 className="w-6 h-6 text-blue-600 animate-spin" /></div>
             ) : isAuthenticated && user ? (
               <form onSubmit={handleSignedIn} noValidate className="space-y-4">
                 <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-blue-700">Step 1 of 2</p>
                   <h2 className="font-display text-lg font-bold text-slate-900">Book online</h2>
                   <p className="text-xs text-slate-500 mt-1">
                     Signed in as <strong>{user.fullName}</strong> ({user.email}).
@@ -732,8 +884,8 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
                   <>
                     {bookingFields}
                     <TermsCheckbox checked={form.agreeToTerms} onChange={(checked) => update('agreeToTerms', checked)} error={fieldErrors.agreeToTerms} />
-                    <AuthSubmit busy={isSubmitting} busyLabel="Sending booking…">
-                      <CalendarCheck className="h-4 w-4" /> Book online
+                    <AuthSubmit busy={isSubmitting} busyLabel="Checking…">
+                      <Wallet className="h-4 w-4" /> Continue to payment
                     </AuthSubmit>
                   </>
                 )}
@@ -741,6 +893,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
             ) : (
               <form onSubmit={handleNewCustomer} noValidate className="space-y-4">
                 <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-blue-700">Step 1 of 2</p>
                   <h2 className="font-display text-lg font-bold text-slate-900">Book online</h2>
                   <p className="text-xs text-slate-500 mt-1">
                     Choose your date, then we will create your Mahdev account so you can follow your booking and download your invoice.
@@ -826,8 +979,8 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
                   error={fieldErrors.confirmPassword}
                 />
                 <TermsCheckbox checked={form.agreeToTerms} onChange={(checked) => update('agreeToTerms', checked)} error={fieldErrors.agreeToTerms} />
-                <AuthSubmit busy={isSubmitting} busyLabel="Creating account & booking…">
-                  <ShieldCheck className="h-4 w-4" /> Create account & book online
+                <AuthSubmit busy={isSubmitting} busyLabel="Checking your details…">
+                  <ShieldCheck className="h-4 w-4" /> Continue to payment
                 </AuthSubmit>
               </form>
             )}
@@ -956,39 +1109,75 @@ const TermsCheckbox: React.FC<{ checked: boolean; onChange: (checked: boolean) =
 );
 
 /**
- * Where to pay the advance once the booking is sent. The final advance is
- * confirmed by our team; until then an estimate from the booking deposit rate
- * (Admin → Settings → Commerce) is shown when the item has a price.
+ * The account to pay the advance into, with copy buttons. The advance is an
+ * estimate from the booking deposit rate (Admin → Settings → Commerce) until
+ * our team confirms the final price.
  */
-const AdvancePaymentCard: React.FC<{ reference: string; total: number; depositPercent: number }> = ({
+const BankTransferDetails: React.FC<{ reference: string; total: number; advance: number; depositPercent: number }> = ({
   reference,
   total,
+  advance,
   depositPercent,
 }) => {
-  const estimate = total > 0 ? Math.round((total * depositPercent) / 100) : 0;
+  const [copied, setCopied] = useState<string | null>(null);
+  const copy = async (label: string, value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(label);
+      window.setTimeout(() => setCopied(null), 2000);
+    } catch {
+      // Clipboard blocked: the value is still visible to copy by hand.
+    }
+  };
+  const rows: Array<[string, string, boolean]> = (
+    [
+      ['Account name', BANK_DETAILS.accountName, true],
+      ['Bank', BANK_DETAILS.bankName, false],
+      ['Branch', BANK_DETAILS.branch, false],
+      ['Account number', BANK_DETAILS.accountNumber, true],
+      ['Payment reference', reference, true],
+    ] as Array<[string, string, boolean]>
+  ).filter(([, value]) => value);
+
   return (
-    <div className="text-left rounded-2xl border border-blue-100 bg-blue-50/50 p-4 text-xs space-y-1.5">
-      <div className="font-bold text-slate-900 text-sm">Pay the advance by bank transfer</div>
-      <p className="text-slate-600">
-        {estimate > 0
-          ? `Estimated advance (${depositPercent}%): ${formatCurrency(estimate, 'LKR')}. We will confirm the exact amount before you pay.`
-          : 'We will confirm the advance amount with you before you pay.'}
-      </p>
-      {[
-        ['Account name', BANK_DETAILS.accountName],
-        ['Bank', BANK_DETAILS.bankName],
-        ['Branch', BANK_DETAILS.branch],
-        ['Account number', BANK_DETAILS.accountNumber],
-        ['Reference', reference],
-      ]
-        .filter(([, value]) => value)
-        .map(([label, value]) => (
-          <div key={label} className="flex justify-between gap-3">
+    <div className="rounded-2xl border border-blue-100 bg-blue-50/50 overflow-hidden text-xs">
+      <div className="px-4 py-3 flex items-center justify-between gap-3 border-b border-blue-100 bg-white/60">
+        <div className="flex items-center gap-2 font-bold text-slate-900 text-sm">
+          <Building2 className="h-4 w-4 text-blue-600" /> Bank transfer
+        </div>
+        {advance > 0 && (
+          <div className="text-right">
+            <div className="text-[10px] text-slate-500">Advance ({depositPercent}%)</div>
+            <div className="font-mono text-base font-bold text-[#0052FF]">{formatCurrency(advance, 'LKR')}</div>
+          </div>
+        )}
+      </div>
+      <div className="divide-y divide-blue-100/70">
+        {rows.map(([label, value, copyable]) => (
+          <div key={label} className="flex items-center justify-between gap-3 px-4 py-2.5">
             <span className="text-slate-500">{label}</span>
-            <strong className="text-slate-900 font-mono text-right break-all">{value}</strong>
+            <span className="flex items-center gap-1.5 min-w-0">
+              <strong className="text-slate-900 font-mono text-right break-all">{value}</strong>
+              {copyable && (
+                <button
+                  type="button"
+                  onClick={() => void copy(label, value)}
+                  className="p-1 text-slate-400 hover:text-slate-700 shrink-0"
+                  aria-label={`Copy ${label.toLowerCase()}`}
+                >
+                  {copied === label ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              )}
+            </span>
           </div>
         ))}
-      <p className="text-slate-500 pt-1">Please send the transfer slip on WhatsApp (075 092 8078) with your booking reference.</p>
+      </div>
+      <p className="px-4 py-3 text-slate-600 border-t border-blue-100">
+        {advance > 0
+          ? `Total ${formatCurrency(total, 'LKR')}. Pay at least the advance now; the balance is paid before your date.`
+          : 'The price is on quotation. If you have agreed an advance with our team, pay it now; otherwise you can upload the slip later from My bookings.'}{' '}
+        Use <strong className="font-mono">{reference}</strong> as the payment reference.
+      </p>
     </div>
   );
 };

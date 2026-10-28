@@ -111,7 +111,7 @@ function receiptMessage(confirmation: OrderConfirmation): string {
     `Bank: ${BANK_DETAILS.bankName}`,
     ...(BANK_DETAILS.branch ? [`Branch: ${BANK_DETAILS.branch}`] : []),
     ...(BANK_DETAILS.accountNumber ? [`Account number: ${BANK_DETAILS.accountNumber}`] : []),
-    'Please send the transfer slip here with your booking reference.',
+    'After paying, upload the transfer slip in your account (My bookings > Pay / upload slip), or send it here with your booking reference.',
     '',
     `Track your booking and view your invoice: ${accountUrl}`,
     '',

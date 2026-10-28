@@ -162,5 +162,10 @@ service firebase.storage {
     match /career-cvs/{allPaths=**} {
       allow read, write: if false;
     }
+
+    // Bank transfer slips are uploaded and served only through /api/bookings/slip.
+    match /booking-slips/{allPaths=**} {
+      allow read, write: if false;
+    }
   }
 }

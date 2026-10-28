@@ -291,3 +291,40 @@ export async function deleteCareerCv(storagePath: string): Promise<void> {
   }
   await getStorageBucket().file(storagePath).delete({ ignoreNotFound: true });
 }
+
+// Bank transfer slips: JPG, PNG, WebP or PDF, checked by their first bytes.
+export const MAX_BOOKING_SLIP_BYTES = 10 * 1024 * 1024;
+const BOOKING_SLIP_TYPES: Array<{ contentType: string; extension: string; matches: (body: Buffer) => boolean }> = [
+  { contentType: 'image/jpeg', extension: 'jpg', matches: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
+  { contentType: 'image/png', extension: 'png', matches: (b) => b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) },
+  { contentType: 'image/webp', extension: 'webp', matches: (b) => b.subarray(0, 4).toString('ascii') === 'RIFF' && b.subarray(8, 12).toString('ascii') === 'WEBP' },
+  { contentType: 'application/pdf', extension: 'pdf', matches: (b) => b.subarray(0, 5).toString('ascii') === '%PDF-' },
+];
+const BOOKING_SLIP_PATH = /^booking-slips\/[A-Za-z0-9-]{1,40}\/[0-9a-f-]{36}\.(jpg|png|webp|pdf)$/;
+
+/** Saves a transfer slip privately; the content type comes from the file itself, not the browser. */
+export async function storeBookingSlip(input: { bookingId: string; body: Buffer }): Promise<{
+  storagePath: string;
+  contentType: string;
+}> {
+  if (input.body.length > MAX_BOOKING_SLIP_BYTES) throw new Error('Upload a slip no larger than 10 MB.');
+  if (input.body.length < 12) throw new Error('Upload the slip as a JPG, PNG, WebP image or a PDF.');
+  const type = BOOKING_SLIP_TYPES.find((candidate) => candidate.matches(input.body));
+  if (!type) throw new Error('Upload the slip as a JPG, PNG, WebP image or a PDF.');
+  if (!/^[A-Za-z0-9-]{1,40}$/.test(input.bookingId)) throw new Error('Invalid booking reference.');
+
+  const storagePath = `booking-slips/${input.bookingId}/${randomUUID()}.${type.extension}`;
+  await getStorageBucket().file(storagePath).save(input.body, {
+    resumable: false,
+    metadata: { contentType: type.contentType, cacheControl: 'private, no-store' },
+  });
+  return { storagePath, contentType: type.contentType };
+}
+
+export async function readBookingSlip(storagePath: string): Promise<{ body: Buffer; contentType: string }> {
+  if (!BOOKING_SLIP_PATH.test(storagePath)) throw new Error('Invalid slip storage reference.');
+  const [body] = await getStorageBucket().file(storagePath).download();
+  const extension = storagePath.split('.').pop();
+  const type = BOOKING_SLIP_TYPES.find((candidate) => candidate.extension === extension);
+  return { body, contentType: type?.contentType || 'application/octet-stream' };
+}

@@ -5,6 +5,7 @@ import mediaHandler from '../backend/api/handlers/upload/media.js';
 import careerApplicationHandler from '../backend/api/handlers/careers/application.js';
 import careerCvHandler from '../backend/api/handlers/careers/cv.js';
 import careerStatusHandler from '../backend/api/handlers/careers/status.js';
+import bookingSlipHandler from '../backend/api/handlers/bookingSlip.js';
 import adminLoginHandler from '../backend/api/handlers/admin/auth/login.js';
 import adminLogoutHandler from '../backend/api/handlers/admin/auth/logout.js';
 import adminVerifyHandler from '../backend/api/handlers/admin/auth/verify.js';
@@ -34,6 +35,7 @@ async function parseJsonBody(req: ApiRequest, res: ServerResponse, pathname: str
     req.body !== undefined ||
     pathname === '/api/upload/media' ||
     pathname === '/api/careers/cv' ||
+    pathname === '/api/bookings/slip' ||
     !req.headers['content-type']?.toLowerCase().includes('application/json') ||
     (req.method !== 'POST' && req.method !== 'PUT' && req.method !== 'PATCH')
   ) {
@@ -88,6 +90,7 @@ const BROWSER_VISIBLE_API_PATHS = new Set([
   '/api/health',
   '/api/careers/cv',
   '/api/careers/status',
+  '/api/bookings/slip',
   '/api/admin/auth/verify',
   '/api/admin/customers',
   '/api/page-shell',
@@ -185,6 +188,10 @@ export default async function handler(req: ApiRequest, res: ServerResponse): Pro
   }
   if (pathname === '/api/careers/cv') {
     await careerCvHandler(req, res);
+    return;
+  }
+  if (pathname === '/api/bookings/slip') {
+    await bookingSlipHandler(req, res);
     return;
   }
   if (pathname === '/api/careers/status') {

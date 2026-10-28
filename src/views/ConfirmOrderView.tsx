@@ -13,6 +13,7 @@ import {
   Phone,
   ShieldCheck,
   Sparkles,
+  Upload,
   User,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -31,6 +32,9 @@ import { normaliseNic, normaliseSriLankaPhone, parseNic } from '../utils/sriLank
 import { formatCurrency } from '../utils/currency';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { BANK_DETAILS } from '../config/company';
+import { uploadPaymentSlip } from '../services/bookingService';
+import { PaymentSlipField } from '../components/payment/PaymentSlipField';
+import type { BookingPaymentSlip } from '../types/booking';
 
 interface ConfirmOrderViewProps {
   token: string;
@@ -38,7 +42,9 @@ interface ConfirmOrderViewProps {
 }
 
 type CheckState = 'idle' | 'checking' | AvailabilityResult | 'error';
-type FieldErrors = Partial<Record<'fullName' | 'nic' | 'phone' | 'email' | 'password' | 'confirmPassword' | 'agreeToTerms', string>>;
+type FieldErrors = Partial<
+  Record<'fullName' | 'nic' | 'phone' | 'email' | 'password' | 'confirmPassword' | 'agreeToTerms' | 'slipAmount', string>
+>;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -92,6 +98,12 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<{ bookingId: string; emailSent?: boolean } | null>(null);
+  // Advance transfer slip: optional. It can be added here, after confirming, or later from My bookings.
+  const [slipFile, setSlipFile] = useState<File | null>(null);
+  const [slipAmount, setSlipAmount] = useState('');
+  const [uploadedSlip, setUploadedSlip] = useState<BookingPaymentSlip | null>(null);
+  const [slipError, setSlipError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const prefilled = useRef(false);
 
   const loginPath = `/login?redirect=${encodeURIComponent(`/confirm-order/${token}`)}`;
@@ -112,6 +124,8 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
             phone: data.customerPhone ? data.customerPhone.replace(/^\+94/, '0') : '',
             address: data.venue || '',
           }));
+          const due = data.advanceAmount > 0 ? data.advanceAmount : data.total;
+          if (due > 0) setSlipAmount(String(due));
         }
       })
       .catch((error: Error) => !cancelled && setLoadError(error.message));
@@ -138,11 +152,38 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
     return [!user.phone && 'contact number', !user.nic && 'NIC'].filter(Boolean) as string[];
   }, [user]);
 
+  /** Attaches the chosen slip to the booking; a failure is shown with a retry, the booking stays confirmed. */
+  const sendSlip = async (bookingId: string) => {
+    if (!slipFile) return;
+    setIsUploading(true);
+    try {
+      setUploadedSlip(await uploadPaymentSlip(bookingId, slipFile, Number(slipAmount)));
+      setSlipError(null);
+      markAccountDataStale();
+    } catch (error) {
+      setSlipError(error instanceof Error ? error.message : 'The slip could not be uploaded. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  /** The slip is optional, but a chosen slip needs a sensible amount. */
+  const slipAmountError = (): string | null => {
+    if (!slipFile) return null;
+    const amount = Number(slipAmount);
+    if (!Number.isFinite(amount) || amount <= 0) return 'Enter the amount you transferred.';
+    if (confirmation && confirmation.total > 0 && amount > confirmation.total) {
+      return `The amount cannot be more than the total of ${formatCurrency(confirmation.total, 'LKR')}.`;
+    }
+    return null;
+  };
+
   const finish = async () => {
     const confirmed = await confirmOrder(token, { address: form.address.trim(), notes: form.notes.trim() });
     markAccountDataStale();
     setResult(confirmed);
     setConfirmation((current) => (current ? { ...current, status: 'confirmed', bookingId: confirmed.bookingId } : current));
+    await sendSlip(confirmed.bookingId);
   };
 
   const validateNewCustomer = (): FieldErrors => {
@@ -157,6 +198,8 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
     if (passwordProblem) errors.password = passwordProblem;
     if (form.confirmPassword !== form.password) errors.confirmPassword = 'Passwords do not match.';
     if (!form.agreeToTerms) errors.agreeToTerms = 'Please accept the Terms and Privacy Policy.';
+    const amountProblem = slipAmountError();
+    if (amountProblem) errors.slipAmount = amountProblem;
     return errors;
   };
 
@@ -200,10 +243,12 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
   const handleSignedIn = async (event: React.FormEvent) => {
     event.preventDefault();
     setErrorMessage(null);
-    if (!form.agreeToTerms) {
-      setFieldErrors({ agreeToTerms: 'Please accept the Terms and Privacy Policy.' });
-      return;
-    }
+    const errors: FieldErrors = {};
+    if (!form.agreeToTerms) errors.agreeToTerms = 'Please accept the Terms and Privacy Policy.';
+    const amountProblem = slipAmountError();
+    if (amountProblem) errors.slipAmount = amountProblem;
+    setFieldErrors(errors);
+    if (Object.keys(errors).length) return;
     setIsSubmitting(true);
     try {
       await finish();
@@ -380,7 +425,55 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
                     </p>
                   )}
                 </div>
-                <BankDetailsCard advanceAmount={confirmation.advanceAmount} total={confirmation.total} />
+                {uploadedSlip ? (
+                  <div className="text-left rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 text-xs text-emerald-900 space-y-1">
+                    <div className="font-bold text-sm">Slip uploaded: {formatCurrency(uploadedSlip.amount, 'LKR')}</div>
+                    <p>Our team will check the payment and update your booking.</p>
+                  </div>
+                ) : result && isAuthenticated ? (
+                  // Just confirmed in this visit: the slip can still be added here, or later.
+                  <div className="text-left space-y-3">
+                    <BankDetailsCard
+                      advanceAmount={confirmation.advanceAmount}
+                      total={confirmation.total}
+                      reference={confirmation.bookingId || confirmation.reference}
+                    />
+                    <PaymentSlipField
+                      file={slipFile}
+                      onFileChange={(file) => {
+                        setSlipFile(file);
+                        setSlipError(null);
+                      }}
+                      amount={slipAmount}
+                      onAmountChange={setSlipAmount}
+                      fileError={slipError || undefined}
+                      required={false}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const problem = slipFile ? slipAmountError() : 'Choose the slip photo or PDF first.';
+                        if (problem) setSlipError(problem);
+                        else if (confirmation.bookingId) void sendSlip(confirmation.bookingId);
+                      }}
+                      disabled={isUploading}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold py-3 hover:bg-emerald-700 disabled:opacity-60"
+                    >
+                      {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                      {isUploading ? 'Uploading…' : 'Upload slip'}
+                    </button>
+                    <p className="text-[11px] text-slate-500 text-center">
+                      Not paid yet? You can skip this and upload the slip later from <strong>My bookings</strong>.
+                    </p>
+                  </div>
+                ) : (
+                  <BankDetailsCard
+                    advanceAmount={confirmation.advanceAmount}
+                    total={confirmation.total}
+                    reference={confirmation.bookingId || confirmation.reference}
+                    laterHint
+                  />
+                )}
                 {isAuthenticated ? (
                   <div className="grid grid-cols-2 gap-2">
                     <button type="button" onClick={() => onNavigate('/account/bookings')} className="rounded-xl bg-[#0052FF] text-white text-sm font-semibold py-3 hover:bg-blue-700">
@@ -429,6 +522,17 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
                 ) : (
                   <>
                     <ExtraFields form={form} update={update} />
+                    <OptionalSlipSection
+                      confirmation={confirmation}
+                      file={slipFile}
+                      onFileChange={setSlipFile}
+                      amount={slipAmount}
+                      onAmountChange={(value) => {
+                        setSlipAmount(value);
+                        setFieldErrors((current) => ({ ...current, slipAmount: undefined }));
+                      }}
+                      amountError={fieldErrors.slipAmount}
+                    />
                     <TermsCheckbox checked={form.agreeToTerms} onChange={(checked) => update('agreeToTerms', checked)} error={fieldErrors.agreeToTerms} />
                     <AuthSubmit busy={isSubmitting} busyLabel="Confirming…">
                       <ShieldCheck className="h-4 w-4" /> Confirm my order
@@ -522,6 +626,17 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
                   error={fieldErrors.confirmPassword}
                 />
                 <ExtraFields form={form} update={update} />
+                <OptionalSlipSection
+                  confirmation={confirmation}
+                  file={slipFile}
+                  onFileChange={setSlipFile}
+                  amount={slipAmount}
+                  onAmountChange={(value) => {
+                    setSlipAmount(value);
+                    setFieldErrors((current) => ({ ...current, slipAmount: undefined }));
+                  }}
+                  amountError={fieldErrors.slipAmount}
+                />
                 <TermsCheckbox checked={form.agreeToTerms} onChange={(checked) => update('agreeToTerms', checked)} error={fieldErrors.agreeToTerms} />
                 <AuthSubmit busy={isSubmitting} busyLabel="Creating account & confirming…" disabled={emailCheck === 'taken' || nicCheck === 'taken'}>
                   <ShieldCheck className="h-4 w-4" /> Create account & confirm order
@@ -536,7 +651,12 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
 };
 
 /** Where to pay the advance and balance (bank transfer only for now). */
-const BankDetailsCard: React.FC<{ advanceAmount: number; total: number }> = ({ advanceAmount, total }) => (
+const BankDetailsCard: React.FC<{ advanceAmount: number; total: number; reference?: string; laterHint?: boolean }> = ({
+  advanceAmount,
+  total,
+  reference,
+  laterHint,
+}) => (
   <div className="text-left rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs space-y-1.5">
     <div className="font-bold text-slate-900 text-sm">
       {advanceAmount > 0 ? `Pay the advance of ${formatCurrency(advanceAmount, 'LKR')}` : `Pay ${formatCurrency(total, 'LKR')}`} by bank transfer
@@ -546,15 +666,62 @@ const BankDetailsCard: React.FC<{ advanceAmount: number; total: number }> = ({ a
       ['Bank', BANK_DETAILS.bankName],
       ['Branch', BANK_DETAILS.branch],
       ['Account number', BANK_DETAILS.accountNumber],
+      ['Payment reference', reference || ''],
     ].filter(([, value]) => value).map(([label, value]) => (
       <div key={label} className="flex justify-between gap-3">
         <span className="text-slate-500">{label}</span>
-        <strong className="text-slate-900 font-mono">{value}</strong>
+        <strong className="text-slate-900 font-mono text-right break-all">{value}</strong>
       </div>
     ))}
-    <p className="text-slate-500 pt-1">Please send the transfer slip to us on WhatsApp with your booking reference.</p>
+    {laterHint && (
+      <p className="text-slate-500 pt-1">After paying, upload the transfer slip from <strong>My bookings</strong> (Pay / upload slip).</p>
+    )}
   </div>
 );
+
+/**
+ * Optional before confirming: pay the advance now and attach the slip. Customers
+ * who have not paid yet skip it and upload the slip later from My bookings.
+ */
+const OptionalSlipSection: React.FC<{
+  confirmation: PublicConfirmation;
+  file: File | null;
+  onFileChange: (file: File | null) => void;
+  amount: string;
+  onAmountChange: (amount: string) => void;
+  amountError?: string;
+}> = ({ confirmation, file, onFileChange, amount, onAmountChange, amountError }) => {
+  const [open, setOpen] = useState(Boolean(file));
+  return (
+    <div className="rounded-2xl border border-slate-200 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        aria-expanded={open}
+        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-50"
+      >
+        <span>
+          <span className="block text-sm font-bold text-slate-900">Already paid the advance? Add the slip</span>
+          <span className="block text-[11px] text-slate-500">Optional. You can skip this and upload it later.</span>
+        </span>
+        <span className="text-xs font-semibold text-blue-700 shrink-0">{file ? 'Slip added' : open ? 'Hide' : 'Add slip'}</span>
+      </button>
+      {open && (
+        <div className="px-4 pb-4 space-y-3 border-t border-slate-100 pt-3">
+          <BankDetailsCard advanceAmount={confirmation.advanceAmount} total={confirmation.total} reference={confirmation.reference} />
+          <PaymentSlipField
+            file={file}
+            onFileChange={onFileChange}
+            amount={amount}
+            onAmountChange={onAmountChange}
+            amountError={amountError}
+            required={false}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
 
 /** Event address and notes, shared by the new-customer and signed-in forms. */
 const ExtraFields: React.FC<{

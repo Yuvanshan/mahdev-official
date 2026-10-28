@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Download, Plus, Trash2, Wallet } from 'lucide-react';
+import { Check, Download, ExternalLink, FileText, Plus, Receipt, Trash2, Wallet, X } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { bookingService } from '../../services/bookingService';
+import { bookingService, paymentSlipUrl } from '../../services/bookingService';
 import { formatCurrency } from '../../utils/currency';
 import { invoiceFromBooking, formatInvoiceDate } from '../../utils/invoiceDocument';
 import { downloadInvoicePdf } from '../../utils/invoicePdf';
-import type { Booking, BookingPaymentKind, BookingPaymentRecord } from '../../types/booking';
+import type { Booking, BookingPaymentKind, BookingPaymentRecord, BookingPaymentSlip } from '../../types/booking';
 
 interface AdminBookingPaymentsPanelProps {
   booking: Booking;
@@ -17,6 +17,11 @@ interface AdminBookingPaymentsPanelProps {
 
 const PAYMENT_METHODS = ['Bank transfer', 'Cash', 'Card', 'Cheque', 'Online'];
 const KIND_LABELS: Record<BookingPaymentKind, string> = { advance: 'Advance', balance: 'Balance', other: 'Other' };
+const SLIP_STATUS: Record<BookingPaymentSlip['status'], { label: string; tone: string }> = {
+  submitted: { label: 'Waiting for review', tone: 'bg-amber-50 text-amber-800 border-amber-200' },
+  accepted: { label: 'Accepted', tone: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  rejected: { label: 'Rejected', tone: 'bg-rose-50 text-rose-700 border-rose-200' },
+};
 
 const inputClass = 'w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white';
 const round = (value: number) => Math.round(value * 100) / 100;
@@ -29,6 +34,8 @@ const round = (value: number) => Math.round(value * 100) / 100;
 export const AdminBookingPaymentsPanel: React.FC<AdminBookingPaymentsPanelProps> = ({ booking, recordedBy, notify, onSaved }) => {
   const currency = booking.currency || 'LKR';
   const payments = booking.payments || [];
+  // Newest first, so the slip waiting for review is at the top.
+  const slips = [...(booking.paymentSlips || [])].reverse();
   const paid = booking.amountPaid ?? round(payments.reduce((sum, payment) => sum + payment.amount, 0));
   const balance = round(Math.max(0, booking.price - paid));
   const advance = booking.advanceAmount || 0;
@@ -109,6 +116,44 @@ export const AdminBookingPaymentsPanel: React.FC<AdminBookingPaymentsPanelProps>
     });
   };
 
+  /** Records the slip as a bank transfer payment and confirms a pending booking. */
+  const handleAcceptSlip = async (slip: BookingPaymentSlip) => {
+    const input = window.prompt(
+      `Amount received for slip ${slip.id} (${currency}). Check it against your bank statement.`,
+      String(Math.min(slip.amount, balance))
+    );
+    if (input === null) return;
+    setIsSaving(true);
+    const result = await bookingService.adminReviewPaymentSlip(booking.id, slip.id, { accept: true, amount: Number(input), reviewedBy: recordedBy });
+    setIsSaving(false);
+    if (!result.success) {
+      notify('error', 'Could Not Accept', result.error || 'The slip could not be accepted.');
+      return;
+    }
+    notify(
+      'success',
+      'Slip Accepted',
+      booking.status === 'pending'
+        ? `${formatCurrency(Number(input), currency)} recorded and the booking is confirmed.`
+        : `${formatCurrency(Number(input), currency)} recorded.`
+    );
+    onSaved();
+  };
+
+  const handleRejectSlip = async (slip: BookingPaymentSlip) => {
+    const reason = window.prompt('Why is this slip not accepted? The customer will see this.', 'The amount was not received in our account.');
+    if (reason === null) return;
+    setIsSaving(true);
+    const result = await bookingService.adminReviewPaymentSlip(booking.id, slip.id, { accept: false, reason, reviewedBy: recordedBy });
+    setIsSaving(false);
+    if (!result.success) {
+      notify('error', 'Could Not Reject', result.error || 'The slip could not be updated.');
+      return;
+    }
+    notify('warning', 'Slip Rejected', 'The customer has been told why.');
+    onSaved();
+  };
+
   const handleDownload = async () => {
     try {
       await downloadInvoicePdf(invoiceFromBooking(booking));
@@ -163,6 +208,67 @@ export const AdminBookingPaymentsPanel: React.FC<AdminBookingPaymentsPanelProps>
           </button>
         ))}
       </div>
+
+      {/* Transfer slips uploaded by the customer */}
+      {slips.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700">
+            <Receipt className="w-3.5 h-3.5 text-blue-600" /> Customer transfer slips
+          </div>
+          {slips.map((slip) => {
+            const url = paymentSlipUrl(booking.id, slip.id);
+            const status = SLIP_STATUS[slip.status] || SLIP_STATUS.submitted;
+            return (
+              <div key={slip.id} className="flex flex-col sm:flex-row gap-3 rounded-lg border border-slate-200 p-3">
+                <a href={url} target="_blank" rel="noopener noreferrer" className="shrink-0" title="Open the slip">
+                  {slip.contentType.startsWith('image/') ? (
+                    <img src={url} alt={`Transfer slip ${slip.id}`} className="w-28 h-28 rounded-lg object-cover border border-slate-200 bg-slate-50" />
+                  ) : (
+                    <div className="w-28 h-28 rounded-lg border border-slate-200 bg-slate-50 flex flex-col items-center justify-center gap-1 text-slate-500">
+                      <FileText className="w-7 h-7" />
+                      <span className="text-[10px] font-semibold">PDF</span>
+                    </div>
+                  )}
+                </a>
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <strong className="font-mono text-sm text-slate-900">{formatCurrency(slip.amount, currency)}</strong>
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${status.tone}`}>{status.label}</span>
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    {slip.id} · uploaded {new Date(slip.uploadedAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
+                  </div>
+                  <div className="text-[11px] text-slate-400 truncate">{slip.fileName}</div>
+                  {slip.reviewedAt && (
+                    <div className="text-[11px] text-slate-500">
+                      Reviewed by {slip.reviewedBy || 'Admin'} on {formatInvoiceDate(slip.reviewedAt)}
+                      {slip.reviewNote ? ` · ${slip.reviewNote}` : ''}
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 h-8 px-2.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                      <ExternalLink className="w-3.5 h-3.5" /> Open slip
+                    </a>
+                    {slip.status === 'submitted' && (
+                      <>
+                        <Button variant="primary" size="sm" className="h-8 text-xs" disabled={isSaving || booking.price <= 0} onClick={() => void handleAcceptSlip(slip)}>
+                          <Check className="w-3.5 h-3.5 mr-1" /> {booking.status === 'pending' ? 'Accept & confirm booking' : 'Accept payment'}
+                        </Button>
+                        <Button variant="outline" size="sm" className="h-8 text-xs text-rose-700" disabled={isSaving} onClick={() => void handleRejectSlip(slip)}>
+                          <X className="w-3.5 h-3.5 mr-1" /> Reject
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  {slip.status === 'submitted' && booking.price <= 0 && (
+                    <p className="text-[11px] text-amber-700">Set the booking charges above before accepting this payment.</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Record a payment */}
       {balance > 0 ? (
