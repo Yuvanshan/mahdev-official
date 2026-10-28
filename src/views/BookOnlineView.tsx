@@ -24,6 +24,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { SEOHead } from '../components/layout/SEOHead';
 import { AuthAlert, AuthField, AuthSubmit, PasswordField } from '../components/auth/AuthFields';
@@ -32,7 +33,8 @@ import { MIN_PASSWORD_LENGTH, passwordPolicyError } from '../services/authServic
 import { bookingService, newBookingReference, uploadPaymentSlip } from '../services/bookingService';
 import { PaymentSlipField } from '../components/payment/PaymentSlipField';
 import { markAccountDataStale } from '../services/customerAccountService';
-import { Booking, BookingLocation, BookingPaymentSlip, BookingType } from '../types/booking';
+import { Booking, BookingLineItem, BookingLocation, BookingPaymentSlip, BookingType } from '../types/booking';
+import type { CartItem } from '../types/cart';
 import { FirestoreGallery, FirestoreProduct, FirestoreService } from '../types/firestore';
 import { normaliseSriLankaPhone, parseNic } from '../utils/sriLankaIdentity';
 import { formatCurrency } from '../utils/currency';
@@ -121,6 +123,7 @@ const KIND_LABELS: Record<OnlineBookingKind, string> = {
   service: 'Service',
   gallery: 'Design from our gallery',
   product: 'Product',
+  cart: 'Products from your cart',
 };
 
 // Earliest bookable date is tomorrow, in the visitor's local time.
@@ -187,6 +190,24 @@ function fromProduct(product: FirestoreProduct): OnlineBookingItem {
   };
 }
 
+/** The cart as one bookable item: every product is a line of the booking. */
+function fromCart(cartItems: CartItem[]): OnlineBookingItem | null {
+  if (!cartItems.length) return null;
+  const divisions = new Set(cartItems.map((line) => line.divisionId || 'mart'));
+  const divisionId = divisions.size === 1 ? [...divisions][0] : 'mart';
+  const count = cartItems.reduce((sum, line) => sum + line.quantity, 0);
+  return {
+    kind: 'cart',
+    id: 'cart',
+    title: cartItems.length === 1 ? cartItems[0].name : `Your cart (${count} items)`,
+    images: cartItems.map((line) => line.imageUrl).filter(Boolean),
+    divisionId,
+    divisionName: divisionNameFor(divisionId, cartItems[0].divisionName),
+    price: null,
+    sku: cartItems.length === 1 ? cartItems[0].sku : undefined,
+  };
+}
+
 /** Packages an admin set up on a service (metadata.packages), if any. */
 function servicePackages(service?: FirestoreService): BookingPackage[] {
   const raw = (service?.metadata as { packages?: unknown } | undefined)?.packages;
@@ -203,6 +224,13 @@ function servicePackages(service?: FirestoreService): BookingPackage[] {
 
 export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, onNavigate }) => {
   const { user, isAuthenticated, isLoading: authLoading, register } = useAuth();
+  const { cartItems, appliedCoupon, clearCart } = useCart();
+  // The cart is emptied once it is booked; the booked lines stay on screen.
+  const [bookedCart, setBookedCart] = useState<CartItem[] | null>(null);
+  const cartLines = kind === 'cart' ? bookedCart || cartItems : [];
+  const isCart = kind === 'cart';
+  // Products (one product, or the cart) are delivered rather than attended.
+  const isProducts = kind === 'product' || isCart;
   const onlineBookingEnabled = useOnlineBookingEnabled();
   const { services, gallery, products, siteSettings, isServicesLoading, isGalleryLoading, isProductsLoading, isInitialLoading } =
     useFirestoreDataContext();
@@ -212,6 +240,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
   const sameId = (value?: string) => !!value && value.toLowerCase() === itemId.toLowerCase();
   const liveService = kind === 'service' ? services.find((s) => sameId(s.id) || sameId(s.slug)) : undefined;
   const item = useMemo<OnlineBookingItem | null>(() => {
+    if (kind === 'cart') return fromCart(cartLines);
     if (liveService) return fromService(liveService);
     if (kind === 'gallery') {
       const record = gallery.find((g) => sameId(g.id));
@@ -223,7 +252,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
     }
     return readOnlineBookingSnapshot(kind, itemId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kind, itemId, liveService, gallery, products]);
+  }, [kind, itemId, liveService, gallery, products, cartLines]);
   const packages = useMemo(() => servicePackages(liveService), [liveService]);
   const stillLoading = isInitialLoading || isServicesLoading || isGalleryLoading || isProductsLoading;
 
@@ -312,20 +341,37 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
   const selectedPackage = packages.find((pkg) => pkg.id === form.packageId);
   const unitPrice = selectedPackage?.price || item?.price || 0;
   const quantity = kind === 'product' ? form.quantity : 1;
-  const estimatedTotal = unitPrice * quantity;
+  // What is booked: every product in the cart, or the one item.
+  const lineItems: BookingLineItem[] = isCart
+    ? cartLines.map((line) => ({
+        name: line.selectedVariant ? `${line.name} - ${line.selectedVariant.name}` : line.name,
+        description: line.sku ? `SKU ${line.sku}` : KIND_LABELS.product,
+        quantity: line.quantity,
+        unitPrice: line.unitPrice,
+      }))
+    : item
+      ? [{
+          name: selectedPackage ? `${item.title} - ${selectedPackage.name}` : item.title,
+          description: KIND_LABELS[kind],
+          quantity,
+          unitPrice,
+        }]
+      : [];
+  const estimatedTotal = lineItems.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
+  const hasPrice = estimatedTotal > 0;
   const depositPercent = siteSettings?.bookingDepositPercent ?? 30;
   const advanceEstimate = estimatedTotal > 0 ? Math.round((estimatedTotal * depositPercent) / 100) : 0;
   const minDate = tomorrowIso();
   const loginPath = `/login?redirect=${encodeURIComponent(onlineBookingPath(kind, itemId))}`;
   const addressLabel =
-    kind === 'product'
+    isProducts
       ? 'Delivery address'
       : item?.divisionId === 'travels'
         ? 'Pickup location'
         : item?.divisionId === 'it'
           ? 'Business address or "Online meeting"'
           : 'Event venue / address';
-  const dateLabel = kind === 'product' ? 'Preferred delivery date' : 'Preferred date';
+  const dateLabel = isProducts ? 'Preferred delivery date' : 'Preferred date';
 
   const signedInMissing = useMemo(() => {
     if (!user) return [];
@@ -361,27 +407,29 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
     if (!item) return null;
     const divisionId = item.divisionId || divisionIdFromName(item.divisionName);
     const location: BookingLocation = {
-      type: kind === 'product' ? 'client_premises' : divisionId === 'travels' ? 'travel_destination' : 'venue',
+      type: isProducts ? 'client_premises' : divisionId === 'travels' ? 'travel_destination' : 'venue',
       address: form.address.trim(),
     };
     const now = new Date().toISOString();
-    const lineName = selectedPackage ? `${item.title} - ${selectedPackage.name}` : item.title;
     const booking = await bookingService.submitOnlineBooking({
       customerId: user?.id || '',
       divisionId: (['sws', 'u1', 'travels', 'it'].includes(divisionId || '') ? divisionId : 'other') as Booking['divisionId'],
       divisionName: divisionNameFor(divisionId, item.divisionName),
       bookingType: BOOKING_TYPES[divisionId || ''] || 'other',
-      serviceId: item.id,
+      serviceId: isCart ? 'cart' : item.id,
       serviceName: item.title,
       serviceSku: item.sku,
       serviceImageUrl: storableImageUrl(item.images[0]),
-      packageId: selectedPackage?.id || `${kind}-${item.id}`,
+      packageId: selectedPackage?.id || (isCart ? 'cart' : `${kind}-${item.id}`),
       packageName: selectedPackage?.name || KIND_LABELS[kind],
       date: form.date,
       time: form.time,
       location,
       customer: { ...customer, preferredContactMethod: 'whatsapp' },
-      notes: form.notes.trim(),
+      // A cart coupon is not applied to the booking total; the team applies it when confirming.
+      notes: [form.notes.trim(), isCart && appliedCoupon ? `Coupon code: ${appliedCoupon.code}` : '']
+        .filter(Boolean)
+        .join('\n'),
       price: estimatedTotal,
       currency: 'LKR',
       paymentStatus: 'unpaid',
@@ -389,8 +437,8 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
       createdAt: now,
       updatedAt: now,
       source: 'online_booking',
-      itemKind: kind,
-      lineItems: [{ name: lineName, description: KIND_LABELS[kind], quantity, unitPrice }],
+      itemKind: isCart ? 'product' : (kind as Exclude<OnlineBookingKind, 'cart'>),
+      lineItems,
       subtotal: estimatedTotal,
     }, reference);
     markAccountDataStale();
@@ -531,6 +579,10 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
       const booking = await submitBooking(customer);
       if (!booking) return;
       await sendSlip(booking);
+      if (isCart) {
+        setBookedCart(cartLines);
+        clearCart();
+      }
       setConfirmed(booking);
     } catch (error) {
       // A new account exists now; the signed-in payment step lets them retry.
@@ -576,7 +628,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
                   title: item?.title || 'Booking enquiry',
                   divisionName: item?.divisionName,
                   imageUrl: item?.images[0],
-                  type: kind === 'product' ? 'product' : kind === 'gallery' ? 'gallery' : 'service',
+                  type: isProducts ? 'product' : kind === 'gallery' ? 'gallery' : 'service',
                 })
               }
               className="rounded-xl bg-emerald-600 text-white text-sm font-semibold py-3 hover:bg-emerald-700"
@@ -587,6 +639,22 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
               Contact us
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!item && isCart) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center px-4 py-16">
+        {seo}
+        <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200 p-8 text-center space-y-3">
+          <Package className="w-10 h-10 text-slate-400 mx-auto" />
+          <h1 className="font-display text-lg font-bold text-slate-900">Your cart is empty</h1>
+          <p className="text-sm text-slate-600">Add products to your cart, then book them online or order on WhatsApp from the cart.</p>
+          <button type="button" onClick={() => onNavigate('/catalog')} className="w-full rounded-xl bg-[#0052FF] text-white text-sm font-semibold py-3 hover:bg-blue-700">
+            Browse products
+          </button>
         </div>
       </div>
     );
@@ -725,31 +793,33 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  <tr>
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-slate-900">{item.title}</div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">{selectedPackage?.name || KIND_LABELS[kind]}</div>
-                    </td>
-                    <td className="py-3 px-3 text-center font-mono">{quantity}</td>
-                    <td className="py-3 px-3 text-right font-mono">{unitPrice > 0 ? formatCurrency(unitPrice, 'LKR') : 'On quotation'}</td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-slate-900">
-                      {unitPrice > 0 ? formatCurrency(estimatedTotal, 'LKR') : '-'}
-                    </td>
-                  </tr>
+                  {lineItems.map((line, index) => (
+                    <tr key={`${line.name}-${index}`}>
+                      <td className="py-3 px-4">
+                        <div className="font-bold text-slate-900">{line.name}</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">{isCart ? line.description : selectedPackage?.name || KIND_LABELS[kind]}</div>
+                      </td>
+                      <td className="py-3 px-3 text-center font-mono">{line.quantity}</td>
+                      <td className="py-3 px-3 text-right font-mono">{line.unitPrice > 0 ? formatCurrency(line.unitPrice, 'LKR') : 'On quotation'}</td>
+                      <td className="py-3 px-4 text-right font-mono font-bold text-slate-900">
+                        {line.unitPrice > 0 ? formatCurrency(line.unitPrice * line.quantity, 'LKR') : '-'}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
             <div className="px-5 sm:px-6 py-4 border-t border-slate-100 flex justify-end">
               <div className="w-full sm:w-72 space-y-1.5 text-xs">
                 <div className="flex justify-between text-base font-bold text-slate-900">
-                  <span>{unitPrice > 0 ? (kind === 'product' ? 'Estimated total' : 'Starting from') : 'Price'}</span>
-                  <span className="font-mono text-[#0052FF]">{unitPrice > 0 ? formatCurrency(estimatedTotal, 'LKR') : 'On quotation'}</span>
+                  <span>{hasPrice ? (isProducts ? 'Estimated total' : 'Starting from') : 'Price'}</span>
+                  <span className="font-mono text-[#0052FF]">{hasPrice ? formatCurrency(estimatedTotal, 'LKR') : 'On quotation'}</span>
                 </div>
               </div>
             </div>
             <div className="mx-5 sm:mx-6 mb-5 text-xs text-slate-600 bg-amber-50/70 border border-amber-100 rounded-xl p-3 space-y-1">
               <p>
-                {unitPrice > 0
+                {hasPrice
                   ? `To confirm, pay an advance of ${formatCurrency(advanceEstimate, 'LKR')} (${depositPercent}%) by bank transfer and upload the slip, now or later from My bookings. Our team checks the payment and availability, then confirms your booking and any delivery or transport charges.`
                   : 'Our team will confirm the final price and the advance. Pay the advance by bank transfer and upload the slip from My bookings to reserve your date.'}
               </p>

@@ -13,15 +13,12 @@ import {
   Minus,
   Plus,
   Share2,
-  CalendarCheck,
 } from 'lucide-react';
 import { Product, ProductVariant, MART_PRODUCTS } from '../../data/martData';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { formatCurrency } from '../../utils/currency';
 import { getImageAlt, getImageAltForPhoto } from '../../config/imageAlt';
-import { startOnlineBooking } from '../../utils/onlineBooking';
-import { useOnlineBookingEnabled } from '../../hooks/useOnlineBookingEnabled';
 
 interface MartProductDetailModalProps {
   product: Product | null;
@@ -42,7 +39,6 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'specs' | 'desc' | 'reviews'>('desc');
-  const onlineBookingEnabled = useOnlineBookingEnabled();
 
   // Hooks must run on every render (before the early return), otherwise opening
   // the modal changes the hook count and React throws error #310.
@@ -284,29 +280,6 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                   </Button>
                 </div>
 
-                {/* Book online: choose a date and delivery address, then confirm */}
-                {onlineBookingEnabled && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    startOnlineBooking({
-                      kind: 'product',
-                      id: product.id,
-                      title: product.name,
-                      images: [...product.gallery, product.imageUrl],
-                      description: product.description,
-                      divisionId: 'mart',
-                      divisionName: 'MAHDEV Online Mart',
-                      price: unitPrice,
-                      sku: product.sku,
-                    });
-                  }}
-                  className="w-full min-h-[44px] rounded-xl border border-[#0052FF] bg-white text-[#0052FF] text-xs sm:text-sm font-bold flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"
-                >
-                  <CalendarCheck className="w-4 h-4 shrink-0" /> Book online
-                </button>
-                )}
 
                 {/* Trust Features Strip */}
                 <div className="grid grid-cols-3 gap-2 pt-2 text-[11px] text-slate-600 font-medium">

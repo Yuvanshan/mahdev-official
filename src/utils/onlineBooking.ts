@@ -1,17 +1,23 @@
 import { safeStorage } from './safeStorage';
 
 /**
- * "Book online" for any service, gallery item or product.
+ * "Book online" for any service or gallery item, and for the whole cart.
  *
  * Every Book online button calls startOnlineBooking(), which saves what the
  * visitor was looking at and opens /book/{kind}/{id}. The booking page prefers
  * the live database record for that id and falls back to the saved snapshot,
  * so items built from division data (packages, tours, rentals...) can be
  * booked too.
+ *
+ * Products are not booked one by one: they are added to the cart, and the cart
+ * is booked online at /book/cart (or ordered on WhatsApp).
  */
-export type OnlineBookingKind = 'service' | 'gallery' | 'product';
+export type OnlineBookingKind = 'service' | 'gallery' | 'product' | 'cart';
 
-export const ONLINE_BOOKING_KINDS: OnlineBookingKind[] = ['service', 'gallery', 'product'];
+export const ONLINE_BOOKING_KINDS: OnlineBookingKind[] = ['service', 'gallery', 'cart'];
+
+/** Booking page for everything in the cart. */
+export const CART_BOOKING_PATH = '/book/cart';
 
 export interface OnlineBookingItem {
   kind: OnlineBookingKind;
@@ -34,6 +40,7 @@ const SNAPSHOT_KEY = 'mahdev_online_booking_item';
 const MAX_SNAPSHOT_IMAGES = 6;
 
 export function onlineBookingPath(kind: OnlineBookingKind, id: string): string {
+  if (kind === 'cart') return CART_BOOKING_PATH;
   return `/book/${kind}/${encodeURIComponent(id)}`;
 }
 

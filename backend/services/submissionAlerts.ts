@@ -3,9 +3,8 @@
  * database API. Runs only after the record is saved and re-read from the
  * database, so the details come from the stored record, not the request.
  *
- * - Every order or booking: alert email to the Mahdev team.
- * - "Book online" bookings: "booking request received" email to the customer,
- *   sent to the signed-in account's email (set by the server, not the browser).
+ * - Every order or booking: "received" alert email to the Mahdev team.
+ * - When an admin confirms an order or booking: "confirmed" email to the customer.
  */
 
 import { getTursoDocument, writeTursoDocument } from '../db/tursoDatabase.js';
@@ -54,79 +53,7 @@ function siteOrigin(): string {
   return (process.env.APP_URL || CANONICAL_SITE_ORIGIN).replace(/\/+$/, '');
 }
 
-/** Plain-text and HTML "booking request received" email for the customer. */
-export function bookingReceivedEmail(id: string, data: Record<string, unknown>, customerName: string) {
-  const firstName = customerName.split(' ')[0] || 'there';
-  const location = isRecord(data.location) ? safeText(data.location.address, 'To be confirmed', 300) : 'To be confirmed';
-  const lineItem = Array.isArray(data.lineItems) && isRecord(data.lineItems[0]) ? data.lineItems[0] : {};
-  const quantity = Number(lineItem.quantity) > 1 ? ` x ${Number(lineItem.quantity)}` : '';
-  const division = safeText(data.divisionName, 'Mahdev');
-  const accountUrl = `${siteOrigin()}/account/bookings`;
-  const rows: Array<[string, string]> = [
-    ['Booking reference', id],
-    ['Item', `${safeText(data.serviceName, 'Booking')}${quantity}`],
-    ['Date', formatDate(safeText(data.date, '', 40))],
-    ['Time', safeText(data.time, 'To be confirmed', 60)],
-    ['Address', location],
-    [Number(lineItem.quantity) > 1 ? 'Estimated total' : 'Price', formatLkr(data.price)],
-  ];
-  const bankRows: Array<[string, string]> = ([
-    ['Account name', BANK_DETAILS.accountName],
-    ['Bank', BANK_DETAILS.bankName],
-    ['Branch', BANK_DETAILS.branch],
-    ['Account number', BANK_DETAILS.accountNumber],
-    ['Reference', id],
-  ] as Array<[string, string]>).filter(([, value]) => value);
-  const text = [
-    `Hello ${firstName},`,
-    '',
-    `Thank you for booking online with ${division}. We have received your booking request.`,
-    '',
-    ...rows.map(([label, value]) => `${label}: ${value}`),
-    '',
-    'What happens next:',
-    '1. Our team checks availability for your date.',
-    '2. We confirm the final price and any advance with you on WhatsApp or email.',
-    '3. Your booking is confirmed once we accept it. No payment has been taken yet.',
-    '',
-    'Pay the advance by bank transfer once we confirm the amount:',
-    ...bankRows.map(([label, value]) => `${label}: ${value}`),
-    'Please send the transfer slip on WhatsApp (075 092 8078) with your booking reference.',
-    '',
-    `Follow your booking: ${accountUrl}`,
-    '',
-    'Cancellations and refunds follow our Refund and Cancellation Policy:',
-    `${siteOrigin()}/refund-policy`,
-    '',
-    `${division},`,
-    'Mahdev Pvt Ltd',
-    'info.mahdev.lk@gmail.com | 075 092 8078 / 076 898 8970',
-  ].join('\n');
-  const html = `<div style="font-family:Arial,sans-serif;font-size:15px;color:#0f172a;line-height:1.6;max-width:560px">
-<p>Hello ${escapeHtml(firstName)},</p>
-<p>Thank you for booking online with ${escapeHtml(division)}. We have received your booking request.</p>
-<table style="border-collapse:collapse;width:100%;font-size:14px;margin:12px 0">${rows
-    .map(([label, value]) => `<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;color:#64748b">${escapeHtml(label)}</td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:bold">${escapeHtml(value)}</td></tr>`)
-    .join('')}</table>
-<p><strong>What happens next</strong></p>
-<ol style="padding-left:20px;margin-top:0">
-<li>Our team checks availability for your date.</li>
-<li>We confirm the final price and any advance with you on WhatsApp or email.</li>
-<li>Your booking is confirmed once we accept it. No payment has been taken yet.</li>
-</ol>
-<p><strong>Pay the advance by bank transfer</strong> once we confirm the amount:</p>
-<table style="border-collapse:collapse;width:100%;font-size:14px;margin:0 0 8px">${bankRows
-    .map(([label, value]) => `<tr><td style="padding:6px 10px;border:1px solid #e2e8f0;color:#64748b">${escapeHtml(label)}</td><td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:bold">${escapeHtml(value)}</td></tr>`)
-    .join('')}</table>
-<p style="font-size:13px;color:#64748b">Please send the transfer slip on WhatsApp (075 092 8078) with your booking reference.</p>
-<p><a href="${escapeHtml(accountUrl)}" style="display:inline-block;background:#0052FF;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Track my booking</a></p>
-<p style="font-size:13px;color:#64748b">Cancellations and refunds follow our <a href="${escapeHtml(`${siteOrigin()}/refund-policy`)}">Refund and Cancellation Policy</a>.</p>
-<p>${escapeHtml(division)},<br>Mahdev Pvt Ltd<br>info.mahdev.lk@gmail.com | 075 092 8078 / 076 898 8970</p>
-</div>`;
-  return { subject: `Booking request received: ${id}`, text, html };
-}
-
-/** Sends the team alert (and, for online bookings, the customer email) for a new record. */
+/** Sends the team alert for a new record. */
 export async function notifyForVerifiedSubmission(input: unknown, access: DatabaseAccess): Promise<void> {
   if (access.role === 'admin' || !isRecord(input) || input.action !== 'write' || !isRecord(input.write)) {
     return;
@@ -187,14 +114,6 @@ export async function notifyForVerifiedSubmission(input: unknown, access: Databa
     ? `A new order was submitted by ${customerName}. Order reference: ${recordId}.`
     : `${isOnlineBooking ? 'A new online booking' : 'A new booking'} was submitted by ${customerName} for ${safeText(data.serviceName, 'a service')} on ${safeText(data.date || data.bookingDate, 'a date to be confirmed')}. Review and confirm it in Admin > Bookings.`;
 
-  // Only to a VERIFIED sign-in email. Anyone can create an account with someone else's
-  // address without verifying it, so an unverified address would let a stranger make this
-  // server email that person. Unverified customers see the confirmation and bank details on
-  // screen, and are emailed when the team confirms the booking.
-  const receiptEmail = access.role === 'customer'
-    ? safeText(access.identity?.email, '', 254).toLowerCase()
-    : '';
-
   // Bookings reach the team the same way as contact-page enquiries: the enquiry email
   // layout, sent "<customer> via Mahdev" with Reply-To set to the customer.
   // The booking details are shown in the email and attached as a PDF.
@@ -214,7 +133,7 @@ export async function notifyForVerifiedSubmission(input: unknown, access: Databa
         senderPhone: safeText(customer.phone, '', 32),
         division: safeText(data.divisionName, '', 80),
         service: safeText(data.serviceName, 'Service booking'),
-        subject: `${isOnlineBooking ? 'New Online Booking' : 'New Booking'}: ${recordId}`,
+        subject: `${isOnlineBooking ? 'Online Booking Received' : 'Booking Received'}: ${recordId}`,
         message: `${isOnlineBooking ? 'A new online booking' : 'A new booking'} was submitted by ${customerName}. The booking details are below and attached as a PDF. Review and confirm it in Admin > Bookings.`,
         details: bookingDetailSections(recordId, data),
         attachments,
@@ -237,19 +156,10 @@ export async function notifyForVerifiedSubmission(input: unknown, access: Databa
     });
   };
 
-  const [teamAlert, customerMail] = await Promise.all([
-    sendTeamAlert(),
-    // Only to the account's own address, so the email cannot be sent to someone else.
-    isOnlineBooking && access.role === 'customer' && receiptEmail
-      ? sendCustomerEmail({ to: receiptEmail, ...bookingReceivedEmail(recordId, data, customerName) })
-      : Promise.resolve(null),
-  ]);
-
+  // The customer is emailed only when the team confirms the booking (notifyCustomerOfConfirmation).
+  const teamAlert = await sendTeamAlert();
   if (!teamAlert.success) {
     console.error(`[Submission alerts] Team alert for ${collection} record ${recordId} was not delivered: ${teamAlert.message}`);
-  }
-  if (customerMail && !customerMail.delivered) {
-    console.error(`[Submission alerts] Customer email for booking ${recordId} was not delivered: ${customerMail.notice}`);
   }
 }
 

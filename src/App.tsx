@@ -1240,8 +1240,14 @@ function AppContent() {
       );
     }
 
-    // "Book online" for one item: /book/service/{id}, /book/gallery/{id}, /book/product/{id}
-    const onlineBookingMatch = basePath.match(/^\/+book\/(service|gallery|product)\/([^/]+)/i);
+    // "Book online" for the whole cart. Products are booked from the cart, so old
+    // /book/product/{id} links open the cart booking too.
+    if (/^\/+book\/(cart\/?$|product\/)/i.test(basePath)) {
+      return <BookOnlineView key="cart" kind="cart" itemId="cart" onNavigate={navigate} />;
+    }
+
+    // "Book online" for one item: /book/service/{id}, /book/gallery/{id}
+    const onlineBookingMatch = basePath.match(/^\/+book\/(service|gallery)\/([^/]+)/i);
     if (onlineBookingMatch) {
       // Read the id from the original path: route normalising lowercases, and ids can be mixed case.
       const kind = onlineBookingMatch[1].toLowerCase() as OnlineBookingKind;

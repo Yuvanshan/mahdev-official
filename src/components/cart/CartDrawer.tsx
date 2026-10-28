@@ -23,6 +23,8 @@ import { Badge } from '../ui/Badge';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatCurrency, formatLKR } from '../../utils/currency';
 import { openWhatsAppOrder } from '../../utils/whatsapp';
+import { CART_BOOKING_PATH } from '../../utils/onlineBooking';
+import { useOnlineBookingEnabled } from '../../hooks/useOnlineBookingEnabled';
 
 interface CartDrawerProps {
   onNavigate?: (path: string) => void;
@@ -31,6 +33,7 @@ interface CartDrawerProps {
 const SHOW_ONLINE_CHECKOUT = false;
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
+  const onlineBookingEnabled = useOnlineBookingEnabled();
   const {
     isCartDrawerOpen,
     closeCart,
@@ -80,6 +83,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
       onNavigate('/checkout');
     } else {
       window.location.href = '/checkout';
+    }
+  };
+
+  // Book the whole cart online: date, delivery address, advance by bank transfer.
+  const handleBookOnline = () => {
+    closeCart();
+    if (onNavigate) {
+      onNavigate(CART_BOOKING_PATH);
+    } else {
+      window.location.href = CART_BOOKING_PATH;
     }
   };
 
@@ -395,12 +408,25 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
             <div className="p-2.5 rounded-lg bg-blue-50/80 border border-blue-100 text-[10px] text-slate-600 flex items-start gap-2">
               <ShieldCheck className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
               <span>
-                Place your order on WhatsApp: your items, SKU codes and delivery total are sent to our team to confirm.
+                {onlineBookingEnabled
+                  ? 'Book online to choose a delivery date and pay the advance by bank transfer, or order on WhatsApp. Our team confirms every order.'
+                  : 'Place your order on WhatsApp: your items, SKU codes and delivery total are sent to our team to confirm.'}
               </span>
             </div>
 
             {/* Action Buttons */}
             <div className="space-y-2">
+              {onlineBookingEnabled && (
+              <button
+                type="button"
+                onClick={handleBookOnline}
+                className="w-full min-h-12 py-3 px-4 rounded-xl bg-[#0052FF] hover:bg-blue-700 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
+              >
+                <Calendar className="w-4 h-4" />
+                <span>Book online</span>
+              </button>
+              )}
+
               <button
                 onClick={() => {
                   openWhatsAppOrder({
