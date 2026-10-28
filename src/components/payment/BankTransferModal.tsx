@@ -91,7 +91,9 @@ export const BankTransferModal: React.FC<BankTransferModalProps> = ({
   const slipMessage = [
     'Hello Mahdev,',
     '',
-    `I have made a bank transfer of ${formatCurrency(amount, currency)} for ${reference}.`,
+    amount > 0
+      ? `I have made a bank transfer of ${formatCurrency(amount, currency)} for ${reference}.`
+      : `I have made a bank transfer for ${reference}.`,
     'Please find the transfer slip attached.',
   ].join('\n');
 
@@ -121,8 +123,15 @@ export const BankTransferModal: React.FC<BankTransferModalProps> = ({
 
         <div className="p-6 space-y-5">
           <div className="text-center">
-            <div className="text-xs text-slate-500">{amountLabel}</div>
-            <div className="font-mono text-3xl font-bold text-slate-900">{formatCurrency(amount, currency)}</div>
+            {/* No amount yet (price on quotation): pay what was agreed with our team. */}
+            {amount > 0 ? (
+              <>
+                <div className="text-xs text-slate-500">{amountLabel}</div>
+                <div className="font-mono text-3xl font-bold text-slate-900">{formatCurrency(amount, currency)}</div>
+              </>
+            ) : (
+              <p className="text-sm text-slate-600">Pay the advance agreed with our team and enter the amount below.</p>
+            )}
           </div>
 
           <div className="rounded-2xl border border-slate-200 divide-y divide-slate-100">

@@ -254,6 +254,8 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
   const [reference] = useState(newBookingReference);
   const [slipFile, setSlipFile] = useState<File | null>(null);
   const [slipAmount, setSlipAmount] = useState('');
+  // "Pay later": book now without a slip and upload it from My bookings afterwards.
+  const [payLater, setPayLater] = useState(false);
   const [uploadedSlip, setUploadedSlip] = useState<BookingPaymentSlip | null>(null);
   // Set when the booking was saved but its slip upload failed (retry from the success panel).
   const [slipUploadError, setSlipUploadError] = useState<string | null>(null);
@@ -313,8 +315,6 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
   const estimatedTotal = unitPrice * quantity;
   const depositPercent = siteSettings?.bookingDepositPercent ?? 30;
   const advanceEstimate = estimatedTotal > 0 ? Math.round((estimatedTotal * depositPercent) / 100) : 0;
-  // A priced item needs the advance slip now; a quotation can add it later from My bookings.
-  const slipRequired = estimatedTotal > 0;
   const minDate = tomorrowIso();
   const loginPath = `/login?redirect=${encodeURIComponent(onlineBookingPath(kind, itemId))}`;
   const addressLabel =
@@ -399,7 +399,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
 
   /** Uploads the chosen slip to the saved booking; a failure can be retried from the success panel. */
   const sendSlip = async (booking: Booking) => {
-    if (!slipFile) return;
+    if (!slipFile || payLater) return;
     try {
       setUploadedSlip(await uploadPaymentSlip(booking.id, slipFile, Number(slipAmount)));
       setSlipUploadError(null);
@@ -411,7 +411,8 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
 
   const validateSlip = (): FieldErrors => {
     const errors: FieldErrors = {};
-    if (slipRequired && !slipFile) errors.slip = 'Upload the transfer slip for the advance to confirm your booking.';
+    if (payLater) return errors;
+    if (!slipFile) errors.slip = 'Upload the transfer slip, or tick "Pay later" to upload it from My bookings.';
     const amount = Number(slipAmount);
     if (slipFile && (!Number.isFinite(amount) || amount <= 0)) errors.slipAmount = 'Enter the amount you transferred.';
     else if (slipFile && estimatedTotal > 0 && amount > estimatedTotal) {
@@ -749,8 +750,8 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
             <div className="mx-5 sm:mx-6 mb-5 text-xs text-slate-600 bg-amber-50/70 border border-amber-100 rounded-xl p-3 space-y-1">
               <p>
                 {unitPrice > 0
-                  ? `To confirm, pay an advance of ${formatCurrency(advanceEstimate, 'LKR')} (${depositPercent}%) by bank transfer and upload the slip. Our team checks the payment and availability, then confirms your booking and any delivery or transport charges.`
-                  : 'Our team will confirm the final price and the advance. Pay the advance by bank transfer and upload the slip to reserve your date.'}
+                  ? `To confirm, pay an advance of ${formatCurrency(advanceEstimate, 'LKR')} (${depositPercent}%) by bank transfer and upload the slip, now or later from My bookings. Our team checks the payment and availability, then confirms your booking and any delivery or transport charges.`
+                  : 'Our team will confirm the final price and the advance. Pay the advance by bank transfer and upload the slip from My bookings to reserve your date.'}
               </p>
               <p>
                 Cancellations and refunds follow our{' '}
@@ -798,7 +799,9 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
                 )}
                 {!uploadedSlip && !slipUploadError && (
                   <p className="text-left rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600">
-                    We will confirm the final price and the advance with you. Then pay the advance and upload the slip from{' '}
+                    {estimatedTotal > 0
+                      ? `When you are ready, transfer the advance of ${formatCurrency(advanceEstimate, 'LKR')} using ${confirmed.id} as the reference and upload the slip from `
+                      : 'We will confirm the final price and the advance with you. Then pay the advance and upload the slip from '}
                     <strong>My bookings</strong> to reserve your date.
                   </p>
                 )}
@@ -825,7 +828,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
                   <p className="text-[11px] font-bold uppercase tracking-wide text-blue-700">Step 2 of 2</p>
                   <h2 className="font-display text-lg font-bold text-slate-900">Pay the advance & confirm</h2>
                   <p className="text-xs text-slate-500 mt-1">
-                    Transfer the advance to the account below, upload the slip and confirm your booking.
+                    Transfer the advance to the account below and upload the slip, or choose to pay later.
                   </p>
                 </div>
                 <AuthAlert tone="error" message={errorMessage} />
@@ -835,21 +838,39 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
                   advance={advanceEstimate}
                   depositPercent={depositPercent}
                 />
-                <PaymentSlipField
-                  file={slipFile}
-                  onFileChange={(file) => {
-                    setSlipFile(file);
-                    setFieldErrors((current) => ({ ...current, slip: undefined }));
-                  }}
-                  amount={slipAmount}
-                  onAmountChange={(value) => {
-                    setSlipAmount(value);
-                    setFieldErrors((current) => ({ ...current, slipAmount: undefined }));
-                  }}
-                  fileError={fieldErrors.slip}
-                  amountError={fieldErrors.slipAmount}
-                  required={slipRequired}
-                />
+                <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 cursor-pointer hover:bg-slate-100/70">
+                  <input
+                    type="checkbox"
+                    checked={payLater}
+                    onChange={(e) => {
+                      setPayLater(e.target.checked);
+                      setFieldErrors((current) => ({ ...current, slip: undefined, slipAmount: undefined }));
+                    }}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600/30"
+                  />
+                  <span>
+                    <span className="block text-sm font-bold text-slate-900">Pay later</span>
+                    <span className="block text-[11px] text-slate-500">
+                      Book now and upload the transfer slip later from <strong>My bookings</strong>. Your date is reserved once the advance is received.
+                    </span>
+                  </span>
+                </label>
+                {!payLater && (
+                  <PaymentSlipField
+                    file={slipFile}
+                    onFileChange={(file) => {
+                      setSlipFile(file);
+                      setFieldErrors((current) => ({ ...current, slip: undefined }));
+                    }}
+                    amount={slipAmount}
+                    onAmountChange={(value) => {
+                      setSlipAmount(value);
+                      setFieldErrors((current) => ({ ...current, slipAmount: undefined }));
+                    }}
+                    fileError={fieldErrors.slip}
+                    amountError={fieldErrors.slipAmount}
+                  />
+                )}
                 <AuthSubmit busy={isSubmitting} busyLabel={isAuthenticated ? 'Confirming booking…' : 'Creating account & confirming…'}>
                   <CalendarCheck className="h-4 w-4" /> Confirm booking
                 </AuthSubmit>

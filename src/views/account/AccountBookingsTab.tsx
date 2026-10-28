@@ -35,6 +35,12 @@ function amountDue(booking: Booking): { amount: number; label: string } {
   return { amount: balance, label: 'Balance due' };
 }
 
+/** Open bookings take payments, including "on quotation" ones whose total is not set yet. */
+function canPay(booking: Booking): boolean {
+  if (['cancelled', 'rejected', 'completed'].includes(booking.status)) return false;
+  return booking.price <= 0 || amountDue(booking).amount > 0;
+}
+
 interface AccountBookingsTabProps {
   bookings: Booking[];
   onNavigate: (path: string) => void;
@@ -108,7 +114,7 @@ export const AccountBookingsTab: React.FC<AccountBookingsTabProps> = ({
             <Button
               variant="electric"
               size="sm"
-              onClick={() => onNavigate('/book')}
+              onClick={() => onNavigate('/services')}
               leftIcon={<Plus className="w-3.5 h-3.5" />}
               className="text-xs font-bold shrink-0"
             >
@@ -121,6 +127,7 @@ export const AccountBookingsTab: React.FC<AccountBookingsTabProps> = ({
         <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
           {[
             { id: 'all', label: 'All Bookings' },
+            { id: 'pending', label: 'Pending' },
             { id: 'confirmed', label: 'Confirmed' },
             { id: 'scheduled', label: 'Scheduled' },
             { id: 'in_progress', label: 'In Progress' },
@@ -159,7 +166,7 @@ export const AccountBookingsTab: React.FC<AccountBookingsTabProps> = ({
           <Button
             variant="electric"
             size="sm"
-            onClick={() => onNavigate('/book')}
+            onClick={() => onNavigate('/services')}
             leftIcon={<Plus className="w-4 h-4" />}
             className="text-xs font-bold"
           >
@@ -315,7 +322,11 @@ export const AccountBookingsTab: React.FC<AccountBookingsTabProps> = ({
                     )}
                     {(() => {
                       const latest = slipsFor(b).slice(-1)[0];
-                      if (!latest) return null;
+                      if (!latest) {
+                        return canPay(b) && !(b.amountPaid || 0) ? (
+                          <div className="text-[11px] font-semibold text-amber-700">Awaiting your payment slip</div>
+                        ) : null;
+                      }
                       const text =
                         latest.status === 'accepted'
                           ? `Slip of ${formatCurrency(latest.amount, b.currency || 'LKR')} accepted`
@@ -328,7 +339,7 @@ export const AccountBookingsTab: React.FC<AccountBookingsTabProps> = ({
                   </div>
 
                   <div className="flex flex-wrap gap-2 w-full md:w-auto md:justify-end">
-                    {b.price > 0 && amountDue(b).amount > 0 && !['cancelled', 'rejected'].includes(b.status) && (
+                    {canPay(b) && (
                       <button
                         type="button"
                         onClick={() => setPaying(b)}
