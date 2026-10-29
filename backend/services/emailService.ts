@@ -343,10 +343,12 @@ To reply directly to this customer, email: ${data.senderEmail}
 }
 
 /**
- * Dispatches website inquiries to the configured admin inbox.
+ * Dispatches website inquiries and bookings to their configured team inboxes.
  */
 export async function sendEnquiryEmail(payload: WebsiteEnquiryPayload): Promise<EmailDispatchResult> {
-  const targetEmail = process.env.ENQUIRY_TARGET_EMAIL || DEFAULT_TARGET_EMAIL;
+  const targetEmail = payload.kind === 'Booking'
+    ? process.env.ADMIN_NOTIFICATION_EMAIL || DEFAULT_ADMIN_NOTIFICATION_EMAIL
+    : process.env.ENQUIRY_TARGET_EMAIL || DEFAULT_TARGET_EMAIL;
   const config = getServerConfig();
   const smtpFromEmail = process.env.SMTP_FROM_EMAIL || config.notifications.smtpUser || DEFAULT_SENDER_EMAIL;
   const senderDisplayName = payload.senderName.replace(/[\r\n"]/g, ' ').slice(0, 100);
@@ -433,7 +435,6 @@ export async function sendAdminAlertEmail(payload: {
 }): Promise<EmailDispatchResult> {
   const targetEmail =
     process.env.ADMIN_NOTIFICATION_EMAIL ||
-    process.env.ENQUIRY_TARGET_EMAIL ||
     DEFAULT_ADMIN_NOTIFICATION_EMAIL;
   const config = getServerConfig();
   const smtpFromEmail =

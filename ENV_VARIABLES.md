@@ -67,6 +67,8 @@ This document outlines the environment configuration architecture for the **Mahd
 | `SMTP_USER` | Server | **Confidential** | SMTP authentication username | `apikey` |
 | `SMTP_PASS` | Server | **Confidential** | SMTP authentication password | API Key / Password |
 | `SMTP_FROM_EMAIL` | Server | Standard | Outbound sender address | `notifications@mahdev.lk` |
+| `ENQUIRY_TARGET_EMAIL` | Server | Standard | Inbox for general website enquiries | `info@mahdev.lk` |
+| `ADMIN_NOTIFICATION_EMAIL` | Server | Standard | Inbox for booking, order, and administrative alert emails | `yuvanshan875@gmail.com` |
 | `WHATSAPP_API_TOKEN` | Server | **Confidential** | WhatsApp Cloud API Bearer Token | Meta System User Token |
 | `WHATSAPP_PHONE_NUMBER_ID` | Server | Standard | WhatsApp Phone Number ID | Meta Phone ID |
 | `WHATSAPP_ORDER_TEMPLATE_NAME` | Server | Standard | Approved template for design confirmation links and order receipts (params: name, title/order ID, link). Without it plain text is sent, which Meta only delivers inside the 24-hour customer window | `order_confirmation` |
