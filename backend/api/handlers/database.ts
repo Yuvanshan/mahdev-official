@@ -127,7 +127,7 @@ export async function handleTursoDatabaseRequest(
   const result = await handleTursoAction(req.body, access);
   if (result.status === 200 && result.body.success === true) {
     try {
-      await notifyForVerifiedSubmission(req.body, access);
+      await notifyForVerifiedSubmission(req.body);
       await notifyCustomerOfConfirmation(req.body, access);
     } catch (error) {
       console.error('[Turso API] Verified submission alert failed:', error);

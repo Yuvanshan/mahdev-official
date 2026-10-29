@@ -1258,7 +1258,7 @@ export function createTursoRouter(): Router {
       res.status(result.status).json(result.body);
       // Same alert emails as the serverless API, sent after the response.
       if (result.status === 200 && result.body.success === true) {
-        void notifyForVerifiedSubmission(req.body, access)
+        void notifyForVerifiedSubmission(req.body)
           .then(() => notifyCustomerOfConfirmation(req.body, access))
           .catch((error: unknown) => {
             console.error('[Turso API] Verified submission alert failed:', error);

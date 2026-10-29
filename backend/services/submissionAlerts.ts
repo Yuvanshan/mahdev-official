@@ -54,8 +54,8 @@ function siteOrigin(): string {
 }
 
 /** Sends the team alert for a new record. */
-export async function notifyForVerifiedSubmission(input: unknown, access: DatabaseAccess): Promise<void> {
-  if (access.role === 'admin' || !isRecord(input) || input.action !== 'write' || !isRecord(input.write)) {
+export async function notifyForVerifiedSubmission(input: unknown): Promise<void> {
+  if (!isRecord(input) || input.action !== 'write' || !isRecord(input.write)) {
     return;
   }
 
