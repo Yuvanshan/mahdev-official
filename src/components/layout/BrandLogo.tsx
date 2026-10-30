@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { useSeasonalTheme } from '../../context/SeasonalThemeContext';
+import { resolveMediaUrl } from '../../services/firestoreMediaService';
 
 interface BrandLogoProps {
   divisionLabel?: string;
@@ -21,10 +23,32 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
   showText = true,
 }) => {
   const { siteSettings, companySettings } = useFirestoreDataContext();
+  const { theme: seasonalTheme } = useSeasonalTheme();
   const [imgError, setImgError] = useState(false);
   const [liveLogoUrl, setLiveLogoUrl] = useState<string>('');
+  const [resolvedSeasonalLogo, setResolvedSeasonalLogo] = useState('');
 
   const isDark = theme === 'dark';
+
+  useEffect(() => {
+    let active = true;
+    const logo = seasonalTheme.enabled && seasonalTheme.activeTheme === 'christmas'
+      ? seasonalTheme.seasonalLogo
+      : undefined;
+    if (!logo) {
+      setResolvedSeasonalLogo('');
+      return () => { active = false; };
+    }
+    resolveMediaUrl(logo)
+      .then((url) => {
+        if (active) setResolvedSeasonalLogo(url);
+      })
+      .catch((error: unknown) => {
+        console.error('[BrandLogo] Seasonal logo could not be resolved:', error);
+        if (active) setResolvedSeasonalLogo('');
+      });
+    return () => { active = false; };
+  }, [seasonalTheme.activeTheme, seasonalTheme.enabled, seasonalTheme.seasonalLogo]);
 
   // Listen to broadcast custom events for instant zero-refresh synchronization
   useEffect(() => {
@@ -90,6 +114,9 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
   // Determine active uploaded logo URL from props, live event, React context, or cached snapshot
   // Default to official uploaded PNG: /logo.png
   const rawLogo =
+    (seasonalTheme.enabled &&
+      seasonalTheme.activeTheme === 'christmas' &&
+      (seasonalTheme.seasonalLogo?.startsWith('firestore://') ? resolvedSeasonalLogo : seasonalTheme.seasonalLogo)) ||
     propLogoUrl ||
     liveLogoUrl ||
     (isDark && (siteSettings?.darkLogoUrl || companySettings?.darkLogoUrl)

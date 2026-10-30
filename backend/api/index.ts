@@ -28,6 +28,7 @@ import adminCustomersHandler from './handlers/admin/customers.js';
 import { sanitizePublicSettingsDocument } from './tursoRoutes.js';
 import adminLoginHandler from './handlers/admin/auth/login.js';
 import adminLogoutHandler from './handlers/admin/auth/logout.js';
+import seasonalThemeHandler from './handlers/seasonalTheme.js';
 
 const apiRouter = Router();
 
@@ -89,6 +90,9 @@ apiRouter.post('/account/recovery', async (req: Request, res: Response) => {
     return;
   }
   await accountRecoveryHandler(req, res);
+});
+apiRouter.all('/seasonal-theme', async (req: Request, res: Response) => {
+  await seasonalThemeHandler(req, res);
 });
 
 apiRouter.post('/analytics', (req: Request, res: Response) => {

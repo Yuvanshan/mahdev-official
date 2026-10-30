@@ -460,6 +460,19 @@ export interface HomepageCmsConfig {
     subtitle?: string;
     enabled?: boolean;
   };
+  bookingGuide?: {
+    enabled?: boolean;
+    title?: string;
+    subtitle?: string;
+    steps?: Array<{
+      id: string;
+      title: string;
+      description: string;
+      icon: 'compass' | 'message' | 'calendar' | 'sparkles';
+      order: number;
+      enabled?: boolean;
+    }>;
+  };
   whyMahdev?: {
     badge?: string;
     title?: string;

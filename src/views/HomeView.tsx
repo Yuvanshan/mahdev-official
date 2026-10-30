@@ -1,6 +1,8 @@
 import React, { lazy, Suspense } from 'react';
 import { SEOHead } from '../components/layout/SEOHead';
 import { HeroSection } from '../components/home/HeroSection';
+import { DivisionsSection } from '../components/home/DivisionsSection';
+import { BookingGuide } from '../components/home/BookingGuide';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { DEFAULT_HOMEPAGE_SECTIONS } from '../services/firestore/settings';
 import { DynamicSectionItem } from '../types/cms';
@@ -116,6 +118,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
         onContactUs={() => onNavigate('/contact')}
         onExploreServices={() => onNavigate('/services')}
       />
+
+      <DivisionsSection onNavigate={onNavigate} />
+      <BookingGuide />
 
       <div className="flex flex-col">
         {activeSections.map((section) => {

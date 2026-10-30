@@ -19,6 +19,7 @@ import whatsappWebhookHandler from '../backend/api/handlers/whatsappWebhook.js';
 import orderConfirmationsHandler from '../backend/api/handlers/orderConfirmations.js';
 import accountCheckHandler from '../backend/api/handlers/accountCheck.js';
 import accountRecoveryHandler from '../backend/api/handlers/accountRecovery.js';
+import seasonalThemeHandler from '../backend/api/handlers/seasonalTheme.js';
 import firebaseAuthProxy from '../backend/api/handlers/firebaseAuthProxy.js';
 import { isFromThisSite } from '../backend/security/sameSite.js';
 import pageShellHandler, { sendNotFoundPage } from '../backend/api/handlers/pageShell.js';
@@ -165,6 +166,10 @@ export default async function handler(req: ApiRequest, res: ServerResponse): Pro
   }
   if (pathname === '/api/account/recovery') {
     await accountRecoveryHandler(req, res);
+    return;
+  }
+  if (pathname === '/api/seasonal-theme') {
+    await seasonalThemeHandler(req, res);
     return;
   }
   if (pathname === '/api/contact/submit' || pathname === '/api/inquiries/submit') {

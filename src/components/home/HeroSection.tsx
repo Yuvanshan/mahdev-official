@@ -3,6 +3,10 @@ import { ArrowRight } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { ScrollParallax } from '../motion/ParallelScroll';
 import { AnimatedHeroTitle } from '../common/AnimatedHeroTitle';
+import { SeasonalHeroEffect } from '../seasonal/SeasonalOverlay';
+import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { resolveMediaUrl } from '../../services/firestoreMediaService';
+import { extractYouTubeId, getYouTubeEmbedUrl } from '../../utils/youtube';
 
 // Sky-300 → blue-200 → white, matching the previous clipped-text gradient.
 const HERO_TITLE_GRADIENT = ['#7dd3fc', '#bfdbfe', '#ffffff'];
@@ -17,7 +21,13 @@ interface HeroSectionProps {
 const HERO_VIDEO = '/assets/hero_landing.mp4';
 // First frame shown instantly (preloaded in index.html) until the video can play.
 const HERO_POSTER = '/assets/hero_landing_poster.jpg';
+const DEFAULT_CMS_HERO_VIDEO = '/assets/hero_main.mp4?v=2';
 let savedHeroVideoTime = 0;
+
+function extractVimeoId(url: string): string | null {
+  const match = url.match(/(?:vimeo\.com\/(?:video\/|channels\/(?:\w+\/)?|groups\/[^/]*\/videos\/|album\/(?:\d+\/)?video\/|))(\d+)/);
+  return match?.[1] || null;
+}
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onNavigate,
@@ -27,8 +37,49 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const heroRef = useRef<HTMLElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const reducedMotion = useReducedMotion();
+  const { homepageConfig } = useFirestoreDataContext();
+  const cmsHero = homepageConfig?.hero;
+  const configuredVideo = cmsHero?.videoUrl || cmsHero?.mediaUrl || '';
+  const useCmsVideo = Boolean(configuredVideo && configuredVideo !== DEFAULT_CMS_HERO_VIDEO && cmsHero?.mediaType !== 'image');
+  const configuredImage = cmsHero?.imageUrl || cmsHero?.mediaUrl || '';
+  const useCmsImage = Boolean(configuredImage && cmsHero?.mediaType === 'image');
+  const youtubeId = useCmsVideo ? extractYouTubeId(configuredVideo) : null;
+  const vimeoId = useCmsVideo ? extractVimeoId(configuredVideo) : null;
+  const isCmsVideoEmbed = Boolean(youtubeId || vimeoId);
+  const embedSrc = youtubeId
+    ? getYouTubeEmbedUrl(configuredVideo, { autoplay: true, mute: true, loop: true, controls: false, rel: false })
+    : vimeoId
+      ? `https://player.vimeo.com/video/${vimeoId}?background=1&autoplay=1&loop=1&byline=0&title=0&muted=1`
+      : '';
+  const configuredPoster = cmsHero?.defaultImageUrl || '';
+  const [resolvedHeroMedia, setResolvedHeroMedia] = React.useState({ video: '', image: '', poster: '' });
 
   useEffect(() => {
+    let active = true;
+    const resolve = async (url: string) => {
+      if (!url) return '';
+      return resolveMediaUrl(url);
+    };
+    Promise.all([
+      resolve(useCmsVideo ? configuredVideo : ''),
+      resolve(useCmsImage ? configuredImage : ''),
+      resolve(configuredPoster),
+    ])
+      .then(([video, image, poster]) => {
+        if (active) setResolvedHeroMedia({ video, image, poster });
+      })
+      .catch((error: unknown) => {
+        console.error('[HomeHero] Configured media could not be resolved:', error);
+        if (active) setResolvedHeroMedia({ video: '', image: '', poster: '' });
+      });
+    return () => { active = false; };
+  }, [configuredImage, configuredPoster, configuredVideo, useCmsImage, useCmsVideo]);
+
+  const heroVideo = useCmsVideo ? resolvedHeroMedia.video || HERO_VIDEO : HERO_VIDEO;
+  const heroPoster = resolvedHeroMedia.poster || (useCmsImage ? resolvedHeroMedia.image || HERO_POSTER : HERO_POSTER);
+
+  useEffect(() => {
+    if (useCmsImage || isCmsVideoEmbed) return;
     const video = videoRef.current;
     const hero = heroRef.current;
     if (!video || !hero) return;
@@ -147,7 +198,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       video.removeEventListener('loadedmetadata', restorePlaybackPosition);
       pauseVideo();
     };
-  }, []);
+  }, [heroVideo, isCmsVideoEmbed, useCmsImage]);
 
   const explore = () => {
     if (onExploreServices) onExploreServices();
@@ -161,22 +212,38 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       className="relative isolate min-h-[680px] overflow-hidden bg-slate-950 sm:min-h-[740px] lg:min-h-[min(820px,calc(100svh-5rem))]"
     >
       <ScrollParallax targetRef={heroRef} distance={34} className="absolute -inset-y-10 inset-x-0 overflow-hidden">
-        <video
-          ref={videoRef}
-          src={HERO_VIDEO}
-          poster={HERO_POSTER}
-          autoPlay
-          loop
-          playsInline
-          disableRemotePlayback
-          muted
-          // The poster shows at once; autoplay still starts the video, without forcing the
-          // whole file to download before the page is usable.
-          preload="metadata"
-          aria-hidden="true"
-          disablePictureInPicture
-          className="absolute inset-0 h-full w-full object-cover object-center brightness-[1.05] contrast-[1.08] saturate-[1.08]"
-        />
+        {useCmsImage ? (
+          <img
+            src={resolvedHeroMedia.image || HERO_POSTER}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover object-center brightness-[1.04] contrast-[1.12] saturate-[1.08]"
+          />
+        ) : isCmsVideoEmbed ? (
+          <iframe
+            src={embedSrc}
+            title="MAHDEV homepage showcase"
+            aria-hidden="true"
+            tabIndex={-1}
+            allow="autoplay; encrypted-media; picture-in-picture"
+            className="absolute inset-0 h-full w-full scale-125 border-0 object-cover"
+          />
+        ) : (
+          <video
+            ref={videoRef}
+            src={heroVideo}
+            poster={heroPoster}
+            autoPlay
+            loop
+            playsInline
+            disableRemotePlayback
+            muted
+            preload="metadata"
+            aria-hidden="true"
+            disablePictureInPicture
+            className="absolute inset-0 h-full w-full object-cover object-center brightness-[1.04] contrast-[1.12] saturate-[1.08]"
+          />
+        )}
       </ScrollParallax>
       <div
         aria-hidden="true"
@@ -190,6 +257,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         aria-hidden="true"
         className="pointer-events-none absolute -left-40 top-1/4 h-96 w-96 rounded-full bg-blue-500/15 blur-[100px]"
       />
+      <SeasonalHeroEffect />
 
       <div className="relative mx-auto flex min-h-[680px] max-w-7xl items-center px-5 py-20 sm:min-h-[740px] sm:px-8 lg:min-h-[min(820px,calc(100svh-5rem))] lg:px-10">
         <motion.div

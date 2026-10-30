@@ -59,7 +59,7 @@ export const AdminHomepageView: React.FC = () => {
   const { homepageConfig, updateHomepageConfig } = useFirestoreDataContext();
   const [config, setConfig] = useState<HomepageCmsConfig>(() => homepageConfig || cmsService.getHomepageConfig());
   const [activeTab, setActiveTab] = useState<
-    'sections' | 'hero' | 'services' | 'products' | 'portfolio' | 'showcase' | 'milestones' | 'companies' | 'cta' | 'seo'
+    'sections' | 'hero' | 'divisions-content' | 'bookingGuide' | 'services' | 'products' | 'portfolio' | 'showcase' | 'milestones' | 'companies' | 'cta' | 'seo'
   >('sections');
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -358,6 +358,8 @@ export const AdminHomepageView: React.FC = () => {
       <div className="flex gap-2 overflow-x-auto pb-1">
         {[
           { id: 'sections', label: '0. Sections & Widgets', icon: SlidersHorizontal },
+          { id: 'divisions-content', label: '1. Divisions', icon: Building2 },
+          { id: 'bookingGuide', label: '2. Booking Guide', icon: Compass },
           { id: 'services', label: '1. Featured Services', icon: Layers },
           { id: 'products', label: '2. Featured Products', icon: Tag },
           { id: 'portfolio', label: '3. Portfolio', icon: Star },
@@ -494,7 +496,6 @@ export const AdminHomepageView: React.FC = () => {
                           Edit Content
                         </Button>
                       )}
-
                       <button
                         type="button"
                         onClick={() => handleToggleSection(idx)}
@@ -520,6 +521,169 @@ export const AdminHomepageView: React.FC = () => {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+        {activeTab === 'divisions-content' && (
+          <div className="space-y-5">
+            <div>
+              <h3 className="font-display text-base font-bold text-slate-900">Homepage Divisions</h3>
+              <p className="mt-1 text-xs text-slate-500">
+                The five cards continue to use published division records for names, descriptions, media and routes.
+              </p>
+            </div>
+            <label className="flex items-center gap-3 text-sm font-semibold text-slate-800">
+              <input
+                type="checkbox"
+                checked={config.divisionsSection?.enabled !== false}
+                onChange={(event) => updateNested('divisionsSection', 'enabled', event.target.checked)}
+              />
+              Show division cards on the homepage
+            </label>
+            <label className="block text-xs font-bold text-slate-700">
+              Section title
+              <input
+                maxLength={120}
+                value={config.divisionsSection?.title || ''}
+                onChange={(event) => updateNested('divisionsSection', 'title', event.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 font-normal"
+              />
+            </label>
+            <label className="block text-xs font-bold text-slate-700">
+              Subtitle
+              <textarea
+                maxLength={300}
+                rows={2}
+                value={config.divisionsSection?.subtitle || ''}
+                onChange={(event) => updateNested('divisionsSection', 'subtitle', event.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 font-normal"
+              />
+            </label>
+            <p className="text-xs text-slate-500">
+              Change card imagery, descriptions, visibility and ordering from the Divisions section in the admin portal.
+            </p>
+          </div>
+        )}
+        {activeTab === 'bookingGuide' && (
+          <div className="space-y-5">
+            <div>
+              <h3 className="font-display text-base font-bold text-slate-900">How to Book</h3>
+              <p className="mt-1 text-xs text-slate-500">The public section appears directly after the divisions cards.</p>
+            </div>
+            <label className="flex items-center gap-3 text-sm font-semibold text-slate-800">
+              <input
+                type="checkbox"
+                checked={config.bookingGuide?.enabled !== false}
+                onChange={(event) => {
+                  setConfig((previous) => ({
+                    ...previous,
+                    bookingGuide: { ...previous.bookingGuide, enabled: event.target.checked },
+                  }));
+                  setIsDirty(true);
+                }}
+              />
+              Show the booking guide
+            </label>
+            <label className="block text-xs font-bold text-slate-700">
+              Section title
+              <input
+                maxLength={120}
+                value={config.bookingGuide?.title || ''}
+                onChange={(event) => {
+                  setConfig((previous) => ({
+                    ...previous,
+                    bookingGuide: { ...previous.bookingGuide, title: event.target.value },
+                  }));
+                  setIsDirty(true);
+                }}
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 font-normal"
+              />
+            </label>
+            <label className="block text-xs font-bold text-slate-700">
+              Subtitle
+              <textarea
+                maxLength={300}
+                rows={2}
+                value={config.bookingGuide?.subtitle || ''}
+                onChange={(event) => {
+                  setConfig((previous) => ({
+                    ...previous,
+                    bookingGuide: { ...previous.bookingGuide, subtitle: event.target.value },
+                  }));
+                  setIsDirty(true);
+                }}
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 font-normal"
+              />
+            </label>
+            <div className="space-y-3">
+              {(config.bookingGuide?.steps || []).slice().sort((a, b) => a.order - b.order).map((step) => (
+                <div key={step.id} className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-[1fr_1.5fr_auto_auto] md:items-start">
+                  <label className="text-xs font-bold text-slate-700">
+                    Step title
+                    <input
+                      maxLength={80}
+                      value={step.title}
+                      onChange={(event) => {
+                        const steps = (config.bookingGuide?.steps || []).map((item) =>
+                          item.id === step.id ? { ...item, title: event.target.value } : item
+                        );
+                        setConfig((previous) => ({ ...previous, bookingGuide: { ...previous.bookingGuide, steps } }));
+                        setIsDirty(true);
+                      }}
+                      className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-normal"
+                    />
+                  </label>
+                  <label className="text-xs font-bold text-slate-700">
+                    Description
+                    <textarea
+                      maxLength={240}
+                      rows={2}
+                      value={step.description}
+                      onChange={(event) => {
+                        const steps = (config.bookingGuide?.steps || []).map((item) =>
+                          item.id === step.id ? { ...item, description: event.target.value } : item
+                        );
+                        setConfig((previous) => ({ ...previous, bookingGuide: { ...previous.bookingGuide, steps } }));
+                        setIsDirty(true);
+                      }}
+                      className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-normal"
+                    />
+                  </label>
+                  <label className="text-xs font-bold text-slate-700">
+                    Icon
+                    <select
+                      value={step.icon}
+                      onChange={(event) => {
+                        const steps = (config.bookingGuide?.steps || []).map((item) =>
+                          item.id === step.id ? { ...item, icon: event.target.value as typeof item.icon } : item
+                        );
+                        setConfig((previous) => ({ ...previous, bookingGuide: { ...previous.bookingGuide, steps } }));
+                        setIsDirty(true);
+                      }}
+                      className="mt-1 block rounded-lg border border-slate-200 bg-white px-2 py-2 font-normal"
+                    >
+                      <option value="compass">Explore</option>
+                      <option value="message">Contact</option>
+                      <option value="calendar">Calendar</option>
+                      <option value="sparkles">Experience</option>
+                    </select>
+                  </label>
+                  <label className="flex items-center gap-2 pt-5 text-xs font-semibold text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={step.enabled !== false}
+                      onChange={(event) => {
+                        const steps = (config.bookingGuide?.steps || []).map((item) =>
+                          item.id === step.id ? { ...item, enabled: event.target.checked } : item
+                        );
+                        setConfig((previous) => ({ ...previous, bookingGuide: { ...previous.bookingGuide, steps } }));
+                        setIsDirty(true);
+                      }}
+                    />
+                    Visible
+                  </label>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -655,7 +819,7 @@ export const AdminHomepageView: React.FC = () => {
                         1. Hero Video Loop URL (MP4, WebM, MOV, YouTube, Vimeo, uploaded video)
                       </label>
                       <p className="text-[11px] text-slate-500">
-                        Plays seamlessly in background, auto-looping without sound.
+                        Use a high-quality 1080p (or higher) MP4/WebM source for crisp playback on large screens. Loops muted in the background.
                       </p>
                     </div>
                     <div className="flex items-center gap-2">

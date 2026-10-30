@@ -19,11 +19,14 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
   return (
     <SectionContainer id="divisions" background="white" paddingY="lg">
       <div className="mb-8 flex items-end justify-between gap-4 sm:mb-10">
-        <div>
+        <div className="max-w-2xl">
           {section?.title && (
             <h2 className="font-display text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
               {section.title}
             </h2>
+          )}
+          {section?.subtitle && (
+            <p className="mt-3 text-sm leading-6 text-slate-600 sm:text-base">{section.subtitle}</p>
           )}
         </div>
         <button
@@ -35,7 +38,7 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {items.map((division) => (
           <DivisionCard key={division.id} division={division} onNavigate={onNavigate} />
         ))}

@@ -38,7 +38,7 @@ export const SWS_BUSINESS = {
   ],
 } as const;
 
-export const SWS_PRIMARY_HEADING = 'SWS Event Management – Wedding Decorators Colombo & Trincomalee';
+export const SWS_PRIMARY_HEADING = 'SWS Event Management – Event Decorators in Trincomalee';
 
 /** Visible summary under the service headings, naming the searches the page should match. */
 export const SWS_SERVICE_AREA_SUMMARY =

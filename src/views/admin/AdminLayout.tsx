@@ -34,6 +34,7 @@ import {
   Mail,
   HelpCircle,
   Link2,
+  Sparkles,
 } from 'lucide-react';
 import { activeDatabaseName } from '../../lib/firebase';
 import { AdminSectionId } from '../../types/admin';
@@ -79,6 +80,7 @@ const AdminSettingsView = React.lazy(() => import('./AdminSettingsView').then((m
 const AdminUsersView = React.lazy(() => import('./AdminUsersView').then((module) => ({ default: module.AdminUsersView })));
 const AdminAuditLogsView = React.lazy(() => import('./AdminAuditLogsView').then((module) => ({ default: module.AdminAuditLogsView })));
 const AdminHomepageView = React.lazy(() => import('./AdminHomepageView').then((module) => ({ default: module.AdminHomepageView })));
+const AdminSeasonalThemesView = React.lazy(() => import('./AdminSeasonalThemesView').then((module) => ({ default: module.AdminSeasonalThemesView })));
 const AdminWebsiteContentView = React.lazy(() => import('./AdminWebsiteContentView').then((module) => ({ default: module.AdminWebsiteContentView })));
 const AdminGenericView = React.lazy(() => import('./AdminGenericView').then((module) => ({ default: module.AdminGenericView })));
 
@@ -116,6 +118,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'analytics', label: 'Analytics & Reports', icon: BarChart2, badge: 'Live' },
   { id: 'homepage', label: 'Homepage CMS', icon: Globe, badge: 'Live' },
+  { id: 'seasonal-themes', label: 'Seasonal Themes', icon: Sparkles },
   { id: 'website-content', label: 'Website Content', icon: FileText, badge: 'CMS' },
   { id: 'divisions', label: 'Divisions', icon: Building2 },
   { id: 'services', label: 'Services', icon: Briefcase },
@@ -243,6 +246,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
         );
       case 'homepage':
         return <AdminHomepageView />;
+      case 'seasonal-themes':
+        return <AdminSeasonalThemesView />;
       case 'website-content':
       case 'about-us':
       case 'legal-pages':

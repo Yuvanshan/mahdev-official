@@ -179,7 +179,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
         <img
           src={fallbackImage}
           alt={title}
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover brightness-[1.04] contrast-[1.12] saturate-[1.08]"
         />
       )}
 
@@ -195,7 +195,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
           }}
           className={`absolute inset-0 w-full h-full object-cover scale-135 border-0 z-1 transition-opacity duration-300 ease-out ${
             isVideoReady ? 'opacity-100' : 'opacity-0'
-          }`}
+          } brightness-[1.04] contrast-[1.12] saturate-[1.08]`}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         />
       ) : hasVideo && vimeoEmbedSrc ? (
@@ -207,7 +207,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
               handleVideoReady();
             }, 300);
           }}
-          className={`absolute inset-0 w-full h-full object-cover scale-135 border-0 z-1 transition-opacity duration-300 ease-out ${
+          className={`absolute inset-0 w-full h-full object-cover scale-135 border-0 z-1 transition-opacity duration-300 ease-out brightness-[1.04] contrast-[1.12] saturate-[1.08] ${
             isVideoReady ? 'opacity-100' : 'opacity-0'
           }`}
           allow="autoplay; fullscreen; picture-in-picture"
@@ -245,7 +245,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
             console.warn('[HeroVideoBackground] Video playback note:', err?.message || err);
             handleVideoError();
           }}
-          className={`absolute inset-0 w-full h-full object-cover z-1 transition-opacity duration-300 ease-out ${
+          className={`absolute inset-0 w-full h-full object-cover z-1 transition-opacity duration-300 ease-out brightness-[1.04] contrast-[1.12] saturate-[1.08] ${
             // With a poster the element is shown straight away (poster first,
             // then the video), so the hero is never blank while loading.
             isVideoReady || posterImageUrl?.trim() ? 'opacity-100' : 'opacity-0'

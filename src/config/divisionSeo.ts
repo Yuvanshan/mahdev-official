@@ -19,7 +19,7 @@ export interface DivisionSeo {
 export const DIVISION_SEO = {
   sws: {
     name: 'SWS Event Management',
-    title: 'SWS Event Management – Wedding Decorators Trincomalee, Colombo',
+    title: 'SWS Event Management – Event Decorators in Trincomalee',
     description:
       'Wedding, birthday, cradle ceremony, puberty ceremony and corporate event decoration in Trincomalee and Colombo, Sri Lanka, by SWS Event Management. Call or WhatsApp 075 092 8078.',
   },

@@ -9,6 +9,9 @@ import { DIVISIONS, FORCED_COMING_SOON_DIVISIONS } from './config/divisions';
 import { CustomCursor } from './components/motion/CustomCursor';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
+import { WhatsAppWidget } from './components/common/WhatsAppWidget';
+import { SeasonalThemeProvider } from './context/SeasonalThemeContext';
+import { SeasonalOverlay } from './components/seasonal/SeasonalOverlay';
 import { AdminAuthProvider } from './context/AdminAuthContext';
 import { FirestoreDataProvider, useFirestoreDataContext } from './context/FirestoreDataContext';
 import { CartDrawer } from './components/cart/CartDrawer';
@@ -1387,6 +1390,7 @@ function AppContent() {
     <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-blue-600 selection:text-white w-full max-w-full overflow-x-hidden">
       {/* Top Document Scroll Progress Bar */}
       {!isStandaloneComingSoon && <DocumentScrollProgress />}
+      {!isAdminRoute && <SeasonalOverlay />}
 
       {/* Interactive Magnetic Custom Cursor for Desktop */}
       {!isStandaloneComingSoon && <CustomCursor />}
@@ -1431,6 +1435,7 @@ function AppContent() {
 
       {/* Reusable Global Footer */}
       <Footer onNavigate={navigate} currentPath={normalizedPath} />
+      {!isAdminRoute && <WhatsAppWidget />}
     </div>
   );
 }
@@ -1441,7 +1446,9 @@ export default function App() {
       <AuthProvider>
         <AdminAuthProvider>
           <CartProvider>
-            <AppContent />
+            <SeasonalThemeProvider>
+              <AppContent />
+            </SeasonalThemeProvider>
             <Analytics />
             <SpeedInsights />
           </CartProvider>

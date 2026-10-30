@@ -131,9 +131,20 @@ export function getDefaultHomepageSettings(): HomepageCmsConfig {
     },
     divisionsSection: {
       badge: 'OUR DIVISIONS',
-      title: 'Five Pillars of Industry Mastery',
-      subtitle: 'Specialized corporate subsidiaries delivering end-to-end excellence across hospitality, media, technology, travel, and commerce.',
+      title: 'One Company. Multiple Possibilities.',
+      subtitle: 'Explore our specialized services, designed to bring your ideas to life.',
       enabled: true,
+    },
+    bookingGuide: {
+      enabled: true,
+      title: 'Your Journey Starts Here.',
+      subtitle: 'A straightforward path from your first idea to a result you can enjoy.',
+      steps: [
+        { id: 'explore', title: 'Explore Services', description: 'Discover our divisions and choose your required service.', icon: 'compass', order: 1, enabled: true },
+        { id: 'contact', title: 'Contact Us', description: 'Tell us about your requirements through WhatsApp or the contact form.', icon: 'message', order: 2, enabled: true },
+        { id: 'confirm', title: 'Confirm Your Booking', description: 'Discuss availability, pricing, and service details with our team.', icon: 'calendar', order: 3, enabled: true },
+        { id: 'enjoy', title: 'Enjoy the Experience', description: 'We take care of the agreed arrangements while you enjoy the result.', icon: 'sparkles', order: 4, enabled: true },
+      ],
     },
     whyMahdev: {
       badge: 'THE MAHDEV DIFFERENCE',
