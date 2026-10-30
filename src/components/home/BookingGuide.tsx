@@ -32,7 +32,7 @@ export const BookingGuide: React.FC = () => {
         )}
       </div>
 
-      <ol className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <ol className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:pb-0 lg:grid-cols-4">
         {steps.map((step, index) => {
           const Icon = STEP_ICONS[step.icon] || Compass;
           return (
@@ -42,7 +42,7 @@ export const BookingGuide: React.FC = () => {
               whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
               viewport={reducedMotion ? undefined : { once: true, amount: 0.2 }}
               transition={{ duration: 0.45, delay: reducedMotion ? 0 : index * 0.08 }}
-              className="relative rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm transition-shadow duration-300 hover:shadow-md sm:p-6"
+              className="relative w-[min(82vw,19rem)] shrink-0 snap-start rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm transition-shadow duration-300 hover:shadow-md sm:w-auto sm:shrink sm:p-6"
             >
               <div className="mb-4 flex items-center gap-2 sm:mb-5 sm:gap-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-100 sm:h-12 sm:w-12">

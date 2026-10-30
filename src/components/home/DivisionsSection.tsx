@@ -38,9 +38,11 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {items.map((division) => (
-          <DivisionCard key={division.id} division={division} onNavigate={onNavigate} />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
+        {items.map((division, index) => (
+          <div key={division.id} className={index < 2 ? 'lg:col-span-3' : 'lg:col-span-2'}>
+            <DivisionCard division={division} onNavigate={onNavigate} />
+          </div>
         ))}
       </div>
       <button

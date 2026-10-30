@@ -470,47 +470,14 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 
 .seasonal-diwali-spark {
   bottom: 20px;
-  width: 1.5px;
-  height: 1.5px;
+  width: 1.2px;
+  height: 1.2px;
   background: #ffce65;
-  box-shadow: 0 0 8px 2px rgb(255 211 100 / 34%);
+  box-shadow: 0 0 6px 1.5px rgb(255 211 100 / 34%);
   animation-name: seasonal-diwali-rise;
 }
 
-.seasonal-hero-flight {
-  position: absolute;
-  z-index: 3;
-  top: clamp(5rem, 14vh, 9rem);
-  left: 0;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 2 / 1;
-  pointer-events: none;
-  filter: drop-shadow(0 5px 8px rgb(8 15 35 / 35%));
-}
 
-.seasonal-gift-drop {
-  position: absolute;
-  z-index: 1;
-  top: 24%;
-  width: clamp(17px, 2.2vw, 30px);
-  height: auto;
-  opacity: 0;
-  filter: drop-shadow(0 2px 3px rgb(15 23 42 / 35%));
-  animation: seasonal-gift-drop 15s linear .3s infinite;
-}
-
-.seasonal-gift-drop-1 { left: 22%; }
-.seasonal-gift-drop-2 { left: 46%; animation-delay: 2.5s; }
-.seasonal-gift-drop-3 { left: 70%; animation-delay: 4.8s; }
-
-@keyframes seasonal-gift-drop {
-  0%, 11% { transform: translate3d(0, 0, 0) rotate(0) scale(.8); opacity: 0; }
-  13% { opacity: 1; }
-  20% { transform: translate3d(5px, 38px, 0) rotate(28deg) scale(1); opacity: .95; }
-  31% { transform: translate3d(18px, 145px, 0) rotate(150deg) scale(.78); opacity: 0; }
-  100% { transform: translate3d(18px, 145px, 0) rotate(150deg) scale(.78); opacity: 0; }
-}
 
 @keyframes seasonal-sparkle {
   0%, 100% { opacity: .12; transform: scale(.65); }
@@ -544,10 +511,6 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
     max-height: min(78dvh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 11rem));
   }
 
-  .seasonal-hero-flight {
-    top: clamp(5rem, 12vh, 7rem);
-    width: 100%;
-  }
   .seasonal-diya-row { height: 46px; }
   .seasonal-diya { width: 42px; }
 
@@ -569,11 +532,6 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 @media (max-height: 480px) and (orientation: landscape) {
   .whatsapp-widget {
     bottom: max(.75rem, env(safe-area-inset-bottom)) !important;
-  }
-
-  .seasonal-hero-flight {
-    top: 18%;
-    width: clamp(170px, 31vw, 360px);
   }
 
   .whatsapp-panel {

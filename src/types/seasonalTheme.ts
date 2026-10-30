@@ -20,7 +20,6 @@ export interface SeasonalThemeConfig {
   sparklesAmount: number;
   desktop: boolean;
   mobile: boolean;
-  heroAnimation: boolean;
   schedules: SeasonalThemeSchedule[];
   seasonalLogo?: string;
   seasonalFavicon?: string;
@@ -40,6 +39,5 @@ export const DEFAULT_SEASONAL_THEME: SeasonalThemeConfig = {
   sparklesAmount: 100,
   desktop: true,
   mobile: true,
-  heroAnimation: true,
   schedules: [],
 };

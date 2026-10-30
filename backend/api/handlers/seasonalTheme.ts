@@ -119,7 +119,6 @@ function validateTheme(value: unknown): SeasonalThemeConfig {
     sparklesAmount: effectAmount(value.sparklesAmount, 'Sparkles amount'),
     desktop: value.desktop !== false,
     mobile: value.mobile !== false,
-    heroAnimation: value.heroAnimation !== false,
     schedules,
     seasonalLogo: safeAssetUrl(value.seasonalLogo, 'Seasonal logo'),
     seasonalFavicon: safeAssetUrl(value.seasonalFavicon, 'Seasonal favicon'),

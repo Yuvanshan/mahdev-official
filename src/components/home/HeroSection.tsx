@@ -3,7 +3,6 @@ import { ArrowRight } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { ScrollParallax } from '../motion/ParallelScroll';
 import { AnimatedHeroTitle } from '../common/AnimatedHeroTitle';
-import { SeasonalHeroEffect } from '../seasonal/SeasonalOverlay';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { resolveMediaUrl } from '../../services/firestoreMediaService';
 import { extractYouTubeId, getYouTubeEmbedUrl } from '../../utils/youtube';
@@ -257,8 +256,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         aria-hidden="true"
         className="pointer-events-none absolute -left-40 top-1/4 h-96 w-96 rounded-full bg-blue-500/15 blur-[100px]"
       />
-      <SeasonalHeroEffect />
-
       <div className="relative mx-auto flex min-h-[680px] max-w-7xl items-center px-5 py-20 sm:min-h-[740px] sm:px-8 lg:min-h-[min(820px,calc(100svh-5rem))] lg:px-10">
         <motion.div
           className="max-w-3xl"

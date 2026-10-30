@@ -16,7 +16,7 @@ type SeasonalEffectAmount = 'snowAmount' | 'heartsAmount' | 'fireworksAmount' | 
 
 const THEME_OPTIONS: Array<{ id: SeasonalThemeId; label: string; description: string }> = [
   { id: 'default', label: 'Default MAHDEV', description: 'Original brand appearance with no seasonal effects.' },
-  { id: 'christmas', label: 'Christmas', description: 'Navy and red accents, animated snowfall, and a flying Santa.' },
+  { id: 'christmas', label: 'Christmas', description: 'Navy and red accents with animated snowfall.' },
   { id: 'newYear', label: 'New Year', description: 'Premium gold and blue accents with animated fireworks.' },
   { id: 'valentines', label: "Valentine's Day", description: 'Warm red accents and floating animated hearts.' },
   { id: 'diwali', label: 'Diwali', description: 'Deep purple and gold accents with small lamps along the page edge.' },
@@ -265,7 +265,6 @@ export const AdminSeasonalThemesView: React.FC = () => {
             {([
               ['desktop', 'Enable desktop effects'],
               ['mobile', 'Enable mobile effects'],
-              ['heroAnimation', 'Enable hero animation'],
             ] as const).map(([field, label]) => (
               <label key={field} className="flex items-center gap-2 rounded-xl border border-slate-200 p-3 text-sm font-medium text-slate-700">
                 <input type="checkbox" checked={draft[field]} onChange={(event) => updateDraft({ [field]: event.target.checked })} />
