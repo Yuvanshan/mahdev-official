@@ -11,6 +11,7 @@ import { ServiceDetailsModal, wrapIndex } from '../services/ServiceDetailsModal'
 import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
 import { StartingPriceTag, getStartingPriceDetails } from '../common/StartingPriceTag';
 import { getRecordImageAlt } from '../../config/imageAlt';
+import { divisionIdFromName } from '../../utils/onlineBooking';
 
 interface HomeGalleryItem {
   id: string;
@@ -20,6 +21,8 @@ interface HomeGalleryItem {
   category: string;
   location: string;
   price?: number | null;
+  divisionId?: string;
+  divisionName?: string;
 }
 
 interface ActiveGalleryImage {
@@ -30,9 +33,8 @@ interface ActiveGalleryImage {
 const HomeGalleryCard: React.FC<{
   item: HomeGalleryItem;
   index: number;
-  isFeatured: boolean;
   onOpen: (item: HomeGalleryItem, imageIndex: number) => void;
-}> = ({ item, index, isFeatured, onOpen }) => {
+}> = ({ item, index, onOpen }) => {
   const { activeIndex, containerRef } = useAutoSlideImage(item.images.length);
   const imageUrl = item.images[activeIndex] || item.url;
 
@@ -48,15 +50,14 @@ const HomeGalleryCard: React.FC<{
           onOpen(item, activeIndex);
         }
       }}
-      className={`group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${
-        isFeatured ? 'col-span-2 sm:col-span-2 xl:col-span-2' : ''
-      }`}
+      className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
     >
       <div className="relative">
         <ImageWithShimmer
           src={imageUrl}
           alt={getRecordImageAlt(item)}
-          className={`bg-slate-100 ${isFeatured ? 'aspect-[16/10]' : 'aspect-[4/5]'}`}
+          className="aspect-[4/3] bg-slate-100"
+          imageFit="contain"
           loading={index < 4 ? 'eager' : 'lazy'}
           imageClassName="object-contain transition duration-500 group-hover:scale-[1.02]"
           fallbackText={item.title}
@@ -80,7 +81,7 @@ const HomeGalleryCard: React.FC<{
             openWhatsAppInquiry({
               title: item.title,
               category: item.category,
-              divisionName: 'Mahdev Group',
+              divisionName: item.divisionName || 'Mahdev Group',
               itemId: item.id,
               imageUrl,
               location: item.location,
@@ -116,6 +117,7 @@ const HomeGalleryCard: React.FC<{
 export const HomeGallerySection: React.FC = () => {
   const {
     gallery,
+    divisions,
     isGalleryLoading,
     isInitialLoading,
     isFetching,
@@ -140,8 +142,13 @@ export const HomeGallerySection: React.FC = () => {
         category: item.category || item.tag || 'Mahdev Group',
         location: (item as any).location || item.caption || 'Sri Lanka',
         price: item.price,
+        divisionId: String((item as any).divisionId || item.division || ''),
+        divisionName: divisions.find((division) =>
+          division.id === (item as any).divisionId || division.id === item.division ||
+          division.slug === (item as any).divisionId || division.slug === item.division
+        )?.name,
       };
-    }), [gallery]);
+    }), [divisions, gallery]);
 
   const categories = useMemo<string[]>(() => {
     const set = new Set<string>();
@@ -226,14 +233,11 @@ export const HomeGallerySection: React.FC = () => {
 
       <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4 xl:grid-cols-4">
         {displayedItems.map((item, index) => {
-          const isFeatured = index === 0;
-
           return (
             <HomeGalleryCard
               key={item.id}
               item={item}
               index={index}
-              isFeatured={isFeatured}
               onOpen={(openedItem, imageIndex) => setActiveImage({ item: openedItem, imageIndex })}
             />
           );
@@ -251,11 +255,17 @@ export const HomeGallerySection: React.FC = () => {
           title: activeImage.item.title,
           images: activeImage.item.images.length ? activeImage.item.images : [activeImage.item.url],
           subtitle: [activeImage.item.category, activeImage.item.location].filter(Boolean).join(' · '),
+          divisionName: activeImage.item.divisionName,
           ...getStartingPriceDetails(activeImage.item.price),
         } : null}
         initialImageIndex={activeImage?.imageIndex}
         onClose={() => setActiveImage(null)}
-        bookOnline={activeImage ? { kind: 'gallery', id: activeImage.item.id, price: activeImage.item.price } : undefined}
+        bookOnline={activeImage ? {
+          kind: 'gallery',
+          id: activeImage.item.id,
+          price: activeImage.item.price,
+          divisionId: divisionIdFromName(activeImage.item.divisionId) || activeImage.item.divisionId,
+        } : undefined}
         itemNavigation={(() => {
           // Previous/Next move through the gallery items currently shown.
           const index = activeImage ? displayedItems.findIndex((item) => item.id === activeImage.item.id) : -1;

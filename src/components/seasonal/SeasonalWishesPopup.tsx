@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, Copy, Gift, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useCart } from '../../context/CartContext';
 import { CmsCoupon, SeasonalWishCampaign } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
 import { resolveMediaUrl } from '../../services/firestoreMediaService';
@@ -9,7 +9,7 @@ import { safeStorage } from '../../utils/safeStorage';
 import { formatCouponExpiry, isSeasonalWishCampaignActive } from '../../utils/seasonalWishes';
 
 const DISMISSAL_PREFIX = 'mahdev:dismissed-seasonal-wishes:';
-const CLOSE_ANIMATION_MS = 360;
+const CLOSE_ANIMATION_MS = 560;
 
 interface SeasonalWishesPopupProps {
   onNavigate: (path: string) => void;
@@ -21,7 +21,6 @@ function firstName(value: string | undefined): string {
 
 export const SeasonalWishesPopup: React.FC<SeasonalWishesPopupProps> = ({ onNavigate }) => {
   const { user, isAuthenticated } = useAuth();
-  const { applyCoupon } = useCart();
   const [campaigns, setCampaigns] = useState<SeasonalWishCampaign[]>(() =>
     cmsService.getAll<SeasonalWishCampaign>('seasonalWishCampaigns')
   );
@@ -119,20 +118,15 @@ export const SeasonalWishesPopup: React.FC<SeasonalWishesPopupProps> = ({ onNavi
     }, CLOSE_ANIMATION_MS);
   };
 
-  if (!visibleCampaign) return null;
+  if (!visibleCampaign || typeof document === 'undefined') return null;
 
   const title = isAuthenticated && firstName(user?.fullName)
     ? `${visibleCampaign.greetingTitle}, ${firstName(user?.fullName)}!`
     : visibleCampaign.greetingTitle;
-  const animationDuration = Math.min(Math.max(visibleCampaign.animationDurationMs, 180), 2000);
+  const animationDuration = Math.min(Math.max(visibleCampaign.animationDurationMs, 700), 3000);
   const applyOffer = () => {
     if (!coupon) {
       setCouponMessage('This offer is not currently available.');
-      return;
-    }
-    const result = applyCoupon(coupon.code);
-    if (!result.success) {
-      setCouponMessage(result.message);
       return;
     }
     onNavigate(`/checkout?coupon=${encodeURIComponent(coupon.code)}`);
@@ -140,7 +134,7 @@ export const SeasonalWishesPopup: React.FC<SeasonalWishesPopupProps> = ({ onNavi
     dismissCampaign(visibleCampaign);
   };
 
-  return (
+  return createPortal((
     <>
       <aside
         role="region"
@@ -221,5 +215,5 @@ export const SeasonalWishesPopup: React.FC<SeasonalWishesPopupProps> = ({ onNavi
         </div>
       )}
     </>
-  );
+  ), document.body);
 };

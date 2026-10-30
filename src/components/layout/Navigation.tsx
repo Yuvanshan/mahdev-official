@@ -418,11 +418,9 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                 aria-label={`View cart, ${totalQuantity} ${totalQuantity === 1 ? 'item' : 'items'}`}
               >
                 <ShoppingCart className="w-4 h-4 text-slate-800 shrink-0" />
-                {totalQuantity > 0 && (
-                  <span className="absolute -right-1.5 -top-1.5 min-w-5 h-5 px-1 rounded-full bg-[#0052FF] text-white text-[10px] font-bold leading-5 text-center shadow">
-                    {totalQuantity > 99 ? '99+' : totalQuantity}
-                  </span>
-                )}
+                <span className="absolute -right-1.5 -top-1.5 min-w-5 h-5 px-1 rounded-full bg-[#0052FF] text-white text-[10px] font-bold leading-5 text-center shadow">
+                  {totalQuantity > 99 ? '99+' : totalQuantity}
+                </span>
               </button>
 
               {/* Account: sign-in link, or the signed-in customer's menu. */}

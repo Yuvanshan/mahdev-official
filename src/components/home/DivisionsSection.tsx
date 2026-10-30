@@ -38,12 +38,23 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
         </button>
       </div>
 
-      <div className="grid grid-cols-6 gap-2 sm:gap-4">
-        {items.slice(0, 5).map((division, index) => (
-          <div key={division.id} className={index < 2 ? 'col-span-3' : 'col-span-2'}>
-            <DivisionCard division={division} onNavigate={onNavigate} />
-          </div>
-        ))}
+      <div className="divisions-marquee" aria-label="Mahdev divisions">
+        <div className="divisions-marquee-track">
+          {[0, 1].map((copy) => (
+            <div
+              key={copy}
+              className="divisions-marquee-group"
+              aria-hidden={copy === 1}
+              inert={copy === 1}
+            >
+              {items.slice(0, 5).map((division) => (
+                <div key={division.id} className="divisions-marquee-card">
+                  <DivisionCard division={division} onNavigate={onNavigate} />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
       <button
         type="button"

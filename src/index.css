@@ -175,7 +175,7 @@ html[data-seasonal-theme="diwali"] {
 }
 
 .whatsapp-panel {
-  max-height: min(78dvh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 11rem), 38rem);
+  max-height: min(68dvh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 9rem), 34rem);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -356,6 +356,78 @@ html[data-seasonal-theme="diwali"] {
   box-shadow: 0 14px 32px rgb(18 140 126 / 38%), 0 2px 6px rgb(15 23 42 / 12%);
 }
 
+.whatsapp-notice {
+  position: relative;
+  display: flex;
+  width: min(20rem, calc(100vw - 2rem));
+  align-items: center;
+  gap: 4px;
+  border: 1px solid rgb(226 232 240 / 90%);
+  border-radius: 16px;
+  padding: 10px 8px 10px 12px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgb(15 23 42 / 18%);
+  animation: whatsapp-panel-enter .24s cubic-bezier(.2,.8,.2,1) both;
+}
+
+.whatsapp-notice-content {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+
+.whatsapp-notice-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: #128c7e;
+}
+
+.whatsapp-notice-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-self: flex-start;
+  gap: 2px;
+}
+
+.whatsapp-notice-actions button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  color: #64748b;
+}
+
+.whatsapp-notice-actions button:hover {
+  color: #0f172a;
+  background: #f1f5f9;
+}
+
+.whatsapp-notification-badge {
+  position: absolute;
+  top: -3px;
+  right: -2px;
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  background: #dc2626;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+
 @keyframes whatsapp-panel-enter {
   from { opacity: 0; transform: translateY(9px) scale(.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -403,9 +475,9 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 
 .seasonal-wishes-card {
   position: fixed;
-  top: 76px;
+  top: 0;
   left: 50%;
-  z-index: 55;
+  z-index: 10000;
   isolation: isolate;
   width: min(var(--wishes-desktop-width, 520px), calc(100vw - 2rem));
   min-height: 190px;
@@ -436,11 +508,11 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 .seasonal-wishes-card::after { right: 18%; }
 
 .seasonal-wishes-card-entering {
-  animation: seasonal-wishes-drop var(--wishes-duration, 550ms) cubic-bezier(.2,.8,.2,1) both;
+  animation: seasonal-wishes-drop var(--wishes-duration, 1000ms) cubic-bezier(.16,1,.3,1) both;
 }
 
 .seasonal-wishes-card-closing {
-  animation: seasonal-wishes-rise 360ms cubic-bezier(.4,0,.8,.2) both;
+  animation: seasonal-wishes-rise 560ms cubic-bezier(.4,0,.2,1) both;
 }
 
 .seasonal-wishes-card.seasonal-wishes-fade {
@@ -670,6 +742,42 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
   50% { box-shadow: 0 2px 12px rgb(37 99 235 / 20%); }
 }
 
+.divisions-marquee {
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 2%, #000 98%, transparent);
+}
+
+.divisions-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: divisions-marquee-slide 42s linear infinite;
+}
+
+.divisions-marquee:hover .divisions-marquee-track,
+.divisions-marquee:focus-within .divisions-marquee-track {
+  animation-play-state: paused;
+}
+
+.divisions-marquee-group {
+  display: flex;
+  flex: 0 0 min(100vw, 1280px);
+  gap: 16px;
+  padding-right: 16px;
+}
+
+.divisions-marquee-card {
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.divisions-marquee-card > a {
+  height: 100%;
+}
+
+@keyframes divisions-marquee-slide {
+  to { transform: translateX(-50%); }
+}
+
 .seasonal-paused * {
   animation-play-state: paused !important;
 }
@@ -772,7 +880,6 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 
 @media (max-width: 767px) {
   .seasonal-wishes-card {
-    top: 68px;
     width: min(var(--wishes-mobile-width, 92vw), calc(100vw - 1rem));
     min-height: 165px;
     border-radius: 0 0 18px 18px;
@@ -789,14 +896,22 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
   .seasonal-wishes-artwork { width: 40%; }
   .seasonal-wishes-close { top: 7px; right: 7px; width: 27px; height: 27px; }
   .seasonal-offer-panel { padding: 22px; }
+  .divisions-marquee-group { flex-basis: 150vw; gap: 10px; padding-right: 10px; }
+  .divisions-marquee-track { animation-duration: 52s; }
 
   .whatsapp-widget {
     right: max(1rem, env(safe-area-inset-right)) !important;
     bottom: max(6rem, calc(env(safe-area-inset-bottom) + 5.5rem)) !important;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .divisions-marquee-track { animation: none; }
+    .divisions-marquee { overflow-x: auto; scrollbar-width: none; }
+    .divisions-marquee::-webkit-scrollbar { display: none; }
+  }
+
   .whatsapp-panel {
-    max-height: min(78dvh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 11rem));
+    max-height: min(68dvh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 9rem));
   }
 
   .seasonal-diya-row { height: 46px; }
@@ -823,7 +938,20 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
   }
 
   .whatsapp-panel {
-    max-height: min(68dvh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 5.5rem));
+    max-height: min(62dvh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 4.5rem));
+  }
+}
+
+@media (max-width: 1023px) {
+  .whatsapp-widget {
+    bottom: max(6rem, calc(env(safe-area-inset-bottom) + 5.5rem)) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .whatsapp-notice,
+  .whatsapp-panel {
+    animation: none;
   }
 }
 

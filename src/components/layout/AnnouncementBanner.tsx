@@ -11,6 +11,10 @@ export const AnnouncementBanner: React.FC<AnnouncementBannerProps> = ({ onNaviga
   const { siteSettings } = useFirestoreDataContext();
   const availableBanners = useAvailableCmsBanners();
   const promotionBanner = availableBanners.find((banner) => banner.placement === 'announcement_bar');
+  const promotionTitle = promotionBanner?.title.replace(
+    /^(\d{4})\s+Bookings Are Opened$/i,
+    'Now booking for $1'
+  );
 
   const firestoreAnnouncement = siteSettings?.announcement;
   const isFirestoreActive = Boolean(firestoreAnnouncement?.enabled && firestoreAnnouncement?.text?.trim());
@@ -22,9 +26,9 @@ export const AnnouncementBanner: React.FC<AnnouncementBannerProps> = ({ onNaviga
           type="button"
           onClick={() => onNavigate?.('/promotion')}
           className="mx-auto inline-flex max-w-7xl items-center justify-center gap-2 px-4"
-          aria-label={promotionBanner.title}
+          aria-label={promotionTitle}
         >
-          {promotionBanner.title}
+          {promotionTitle}
           <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" />
         </button>
       </div>

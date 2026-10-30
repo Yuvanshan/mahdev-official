@@ -113,7 +113,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                 <img
                   src={product.gallery[activeImageIndex] || product.imageUrl}
                   alt={getImageAlt(product.name, 'mart', product.category)}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
                 {product.discountPercent && (
                   <div className="absolute top-4 left-4 bg-rose-600 text-white text-xs font-mono font-bold px-2.5 py-1 rounded-md shadow-md">
@@ -135,7 +135,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                           : 'border-slate-200 opacity-70 hover:opacity-100'
                       }`}
                     >
-                      <img src={img} alt={getImageAltForPhoto(getImageAlt(product.name, 'mart', product.category), idx, product.gallery.length)} className="w-full h-full object-cover" />
+                      <img src={img} alt={getImageAltForPhoto(getImageAlt(product.name, 'mart', product.category), idx, product.gallery.length)} className="w-full h-full object-contain" />
                     </button>
                   ))}
                 </div>

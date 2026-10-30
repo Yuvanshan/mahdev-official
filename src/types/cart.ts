@@ -28,6 +28,7 @@ export interface CartItem {
   divisionId: 'mart' | 'sws' | 'u1' | 'it' | 'travels' | 'minerals' | 'consulting' | 'holdings' | string;
   divisionName: string;
   productType: ProductType;
+  bookingKind?: 'service' | 'gallery';
   unitPrice: number; // Base price + variant price modifier
   originalPrice?: number;
   discountPercent?: number;

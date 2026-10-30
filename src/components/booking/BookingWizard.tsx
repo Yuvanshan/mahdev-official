@@ -33,6 +33,8 @@ import {
   Booking,
 } from '../../types/booking';
 import { bookingService } from '../../services/bookingService';
+import { cmsService } from '../../services/cmsService';
+import { useCart } from '../../context/CartContext';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { evaluateBotRisk, checkActionThrottle } from '../../utils/securityProtection';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
@@ -51,6 +53,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
   onBookingCreated,
 }) => {
   const { services: firestoreServices } = useFirestoreDataContext();
+  const { validateCoupon } = useCart();
   const bookableServices = bookingService.getServices();
 
   // Step State (1: Service & Package, 2: Schedule & Location, 3: Customer & Review)
@@ -110,12 +113,21 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
   const [company, setCompany] = useState<string>('');
   const [preferredContact, setPreferredContact] = useState<'phone' | 'email' | 'whatsapp'>('whatsapp');
   const [notes, setNotes] = useState<string>('');
+  const [couponInput, setCouponInput] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [couponMessage, setCouponMessage] = useState('');
   const [honeypotValue, setHoneypotValue] = useState<string>('');
   const [formRenderTime] = useState<number>(() => Date.now());
 
   // Validation Errors & Submission State
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  const couponValidation = couponCode && selectedPackage && selectedService
+    ? validateCoupon(couponCode, selectedPackage.price, selectedService.divisionId)
+    : null;
+  const couponDiscount = couponValidation?.success ? couponValidation.discount : 0;
+  const bookingTotal = Math.max(0, (selectedPackage?.price || 0) - couponDiscount);
 
   // When service changes, update packages and defaults
   const handleServiceSelect = (service: BookableServiceItem) => {
@@ -124,7 +136,28 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
     setSelectedTimeSlot(service.availableTimeSlots[0] || '');
     setLocationType(service.locationTypeDefault);
     setSelectedDate(getDefaultDate(service.leadTimeDays));
+    setCouponCode('');
+    setCouponInput('');
+    setCouponMessage('');
     setErrors({});
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!selectedPackage || !selectedService || !couponInput.trim()) {
+      setCouponMessage('Select a package and enter a coupon code.');
+      setCouponCode('');
+      return;
+    }
+    try {
+      await cmsService.ensureCouponsLoaded();
+      const result = validateCoupon(couponInput, selectedPackage.price, selectedService.divisionId);
+      setCouponMessage(result.message);
+      setCouponCode(result.success && result.coupon ? result.coupon.code : '');
+    } catch (error) {
+      console.error('[BookingWizard] Coupon data could not be loaded:', error);
+      setCouponCode('');
+      setCouponMessage('The coupon could not be checked. Please retry or contact our team.');
+    }
   };
 
   // Check Availability for currently selected date
@@ -247,6 +280,8 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
         preferredContactMethod: preferredContact,
       },
       notes,
+      couponCode: couponCode || undefined,
+      discount: couponDiscount,
     };
 
     setTimeout(() => {
@@ -270,7 +305,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
             customerPhone: phone,
             customerEmail: email,
             customerNotes: notes,
-            price: selectedPackage.price,
+            price: bookingTotal,
             imageUrl: selectedService!.imageUrl,
             type: 'booking',
           });
@@ -691,10 +726,44 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
                 </div>
                 <div className="text-right">
                   <span className="text-2xl font-bold font-mono text-amber-400">
-                    {formatCurrency(selectedPackage.price, 'LKR')}
+                    {formatCurrency(bookingTotal, 'LKR')}
                   </span>
-                  <p className="text-[10px] text-neutral-400">LKR</p>
+                  {couponDiscount > 0 ? (
+                    <p className="text-[10px] text-neutral-400 line-through">{formatCurrency(selectedPackage.price, 'LKR')}</p>
+                  ) : <p className="text-[10px] text-neutral-400">LKR</p>}
                 </div>
+              </div>
+
+              <div className="space-y-2 border-b border-neutral-800 pb-4">
+                <label htmlFor="booking-coupon" className="text-[10px] font-semibold uppercase tracking-wide text-neutral-300">
+                  Coupon code
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="booking-coupon"
+                    value={couponInput}
+                    onChange={(event) => {
+                      setCouponInput(event.target.value);
+                      setCouponCode('');
+                      setCouponMessage('');
+                    }}
+                    placeholder="Enter coupon code"
+                    className="min-w-0 flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-xs text-white placeholder:text-neutral-400"
+                  />
+                  <button type="button" onClick={() => void handleApplyCoupon()} className="rounded-lg bg-amber-500 px-3 py-2 text-xs font-bold text-neutral-950 hover:bg-amber-400">
+                    Apply
+                  </button>
+                </div>
+                {couponMessage && (
+                  <p role="status" className={`text-xs ${couponDiscount > 0 ? 'text-emerald-300' : 'text-amber-200'}`}>
+                    {couponMessage}
+                  </p>
+                )}
+                {couponDiscount > 0 && (
+                  <p className="text-xs text-emerald-300">
+                    {couponCode} discount: -{formatCurrency(couponDiscount, 'LKR')}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-neutral-300 font-mono">
@@ -884,7 +953,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
               ) : (
                 <>
                   <ShieldCheck className="w-4 h-4 text-neutral-950" />
-                  <span>Confirm & Submit Booking ({formatCurrency(selectedPackage.price, 'LKR')})</span>
+                  <span>Confirm & Submit Booking ({formatCurrency(bookingTotal, 'LKR')})</span>
                 </>
               )}
             </button>

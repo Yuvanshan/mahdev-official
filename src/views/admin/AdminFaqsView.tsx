@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, Edit2, Eye, EyeOff, Loader2, Plus, Save, Trash2, X } from 'lucide-react';
 import { FAQ_PAGES, FirestoreFAQ, firestoreFaqsService } from '../../services/firestore/faqs';
-import { SWS_FAQS } from '../../data/swsLocalSeo';
+import { SITE_FAQS } from '../../data/siteFaqs';
 
 type Draft = Pick<FirestoreFAQ, 'question' | 'answer' | 'isActive' | 'pages'>;
 const EMPTY_DRAFT: Draft = { question: '', answer: '', isActive: true, pages: ['contact'] };
@@ -97,7 +97,7 @@ export const AdminFaqsView: React.FC = () => {
 
   const importDefaults = () => {
     void run(async () => {
-      await Promise.all(SWS_FAQS.map((faq, i) => firestoreFaqsService.saveFaq(newId() + i, {
+      await Promise.all(SITE_FAQS.map((faq, i) => firestoreFaqsService.saveFaq(newId() + i, {
         question: faq.question,
         answer: faq.answer,
         isActive: true,
@@ -191,7 +191,7 @@ export const AdminFaqsView: React.FC = () => {
         </div>
       ) : faqs.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-600">
-          <p>No FAQs saved yet, so the website shows the {SWS_FAQS.length} built-in questions.</p>
+          <p>No FAQs saved yet, so the website shows the {SITE_FAQS.length} built-in questions.</p>
           <button type="button" onClick={importDefaults} disabled={isSaving} className="mt-3 inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-50">
             Import default FAQs to edit them
           </button>

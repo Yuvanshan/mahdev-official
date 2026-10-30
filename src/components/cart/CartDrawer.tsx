@@ -182,7 +182,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
               <div className="space-y-1">
                 <h4 className="font-display text-sm font-bold text-slate-900">Your Cart is Empty</h4>
                 <p className="text-xs text-slate-500 max-w-xs mx-auto">
-                  Explore our Master Catalog, Ceylon luxury teas, IT systems, or reserve event & travel services.
+                  Add products, services or gallery experiences, then book everything online from your cart.
                 </p>
               </div>
               <div className="flex flex-col gap-2 max-w-xs mx-auto pt-2">
@@ -197,6 +197,28 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                 >
                   Browse Products
                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    closeCart();
+                    if (onNavigate) onNavigate('/services');
+                  }}
+                  className="text-xs"
+                >
+                  Browse Services
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    closeCart();
+                    if (onNavigate) onNavigate('/gallery');
+                  }}
+                  className="text-xs"
+                >
+                  Browse Gallery
+                </Button>
               </div>
             </div>
           ) : (
@@ -205,7 +227,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                 <img
                   src={item.imageUrl}
                   alt={item.name}
-                  className="w-16 h-16 rounded-xl object-cover bg-slate-100 border border-slate-200 shrink-0"
+                  className="w-16 h-16 rounded-xl object-contain bg-slate-100 border border-slate-200 shrink-0"
                 />
 
                 <div className="flex-1 min-w-0 space-y-1">
@@ -240,8 +262,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                       </span>
                     )}
                     {item.productType && item.productType !== 'physical' && (
-                      <span className="text-[10px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                        {String(item.productType).replace(/_/g, ' ')}
+                      <span className="text-[10px] font-medium text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                        {item.bookingKind === 'gallery'
+                          ? 'Gallery booking'
+                          : item.bookingKind === 'service'
+                            ? 'Service booking'
+                            : String(item.productType).replace(/_/g, ' ')}
                       </span>
                     )}
                   </div>

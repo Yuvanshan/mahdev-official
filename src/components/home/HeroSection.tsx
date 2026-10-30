@@ -1,14 +1,10 @@
 import React, { useEffect, useRef } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowDown, ArrowRight } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { ScrollParallax } from '../motion/ParallelScroll';
-import { AnimatedHeroTitle } from '../common/AnimatedHeroTitle';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { resolveMediaUrl } from '../../services/firestoreMediaService';
 import { extractYouTubeId, getYouTubeEmbedUrl } from '../../utils/youtube';
-
-// Sky-300 → blue-200 → white, matching the previous clipped-text gradient.
-const HERO_TITLE_GRADIENT = ['#7dd3fc', '#bfdbfe', '#ffffff'];
 
 interface HeroSectionProps {
   onNavigate: (route: string) => void;
@@ -205,6 +201,18 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     else onNavigate('/divisions');
   };
 
+  const exploreDivisions = () => {
+    const divisionsSection = document.getElementById('divisions');
+    if (!divisionsSection) {
+      onNavigate('/divisions');
+      return;
+    }
+
+    divisionsSection.scrollIntoView({
+      behavior: reducedMotion ? 'auto' : 'smooth',
+    });
+  };
+
   return (
     <section
       ref={heroRef}
@@ -263,22 +271,42 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
         >
-          <h1 aria-label="Creating moments. Capturing memories. Delivering innovation." className="font-editorial text-4xl font-medium leading-[1.04] tracking-[-0.035em] text-white sm:text-6xl lg:text-7xl">
-            <span className="block"><AnimatedHeroTitle text="Creating moments." /></span>
-            <span className="block">
-              <AnimatedHeroTitle text="Capturing memories." delay={0.18} gradient={HERO_TITLE_GRADIENT} />
-            </span>
-            <span className="block"><AnimatedHeroTitle text="Delivering innovation." delay={0.36} /></span>
+          <p className="mb-5 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-sky-100 sm:text-xs">
+            <span aria-hidden="true" className="h-px w-7 bg-sky-300" />
+            Five specialist divisions. One connected group.
+          </p>
+          <h1 className="font-editorial text-4xl font-medium leading-[1.04] tracking-[-0.035em] text-white sm:text-6xl lg:text-7xl">
+            <span className="block">Creating moments.</span>
+            <span className="block text-sky-200">Capturing memories.</span>
+            <span className="block">Delivering innovation.</span>
           </h1>
-          <button
-            type="button"
-            onClick={explore}
-            className="group mt-9 inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 text-sm font-semibold text-slate-950 shadow-lg shadow-slate-950/20 transition duration-300 hover:-translate-y-0.5 hover:bg-sky-50 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
-          >
-            Explore services
-            <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-          </button>
+          <div className="mt-9 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={explore}
+              className="group inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 text-sm font-semibold text-slate-950 shadow-lg shadow-slate-950/20 transition duration-300 hover:-translate-y-0.5 hover:bg-sky-50 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+            >
+              Explore services
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate('/divisions')}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/45 bg-white/5 px-6 text-sm font-semibold text-white backdrop-blur-sm transition duration-300 hover:-translate-y-0.5 hover:border-white hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+            >
+              Meet our divisions
+            </button>
+          </div>
         </motion.div>
+        <button
+          type="button"
+          onClick={exploreDivisions}
+          className="absolute bottom-24 left-5 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/75 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 sm:left-8 lg:left-10"
+          aria-label="Scroll to explore Mahdev divisions"
+        >
+          Discover Mahdev
+          <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
       </div>
     </section>
   );

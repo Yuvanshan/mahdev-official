@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { cmsService } from '../services/cmsService';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { SEOHead } from '../components/layout/SEOHead';
 import { AuthAlert, AuthField, AuthSubmit, PasswordField } from '../components/auth/AuthFields';
@@ -123,7 +124,7 @@ const KIND_LABELS: Record<OnlineBookingKind, string> = {
   service: 'Service',
   gallery: 'Design from our gallery',
   product: 'Product',
-  cart: 'Products from your cart',
+  cart: 'Items from your cart',
 };
 
 // Earliest bookable date is tomorrow, in the visitor's local time.
@@ -190,7 +191,7 @@ function fromProduct(product: FirestoreProduct): OnlineBookingItem {
   };
 }
 
-/** The cart as one bookable item: every product is a line of the booking. */
+/** The cart as one bookable item: each cart entry becomes a booking line. */
 function fromCart(cartItems: CartItem[]): OnlineBookingItem | null {
   if (!cartItems.length) return null;
   const divisions = new Set(cartItems.map((line) => line.divisionId || 'mart'));
@@ -224,13 +225,17 @@ function servicePackages(service?: FirestoreService): BookingPackage[] {
 
 export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, onNavigate }) => {
   const { user, isAuthenticated, isLoading: authLoading, register, login } = useAuth();
-  const { cartItems, appliedCoupon, clearCart } = useCart();
+  const { cartItems, appliedCoupon, clearCart, validateCoupon } = useCart();
   // The cart is emptied once it is booked; the booked lines stay on screen.
   const [bookedCart, setBookedCart] = useState<CartItem[] | null>(null);
   const cartLines = kind === 'cart' ? bookedCart || cartItems : [];
   const isCart = kind === 'cart';
-  // Products (one product, or the cart) are delivered rather than attended.
-  const isProducts = kind === 'product' || isCart;
+  // Physical-only carts are delivered; service/gallery carts are attended bookings.
+  const cartHasBookableItems = isCart && cartLines.some((line) =>
+    line.bookingKind || ['service', 'package', 'bookable_service'].includes(line.productType)
+  );
+  const cartHasPhysicalItems = isCart && cartLines.some((line) => line.productType === 'physical');
+  const isProducts = kind === 'product' || (isCart && !cartHasBookableItems);
   const onlineBookingEnabled = useOnlineBookingEnabled();
   const { services, gallery, products, siteSettings, isServicesLoading, isGalleryLoading, isProductsLoading, isInitialLoading } =
     useFirestoreDataContext();
@@ -275,6 +280,11 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
   }));
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [couponInput, setCouponInput] = useState(() =>
+    new URLSearchParams(window.location.search).get('coupon') || (kind === 'cart' ? appliedCoupon?.code : '') || ''
+  );
+  const [bookingCouponCode, setBookingCouponCode] = useState('');
+  const [couponMessage, setCouponMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState<Booking | null>(null);
   // Step 1: booking and customer details. Step 2: pay the advance, upload the slip, confirm.
@@ -344,11 +354,15 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
   const selectedPackage = packages.find((pkg) => pkg.id === form.packageId);
   const unitPrice = selectedPackage?.price || item?.price || 0;
   const quantity = kind === 'product' ? form.quantity : 1;
-  // What is booked: every product in the cart, or the one item.
+  // What is booked: every cart line, or the single selected item.
   const lineItems: BookingLineItem[] = isCart
     ? cartLines.map((line) => ({
         name: line.selectedVariant ? `${line.name} - ${line.selectedVariant.name}` : line.name,
-        description: line.sku ? `SKU ${line.sku}` : KIND_LABELS.product,
+        description: line.bookingKind === 'gallery'
+          ? 'Gallery booking'
+          : line.bookingKind === 'service' || ['service', 'package', 'bookable_service'].includes(line.productType)
+            ? 'Service booking'
+            : line.sku ? `SKU ${line.sku}` : KIND_LABELS.product,
         quantity: line.quantity,
         unitPrice: line.unitPrice,
       }))
@@ -360,20 +374,59 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
           unitPrice,
         }]
       : [];
-  const estimatedTotal = lineItems.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
-  const hasPrice = estimatedTotal > 0;
+  const subtotal = lineItems.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
+  const divisionIds = new Set(cartLines.map((line) => line.divisionId || 'mart'));
+  const couponDivisionId = isCart
+    ? divisionIds.size === 1 ? [...divisionIds][0] : 'all'
+    : item?.divisionId || divisionIdFromName(item?.divisionName);
+  const couponValidation = bookingCouponCode
+    ? validateCoupon(bookingCouponCode, subtotal, couponDivisionId)
+    : null;
+  const couponDiscount = couponValidation?.success ? couponValidation.discount : 0;
+  const estimatedTotal = Math.max(0, subtotal - couponDiscount);
+  const hasPrice = subtotal > 0;
+  const fullyDiscounted = hasPrice && estimatedTotal === 0;
   const depositPercent = siteSettings?.bookingDepositPercent ?? 30;
   const advanceEstimate = estimatedTotal > 0 ? Math.round((estimatedTotal * depositPercent) / 100) : 0;
   const minDate = tomorrowIso();
   const addressLabel =
-    isProducts
-      ? 'Delivery address'
-      : item?.divisionId === 'travels'
-        ? 'Pickup location'
-        : item?.divisionId === 'it'
-          ? 'Business address or "Online meeting"'
-          : 'Event venue / address';
-  const dateLabel = isProducts ? 'Preferred delivery date' : 'Preferred date';
+    isCart && cartHasPhysicalItems && cartHasBookableItems
+      ? 'Delivery address / service location'
+      : isProducts
+        ? 'Delivery address'
+        : item?.divisionId === 'travels'
+          ? 'Pickup location'
+          : item?.divisionId === 'it'
+            ? 'Business address or "Online meeting"'
+            : 'Event venue / address';
+  const dateLabel = isCart && cartHasPhysicalItems && cartHasBookableItems
+    ? 'Preferred date / delivery date'
+    : isProducts ? 'Preferred delivery date' : 'Preferred date';
+
+  const applyBookingCoupon = async () => {
+    if (!couponInput.trim()) {
+      setCouponMessage('Enter a coupon code.');
+      setBookingCouponCode('');
+      return;
+    }
+    try {
+      await cmsService.ensureCouponsLoaded();
+      const result = validateCoupon(couponInput, subtotal, couponDivisionId);
+      setCouponMessage(result.message);
+      setBookingCouponCode(result.success && result.coupon ? result.coupon.code : '');
+    } catch (error) {
+      console.error('[BookOnline] Coupon data could not be loaded:', error);
+      setBookingCouponCode('');
+      setCouponMessage('The coupon could not be checked. Please retry or contact our team.');
+    }
+  };
+
+  const initialCouponAttempted = useRef(false);
+  useEffect(() => {
+    if (initialCouponAttempted.current || !couponInput.trim() || subtotal <= 0 || !item) return;
+    initialCouponAttempted.current = true;
+    void applyBookingCoupon();
+  }, [couponInput, subtotal, item, applyBookingCoupon]);
 
   const signedInMissing = useMemo(() => {
     if (!user) return [];
@@ -409,7 +462,9 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
     if (!item) return null;
     const divisionId = item.divisionId || divisionIdFromName(item.divisionName);
     const location: BookingLocation = {
-      type: isProducts ? 'client_premises' : divisionId === 'travels' ? 'travel_destination' : 'venue',
+      type: isProducts || (isCart && cartHasPhysicalItems)
+        ? 'client_premises'
+        : divisionId === 'travels' ? 'travel_destination' : 'venue',
       address: form.address.trim(),
     };
     const now = new Date().toISOString();
@@ -428,8 +483,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
       time: form.time,
       location,
       customer: { ...customer, preferredContactMethod: 'whatsapp' },
-      // A cart coupon is not applied to the booking total; the team applies it when confirming.
-      notes: [form.notes.trim(), isCart && appliedCoupon ? `Coupon code: ${appliedCoupon.code}` : '']
+      notes: [form.notes.trim(), bookingCouponCode ? `Coupon code: ${bookingCouponCode}` : '']
         .filter(Boolean)
         .join('\n'),
       price: estimatedTotal,
@@ -441,7 +495,9 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
       source: 'online_booking',
       itemKind: isCart ? 'product' : (kind as Exclude<OnlineBookingKind, 'cart'>),
       lineItems,
-      subtotal: estimatedTotal,
+      subtotal,
+      discount: couponDiscount,
+      couponCode: bookingCouponCode || undefined,
     }, reference);
     markAccountDataStale();
     return booking;
@@ -461,7 +517,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
 
   const validateSlip = (): FieldErrors => {
     const errors: FieldErrors = {};
-    if (payLater) return errors;
+    if (payLater || fullyDiscounted) return errors;
     if (!slipFile) errors.slip = 'Upload the transfer slip, or tick "Pay later" to upload it from My bookings.';
     const amount = Number(slipAmount);
     if (slipFile && (!Number.isFinite(amount) || amount <= 0)) errors.slipAmount = 'Enter the amount you transferred.';
@@ -711,10 +767,18 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
         <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200 p-8 text-center space-y-3">
           <Package className="w-10 h-10 text-slate-400 mx-auto" />
           <h1 className="font-display text-lg font-bold text-slate-900">Your cart is empty</h1>
-          <p className="text-sm text-slate-600">Add products to your cart, then book them online or order on WhatsApp from the cart.</p>
-          <button type="button" onClick={() => onNavigate('/catalog')} className="w-full rounded-xl bg-[#0052FF] text-white text-sm font-semibold py-3 hover:bg-blue-700">
-            Browse products
-          </button>
+          <p className="text-sm text-slate-600">Add products, services or gallery experiences to your cart, then book them online or contact our team.</p>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <button type="button" onClick={() => onNavigate('/catalog')} className="rounded-xl bg-[#0052FF] text-white text-sm font-semibold py-3 hover:bg-blue-700">
+              Products
+            </button>
+            <button type="button" onClick={() => onNavigate('/services')} className="rounded-xl border border-slate-300 text-slate-800 text-sm font-semibold py-3 hover:bg-slate-50">
+              Services
+            </button>
+            <button type="button" onClick={() => onNavigate('/gallery')} className="rounded-xl border border-slate-300 text-slate-800 text-sm font-semibold py-3 hover:bg-slate-50">
+              Gallery
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -875,11 +939,41 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
                   <span>{hasPrice ? (isProducts ? 'Estimated total' : 'Starting from') : 'Price'}</span>
                   <span className="font-mono text-[#0052FF]">{hasPrice ? formatCurrency(estimatedTotal, 'LKR') : 'On quotation'}</span>
                 </div>
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-emerald-700">
+                    <span>{bookingCouponCode} discount</span>
+                    <span>-{formatCurrency(couponDiscount, 'LKR')}</span>
+                  </div>
+                )}
+                <div className="flex gap-2 pt-2">
+                  <input
+                    value={couponInput}
+                    onChange={(event) => {
+                      setCouponInput(event.target.value);
+                      setBookingCouponCode('');
+                      setCouponMessage('');
+                      initialCouponAttempted.current = true;
+                    }}
+                    aria-label="Coupon code"
+                    placeholder="Coupon code"
+                    className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-xs"
+                  />
+                  <button type="button" onClick={() => void applyBookingCoupon()} className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700">
+                    Apply
+                  </button>
+                </div>
+                {couponMessage && (
+                  <p role="status" className={`text-xs ${couponDiscount > 0 ? 'text-emerald-700' : 'text-amber-700'}`}>
+                    {couponMessage}
+                  </p>
+                )}
               </div>
             </div>
             <div className="mx-5 sm:mx-6 mb-5 text-xs text-slate-600 bg-amber-50/70 border border-amber-100 rounded-xl p-3 space-y-1">
               <p>
-                {hasPrice
+                {fullyDiscounted
+                  ? 'Your coupon covers the full price. No payment is due; our team will review and confirm your booking.'
+                  : hasPrice
                   ? `To confirm, pay an advance of ${formatCurrency(advanceEstimate, 'LKR')} (${depositPercent}%) by bank transfer and upload the slip, now or later from My bookings. Our team checks the payment and availability, then confirms your booking and any delivery or transport charges.`
                   : 'Our team will confirm the final price and the advance. Pay the advance by bank transfer and upload the slip from My bookings to reserve your date.'}
               </p>
@@ -929,7 +1023,9 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
                 )}
                 {!uploadedSlip && !slipUploadError && (
                   <p className="text-left rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600">
-                    {estimatedTotal > 0
+                    {fullyDiscounted
+                      ? 'Your coupon covers the full price, so no payment is due. Our team will review your booking. You can track it from '
+                      : estimatedTotal > 0
                       ? `When you are ready, transfer the advance of ${formatCurrency(advanceEstimate, 'LKR')} using ${confirmed.id} as the reference and upload the slip from `
                       : 'We will confirm the final price and the advance with you. Then pay the advance and upload the slip from '}
                     <strong>My bookings</strong> to reserve your date.
@@ -962,50 +1058,60 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
                   </p>
                 </div>
                 <AuthAlert tone="error" message={errorMessage} />
-                <BankTransferDetails
-                  reference={reference}
-                  total={estimatedTotal}
-                  advance={advanceEstimate}
-                  depositPercent={depositPercent}
-                />
-                <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 cursor-pointer hover:bg-slate-100/70">
-                  <input
-                    type="checkbox"
-                    checked={payLater}
-                    onChange={(e) => {
-                      setPayLater(e.target.checked);
-                      setFieldErrors((current) => ({ ...current, slip: undefined, slipAmount: undefined }));
-                    }}
-                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600/30"
-                  />
-                  <span>
-                    <span className="block text-sm font-bold text-slate-900">Pay later</span>
-                    <span className="block text-[11px] text-slate-500">
-                      Book now and upload the transfer slip later from <strong>My bookings</strong>. Your date is reserved once the advance is received.
-                    </span>
-                  </span>
-                </label>
-                {!payLater && (
-                  <PaymentSlipField
-                    file={slipFile}
-                    onFileChange={(file) => {
-                      setSlipFile(file);
-                      setFieldErrors((current) => ({ ...current, slip: undefined }));
-                    }}
-                    amount={slipAmount}
-                    onAmountChange={(value) => {
-                      setSlipAmount(value);
-                      setFieldErrors((current) => ({ ...current, slipAmount: undefined }));
-                    }}
-                    fileError={fieldErrors.slip}
-                    amountError={fieldErrors.slipAmount}
-                  />
+                {fullyDiscounted ? (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+                    Your coupon covers the full booking total. No bank transfer or payment slip is needed.
+                  </div>
+                ) : (
+                  <>
+                    <BankTransferDetails
+                      reference={reference}
+                      total={estimatedTotal}
+                      advance={advanceEstimate}
+                      depositPercent={depositPercent}
+                    />
+                    <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 cursor-pointer hover:bg-slate-100/70">
+                      <input
+                        type="checkbox"
+                        checked={payLater}
+                        onChange={(e) => {
+                          setPayLater(e.target.checked);
+                          setFieldErrors((current) => ({ ...current, slip: undefined, slipAmount: undefined }));
+                        }}
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600/30"
+                      />
+                      <span>
+                        <span className="block text-sm font-bold text-slate-900">Pay later</span>
+                        <span className="block text-[11px] text-slate-500">
+                          Book now and upload the transfer slip later from <strong>My bookings</strong>. Your date is reserved once the advance is received.
+                        </span>
+                      </span>
+                    </label>
+                    {!payLater && (
+                      <PaymentSlipField
+                        file={slipFile}
+                        onFileChange={(file) => {
+                          setSlipFile(file);
+                          setFieldErrors((current) => ({ ...current, slip: undefined }));
+                        }}
+                        amount={slipAmount}
+                        onAmountChange={(value) => {
+                          setSlipAmount(value);
+                          setFieldErrors((current) => ({ ...current, slipAmount: undefined }));
+                        }}
+                        fileError={fieldErrors.slip}
+                        amountError={fieldErrors.slipAmount}
+                      />
+                    )}
+                  </>
                 )}
                 <AuthSubmit busy={isSubmitting} busyLabel={isAuthenticated ? 'Confirming booking…' : 'Creating account & confirming…'}>
                   <CalendarCheck className="h-4 w-4" /> Confirm booking
                 </AuthSubmit>
                 <p className="text-[11px] text-slate-500 text-center">
-                  Your date is reserved once our team has checked the payment.
+                  {fullyDiscounted
+                    ? 'Our team will review and confirm your booking.'
+                    : 'Your date is reserved once our team has checked the payment.'}
                 </p>
               </form>
             ) : authLoading ? (

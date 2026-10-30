@@ -120,7 +120,7 @@ const FeaturedServiceCard: React.FC<{
       <ServiceDetailsModal
         service={isDetailsOpen ? toServiceDetails(service, divisionBadgeText) : null}
         onClose={() => setIsDetailsOpen(false)}
-        bookOnline={{ kind: 'service', id: service.id, price: getServiceStartingPrice(service) }}
+        bookOnline={{ kind: 'service', id: service.id, price: getServiceStartingPrice(service), divisionId: divId }}
         primaryAction={{ label: `Explore ${divisionBadgeText}`, onClick: () => onNavigate(divRoute) }}
       />
     </motion.div>

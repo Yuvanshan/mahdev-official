@@ -127,6 +127,7 @@ const CatalogProductModalContent: React.FC<
                     src={selectedImage}
                     alt={getRecordImageAlt(product)}
                     className="absolute inset-0"
+                    imageFit="contain"
                   />
                   {product.discountPercent && (
                     <span className="absolute top-3 right-3 px-2.5 py-1 text-xs font-bold bg-red-600 text-white rounded-md">
@@ -148,7 +149,7 @@ const CatalogProductModalContent: React.FC<
                             : 'border-neutral-200 opacity-70 hover:opacity-100'
                         }`}
                       >
-                        <ImageWithShimmer src={imgUrl} alt={getImageAltForPhoto(getRecordImageAlt(product), index, product.gallery.length)} className="absolute inset-0" />
+                        <ImageWithShimmer src={imgUrl} alt={getImageAltForPhoto(getRecordImageAlt(product), index, product.gallery.length)} className="absolute inset-0" imageFit="contain" />
                       </button>
                     ))}
                   </div>

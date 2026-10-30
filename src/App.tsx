@@ -827,6 +827,7 @@ function AppContent() {
         <ExploreAllView
           onNavigate={navigate}
           initialCategorySlug={categoryRoute[1]}
+          initialPage="services"
         />
       );
     }
@@ -847,7 +848,7 @@ function AppContent() {
         undefined;
       return gallerySku
         ? <GalleryPageView onNavigate={navigate} initialSku={gallerySku} />
-        : <ExploreAllView onNavigate={navigate} />;
+        : <ExploreAllView onNavigate={navigate} initialPage="gallery" />;
     }
 
     // Protected Direct /orders and /bookings shortcuts
@@ -1334,7 +1335,7 @@ function AppContent() {
         return <DivisionsPageView onNavigate={navigate} />;
       case '/services':
       case '/featured-services':
-        return <ExploreAllView onNavigate={navigate} />;
+        return <ExploreAllView onNavigate={navigate} initialPage="services" />;
       case '/insights':
         return <InsightsView onNavigate={navigate} />;
       case '/about':
@@ -1343,7 +1344,7 @@ function AppContent() {
         return <AboutView onNavigate={navigate} />;
       case '/gallery':
       case '/media':
-        return <ExploreAllView onNavigate={navigate} />;
+        return <ExploreAllView onNavigate={navigate} initialPage="gallery" />;
       case '/projects':
       case '/portfolio':
       case '/work':
@@ -1401,8 +1402,8 @@ function AppContent() {
       {!isStandaloneComingSoon && <CartDrawer onNavigate={navigate} />}
 
       {/* Sticky Top Navigation */}
-      {/* The promo banner is for the main site only, not division pages (/sws, /u1, ...). */}
-      {!divisionKey && <AnnouncementBanner onNavigate={navigate} />}
+      {/* Keep the campaign banner visible across the public site, including division routes. */}
+      {!isAdminRoute && <AnnouncementBanner onNavigate={navigate} />}
       <Navigation currentPath={normalizedPath} onNavigate={navigate} />
 
       {/* Main Content Area with Smooth View Transitions */}

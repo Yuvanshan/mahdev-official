@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowUpRight, Check, MessageCircle, X } from 'lucide-react';
+import { ArrowUpRight, Check, MessageCircle, Volume2, VolumeX, X } from 'lucide-react';
 import { MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
 import { useAuth } from '../../context/AuthContext';
 
@@ -31,16 +31,57 @@ function markWelcomeShown(): void {
 export const WhatsAppWidget: React.FC = () => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [isNoticeVisible, setIsNoticeVisible] = useState(false);
+  const [hasUnreadNotice, setHasUnreadNotice] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
     if (wasWelcomeShown()) return;
     const timer = window.setTimeout(() => {
       markWelcomeShown();
-      setIsOpen(true);
+      setIsNoticeVisible(true);
+      setHasUnreadNotice(true);
+      if (soundEnabled) playNotificationTone();
     }, 3000);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [soundEnabled]);
+
+  const playNotificationTone = () => {
+    if (document.visibilityState !== 'visible' || !window.AudioContext) return;
+    try {
+      const context = new window.AudioContext();
+      const play = () => {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(740, context.currentTime);
+        oscillator.frequency.setValueAtTime(988, context.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.0001, context.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.045, context.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.22);
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start();
+        oscillator.stop(context.currentTime + 0.23);
+        window.setTimeout(() => {
+          void context.close().catch((error: unknown) => {
+            console.warn('[WhatsAppWidget] Could not close notification audio:', error);
+          });
+        }, 500);
+      };
+
+      if (context.state === 'suspended') {
+        void context.resume().then(play).catch(() => {
+          void context.close();
+        });
+      } else {
+        play();
+      }
+    } catch (error) {
+      console.warn('[WhatsAppWidget] Notification sound could not be played:', error);
+    }
+  };
 
   const openChat = () => {
     const name = user?.fullName?.trim().split(/\s+/)[0];
@@ -48,7 +89,15 @@ export const WhatsAppWidget: React.FC = () => {
       ? `Hi, I'm ${name}. I would like to know more about your services.`
       : 'Hi MAHDEV, I would like to know more about your services.');
     markWelcomeShown();
+    setIsNoticeVisible(false);
+    setHasUnreadNotice(false);
     setIsOpen(true);
+  };
+
+  const dismissNotice = () => {
+    markWelcomeShown();
+    setIsNoticeVisible(false);
+    setHasUnreadNotice(false);
   };
 
   const sendMessage = (event: React.FormEvent) => {
@@ -61,8 +110,39 @@ export const WhatsAppWidget: React.FC = () => {
 
   return (
     <div className="whatsapp-widget fixed bottom-24 right-4 z-[70] flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
+      {isNoticeVisible && !isOpen && (
+        <aside className="whatsapp-notice" role="region" aria-label="WhatsApp support invitation" aria-live="polite">
+          <button type="button" className="whatsapp-notice-content" onClick={openChat}>
+            <span className="whatsapp-notice-icon"><MessageCircle className="h-4 w-4" /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-bold text-slate-900">Need a hand?</span>
+              <span className="mt-0.5 block text-xs leading-5 text-slate-600">Message our team on WhatsApp.</span>
+            </span>
+            <ArrowUpRight aria-hidden="true" className="h-4 w-4 shrink-0 text-emerald-700" />
+          </button>
+          <div className="whatsapp-notice-actions">
+            <button
+              type="button"
+              onClick={() => {
+                const nextSoundEnabled = !soundEnabled;
+                setSoundEnabled(nextSoundEnabled);
+                if (nextSoundEnabled) playNotificationTone();
+              }}
+              aria-label={soundEnabled ? 'Mute notification sound' : 'Enable notification sound'}
+              title={soundEnabled ? 'Mute notification sound' : 'Enable notification sound'}
+            >
+              {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </button>
+            <button type="button" onClick={dismissNotice} aria-label="Dismiss WhatsApp invitation">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </aside>
+      )}
       {isOpen && (
         <section
+          role="dialog"
+          aria-modal="false"
           aria-label="MAHDEV WhatsApp support"
           className="whatsapp-panel w-[min(23rem,calc(100vw-2rem))] overflow-hidden rounded-[1.4rem]"
         >
@@ -126,11 +206,21 @@ export const WhatsAppWidget: React.FC = () => {
       <button
         type="button"
         onClick={isOpen ? () => setIsOpen(false) : openChat}
-        aria-label={isOpen ? 'Close WhatsApp support' : 'Open WhatsApp support'}
+        aria-label={isOpen
+          ? 'Close WhatsApp support'
+          : hasUnreadNotice
+            ? 'New WhatsApp support invitation. Open chat'
+            : 'Open WhatsApp support'}
         aria-expanded={isOpen}
+        aria-haspopup="dialog"
         className="whatsapp-launcher flex h-14 w-14 items-center justify-center rounded-full text-white transition duration-200 hover:scale-105 focus-visible:outline-none focus-visible:ring-4"
       >
-        {isOpen ? <X className="h-6 w-6" /> : <MessageCircle className="h-7 w-7" strokeWidth={2.25} />}
+        {isOpen ? <X className="h-6 w-6" /> : (
+          <>
+            <MessageCircle className="h-7 w-7" strokeWidth={2.25} />
+            {hasUnreadNotice && <span className="whatsapp-notification-badge" aria-hidden="true">1</span>}
+          </>
+        )}
       </button>
     </div>
   );

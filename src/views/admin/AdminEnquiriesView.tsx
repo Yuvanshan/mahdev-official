@@ -70,9 +70,8 @@ export const AdminEnquiriesView: React.FC = () => {
     let contactFeedFailed = false;
 
     const mergeAndSet = () => {
-      if (!latestInquiries || !latestContacts) return;
       // Map contacts into uniform inquiry format
-      const mappedContacts: FirestoreInquiry[] = latestContacts.map((c) => ({
+      const mappedContacts: FirestoreInquiry[] = (latestContacts || []).map((c) => ({
         id: c.id,
         name: c.fullName || c.name || 'Anonymous Client',
         email: c.email,
@@ -93,9 +92,10 @@ export const AdminEnquiriesView: React.FC = () => {
       }));
 
       // Deduplicate and combine by ID
-      const existingIds = new Set(latestInquiries.map((i) => i.id));
+      const currentInquiries = latestInquiries || [];
+      const existingIds = new Set(currentInquiries.map((i) => i.id));
       const combined = [
-        ...latestInquiries,
+        ...currentInquiries,
         ...mappedContacts.filter((c) => !existingIds.has(c.id)),
       ];
 
@@ -122,16 +122,25 @@ export const AdminEnquiriesView: React.FC = () => {
       combined.forEach((inquiry) => knownInquiryIds.current.add(inquiry.id));
       setInquiries(combined);
       setLoading(false);
-      if (!inquiryFeedFailed && !contactFeedFailed) setFeedError(null);
-      initialInquiryFeedsLoaded.current = true;
+      if (latestInquiries !== null && latestContacts !== null) {
+        initialInquiryFeedsLoaded.current = true;
+        if (!inquiryFeedFailed && !contactFeedFailed) setFeedError(null);
+      }
     };
 
     const loadingTimeout = window.setTimeout(() => {
       if (latestInquiries === null || latestContacts === null) {
         setLoading(false);
-        setFeedError('The database did not respond. Check your connection and retry.');
+        const pendingFeeds = [
+          latestInquiries === null ? 'enquiries' : '',
+          latestContacts === null ? 'contact submissions' : '',
+        ].filter(Boolean);
+        setFeedError(
+          `The database timed out loading ${pendingFeeds.join(' and ')}. ${inquiries.length ? 'Available records are still shown. ' : ''}Check your connection and retry.`
+        );
+        initialInquiryFeedsLoaded.current = true;
       }
-    }, 15000);
+    }, 65000);
 
     const handleFeedError = (source: string, error: Error) => {
       if (error instanceof TursoApiError && error.statusCode === 401) {

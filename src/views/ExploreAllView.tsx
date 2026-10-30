@@ -187,7 +187,8 @@ const BrowseCard: React.FC<{
 export const ExploreAllView: React.FC<{
   onNavigate: (route: string) => void;
   initialCategorySlug?: string;
-}> = ({ onNavigate, initialCategorySlug }) => {
+  initialPage?: 'services' | 'gallery';
+}> = ({ onNavigate, initialCategorySlug, initialPage = 'services' }) => {
   const {
     services,
     products,
@@ -546,8 +547,14 @@ export const ExploreAllView: React.FC<{
         <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">Mahdev Marketplace</p>
-            <h1 className="font-editorial text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Explore everything</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Browse services, gallery projects, and products together. Search by name, description, category, feature, or SKU.</p>
+            <h1 className="font-editorial text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+              {initialPage === 'gallery' ? 'Explore the Mahdev gallery' : 'Explore services, projects & products'}
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              {initialPage === 'gallery'
+                ? 'Discover event, photography, and project work from across Mahdev’s divisions. Search by title, category, or division.'
+                : 'Find services, gallery projects, and products from across Mahdev. Search by name, description, category, feature, or SKU.'}
+            </p>
           </div>
           <label className="relative block w-full md:max-w-md">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />

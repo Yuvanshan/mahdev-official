@@ -45,7 +45,7 @@ export const MartProductCard: React.FC<MartProductCardProps> = ({
             src={product.imageUrl}
             alt={getImageAlt(product.name, 'mart', product.category)}
             loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108"
+            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.03]"
           />
 
           {/* Badges Overlay */}

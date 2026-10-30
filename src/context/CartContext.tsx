@@ -20,6 +20,11 @@ interface CartContextType {
   updateQuantity: (cartItemId: string, quantity: number) => void;
   clearCart: () => void;
   appliedCoupon: CouponCode | null;
+  validateCoupon: (
+    code: string,
+    subtotal?: number,
+    divisionId?: string
+  ) => { success: boolean; message: string; coupon?: CouponCode; discount: number };
   applyCoupon: (code: string) => { success: boolean; message: string };
   removeCoupon: () => void;
   isCartDrawerOpen: boolean;
@@ -229,6 +234,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           divisionId: product.divisionId || product.division || 'mart',
           divisionName: product.divisionName || 'Mahdev Group',
           productType: product.productType || 'physical',
+          bookingKind: product.bookingKind,
           unitPrice,
           originalPrice,
           discountPercent: product.discountPercent,
@@ -296,7 +302,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAppliedCoupon(null);
   };
 
-  const applyCoupon = (code: string): { success: boolean; message: string } => {
+  const validateCoupon = (
+    code: string,
+    subtotal = cartSummary.subtotal,
+    divisionId?: string
+  ): { success: boolean; message: string; coupon?: CouponCode; discount: number } => {
     const trimmed = code.trim().toUpperCase();
     const now = Date.now();
     const currentCoupons = cmsCouponsRef.current;
@@ -323,18 +333,49 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         : undefined;
 
     if (!found) {
-      return { success: false, message: `Coupon code "${code}" is invalid or expired.` };
+      return { success: false, message: `Coupon code "${code}" is invalid or expired.`, discount: 0 };
     }
 
-    if (found.minOrderAmount && cartSummary.subtotal < found.minOrderAmount) {
+    if (found.minOrderAmount && subtotal < found.minOrderAmount) {
       return {
         success: false,
         message: `Coupon "${trimmed}" requires a minimum subtotal of ${formatCurrency(found.minOrderAmount, 'LKR')}.`,
+        discount: 0,
       };
     }
 
-    setAppliedCoupon(found);
-    return { success: true, message: `Promo code "${found.code}" applied: ${found.description}` };
+    if (
+      cmsCoupon?.divisionRestriction &&
+      cmsCoupon.divisionRestriction !== 'all' &&
+      divisionId &&
+      (divisionId === 'all' || cmsCoupon.divisionRestriction !== divisionId)
+    ) {
+      return {
+        success: false,
+        message: `This coupon is only valid for the ${cmsCoupon.divisionRestriction} division.`,
+        discount: 0,
+      };
+    }
+
+    let discount = found.discountType === 'percentage'
+      ? subtotal * found.discountValue / 100
+      : found.discountType === 'fixed'
+        ? found.discountValue
+        : 0;
+    if (found.maxDiscount !== undefined) discount = Math.min(discount, found.maxDiscount);
+    discount = Math.max(0, Math.min(subtotal, discount));
+    return {
+      success: true,
+      message: `Promo code "${found.code}" applied: ${found.description}`,
+      coupon: found,
+      discount,
+    };
+  };
+
+  const applyCoupon = (code: string): { success: boolean; message: string } => {
+    const result = validateCoupon(code);
+    if (result.success && result.coupon) setAppliedCoupon(result.coupon);
+    return { success: result.success, message: result.message };
   };
 
   const removeCoupon = () => {
@@ -355,6 +396,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateQuantity,
         clearCart,
         appliedCoupon,
+        validateCoupon,
         applyCoupon,
         removeCoupon,
         isCartDrawerOpen,

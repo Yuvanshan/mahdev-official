@@ -116,6 +116,7 @@ export interface Booking {
   lineItems?: BookingLineItem[];
   subtotal?: number;
   discount?: number;
+  couponCode?: string;
   deliveryFee?: number;
   /** Advance the customer pays to reserve the date. */
   advanceAmount?: number;
@@ -194,6 +195,8 @@ export interface BookingSubmissionInput {
   location: BookingLocation;
   customer: CustomerDetails;
   notes?: string;
+  couponCode?: string;
+  discount?: number;
 }
 
 export interface BookingValidationResult {

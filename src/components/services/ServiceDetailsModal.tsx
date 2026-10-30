@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowRight, CalendarCheck, CheckCircle2, ChevronLeft, ChevronRight, MessageCircle, Truck, X } from 'lucide-react';
+import { ArrowRight, CalendarCheck, CheckCircle2, ChevronLeft, ChevronRight, MessageCircle, ShoppingCart, Truck, X } from 'lucide-react';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 import { ImageWatermark } from '../common/ImageWatermark';
 import { getWhatsAppInquiryUrl, type WhatsAppInquiryOptions } from '../../utils/whatsapp';
@@ -8,6 +8,7 @@ import { getServiceStartingPrice, getStartingPriceDetails } from '../common/Star
 import { getImageAlt } from '../../config/imageAlt';
 import { divisionIdFromName, startOnlineBooking, type OnlineBookingKind } from '../../utils/onlineBooking';
 import { useOnlineBookingEnabled } from '../../hooks/useOnlineBookingEnabled';
+import { useCart } from '../../context/CartContext';
 
 export interface ServiceDetails {
   title: string;
@@ -94,6 +95,7 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
   bookOnline,
 }) => {
   const [imageIndex, setImageIndex] = useState(0);
+  const { addToCart } = useCart();
   const onlineBookingEnabled = useOnlineBookingEnabled();
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const images = service ? service.images.filter(Boolean) : [];
@@ -194,7 +196,7 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
               <ImageWithShimmer
                 src={images[imageIndex]}
                 alt={getImageAlt(service.title, service.divisionName)}
-                className="absolute inset-0"
+                className="absolute inset-0 bg-slate-950"
                 imageFit="contain"
                 fallbackText={service.title}
                 loading="eager"
@@ -225,9 +227,9 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
                   type="button"
                   onClick={() => setImageIndex(index)}
                   aria-label={`Show image ${index + 1}`}
-                  className={`relative h-14 w-20 shrink-0 overflow-hidden rounded-md border-2 ${index === imageIndex ? 'border-white' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                  className={`relative h-14 w-20 shrink-0 overflow-hidden rounded-md border-2 bg-slate-900 ${index === imageIndex ? 'border-white' : 'border-transparent opacity-60 hover:opacity-100'}`}
                 >
-                  <ImageWithShimmer src={image} alt="" className="absolute inset-0" loading="lazy" />
+                  <ImageWithShimmer src={image} alt="" className="absolute inset-0" imageFit="contain" loading="lazy" />
                 </button>
               ))}
             </div>
@@ -302,6 +304,31 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
           </div>
 
           <div className="flex flex-col gap-2 border-t border-slate-200 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-5">
+            {bookOnline && (
+              <button
+                type="button"
+                onClick={() => {
+                  const divisionId = bookOnline.divisionId || divisionIdFromName(service.divisionName);
+                  onClose();
+                  addToCart({
+                    id: `${bookOnline.kind}_${bookOnline.id}`,
+                    name: service.title,
+                    slug: bookOnline.id,
+                    sku: bookOnline.sku || `${bookOnline.kind}-${bookOnline.id}`,
+                    divisionId: divisionId || 'other',
+                    divisionName: service.divisionName || 'Mahdev Group',
+                    productType: 'bookable_service',
+                    bookingKind: bookOnline.kind,
+                    price: typeof bookOnline.price === 'number' && Number.isFinite(bookOnline.price) ? bookOnline.price : 0,
+                    imageUrl: images[imageIndex] || images[0] || '',
+                    shortDescription: service.description || '',
+                  });
+                }}
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-5 text-sm font-semibold text-blue-800 hover:border-blue-300 hover:bg-blue-100"
+              >
+                <ShoppingCart className="h-4 w-4" aria-hidden="true" /> Add to cart
+              </button>
+            )}
             {bookOnline && onlineBookingEnabled && (
               <button
                 type="button"
