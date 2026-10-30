@@ -1,5 +1,6 @@
 import React from 'react';
 import { SectionContainer } from '../ui/SectionContainer';
+import { HorizontalScrollArea } from '../ui/HorizontalScrollArea';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { FirestoreTrustedCompany } from '../../types/firestore';
 import { isPublishedTrustedCompany } from '../../services/firestore/trustedCompanies';
@@ -46,9 +47,9 @@ export const TrustedCompaniesSection: React.FC<TrustedCompaniesSectionProps> = (
         </h2>
       </div>
 
-      <div
-        className="flex snap-x snap-mandatory items-center gap-4 overflow-x-auto pb-3"
-        aria-label="Trusted companies"
+      <HorizontalScrollArea
+        ariaLabel="Trusted companies"
+        contentClassName="flex snap-x snap-mandatory items-center gap-4 overflow-x-auto pb-3 no-visible-scrollbar"
       >
         {activeCompanies.slice(0, 12).map((company) => (
           <div
@@ -78,7 +79,7 @@ export const TrustedCompaniesSection: React.FC<TrustedCompaniesSectionProps> = (
             </div>
           </div>
         ))}
-      </div>
+      </HorizontalScrollArea>
 
       {onExplorePartners && (
         <div className="mt-6 text-center">

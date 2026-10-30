@@ -109,11 +109,11 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate
           </span>
         )}
       </div>
-      <div className="flex items-start justify-between gap-4 p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-2 p-2 sm:gap-4 sm:p-5">
         <div className="min-w-0">
-          <h2 className="font-display text-lg font-semibold text-slate-950">{division.name}</h2>
+          <h2 className="font-display text-xs font-semibold leading-tight text-slate-950 sm:text-lg">{division.name}</h2>
         </div>
-        <ArrowUpRight className="mt-1 h-5 w-5 shrink-0 text-slate-400 transition group-hover:text-blue-700" />
+        <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-slate-400 transition group-hover:text-blue-700 sm:mt-1 sm:h-5 sm:w-5" />
       </div>
     </a>
   );

@@ -3,6 +3,7 @@ import { servicePagePath } from '../../config/itemSeo';
 import { ArrowRight, CheckCircle2, Filter, Sparkles } from 'lucide-react';
 import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import { SectionContainer } from '../ui/SectionContainer';
+import { HorizontalScrollArea } from '../ui/HorizontalScrollArea';
 import { H2, Body, Caption } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { IconRenderer } from '../ui/IconRenderer';
@@ -216,7 +217,12 @@ const FeaturedServicesSectionContent: React.FC<
           </div>
 
           {/* Division Filter Tabs */}
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 overflow-x-auto no-scrollbar max-w-full -mx-4 px-4 sm:mx-0 sm:px-0 flex-nowrap sm:flex-wrap">
+          <HorizontalScrollArea
+            ariaLabel="Service divisions"
+            hideControlsAt="sm"
+            className="max-w-full -mx-4 px-4 sm:mx-0 sm:px-0"
+            contentClassName="flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 flex-nowrap overflow-x-auto no-visible-scrollbar sm:flex-wrap sm:overflow-visible"
+          >
             {filterTabs.map((tab) => (
               <button
                 key={tab.id}
@@ -231,7 +237,7 @@ const FeaturedServicesSectionContent: React.FC<
                 {tab.label}
               </button>
             ))}
-          </div>
+          </HorizontalScrollArea>
         </div>
 
         {filteredServices.length === 0 ? (

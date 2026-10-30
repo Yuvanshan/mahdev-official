@@ -86,6 +86,7 @@ class CmsService {
   private cache: Partial<Record<CmsEntityType, any[]>> = {};
   private listeners: Map<CmsEntityType, Set<() => void>> = new Map();
   private couponsLoadStarted = false;
+  private couponsLoading: Promise<void> | null = null;
   private broadcastChannel: BroadcastChannel | null =
     typeof window !== 'undefined' && 'BroadcastChannel' in window
       ? new BroadcastChannel('mahdev_cms_sync_channel')
@@ -632,10 +633,11 @@ class CmsService {
     }
   }
 
-  public ensureCouponsLoaded(): void {
-    if (this.couponsLoadStarted) return;
+  public ensureCouponsLoaded(): Promise<void> {
+    if (this.couponsLoading) return this.couponsLoading;
+    if (this.couponsLoadStarted) return Promise.resolve();
     this.couponsLoadStarted = true;
-    void getDocs(collection(db, 'coupons'))
+    this.couponsLoading = getDocs(collection(db, 'coupons'))
       .then((snapshot) => {
         const items = snapshot.docs.map((document) => ({
           ...document.data(),
@@ -648,6 +650,25 @@ class CmsService {
       .catch((error: unknown) => {
         this.couponsLoadStarted = false;
         console.error('[CmsService] Could not load coupons from the database:', error);
+        throw error;
+      })
+      .finally(() => {
+        this.couponsLoading = null;
+      });
+    return this.couponsLoading;
+  }
+
+  public ensureSeasonalWishCampaignsLoaded(): Promise<void> {
+    return getDocs(collection(db, 'seasonalWishCampaigns'))
+      .then((snapshot) => {
+        this.syncEntityFromFirestore('seasonalWishCampaigns', snapshot.docs.map((document) => ({
+          ...document.data(),
+          id: document.id,
+        })));
+      })
+      .catch((error: unknown) => {
+        console.error('[CmsService] Could not load seasonal wishes campaigns from the database:', error);
+        throw error;
       });
   }
 
@@ -735,6 +756,7 @@ class CmsService {
       'pages',
       'banners',
       'coupons',
+      'seasonalWishCampaigns',
     ];
 
     entities.forEach((entity) => {
@@ -1151,6 +1173,8 @@ class CmsService {
     try {
       if (entity === 'packages' || entity === 'pages' || entity === 'banners' || entity === 'coupons') {
         await setDoc(doc(db, entity, item.id), item);
+      } else if (entity === 'seasonalWishCampaigns') {
+        await setDoc(doc(db, entity, item.id), item);
       } else if (entity === 'divisions') {
         const divKey = item.divisionKey || item.id?.replace('div-', '') || item.id;
         const videoUrl = item.heroVideoUrl || item.videoUrl || item.hero?.videoUrl || '';
@@ -1386,7 +1410,7 @@ class CmsService {
 
   private async deleteEntityItemFromFirestore(entity: CmsEntityType, id: string): Promise<void> {
     try {
-      if (entity === 'packages' || entity === 'pages' || entity === 'banners' || entity === 'coupons') {
+      if (entity === 'packages' || entity === 'pages' || entity === 'banners' || entity === 'coupons' || entity === 'seasonalWishCampaigns') {
         await deleteDoc(doc(db, entity, id));
       } else if (entity === 'products') {
         await firestoreProductsService.deleteProduct(id);
@@ -1589,6 +1613,7 @@ class CmsService {
       'pages',
       'banners',
       'coupons',
+      'seasonalWishCampaigns',
     ];
 
     entities.forEach((entity) => {

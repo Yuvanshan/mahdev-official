@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { MapPin, MessageCircle, Search } from 'lucide-react';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
+import { HorizontalScrollArea } from '../ui/HorizontalScrollArea';
 import { Caption, H2, Body } from '../ui/Heading';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { GallerySectionShimmer } from '../common/GallerySectionShimmer';
@@ -201,7 +202,10 @@ export const HomeGallerySection: React.FC = () => {
               className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
             />
           </label>
-          <div className="flex max-w-full gap-2 overflow-x-auto pb-1">
+          <HorizontalScrollArea
+            ariaLabel="Gallery categories"
+            contentClassName="flex max-w-full gap-2 overflow-x-auto pb-1 no-visible-scrollbar"
+          >
             {categories.map((category) => (
               <button
                 key={category}
@@ -216,7 +220,7 @@ export const HomeGallerySection: React.FC = () => {
                 {category}
               </button>
             ))}
-          </div>
+          </HorizontalScrollArea>
         </div>
       </div>
 

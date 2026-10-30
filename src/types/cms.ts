@@ -13,7 +13,8 @@ export type CmsEntityType =
   | 'testimonials'
   | 'pages'
   | 'banners'
-  | 'coupons';
+  | 'coupons'
+  | 'seasonalWishCampaigns';
 
 export interface BaseCmsEntity {
   id: string;
@@ -71,6 +72,7 @@ export interface CmsDivision extends BaseCmsEntity {
     canonicalUrl: string;
   };
   isActive: boolean;
+  isDeleted?: boolean;
 }
 
 // 2. Service Entity
@@ -309,6 +311,31 @@ export interface CmsCoupon extends BaseCmsEntity {
   usageLimit: number;
   usageCount: number;
   divisionRestriction?: DivisionId | 'all';
+  isActive: boolean;
+}
+
+export interface SeasonalWishCampaign extends BaseCmsEntity {
+  name: string;
+  occasion: string;
+  greetingTitle: string;
+  greetingDescription: string;
+  backgroundColor: string;
+  accentColor: string;
+  textColor: string;
+  artworkUrl: string;
+  backgroundArtworkUrl: string;
+  couponId: string;
+  ctaText: string;
+  startAt: string;
+  endAt: string;
+  timezone: string;
+  displayDelayMs: number;
+  animationDurationMs: number;
+  autoDismissSeconds: number;
+  desktopWidth: number;
+  mobileWidth: number;
+  animationType: 'slide' | 'fade';
+  fontFamily: 'serif' | 'sans' | 'display';
   isActive: boolean;
 }
 

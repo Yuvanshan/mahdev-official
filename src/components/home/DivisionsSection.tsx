@@ -17,8 +17,8 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
   if (section?.enabled === false || items.length === 0) return null;
 
   return (
-    <SectionContainer id="divisions" background="white" paddingY="lg">
-      <div className="mb-8 flex items-end justify-between gap-4 sm:mb-10">
+    <SectionContainer id="divisions" background="white" paddingY="sm">
+      <div className="mb-4 flex items-end justify-between gap-4 sm:mb-10">
         <div className="max-w-2xl">
           {section?.title && (
             <h2 className="font-display text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
@@ -38,9 +38,9 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
-        {items.map((division, index) => (
-          <div key={division.id} className={index < 2 ? 'lg:col-span-3' : 'lg:col-span-2'}>
+      <div className="grid grid-cols-6 gap-2 sm:gap-4">
+        {items.slice(0, 5).map((division, index) => (
+          <div key={division.id} className={index < 2 ? 'col-span-3' : 'col-span-2'}>
             <DivisionCard division={division} onNavigate={onNavigate} />
           </div>
         ))}
@@ -48,7 +48,7 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
       <button
         type="button"
         onClick={() => onNavigate('/divisions')}
-        className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-blue-700 sm:hidden"
+        className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-blue-700 sm:hidden"
       >
         All businesses <ArrowUpRight className="h-4 w-4" />
       </button>

@@ -44,6 +44,7 @@ const CORE_COLLECTIONS = [
   'roles',
   'services',
   'settings',
+  'seasonalWishCampaigns',
   'statistics',
   'system_metadata',
   'team',

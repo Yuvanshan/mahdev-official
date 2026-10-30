@@ -401,6 +401,275 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
   pointer-events: none;
 }
 
+.seasonal-wishes-card {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  z-index: 55;
+  isolation: isolate;
+  width: min(var(--wishes-desktop-width, 520px), calc(100vw - 2rem));
+  min-height: 190px;
+  overflow: visible;
+  border: 1px solid color-mix(in srgb, var(--wishes-accent) 72%, white);
+  border-radius: 0 0 22px 22px;
+  color: var(--wishes-text, white);
+  background-color: var(--wishes-background, #7f1d1d);
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 24px 48px rgb(15 23 42 / 28%), inset 0 1px 0 rgb(255 255 255 / 42%);
+  transform: translateX(-50%);
+  transform-origin: top center;
+}
+
+.seasonal-wishes-card::before,
+.seasonal-wishes-card::after {
+  position: absolute;
+  top: -13px;
+  z-index: -1;
+  width: 1px;
+  height: 15px;
+  background: linear-gradient(var(--wishes-accent), rgb(255 255 255 / 40%));
+  content: "";
+}
+
+.seasonal-wishes-card::before { left: 18%; }
+.seasonal-wishes-card::after { right: 18%; }
+
+.seasonal-wishes-card-entering {
+  animation: seasonal-wishes-drop var(--wishes-duration, 550ms) cubic-bezier(.2,.8,.2,1) both;
+}
+
+.seasonal-wishes-card-closing {
+  animation: seasonal-wishes-rise 360ms cubic-bezier(.4,0,.8,.2) both;
+}
+
+.seasonal-wishes-card.seasonal-wishes-fade {
+  animation-name: seasonal-wishes-fade-in;
+}
+
+.seasonal-wishes-card.seasonal-wishes-fade.seasonal-wishes-card-closing {
+  animation-name: seasonal-wishes-fade-out;
+}
+
+.seasonal-wishes-hanger {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 28px;
+  height: 16px;
+  border: 1px solid var(--wishes-accent);
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  transform: translateX(-50%);
+}
+
+.seasonal-wishes-content {
+  position: relative;
+  z-index: 1;
+  max-width: 68%;
+  padding: 22px 22px 20px;
+  text-shadow: 0 2px 9px rgb(0 0 0 / 40%);
+}
+
+.seasonal-wishes-font-serif { font-family: Georgia, "Times New Roman", serif; }
+.seasonal-wishes-font-sans { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+.seasonal-wishes-font-display { font-family: var(--font-display, Georgia), Georgia, serif; }
+
+.seasonal-wishes-occasion {
+  margin: 0 0 5px;
+  color: var(--wishes-accent, #f5c15c);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.seasonal-wishes-content h2,
+.seasonal-offer-panel h2 {
+  margin: 0;
+  font-size: clamp(20px, 2.2vw, 29px);
+  font-weight: 700;
+  line-height: 1.08;
+}
+
+.seasonal-wishes-description {
+  margin: 7px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.seasonal-wishes-offer {
+  margin: 8px 0 0;
+  color: var(--wishes-accent, #f5c15c);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.seasonal-wishes-cta,
+.seasonal-offer-copy {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 8px 14px;
+  border: 1px solid var(--wishes-accent, #f5c15c);
+  border-radius: 999px;
+  color: var(--wishes-background, #7f1d1d);
+  background: var(--wishes-accent, #f5c15c);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  box-shadow: 0 5px 14px rgb(0 0 0 / 18%);
+  transition: transform 160ms ease, filter 160ms ease;
+}
+
+.seasonal-wishes-cta:hover,
+.seasonal-offer-copy:hover { filter: brightness(1.05); transform: translateY(-1px); }
+
+.seasonal-wishes-close,
+.seasonal-offer-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 38%);
+  border-radius: 50%;
+  color: white;
+  background: rgb(15 23 42 / 36%);
+  backdrop-filter: blur(8px);
+}
+
+.seasonal-wishes-artwork {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  width: 43%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom right;
+  filter: drop-shadow(-8px 5px 12px rgb(0 0 0 / 30%));
+}
+
+.seasonal-wishes-snow {
+  position: absolute;
+  right: 17%;
+  bottom: 10px;
+  z-index: 1;
+  color: var(--wishes-accent, #f5c15c);
+  opacity: .8;
+  pointer-events: none;
+  animation: seasonal-wishes-twinkle 4s ease-in-out infinite;
+}
+
+.seasonal-offer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(15 23 42 / 52%);
+  backdrop-filter: blur(5px);
+}
+
+.seasonal-offer-panel {
+  position: relative;
+  width: min(100%, 390px);
+  padding: 26px;
+  border: 1px solid #e2e8f0;
+  border-radius: 22px;
+  color: #0f172a;
+  background: #fff;
+  box-shadow: 0 25px 70px rgb(15 23 42 / 35%);
+  animation: seasonal-offer-pop 220ms ease-out both;
+}
+
+.seasonal-offer-panel h2 { font-size: 25px; }
+.seasonal-offer-discount { margin: 12px 0 4px; color: #9f1239; font-size: 24px; font-weight: 900; }
+.seasonal-offer-code { margin: 6px 0 10px; padding: 12px; border: 1px dashed #cbd5e1; border-radius: 10px; background: #f8fafc; font-family: ui-monospace, monospace; font-size: 18px; font-weight: 800; letter-spacing: .12em; text-align: center; }
+.seasonal-offer-copy { width: 100%; color: #7f1d1d; background: white; box-shadow: none; }
+.seasonal-offer-close { color: #475569; background: #f1f5f9; border-color: #e2e8f0; }
+
+.seasonal-wishes-preview {
+  position: relative;
+  min-height: 190px;
+  overflow: hidden;
+  padding: 20px;
+  border: 1px solid;
+  border-radius: 16px;
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 12px 22px rgb(15 23 42 / 16%), inset 0 1px 0 rgb(255 255 255 / 32%);
+}
+
+.seasonal-wishes-preview > :not(.seasonal-wishes-preview-art) { position: relative; z-index: 1; }
+.seasonal-wishes-preview p { margin: 0 0 6px; font-size: 12px; }
+.seasonal-wishes-preview h3 { max-width: 70%; margin: 0; font-size: 23px; font-weight: 700; }
+.seasonal-wishes-preview strong { display: block; margin-top: 8px; }
+.seasonal-wishes-preview span { display: inline-block; margin-top: 10px; padding: 7px 12px; border-radius: 999px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.seasonal-wishes-preview-art { position: absolute; right: 0; bottom: 0; width: 42%; height: 100%; object-fit: contain; object-position: bottom right; }
+
+.horizontal-scroll-indicator {
+  position: absolute;
+  top: 50%;
+  z-index: 5;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid rgb(148 163 184 / 35%);
+  border-radius: 50%;
+  color: #334155;
+  background: rgb(255 255 255 / 88%);
+  box-shadow: 0 2px 9px rgb(15 23 42 / 10%);
+  transform: translateY(-50%);
+  animation: horizontal-scroll-nudge 2.4s ease-in-out infinite;
+  backdrop-filter: blur(8px);
+}
+
+.no-visible-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-visible-scrollbar::-webkit-scrollbar { display: none; }
+
+@keyframes seasonal-wishes-drop {
+  from { opacity: 0; transform: translate(-50%, -125%) rotateX(-15deg); }
+  to { opacity: 1; transform: translate(-50%, 0) rotateX(0); }
+}
+
+@keyframes seasonal-wishes-rise {
+  to { opacity: 0; transform: translate(-50%, -135%) rotateX(14deg); }
+}
+
+@keyframes seasonal-wishes-fade-in {
+  from { opacity: 0; transform: translate(-50%, -8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@keyframes seasonal-wishes-fade-out {
+  to { opacity: 0; transform: translate(-50%, -8px); }
+}
+
+@keyframes seasonal-wishes-twinkle {
+  50% { opacity: .36; transform: translateY(-3px); }
+}
+
+@keyframes seasonal-offer-pop {
+  from { opacity: 0; transform: translateY(8px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes horizontal-scroll-nudge {
+  50% { box-shadow: 0 2px 12px rgb(37 99 235 / 20%); }
+}
+
 .seasonal-paused * {
   animation-play-state: paused !important;
 }
@@ -502,6 +771,25 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 }
 
 @media (max-width: 767px) {
+  .seasonal-wishes-card {
+    top: 68px;
+    width: min(var(--wishes-mobile-width, 92vw), calc(100vw - 1rem));
+    min-height: 165px;
+    border-radius: 0 0 18px 18px;
+  }
+
+  .seasonal-wishes-content {
+    max-width: 73%;
+    padding: 19px 16px 16px;
+  }
+
+  .seasonal-wishes-content h2 { font-size: clamp(18px, 5vw, 23px); }
+  .seasonal-wishes-description { font-size: 11px; }
+  .seasonal-wishes-cta { min-height: 32px; margin-top: 9px; padding: 7px 10px; font-size: 9px; }
+  .seasonal-wishes-artwork { width: 40%; }
+  .seasonal-wishes-close { top: 7px; right: 7px; width: 27px; height: 27px; }
+  .seasonal-offer-panel { padding: 22px; }
+
   .whatsapp-widget {
     right: max(1rem, env(safe-area-inset-right)) !important;
     bottom: max(6rem, calc(env(safe-area-inset-bottom) + 5.5rem)) !important;

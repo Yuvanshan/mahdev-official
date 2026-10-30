@@ -12,6 +12,7 @@ import { AuthProvider } from './context/AuthContext';
 import { WhatsAppWidget } from './components/common/WhatsAppWidget';
 import { SeasonalThemeProvider } from './context/SeasonalThemeContext';
 import { SeasonalOverlay } from './components/seasonal/SeasonalOverlay';
+import { SeasonalWishesPopup } from './components/seasonal/SeasonalWishesPopup';
 import { AdminAuthProvider } from './context/AdminAuthContext';
 import { FirestoreDataProvider, useFirestoreDataContext } from './context/FirestoreDataContext';
 import { CartDrawer } from './components/cart/CartDrawer';
@@ -1391,6 +1392,7 @@ function AppContent() {
       {/* Top Document Scroll Progress Bar */}
       {!isStandaloneComingSoon && <DocumentScrollProgress />}
       {!isAdminRoute && <SeasonalOverlay />}
+      {!isAdminRoute && <SeasonalWishesPopup onNavigate={navigate} />}
 
       {/* Interactive Magnetic Custom Cursor for Desktop */}
       {!isStandaloneComingSoon && <CustomCursor />}

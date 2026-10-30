@@ -106,6 +106,7 @@ export type AdminSectionId =
   | 'analytics'
   | 'homepage'
   | 'seasonal-themes'
+  | 'seasonal-wishes'
   | 'website-content'
   | 'about-us'
   | 'legal-pages'

@@ -55,6 +55,7 @@ const PUBLIC_LEGAL_DRAFT_FIELDS = ['draftSections', 'draftTitle', 'draftSubtitle
 
 function hidePublicDrafts(collection: string, document: TursoDocument): TursoDocument | null {
   if (collection === 'pages' && (document.data.isPublished === false || document.data.status === 'draft')) return null;
+  if (collection === 'seasonalWishCampaigns' && document.data.isActive !== true) return null;
   if (collection === 'legalPages') {
     const data = { ...document.data };
     PUBLIC_LEGAL_DRAFT_FIELDS.forEach((field) => delete data[field]);
@@ -140,8 +141,10 @@ const PUBLIC_READ_COLLECTIONS = new Set([
   'banners',
   'categories',
   'careerOpenings',
+  'coupons',
   // Published legal text (privacy, terms, refunds...) shown on public pages.
   'legalPages',
+  'seasonalWishCampaigns',
   'divisions',
   'faqs',
   'gallery',
@@ -252,6 +255,7 @@ const ADMIN_MANAGED_COLLECTIONS = new Set([
   'categories',
   'companySettings',
   'coupons',
+  'seasonalWishCampaigns',
   'divisions',
   'faqs',
   'gallery',
@@ -1170,6 +1174,9 @@ export async function handleTursoAction(
         : maxRows;
       if (access.role === 'public' && collection === 'careerOpenings') {
         filters.push({ field: 'status', operator: '==', value: 'published' });
+      }
+      if (access.role === 'public' && collection === 'coupons') {
+        filters.push({ field: 'isActive', operator: '==', value: true });
       }
       const documents = await listTursoDocuments(
         collection,

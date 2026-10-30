@@ -22,6 +22,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { cmsService } from '../services/cmsService';
 import { orderService, SHIPPING_METHODS } from '../services/orderService';
 import {
   CustomerOrderDetails,
@@ -43,6 +44,29 @@ interface CheckoutViewProps {
 export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
   const { cartItems, cartSummary, clearCart, appliedCoupon, applyCoupon, removeCoupon } =
     useCart();
+  const applyCouponRef = React.useRef(applyCoupon);
+  applyCouponRef.current = applyCoupon;
+
+  React.useEffect(() => {
+    const couponCode = new URLSearchParams(window.location.search).get('coupon')?.trim();
+    if (!couponCode || appliedCoupon?.code.toUpperCase() === couponCode.toUpperCase()) return;
+
+    let active = true;
+    void cmsService.ensureCouponsLoaded()
+      .then(() => {
+        if (!active) return;
+        const result = applyCouponRef.current(couponCode);
+        if (!result.success) setCouponError(result.message);
+      })
+      .catch((error: unknown) => {
+        console.error('[Checkout] Coupon data could not be loaded:', error);
+        if (active) setCouponError('The offer could not be checked. Please enter the code manually or try again.');
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Track checkout initiated
   React.useEffect(() => {

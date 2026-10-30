@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Sparkles, ChevronRight } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
+import { HorizontalScrollArea } from '../ui/HorizontalScrollArea';
 import { H2, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
@@ -90,9 +91,10 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
         </div>
 
         {/* Swipe horizontally to browse milestone titles and years. */}
-        <div
-          aria-label="Company milestones"
-          className="mb-10 flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-4 touch-pan-x"
+        <HorizontalScrollArea
+          ariaLabel="Company milestones"
+          className="mb-10"
+          contentClassName="flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-4 touch-pan-x no-visible-scrollbar"
         >
             {displayMilestones.map((ms, index) => {
               const milestoneKey = ms.id ? `ms-card-${ms.id}` : `ms-card-${ms.year}-${index}`;
@@ -109,7 +111,7 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
                 </article>
               );
             })}
-        </div>
+        </HorizontalScrollArea>
 
         {/* View Company Journey Button */}
         {onNavigate && (

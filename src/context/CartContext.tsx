@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
 import { CartItem, CartSummary, CouponCode, CartVariantSelection, CartBookingDetails } from '../types/cart';
 import { CatalogProduct, ProductVariantOption } from '../types/catalog';
 import { analyticsService } from '../services/analyticsService';
@@ -102,9 +102,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
   const [cmsCoupons, setCmsCoupons] = useState<CmsCoupon[]>(() => cmsService.getAll<CmsCoupon>('coupons'));
+  const cmsCouponsRef = useRef(cmsCoupons);
 
   useEffect(() => {
-    const refreshCoupons = () => setCmsCoupons(cmsService.getAll<CmsCoupon>('coupons'));
+    const refreshCoupons = () => {
+      const coupons = cmsService.getAll<CmsCoupon>('coupons');
+      cmsCouponsRef.current = coupons;
+      setCmsCoupons(coupons);
+    };
     const unsubscribe = cmsService.subscribe('coupons', refreshCoupons);
     refreshCoupons();
     return unsubscribe;
@@ -294,7 +299,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const applyCoupon = (code: string): { success: boolean; message: string } => {
     const trimmed = code.trim().toUpperCase();
     const now = Date.now();
-    const configuredCoupons = cmsCoupons.filter((coupon) => {
+    const currentCoupons = cmsCouponsRef.current;
+    const configuredCoupons = currentCoupons.filter((coupon) => {
       if (!coupon.isActive || coupon.isDeleted) return false;
       if (coupon.validFrom && new Date(`${coupon.validFrom}T00:00:00`).getTime() > now) return false;
       if (coupon.validUntil && new Date(`${coupon.validUntil}T23:59:59`).getTime() < now) return false;
@@ -312,7 +318,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           maxDiscount: cmsCoupon.maxDiscount,
           expiryDate: cmsCoupon.validUntil,
         }
-      : cmsCoupons.length === 0
+      : currentCoupons.length === 0
         ? VALID_COUPONS.find((coupon) => coupon.code === trimmed)
         : undefined;
 

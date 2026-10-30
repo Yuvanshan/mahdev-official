@@ -35,6 +35,7 @@ import {
   HelpCircle,
   Link2,
   Sparkles,
+  Gift,
 } from 'lucide-react';
 import { activeDatabaseName } from '../../lib/firebase';
 import { AdminSectionId } from '../../types/admin';
@@ -81,6 +82,7 @@ const AdminUsersView = React.lazy(() => import('./AdminUsersView').then((module)
 const AdminAuditLogsView = React.lazy(() => import('./AdminAuditLogsView').then((module) => ({ default: module.AdminAuditLogsView })));
 const AdminHomepageView = React.lazy(() => import('./AdminHomepageView').then((module) => ({ default: module.AdminHomepageView })));
 const AdminSeasonalThemesView = React.lazy(() => import('./AdminSeasonalThemesView').then((module) => ({ default: module.AdminSeasonalThemesView })));
+const AdminSeasonalWishesView = React.lazy(() => import('./AdminSeasonalWishesView').then((module) => ({ default: module.AdminSeasonalWishesView })));
 const AdminWebsiteContentView = React.lazy(() => import('./AdminWebsiteContentView').then((module) => ({ default: module.AdminWebsiteContentView })));
 const AdminGenericView = React.lazy(() => import('./AdminGenericView').then((module) => ({ default: module.AdminGenericView })));
 
@@ -119,6 +121,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { id: 'analytics', label: 'Analytics & Reports', icon: BarChart2, badge: 'Live' },
   { id: 'homepage', label: 'Homepage CMS', icon: Globe, badge: 'Live' },
   { id: 'seasonal-themes', label: 'Seasonal Themes', icon: Sparkles },
+  { id: 'seasonal-wishes', label: 'Seasonal Wishes & Campaigns', icon: Gift },
   { id: 'website-content', label: 'Website Content', icon: FileText, badge: 'CMS' },
   { id: 'divisions', label: 'Divisions', icon: Building2 },
   { id: 'services', label: 'Services', icon: Briefcase },
@@ -248,6 +251,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
         return <AdminHomepageView />;
       case 'seasonal-themes':
         return <AdminSeasonalThemesView />;
+      case 'seasonal-wishes':
+        return <AdminSeasonalWishesView />;
       case 'website-content':
       case 'about-us':
       case 'legal-pages':
