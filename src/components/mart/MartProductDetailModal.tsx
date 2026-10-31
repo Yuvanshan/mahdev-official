@@ -104,7 +104,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
         </div>
 
         {/* Scrollable Content */}
-        <div className="overflow-y-auto flex-1 p-6 space-y-8 text-slate-800">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:p-6 sm:pb-6 space-y-8 text-slate-800">
           {/* Main 2-Column Product Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left Column: Image Gallery (5 cols) */}

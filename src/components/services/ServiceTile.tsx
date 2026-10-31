@@ -72,8 +72,7 @@ export const ServiceTile: React.FC<ServiceTileProps> = ({ title, images, onView,
           src={usableImages[activeIndex] || usableImages[0] || ''}
           alt={imageAlt || title}
           className="aspect-[4/3] w-full bg-slate-100"
-          // Whole image, never cropped (letterboxed inside the gallery-sized 4:3 frame).
-          imageFit="contain"
+          imageFit="cover"
           imageClassName="transition-transform duration-500 group-hover:scale-[1.02]"
           fallbackText={title}
           fallbackSources={usableImages.filter((_, index) => index !== activeIndex)}

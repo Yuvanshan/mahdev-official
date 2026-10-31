@@ -85,13 +85,13 @@ const CatalogProductModalContent: React.FC<
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[200] overflow-y-auto bg-neutral-950/70 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="fixed inset-0 z-[200] overflow-y-auto bg-neutral-950/70 backdrop-blur-sm flex items-start justify-center p-2 pb-[max(.5rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6 lg:p-8">
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 20 }}
           transition={{ duration: 0.25 }}
-          className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-neutral-200"
+          className="relative my-2 bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[calc(100dvh-1rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-hidden flex flex-col border border-neutral-200 sm:my-0 sm:max-h-[90vh]"
         >
           {/* Top Bar with SKU & Close Button */}
           <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50">
@@ -118,7 +118,7 @@ const CatalogProductModalContent: React.FC<
           </div>
 
           {/* Modal Content Scrollable Area */}
-          <div className="overflow-y-auto p-6 sm:p-8 space-y-8">
+          <div className="min-h-0 overflow-y-auto overscroll-contain p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:p-6 sm:pb-8 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Left Column: Gallery */}
               <div className="space-y-4">

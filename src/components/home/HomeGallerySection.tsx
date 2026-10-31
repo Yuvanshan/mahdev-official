@@ -57,9 +57,9 @@ const HomeGalleryCard: React.FC<{
           src={imageUrl}
           alt={getRecordImageAlt(item)}
           className="aspect-[4/3] bg-slate-100"
-          imageFit="contain"
+          imageFit="cover"
           loading={index < 4 ? 'eager' : 'lazy'}
-          imageClassName="object-contain transition duration-500 group-hover:scale-[1.02]"
+          imageClassName="object-cover transition duration-500 group-hover:scale-[1.02]"
           fallbackText={item.title}
         />
         {item.images.length > 1 && (

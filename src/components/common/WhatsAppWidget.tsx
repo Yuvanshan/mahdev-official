@@ -109,7 +109,7 @@ export const WhatsAppWidget: React.FC = () => {
   };
 
   return (
-    <div className="whatsapp-widget fixed bottom-24 right-4 z-[70] flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
+    <div className="whatsapp-widget fixed bottom-24 right-4 z-[120] flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
       {isNoticeVisible && !isOpen && (
         <aside className="whatsapp-notice" role="region" aria-label="WhatsApp support invitation" aria-live="polite">
           <button type="button" className="whatsapp-notice-content" onClick={openChat}>

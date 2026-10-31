@@ -65,7 +65,7 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate
         event.preventDefault();
         onNavigate(division.route);
       }}
-      className="group overflow-hidden rounded-xl border border-slate-200 bg-white text-left transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
+      className="group relative block h-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 text-left transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg"
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
         {mediaUrl && division.mediaType === 'video' ? (
@@ -88,32 +88,30 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate
             alt={division.name}
             loading="lazy"
             decoding="async"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-white p-8">
-            {division.logoUrl && (
-              <img
-                src={division.logoUrl}
-                alt={`${division.name} logo`}
-                loading="lazy"
-                decoding="async"
-                className="max-h-full max-w-full object-contain"
-              />
-            )}
+        ) : null}
+        {!mediaUrl && <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-blue-50" />}
+        {division.logoUrl && (
+          <div className="absolute inset-x-[14%] top-[10%] bottom-[23%] flex items-center justify-center rounded-2xl border border-white/60 bg-white/90 p-3 shadow-lg backdrop-blur-sm sm:inset-x-[18%] sm:p-4">
+            <img
+              src={division.logoUrl}
+              alt={`${division.name} logo`}
+              loading="lazy"
+              decoding="async"
+              className="max-h-full max-w-full object-contain"
+            />
           </div>
         )}
+        <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent px-3 pb-3 pt-10 text-white sm:px-4 sm:pb-4">
+          <h2 className="min-w-0 font-display text-sm font-bold leading-tight drop-shadow sm:text-base">{division.name}</h2>
+          <ArrowUpRight className="h-4 w-4 shrink-0 text-white/90 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 sm:h-5 sm:w-5" />
+        </div>
         {division.isComingSoon && (
-          <span className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold text-slate-700">
+          <span className="absolute left-2 top-2 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-semibold text-slate-700 shadow-sm sm:left-3 sm:top-3 sm:px-3 sm:text-[11px]">
             Coming soon
           </span>
         )}
-      </div>
-      <div className="flex items-start justify-between gap-2 p-2 sm:gap-4 sm:p-5">
-        <div className="min-w-0">
-          <h2 className="font-display text-[clamp(.65rem,1.3vw,1.125rem)] font-semibold leading-tight text-slate-950">{division.name}</h2>
-        </div>
-        <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-slate-400 transition group-hover:text-blue-700 sm:mt-1 sm:h-5 sm:w-5" />
       </div>
     </a>
   );

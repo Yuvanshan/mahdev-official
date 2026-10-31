@@ -36,8 +36,8 @@ const SWSGalleryCardImage: React.FC<{ images: string[]; alt: string }> = ({ imag
         }
         alt={alt}
         className="h-full w-full"
-        objectFit="contain"
-        imageClassName="object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+        objectFit="cover"
+        imageClassName="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
       />
       <ImageWatermark label="SWS EVENT MANAGEMENT" />
       {images.length > 1 && (

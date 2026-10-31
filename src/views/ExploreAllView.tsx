@@ -136,7 +136,6 @@ const BrowseCard: React.FC<{
             fallbackSources={imageSources.slice(1)}
             alt={preferSavedAlt(item.data.imageAlt, getImageAlt(item.title, item.division, item.category))}
             className="absolute inset-0"
-            imageClassName="!object-contain"
             loading={imageLoading}
           />
         ) : (

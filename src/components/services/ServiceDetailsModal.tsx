@@ -259,7 +259,7 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
 
         {/* Details and actions. */}
         <div className="flex min-h-0 flex-1 flex-col lg:w-[36%]">
-          <div className="flex-1 space-y-5 overflow-y-auto overscroll-contain p-5 sm:p-7 lg:pt-10">
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-5 sm:p-7 lg:pt-10">
             <div>
               {service.divisionName && (
                 <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">{service.divisionName}</p>
@@ -303,7 +303,8 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
             ))}
           </div>
 
-          <div className="flex flex-col gap-2 border-t border-slate-200 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-5">
+          <div className="max-h-[42svh] shrink-0 overflow-y-auto overscroll-contain border-t border-slate-200 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-h-none sm:overflow-visible sm:p-5">
+            <div className="flex flex-col gap-2">
             {bookOnline && (
               <button
                 type="button"
@@ -380,6 +381,7 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
                 ))}
               </div>
             )}
+            </div>
           </div>
         </div>
       </div>

@@ -743,39 +743,25 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 }
 
 .divisions-marquee {
-  overflow: hidden;
-  mask-image: linear-gradient(90deg, transparent, #000 2%, #000 98%, transparent);
-}
-
-.divisions-marquee-track {
   display: flex;
-  width: max-content;
-  animation: divisions-marquee-slide 42s linear infinite;
-}
-
-.divisions-marquee:hover .divisions-marquee-track,
-.divisions-marquee:focus-within .divisions-marquee-track {
-  animation-play-state: paused;
-}
-
-.divisions-marquee-group {
-  display: flex;
-  flex: 0 0 min(100vw, 1280px);
   gap: 16px;
-  padding-right: 16px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
+
+.divisions-marquee::-webkit-scrollbar { display: none; }
 
 .divisions-marquee-card {
-  min-width: 0;
-  flex: 1 1 0;
+  flex: 0 0 clamp(9rem, 22vw, 15rem);
+  scroll-snap-align: start;
 }
 
 .divisions-marquee-card > a {
   height: 100%;
-}
-
-@keyframes divisions-marquee-slide {
-  to { transform: translateX(-50%); }
 }
 
 .seasonal-paused * {
@@ -896,18 +882,13 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
   .seasonal-wishes-artwork { width: 40%; }
   .seasonal-wishes-close { top: 7px; right: 7px; width: 27px; height: 27px; }
   .seasonal-offer-panel { padding: 22px; }
-  .divisions-marquee-group { flex-basis: 150vw; gap: 10px; padding-right: 10px; }
-  .divisions-marquee-track { animation-duration: 52s; }
+  .divisions-marquee { gap: 10px; }
+  .divisions-marquee-card { flex-basis: clamp(9rem, 39vw, 12rem); }
 
   .whatsapp-widget {
     right: max(1rem, env(safe-area-inset-right)) !important;
     bottom: max(6rem, calc(env(safe-area-inset-bottom) + 5.5rem)) !important;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .divisions-marquee-track { animation: none; }
-    .divisions-marquee { overflow-x: auto; scrollbar-width: none; }
-    .divisions-marquee::-webkit-scrollbar { display: none; }
+    z-index: 120 !important;
   }
 
   .whatsapp-panel {
@@ -945,6 +926,7 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 @media (max-width: 1023px) {
   .whatsapp-widget {
     bottom: max(6rem, calc(env(safe-area-inset-bottom) + 5.5rem)) !important;
+    z-index: 120 !important;
   }
 }
 

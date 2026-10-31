@@ -34,8 +34,8 @@ const U1PortfolioCardImage: React.FC<{ item: U1PortfolioItem }> = ({ item }) => 
         src={images[activeIndex] || item.imageUrl}
         alt={getU1ImageAlt(item.title, item.category)}
         className="absolute inset-0"
-        objectFit="contain"
-        imageClassName="object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+        objectFit="cover"
+        imageClassName="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
       />
       <ImageWatermark label="U1 STUDIO" />
       {images.length > 1 && (
