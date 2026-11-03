@@ -33,7 +33,7 @@ export const MartProductCard: React.FC<MartProductCardProps> = ({
   };
 
   return (
-    <div className="group rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl hover:border-blue-200 transition-all duration-300 flex flex-col justify-between h-full">
+    <div className="group rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-blue-300 flex flex-col justify-between h-full">
       {/* Top Media & Content Container */}
       <div className="flex flex-col flex-1">
         {/* Media Container */}

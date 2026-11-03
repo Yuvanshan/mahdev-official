@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Mail,
   Phone,
-  ChevronLeft,
   Calendar,
   Layers,
   ArrowUpRight,
@@ -388,18 +387,6 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
         {/* Hero Content Over Video on Left Side */}
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-28 z-20 w-full">
           <div className="max-w-3xl space-y-6">
-            
-            {/* Breadcrumb Back Link */}
-            <div>
-              <button
-                onClick={() => onNavigate('/')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-bold text-white transition-all backdrop-blur-md cursor-pointer"
-              >
-                <ChevronLeft className="w-4 h-4 text-blue-400" />
-                <span>Back to Home</span>
-              </button>
-            </div>
-
             {/* Division identity */}
             <div className="flex items-center gap-3">
               {divisionLogo && (

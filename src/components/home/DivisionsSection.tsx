@@ -66,7 +66,6 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
           <h2 className="font-display text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
             {section?.title || 'Explore Our Divisions'}
           </h2>
-          {section?.subtitle && <p className="mt-2 text-sm leading-relaxed text-slate-600">{section.subtitle}</p>}
         </div>
         <div className="flex items-center gap-3">
           <button

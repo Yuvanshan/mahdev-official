@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowRight } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { ScrollParallax } from '../motion/ParallelScroll';
@@ -31,6 +31,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 }) => {
   const heroRef = useRef<HTMLElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const uploadedVideoRef = useRef<HTMLVideoElement | null>(null);
+  const [activeUploadedVideo, setActiveUploadedVideo] = useState('');
   const reducedMotion = useReducedMotion();
   const { homepageConfig } = useFirestoreDataContext();
   const cmsHero = homepageConfig?.hero;
@@ -41,13 +43,20 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const youtubeId = useCmsVideo ? extractYouTubeId(configuredVideo) : null;
   const vimeoId = useCmsVideo ? extractVimeoId(configuredVideo) : null;
   const isCmsVideoEmbed = Boolean(youtubeId || vimeoId);
-  const embedSrc = youtubeId
-    ? getYouTubeEmbedUrl(configuredVideo, { autoplay: true, mute: true, loop: true, controls: false, rel: false })
+  const embedSrc: string | undefined = youtubeId
+    ? getYouTubeEmbedUrl(configuredVideo, { autoplay: true, mute: true, loop: true, controls: false, rel: false }) ?? undefined
     : vimeoId
       ? `https://player.vimeo.com/video/${vimeoId}?background=1&autoplay=1&loop=1&byline=0&title=0&muted=1`
       : '';
   const configuredPoster = cmsHero?.defaultImageUrl || '';
   const [resolvedHeroMedia, setResolvedHeroMedia] = React.useState({ video: '', image: '', poster: '' });
+  const uploadedVideo = useCmsVideo && !isCmsVideoEmbed ? resolvedHeroMedia.video : '';
+  const isUploadedVideoActive = Boolean(uploadedVideo && activeUploadedVideo === uploadedVideo);
+  const heroVideo = isUploadedVideoActive ? uploadedVideo : HERO_VIDEO;
+
+  useEffect(() => {
+    setActiveUploadedVideo('');
+  }, [uploadedVideo]);
 
   useEffect(() => {
     let active = true;
@@ -70,12 +79,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     return () => { active = false; };
   }, [configuredImage, configuredPoster, configuredVideo, useCmsImage, useCmsVideo]);
 
-  const heroVideo = useCmsVideo ? resolvedHeroMedia.video || HERO_VIDEO : HERO_VIDEO;
   const heroPoster = resolvedHeroMedia.poster || (useCmsImage ? resolvedHeroMedia.image || HERO_POSTER : HERO_POSTER);
 
   useEffect(() => {
     if (useCmsImage || isCmsVideoEmbed) return;
-    const video = videoRef.current;
+    const video = isUploadedVideoActive ? uploadedVideoRef.current : videoRef.current;
     const hero = heroRef.current;
     if (!video || !hero) return;
 
@@ -88,13 +96,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       if (Number.isFinite(video.currentTime)) savedHeroVideoTime = video.currentTime;
     };
     const restorePlaybackPosition = () => {
-      if (
-        savedHeroVideoTime > 0 &&
-        Number.isFinite(video.duration) &&
-        savedHeroVideoTime < video.duration
-      ) {
-        video.currentTime = savedHeroVideoTime;
-      }
+      if (!Number.isFinite(video.duration) || video.duration <= 0) return;
+      video.currentTime = savedHeroVideoTime % video.duration;
     };
 
     const removeInteractionListeners = () => {
@@ -103,9 +106,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       window.removeEventListener('keydown', enableAudio);
     };
 
-    const pauseVideo = () => {
+    const pauseVideo = (savePosition = true) => {
       playbackRequest += 1;
-      savePlaybackPosition();
+      if (savePosition) savePlaybackPosition();
       video.pause();
       video.muted = true;
     };
@@ -191,9 +194,29 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       removeInteractionListeners();
       video.removeEventListener('timeupdate', savePlaybackPosition);
       video.removeEventListener('loadedmetadata', restorePlaybackPosition);
-      pauseVideo();
+      pauseVideo(false);
     };
-  }, [heroVideo, isCmsVideoEmbed, useCmsImage]);
+  }, [heroVideo, isCmsVideoEmbed, isUploadedVideoActive, useCmsImage]);
+
+  const activateUploadedVideo = () => {
+    const candidate = uploadedVideoRef.current;
+    const fallback = videoRef.current;
+    if (!candidate || !fallback || !uploadedVideo || activeUploadedVideo === uploadedVideo) return;
+
+    const fallbackTime = Number.isFinite(fallback.currentTime) ? fallback.currentTime : savedHeroVideoTime;
+    if (Number.isFinite(candidate.duration) && candidate.duration > 0) {
+      candidate.currentTime = fallbackTime % candidate.duration;
+    }
+    savedHeroVideoTime = fallbackTime;
+    candidate.muted = true;
+    candidate.volume = fallback.volume;
+    candidate.play().then(
+      () => setActiveUploadedVideo(uploadedVideo),
+      (error: unknown) => {
+        console.warn('[HomeHero] Uploaded hero video could not start; keeping the default video:', error);
+      }
+    );
+  };
 
   const explore = () => {
     if (onExploreServices) onExploreServices();
@@ -236,20 +259,46 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             className="absolute inset-0 h-full w-full scale-125 border-0 object-cover"
           />
         ) : (
-          <video
-            ref={videoRef}
-            src={heroVideo}
-            poster={heroPoster}
-            autoPlay
-            loop
-            playsInline
-            disableRemotePlayback
-            muted
-            preload="metadata"
-            aria-hidden="true"
-            disablePictureInPicture
-            className="absolute inset-0 h-full w-full object-cover object-center brightness-[1.04] contrast-[1.12] saturate-[1.08]"
-          />
+          <>
+            <video
+              ref={videoRef}
+              src={HERO_VIDEO}
+              poster={HERO_POSTER}
+              autoPlay
+              loop
+              playsInline
+              disableRemotePlayback
+              muted
+              preload="auto"
+              aria-hidden="true"
+              disablePictureInPicture
+              className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 brightness-[1.04] contrast-[1.12] saturate-[1.08] ${
+                isUploadedVideoActive ? 'opacity-0' : 'opacity-100'
+              }`}
+            />
+            {uploadedVideo && (
+              <video
+                key={uploadedVideo}
+                ref={uploadedVideoRef}
+                src={uploadedVideo}
+                poster={heroPoster}
+                loop
+                playsInline
+                disableRemotePlayback
+                muted
+                preload="auto"
+                aria-hidden="true"
+                disablePictureInPicture
+                onCanPlay={activateUploadedVideo}
+                onError={() => {
+                  console.warn('[HomeHero] Uploaded hero video could not be loaded; keeping the default video.');
+                }}
+                className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 brightness-[1.04] contrast-[1.12] saturate-[1.08] ${
+                  isUploadedVideoActive ? 'opacity-100' : 'opacity-0'
+                }`}
+              />
+            )}
+          </>
         )}
       </ScrollParallax>
       <div
@@ -271,10 +320,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
         >
-          <p className="mb-5 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-sky-100 sm:text-xs">
-            <span aria-hidden="true" className="h-px w-7 bg-sky-300" />
-            Five specialist divisions. One connected group.
-          </p>
           <h1 className="font-editorial text-4xl font-medium leading-[1.04] tracking-[-0.035em] text-white sm:text-6xl lg:text-7xl">
             <span className="block">Creating moments.</span>
             <span className="block text-sky-200">Capturing memories.</span>
@@ -288,13 +333,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             >
               Explore services
               <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigate('/divisions')}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/45 bg-white/5 px-6 text-sm font-semibold text-white backdrop-blur-sm transition duration-300 hover:-translate-y-0.5 hover:border-white hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
-            >
-              Meet our divisions
             </button>
           </div>
         </motion.div>

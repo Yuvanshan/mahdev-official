@@ -347,7 +347,7 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
               <div
                 key={item.id}
                 onClick={() => setActiveItem(item)}
-                className="group relative cursor-pointer overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm hover:shadow-md transition-all duration-300"
+                className="group relative cursor-pointer overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg"
               >
                 <div className="aspect-[4/3] w-full overflow-hidden bg-slate-100 relative">
                   <ImageWithShimmer

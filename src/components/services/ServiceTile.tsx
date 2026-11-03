@@ -56,7 +56,7 @@ export const ServiceTile: React.FC<ServiceTileProps> = ({ title, images, onView,
   const { activeIndex, containerRef } = useAutoSlideImage(usableImages.length);
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md">
+    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs transition duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-lg">
       <ViewControl
         href={href}
         onView={onView}
@@ -84,7 +84,7 @@ export const ServiceTile: React.FC<ServiceTileProps> = ({ title, images, onView,
           className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 text-xs font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 sm:text-sm"
         >
           View service
-          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true" />
         </ViewControl>
       </div>
     </article>

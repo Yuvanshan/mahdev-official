@@ -93,7 +93,7 @@ const FeaturedWorkSectionContent: React.FC<
               onClick={() =>
                 onNavigate(`/project/${featuredHeroProject.slug || featuredHeroProject.id}`)
               }
-              className="group relative rounded-3xl overflow-hidden bg-slate-950 border border-slate-200/80 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer grid grid-cols-1 lg:grid-cols-12"
+              className="group relative rounded-3xl overflow-hidden bg-slate-950 border border-slate-200/80 shadow-lg transition-all duration-500 hover:-translate-y-1 hover:border-blue-400 hover:shadow-2xl cursor-pointer grid grid-cols-1 lg:grid-cols-12"
             >
               {/* Large Project Image */}
               <div className="lg:col-span-7 relative aspect-16/10 lg:aspect-auto min-h-[320px] sm:min-h-[420px] overflow-hidden bg-slate-900">
@@ -165,7 +165,7 @@ const FeaturedWorkSectionContent: React.FC<
                       onClick={() =>
                         onNavigate(`/project/${project.slug || project.id}`)
                       }
-                      className="group h-full rounded-3xl overflow-hidden bg-white border border-slate-200/80 hover:border-blue-400 shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
+                      className="group h-full rounded-3xl overflow-hidden bg-white border border-slate-200/80 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-blue-400 hover:shadow-xl cursor-pointer flex flex-col justify-between"
                     >
                       <div>
                         {/* Large Project Image */}

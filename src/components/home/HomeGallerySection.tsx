@@ -50,7 +50,7 @@ const HomeGalleryCard: React.FC<{
           onOpen(item, activeIndex);
         }
       }}
-      className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+      className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg"
     >
       <div className="relative">
         <ImageWithShimmer

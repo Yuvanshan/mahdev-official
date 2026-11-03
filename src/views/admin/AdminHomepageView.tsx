@@ -67,6 +67,7 @@ export const AdminHomepageView: React.FC = () => {
   const [isUploadingDefaultImage, setIsUploadingDefaultImage] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showcaseUploadProgress, setShowcaseUploadProgress] = useState<Record<string, number>>({});
+  const [showcaseThumbnailUploadProgress, setShowcaseThumbnailUploadProgress] = useState<Record<string, number>>({});
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
   const [mediaPickerTarget, setMediaPickerTarget] = useState<'hero' | 'seo' | string>('hero');
@@ -189,6 +190,59 @@ export const AdminHomepageView: React.FC = () => {
       addToast('error', 'Upload Failed', error instanceof Error ? error.message : 'Could not upload the showcase video.');
     } finally {
       setShowcaseUploadProgress((current) => {
+        const next = { ...current };
+        delete next[videoId];
+        return next;
+      });
+      event.target.value = '';
+    }
+  };
+
+  const handleShowcaseThumbnailUpload = async (
+    videoId: string,
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      addToast('error', 'Unsupported File', 'Select an image file for the showcase video poster.');
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > 20 * 1024 * 1024) {
+      addToast('error', 'File Too Large', 'Showcase poster images must be smaller than 20 MB.');
+      event.target.value = '';
+      return;
+    }
+
+    setShowcaseThumbnailUploadProgress((current) => ({ ...current, [videoId]: 1 }));
+    try {
+      const thumbnailUrl = await uploadMediaAsset(file, (progress) => {
+        setShowcaseThumbnailUploadProgress((current) => ({ ...current, [videoId]: progress }));
+      });
+      setConfig((current) => ({
+        ...current,
+        decorationShowcase: {
+          ...(current.decorationShowcase || {
+            badge: 'SWS Precision Event Engineering',
+            title: 'Cinematic Event & Decoration Showcase',
+            subtitle: '',
+            enabled: true,
+          }),
+          videos: (current.decorationShowcase?.videos || []).map((video) =>
+            video.id === videoId ? { ...video, thumbnailUrl } : video
+          ),
+        },
+      }));
+      setIsDirty(true);
+      addToast('success', 'Poster Uploaded', 'Poster image added to the homepage draft. Save the homepage to publish it.');
+    } catch (error) {
+      console.error('[AdminHomepage] Showcase poster upload failed:', error);
+      addToast('error', 'Upload Failed', error instanceof Error ? error.message : 'Could not upload the showcase poster.');
+    } finally {
+      setShowcaseThumbnailUploadProgress((current) => {
         const next = { ...current };
         delete next[videoId];
         return next;
@@ -1578,11 +1632,29 @@ export const AdminHomepageView: React.FC = () => {
 
                       <div className="sm:col-span-2">
                         <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">
-                          Thumbnail Image URL
+                          Default Poster Image
                         </label>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <label className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold ${
+                            showcaseThumbnailUploadProgress[video.id] !== undefined
+                              ? 'cursor-wait border-slate-200 text-slate-400'
+                              : 'border-blue-200 bg-white text-blue-700 hover:bg-blue-50'
+                          }`}>
+                            <Upload className="h-3.5 w-3.5" />
+                            {showcaseThumbnailUploadProgress[video.id] !== undefined
+                              ? `Uploading ${showcaseThumbnailUploadProgress[video.id]}%`
+                              : video.thumbnailUrl ? 'Replace poster' : 'Upload poster'}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              disabled={showcaseThumbnailUploadProgress[video.id] !== undefined}
+                              onChange={(event) => void handleShowcaseThumbnailUpload(video.id, event)}
+                              className="hidden"
+                            />
+                          </label>
                           <input
                             type="url"
+                            aria-label={`Poster image URL for ${video.title || `video ${idx + 1}`}`}
                             value={video.thumbnailUrl}
                             onChange={(e) => {
                               const updated = [...(config.decorationShowcase?.videos || [])];
@@ -1593,6 +1665,7 @@ export const AdminHomepageView: React.FC = () => {
                               }));
                               setIsDirty(true);
                             }}
+                            placeholder="Or paste a poster image URL"
                             className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
                           />
                         </div>

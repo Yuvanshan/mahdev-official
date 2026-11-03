@@ -106,7 +106,7 @@ export const CatalogProductCard: React.FC<CatalogProductCardProps> = ({
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="group bg-white rounded-xl border border-neutral-200/80 shadow-xs hover:shadow-lg hover:border-neutral-300 transition-all duration-300 flex flex-col justify-between h-full overflow-hidden"
+      className="group bg-white rounded-xl border border-neutral-200/80 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-blue-200 flex flex-col justify-between h-full overflow-hidden"
     >
       {/* Top Section */}
       <div className="flex flex-col flex-1">

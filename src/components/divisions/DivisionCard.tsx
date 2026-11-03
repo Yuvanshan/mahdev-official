@@ -170,9 +170,8 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate
         )}
       </div>
       {variant === 'featured' && (
-        <div className="flex h-[132px] flex-col border-t border-slate-100 bg-white p-4">
+        <div className="flex h-[96px] flex-col border-t border-slate-100 bg-white p-4">
           <h3 className="font-display text-base font-bold leading-snug text-slate-950">{division.name}</h3>
-          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-600">{division.description}</p>
           <span className="mt-auto inline-flex items-center gap-1 pt-3 text-xs font-bold text-blue-700">
             Explore {division.categoryLabel}
             <ArrowUpRight className="h-3.5 w-3.5 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />

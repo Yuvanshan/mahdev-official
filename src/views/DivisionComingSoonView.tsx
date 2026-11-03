@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Sparkles,
   ArrowRight,
-  ChevronLeft,
   MessageCircle,
   Phone,
   Mail,
@@ -145,15 +144,7 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
 
       {/* Top Header Navigation Strip */}
       <div className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md relative z-20">
-        <SectionContainer className="py-3.5 flex items-center justify-between">
-          <button
-            onClick={() => onNavigate('/')}
-            className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            <span>Return to Mahdev Home</span>
-          </button>
-
+        <SectionContainer className="py-3.5 flex items-center justify-end">
           <div className="flex items-center gap-3">
             <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
               <Clock className="w-3 h-3 animate-spin" />
