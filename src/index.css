@@ -765,6 +765,20 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
   height: 100%;
 }
 
+@media (min-width: 1024px) {
+  .divisions-home-rail {
+    justify-content: center;
+  }
+
+  .divisions-home-rail .divisions-marquee-card {
+    flex-basis: clamp(9rem, 17vw, 13.5rem);
+  }
+
+  .divisions-home-rail-controls {
+    display: none;
+  }
+}
+
 .seasonal-paused * {
   animation-play-state: paused !important;
 }
@@ -1120,33 +1134,26 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
   color: var(--text-primary);
   background-color: var(--surface);
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  line-height: 1.58;
+  line-height: 1.62;
 }
 
-.public-editorial h1,
-.public-editorial h2 {
-  font-family: Didot, 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
-  font-weight: 500;
-  letter-spacing: -0.035em;
-  line-height: 1.08;
+.division-experience.public-editorial {
+  background-color: #faf9f6;
+}
+
+.public-editorial :is(h1, h2, h3, h4, h5, h6, .font-display, .font-editorial) {
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.025em;
   text-wrap: balance;
 }
 
-.public-editorial :is(h3, h4) {
-  font-family: Didot, 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-  text-wrap: balance;
-}
-
-.public-editorial .font-editorial {
-  font-family: Didot, 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
+.public-editorial :is(h1, h2, h3, h4, h5, h6) {
+  font-weight: 600;
+  line-height: 1.18;
 }
 
 .public-editorial :is(h1, h2, h3, h4, .font-editorial) {
   font-kerning: normal;
-  text-wrap: balance;
 }
 
 .public-editorial [class*="bg-white"][class*="rounded-2xl"][class*="border"],
@@ -1233,14 +1240,14 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 }
 
 .public-announcement-bar {
-  min-height: 30px;
-  border-bottom: 1px solid rgb(226 232 240 / 75%);
-  background: #f8fafc;
-  color: #334155;
+  min-height: 34px;
+  border-bottom: 1px solid rgb(56 189 248 / 24%);
+  background: #061033;
+  color: #f8fafc;
 }
 
 .public-announcement-link {
-  min-height: 30px;
+  min-height: 34px;
   color: inherit;
   font-size: 0.68rem;
   font-weight: 600;
@@ -1250,33 +1257,56 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 }
 
 .public-announcement-link:hover {
-  color: #0052ff;
+  color: #bae6fd;
 }
 
 .public-announcement-link svg {
-  color: #0052ff;
+  color: #7dd3fc;
 }
 
 .public-site-footer {
-  border-color: #e2e8f0;
-  background: #fff;
-  color: #475569;
+  border-color: #1e3a8a;
+  background: #061033;
+  color: #e2e8f0;
 }
 
 .public-site-footer > div:first-child {
-  border-color: #e2e8f0;
+  border-color: rgb(148 163 184 / 22%);
 }
 
 .public-site-footer > div:first-child h3 {
-  color: #0f172a;
+  color: #f8fafc;
+}
+
+.public-site-footer h4,
+.public-site-footer .font-display {
+  color: #f8fafc;
+}
+
+.public-site-footer :is(.text-slate-500, .text-slate-600, .text-slate-700, .text-slate-900) {
+  color: #cbd5e1;
+}
+
+.public-site-footer a {
+  color: #dbeafe;
 }
 
 .public-site-footer .public-footer-contact a:hover {
-  color: #0052ff;
+  color: #7dd3fc;
+}
+
+.public-site-footer .border-slate-200 {
+  border-color: rgb(148 163 184 / 28%);
+}
+
+.public-site-footer .bg-blue-50 {
+  border-color: rgb(147 197 253 / 30%);
+  background: rgb(30 58 138 / 45%);
+  color: #bfdbfe;
 }
 
 .public-site-footer > div:last-of-type > div:last-child {
-  border-color: #e2e8f0;
+  border-color: rgb(148 163 184 / 22%);
 }
 
 nav.public-bottom-navigation .public-bottom-navigation__bar {
@@ -1304,7 +1334,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 
   .public-announcement-bar,
   .public-announcement-link {
-    min-height: 28px;
+    min-height: 30px;
   }
 }
 

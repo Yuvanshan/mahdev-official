@@ -51,7 +51,7 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
             initial={{ opacity: 0.85, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            className="font-editorial text-4xl font-medium leading-[1.04] tracking-[-0.035em] text-white drop-shadow-md sm:text-6xl lg:text-7xl"
+            className="font-editorial text-4xl font-medium leading-[1.04] tracking-[-0.035em] text-white drop-shadow-md sm:text-5xl lg:text-6xl xl:text-7xl"
           >
             <span className="block"><AnimatedHeroTitle text="We Create Moments." /></span>
             <span className="block"><AnimatedHeroTitle text="You Make Memories." delay={0.2} gradient={HERO_TITLE_GRADIENT} /></span>

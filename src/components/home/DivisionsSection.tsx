@@ -76,7 +76,7 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }
           >
             All businesses <ArrowUpRight className="h-4 w-4" />
           </button>
-          <div className="hidden gap-2 sm:flex" aria-label="Scroll divisions">
+          <div className="divisions-home-rail-controls hidden gap-2 sm:flex" aria-label="Scroll divisions">
             <button type="button" onClick={() => scrollRail(-1)} aria-label="Previous divisions" className="rounded-full border border-slate-200 p-2 text-slate-700 transition hover:border-blue-300 hover:text-blue-700">
               <ArrowLeft className="h-4 w-4" />
             </button>

@@ -1,6 +1,6 @@
-import { DivisionConfig, DivisionId } from '../types';
-import { COMPANY_INFO } from './company';
-import { CANONICAL_SITE_ORIGIN } from './site';
+import type { DivisionConfig, DivisionId } from '../types';
+import { COMPANY_INFO } from './company.js';
+import { CANONICAL_SITE_ORIGIN } from './site.js';
 
 export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
   sws: {

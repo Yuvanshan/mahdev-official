@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, Check, MessageCircle, Volume2, VolumeX, X } from 'lucide-react';
 import { MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
 import { useAuth } from '../../context/AuthContext';
@@ -30,11 +30,72 @@ function markWelcomeShown(): void {
 
 export const WhatsAppWidget: React.FC = () => {
   const { user } = useAuth();
+  const audioContextRef = useRef<AudioContext | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isNoticeVisible, setIsNoticeVisible] = useState(false);
   const [hasUnreadNotice, setHasUnreadNotice] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const [message, setMessage] = useState('');
+
+  const getAudioContext = useCallback(() => {
+    if (typeof window.AudioContext === 'undefined') return null;
+    audioContextRef.current ??= new window.AudioContext();
+    return audioContextRef.current;
+  }, []);
+
+  const playNotificationTone = useCallback(() => {
+    if (document.visibilityState !== 'visible') return;
+    try {
+      const context = getAudioContext();
+      if (!context) return;
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(740, context.currentTime);
+      oscillator.frequency.setValueAtTime(988, context.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.0001, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.045, context.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.22);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start();
+      oscillator.stop(context.currentTime + 0.23);
+    } catch (error) {
+      console.warn('[WhatsAppWidget] Notification sound could not be played:', error);
+    }
+  }, [getAudioContext]);
+
+  useEffect(() => {
+    const unlockAudio = () => {
+      try {
+        const context = getAudioContext();
+        if (context?.state === 'suspended') {
+          void context.resume().catch((error: unknown) => {
+            console.warn('[WhatsAppWidget] Notification audio could not be unlocked:', error);
+          });
+        }
+      } catch (error) {
+        console.warn('[WhatsAppWidget] Notification audio could not be unlocked:', error);
+      } finally {
+        window.removeEventListener('pointerdown', unlockAudio);
+        window.removeEventListener('keydown', unlockAudio);
+      }
+    };
+
+    window.addEventListener('pointerdown', unlockAudio, { passive: true });
+    window.addEventListener('keydown', unlockAudio);
+    return () => {
+      window.removeEventListener('pointerdown', unlockAudio);
+      window.removeEventListener('keydown', unlockAudio);
+      const context = audioContextRef.current;
+      audioContextRef.current = null;
+      if (context && context.state !== 'closed') {
+        void context.close().catch((error: unknown) => {
+          console.warn('[WhatsAppWidget] Could not close notification audio:', error);
+        });
+      }
+    };
+  }, [getAudioContext]);
 
   useEffect(() => {
     if (wasWelcomeShown()) return;
@@ -45,43 +106,7 @@ export const WhatsAppWidget: React.FC = () => {
       if (soundEnabled) playNotificationTone();
     }, 10000);
     return () => window.clearTimeout(timer);
-  }, [soundEnabled]);
-
-  const playNotificationTone = () => {
-    if (document.visibilityState !== 'visible' || !window.AudioContext) return;
-    try {
-      const context = new window.AudioContext();
-      const play = () => {
-        const oscillator = context.createOscillator();
-        const gain = context.createGain();
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(740, context.currentTime);
-        oscillator.frequency.setValueAtTime(988, context.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.0001, context.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.045, context.currentTime + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.22);
-        oscillator.connect(gain);
-        gain.connect(context.destination);
-        oscillator.start();
-        oscillator.stop(context.currentTime + 0.23);
-        window.setTimeout(() => {
-          void context.close().catch((error: unknown) => {
-            console.warn('[WhatsAppWidget] Could not close notification audio:', error);
-          });
-        }, 500);
-      };
-
-      if (context.state === 'suspended') {
-        void context.resume().then(play).catch(() => {
-          void context.close();
-        });
-      } else {
-        play();
-      }
-    } catch (error) {
-      console.warn('[WhatsAppWidget] Notification sound could not be played:', error);
-    }
-  };
+  }, [playNotificationTone, soundEnabled]);
 
   const openChat = () => {
     const name = user?.fullName?.trim().split(/\s+/)[0];

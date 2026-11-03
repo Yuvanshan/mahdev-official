@@ -78,7 +78,7 @@ export const SWSServicesSection: React.FC<SWSServicesSectionProps> = ({
         });
       }
     }
-    return [];
+    return SWS_SERVICES;
   }, [rawServices]);
 
   // Category ids/slugs from the Admin Portal resolve to their display names.

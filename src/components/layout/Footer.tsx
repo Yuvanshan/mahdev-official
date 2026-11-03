@@ -101,11 +101,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath }) => {
             {/* Brand Column */}
             <div className="space-y-4">
               <BrandLogo
-                theme="light"
+                theme="dark"
                 size="md"
                 onClick={() => onNavigate('/')}
               />
-              <SocialLinks socials={companySettings?.socials} variant="light" />
+              <SocialLinks socials={companySettings?.socials} variant="dark" />
 
               {/* Direct Contact Anchors */}
               <div className="public-footer-contact space-y-3 pt-2 text-xs">

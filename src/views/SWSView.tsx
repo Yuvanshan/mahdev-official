@@ -148,7 +148,7 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="division-experience min-h-screen w-full flex flex-col bg-[#FAF9F6]">
+    <div className="division-experience public-editorial min-h-screen w-full flex flex-col bg-[#FAF9F6]">
       <SEOHead
         title={DIVISION_SEO.sws.title}
         description={DIVISION_SEO.sws.description}
@@ -165,14 +165,14 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
 
       {divisionLoadErrors.sws && (
         <div className="mx-auto mt-6 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            <span>{divisionLoadErrors.sws}</span>
+          <div role="status" aria-live="polite" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950">
+            <span>Showing saved SWS examples while live content reconnects.</span>
             <button
               type="button"
               onClick={() => void loadDivisionData('sws', true)}
-              className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 font-semibold hover:bg-amber-100"
+              className="rounded-lg border border-blue-300 bg-white px-3 py-1.5 font-semibold text-blue-900 hover:bg-blue-100"
             >
-              Retry loading
+              Retry update
             </button>
           </div>
         </div>

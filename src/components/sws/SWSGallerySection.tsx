@@ -9,6 +9,7 @@ import { getSwsImageAlt } from '../../data/swsLocalSeo';
 import { branchLocationTag, preferSavedAlt } from '../../config/imageAlt';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { isSameDivision } from '../../services/firestore/divisions';
+import { getDefaultGallery } from '../../services/firestore/gallery';
 import { SectionContainer } from '../ui/SectionContainer';
 import { GallerySectionShimmer } from '../common/GallerySectionShimmer';
 import { H2, Body } from '../ui/Heading';
@@ -62,36 +63,35 @@ export const SWSGallerySection: React.FC = () => {
   const [shareToast, setShareToast] = useState<string | null>(null);
 
   const galleryItems = useMemo<SWSGalleryItem[]>(() => {
-    if (rawGallery && rawGallery.length > 0) {
-      const swsGal = rawGallery.filter(
-        (g) => isSameDivision(g.division, 'sws') || isSameDivision((g as any).divisionId, 'sws')
-      );
-      if (swsGal.length > 0) {
-        return swsGal.map((g) => {
-          const cat = (g as any).category || (g as any).tag || 'Weddings';
-          const galleryYear = (g as any).year;
-          const images = Array.isArray((g as any).images) && (g as any).images.length > 0
-            ? (g as any).images.filter(Boolean).slice(0, 3)
-            : ((g as any).imageUrl || (g as any).mediaUrl || (g as any).url || (g as any).image
-              ? [(g as any).imageUrl || (g as any).mediaUrl || (g as any).url || (g as any).image]
-              : []);
-          return {
-            id: g.id,
-            imageAlt: (g as any).imageAlt,
-            title: g.title,
-            category: cat as any,
-            imageUrl: images[0] || (g as any).imageUrl || (g as any).url || '',
-            images: images,
-            location: branchLocationTag((g as any).location),
-            year: !galleryYear || String(galleryYear) === '2024' ? '2026' : String(galleryYear),
-            description: (g as any).description || (g as any).caption || '',
-            tags: (g as any).tags || [cat],
-            price: g.price,
-          };
-        });
-      }
-    }
-    return [];
+    const liveItems = rawGallery.filter(
+      (item) => isSameDivision(item.division, 'sws') || isSameDivision((item as any).divisionId, 'sws')
+    );
+    const source = liveItems.length > 0
+      ? liveItems
+      : getDefaultGallery().filter((item) => isSameDivision(item.division, 'sws'));
+
+    return source.map((item) => {
+      const cat = (item as any).category || (item as any).tag || 'Weddings';
+      const galleryYear = (item as any).year;
+      const images = Array.isArray((item as any).images) && (item as any).images.length > 0
+        ? (item as any).images.filter(Boolean).slice(0, 3)
+        : ((item as any).imageUrl || (item as any).mediaUrl || (item as any).url || (item as any).image
+          ? [(item as any).imageUrl || (item as any).mediaUrl || (item as any).url || (item as any).image]
+          : []);
+      return {
+        id: item.id,
+        imageAlt: (item as any).imageAlt,
+        title: item.title,
+        category: cat as any,
+        imageUrl: images[0] || (item as any).imageUrl || (item as any).url || '',
+        images,
+        location: branchLocationTag((item as any).location),
+        year: !galleryYear || String(galleryYear) === '2024' ? '2026' : String(galleryYear),
+        description: (item as any).description || (item as any).caption || '',
+        tags: (item as any).tags || [cat],
+        price: item.price,
+      };
+    });
   }, [rawGallery]);
 
 
