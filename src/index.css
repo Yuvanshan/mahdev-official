@@ -1125,16 +1125,27 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 
 .public-editorial h1,
 .public-editorial h2 {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: Didot, 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
   font-weight: 500;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.035em;
   line-height: 1.08;
   text-wrap: balance;
 }
 
 .public-editorial :is(h3, h4) {
-  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
-  letter-spacing: -0.025em;
+  font-family: Didot, 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.public-editorial .font-editorial {
+  font-family: Didot, 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
+}
+
+.public-editorial :is(h1, h2, h3, h4, .font-editorial) {
+  font-kerning: normal;
   text-wrap: balance;
 }
 
@@ -1200,6 +1211,27 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
   backdrop-filter: blur(16px);
 }
 
+.public-nav-inner nav > a,
+.public-nav-inner nav > div > div > a {
+  border-radius: 0;
+  padding-inline: 0.65rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.public-nav-inner nav > a[aria-current="page"],
+.public-nav-inner nav > div > div > a[aria-current="page"] {
+  background: transparent;
+  box-shadow: none;
+}
+
+.public-nav-inner nav > a:hover,
+.public-nav-inner nav > div > div > a:hover {
+  background: transparent;
+}
+
 .public-announcement-bar {
   min-height: 30px;
   border-bottom: 1px solid rgb(226 232 240 / 75%);
@@ -1210,6 +1242,10 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 .public-announcement-link {
   min-height: 30px;
   color: inherit;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   transition: color 160ms ease;
 }
 

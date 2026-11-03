@@ -87,11 +87,6 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       proxy: {
-        '/sitemap.xml': {
-          target: 'http://localhost:4000',
-          changeOrigin: true,
-          secure: false,
-        },
         '/api': {
           target: 'http://localhost:4000',
           changeOrigin: true,

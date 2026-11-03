@@ -416,7 +416,7 @@ export function buildSitemapXml(
 
 let initialization: Promise<void> | undefined;
 
-async function loadPublicSitemapData(): Promise<{
+export async function loadPublicSitemapData(): Promise<{
   pages: TursoDocument[];
   careerOpenings: TursoDocument[];
   divisions: TursoDocument[];

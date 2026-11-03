@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url><loc>https://mahdev-official.vercel.app/</loc></url>
+  <url><loc>https://mahdev-official.vercel.app/about</loc></url>
+  <url><loc>https://mahdev-official.vercel.app/book</loc></url>
+  <url><loc>https://mahdev-official.vercel.app/careers</loc></url>
+  <url><loc>https://mahdev-official.vercel.app/catalog</loc></url>
+  <url><loc>https://mahdev-official.vercel.app/clients</loc></url>
+  <url><loc>https://mahdev-official.vercel.app/contact</loc></url>
+  <url><loc>https://mahdev-official.vercel.app/cookie-policy</loc></url>
+  <url><loc>https://mahdev-official.vercel.app/divisions</loc></url>
+  <url><loc>https://mahdev-official.vercel.app/insights</loc></url>
+  <url><loc>https://mahdev-official.vercel.app/it</loc><image:image><image:loc>https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&amp;fit=crop&amp;w=1200&amp;q=85</image:loc></image:image></url>
+  <url><loc>https://mahdev-official.vercel.app/mart</loc><image:image><image:loc>https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&amp;fit=crop&amp;w=1200&amp;q=85</image:loc></image:image></url>
+  <url><loc>https://mahdev-official.vercel.app/milestones</loc></url>
+  <url><loc>https://mahdev-official.vercel.app/portfolio</loc></url>
+  <url><loc>https://mahdev-official.vercel.app/privacy-policy</loc></url>
+  <url><loc>https://mahdev-official.vercel.app/promotions</loc></url>
+  <url><loc>https://mahdev-official.vercel.app/refund-policy</loc></url>
+  <url><loc>https://mahdev-official.vercel.app/services</loc></url>
+  <url><loc>https://mahdev-official.vercel.app/shipping-policy</loc></url>
+  <url><loc>https://mahdev-official.vercel.app/sws</loc><image:image><image:loc>https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&amp;fit=crop&amp;w=1200&amp;q=85</image:loc></image:image></url>
+  <url><loc>https://mahdev-official.vercel.app/terms-and-conditions</loc></url>
+  <url><loc>https://mahdev-official.vercel.app/testimonials</loc></url>
+  <url><loc>https://mahdev-official.vercel.app/travels</loc><image:image><image:loc>https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&amp;fit=crop&amp;w=1200&amp;q=85</image:loc></image:image></url>
+  <url><loc>https://mahdev-official.vercel.app/u1</loc><image:image><image:loc>https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&amp;fit=crop&amp;w=1200&amp;q=85</image:loc></image:image></url>
+</urlset>
