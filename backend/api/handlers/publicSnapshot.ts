@@ -18,8 +18,9 @@ import { handleTursoAction } from '../tursoRoutes.js';
  * There is no polling: the browser fetches it once per page session.
  */
 
-// Collections the public site reads. media_blobs is excluded on purpose:
-// it holds chunked binary media and is fetched only when a blob is displayed.
+// Collections the public site reads. settings is fetched directly because it
+// contains live theme/maintenance switches that must not wait for CDN revalidation.
+// media_blobs is excluded because it holds chunked binary media.
 export const PUBLIC_SNAPSHOT_COLLECTIONS = [
   'announcements',
   'banners',
@@ -40,7 +41,6 @@ export const PUBLIC_SNAPSHOT_COLLECTIONS = [
   'portfolio',
   'products',
   'services',
-  'settings',
   'team',
   'testimonials',
   'trustedCompanies',

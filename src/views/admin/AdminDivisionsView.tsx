@@ -39,6 +39,7 @@ import { compressDataUrl } from '../../utils/imageOptimizer';
 import { uploadMediaAsset } from '../../services/mediaUploadService';
 import { resolveMediaUrl } from '../../services/firestoreMediaService';
 import { getDefaultDivisionLogo, normalizeDivisionId } from '../../services/firestore/divisions';
+import { DEFAULT_DIVISION_EXTERNAL_URLS } from '../../utils/divisionPresentation';
 
 export const AdminDivisionsView: React.FC = () => {
   const { saveDivision, refreshAll, divisions: firestoreDivisions, companySettings, products } = useFirestoreDataContext();
@@ -77,6 +78,7 @@ export const AdminDivisionsView: React.FC = () => {
     description: string;
     badge: string;
     route: string;
+    externalUrl: string;
     logoUrl: string;
     accentColor: string;
     gradient: string;
@@ -114,6 +116,7 @@ export const AdminDivisionsView: React.FC = () => {
     description: '',
     badge: '',
     route: '',
+    externalUrl: '',
     logoUrl: '',
     accentColor: '#0052FF',
     gradient: 'from-blue-600 to-indigo-700',
@@ -354,6 +357,7 @@ export const AdminDivisionsView: React.FC = () => {
       description: '',
       badge: 'Operating Division',
       route: '',
+      externalUrl: '',
       logoUrl: '',
       accentColor: '#0052FF',
       gradient: 'from-blue-600 to-indigo-700',
@@ -434,6 +438,9 @@ export const AdminDivisionsView: React.FC = () => {
       description: div.description,
       badge: div.badge,
       route: div.route,
+      externalUrl: div.externalUrl ||
+        DEFAULT_DIVISION_EXTERNAL_URLS[normalizeDivisionId(div.divisionKey || div.id || '').shortId] ||
+        '',
       logoUrl: resolvedLogoUrl,
       accentColor: div.accentColor,
       gradient: div.gradient,
@@ -484,6 +491,16 @@ export const AdminDivisionsView: React.FC = () => {
     if (!formData.divisionKey.trim()) errors.divisionKey = 'Division Key / ID is required';
     if (!formData.tagline.trim()) errors.tagline = 'Tagline is required';
     if (!formData.route.trim()) errors.route = 'Public URL Route is required';
+    if (formData.externalUrl.trim()) {
+      try {
+        const externalUrl = new URL(formData.externalUrl.trim());
+        if (externalUrl.protocol !== 'https:' || externalUrl.username || externalUrl.password) {
+          errors.externalUrl = 'Use a secure HTTPS URL without embedded credentials.';
+        }
+      } catch {
+        errors.externalUrl = 'Enter a valid external URL, or leave this blank to use the public route.';
+      }
+    }
     if (!formData.contactEmail.trim() || !formData.contactEmail.includes('@')) {
       errors.contactEmail = 'A valid contact email is required';
     }
@@ -753,6 +770,7 @@ export const AdminDivisionsView: React.FC = () => {
           videoUrl: formData.heroVideoUrl,
           heroMediaType: formData.heroMediaType,
           route: formData.route || `/${shortId}`,
+          externalUrl: formData.externalUrl.trim(),
           accentColor: formData.accentColor,
           gradient: formData.gradient,
           heroHeadline: formData.heroHeadline,
@@ -1497,6 +1515,28 @@ export const AdminDivisionsView: React.FC = () => {
                 </div>
 
                 <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Optional External Destination
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.externalUrl}
+                    onChange={(e) => {
+                      setFormData({ ...formData, externalUrl: e.target.value });
+                      setIsDirty(true);
+                    }}
+                    placeholder="https://division.example.com"
+                    className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono ${
+                      formErrors.externalUrl ? 'border-red-500' : 'border-slate-200'
+                    }`}
+                  />
+                  <p className="mt-1 text-[10px] leading-relaxed text-slate-500">
+                    Use only after the external domain is configured and verified. If blank, the existing same-site route is used.
+                  </p>
+                  {formErrors.externalUrl && <p className="text-red-600 text-[10px] mt-0.5">{formErrors.externalUrl}</p>}
+                </div>
+
+                <div>
                   <label className="block font-semibold text-slate-700 mb-1">Category Badge</label>
                   <input
                     type="text"
@@ -1713,10 +1753,10 @@ export const AdminDivisionsView: React.FC = () => {
                   <div className="flex items-center justify-between mb-1">
                     <div>
                       <label className="block font-semibold text-slate-800 text-xs">
-                        Default Image Fallback (Shows while video is loading)
+                        Division Card Image & Hero Poster
                       </label>
                       <p className="text-[10px] text-slate-500">
-                        HD image that appears immediately while the video is loading or buffering.
+                        Used as the division card image and the poster while its hero video loads.
                       </p>
                     </div>
                     <div className="flex items-center gap-2">

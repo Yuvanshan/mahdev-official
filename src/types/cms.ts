@@ -34,6 +34,7 @@ export interface CmsDivision extends BaseCmsEntity {
   description: string;
   badge: string;
   route: string;
+  externalUrl?: string;
   accentColor: string;
   gradient: string;
   heroHeadline: string;
@@ -289,6 +290,7 @@ export interface CmsBanner extends BaseCmsEntity {
   targetUrl: string;
   buttonText: string;
   imageUrl?: string;
+  videoUrl?: string;
   bgGradient?: string;
   badgeText?: string;
   startDate?: string;

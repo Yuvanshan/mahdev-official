@@ -51,6 +51,7 @@ export interface FirestoreDivision {
   logoUrl?: string;
   logo?: string; // backwards compatibility
   route?: string;
+  externalUrl?: string;
   isPublished?: boolean;
   order?: number;
   shortName?: string;
@@ -428,6 +429,15 @@ export interface FirestoreSiteSettings {
     enabled: boolean;
     text: string;
     link?: string;
+  };
+  websiteAppearance?: {
+    activeTheme: 'v1' | 'v2';
+    availableThemes: {
+      v1: boolean;
+      v2: boolean;
+    };
+    updatedAt?: string;
+    updatedBy?: string;
   };
   currency?: string;
   defaultCurrency?: string;

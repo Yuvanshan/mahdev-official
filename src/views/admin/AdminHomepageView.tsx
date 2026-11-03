@@ -66,6 +66,7 @@ export const AdminHomepageView: React.FC = () => {
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [isUploadingDefaultImage, setIsUploadingDefaultImage] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [showcaseUploadProgress, setShowcaseUploadProgress] = useState<Record<string, number>>({});
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
   const [mediaPickerTarget, setMediaPickerTarget] = useState<'hero' | 'seo' | string>('hero');
@@ -141,6 +142,59 @@ export const AdminHomepageView: React.FC = () => {
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 4000);
+  };
+
+  const handleShowcaseVideoUpload = async (
+    videoId: string,
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('video/')) {
+      addToast('error', 'Unsupported File', 'Select a video file to add to the homepage showcase.');
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > 100 * 1024 * 1024) {
+      addToast('error', 'File Too Large', 'Showcase videos must be smaller than 100 MB.');
+      event.target.value = '';
+      return;
+    }
+
+    setShowcaseUploadProgress((current) => ({ ...current, [videoId]: 1 }));
+    try {
+      const videoUrl = await uploadMediaAsset(file, (progress) => {
+        setShowcaseUploadProgress((current) => ({ ...current, [videoId]: progress }));
+      });
+      setConfig((current) => ({
+        ...current,
+        decorationShowcase: {
+          ...(current.decorationShowcase || {
+            badge: 'SWS Precision Event Engineering',
+            title: 'Cinematic Event & Decoration Showcase',
+            subtitle: '',
+            enabled: true,
+          }),
+          videos: (current.decorationShowcase?.videos || []).map((video) =>
+            video.id === videoId ? { ...video, videoUrl } : video
+          ),
+        },
+      }));
+      setIsDirty(true);
+      addToast('success', 'Showcase Video Uploaded', 'Video added to the homepage draft. Save the homepage to publish it.');
+    } catch (error) {
+      console.error('[AdminHomepage] Showcase video upload failed:', error);
+      addToast('error', 'Upload Failed', error instanceof Error ? error.message : 'Could not upload the showcase video.');
+    } finally {
+      setShowcaseUploadProgress((current) => {
+        const next = { ...current };
+        delete next[videoId];
+        return next;
+      });
+      event.target.value = '';
+    }
   };
 
   useEffect(() => {
@@ -1340,7 +1394,7 @@ export const AdminHomepageView: React.FC = () => {
                       category: 'Weddings',
                       location: 'Colombo, Sri Lanka',
                       duration: '0:45',
-                      videoUrl: 'firestore://media_blobs/vid_corporate_hero_v1',
+                      videoUrl: '',
                       thumbnailUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80',
                       description: 'Custom engineered stagecraft and lighting production.',
                       venueType: '5-Star Luxury Ballroom',
@@ -1461,22 +1515,46 @@ export const AdminHomepageView: React.FC = () => {
 
                       <div className="sm:col-span-2">
                         <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">
-                          Video MP4 URL
+                          Showcase Video
                         </label>
-                        <input
-                          type="url"
-                          value={video.videoUrl}
-                          onChange={(e) => {
-                            const updated = [...(config.decorationShowcase?.videos || [])];
-                            updated[idx] = { ...updated[idx], videoUrl: e.target.value };
-                            setConfig((prev) => ({
-                              ...prev,
-                              decorationShowcase: { ...(prev.decorationShowcase as any), videos: updated },
-                            }));
-                            setIsDirty(true);
-                          }}
-                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
-                        />
+                        <div className="flex flex-wrap items-center gap-2">
+                          <label className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold ${
+                            showcaseUploadProgress[video.id] !== undefined
+                              ? 'cursor-wait border-slate-200 text-slate-400'
+                              : 'border-blue-200 bg-white text-blue-700 hover:bg-blue-50'
+                          }`}>
+                            <Upload className="h-3.5 w-3.5" />
+                            {showcaseUploadProgress[video.id] !== undefined
+                              ? `Uploading ${showcaseUploadProgress[video.id]}%`
+                              : video.videoUrl ? 'Replace video' : 'Upload video'}
+                            <input
+                              type="file"
+                              accept="video/*"
+                              disabled={showcaseUploadProgress[video.id] !== undefined}
+                              onChange={(event) => void handleShowcaseVideoUpload(video.id, event)}
+                              className="hidden"
+                            />
+                          </label>
+                          <input
+                            type="url"
+                            aria-label={`Video URL for ${video.title || `video ${idx + 1}`}`}
+                            value={video.videoUrl}
+                            onChange={(e) => {
+                              const updated = [...(config.decorationShowcase?.videos || [])];
+                              updated[idx] = { ...updated[idx], videoUrl: e.target.value };
+                              setConfig((prev) => ({
+                                ...prev,
+                                decorationShowcase: { ...(prev.decorationShowcase as any), videos: updated },
+                              }));
+                              setIsDirty(true);
+                            }}
+                            placeholder="Or paste a video URL"
+                            className="min-w-[12rem] flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+                          />
+                        </div>
+                        {video.videoUrl && (
+                          <p className="mt-1 truncate text-[10px] text-slate-500">{video.videoUrl}</p>
+                        )}
                       </div>
 
                       <div>

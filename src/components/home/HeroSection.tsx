@@ -11,6 +11,7 @@ interface HeroSectionProps {
   onExploreMahdev: () => void;
   onContactUs?: () => void;
   onExploreServices?: () => void;
+  theme?: 'v1' | 'v2';
 }
 
 const HERO_VIDEO = '/assets/hero_landing.mp4';
@@ -28,10 +29,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onNavigate,
   onExploreMahdev,
   onExploreServices,
+  theme = 'v1',
 }) => {
   const heroRef = useRef<HTMLElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const reducedMotion = useReducedMotion();
+  const isV2 = theme === 'v2';
   const { homepageConfig } = useFirestoreDataContext();
   const cmsHero = homepageConfig?.hero;
   const configuredVideo = cmsHero?.videoUrl || cmsHero?.mediaUrl || '';
@@ -216,7 +219,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   return (
     <section
       ref={heroRef}
-      className="relative isolate min-h-[680px] overflow-hidden bg-slate-950 sm:min-h-[740px] lg:min-h-[min(820px,calc(100svh-5rem))]"
+      className={`relative isolate overflow-hidden ${
+        isV2
+          ? 'hero-theme-v2 min-h-[580px] bg-[#160605] sm:min-h-[660px] lg:min-h-[min(760px,calc(100svh-5rem))]'
+          : 'min-h-[680px] bg-slate-950 sm:min-h-[740px] lg:min-h-[min(820px,calc(100svh-5rem))]'
+      }`}
     >
       <ScrollParallax targetRef={heroRef} distance={34} className="absolute -inset-y-10 inset-x-0 overflow-hidden">
         {useCmsImage ? (
@@ -254,37 +261,57 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       </ScrollParallax>
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-r from-slate-950/65 via-slate-950/30 to-transparent"
+        className={`absolute inset-0 ${
+          isV2
+            ? 'bg-gradient-to-r from-[#6f1d1b]/90 via-[#432818]/55 to-transparent'
+            : 'bg-gradient-to-r from-slate-950/65 via-slate-950/30 to-transparent'
+        }`}
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-slate-950/10"
+        className={`absolute inset-0 ${
+          isV2
+            ? 'bg-gradient-to-t from-[#432818]/65 via-transparent to-[#6f1d1b]/20'
+            : 'bg-gradient-to-t from-slate-950/45 via-transparent to-slate-950/10'
+        }`}
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -left-40 top-1/4 h-96 w-96 rounded-full bg-blue-500/15 blur-[100px]"
+        className={`pointer-events-none absolute -left-40 top-1/4 h-96 w-96 rounded-full blur-[100px] ${
+          isV2 ? 'bg-[#ffe6a7]/20' : 'bg-blue-500/15'
+        }`}
       />
-      <div className="relative mx-auto flex min-h-[680px] max-w-7xl items-center px-5 py-20 sm:min-h-[740px] sm:px-8 lg:min-h-[min(820px,calc(100svh-5rem))] lg:px-10">
+      <div className={`relative mx-auto flex max-w-7xl items-center px-5 py-20 sm:px-8 lg:px-10 ${
+        isV2
+          ? 'min-h-[580px] sm:min-h-[660px] lg:min-h-[min(760px,calc(100svh-5rem))]'
+          : 'min-h-[680px] sm:min-h-[740px] lg:min-h-[min(820px,calc(100svh-5rem))]'
+      }`}>
         <motion.div
           className="max-w-3xl"
           initial={reducedMotion ? false : { opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
         >
-          <p className="mb-5 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-sky-100 sm:text-xs">
-            <span aria-hidden="true" className="h-px w-7 bg-sky-300" />
+          <p className={`mb-5 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.24em] sm:text-xs ${
+            isV2 ? 'text-[#fffaee]' : 'text-sky-100'
+          }`}>
+            <span aria-hidden="true" className={`h-px w-7 ${isV2 ? 'bg-[#ffe6a7]' : 'bg-sky-300'}`} />
             Five specialist divisions. One connected group.
           </p>
           <h1 className="font-editorial text-4xl font-medium leading-[1.04] tracking-[-0.035em] text-white sm:text-6xl lg:text-7xl">
             <span className="block">Creating moments.</span>
-            <span className="block text-sky-200">Capturing memories.</span>
+            <span className={`block ${isV2 ? 'text-[#ffe6a7]' : 'text-sky-200'}`}>Capturing memories.</span>
             <span className="block">Delivering innovation.</span>
           </h1>
           <div className="mt-9 flex flex-wrap gap-3">
             <button
               type="button"
               onClick={explore}
-              className="group inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 text-sm font-semibold text-slate-950 shadow-lg shadow-slate-950/20 transition duration-300 hover:-translate-y-0.5 hover:bg-sky-50 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+              className={`group inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 text-sm font-semibold shadow-lg shadow-slate-950/20 transition duration-300 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+                isV2
+                  ? 'text-[#6f1d1b] hover:bg-[#fffaee] focus-visible:ring-[#ffe6a7] focus-visible:ring-offset-[#432818]'
+                  : 'text-slate-950 hover:bg-sky-50 focus-visible:ring-sky-300 focus-visible:ring-offset-slate-950'
+              }`}
             >
               Explore services
               <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
@@ -292,7 +319,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <button
               type="button"
               onClick={() => onNavigate('/divisions')}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/45 bg-white/5 px-6 text-sm font-semibold text-white backdrop-blur-sm transition duration-300 hover:-translate-y-0.5 hover:border-white hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+              className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-full border bg-white/5 px-6 text-sm font-semibold text-white backdrop-blur-sm transition duration-300 hover:-translate-y-0.5 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+                isV2
+                  ? 'border-[#ffe6a7]/65 hover:border-[#ffe6a7] focus-visible:ring-[#ffe6a7] focus-visible:ring-offset-[#432818]'
+                  : 'border-white/45 hover:border-white focus-visible:ring-sky-300 focus-visible:ring-offset-slate-950'
+              }`}
             >
               Meet our divisions
             </button>
@@ -301,7 +332,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         <button
           type="button"
           onClick={exploreDivisions}
-          className="absolute bottom-24 left-5 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/75 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 sm:left-8 lg:left-10"
+          className={`absolute bottom-24 left-5 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/75 transition focus-visible:outline-none focus-visible:ring-2 sm:left-8 lg:left-10 ${
+            isV2 ? 'hover:text-[#ffe6a7] focus-visible:ring-[#ffe6a7]' : 'hover:text-white focus-visible:ring-sky-300'
+          }`}
           aria-label="Scroll to explore Mahdev divisions"
         >
           Discover Mahdev

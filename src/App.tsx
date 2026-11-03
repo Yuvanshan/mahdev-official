@@ -13,7 +13,7 @@ import { WhatsAppWidget } from './components/common/WhatsAppWidget';
 import { SeasonalThemeProvider } from './context/SeasonalThemeContext';
 import { SeasonalOverlay } from './components/seasonal/SeasonalOverlay';
 import { SeasonalWishesPopup } from './components/seasonal/SeasonalWishesPopup';
-import { AdminAuthProvider } from './context/AdminAuthContext';
+import { AdminAuthProvider, useAdminAuth } from './context/AdminAuthContext';
 import { FirestoreDataProvider, useFirestoreDataContext } from './context/FirestoreDataContext';
 import { CartDrawer } from './components/cart/CartDrawer';
 import { AnnouncementBanner } from './components/layout/AnnouncementBanner';
@@ -231,6 +231,11 @@ const MaintenanceView = lazy(() => import('./views/MaintenanceView').then((modul
 import { DocumentScrollProgress } from './components/motion/ParallelScroll';
 
 function AppContent() {
+  const {
+    admin: currentAdmin,
+    isAuthenticated: isAdminAuthenticated,
+    ensureSessionRestored,
+  } = useAdminAuth();
   const {
     siteSettings,
     companySettings,
@@ -465,6 +470,17 @@ function AppContent() {
     (_match, slug: string) => `/services/category/${slug.toLowerCase()}`
   );
   const normalizedPath = canonicalizeAdminPath(canonicalizeDivisionRoute(legacyCategoryPath));
+  const requestedThemePreview = new URLSearchParams(searchParamsString).get('themePreview');
+  const isLocalThemePreview = Boolean(
+    import.meta.env.DEV &&
+    typeof window !== 'undefined' &&
+    ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname)
+  );
+  useEffect(() => {
+    if (!requestedThemePreview || isLocalThemePreview) return;
+    ensureSessionRestored();
+  }, [ensureSessionRestored, isLocalThemePreview, requestedThemePreview]);
+
   // Set the tab title on every route change ("Careers - Mahdev (Pvt) Ltd"), so a page
   // without its own SEOHead never keeps the previous page's title. A layout effect runs
   // before the pages' own effects, so pages with a specific title (a service, project
@@ -500,6 +516,12 @@ function AppContent() {
   const redirectParam = searchParams.get('redirect') || undefined;
 
   const isAdminRoute = isAdminPortalPath(normalizedPath);
+  const canPreviewTheme = isLocalThemePreview || (isAdminAuthenticated && Boolean(currentAdmin));
+  const effectivePublicTheme =
+    (requestedThemePreview === 'v1' || requestedThemePreview === 'v2') && canPreviewTheme
+      ? requestedThemePreview
+      : siteSettings.websiteAppearance?.activeTheme || 'v1';
+  const isDashboardHome = !isAdminRoute && normalizedPath === '/' && effectivePublicTheme === 'v2';
 
   // Determine current division from path or known aliases
   const divisionKey =
@@ -1389,7 +1411,7 @@ function AppContent() {
   // division routes, while the division-specific notice still remains in place.
   const isStandaloneComingSoon = Boolean(divisionKey && isDivisionComingSoon(divisionKey));
   return (
-    <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-blue-600 selection:text-white w-full max-w-full overflow-x-hidden">
+    <div className={`min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-blue-600 selection:text-white w-full max-w-full overflow-x-hidden ${isDashboardHome ? 'public-theme-v2' : ''}`}>
       {/* Top Document Scroll Progress Bar */}
       {!isStandaloneComingSoon && <DocumentScrollProgress />}
       {!isAdminRoute && <SeasonalOverlay />}
@@ -1403,8 +1425,8 @@ function AppContent() {
 
       {/* Sticky Top Navigation */}
       {/* Keep the campaign banner visible across the public site, including division routes. */}
-      {!isAdminRoute && <AnnouncementBanner onNavigate={navigate} />}
-      <Navigation currentPath={normalizedPath} onNavigate={navigate} />
+      {!isAdminRoute && !isDashboardHome && <AnnouncementBanner onNavigate={navigate} />}
+      {!isDashboardHome && <Navigation currentPath={normalizedPath} onNavigate={navigate} />}
 
       {/* Main Content Area with Smooth View Transitions */}
       <main className="flex-1 w-full max-w-full min-w-0" aria-live="polite">
@@ -1434,7 +1456,7 @@ function AppContent() {
       </main>
 
       {/* Mobile Ergonomic Bottom Navigation Bar */}
-      <BottomNavigation currentPath={normalizedPath} onNavigate={navigate} />
+      {!isDashboardHome && <BottomNavigation currentPath={normalizedPath} onNavigate={navigate} />}
 
       {/* Reusable Global Footer */}
       <Footer onNavigate={navigate} currentPath={normalizedPath} />

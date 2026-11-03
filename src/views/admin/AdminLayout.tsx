@@ -27,7 +27,6 @@ import {
   ExternalLink,
   Shield,
   Bell,
-  Search,
   BarChart2,
   Database,
   Loader2,
@@ -170,6 +169,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
   }, [isAuthenticated, admin?.id, refreshAll]);
   const getPathSection = (path: string) =>
     path.slice(ADMIN_PORTAL_PATH.length).split('/').filter(Boolean)[0]?.toLowerCase();
+  React.useEffect(() => {
+    const parts = currentPath.slice(ADMIN_PORTAL_PATH.length).split('/').filter(Boolean);
+    if (parts[0] !== 'v2') return;
+    onNavigate(parts[1] ? getAdminPortalPath(parts[1]) : getAdminPortalPath());
+  }, [currentPath, onNavigate]);
   const [activeSection, setActiveSection] = useState<AdminSectionId>(() => {
     if (typeof window !== 'undefined' && currentPath) {
       const slug = getPathSection(currentPath);
@@ -205,11 +209,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
   const handleSelectSection = (sec: AdminSectionId) => {
     setActiveSection(sec);
     setIsMobileMenuOpen(false);
-    if (sec === 'dashboard') {
-      onNavigate(getAdminPortalPath());
-    } else {
-      onNavigate(getAdminPortalPath(sec));
-    }
+    onNavigate(sec === 'dashboard' ? getAdminPortalPath() : getAdminPortalPath(sec));
   };
 
   // 1. Authentication Guard: If not authenticated, show Admin Login View immediately

@@ -24,6 +24,8 @@ import { getRecordImageAlt } from '../../config/imageAlt';
 interface FeaturedServicesSectionProps {
   onNavigate: (route: string) => void;
   onInquireService?: (service: any) => void;
+  publishedOnly?: boolean;
+  showEmptyState?: boolean;
 }
 
 export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (props) => {
@@ -36,6 +38,7 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
     error,
     refreshAll,
   } = useFirestoreDataContext();
+  const { publishedOnly = false, showEmptyState = false } = props;
 
   if (homepageConfig.featuredServices && !homepageConfig.featuredServices.enabled) {
     return null;
@@ -43,6 +46,15 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
 
   // Admin sort order, with newly added services shown first.
   const activeServices = newestListedFirst(services
+    .filter((service) =>
+      !publishedOnly ||
+      (
+        service.isPublished !== false &&
+        (service as any).status !== 'draft' &&
+        (service as any).status !== 'inactive' &&
+        (service as any).status !== 'archived'
+      )
+    )
     .filter((s) => (s as any).status !== 'archived')
     .sort((a, b) => (a.order ?? (a as any).sortOrder ?? 0) - (b.order ?? (b as any).sortOrder ?? 0)));
 
@@ -62,6 +74,21 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
             >
               Retry loading
             </button>
+          </div>
+        </SectionContainer>
+      );
+    }
+    if (showEmptyState) {
+      return (
+        <SectionContainer background="none" paddingY="md">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+            <h2 className="font-display text-xl font-bold text-slate-900">Featured Services</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              No services are currently published. Please check back soon.
+            </p>
+            <Button className="mt-4" onClick={() => props.onNavigate('/services')}>
+              Browse services
+            </Button>
           </div>
         </SectionContainer>
       );

@@ -34,9 +34,11 @@ import {
   ArrowRight,
   Database,
   Layers,
+  Monitor,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
+import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { DatabaseDiagnosticsPanel } from '../../components/admin/DatabaseDiagnosticsPanel';
 import {
   firestoreSettingsService,
@@ -67,8 +69,9 @@ export const AdminSettingsView: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
-    'company' | 'branding' | 'commerce' | 'announcement' | 'maintenance' | 'security' | 'database'
+    'company' | 'branding' | 'commerce' | 'announcement' | 'appearance' | 'maintenance' | 'security' | 'database'
   >('company');
+  const [themeAwaitingConfirmation, setThemeAwaitingConfirmation] = useState<'v1' | 'v2' | null>(null);
 
   // Upload States
   const [uploadingField, setUploadingField] = useState<
@@ -383,6 +386,92 @@ export const AdminSettingsView: React.FC = () => {
     }
   };
 
+  const handleSetThemeAvailability = async (theme: 'v1' | 'v2', enabled: boolean) => {
+    const activeTheme = systemSettings.websiteAppearance?.activeTheme || 'v1';
+    if (!enabled && activeTheme === theme) {
+      addToast('error', 'Active theme cannot be disabled', 'Activate another theme before disabling this one.');
+      return;
+    }
+
+    const websiteAppearance = {
+      activeTheme,
+      availableThemes: {
+        v1: systemSettings.websiteAppearance?.availableThemes?.v1 ?? true,
+        v2: systemSettings.websiteAppearance?.availableThemes?.v2 ?? true,
+        [theme]: enabled,
+      },
+      updatedAt: new Date().toISOString(),
+      ...(currentAdmin?.id ? { updatedBy: currentAdmin.id } : {}),
+    };
+    setIsSaving(true);
+    try {
+      await updateContextSiteSettings({ websiteAppearance });
+      setSystemSettings((current) => ({ ...current, websiteAppearance }));
+      addToast(
+        'success',
+        'Theme Availability Updated',
+        `${theme.toUpperCase()} is now ${enabled ? 'available' : 'unavailable'} for the public site.`
+      );
+    } catch (error) {
+      console.error('[AdminSettings] Could not update theme availability:', error);
+      addToast(
+        'error',
+        'Update Failed',
+        error instanceof Error ? error.message : 'Theme availability could not be updated.'
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleActivateWebsiteTheme = async () => {
+    if (!themeAwaitingConfirmation) return;
+    const activeTheme = themeAwaitingConfirmation;
+    const availableThemes = {
+      v1: systemSettings.websiteAppearance?.availableThemes?.v1 ?? true,
+      v2: systemSettings.websiteAppearance?.availableThemes?.v2 ?? true,
+    };
+    if (!availableThemes[activeTheme]) {
+      addToast('error', 'Theme unavailable', 'Enable this theme before activating it.');
+      setThemeAwaitingConfirmation(null);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const websiteAppearance = {
+        activeTheme,
+        availableThemes,
+        updatedAt: new Date().toISOString(),
+        ...(currentAdmin?.id ? { updatedBy: currentAdmin.id } : {}),
+      } as const;
+      await updateContextSiteSettings({ websiteAppearance });
+      setSystemSettings((current) => ({ ...current, websiteAppearance }));
+      await adminService.logAudit({
+        action: 'PUBLIC_WEBSITE_THEME_ACTIVATED',
+        entityType: 'WebsiteAppearance',
+        entityId: activeTheme,
+        details: `Activated public website theme ${activeTheme.toUpperCase()}.`,
+        status: 'success',
+      });
+      addToast(
+        'success',
+        'Website Theme Published',
+        `The ${activeTheme === 'v1' ? 'Classic MAHDEV' : 'Modern MAHDEV'} theme is now active on the public website.`
+      );
+    } catch (error) {
+      console.error('[AdminSettings] Could not publish the website theme:', error);
+      addToast(
+        'error',
+        'Theme Activation Failed',
+        error instanceof Error ? error.message : 'The public website theme could not be updated.'
+      );
+    } finally {
+      setIsSaving(false);
+      setThemeAwaitingConfirmation(null);
+    }
+  };
+
   const handleSaveAnnouncement = async () => {
     setIsSaving(true);
     try {
@@ -652,6 +741,18 @@ export const AdminSettingsView: React.FC = () => {
         </button>
 
         <button
+          onClick={() => setActiveTab('appearance')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
+            activeTab === 'appearance'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Monitor className="w-4 h-4" />
+          Website Appearance
+        </button>
+
+        <button
           onClick={() => setActiveTab('maintenance')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
             activeTab === 'maintenance'
@@ -731,6 +832,175 @@ export const AdminSettingsView: React.FC = () => {
         className="hidden"
         onChange={(e) => handleFileUpload(e, 'maintenanceImage')}
       />
+
+      {activeTab === 'appearance' && (() => {
+        const appearance = systemSettings.websiteAppearance || {
+          activeTheme: 'v1' as const,
+          availableThemes: { v1: true, v2: true },
+        };
+        const availableThemes = {
+          v1: appearance.availableThemes?.v1 ?? true,
+          v2: appearance.availableThemes?.v2 ?? true,
+        };
+        const themeCards = [
+          {
+            id: 'v1' as const,
+            name: 'Classic MAHDEV',
+            description: 'The current MAHDEV website design and navigation.',
+          },
+          {
+            id: 'v2' as const,
+            name: 'Modern MAHDEV',
+            description: 'A responsive dashboard-inspired layout using the same MAHDEV content and services.',
+          },
+        ];
+
+        return (
+          <section className="space-y-5">
+            <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-800">
+                    Public website theme
+                  </p>
+                  <h2 className="mt-1 text-lg font-bold text-slate-900">
+                    {appearance.activeTheme === 'v1' ? 'Classic MAHDEV (V1)' : 'Modern MAHDEV (V2)'} is live
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Theme selection changes presentation only. Existing content, routes, and customer features are shared.
+                  </p>
+                </div>
+                <span className="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-800">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  Active
+                </span>
+              </div>
+              {appearance.updatedAt && (
+                <p className="mt-3 text-[11px] text-slate-500">
+                  Last updated {new Date(appearance.updatedAt).toLocaleString()}
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-5 lg:grid-cols-2">
+              {themeCards.map((theme) => {
+                const isActive = appearance.activeTheme === theme.id;
+                const isAvailable = availableThemes[theme.id];
+                return (
+                  <article key={theme.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div
+                      className={`relative h-40 overflow-hidden p-3 ${
+                        theme.id === 'v1' ? 'bg-slate-950' : 'bg-slate-100'
+                      }`}
+                      aria-label={`${theme.name} layout preview`}
+                    >
+                      {theme.id === 'v1' ? (
+                        <div className="mx-auto flex h-full max-w-sm flex-col overflow-hidden rounded-xl border border-white/15 bg-slate-900">
+                          <div className="h-5 border-b border-white/10 bg-slate-950 px-2 py-1">
+                            <span className="text-[7px] font-bold tracking-widest text-white">MAHDEV</span>
+                          </div>
+                          <div className="flex flex-1 items-end bg-gradient-to-br from-blue-950 via-slate-800 to-slate-950 p-3">
+                            <div className="w-3/4 space-y-1">
+                              <div className="h-2 w-1/3 rounded bg-sky-200/70" />
+                              <div className="h-3 w-full rounded bg-white/80" />
+                              <div className="h-3 w-2/3 rounded bg-white/60" />
+                              <div className="h-3 w-1/4 rounded-full bg-blue-500" />
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mx-auto grid h-full max-w-sm grid-cols-[48px_1fr_54px] gap-1.5 rounded-xl border border-slate-200 bg-slate-50 p-1.5">
+                          <div className="rounded-md bg-slate-900 p-1">
+                            <div className="mb-2 h-2 rounded bg-white/70" />
+                            <div className="space-y-1">
+                              {[0, 1, 2, 3].map((item) => <div key={item} className="h-1 rounded bg-white/25" />)}
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <div className="h-4 rounded bg-white" />
+                            <div className="h-10 rounded bg-gradient-to-r from-blue-950 to-blue-700" />
+                            <div className="grid grid-cols-3 gap-1">
+                              {[0, 1, 2].map((item) => <div key={item} className="h-8 rounded bg-white" />)}
+                            </div>
+                          </div>
+                          <div className="rounded-md bg-white" />
+                        </div>
+                      )}
+                      {isActive && (
+                        <span className="absolute right-3 top-3 rounded-full bg-emerald-500 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <div className="space-y-4 p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="font-display text-base font-bold text-slate-900">{theme.name}</h3>
+                          <p className="mt-1 text-xs leading-relaxed text-slate-500">{theme.description}</p>
+                        </div>
+                        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                          isAvailable ? 'bg-slate-100 text-slate-600' : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          {isAvailable ? 'Available' : 'Unavailable'}
+                        </span>
+                      </div>
+                      <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-slate-600">
+                        <input
+                          type="checkbox"
+                          checked={isAvailable}
+                          disabled={isSaving || (isActive && isAvailable)}
+                          onChange={(event) => void handleSetThemeAvailability(theme.id, event.target.checked)}
+                          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        Available to publish
+                      </label>
+                      <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={!isAvailable}
+                          onClick={() => {
+                            const preview = new URL('/', window.location.origin);
+                            preview.searchParams.set('themePreview', theme.id);
+                            window.open(preview.toString(), '_blank', 'noopener,noreferrer');
+                          }}
+                          leftIcon={<Eye className="h-3.5 w-3.5" />}
+                        >
+                          Preview
+                        </Button>
+                        <Button
+                          variant={isActive ? 'outline' : 'primary'}
+                          size="sm"
+                          disabled={isSaving || isActive || !isAvailable}
+                          onClick={() => setThemeAwaitingConfirmation(theme.id)}
+                        >
+                          {isActive ? 'Currently Active' : `Activate ${theme.id.toUpperCase()}`}
+                        </Button>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white p-4 text-xs leading-relaxed text-slate-600">
+              Theme settings are saved to the existing shared site-settings document and use the existing admin-only database write authorization. Division destinations remain managed in the existing Divisions section.
+            </div>
+
+            <AdminConfirmDialog
+              isOpen={Boolean(themeAwaitingConfirmation)}
+              title="Change public website theme?"
+              message={`Are you sure you want to activate ${themeAwaitingConfirmation === 'v1' ? 'Classic MAHDEV (V1)' : 'Modern MAHDEV (V2)'}? This will change the public website appearance without replacing its content.`}
+              confirmText="Confirm & Activate"
+              cancelText="Cancel"
+              isDestructive={false}
+              allowSoftDelete={false}
+              onCancel={() => setThemeAwaitingConfirmation(null)}
+              onConfirm={() => void handleActivateWebsiteTheme()}
+            />
+          </section>
+        );
+      })()}
 
       {/* Tab 1: Company & Offices */}
       {activeTab === 'company' && (

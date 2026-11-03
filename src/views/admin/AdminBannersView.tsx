@@ -53,6 +53,7 @@ export const AdminBannersView: React.FC = () => {
     targetUrl: '/promotion',
     buttonText: 'View Offers',
     imageUrl: '',
+    videoUrl: '',
     bgGradient: 'from-blue-900/90 via-slate-900 to-indigo-950',
     badgeText: 'SPECIAL OFFER',
     startDate: '',
@@ -102,6 +103,7 @@ export const AdminBannersView: React.FC = () => {
       targetUrl: '/promotion',
       buttonText: 'View Offers',
       imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
+      videoUrl: '',
       bgGradient: 'from-blue-900/90 via-slate-900 to-indigo-950',
       badgeText: 'ENTERPRISE SPOTLIGHT',
       startDate: new Date().toISOString().split('T')[0],
@@ -124,6 +126,7 @@ export const AdminBannersView: React.FC = () => {
       targetUrl: banner.targetUrl,
       buttonText: banner.buttonText || 'Learn More',
       imageUrl: banner.imageUrl || '',
+      videoUrl: banner.videoUrl || '',
       bgGradient: banner.bgGradient || 'from-blue-900/90 via-slate-900 to-indigo-950',
       badgeText: banner.badgeText || '',
       startDate: banner.startDate || '',
@@ -140,6 +143,16 @@ export const AdminBannersView: React.FC = () => {
     const errors: Record<string, string> = {};
     if (!formData.title.trim()) errors.title = 'Banner headline is required';
     if (!formData.targetUrl.trim()) errors.targetUrl = 'Target URL or route is required';
+    else if (!formData.targetUrl.trim().startsWith('/') &&
+      !/^https:\/\//i.test(formData.targetUrl.trim())) {
+      errors.targetUrl = 'Use a same-site route or a secure HTTPS URL.';
+    }
+    if (formData.videoUrl.trim() &&
+      !formData.videoUrl.trim().startsWith('/') &&
+      !formData.videoUrl.trim().startsWith('firestore://') &&
+      !/^https:\/\//i.test(formData.videoUrl.trim())) {
+      errors.videoUrl = 'Use a same-site media path or a secure HTTPS video URL.';
+    }
     if (
       formData.startDate &&
       formData.endDate &&
@@ -165,6 +178,7 @@ export const AdminBannersView: React.FC = () => {
           targetUrl: formData.targetUrl,
           buttonText: formData.buttonText,
           imageUrl: formData.imageUrl,
+          videoUrl: formData.videoUrl,
           bgGradient: formData.bgGradient,
           badgeText: formData.badgeText,
           startDate: formData.startDate,
@@ -182,6 +196,7 @@ export const AdminBannersView: React.FC = () => {
           targetUrl: formData.targetUrl,
           buttonText: formData.buttonText,
           imageUrl: formData.imageUrl,
+          videoUrl: formData.videoUrl,
           bgGradient: formData.bgGradient,
           badgeText: formData.badgeText,
           startDate: formData.startDate,
@@ -593,6 +608,27 @@ export const AdminBannersView: React.FC = () => {
               placeholder="https://images.unsplash.com/..."
               className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              Optional Background Video URL
+            </label>
+            <input
+              type="text"
+              value={formData.videoUrl}
+              onChange={(e) => {
+                setFormData({ ...formData, videoUrl: e.target.value });
+                setIsDirty(true);
+              }}
+              placeholder="https://… or a stored media URL"
+              aria-invalid={Boolean(formErrors.videoUrl)}
+              className={`w-full px-3.5 py-2 bg-slate-50 border rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 ${
+                formErrors.videoUrl ? 'border-red-500' : 'border-slate-200'
+              }`}
+            />
+            {formErrors.videoUrl && <p className="mt-1 text-[11px] text-red-500">{formErrors.videoUrl}</p>}
+            <p className="mt-1 text-[11px] text-slate-500">When configured, the video plays muted and the image remains its visual fallback.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

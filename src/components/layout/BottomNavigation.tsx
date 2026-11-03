@@ -10,6 +10,7 @@ interface BottomNavigationProps {
 export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath, onNavigate }) => {
   const [basePath] = (currentPath ? String(currentPath) : '/').split('?');
   const normalizedPath = (basePath || '/').toLowerCase().replace(/\/$/, '') || '/';
+  const isPublicRoute = !normalizedPath.startsWith('/admin');
 
   const navItems = [
     {
@@ -76,10 +77,10 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
     <nav
       id="floating-bottom-navbar"
       aria-label="Mobile Navigation"
-      className="lg:hidden fixed bottom-3 left-0 right-0 z-40 flex justify-center items-center pointer-events-none px-2"
+      className={`lg:hidden fixed bottom-3 left-0 right-0 z-40 flex justify-center items-center pointer-events-none px-2 ${isPublicRoute ? 'public-bottom-navigation' : ''}`}
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0.5rem)' }}
     >
-      <div className="pointer-events-auto flex items-center justify-between gap-0.5 w-full max-w-[28rem] px-1.5 py-1.5 rounded-full bg-slate-950/95 backdrop-blur-xl border border-white/10 shadow-2xl shadow-slate-950/50">
+      <div className="public-bottom-navigation__bar pointer-events-auto flex items-center justify-between gap-0.5 w-full max-w-[28rem] px-1.5 py-1.5 rounded-full bg-slate-950/95 backdrop-blur-xl border border-white/10 shadow-2xl shadow-slate-950/50">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = item.isActive;

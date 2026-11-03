@@ -242,6 +242,7 @@ const PRIVATE_PUBLIC_SETTINGS_FIELDS = new Set([
   'testWrite',
   'dailyBackupEnabled',
   'enableStockAlertEmails',
+  'updatedBy',
 ]);
 
 const ADMIN_MANAGED_COLLECTIONS = new Set([

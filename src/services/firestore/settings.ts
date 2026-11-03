@@ -359,6 +359,11 @@ export function getDefaultSiteSettings(): FirestoreSiteSettings {
       text: '',
       link: '/contact',
     },
+    websiteAppearance: {
+      activeTheme: 'v1',
+      availableThemes: { v1: true, v2: true },
+      updatedAt: now,
+    },
     currency: 'LKR',
     defaultCurrency: 'LKR',
     supportedCurrencies: ['LKR', 'USD', 'EUR', 'GBP'],

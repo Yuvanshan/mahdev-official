@@ -21,14 +21,11 @@ import { DecorationShowcaseVideo } from '../../types/cms';
 import { ParallelWatermark } from '../motion/ParallelScroll';
 import { useDeviceMotion } from '../motion/MotionWrappers';
 import { getImageAlt } from '../../config/imageAlt';
+import { resolveMediaUrl } from '../../services/firestoreMediaService';
 
 type DecorationVideo = DecorationShowcaseVideo;
 
 const FALLBACK_THUMBNAIL = 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80';
-
-// Every <video> needs a poster: Google uses it as the thumbnail and will not index the video without one.
-const getThumbnail = (video: { thumbnailUrl?: string }): string =>
-  video.thumbnailUrl?.trim() || FALLBACK_THUMBNAIL;
 
 interface DecorationVideoShowcaseProps {
   onNavigate?: (route: string) => void;
@@ -41,7 +38,7 @@ export const DecorationVideoShowcase: React.FC<DecorationVideoShowcaseProps> = (
   // Exclusively consume dynamic showcase videos from Homepage CMS Config
   const videoList = useMemo<DecorationVideo[]>(() => {
     if (showcaseConfig?.videos && Array.isArray(showcaseConfig.videos)) {
-      return showcaseConfig.videos;
+      return showcaseConfig.videos.filter((video) => Boolean(video.videoUrl?.trim()));
     }
     return [];
   }, [showcaseConfig?.videos]);
@@ -72,6 +69,9 @@ const DecorationVideoShowcaseContent: React.FC<
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [isMuted, setIsMuted] = useState<boolean>(true);
   const [modalVideo, setModalVideo] = useState<DecorationVideo | null>(null);
+  const [resolvedVideoUrl, setResolvedVideoUrl] = useState('');
+  const [resolvedModalVideoUrl, setResolvedModalVideoUrl] = useState('');
+  const [resolvedThumbnails, setResolvedThumbnails] = useState<Record<string, string>>({});
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -97,9 +97,63 @@ const DecorationVideoShowcaseContent: React.FC<
 
   const activeVideo = filteredVideos[activeVideoIndex] || filteredVideos[0] || videoList[0];
 
+  React.useEffect(() => {
+    let active = true;
+    if (!activeVideo?.videoUrl) {
+      setResolvedVideoUrl('');
+      return;
+    }
+
+    resolveMediaUrl(activeVideo.videoUrl)
+      .then((url) => {
+        if (active) setResolvedVideoUrl(url);
+      })
+      .catch((error) => {
+        console.error(`[DecorationVideoShowcase] Could not resolve video ${activeVideo.id}:`, error);
+        if (active) setResolvedVideoUrl('');
+      });
+
+    return () => { active = false; };
+  }, [activeVideo?.id, activeVideo?.videoUrl]);
+
+  React.useEffect(() => {
+    let active = true;
+    if (!modalVideo?.videoUrl) {
+      setResolvedModalVideoUrl('');
+      return;
+    }
+
+    resolveMediaUrl(modalVideo.videoUrl)
+      .then((url) => {
+        if (active) setResolvedModalVideoUrl(url);
+      })
+      .catch((error) => {
+        console.error(`[DecorationVideoShowcase] Could not resolve modal video ${modalVideo.id}:`, error);
+        if (active) setResolvedModalVideoUrl('');
+      });
+
+    return () => { active = false; };
+  }, [modalVideo?.id, modalVideo?.videoUrl]);
+
+  React.useEffect(() => {
+    let active = true;
+    Promise.all(videoList.map(async (video) => {
+      if (!video.thumbnailUrl) return [video.id, FALLBACK_THUMBNAIL] as const;
+      try {
+        return [video.id, await resolveMediaUrl(video.thumbnailUrl)] as const;
+      } catch (error) {
+        console.error(`[DecorationVideoShowcase] Could not resolve thumbnail ${video.id}:`, error);
+        return [video.id, FALLBACK_THUMBNAIL] as const;
+      }
+    })).then((entries) => {
+      if (active) setResolvedThumbnails(Object.fromEntries(entries));
+    });
+    return () => { active = false; };
+  }, [videoList]);
+
   // Guarantee HTML5 video autoplay across browsers
   React.useEffect(() => {
-    if (videoRef.current) {
+    if (videoRef.current && resolvedVideoUrl) {
       videoRef.current.defaultMuted = true;
       videoRef.current.muted = isMuted;
       videoRef.current.playsInline = true;
@@ -109,7 +163,7 @@ const DecorationVideoShowcaseContent: React.FC<
         });
       }
     }
-  }, [activeVideo.videoUrl, isMuted, isPlaying]);
+  }, [resolvedVideoUrl, isMuted, isPlaying]);
 
   const handleTogglePlay = () => {
     if (!videoRef.current) return;
@@ -187,8 +241,8 @@ const DecorationVideoShowcaseContent: React.FC<
                 <video
                   ref={videoRef}
                   key={activeVideo.videoUrl}
-                  src={activeVideo.videoUrl}
-                  poster={getThumbnail(activeVideo)}
+                  src={resolvedVideoUrl || undefined}
+                  poster={resolvedThumbnails[activeVideo.id] || FALLBACK_THUMBNAIL}
                   autoPlay
                   loop
                   muted={isMuted}
@@ -307,7 +361,7 @@ const DecorationVideoShowcaseContent: React.FC<
                     {/* Thumbnail with mini play overlay */}
                     <div className="relative w-24 h-16 rounded-lg overflow-hidden shrink-0 bg-slate-950 border border-slate-800">
                       <img
-                        src={getThumbnail(video)}
+                        src={resolvedThumbnails[video.id] || FALLBACK_THUMBNAIL}
                         alt={getImageAlt(video.title, 'sws')}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
@@ -397,8 +451,8 @@ const DecorationVideoShowcaseContent: React.FC<
 
                 <div className="aspect-video w-full bg-black">
                   <video
-                    src={modalVideo.videoUrl}
-                    poster={getThumbnail(modalVideo)}
+                    src={resolvedModalVideoUrl || undefined}
+                    poster={resolvedThumbnails[modalVideo.id] || FALLBACK_THUMBNAIL}
                     controls
                     autoPlay
                     className="w-full h-full object-contain"
