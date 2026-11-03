@@ -472,9 +472,6 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
   overflow: hidden;
   pointer-events: none;
   isolation: isolate;
-  contain: layout paint;
-  transform: translateZ(0);
-  backface-visibility: hidden;
 }
 
 .seasonal-wishes-card {
@@ -919,9 +916,14 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
   }
 
   .seasonal-diya-row {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
     height: 46px;
     padding: 0 8px 4px;
     background: linear-gradient(0deg, rgb(255 180 72 / 9%), transparent);
+    transform: none;
   }
   .seasonal-diya {
     width: 30px;
