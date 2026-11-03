@@ -85,11 +85,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath }) => {
 
   return (
     <>
-      <footer className="w-full bg-[#06102B] text-blue-100/80 border-t border-blue-900/50 mt-auto">
+      <footer className="public-site-footer mt-auto w-full border-t">
         {/* Slogan Banner */}
-        <div className="border-b border-blue-900/40 py-6 sm:py-8 px-3 sm:px-6 lg:px-8 text-center">
+        <div className="border-b py-6 px-3 text-center sm:px-6 sm:py-8 lg:px-8">
           <div className="max-w-4xl mx-auto">
-            <h3 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">
+            <h3 className="font-display text-xl font-medium tracking-tight sm:text-2xl lg:text-3xl">
               Creating Moments. Capturing Memories. Delivering Innovation.
             </h3>
           </div>
@@ -101,30 +101,30 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath }) => {
             {/* Brand Column */}
             <div className="space-y-4">
               <BrandLogo
-                theme="dark"
+                theme="light"
                 size="md"
                 onClick={() => onNavigate('/')}
               />
-              <SocialLinks socials={companySettings?.socials} variant="dark" />
+              <SocialLinks socials={companySettings?.socials} variant="light" />
 
               {/* Direct Contact Anchors */}
-              <div className="space-y-3 pt-2 text-xs text-blue-200/80">
+              <div className="public-footer-contact space-y-3 pt-2 text-xs">
                 <a
                   href={getMailtoLink(email)}
-                  className="flex items-center gap-2 text-blue-200/90 hover:text-blue-300 transition-colors group"
+                  className="flex items-center gap-2 transition-colors group"
                 >
-                  <Mail className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <Mail className="h-3.5 w-3.5 shrink-0 text-[#0052FF]" />
                   <span className="break-all">{email}</span>
                 </a>
                 
                 <div className="space-y-1.5 pt-0.5">
                   <div className="flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                    <Phone className="h-3.5 w-3.5 shrink-0 text-[#0052FF]" />
                     <div className="flex items-center gap-1.5">
-                      <span className="text-blue-300/70 text-[11px]">Hotline:</span>
+                      <span className="text-[11px] text-slate-500">Hotline:</span>
                       <a
                         href={getTelLink(primaryPhone)}
-                        className="hover:text-blue-300 transition-colors font-medium font-mono text-white"
+                        className="font-mono font-medium text-slate-900 transition-colors hover:text-[#0052FF]"
                         title={`Call Hotline ${primaryPhone}`}
                       >
                         {primaryPhone}
@@ -133,14 +133,14 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath }) => {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <MessageCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <MessageCircle className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
                     <div className="flex items-center gap-1.5">
-                      <span className="text-blue-300/70 text-[11px]">WhatsApp:</span>
+                      <span className="text-[11px] text-slate-500">WhatsApp:</span>
                       <a
                         href={footerWhatsAppUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="hover:text-emerald-300 transition-colors font-medium font-mono text-emerald-400"
+                        className="font-mono font-medium text-emerald-700 transition-colors hover:text-emerald-800"
                         title="WhatsApp 075 092 8078"
                       >
                         075 092 8078
@@ -149,13 +149,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath }) => {
                   </div>
                 </div>
 
-                <div className="pt-1 space-y-2 border-t border-blue-900/40">
-                  <div className="flex items-start gap-2 text-[11px] text-blue-300/70">
-                    <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
+                <div className="space-y-2 border-t border-slate-200 pt-2">
+                  <div className="flex items-start gap-2 text-[11px] text-slate-600">
+                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#0052FF]" />
                     <span>Colombo: {colomboAddress}</span>
                   </div>
-                  <div className="flex items-start gap-2 text-[11px] text-blue-300/70">
-                    <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2 text-[11px] text-slate-600">
+                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#0052FF]" />
                     <span>Trincomalee: {trincomaleeAddress}</span>
                   </div>
                 </div>
@@ -165,7 +165,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath }) => {
             {/* Link Columns: Company, Divisions, Legal Provisions */}
             {FOOTER_SECTIONS.map((section, idx) => (
               <div key={idx} className="space-y-4">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-blue-200">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
                   {section.title}
                 </h4>
                 <ul className="space-y-2 text-xs">
@@ -181,11 +181,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath }) => {
                             handleLegalClick(e, link.label);
                           }
                         }}
-                        className="text-blue-300/70 hover:text-white transition-colors flex items-center justify-between group"
+                        className="flex items-center justify-between text-slate-600 transition-colors group hover:text-[#0052FF]"
                       >
                         <span>{link.label}</span>
                         {link.badge && (
-                          <span className="text-[10px] bg-blue-900/80 text-blue-300 px-1.5 py-0.5 rounded-full border border-blue-500/30">
+                          <span className="rounded-full border border-blue-100 bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700">
                             {link.badge}
                           </span>
                         )}
@@ -198,7 +198,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath }) => {
           </div>
 
           {/* Bottom Bar: Clean Copyright */}
-          <div className="border-t border-blue-900/40 mt-12 sm:mt-16 pt-6 sm:pt-8 flex items-center justify-center text-xs text-blue-300/60">
+          <div className="mt-12 flex items-center justify-center border-t pt-6 text-center text-xs text-slate-500 sm:mt-16 sm:pt-8">
             <span>
               © 2026 Mahdev Private Limited. All rights reserved.
             </span>

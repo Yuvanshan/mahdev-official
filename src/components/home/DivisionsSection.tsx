@@ -4,6 +4,7 @@ import { SectionContainer } from '../ui/SectionContainer';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { getDivisionCardItems } from '../../utils/divisionPresentation';
 import { DivisionCard } from '../divisions/DivisionCard';
+import { DIVISION_LIST } from '../../config/divisions';
 
 interface DivisionsSectionProps {
   onNavigate: (route: string) => void;
@@ -11,7 +12,24 @@ interface DivisionsSectionProps {
 
 export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }) => {
   const { divisions, homepageConfig } = useFirestoreDataContext();
-  const items = useMemo(() => getDivisionCardItems(divisions), [divisions]);
+  const items = useMemo(() => {
+    const source = divisions.length > 0
+      ? divisions
+      : DIVISION_LIST.map((division, order) => ({
+          id: division.id,
+          name: division.name,
+          slug: division.id,
+          description: division.description,
+          shortName: division.shortName,
+          route: division.route,
+          imageUrl: division.imageUrl,
+          order,
+          isPublished: true,
+          createdAt: '',
+          updatedAt: '',
+        }));
+    return getDivisionCardItems(source);
+  }, [divisions]);
   const section = homepageConfig?.divisionsSection;
   const railRef = useRef<HTMLDivElement>(null);
   const [isPaused, setIsPaused] = useState(false);

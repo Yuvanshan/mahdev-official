@@ -377,7 +377,7 @@ export const AdminGenericView: React.FC<AdminGenericViewProps> = ({
             </div>
           </div>
           <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 text-blue-900 font-mono text-xs">
-            sitemap.xml is generated from published CMS pages, active divisions, and published portfolio projects.
+            sitemap.xml includes public pages and published service, product, gallery, project, division, and career URLs, with their available image URLs.
           </div>
         </div>
       </div>

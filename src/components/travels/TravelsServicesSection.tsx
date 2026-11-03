@@ -108,7 +108,7 @@ export const TravelsServicesSection: React.FC = () => {
       {/* Grid of Services */}
       {filteredServices.length === 0 && <DivisionFilterEmptyState label="services" />}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Cards show image, title, starting price and View; full details open in a modal. */}
+        {/* Cards show the image and title; full details open in a modal. */}
         {filteredServices.map((svc) => (
           <ServiceTile
             key={svc.record.id || svc.title}
@@ -117,7 +117,6 @@ export const TravelsServicesSection: React.FC = () => {
             images={toServiceDetails(svc.record).images}
             onView={() => setSelectedService(svc.record)}
             href={svc.record ? servicePagePath(svc.record) : undefined}
-            price={getServiceStartingPrice(svc.record)}
           />
         ))}
       </div>

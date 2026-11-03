@@ -91,7 +91,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
               id={`nav-tab-${item.id}`}
               onClick={item.onClick}
               className={`relative flex-1 min-w-0 flex flex-col items-center justify-center py-1.5 px-0.5 rounded-full transition-all duration-200 cursor-pointer select-none touch-manipulation active:scale-95 ${
-                active ? 'text-white font-semibold' : 'text-slate-400 hover:text-slate-200'
+                active ? 'font-semibold text-[#0052FF]' : 'text-slate-500 hover:text-slate-900'
               }`}
               aria-label={item.label}
               aria-current={active ? 'page' : undefined}
@@ -99,7 +99,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
               {active && (
                 <motion.div
                   layoutId="bottomNavActivePill"
-                  className="absolute inset-0 rounded-full bg-gradient-to-r from-[#0052FF] via-[#0066FF] to-[#00D2FF] shadow-md shadow-[#0052FF]/30"
+                  className="absolute inset-0 rounded-full bg-blue-50"
                   transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                 />
               )}
@@ -107,7 +107,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
               <div className="relative z-10 flex items-center justify-center">
                 <Icon
                   className={`w-4 h-4 transition-transform duration-200 ${
-                    active ? 'scale-110 text-white' : 'text-slate-400 group-hover:text-slate-200'
+                    active ? 'scale-110 text-[#0052FF]' : 'text-slate-500 group-hover:text-slate-900'
                   }`}
                 />
               </div>

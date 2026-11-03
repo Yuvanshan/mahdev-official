@@ -101,12 +101,12 @@ const BrowseCard: React.FC<{
   // follow it; a plain click opens the details pop-up instead.
   const record = item.data as unknown as Record<string, unknown>;
   const href = item.type === 'service'
-    ? servicePagePath(record)
+    ? servicePagePath(record) || `/services/${encodeURIComponent(item.id)}`
     : item.type === 'product'
       ? productSeo(record, item.data.id).path
       : gallerySeo(record, item.data.id).path;
   const openDetails = inAppLinkClick(() => onSelect(item));
-  // Services: image, title and View only; full details open in the modal below.
+  // Services: image, title and a single action; full details open in the modal below.
   if (item.type === 'service') {
     return (
       <ServiceTile
@@ -116,7 +116,6 @@ const BrowseCard: React.FC<{
         href={href}
         onView={() => onSelect(item)}
         imageLoading={imageLoading}
-        price={getServiceStartingPrice(item.data as unknown as Record<string, any>)}
       />
     );
   }
@@ -386,7 +385,8 @@ export const ExploreAllView: React.FC<{
 
   const handleSelect = (item: BrowseItem) => {
     if (item.type === 'service') {
-      analyticsService.trackEvent('service_view', servicePagePath(item.data as unknown as Record<string, unknown>), {
+      const servicePath = `/services/${encodeURIComponent(String(item.data.slug || item.id))}`;
+      analyticsService.trackEvent('service_view', servicePath, {
         serviceId: item.id,
         serviceName: item.title,
         category: item.category,

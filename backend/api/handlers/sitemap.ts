@@ -6,6 +6,7 @@ import {
   type TursoDocument,
 } from '../../db/tursoDatabase.js';
 import { CANONICAL_SITE_ORIGIN } from '../../../src/config/site.js';
+import { DIVISIONS } from '../../../src/config/divisions.js';
 import { canonicalizeDivisionRoute } from '../../../src/config/divisionRoutes.js';
 
 const STATIC_PUBLIC_PATHS = [
@@ -93,8 +94,34 @@ function isValidDate(value: unknown): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
 }
 
-const MAX_IMAGES_PER_URL = 10;
+const MAX_IMAGES_PER_URL = 1000;
 const VIDEO_FILE = /\.(mp4|webm|mov|m4v|ogv)(\?|#|$)/i;
+const IMAGE_FIELDS = new Set([
+  'bgImage',
+  'coverImage',
+  'coverImageUrl',
+  'decorationShowcase',
+  'defaultImageUrl',
+  'fallbackImageUrl',
+  'gallery',
+  'galleryImages',
+  'hero',
+  'heroImage',
+  'heroImageUrl',
+  'image',
+  'imageUrl',
+  'images',
+  'logoUrl',
+  'mediaUrl',
+  'openGraphImage',
+  'ogImage',
+  'poster',
+  'posterUrl',
+  'thumbnail',
+  'thumbnailUrl',
+  'url',
+  'videos',
+]);
 
 /**
  * Photo URLs of a record (image sitemap), absolute and without videos or inline
@@ -102,19 +129,66 @@ const VIDEO_FILE = /\.(mp4|webm|mov|m4v|ogv)(\?|#|$)/i;
  */
 function recordImages(data: Record<string, unknown>, origin: string): string[] {
   const urls = new Set<string>();
-  for (const field of ['imageUrl', 'coverImage', 'images', 'mediaUrl', 'url', 'thumbnailUrl']) {
-    const value = data[field];
-    for (const item of Array.isArray(value) ? value : [value]) {
-      if (typeof item !== 'string' || !item.trim() || VIDEO_FILE.test(item)) continue;
+  const isVideoRecord = (record: Record<string, unknown>) =>
+    [record.mediaType, record.type].some(
+      (type) => typeof type === 'string' && type.toLowerCase() === 'video'
+    );
+  const addImage = (value: unknown): void => {
+    if (typeof value === 'string') {
+      if (!value.trim() || VIDEO_FILE.test(value)) return;
       try {
-        const url = new URL(item.trim(), origin);
+        const url = new URL(value.trim(), origin);
         if (url.protocol === 'https:' || url.protocol === 'http:') urls.add(url.href);
       } catch {
         // Not a usable URL; skip it.
       }
+      return;
     }
+
+    if (Array.isArray(value)) {
+      value.forEach((item) => addImage(item));
+      return;
+    }
+
+    if (!value || typeof value !== 'object') return;
+    const record = value as Record<string, unknown>;
+    const isVideo = isVideoRecord(record);
+    for (const [field, child] of Object.entries(record)) {
+      if (!IMAGE_FIELDS.has(field)) continue;
+      if (isVideo && ['gallery', 'images', 'mediaUrl', 'url'].includes(field)) continue;
+      addImage(child);
+    }
+  };
+
+  const isVideo = isVideoRecord(data);
+  for (const field of IMAGE_FIELDS) {
+    if (isVideo && ['gallery', 'images', 'mediaUrl', 'url'].includes(field)) continue;
+    addImage(data[field]);
   }
+  const seo = data.seo;
+  if (seo && typeof seo === 'object' && !Array.isArray(seo)) {
+    const seoData = seo as Record<string, unknown>;
+    addImage(seoData.ogImage);
+    addImage(seoData.imageUrl);
+  }
+
   return [...urls].slice(0, MAX_IMAGES_PER_URL);
+}
+
+function mergeEntries(existing: string | undefined, incoming: string): string {
+  if (!existing) return incoming;
+  const location = incoming.match(/<loc>(.*?)<\/loc>/)?.[1] || '';
+  const lastmodValues = [existing, incoming]
+    .map((item) => item.match(/<lastmod>(.*?)<\/lastmod>/)?.[1] || '')
+    .filter(Boolean)
+    .sort();
+  const imageTags = new Set(
+    [existing, incoming].flatMap((item) =>
+      [...item.matchAll(/<image:image><image:loc>.*?<\/image:loc><\/image:image>/g)]
+        .map(([tag]) => tag)
+    )
+  );
+  return `  <url><loc>${location}</loc>${lastmodValues.length ? `<lastmod>${lastmodValues.at(-1)}</lastmod>` : ''}${[...imageTags].join('')}</url>`;
 }
 
 function entry(
@@ -133,10 +207,11 @@ function recordsToEntries(
   pathForDocument: (document: TursoDocument) => string | null,
   origin: string,
   withImages = false,
+  includeReserved = false,
 ): Array<[string, string]> {
   return documents.flatMap((document) => {
     const path = pathForDocument(document);
-    if (!path || RESERVED_PATHS.has(path) || !isPublicPath(path)) return [];
+    if (!path || (!includeReserved && RESERVED_PATHS.has(path)) || !isPublicPath(path)) return [];
     return [[
       path,
       entry(
@@ -152,12 +227,16 @@ function recordsToEntries(
 export function buildSitemapXml(
   content: {
     pages: TursoDocument[];
+    careerOpenings?: TursoDocument[];
     divisions: TursoDocument[];
     services: TursoDocument[];
     portfolio: TursoDocument[];
     gallery?: TursoDocument[];
     mediaAssets?: TursoDocument[];
     products?: TursoDocument[];
+    homepage?: TursoDocument | null;
+    siteSettings?: TursoDocument | null;
+    companySettings?: TursoDocument | null;
     seoConfig?: TursoDocument | null;
   },
   origin = CANONICAL_SITE_ORIGIN,
@@ -196,6 +275,20 @@ export function buildSitemapXml(
         })
       : []
   );
+  const sharedImages = [
+    content.homepage,
+    content.siteSettings,
+    content.companySettings,
+  ].flatMap((document) => document ? recordImages(document.data, origin) : []);
+  const defaultDivisionImages = new Map<string, string[]>(
+    Object.values(DIVISIONS).flatMap((division) =>
+      typeof division.route === 'string'
+        ? [[division.route, recordImages({
+            imageUrl: division.imageUrl || division.image,
+          }, origin)]]
+        : []
+    )
+  );
   const entries = new Map<string, string>(
     STATIC_PUBLIC_PATHS
       .filter((path) =>
@@ -203,7 +296,13 @@ export function buildSitemapXml(
           !inactiveDivisionPaths.has(path) &&
           isPublicPath(path)
       )
-      .map((path) => [path, entry(path, origin)])
+      .map((path) => [
+        path,
+        entry(path, origin, null, [
+          ...(path === '/' ? sharedImages : []),
+          ...(defaultDivisionImages.get(path) || []),
+        ]),
+      ])
   );
   const dynamicEntries: Array<[string, string]> = [
     ...recordsToEntries(
@@ -213,6 +312,15 @@ export function buildSitemapXml(
         if (!slug) return null;
         return data.category === 'insights' ? `/insights/${slug}` : `/${slug}`;
       },
+      origin,
+      true,
+      true,
+    ),
+    ...recordsToEntries(
+      (content.careerOpenings || []).filter(({ data }) =>
+        data.status === 'published' && data.isDeleted !== true
+      ),
+      ({ id }) => `/careers?role=${encodeURIComponent(id)}`,
       origin,
     ),
     ...recordsToEntries(
@@ -234,6 +342,8 @@ export function buildSitemapXml(
         return slug ? canonicalizeDivisionRoute(`/${slug}`) : null;
       },
       origin,
+      true,
+      true,
     ),
     ...recordsToEntries(
       content.services.filter(({ data }) =>
@@ -290,7 +400,9 @@ export function buildSitemapXml(
   ];
 
   for (const [path, item] of dynamicEntries) {
-    if (!excludedPaths.has(path.split(/[?#]/, 1)[0])) entries.set(path, item);
+    if (!excludedPaths.has(path.split(/[?#]/, 1)[0])) {
+      entries.set(path, mergeEntries(entries.get(path), item));
+    }
   }
 
   return [
@@ -306,12 +418,16 @@ let initialization: Promise<void> | undefined;
 
 async function loadPublicSitemapData(): Promise<{
   pages: TursoDocument[];
+  careerOpenings: TursoDocument[];
   divisions: TursoDocument[];
   services: TursoDocument[];
   portfolio: TursoDocument[];
   gallery: TursoDocument[];
   mediaAssets: TursoDocument[];
   products: TursoDocument[];
+  homepage: TursoDocument | null;
+  siteSettings: TursoDocument | null;
+  companySettings: TursoDocument | null;
   seoConfig: TursoDocument | null;
 }> {
   initialization ??= initializeTursoDatabase().catch((error: unknown) => {
@@ -319,17 +435,21 @@ async function loadPublicSitemapData(): Promise<{
     throw error;
   });
   await initialization;
-  const [pages, divisions, services, portfolio, gallery, mediaAssets, products, seoConfig] = await Promise.all([
+  const [pages, careerOpenings, divisions, services, portfolio, gallery, mediaAssets, products, homepage, siteSettings, companySettings, seoConfig] = await Promise.all([
     listTursoDocuments('pages', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
+    listTursoDocuments('careerOpenings', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     listTursoDocuments('divisions', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     listTursoDocuments('services', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     listTursoDocuments('portfolio', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     listTursoDocuments('gallery', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     listTursoDocuments('media_assets', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     listTursoDocuments('products', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
+    getTursoDocument('settings', '', 'homepage'),
+    getTursoDocument('settings', '', 'site'),
+    getTursoDocument('settings', '', 'company'),
     getTursoDocument('settings', '', 'seo'),
   ]);
-  return { pages, divisions, services, portfolio, gallery, mediaAssets, products, seoConfig };
+  return { pages, careerOpenings, divisions, services, portfolio, gallery, mediaAssets, products, homepage, siteSettings, companySettings, seoConfig };
 }
 
 export default async function sitemapHandler(

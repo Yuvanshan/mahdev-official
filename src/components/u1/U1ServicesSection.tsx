@@ -177,10 +177,10 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
         </div>
       </div>
 
-      {/* Services Grid (Image-First Cards) */}
+      {/* Services Grid */}
       {filteredServices.length === 0 && <DivisionFilterEmptyState label="services" />}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-        {/* Cards show image, title, starting price and View; details and booking are in the modal. */}
+        {/* Cards show the image and title; details and booking open in the modal. */}
         {filteredServices.map((service) => (
           <ServiceTile
             key={service.id}
@@ -189,7 +189,6 @@ export const U1ServicesSection: React.FC<U1ServicesSectionProps> = ({
             images={(service.gallery?.length ? service.gallery : [service.imageUrl]).filter(Boolean) as string[]}
             onView={() => setActiveModalService(service)}
             href={service.pagePath}
-            price={service.price}
           />
         ))}
       </div>

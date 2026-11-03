@@ -84,7 +84,7 @@ export const COMPANY_INFO: CompanyInformation = {
     facebook: 'https://www.facebook.com/SWSEventsManagement/',
     instagram: 'https://www.instagram.com/sws_event_management/',
     youtube: 'https://www.youtube.com/@swseventmanagement5126',
-    tiktok: 'https://www.tiktok.com/@yuvan.shan5',
+    tiktok: 'https://www.tiktok.com/@sws_event_management',
     whatsapp: 'https://wa.me/94750928078?text=Hello%20Mahdev%20Pvt%20Ltd',
   },
   workingHours: {
@@ -122,7 +122,7 @@ export const SOCIAL_PROFILES: Array<{ label: string; url: string }> = [
   { label: 'Instagram', url: 'https://www.instagram.com/sws_event_management/' },
   { label: 'LinkedIn', url: 'https://www.linkedin.com/company/mahdev-pvt-ltd/' },
   { label: 'YouTube', url: 'https://www.youtube.com/@swseventmanagement5126' },
-  { label: 'TikTok', url: 'https://www.tiktok.com/@yuvan.shan5' },
+  { label: 'TikTok', url: 'https://www.tiktok.com/@sws_event_management' },
 ];
 
 export const OFFICE_LIST: OfficeLocation[] = [

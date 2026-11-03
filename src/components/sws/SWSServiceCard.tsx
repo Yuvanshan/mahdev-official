@@ -30,7 +30,6 @@ export const SWSServiceCard: React.FC<SWSServiceCardProps> = ({
       images={images.length ? images : [service.imageUrl].filter(Boolean) as string[]}
       onView={() => onViewDetails(service)}
       href={service.pagePath}
-      price={service.price}
     />
   );
 };

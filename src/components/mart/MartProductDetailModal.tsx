@@ -79,9 +79,9 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[200] overflow-y-auto bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
+    <div className="fixed inset-0 z-[200] flex items-start justify-center overflow-y-auto overscroll-contain bg-slate-950/80 p-3 pb-[max(.75rem,env(safe-area-inset-bottom))] backdrop-blur-md sm:items-center sm:p-6 animate-fadeIn">
       <div
-        className="relative w-full max-w-5xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-8 max-h-[92vh] flex flex-col"
+        className="relative my-0 flex max-h-[calc(100dvh-1.5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:my-8 sm:max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header Bar */}
@@ -104,7 +104,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
         </div>
 
         {/* Scrollable Content */}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:p-6 sm:pb-6 space-y-8 text-slate-800">
+        <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:p-6 sm:pb-6 space-y-8 text-slate-800">
           {/* Main 2-Column Product Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left Column: Image Gallery (5 cols) */}

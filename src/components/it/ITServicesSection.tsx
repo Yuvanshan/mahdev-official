@@ -161,7 +161,7 @@ export const ITServicesSection: React.FC<ITServicesSectionProps> = ({
       {/* Grid of 10 Services */}
       {filteredServices.length === 0 && <DivisionFilterEmptyState label="services" />}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Cards show image, title, starting price and View; full details open in the IT modal. */}
+        {/* Cards show the image and title; full details open in the IT modal. */}
         {filteredServices.map((service) => (
           <ServiceTile
             key={service.id}
@@ -170,7 +170,6 @@ export const ITServicesSection: React.FC<ITServicesSectionProps> = ({
             images={service.images || []}
             onView={() => onSelectService(service)}
             href={service.pagePath}
-            price={service.price}
           />
         ))}
       </div>

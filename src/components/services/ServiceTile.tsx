@@ -2,15 +2,12 @@ import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
-import { StartingPriceTag } from '../common/StartingPriceTag';
 
 interface ServiceTileProps {
   title: string;
   images: string[];
   onView: () => void;
   imageLoading?: 'eager' | 'lazy';
-  /** Optional starting price; shown as "Starting From" with the transport tag. */
-  price?: unknown;
   /**
    * The item's own page (e.g. /services/{slug}). When set, the controls are real
    * links search engines can follow; a plain click still opens the details pop-up.
@@ -51,11 +48,10 @@ const ViewControl: React.FC<{
   );
 
 /**
- * Compact service card used everywhere services are listed: image, title,
- * optional starting price and a View button. Images use the same 4:3 frame as gallery images. Full
- * details (description, features, price, booking) open from View.
+ * Compact service card used on all listings. Pricing and other details stay in
+ * the detail view so the grid remains easy to scan.
  */
-export const ServiceTile: React.FC<ServiceTileProps> = ({ title, images, onView, imageLoading = 'lazy', price, href, imageAlt }) => {
+export const ServiceTile: React.FC<ServiceTileProps> = ({ title, images, onView, imageLoading = 'lazy', href, imageAlt }) => {
   const usableImages = images.filter(Boolean);
   const { activeIndex, containerRef } = useAutoSlideImage(usableImages.length);
 
@@ -80,17 +76,14 @@ export const ServiceTile: React.FC<ServiceTileProps> = ({ title, images, onView,
         />
         </div>
       </ViewControl>
-      <div className="flex flex-1 flex-col justify-between gap-4 p-4 sm:p-5">
-        <div className="space-y-2">
-          <h3 className="font-display text-base font-bold leading-snug text-slate-900">{title}</h3>
-          <StartingPriceTag price={price} />
-        </div>
+      <div className="flex flex-1 flex-col justify-between gap-3 p-3.5 sm:p-4">
+        <h3 className="line-clamp-2 min-h-10 font-display text-sm font-bold leading-5 text-slate-900 sm:text-base">{title}</h3>
         <ViewControl
           href={href}
           onView={onView}
-          className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-800 transition hover:border-blue-600 hover:text-blue-700"
+          className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 text-xs font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 sm:text-sm"
         >
-          View
+          View service
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </ViewControl>
       </div>

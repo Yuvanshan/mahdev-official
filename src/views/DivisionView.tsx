@@ -524,7 +524,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
         </ScrollReveal>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-          {/* Cards show only image, title and View; full details open in a modal. */}
+          {/* Cards show the image and title; full details open in a modal. */}
           {division.coreServices.map((service: any, index: number) => (
             <ServiceTile
               key={index}
@@ -533,7 +533,6 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
               images={service.record ? toServiceDetails(service.record).images : []}
               onView={() => setSelectedCoreService(service)}
               href={service.record ? servicePagePath(service.record) : undefined}
-              price={getServiceStartingPrice(service.record)}
             />
           ))}
         </div>

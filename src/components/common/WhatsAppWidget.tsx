@@ -33,7 +33,7 @@ export const WhatsAppWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isNoticeVisible, setIsNoticeVisible] = useState(false);
   const [hasUnreadNotice, setHasUnreadNotice] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(false);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export const WhatsAppWidget: React.FC = () => {
       setIsNoticeVisible(true);
       setHasUnreadNotice(true);
       if (soundEnabled) playNotificationTone();
-    }, 3000);
+    }, 10000);
     return () => window.clearTimeout(timer);
   }, [soundEnabled]);
 

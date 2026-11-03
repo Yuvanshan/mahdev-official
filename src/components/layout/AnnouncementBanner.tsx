@@ -21,11 +21,11 @@ export const AnnouncementBanner: React.FC<AnnouncementBannerProps> = ({ onNaviga
 
   if (promotionBanner) {
     return (
-      <div className="relative z-50 bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-700 px-3 py-2 text-center text-xs font-semibold text-white shadow-sm sm:text-sm">
+      <div className="public-announcement-bar relative z-50 px-3 text-center text-xs font-semibold sm:text-sm">
         <button
           type="button"
           onClick={() => onNavigate?.('/promotion')}
-          className="mx-auto inline-flex max-w-7xl items-center justify-center gap-2 px-4"
+          className="public-announcement-link mx-auto inline-flex max-w-7xl items-center justify-center gap-2 px-4"
           aria-label={promotionTitle}
         >
           {promotionTitle}
@@ -38,7 +38,7 @@ export const AnnouncementBanner: React.FC<AnnouncementBannerProps> = ({ onNaviga
   if (firestoreAnnouncement?.enabled === false || !isFirestoreActive) return null;
 
   return (
-    <div className="relative z-50 bg-gradient-to-r from-slate-950 via-[#0052FF] to-blue-900 px-4 py-2 text-center text-xs font-semibold text-white sm:text-sm">
+    <div className="public-announcement-bar relative z-50 px-4 text-center text-xs font-semibold sm:text-sm">
       <button
         type="button"
         onClick={() => {
@@ -49,7 +49,7 @@ export const AnnouncementBanner: React.FC<AnnouncementBannerProps> = ({ onNaviga
             onNavigate?.(link);
           }
         }}
-        className="mx-auto inline-flex max-w-7xl items-center justify-center gap-2 px-4"
+        className="public-announcement-link mx-auto inline-flex max-w-7xl items-center justify-center gap-2 px-4"
       >
         {firestoreAnnouncement?.text}
         <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" />

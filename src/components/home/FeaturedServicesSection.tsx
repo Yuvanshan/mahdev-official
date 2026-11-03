@@ -134,7 +134,7 @@ const FeaturedServiceCard: React.FC<{
       style={!reducedMotion && !isTouch ? { y: colTransform } : undefined}
       className="h-full"
     >
-      {/* Card shows only image, title and View; full details open in a modal. */}
+      {/* Cards stay concise; full service details open in the modal. */}
       <ServiceTile
         title={service.title || service.name}
         imageAlt={getRecordImageAlt(service, service.title || service.name)}
@@ -142,7 +142,6 @@ const FeaturedServiceCard: React.FC<{
         onView={() => setIsDetailsOpen(true)}
         href={servicePagePath(service)}
         imageLoading={idx < 3 ? 'eager' : 'lazy'}
-        price={getServiceStartingPrice(service)}
       />
       <ServiceDetailsModal
         service={isDetailsOpen ? toServiceDetails(service, divisionBadgeText) : null}
