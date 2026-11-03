@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useReducedMotion } from 'motion/react';
 import { useSeasonalTheme } from '../../context/SeasonalThemeContext';
 import { SeasonalLottie } from './SeasonalLottie';
@@ -9,7 +10,7 @@ const PARTICLES = Array.from({ length: 40 }, (_, index) => ({
   delay: `${(index % 13) * -1.9}s`,
   duration: `${12 + (index % 7) * 2.2}s`,
   drift: `${((index * 19) % 81) - 40}px`,
-  rise: `${30 + (index % 5) * 8}vh`,
+  rise: `${140 + (index % 5) * 28}px`,
   size: `${2 + (index % 3)}px`,
   variant: index % 4,
 }));
@@ -21,6 +22,7 @@ export const SeasonalOverlay: React.FC = () => {
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches);
   const activeTheme = theme.enabled ? theme.activeTheme : 'default';
   const enabledForDevice = isMobile ? theme.mobile : theme.desktop;
+  const renderOverlay = (content: React.ReactNode) => createPortal(content, document.body);
 
   useEffect(() => {
     const updateVisibility = () => setIsVisible(document.visibilityState === 'visible');
@@ -34,11 +36,12 @@ export const SeasonalOverlay: React.FC = () => {
     };
   }, []);
 
-  if (activeTheme === 'default' || !enabledForDevice || reducedMotion) return null;
+  if (activeTheme === 'default' || !enabledForDevice) return null;
+  if (reducedMotion && activeTheme !== 'diwali') return null;
 
   const className = `seasonal-overlay seasonal-${activeTheme}`;
   if (activeTheme === 'christmas') {
-    return (
+    return renderOverlay(
       <div className={className} aria-hidden="true">
         <SeasonalLottie
           path="/animations/seasonal/snowfall.json"
@@ -50,7 +53,7 @@ export const SeasonalOverlay: React.FC = () => {
     );
   }
   if (activeTheme === 'valentines') {
-    return (
+    return renderOverlay(
       <div className={className} aria-hidden="true">
         <SeasonalLottie
           path="/animations/seasonal/flying-hearts.json"
@@ -63,7 +66,7 @@ export const SeasonalOverlay: React.FC = () => {
     );
   }
   if (activeTheme === 'newYear') {
-    return (
+    return renderOverlay(
       <div className={className} aria-hidden="true">
         <SeasonalLottie
           path="/animations/seasonal/fireworks.json"
@@ -76,11 +79,19 @@ export const SeasonalOverlay: React.FC = () => {
   }
 
   const baseParticleCount = theme.effectIntensity === 'low' ? 10 : theme.effectIntensity === 'high' ? 32 : 20;
-  const particleCount = Math.round(baseParticleCount * theme.sparklesAmount / 100);
-  const diyaCount = theme.effectIntensity === 'low' ? 3 : theme.effectIntensity === 'high' ? 7 : 5;
+  const particleCount = reducedMotion
+    ? 0
+    : Math.round(
+        Math.min(baseParticleCount, isMobile ? 8 : baseParticleCount) *
+        theme.sparklesAmount / 100
+      );
+  const diyaCount = Math.min(
+    theme.effectIntensity === 'low' ? 3 : theme.effectIntensity === 'high' ? 7 : 5,
+    isMobile ? 3 : 7
+  );
 
-  return (
-    <div className={`${className} ${isVisible ? '' : 'seasonal-paused'}`} aria-hidden="true">
+  return renderOverlay(
+    <div className={`${className} ${isVisible ? '' : 'seasonal-paused'} ${reducedMotion ? 'seasonal-reduced-motion' : ''}`} aria-hidden="true">
       <div className="seasonal-diya-row">
         {Array.from({ length: diyaCount }, (_, lamp) => (
           <svg key={lamp} viewBox="0 0 64 48" className={`seasonal-diya seasonal-diya-${lamp % 3}`}>
