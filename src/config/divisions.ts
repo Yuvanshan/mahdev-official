@@ -1,5 +1,6 @@
 import { DivisionConfig, DivisionId } from '../types';
 import { COMPANY_INFO } from './company';
+import { CANONICAL_SITE_ORIGIN } from './site';
 
 export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
   sws: {
@@ -12,7 +13,7 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
     badge: 'Primary Flagship Division',
     isPrimary: true,
     route: '/sws',
-    domainUrl: 'https://mahdev.lk/sws',
+    domainUrl: `${CANONICAL_SITE_ORIGIN}/sws`,
     accentColor: '#0052FF',
     gradient: 'from-[#0052FF] to-[#0A1E5C]',
     image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=85',
@@ -64,7 +65,7 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
       'High-end wedding photography, candid photojournalism, 8K cinema videography, studio fashion portraits, pre-shoots, and aerial drone coverage with fine-art post-production mastering.',
     badge: 'Photography & Cinema',
     route: '/u1',
-    domainUrl: 'https://mahdev.lk/u1',
+    domainUrl: `${CANONICAL_SITE_ORIGIN}/u1`,
     accentColor: '#0066FF',
     gradient: 'from-[#0066FF] to-[#061033]',
     image: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=1200&q=85',
@@ -116,7 +117,7 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
       'Enterprise software engineering, modern cloud architecture, scalable web and mobile ecosystems, intelligent automation, and cybersecurity assurance.',
     badge: 'IT Solutions & Tech',
     route: '/it',
-    domainUrl: 'https://mahdev.lk/it',
+    domainUrl: `${CANONICAL_SITE_ORIGIN}/it`,
     accentColor: '#0052FF',
     gradient: 'from-[#0052FF] to-[#0A1E5C]',
     image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1200&q=85',
@@ -168,7 +169,7 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
       'Curated e-commerce storefront delivering bespoke event & home decor, ambient stage lighting, creator electronics, and smart tech accessories.',
     badge: 'Decor & Smart Tech',
     route: '/mart',
-    domainUrl: 'https://mahdev.lk/mart',
+    domainUrl: `${CANONICAL_SITE_ORIGIN}/mart`,
     accentColor: '#0052FF',
     gradient: 'from-[#0052FF] to-[#0A1E5C]',
     image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1200&q=85',
@@ -220,7 +221,7 @@ export const DIVISIONS: Record<DivisionId, DivisionConfig> = {
       'Bespoke travel curation, VIP executive retreats, luxury island expeditions, chauffeur services, and personalized global holiday itineraries.',
     badge: 'Travel & Expeditions',
     route: '/travels',
-    domainUrl: 'https://mahdev.lk/travels',
+    domainUrl: `${CANONICAL_SITE_ORIGIN}/travels`,
     accentColor: '#0052FF',
     gradient: 'from-[#0052FF] to-[#061033]',
     image: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1200&q=85',

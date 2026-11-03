@@ -145,7 +145,9 @@ Admin portal access uses `ADMIN_LOGIN_EMAIL`, `ADMIN_LOGIN_PASSWORD_HASH`, and `
 
 ## 5. Search indexing and analytics
 
-The public sitemap is generated at request time from published CMS pages, active divisions, public services, and published portfolio projects, in addition to the main public routes. It is served from `https://mahdev-official.vercel.app/sitemap.xml` and declared in `robots.txt`. Public marketing pages are indexable; account, admin, and transaction routes are excluded. Individual service pages use service structured data, and division/service listing links use crawlable URLs.
+The public sitemap is generated at request time from published CMS pages, active divisions, public services, and published portfolio projects, in addition to the main public routes. It is served from `https://mahdev-official.vercel.app/sitemap.xml` and declared in `robots.txt`. The main sitemap includes the division path URLs (`/sws`, `/u1`, `/it`, `/travels`, and `/mart`) on the same host. Add the main `https://mahdev-official.vercel.app/` property to Search Console and submit this sitemap once to discover those division pages under the same property. Public marketing pages are indexable; account, admin, and transaction routes are excluded. Individual service pages use service structured data, and division/service listing links use crawlable URLs.
+
+Division pages use canonical URLs on the main host, such as `https://mahdev-official.vercel.app/sws` and `https://mahdev-official.vercel.app/u1`. If a division is later moved to a different hostname, that hostname must have its own crawlable page and sitemap and be added to Search Console separately; the main site's sitemap cannot submit another host's URLs under its own property.
 
 Search indexing is enabled only when Vercel sets `VERCEL_ENV=production`; Vercel preview deployments and local builds remain `noindex`. The `VITE_SITE_URL` environment variable (read by `src/config/site.ts`) is the single source of truth for the public domain: page canonical URLs, sitemap URLs, `robots.txt` and `llms.txt` all follow it. `VITE_APP_URL` is not used to override canonical URLs.
 

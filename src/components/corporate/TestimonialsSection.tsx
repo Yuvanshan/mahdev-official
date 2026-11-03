@@ -207,12 +207,12 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
       ) : (
         <div
           ref={testimonialsTrackRef}
-          className="flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-4"
+          className="no-visible-scrollbar flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth"
         >
           {filteredReviews.map((review) => (
             <div
               key={review.id}
-              className="w-[85%] shrink-0 snap-start p-6 sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)] sm:p-7 rounded-2xl bg-slate-50/80 border border-slate-200/90 hover:border-blue-400 hover:bg-white hover:shadow-lg transition-all duration-300 flex flex-col justify-between group"
+              className="w-[80%] shrink-0 snap-start rounded-2xl border border-slate-200/90 bg-slate-50/80 p-5 transition-all duration-300 hover:border-blue-400 hover:bg-white hover:shadow-lg sm:w-[calc(50%-0.75rem)] sm:p-6 lg:w-[calc(33.333%-1rem)] flex flex-col justify-between group"
             >
               <div>
                 {/* Header: Stars and Division Tag */}
@@ -231,7 +231,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
                 </div>
 
                 {/* Review Quote */}
-                <div className="relative mb-6">
+                <div className="relative mb-4">
                   <Quote className="w-6 h-6 text-slate-200 mb-2 -scale-x-100" />
                   <p className="text-xs sm:text-sm text-slate-700 leading-relaxed italic">
                     "{review.text}"

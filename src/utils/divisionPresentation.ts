@@ -30,17 +30,12 @@ const CANONICAL_IDS: Record<string, string> = {
 };
 
 const CORE_DIVISION_ORDER: Record<string, number> = { sws: 1, u1: 2, it: 3, mart: 4, travels: 5 };
-const DASHBOARD_DIVISION_ORDER: Record<string, number> = { sws: 1, u1: 2, it: 3, travels: 4, mart: 5 };
 const CATEGORY_LABELS: Record<string, string> = {
   sws: 'Decoration',
   u1: 'Photography',
   it: 'IT & Solutions',
   travels: 'Travels',
   mart: 'Online Mart',
-};
-
-export const DEFAULT_DIVISION_EXTERNAL_URLS: Record<string, string> = {
-  sws: 'https://sws.mahdev-official.vercel.app',
 };
 
 const DEFAULT_DIVISION_LOGOS: Record<string, string> = {
@@ -108,7 +103,7 @@ export function getDivisionCardItems(divisions: FirestoreDivision[]): DivisionCa
         name: division.name,
         categoryLabel: CATEGORY_LABELS[id] || division.shortName || division.name,
         route: division.route || `/${division.slug || id}`,
-        externalUrl: division.externalUrl || DEFAULT_DIVISION_EXTERNAL_URLS[id],
+        externalUrl: division.externalUrl,
         description: shortDescription(
           division.description || division.shortDescription || hero?.subtitle || ''
         ),
@@ -122,16 +117,10 @@ export function getDivisionCardItems(divisions: FirestoreDivision[]): DivisionCa
           division.comingSoon ||
           division.status === 'coming_soon'
         ),
-        // Keep the dashboard's division order consistent across the sidebar and cards.
+        // Keep core divisions in a consistent order across the homepage and divisions page.
         order: CORE_DIVISION_ORDER[id] ?? division.order ?? Number.MAX_SAFE_INTEGER,
       });
     });
 
   return Array.from(unique.values()).sort((a, b) => a.order - b.order);
-}
-
-export function getDashboardDivisionCardItems(divisions: FirestoreDivision[]): DivisionCardItem[] {
-  return getDivisionCardItems(divisions).sort(
-    (a, b) => (DASHBOARD_DIVISION_ORDER[a.id] ?? a.order) - (DASHBOARD_DIVISION_ORDER[b.id] ?? b.order)
-  );
 }

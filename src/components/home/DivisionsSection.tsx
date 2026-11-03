@@ -1,71 +1,28 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react';
-import { motion, useReducedMotion, useScroll, useSpring, useTransform } from 'motion/react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
-import { getDashboardDivisionCardItems, getDivisionCardItems } from '../../utils/divisionPresentation';
+import { getDivisionCardItems } from '../../utils/divisionPresentation';
 import { DivisionCard } from '../divisions/DivisionCard';
-import { getDefaultDivisions } from '../../services/firestore/divisions';
 
 interface DivisionsSectionProps {
   onNavigate: (route: string) => void;
-  layout?: 'rail' | 'grid';
 }
 
-const DivisionRailCard: React.FC<{
-  division: ReturnType<typeof getDashboardDivisionCardItems>[number];
-  onNavigate: (route: string) => void;
-}> = ({ division, onNavigate }) => {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const reducedMotion = useReducedMotion();
-  const { scrollYProgress } = useScroll({
-    target: cardRef,
-    offset: ['start end', 'end start'],
-  });
-  const smoothProgress = useSpring(scrollYProgress, { stiffness: 110, damping: 24, mass: 0.18 });
-  const y = useTransform(smoothProgress, [0, 1], [10, -10]);
-
-  return (
-    <motion.div
-      ref={cardRef}
-      style={{ y: reducedMotion ? 0 : y }}
-      className="divisions-marquee-card divisions-marquee-dashboard-card"
-    >
-      <DivisionCard division={division} onNavigate={onNavigate} variant="dashboard" />
-    </motion.div>
-  );
-};
-
-export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate, layout = 'rail' }) => {
+export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate }) => {
   const { divisions, homepageConfig } = useFirestoreDataContext();
-  const items = useMemo(
-    () => {
-      const sourceDivisions = layout === 'grid' && divisions.length === 0
-        ? getDefaultDivisions()
-        : divisions;
-      return layout === 'grid'
-        ? getDashboardDivisionCardItems(sourceDivisions)
-        : getDivisionCardItems(sourceDivisions);
-    },
-    [divisions, layout]
-  );
+  const items = useMemo(() => getDivisionCardItems(divisions), [divisions]);
   const section = homepageConfig?.divisionsSection;
   const railRef = useRef<HTMLDivElement>(null);
   const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
-    if (
-      layout === 'grid' ||
-      isPaused ||
-      items.length < 2 ||
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    ) return;
+    if (isPaused || items.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     const timer = window.setInterval(() => {
       const rail = railRef.current;
-      if (!rail) return;
-      const card = rail.querySelector<HTMLElement>('.divisions-marquee-card');
-      if (!card) return;
+      const card = rail?.querySelector<HTMLElement>('.divisions-marquee-card');
+      if (!rail || !card) return;
 
       const step = card.getBoundingClientRect().width + 16;
       const atEnd = rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - step / 2;
@@ -73,7 +30,7 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate, 
     }, 4200);
 
     return () => window.clearInterval(timer);
-  }, [isPaused, items.length, layout]);
+  }, [isPaused, items.length]);
 
   const scrollRail = (direction: -1 | 1) => {
     const rail = railRef.current;
@@ -85,18 +42,13 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate, 
   if (section?.enabled === false || items.length === 0) return null;
 
   return (
-    <SectionContainer
-      id="divisions"
-      background={layout === 'grid' ? 'none' : 'white'}
-      paddingY={layout === 'grid' ? 'none' : 'sm'}
-      maxWidth={layout === 'grid' ? 'full' : undefined}
-      innerClassName={layout === 'grid' ? 'px-0' : ''}
-    >
-      <div className={`mb-4 flex items-end justify-between gap-4 ${layout === 'grid' ? 'sm:mb-5' : 'sm:mb-10'}`}>
+    <SectionContainer id="divisions" background="white" paddingY="sm">
+      <div className="mb-4 flex items-end justify-between gap-4 sm:mb-10">
         <div className="max-w-2xl">
           <h2 className="font-display text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
-            {layout === 'grid' ? 'Explore Our Divisions' : section?.title}
+            {section?.title || 'Explore Our Divisions'}
           </h2>
+          {section?.subtitle && <p className="mt-2 text-sm leading-relaxed text-slate-600">{section.subtitle}</p>}
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -117,47 +69,31 @@ export const DivisionsSection: React.FC<DivisionsSectionProps> = ({ onNavigate, 
         </div>
       </div>
 
-      {layout === 'grid' ? (
-        <div
-          ref={railRef}
-          className="divisions-marquee divisions-marquee-dashboard"
-          aria-label="Mahdev divisions"
-          onPointerEnter={() => setIsPaused(true)}
-          onPointerLeave={() => setIsPaused(false)}
-        >
-          {items.slice(0, 5).map((division) => (
-            <DivisionRailCard key={division.id} division={division} onNavigate={onNavigate} />
-          ))}
-        </div>
-      ) : (
-        <>
-          <div
-            ref={railRef}
-            className="divisions-marquee"
-            aria-label="Mahdev divisions"
-            onPointerEnter={() => setIsPaused(true)}
-            onPointerLeave={() => setIsPaused(false)}
-            onFocus={() => setIsPaused(true)}
-            onBlur={(event) => {
-              const nextTarget = event.relatedTarget;
-              if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) setIsPaused(false);
-            }}
-          >
-            {items.slice(0, 5).map((division) => (
-              <div key={division.id} className="divisions-marquee-card">
-                <DivisionCard division={division} onNavigate={onNavigate} />
-              </div>
-            ))}
+      <div
+        ref={railRef}
+        className="divisions-marquee divisions-home-rail"
+        aria-label="Mahdev divisions"
+        onPointerEnter={() => setIsPaused(true)}
+        onPointerLeave={() => setIsPaused(false)}
+        onFocus={() => setIsPaused(true)}
+        onBlur={(event) => {
+          const nextTarget = event.relatedTarget;
+          if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) setIsPaused(false);
+        }}
+      >
+        {items.map((division) => (
+          <div key={division.id} className="divisions-marquee-card divisions-home-rail-card">
+            <DivisionCard division={division} onNavigate={onNavigate} variant="featured" />
           </div>
-          <button
-            type="button"
-            onClick={() => onNavigate('/divisions')}
-            className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-blue-700 sm:hidden"
-          >
-            All businesses <ArrowUpRight className="h-4 w-4" />
-          </button>
-        </>
-      )}
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={() => onNavigate('/divisions')}
+        className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-blue-700 sm:hidden"
+      >
+        All businesses <ArrowUpRight className="h-4 w-4" />
+      </button>
     </SectionContainer>
   );
 };

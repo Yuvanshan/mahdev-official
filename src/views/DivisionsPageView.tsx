@@ -4,6 +4,7 @@ import { SEOHead } from '../components/layout/SEOHead';
 import { DivisionCard } from '../components/divisions/DivisionCard';
 import { getDivisionCardItems } from '../utils/divisionPresentation';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 
 interface DivisionsPageViewProps {
   onNavigate: (route: string) => void;
@@ -24,7 +25,7 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
       <SEOHead
         title={title ? `${title} | ${companySettings?.name || ''}` : companySettings?.name || ''}
         description={`Explore the business divisions of ${companySettings?.name || 'Mahdev Group'}.`}
-        canonicalUrl="https://mahdev.lk/divisions"
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/divisions`}
       />
       {title && (
         <SectionContainer background="subtle" paddingY="sm">

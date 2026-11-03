@@ -7,7 +7,7 @@ import { resolveMediaUrl } from '../../services/firestoreMediaService';
 interface DivisionCardProps {
   division: DivisionCardItem;
   onNavigate: (route: string) => void;
-  variant?: 'standard' | 'dashboard';
+  variant?: 'standard' | 'featured';
 }
 
 const categoryIcons: Record<string, React.ElementType> = {
@@ -22,7 +22,7 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate
   const [mediaUrl, setMediaUrl] = useState('');
   const [posterUrl, setPosterUrl] = useState('');
   const destination = division.externalUrl || division.route;
-  const fallbackImage = variant === 'dashboard'
+  const fallbackImage = variant === 'featured'
     ? DIVISIONS[division.id as keyof typeof DIVISIONS]?.imageUrl || ''
     : '';
   const displayMediaUrl = mediaUrl || fallbackImage;
@@ -93,13 +93,13 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate
         }
         onNavigate(division.route);
       }}
-      className={`group relative block h-full overflow-hidden rounded-2xl border text-left transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg ${
-        variant === 'dashboard'
+      className={`group relative block h-full overflow-hidden rounded-2xl border text-left transition duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-lg ${
+        variant === 'featured'
           ? 'border-slate-200 bg-white shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2'
           : 'border-slate-200 bg-slate-950'
       }`}
     >
-      <div className={`relative overflow-hidden bg-slate-100 ${variant === 'dashboard' ? 'aspect-[16/9]' : 'aspect-[16/10]'}`}>
+      <div className={`relative overflow-hidden bg-slate-100 ${variant === 'featured' ? 'aspect-[16/9]' : 'aspect-[16/10]'}`}>
         {mediaUrl && division.mediaType === 'video' ? (
           <video
             src={mediaUrl}
@@ -124,10 +124,10 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate
           />
         ) : null}
         {!displayMediaUrl && <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-blue-50" />}
-        {variant === 'dashboard' ? (
+        {variant === 'featured' ? (
           <>
-            <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-amber-200/90 bg-white/95 px-3 py-1 text-[10px] font-bold text-[#6f1d1b] shadow-sm">
-              <CategoryIcon className="h-3 w-3 text-[#bb9457]" aria-hidden="true" />
+            <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-white/95 px-3 py-1 text-[10px] font-bold text-blue-800 shadow-sm">
+              <CategoryIcon className="h-3 w-3 text-blue-600" aria-hidden="true" />
               {division.categoryLabel}
             </span>
             {division.logoUrl && (
@@ -169,11 +169,11 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate
           </span>
         )}
       </div>
-      {variant === 'dashboard' && (
-        <div className="flex h-[132px] flex-col border-t border-amber-100 bg-white p-4">
+      {variant === 'featured' && (
+        <div className="flex h-[132px] flex-col border-t border-slate-100 bg-white p-4">
           <h3 className="font-display text-base font-bold leading-snug text-slate-950">{division.name}</h3>
           <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-600">{division.description}</p>
-          <span className="mt-auto inline-flex items-center gap-1 pt-3 text-xs font-bold text-blue-800">
+          <span className="mt-auto inline-flex items-center gap-1 pt-3 text-xs font-bold text-blue-700">
             Explore {division.categoryLabel}
             <ArrowUpRight className="h-3.5 w-3.5 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
           </span>

@@ -39,7 +39,6 @@ import { compressDataUrl } from '../../utils/imageOptimizer';
 import { uploadMediaAsset } from '../../services/mediaUploadService';
 import { resolveMediaUrl } from '../../services/firestoreMediaService';
 import { getDefaultDivisionLogo, normalizeDivisionId } from '../../services/firestore/divisions';
-import { DEFAULT_DIVISION_EXTERNAL_URLS } from '../../utils/divisionPresentation';
 
 export const AdminDivisionsView: React.FC = () => {
   const { saveDivision, refreshAll, divisions: firestoreDivisions, companySettings, products } = useFirestoreDataContext();
@@ -438,9 +437,7 @@ export const AdminDivisionsView: React.FC = () => {
       description: div.description,
       badge: div.badge,
       route: div.route,
-      externalUrl: div.externalUrl ||
-        DEFAULT_DIVISION_EXTERNAL_URLS[normalizeDivisionId(div.divisionKey || div.id || '').shortId] ||
-        '',
+      externalUrl: div.externalUrl || '',
       logoUrl: resolvedLogoUrl,
       accentColor: div.accentColor,
       gradient: div.gradient,

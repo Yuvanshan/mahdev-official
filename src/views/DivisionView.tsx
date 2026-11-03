@@ -41,6 +41,8 @@ import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
 import { HeroVideoBackground } from '../components/common/HeroVideoBackground';
 import { DivisionBelowHeroShimmer } from '../components/common/DivisionBelowHeroShimmer';
 import { getRecordImageAlt } from '../config/imageAlt';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
+import { canonicalizeDivisionRoute } from '../config/divisionRoutes';
 
 interface DivisionViewProps {
   divisionId: string;
@@ -104,7 +106,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
     description: 'Specialized services and enterprise solutions by Mahdev Pvt Ltd.',
     badge: 'Specialized Division',
     route: `/${divisionId}`,
-    domainUrl: `https://mahdev.lk/${divisionId}`,
+    domainUrl: `${CANONICAL_SITE_ORIGIN}/${divisionId}`,
     accentColor: '#0052FF',
     gradient: 'from-blue-600 to-indigo-700',
     heroHeadline: 'Delivering Innovation & Specialized Services',
@@ -331,7 +333,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
       <SEOHead
         title={division.name}
         description={`${division.tagline} — ${division.description}`}
-        canonicalUrl={division.domainUrl || `https://mahdev.lk${division.route}`}
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}${canonicalizeDivisionRoute(division.route)}`}
       />
 
       {/* 1. DIVISION HERO SECTION: FULL SCREEN WIDTH VIDEO/PICTURE COVER */}
