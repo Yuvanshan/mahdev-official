@@ -152,17 +152,27 @@ export default async function handler(
           : request.headers.cookie;
         await requireAdminSession(cookie);
         await initializeTursoDatabase();
+        const publishedOnly = requestUrl.searchParams.get('published') === '1';
         const draftDocument = await getTursoDocument('settings', '', 'draftSeasonalTheme');
-        const publishedDocument = draftDocument
-          ? null
-          : await getTursoDocument('settings', '', 'publishedSeasonalTheme');
+        const publishedDocument = await getTursoDocument('settings', '', 'publishedSeasonalTheme');
+        const draftUpdatedAt = Date.parse(String(draftDocument?.data.updatedAt || ''));
+        const publishedUpdatedAt = Date.parse(String(publishedDocument?.data.updatedAt || ''));
+        const latestDocument = draftDocument && publishedDocument
+          ? Number.isFinite(publishedUpdatedAt) && (!Number.isFinite(draftUpdatedAt) || publishedUpdatedAt > draftUpdatedAt)
+            ? publishedDocument
+            : draftDocument
+          : draftDocument || publishedDocument;
+        const selectedDocument = publishedOnly ? publishedDocument : latestDocument;
         sendJson(response, 200, {
           success: true,
-          theme: draftDocument
-            ? validateTheme(draftDocument.data)
-            : publishedDocument
-              ? validateTheme(publishedDocument.data)
-              : DEFAULT_SEASONAL_THEME,
+          theme: selectedDocument
+            ? {
+                ...validateTheme(selectedDocument.data),
+                updatedAt: typeof selectedDocument.data.updatedAt === 'string'
+                  ? selectedDocument.data.updatedAt
+                  : undefined,
+              }
+            : DEFAULT_SEASONAL_THEME,
         });
         return;
       }

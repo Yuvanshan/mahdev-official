@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CalendarClock, Eye, Gift, Plus, Save, Trash2 } from 'lucide-react';
+import { CalendarClock, Eye, Gift, Pencil, Plus, Save, Trash2 } from 'lucide-react';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { ImageUploader } from '../../components/common/ImageUploader';
@@ -354,6 +354,13 @@ export const AdminSeasonalWishesView: React.FC = () => {
                         </span>
                       </button>
                       <div className="flex shrink-0 gap-1">
+                        <button
+                          type="button"
+                          onClick={() => selectCampaign(campaign)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-blue-200 px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+                        >
+                          <Pencil className="h-3 w-3" /> Edit
+                        </button>
                         <button type="button" onClick={() => void toggleCampaign(campaign)} className="rounded-lg border border-slate-200 px-2 py-1 text-xs font-medium text-slate-700">{campaign.isActive ? 'Deactivate' : 'Activate'}</button>
                         <button type="button" aria-label={`Delete ${campaign.name}`} onClick={() => setCampaignToDelete(campaign)} className="rounded-lg p-2 text-rose-700 hover:bg-rose-50"><Trash2 className="h-4 w-4" /></button>
                       </div>

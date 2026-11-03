@@ -13,9 +13,14 @@ interface SeasonalThemeResponse {
 async function requestTheme(
   action: 'published' | 'save-draft' | 'publish',
   theme?: SeasonalThemeConfig,
-  draft = false,
+  adminView: 'latest' | 'published' | null = null,
 ): Promise<SeasonalThemeConfig> {
-  const response = await fetch(`/api/seasonal-theme${draft ? '?draft=1' : ''}`, {
+  const query = adminView === 'published'
+    ? '?draft=1&published=1'
+    : adminView === 'latest'
+      ? '?draft=1'
+      : '';
+  const response = await fetch(`/api/seasonal-theme${query}`, {
     method: action === 'published' ? 'GET' : 'POST',
     credentials: 'same-origin',
     cache: 'no-store',
@@ -36,7 +41,12 @@ export const seasonalThemeService = {
   },
 
   async getDraft(): Promise<SeasonalThemeConfig> {
-    const result = await requestTheme('published', undefined, true);
+    const result = await requestTheme('published', undefined, 'latest');
+    return { ...DEFAULT_SEASONAL_THEME, ...result };
+  },
+
+  async getPublishedForAdmin(): Promise<SeasonalThemeConfig> {
+    const result = await requestTheme('published', undefined, 'published');
     return { ...DEFAULT_SEASONAL_THEME, ...result };
   },
 

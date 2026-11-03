@@ -803,41 +803,57 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
   left: 0;
   display: flex;
   justify-content: space-around;
-  height: 60px;
+  height: 76px;
   align-items: flex-end;
-  padding: 0 3vw 7px;
+  padding: 0 4vw 8px;
   background:
-    radial-gradient(ellipse at 50% 100%, rgb(255 152 39 / 16%), transparent 62%),
-    linear-gradient(0deg, rgb(255 180 72 / 8%), transparent);
+    radial-gradient(ellipse at 50% 100%, rgb(255 160 42 / 25%), transparent 64%),
+    linear-gradient(0deg, rgb(255 180 72 / 11%), transparent);
 }
 
 .seasonal-diya {
-  width: clamp(42px, 5vw, 66px);
+  width: clamp(38px, 4.7vw, 62px);
   height: auto;
   overflow: visible;
-  filter: drop-shadow(0 1px 3px rgb(68 34 8 / 48%)) drop-shadow(0 0 9px rgb(255 185 70 / 66%));
-  animation: seasonal-diya-glow 2.8s ease-in-out infinite alternate;
+  filter: drop-shadow(0 2px 4px rgb(68 34 8 / 54%)) drop-shadow(0 0 10px rgb(255 185 70 / 58%));
+  animation: seasonal-diya-glow 3.8s ease-in-out infinite alternate, seasonal-diya-sway 5.5s ease-in-out infinite;
+  transform-origin: 50% 100%;
 }
 
-.seasonal-diya-1 { animation-delay: -.8s; }
-.seasonal-diya-2 { animation-delay: -1.7s; }
+.seasonal-diya-1 { animation-delay: -.8s, -1.8s; }
+.seasonal-diya-2 { animation-delay: -1.7s, -3.1s; }
 
 .seasonal-flame,
 .seasonal-flame-core {
   transform-box: fill-box;
   transform-origin: 50% 100%;
-  animation: seasonal-flame-flicker .72s ease-in-out infinite alternate;
+  animation: seasonal-flame-flicker 1.05s ease-in-out infinite alternate;
 }
 
-.seasonal-flame-core { animation-duration: .53s; animation-direction: alternate-reverse; }
+.seasonal-flame-core { animation-duration: .78s; animation-direction: alternate-reverse; }
 
 .seasonal-diwali-spark {
   bottom: 20px;
-  width: 1.2px;
-  height: 1.2px;
-  background: #ffce65;
-  box-shadow: 0 0 6px 1.5px rgb(255 211 100 / 34%);
+  border-radius: 50%;
+  background: #ffe8a6;
+  box-shadow: 0 0 7px 2px rgb(255 211 100 / 42%);
   animation-name: seasonal-diwali-rise;
+  animation-timing-function: cubic-bezier(.35,0,.65,1);
+}
+
+.seasonal-diwali-spark-1 {
+  background: #fff7d6;
+  box-shadow: 0 0 9px 2px rgb(255 238 174 / 58%);
+}
+
+.seasonal-diwali-spark-2 {
+  background: #f7bd4d;
+  box-shadow: 0 0 6px 1px rgb(255 172 49 / 35%);
+}
+
+.seasonal-diwali-spark-3 {
+  opacity: .7;
+  filter: blur(.4px);
 }
 
 
@@ -848,10 +864,11 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 }
 
 @keyframes seasonal-diwali-rise {
-  0% { transform: translate3d(0, 0, 0) scale(.5); opacity: 0; }
-  18% { opacity: .45; }
-  55% { opacity: .3; }
-  100% { transform: translate3d(12px, -38vh, 0) scale(0); opacity: 0; }
+  0% { transform: translate3d(0, 0, 0) scale(.45); opacity: 0; }
+  12% { opacity: .72; }
+  32% { transform: translate3d(calc(var(--spark-drift) * -.35), calc(var(--spark-rise) * -.3), 0) scale(1); opacity: .66; }
+  68% { transform: translate3d(calc(var(--spark-drift) * .45), calc(var(--spark-rise) * -.68), 0) scale(.82); opacity: .42; }
+  100% { transform: translate3d(var(--spark-drift), calc(var(--spark-rise) * -1), 0) scale(.2); opacity: 0; }
 }
 
 @keyframes seasonal-flame-flicker {
@@ -860,8 +877,13 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 }
 
 @keyframes seasonal-diya-glow {
-  from { filter: drop-shadow(0 1px 3px rgb(68 34 8 / 48%)) drop-shadow(0 0 7px rgb(255 185 70 / 48%)); }
-  to { filter: drop-shadow(0 1px 3px rgb(68 34 8 / 48%)) drop-shadow(0 0 13px rgb(255 185 70 / 85%)); }
+  from { filter: drop-shadow(0 2px 4px rgb(68 34 8 / 54%)) drop-shadow(0 0 7px rgb(255 185 70 / 42%)); }
+  to { filter: drop-shadow(0 2px 4px rgb(68 34 8 / 54%)) drop-shadow(0 0 14px rgb(255 185 70 / 78%)); }
+}
+
+@keyframes seasonal-diya-sway {
+  0%, 100% { transform: translateY(0) rotate(-.4deg); }
+  50% { transform: translateY(-2px) rotate(.4deg); }
 }
 
 @media (max-width: 767px) {
@@ -895,8 +917,8 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
     max-height: min(68dvh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 9rem));
   }
 
-  .seasonal-diya-row { height: 46px; }
-  .seasonal-diya { width: 42px; }
+  .seasonal-diya-row { height: 54px; padding-bottom: 5px; }
+  .seasonal-diya { width: 40px; }
 
   .whatsapp-panel-header {
     gap: 9px;

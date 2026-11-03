@@ -6,9 +6,12 @@ import { SeasonalLottie } from './SeasonalLottie';
 const PARTICLES = Array.from({ length: 40 }, (_, index) => ({
   id: index,
   left: `${(index * 37 + 11) % 100}%`,
-  delay: `${(index % 9) * -1.7}s`,
-  duration: `${9 + (index % 8) * 1.8}s`,
-  size: `${4 + (index % 4) * 2}px`,
+  delay: `${(index % 13) * -1.9}s`,
+  duration: `${12 + (index % 7) * 2.2}s`,
+  drift: `${((index * 19) % 81) - 40}px`,
+  rise: `${30 + (index % 5) * 8}vh`,
+  size: `${2 + (index % 3)}px`,
+  variant: index % 4,
 }));
 
 export const SeasonalOverlay: React.FC = () => {
@@ -107,8 +110,16 @@ export const SeasonalOverlay: React.FC = () => {
       {PARTICLES.slice(0, particleCount).map((particle) => (
         <span
           key={particle.id}
-          className="seasonal-diwali-spark"
-          style={{ left: particle.left, animationDelay: particle.delay, animationDuration: particle.duration }}
+          className={`seasonal-diwali-spark seasonal-diwali-spark-${particle.variant}`}
+          style={{
+            left: particle.left,
+            width: particle.size,
+            height: particle.size,
+            animationDelay: particle.delay,
+            animationDuration: particle.duration,
+            '--spark-drift': particle.drift,
+            '--spark-rise': particle.rise,
+          } as React.CSSProperties}
         />
       ))}
     </div>

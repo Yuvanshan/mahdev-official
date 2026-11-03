@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Building2, CalendarDays, Eye, Monitor, Save, Smartphone, Sparkles } from 'lucide-react';
+import { Building2, CalendarDays, Eye, Monitor, Pencil, Save, Smartphone, Sparkles, X } from 'lucide-react';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { ImageUploader } from '../../components/common/ImageUploader';
 import { resolveMediaUrl } from '../../services/firestoreMediaService';
@@ -46,12 +46,15 @@ function newScheduleId(): string {
 
 export const AdminSeasonalThemesView: React.FC = () => {
   const [draft, setDraft] = useState<SeasonalThemeConfig>(DEFAULT_SEASONAL_THEME);
+  const [savedDraft, setSavedDraft] = useState<SeasonalThemeConfig | null>(null);
+  const [publishedTheme, setPublishedTheme] = useState<SeasonalThemeConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
   const [scheduleTheme, setScheduleTheme] = useState<SeasonalThemeSchedule['theme']>('christmas');
   const [scheduleStart, setScheduleStart] = useState('');
   const [scheduleEnd, setScheduleEnd] = useState('');
+  const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [previewLogoUrl, setPreviewLogoUrl] = useState('/logo.png');
   const [previewFaviconUrl, setPreviewFaviconUrl] = useState('/favicon.png');
@@ -64,9 +67,16 @@ export const AdminSeasonalThemesView: React.FC = () => {
 
   useEffect(() => {
     let active = true;
-    seasonalThemeService.getDraft()
-      .then((savedDraft) => {
-        if (active) setDraft(savedDraft);
+    Promise.all([
+      seasonalThemeService.getDraft(),
+      seasonalThemeService.getPublishedForAdmin(),
+    ])
+      .then(([latest, published]) => {
+        if (active) {
+          setDraft(latest);
+          setSavedDraft(latest.updatedAt ? latest : null);
+          setPublishedTheme(published.updatedAt ? published : null);
+        }
       })
       .catch((error: unknown) => {
         console.error('[AdminSeasonalThemes] Draft settings could not be loaded:', error);
@@ -108,6 +118,7 @@ export const AdminSeasonalThemesView: React.FC = () => {
     try {
       const saved = await seasonalThemeService.saveDraft(draft);
       setDraft(saved);
+      setSavedDraft(saved);
       notify('success', 'Draft saved', 'The public website is unchanged until you publish.');
     } catch (error) {
       notify('error', 'Draft could not be saved', error instanceof Error ? error.message : 'Try again.');
@@ -121,6 +132,8 @@ export const AdminSeasonalThemesView: React.FC = () => {
     try {
       const published = await seasonalThemeService.publish(draft);
       setDraft(published);
+      setSavedDraft(published);
+      setPublishedTheme(published);
       notify('success', 'Seasonal appearance published', 'The public theme is live.');
     } catch (error) {
       notify('error', 'Theme was not published', error instanceof Error ? error.message : 'Try again.');
@@ -137,7 +150,7 @@ export const AdminSeasonalThemesView: React.FC = () => {
       return;
     }
     const candidate: SeasonalThemeSchedule = {
-      id: newScheduleId(),
+      id: editingScheduleId || newScheduleId(),
       theme: scheduleTheme,
       startAt,
       endAt,
@@ -147,9 +160,32 @@ export const AdminSeasonalThemesView: React.FC = () => {
       notify('error', 'Schedule overlap', `This time overlaps the ${THEME_OPTIONS.find((option) => option.id === conflict.theme)?.label || conflict.theme} schedule. Resolve the overlap before saving.`);
       return;
     }
-    updateDraft({ schedules: [...draft.schedules, candidate] });
+    updateDraft({
+      schedules: editingScheduleId
+        ? draft.schedules.map((schedule) => schedule.id === editingScheduleId ? candidate : schedule)
+        : [...draft.schedules, candidate],
+    });
+    setEditingScheduleId(null);
     setScheduleStart('');
     setScheduleEnd('');
+  };
+
+  const editSchedule = (schedule: SeasonalThemeSchedule) => {
+    setEditingScheduleId(schedule.id);
+    setScheduleTheme(schedule.theme);
+    setScheduleStart(toColomboInput(schedule.startAt));
+    setScheduleEnd(toColomboInput(schedule.endAt));
+  };
+
+  const cancelScheduleEdit = () => {
+    setEditingScheduleId(null);
+    setScheduleStart('');
+    setScheduleEnd('');
+  };
+
+  const editSavedTheme = (theme: SeasonalThemeConfig) => {
+    setDraft({ ...theme, schedules: [...theme.schedules] });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (isLoading) {
@@ -185,6 +221,40 @@ export const AdminSeasonalThemesView: React.FC = () => {
           </button>
         </div>
       </header>
+
+      <section className="grid gap-4 md:grid-cols-2" aria-label="Saved seasonal themes">
+        {([
+          { title: 'Most recently saved', theme: savedDraft },
+          { title: 'Published theme', theme: publishedTheme },
+        ]).map(({ title, theme }) => (
+          <article key={title} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{title}</p>
+              {theme ? (
+                <>
+                  <p className="mt-1 truncate font-semibold text-slate-900">
+                    {THEME_OPTIONS.find((option) => option.id === theme.activeTheme)?.label || theme.activeTheme}
+                    {!theme.enabled && <span className="ml-2 text-xs font-medium text-slate-500">Disabled</span>}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Saved {theme.updatedAt ? new Date(theme.updatedAt).toLocaleString() : '—'}
+                  </p>
+                </>
+              ) : (
+                <p className="mt-1 text-sm text-slate-500">Nothing saved yet.</p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => theme && editSavedTheme(theme)}
+              disabled={!theme}
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-blue-400 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Pencil className="h-4 w-4" /> Edit
+            </button>
+          </article>
+        ))}
+      </section>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,.9fr)]">
         <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -364,7 +434,16 @@ export const AdminSeasonalThemesView: React.FC = () => {
           </select>
           <label className="text-xs font-semibold text-slate-600">Start (Sri Lanka time)<input type="datetime-local" value={scheduleStart} onChange={(event) => setScheduleStart(event.target.value)} className="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" /></label>
           <label className="text-xs font-semibold text-slate-600">End (Sri Lanka time)<input type="datetime-local" value={scheduleEnd} onChange={(event) => setScheduleEnd(event.target.value)} className="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" /></label>
-          <button type="button" onClick={addSchedule} className="self-end rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white">Add schedule</button>
+          <div className="flex items-center gap-2 self-end">
+            {editingScheduleId && (
+              <button type="button" onClick={cancelScheduleEdit} aria-label="Cancel schedule edit" className="rounded-xl border border-slate-300 p-2.5 text-slate-600 hover:bg-slate-50">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+            <button type="button" onClick={addSchedule} className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white">
+              {editingScheduleId ? 'Save changes' : 'Add schedule'}
+            </button>
+          </div>
         </div>
         {draft.schedules.length === 0 ? (
           <p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600">No activation windows configured.</p>
@@ -374,7 +453,21 @@ export const AdminSeasonalThemesView: React.FC = () => {
               <li key={schedule.id} className="flex flex-wrap items-center justify-between gap-3 p-3 text-sm">
                 <span className="font-semibold text-slate-800">{THEME_OPTIONS.find((option) => option.id === schedule.theme)?.label}</span>
                 <span className="text-xs text-slate-600">{new Date(schedule.startAt).toLocaleString('en-LK', { timeZone: 'Asia/Colombo' })} – {new Date(schedule.endAt).toLocaleString('en-LK', { timeZone: 'Asia/Colombo' })}</span>
-                <button type="button" onClick={() => updateDraft({ schedules: draft.schedules.filter((item) => item.id !== schedule.id) })} className="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700">Remove</button>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => editSchedule(schedule)} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-blue-300 hover:text-blue-700">
+                    <Pencil className="h-3 w-3" /> Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateDraft({ schedules: draft.schedules.filter((item) => item.id !== schedule.id) });
+                      if (editingScheduleId === schedule.id) cancelScheduleEdit();
+                    }}
+                    className="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700"
+                  >
+                    Remove
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
