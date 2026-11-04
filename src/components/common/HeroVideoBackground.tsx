@@ -50,11 +50,21 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
   const [videoFailed, setVideoFailed] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [resolvedSrc, setResolvedSrc] = useState<string>('');
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
   // The caller decides when the corporate movie is an appropriate fallback.  In
   // particular, a division's Firestore video must always win when one exists.
   const [currentVideoCandidate, setCurrentVideoCandidate] = useState<string>(videoUrl?.trim() || '');
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const backgroundRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updatePreference = () => setPrefersReducedMotion(preference.matches);
+    preference.addEventListener('change', updatePreference);
+    return () => preference.removeEventListener('change', updatePreference);
+  }, []);
 
   // Synchronize incoming videoUrl changes
   useEffect(() => {
@@ -128,7 +138,12 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
         resolvedSrc.startsWith('blob:'))
   );
 
-  const hasVideo = Boolean(!videoFailed && (trimmedVideo || resolvedSrc) && (isEmbedVideo || isHtmlVideo));
+  const hasVideo = Boolean(
+    !prefersReducedMotion &&
+      !videoFailed &&
+      (trimmedVideo || resolvedSrc) &&
+      (isEmbedVideo || isHtmlVideo)
+  );
 
   const handleVideoError = useCallback(() => {
     console.warn('[HeroVideoBackground] Video stream unavailable');

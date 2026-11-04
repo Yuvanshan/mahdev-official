@@ -35,25 +35,35 @@ export const AnnouncementBanner: React.FC<AnnouncementBannerProps> = ({ onNaviga
     );
   }
 
-  if (firestoreAnnouncement?.enabled === false || !isFirestoreActive) return null;
+  if (firestoreAnnouncement?.enabled === false) return null;
 
   return (
     <div className="public-announcement-bar relative z-50 px-4 text-center text-xs font-semibold sm:text-sm">
-      <button
-        type="button"
-        onClick={() => {
-          const link = firestoreAnnouncement?.link || '/contact';
-          if (/^https?:\/\//i.test(link)) {
-            window.open(link, '_blank', 'noopener,noreferrer');
-          } else {
-            onNavigate?.(link);
-          }
-        }}
-        className="public-announcement-link mx-auto inline-flex max-w-7xl items-center justify-center gap-2 px-4"
-      >
-        {firestoreAnnouncement?.text}
-        <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" />
-      </button>
+      {isFirestoreActive ? (
+        <button
+          type="button"
+          onClick={() => {
+            const link = firestoreAnnouncement?.link || '/contact';
+            if (/^https?:\/\//i.test(link)) {
+              window.open(link, '_blank', 'noopener,noreferrer');
+            } else {
+              onNavigate?.(link);
+            }
+          }}
+          className="public-announcement-link mx-auto inline-flex max-w-7xl items-center justify-center gap-2 px-4"
+        >
+          {firestoreAnnouncement?.text}
+          <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" />
+        </button>
+      ) : (
+        <div className="public-announcement-link mx-auto inline-flex max-w-7xl items-center justify-center gap-2 px-4">
+          <span className="announcement-new">New</span>
+          <span>Planning a wedding or event? Let’s make it feel like yours.</span>
+          <button type="button" onClick={() => onNavigate?.('/contact')} className="announcement-action">
+            Start planning <ArrowRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

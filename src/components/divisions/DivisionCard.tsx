@@ -8,6 +8,7 @@ interface DivisionCardProps {
   division: DivisionCardItem;
   onNavigate: (route: string) => void;
   variant?: 'standard' | 'featured';
+  showLogo?: boolean;
 }
 
 const categoryIcons: Record<string, React.ElementType> = {
@@ -18,7 +19,12 @@ const categoryIcons: Record<string, React.ElementType> = {
   mart: ShoppingBag,
 };
 
-export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate, variant = 'standard' }) => {
+export const DivisionCard: React.FC<DivisionCardProps> = ({
+  division,
+  onNavigate,
+  variant = 'standard',
+  showLogo = true,
+}) => {
   const [mediaUrl, setMediaUrl] = useState('');
   const [posterUrl, setPosterUrl] = useState('');
   const destination = division.externalUrl || division.route;
@@ -130,7 +136,7 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate
               <CategoryIcon className="h-3 w-3 text-blue-600" aria-hidden="true" />
               {division.categoryLabel}
             </span>
-            {division.logoUrl && (
+            {showLogo && division.logoUrl && (
               <div className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-xl border border-white/80 bg-white/95 p-1.5 shadow-sm">
                 <img
                   src={division.logoUrl}
@@ -148,7 +154,7 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({ division, onNavigate
               </span>
             )}
           </>
-        ) : division.logoUrl && (
+        ) : showLogo && division.logoUrl && (
           <div className="absolute inset-x-[14%] top-[10%] bottom-[23%] flex items-center justify-center rounded-2xl border border-white/60 bg-white/90 p-3 shadow-lg backdrop-blur-sm sm:inset-x-[18%] sm:p-4">
             <img
               src={division.logoUrl}

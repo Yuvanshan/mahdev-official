@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowRight } from 'lucide-react';
+import { ArrowDown, ArrowRight, Pause, Play, MessageCircle } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { ScrollParallax } from '../motion/ParallelScroll';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { resolveMediaUrl } from '../../services/firestoreMediaService';
 import { extractYouTubeId, getYouTubeEmbedUrl } from '../../utils/youtube';
+import { MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
 
 interface HeroSectionProps {
   onNavigate: (route: string) => void;
@@ -24,15 +25,12 @@ function extractVimeoId(url: string): string | null {
   return match?.[1] || null;
 }
 
-export const HeroSection: React.FC<HeroSectionProps> = ({
-  onNavigate,
-  onExploreMahdev,
-  onExploreServices,
-}) => {
+export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
   const heroRef = useRef<HTMLElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const uploadedVideoRef = useRef<HTMLVideoElement | null>(null);
   const [activeUploadedVideo, setActiveUploadedVideo] = useState('');
+  const [isVideoPaused, setIsVideoPaused] = useState(false);
   const reducedMotion = useReducedMotion();
   const { homepageConfig } = useFirestoreDataContext();
   const cmsHero = homepageConfig?.hero;
@@ -87,11 +85,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     const hero = heroRef.current;
     if (!video || !hero) return;
 
-    let audioEnabled = false;
-    let userInteracted = false;
-    let hasAttemptedAudibleAutoplay = false;
     let isHeroVisible = false;
-    let playbackRequest = 0;
     const savePlaybackPosition = () => {
       if (Number.isFinite(video.currentTime)) savedHeroVideoTime = video.currentTime;
     };
@@ -99,106 +93,48 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       if (!Number.isFinite(video.duration) || video.duration <= 0) return;
       video.currentTime = savedHeroVideoTime % video.duration;
     };
-
-    const removeInteractionListeners = () => {
-      window.removeEventListener('pointerdown', enableAudio);
-      window.removeEventListener('touchstart', enableAudio);
-      window.removeEventListener('keydown', enableAudio);
-    };
-
-    const pauseVideo = (savePosition = true) => {
-      playbackRequest += 1;
-      if (savePosition) savePlaybackPosition();
-      video.pause();
-      video.muted = true;
-    };
-
-    const startVideo = async (tryAudio: boolean) => {
-      if (!isHeroVisible || document.visibilityState === 'hidden') return;
-
-      const requestId = ++playbackRequest;
-      video.volume = 0.2;
-      video.muted = !tryAudio;
-      try {
-        await video.play();
-        if (requestId !== playbackRequest || !isHeroVisible) {
-          return;
-        }
-        if (tryAudio) {
-          audioEnabled = true;
-          removeInteractionListeners();
-        }
-      } catch (error) {
-        if (requestId !== playbackRequest) return;
-        video.muted = true;
-        if (tryAudio && isHeroVisible) {
-          try {
-            await video.play();
-          } catch (mutedError) {
-            console.warn('[HomeHero] Muted autoplay was blocked:', mutedError);
-          }
-          if (requestId !== playbackRequest || !isHeroVisible) return;
-          if (userInteracted) {
-            console.warn('[HomeHero] Could not enable video audio after interaction:', error);
-          }
-          return;
-        }
-        console.warn('[HomeHero] Could not start the hero video:', error);
-      }
-    };
-
-    const enableAudio = () => {
-      userInteracted = true;
-      if (audioEnabled || !isHeroVisible) return;
-      void startVideo(true);
-    };
-
-    window.addEventListener('pointerdown', enableAudio, { passive: true });
-    window.addEventListener('touchstart', enableAudio, { passive: true });
-    window.addEventListener('keydown', enableAudio);
     video.addEventListener('timeupdate', savePlaybackPosition);
     video.addEventListener('loadedmetadata', restorePlaybackPosition);
     if (video.readyState >= HTMLMediaElement.HAVE_METADATA) restorePlaybackPosition();
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        pauseVideo();
-      } else if (isHeroVisible) {
-        void startVideo(audioEnabled || userInteracted || !hasAttemptedAudibleAutoplay);
+    const syncPlayback = () => {
+      if (reducedMotion || isVideoPaused || !isHeroVisible || document.visibilityState === 'hidden') {
+        savePlaybackPosition();
+        video.pause();
+        return;
       }
+      video.muted = true;
+      void video.play().catch((error: unknown) => {
+        console.warn('[HomeHero] Muted autoplay was blocked:', error);
+      });
     };
+    const onVisibilityChange = () => syncPlayback();
     document.addEventListener('visibilitychange', onVisibilityChange);
 
     const observer = typeof IntersectionObserver === 'undefined'
       ? null
       : new IntersectionObserver(([entry]) => {
           isHeroVisible = entry.isIntersecting;
-          if (!isHeroVisible) {
-            pauseVideo();
-            return;
-          }
-          const tryAudio = audioEnabled || userInteracted || !hasAttemptedAudibleAutoplay;
-          if (!userInteracted && !audioEnabled) hasAttemptedAudibleAutoplay = true;
-          void startVideo(tryAudio);
+          syncPlayback();
         }, { threshold: 0.05 });
     if (observer) {
       observer.observe(hero);
     } else {
       isHeroVisible = true;
-      hasAttemptedAudibleAutoplay = true;
-      void startVideo(true);
+      syncPlayback();
     }
 
     return () => {
       observer?.disconnect();
       document.removeEventListener('visibilitychange', onVisibilityChange);
-      removeInteractionListeners();
       video.removeEventListener('timeupdate', savePlaybackPosition);
       video.removeEventListener('loadedmetadata', restorePlaybackPosition);
-      pauseVideo(false);
+      savePlaybackPosition();
+      video.pause();
     };
-  }, [heroVideo, isCmsVideoEmbed, isUploadedVideoActive, useCmsImage]);
+  }, [heroVideo, isCmsVideoEmbed, isUploadedVideoActive, isVideoPaused, reducedMotion, useCmsImage]);
 
   const activateUploadedVideo = () => {
+    if (reducedMotion) return;
     const candidate = uploadedVideoRef.current;
     const fallback = videoRef.current;
     if (!candidate || !fallback || !uploadedVideo || activeUploadedVideo === uploadedVideo) return;
@@ -219,9 +155,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   };
 
   const explore = () => {
-    if (onExploreServices) onExploreServices();
-    else if (onExploreMahdev) onExploreMahdev();
-    else onNavigate('/divisions');
+    onNavigate('/contact');
   };
 
   const exploreDivisions = () => {
@@ -239,111 +173,122 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   return (
     <section
       ref={heroRef}
-      className="relative isolate min-h-[680px] overflow-hidden bg-slate-950 sm:min-h-[740px] lg:min-h-[min(820px,calc(100svh-5rem))]"
+      className="home-video-hero relative isolate w-full overflow-hidden"
     >
-      <ScrollParallax targetRef={heroRef} distance={34} className="absolute -inset-y-10 inset-x-0 overflow-hidden">
-        {useCmsImage ? (
-          <img
-            src={resolvedHeroMedia.image || HERO_POSTER}
-            alt=""
-            aria-hidden="true"
-            className="absolute inset-0 h-full w-full object-cover object-center brightness-[1.04] contrast-[1.12] saturate-[1.08]"
-          />
-        ) : isCmsVideoEmbed ? (
-          <iframe
-            src={embedSrc}
-            title="MAHDEV homepage showcase"
-            aria-hidden="true"
-            tabIndex={-1}
-            allow="autoplay; encrypted-media; picture-in-picture"
-            className="absolute inset-0 h-full w-full scale-125 border-0 object-cover"
-          />
-        ) : (
-          <>
-            <video
-              ref={videoRef}
-              src={HERO_VIDEO}
-              poster={HERO_POSTER}
-              autoPlay
-              loop
-              playsInline
-              disableRemotePlayback
-              muted
-              preload="auto"
+      <div className="home-video-hero__panel relative isolate flex min-h-[680px] w-full items-center overflow-hidden bg-[#12172A] text-white sm:min-h-[740px] lg:min-h-[min(820px,calc(100svh-5rem))]">
+        <ScrollParallax targetRef={heroRef} distance={24} className="home-video-hero__media absolute -inset-y-10 right-[-2%] w-[72%] overflow-hidden">
+          {useCmsImage ? (
+            <img
+              src={resolvedHeroMedia.image || HERO_POSTER}
+              alt=""
               aria-hidden="true"
-              disablePictureInPicture
-              className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 brightness-[1.04] contrast-[1.12] saturate-[1.08] ${
-                isUploadedVideoActive ? 'opacity-0' : 'opacity-100'
-              }`}
+              className="absolute inset-0 h-full w-full object-cover object-center"
             />
-            {uploadedVideo && (
+          ) : reducedMotion ? (
+            <img
+              src={heroPoster}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 h-full w-full object-cover object-center"
+            />
+          ) : isCmsVideoEmbed ? (
+            <iframe
+              src={embedSrc}
+              title="MAHDEV homepage showcase"
+              aria-hidden="true"
+              tabIndex={-1}
+              allow="autoplay; encrypted-media; picture-in-picture"
+              className="absolute inset-0 h-full w-full scale-125 border-0 object-cover"
+            />
+          ) : (
+            <>
               <video
-                key={uploadedVideo}
-                ref={uploadedVideoRef}
-                src={uploadedVideo}
-                poster={heroPoster}
+                ref={videoRef}
+                src={HERO_VIDEO}
+                poster={HERO_POSTER}
+                autoPlay={!reducedMotion && !isVideoPaused}
                 loop
                 playsInline
                 disableRemotePlayback
                 muted
-                preload="auto"
+                preload="metadata"
                 aria-hidden="true"
                 disablePictureInPicture
-                onCanPlay={activateUploadedVideo}
-                onError={() => {
-                  console.warn('[HomeHero] Uploaded hero video could not be loaded; keeping the default video.');
-                }}
                 className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 brightness-[1.04] contrast-[1.12] saturate-[1.08] ${
-                  isUploadedVideoActive ? 'opacity-100' : 'opacity-0'
+                  isUploadedVideoActive ? 'opacity-0' : 'opacity-100'
                 }`}
               />
-            )}
-          </>
+              {uploadedVideo && (
+                <video
+                  key={uploadedVideo}
+                  ref={uploadedVideoRef}
+                  src={uploadedVideo}
+                  poster={heroPoster}
+                  loop
+                  playsInline
+                  disableRemotePlayback
+                  muted
+                  preload="metadata"
+                  aria-hidden="true"
+                  disablePictureInPicture
+                  onCanPlay={activateUploadedVideo}
+                  onError={() => {
+                    console.warn('[HomeHero] Uploaded hero video could not be loaded; keeping the default video.');
+                  }}
+                  className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 brightness-[1.04] contrast-[1.12] saturate-[1.08] ${
+                    isUploadedVideoActive ? 'opacity-100' : 'opacity-0'
+                  }`}
+                />
+              )}
+            </>
+          )}
+        </ScrollParallax>
+        <div className="home-video-hero__tint absolute inset-0" aria-hidden="true" />
+        {!useCmsImage && !isCmsVideoEmbed && !reducedMotion && (
+          <button
+            type="button"
+            className="home-video-control absolute right-6 top-6 z-30"
+            onClick={() => setIsVideoPaused((paused) => !paused)}
+            aria-label={isVideoPaused ? 'Play header video' : 'Pause header video'}
+          >
+            {isVideoPaused ? <Play aria-hidden="true" /> : <Pause aria-hidden="true" />}
+          </button>
         )}
-      </ScrollParallax>
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-r from-slate-950/65 via-slate-950/30 to-transparent"
-      />
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-slate-950/10"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -left-40 top-1/4 h-96 w-96 rounded-full bg-blue-500/15 blur-[100px]"
-      />
-      <div className="relative mx-auto flex min-h-[680px] max-w-7xl items-center px-5 py-20 sm:min-h-[740px] sm:px-8 lg:min-h-[min(820px,calc(100svh-5rem))] lg:px-10">
         <motion.div
-          className="max-w-3xl"
+          className="home-video-hero__content relative z-20 w-full max-w-[620px] px-[clamp(28px,5vw,64px)] py-24"
           initial={reducedMotion ? false : { opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
         >
-          <h1 className="font-editorial text-4xl font-medium leading-[1.04] tracking-[-0.035em] text-white sm:text-6xl lg:text-7xl">
-            <span className="block">Creating moments.</span>
-            <span className="block text-sky-200">Capturing memories.</span>
-            <span className="block">Delivering innovation.</span>
+          <p className="home-hero-eyebrow">Events <span>·</span> Studio <span>·</span> IT <span>·</span> Travels <span>·</span> Mart</p>
+          <h1>
+            <span>Creating moments.</span>
+            <span><em>Capturing</em> memories.</span>
           </h1>
-          <div className="mt-9 flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={explore}
-              className="group inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 text-sm font-semibold text-slate-950 shadow-lg shadow-slate-950/20 transition duration-300 hover:-translate-y-0.5 hover:bg-sky-50 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
-            >
-              Explore services
-              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+          <div className="home-hero-actions">
+            <button type="button" className="home-button home-button--primary" onClick={explore}>
+              Plan your event <ArrowRight aria-hidden="true" />
             </button>
+            <a className="home-button home-button--whatsapp" href={`https://wa.me/${MAHDEV_WHATSAPP_NUMBER}?text=${encodeURIComponent('Hi Mahdev, I would like to plan an event.')}`} target="_blank" rel="noopener noreferrer">
+              <MessageCircle aria-hidden="true" /> Chat on WhatsApp
+            </a>
           </div>
         </motion.div>
         <button
           type="button"
           onClick={exploreDivisions}
-          className="absolute bottom-24 left-5 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/75 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 sm:left-8 lg:left-10"
-          aria-label="Scroll to explore Mahdev divisions"
+          className="home-scroll-button absolute bottom-7 left-1/2 z-20 -translate-x-1/2"
+          aria-label="Scroll to discover Mahdev"
         >
-          Discover Mahdev
-          <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
+          <ArrowDown aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          className="home-latest-card absolute bottom-8 right-8 z-20"
+          onClick={() => onNavigate('/portfolio')}
+        >
+          <span><small>Explore</small><strong>Recent work</strong></span>
+          <ArrowRight aria-hidden="true" />
         </button>
       </div>
     </section>

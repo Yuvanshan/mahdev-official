@@ -336,7 +336,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
       />
 
       {/* 1. DIVISION HERO SECTION: FULL SCREEN WIDTH VIDEO/PICTURE COVER */}
-      <section ref={divisionHeroRef} className="relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-slate-950 text-white">
+      <section ref={divisionHeroRef} className="division-video-hero relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-slate-950 text-white">
         {/* Full-bleed Video or Image Background */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           {(() => {
@@ -372,12 +372,13 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
             const effectiveVideo = hasFirestoreVideo ? divVideo : '/assets/hero_main.mp4?v=2';
 
             return (
-              <ScrollParallax targetRef={divisionHeroRef} distance={34} className="absolute -inset-y-10 inset-x-0 overflow-hidden">
+              <ScrollParallax targetRef={divisionHeroRef} distance={24} className="division-video-hero__media absolute -inset-y-10 right-[-2%] w-[72%] overflow-hidden">
                 <HeroVideoBackground
                   videoUrl={effectiveVideo}
                   imageUrl={divImg}
                   posterImageUrl={divImg}
                   title={`${division.name} Showcase`}
+                  enableAutomaticAudio
                 />
               </ScrollParallax>
             );

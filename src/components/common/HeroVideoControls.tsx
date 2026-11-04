@@ -1,4 +1,5 @@
-import React, { RefObject, useEffect } from 'react';
+import React, { RefObject, useEffect, useState } from 'react';
+import { Pause, Play } from 'lucide-react';
 
 interface HeroVideoControlsProps {
   heroRef: RefObject<HTMLElement | null>;
@@ -7,88 +8,62 @@ interface HeroVideoControlsProps {
   videoSrc?: string;
 }
 
-const HERO_VIDEO_VOLUME = 0.15;
 const HERO_VISIBLE_THRESHOLD = 0.05;
 
 /**
- * Division hero playback, matching the landing page hero (HeroSection):
- * when the hero is visible it tries to play with sound and, if the browser
- * refuses, immediately continues muted in the same step, so the video always
- * starts on arrival. The first tap/click/key press turns sound on. Playback
- * pauses when the hero scrolls out of view or the tab is hidden.
+ * Keeps hero video playback muted, pauses it off-screen, and exposes a
+ * native play/pause control for people who prefer to stop motion.
  */
 export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
   heroRef,
   videoRef,
   videoSrc,
 }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+
+  useEffect(() => {
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updatePreference = () => setReducedMotion(preference.matches);
+    preference.addEventListener('change', updatePreference);
+    return () => preference.removeEventListener('change', updatePreference);
+  }, []);
+
   useEffect(() => {
     const video = videoRef.current;
     const hero = heroRef.current;
     if (!video || !hero) return;
 
-    let audioEnabled = false;
-    let userInteracted = false;
-    let hasAttemptedAudibleAutoplay = false;
     let isHeroVisible = false;
-    let playbackRequest = 0;
-
-    const removeInteractionListeners = () => {
-      window.removeEventListener('pointerdown', enableAudio);
-      window.removeEventListener('touchstart', enableAudio);
-      window.removeEventListener('keydown', enableAudio);
-    };
 
     const pauseVideo = () => {
-      playbackRequest += 1;
       video.pause();
       video.muted = true;
+      setIsPlaying(false);
     };
 
-    const startVideo = async (tryAudio: boolean) => {
-      if (!isHeroVisible || document.visibilityState === 'hidden') return;
-
-      const requestId = ++playbackRequest;
-      video.volume = HERO_VIDEO_VOLUME;
-      video.muted = !tryAudio;
-      try {
-        await video.play();
-        if (requestId !== playbackRequest || !isHeroVisible) return;
-        if (tryAudio) {
-          audioEnabled = true;
-          removeInteractionListeners();
-        }
-      } catch (error) {
-        if (requestId !== playbackRequest) return;
-        // Sound was refused: keep playing muted straight away.
-        video.muted = true;
-        if (tryAudio && isHeroVisible) {
-          try {
-            await video.play();
-          } catch (mutedError) {
-            console.warn('[DivisionHero] Muted autoplay was blocked:', mutedError);
-          }
-          return;
-        }
-        console.warn('[DivisionHero] Could not start the hero video:', error);
+    const playVideo = () => {
+      if (reducedMotion || !isHeroVisible || document.visibilityState === 'hidden') {
+        pauseVideo();
+        return;
       }
+      video.muted = true;
+      void video.play().then(
+        () => setIsPlaying(true),
+        (error: unknown) => {
+          setIsPlaying(false);
+          console.warn('[DivisionHero] Muted autoplay was blocked:', error);
+        }
+      );
     };
-
-    const enableAudio = () => {
-      userInteracted = true;
-      if (audioEnabled || !isHeroVisible) return;
-      void startVideo(true);
-    };
-
-    window.addEventListener('pointerdown', enableAudio, { passive: true });
-    window.addEventListener('touchstart', enableAudio, { passive: true });
-    window.addEventListener('keydown', enableAudio);
 
     const onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         pauseVideo();
       } else if (isHeroVisible) {
-        void startVideo(audioEnabled || userInteracted || !hasAttemptedAudibleAutoplay);
+        playVideo();
       }
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
@@ -101,25 +76,50 @@ export const HeroVideoControls: React.FC<HeroVideoControlsProps> = ({
             pauseVideo();
             return;
           }
-          const tryAudio = audioEnabled || userInteracted || !hasAttemptedAudibleAutoplay;
-          if (!userInteracted && !audioEnabled) hasAttemptedAudibleAutoplay = true;
-          void startVideo(tryAudio);
+          playVideo();
         }, { threshold: HERO_VISIBLE_THRESHOLD });
     if (observer) {
       observer.observe(hero);
     } else {
       isHeroVisible = true;
-      hasAttemptedAudibleAutoplay = true;
-      void startVideo(true);
+      playVideo();
     }
 
     return () => {
       observer?.disconnect();
       document.removeEventListener('visibilitychange', onVisibilityChange);
-      removeInteractionListeners();
       pauseVideo();
     };
-  }, [heroRef, videoRef, videoSrc]);
+  }, [heroRef, videoRef, videoSrc, reducedMotion]);
 
-  return null;
+  if (reducedMotion) return null;
+
+  const togglePlayback = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.muted = true;
+      void video.play().then(
+        () => setIsPlaying(true),
+        (error: unknown) => {
+          setIsPlaying(false);
+          console.warn('[DivisionHero] Video playback could not be started:', error);
+        }
+      );
+      return;
+    }
+    video.pause();
+    setIsPlaying(false);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={togglePlayback}
+      aria-label={isPlaying ? 'Pause header video' : 'Play header video'}
+      className="pointer-events-auto absolute right-6 top-6 z-20 grid h-14 w-14 place-items-center rounded-full border border-white/40 bg-white/20 text-white shadow-lg backdrop-blur-xl transition hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
+    >
+      {isPlaying ? <Pause aria-hidden="true" className="h-5 w-5" /> : <Play aria-hidden="true" className="h-5 w-5" />}
+    </button>
+  );
 };

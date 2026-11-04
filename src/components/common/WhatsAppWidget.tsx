@@ -1,9 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowUpRight, Check, MessageCircle, Volume2, VolumeX, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowUpRight, Check, MessageCircle, X } from 'lucide-react';
 import { MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
 import { useAuth } from '../../context/AuthContext';
-
-const WELCOME_SHOWN_KEY = 'mahdev:whatsapp-welcome-shown';
 
 const WhatsAppMark: React.FC<{ className?: string }> = ({ className }) => (
   <svg aria-hidden="true" viewBox="0 0 24 24" className={className}>
@@ -11,118 +9,17 @@ const WhatsAppMark: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-function wasWelcomeShown(): boolean {
-  try {
-    return sessionStorage.getItem(WELCOME_SHOWN_KEY) === '1';
-  } catch (error) {
-    console.warn('[WhatsAppWidget] Could not read session state:', error);
-    return false;
-  }
-}
-
-function markWelcomeShown(): void {
-  try {
-    sessionStorage.setItem(WELCOME_SHOWN_KEY, '1');
-  } catch (error) {
-    console.warn('[WhatsAppWidget] Could not save session state:', error);
-  }
-}
-
 export const WhatsAppWidget: React.FC = () => {
   const { user } = useAuth();
-  const audioContextRef = useRef<AudioContext | null>(null);
   const [isOpen, setIsOpen] = useState(false);
-  const [isNoticeVisible, setIsNoticeVisible] = useState(false);
-  const [hasUnreadNotice, setHasUnreadNotice] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
   const [message, setMessage] = useState('');
-
-  const getAudioContext = useCallback(() => {
-    if (typeof window.AudioContext === 'undefined') return null;
-    audioContextRef.current ??= new window.AudioContext();
-    return audioContextRef.current;
-  }, []);
-
-  const playNotificationTone = useCallback(() => {
-    if (document.visibilityState !== 'visible') return;
-    try {
-      const context = getAudioContext();
-      if (!context) return;
-      const oscillator = context.createOscillator();
-      const gain = context.createGain();
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(740, context.currentTime);
-      oscillator.frequency.setValueAtTime(988, context.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.0001, context.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.045, context.currentTime + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.22);
-      oscillator.connect(gain);
-      gain.connect(context.destination);
-      oscillator.start();
-      oscillator.stop(context.currentTime + 0.23);
-    } catch (error) {
-      console.warn('[WhatsAppWidget] Notification sound could not be played:', error);
-    }
-  }, [getAudioContext]);
-
-  useEffect(() => {
-    const unlockAudio = () => {
-      try {
-        const context = getAudioContext();
-        if (context?.state === 'suspended') {
-          void context.resume().catch((error: unknown) => {
-            console.warn('[WhatsAppWidget] Notification audio could not be unlocked:', error);
-          });
-        }
-      } catch (error) {
-        console.warn('[WhatsAppWidget] Notification audio could not be unlocked:', error);
-      } finally {
-        window.removeEventListener('pointerdown', unlockAudio);
-        window.removeEventListener('keydown', unlockAudio);
-      }
-    };
-
-    window.addEventListener('pointerdown', unlockAudio, { passive: true });
-    window.addEventListener('keydown', unlockAudio);
-    return () => {
-      window.removeEventListener('pointerdown', unlockAudio);
-      window.removeEventListener('keydown', unlockAudio);
-      const context = audioContextRef.current;
-      audioContextRef.current = null;
-      if (context && context.state !== 'closed') {
-        void context.close().catch((error: unknown) => {
-          console.warn('[WhatsAppWidget] Could not close notification audio:', error);
-        });
-      }
-    };
-  }, [getAudioContext]);
-
-  useEffect(() => {
-    if (wasWelcomeShown()) return;
-    const timer = window.setTimeout(() => {
-      markWelcomeShown();
-      setIsNoticeVisible(true);
-      setHasUnreadNotice(true);
-      if (soundEnabled) playNotificationTone();
-    }, 10000);
-    return () => window.clearTimeout(timer);
-  }, [playNotificationTone, soundEnabled]);
 
   const openChat = () => {
     const name = user?.fullName?.trim().split(/\s+/)[0];
     setMessage(name
       ? `Hi, I'm ${name}. I would like to know more about your services.`
       : 'Hi MAHDEV, I would like to know more about your services.');
-    markWelcomeShown();
-    setIsNoticeVisible(false);
-    setHasUnreadNotice(false);
     setIsOpen(true);
-  };
-
-  const dismissNotice = () => {
-    markWelcomeShown();
-    setIsNoticeVisible(false);
-    setHasUnreadNotice(false);
   };
 
   const sendMessage = (event: React.FormEvent) => {
@@ -135,35 +32,6 @@ export const WhatsAppWidget: React.FC = () => {
 
   return (
     <div className="whatsapp-widget fixed bottom-24 right-4 z-[120] flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
-      {isNoticeVisible && !isOpen && (
-        <aside className="whatsapp-notice" role="region" aria-label="WhatsApp support invitation" aria-live="polite">
-          <button type="button" className="whatsapp-notice-content" onClick={openChat}>
-            <span className="whatsapp-notice-icon"><MessageCircle className="h-4 w-4" /></span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-bold text-slate-900">Need a hand?</span>
-              <span className="mt-0.5 block text-xs leading-5 text-slate-600">Message our team on WhatsApp.</span>
-            </span>
-            <ArrowUpRight aria-hidden="true" className="h-4 w-4 shrink-0 text-emerald-700" />
-          </button>
-          <div className="whatsapp-notice-actions">
-            <button
-              type="button"
-              onClick={() => {
-                const nextSoundEnabled = !soundEnabled;
-                setSoundEnabled(nextSoundEnabled);
-                if (nextSoundEnabled) playNotificationTone();
-              }}
-              aria-label={soundEnabled ? 'Mute notification sound' : 'Enable notification sound'}
-              title={soundEnabled ? 'Mute notification sound' : 'Enable notification sound'}
-            >
-              {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-            </button>
-            <button type="button" onClick={dismissNotice} aria-label="Dismiss WhatsApp invitation">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </aside>
-      )}
       {isOpen && (
         <section
           role="dialog"
@@ -231,20 +99,13 @@ export const WhatsAppWidget: React.FC = () => {
       <button
         type="button"
         onClick={isOpen ? () => setIsOpen(false) : openChat}
-        aria-label={isOpen
-          ? 'Close WhatsApp support'
-          : hasUnreadNotice
-            ? 'New WhatsApp support invitation. Open chat'
-            : 'Open WhatsApp support'}
+        aria-label={isOpen ? 'Close WhatsApp support' : 'Chat with Mahdev on WhatsApp'}
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         className="whatsapp-launcher flex h-14 w-14 items-center justify-center rounded-full text-white transition duration-200 hover:scale-105 focus-visible:outline-none focus-visible:ring-4"
       >
         {isOpen ? <X className="h-6 w-6" /> : (
-          <>
-            <MessageCircle className="h-7 w-7" strokeWidth={2.25} />
-            {hasUnreadNotice && <span className="whatsapp-notification-badge" aria-hidden="true">1</span>}
-          </>
+          <MessageCircle className="h-7 w-7" strokeWidth={2.25} />
         )}
       </button>
     </div>

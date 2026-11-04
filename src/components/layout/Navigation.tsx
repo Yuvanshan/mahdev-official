@@ -23,12 +23,18 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { BrandLogo } from './BrandLogo';
-import { Button } from '../ui/Button';
 import { MAIN_NAV_ITEMS as ALL_NAV_ITEMS } from '../../config/navigation';
 
 // Items kept in config (and the footer) but hidden from the top bar and mobile menu.
 const HIDDEN_TOP_BAR_ITEMS = new Set(['insights']);
 const MAIN_NAV_ITEMS = ALL_NAV_ITEMS.filter((item) => !HIDDEN_TOP_BAR_ITEMS.has(item.id));
+const DIVISION_MENU_DETAILS: Record<string, { mark: string; description: string; background: string; color: string }> = {
+  sws: { mark: 'SWS', description: 'Weddings, parties & events', background: '#0E1424', color: '#fff' },
+  u1: { mark: 'U1', description: 'Photography & cinema', background: '#F1E4D3', color: '#0E1424' },
+  it: { mark: 'IT', description: 'Web, apps & digital products', background: '#E8ECFF', color: '#2E46CF' },
+  travels: { mark: 'MT', description: 'Thoughtful island journeys', background: '#E4F0EB', color: '#0E6B4F' },
+  mart: { mark: 'OM', description: 'Celebration & home essentials', background: '#FBEBDD', color: '#9A4A12' },
+};
 import { DIVISIONS, DIVISION_LIST } from '../../config/divisions';
 import { DivisionId } from '../../types';
 import { useCart } from '../../context/CartContext';
@@ -276,7 +282,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
             </div>
 
             {/* Middle: Desktop Navigation Links */}
-            <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
+            <nav className="hidden min-[900px]:flex items-center gap-1 xl:gap-2">
               {MAIN_NAV_ITEMS.map((item) => {
                 if (item.id === 'divisions' || item.children) {
                   return (
@@ -322,43 +328,60 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
                       {/* Dropdown Menu - perfectly constrained, responsive width, never overflows viewport */}
                       {isServicesOpen && (
-                        <div className="absolute left-0 mt-2 w-[360px] sm:w-[410px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-xl border border-slate-200 z-[70] animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col max-h-[calc(100vh-5rem)] overflow-hidden">
+                        <div className="absolute left-0 mt-3 w-[560px] max-w-[calc(100vw-2rem)] rounded-[24px] border border-slate-200 bg-white shadow-2xl shadow-slate-900/15 z-[70] animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col max-h-[calc(100vh-5rem)] overflow-hidden">
                           <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between shrink-0">
                             <span className="text-sm font-semibold text-slate-900">Our businesses</span>
                           </div>
 
                           {/* Scrollable division items container */}
-                          <div className="p-2 space-y-1 overflow-y-auto overscroll-contain max-h-[360px] divide-y divide-slate-100 scrollbar-thin">
+                          <div className="grid grid-cols-2 gap-2 p-3 overflow-y-auto overscroll-contain max-h-[360px] scrollbar-thin">
                             {displayDivisions.map((division) => (
+                              (() => {
+                                const detail = DIVISION_MENU_DETAILS[division.id] || {
+                                  mark: division.name.slice(0, 2).toUpperCase(),
+                                  description: division.tagline || 'Explore this Mahdev division',
+                                  background: '#EEF1FF',
+                                  color: '#2E46CF',
+                                };
+                                return (
                               <a
                                 key={division.id}
                                 href={division.route}
                                 onClick={(event) => handleAnchorClick(event, division.route)}
-                                className={`w-full flex items-center p-3 rounded-xl text-left transition-all cursor-pointer group ${
+                                aria-current={currentDivisionKey === division.id ? 'page' : undefined}
+                                className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all cursor-pointer group ${
                                   currentPath === division.route
                                     ? 'bg-blue-100/80 text-blue-900 ring-1 ring-blue-500/30'
-                                    : 'hover:bg-blue-50/70 text-slate-800'
+                                    : 'hover:bg-slate-50 text-slate-800'
                                 }`}
                               >
-                                <span className="truncate text-sm font-semibold group-hover:text-[#0052FF] transition-colors">
-                                  {division.name}
+                                <span
+                                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[10px] font-extrabold tracking-tight"
+                                  style={{ backgroundColor: detail.background, color: detail.color }}
+                                  aria-hidden="true"
+                                >
+                                  {detail.mark}
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="block truncate text-sm font-semibold group-hover:text-[#3550E8] transition-colors">
+                                    {division.name}
+                                  </span>
+                                  <span className="mt-0.5 block truncate text-xs text-slate-500">{detail.description}</span>
                                 </span>
                               </a>
+                                );
+                              })()
                             ))}
+                            <button
+                              type="button"
+                              onClick={() => handleLinkClick('/portfolio')}
+                              className="col-span-2 flex min-h-14 items-center justify-between rounded-2xl bg-[#0E1424] px-4 text-left text-sm font-semibold text-white transition-colors hover:bg-[#20283c]"
+                            >
+                              See all our work <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                            </button>
                           </div>
 
                           {/* Action footer */}
-                          <div className="p-3 border-t border-slate-200 shrink-0">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              fullWidth
-                              onClick={() => handleLinkClick('/divisions')}
-                              className="text-xs font-semibold"
-                            >
-                              Explore all businesses
-                            </Button>
-                          </div>
                         </div>
                       )}
                     </div>
@@ -532,8 +555,10 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 rounded-xl text-slate-900 hover:text-[#0052FF] hover:bg-blue-50 lg:hidden focus:outline-none focus:ring-2 focus:ring-[#0052FF] cursor-pointer shrink-0 border border-blue-200/80 bg-[#FAF9F6]"
+                className="p-2 rounded-xl text-slate-900 hover:text-[#0052FF] hover:bg-blue-50 min-[900px]:hidden focus:outline-none focus:ring-2 focus:ring-[#0052FF] cursor-pointer shrink-0 border border-blue-200/80 bg-[#FAF9F6]"
                 aria-label="Toggle navigation menu"
+                aria-expanded={isMobileMenuOpen}
+                aria-controls="mahdev-mobile-navigation"
               >
                 {isMobileMenuOpen ? <X className="w-5 h-5 text-slate-900" /> : <Menu className="w-5 h-5 text-slate-900" />}
               </button>
@@ -549,9 +574,9 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
             type="button"
             aria-label="Close menu"
             onClick={() => setIsMobileMenuOpen(false)}
-            className="lg:hidden absolute inset-x-0 top-full h-[100svh] z-[55] bg-slate-950/30"
+            className="min-[900px]:hidden fixed inset-0 z-[55] bg-slate-950/35"
           />
-          <div className="lg:hidden absolute inset-x-3 top-full z-[61] mt-2 max-h-[calc(100svh-6rem)] overflow-y-auto overscroll-contain rounded-2xl border border-blue-200/80 bg-[#FAF9F6] px-4 pt-4 pb-6 space-y-4 shadow-2xl animate-in slide-in-from-top-2 duration-200">
+          <div id="mahdev-mobile-navigation" className="min-[900px]:hidden fixed inset-x-0 top-[var(--public-nav-height,4.25rem)] bottom-0 z-[61] overflow-y-auto overscroll-contain bg-[#F6F5F1] px-5 pt-5 pb-10 space-y-4 shadow-2xl animate-in slide-in-from-top-2 duration-200">
             {/* Account */}
             {!isAuthLoading && (
               isAuthenticated && user ? (

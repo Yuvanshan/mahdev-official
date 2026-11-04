@@ -24,9 +24,9 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
   const heroRef = React.useRef<HTMLElement | null>(null);
 
   return (
-    <section ref={heroRef} className="relative flex min-h-[680px] w-full items-center overflow-hidden bg-[#061033] text-white sm:min-h-[740px] lg:min-h-[min(820px,calc(100svh-5rem))]">
+    <section ref={heroRef} className="division-video-hero relative flex min-h-[680px] w-full items-center overflow-hidden bg-[#061033] text-white sm:min-h-[740px] lg:min-h-[min(820px,calc(100svh-5rem))]">
       {/* Reliable Full-Width Video Background with guaranteed autoplay */}
-      <ScrollParallax targetRef={heroRef} distance={34} className="absolute -inset-y-10 inset-x-0 overflow-hidden">
+      <ScrollParallax targetRef={heroRef} distance={24} className="division-video-hero__media absolute -inset-y-10 right-[-2%] w-[72%] overflow-hidden">
         <HeroVideoBackground
           videoUrl="/assets/hero_main.mp4?v=2"
           posterImageUrl="/assets/hero_main_poster.jpg"
