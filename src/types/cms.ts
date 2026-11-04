@@ -571,6 +571,7 @@ export interface HomepageCmsConfig {
     subtitle: string;
     enabled: boolean;
     videos: DecorationShowcaseVideo[];
+    categories?: string[];
   };
   milestones: {
     badge: string;

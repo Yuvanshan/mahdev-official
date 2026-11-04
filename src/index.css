@@ -1298,6 +1298,12 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
   color: #e2e8f0;
 }
 
+@media (max-width: 1023px) {
+  .public-site-footer {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .public-site-footer > div:first-child {
   border-color: rgb(148 163 184 / 22%);
 }
@@ -2453,8 +2459,15 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   }
 
   .home-product-details {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
     min-height: 100px;
     padding: 12px;
+  }
+
+  .home-product-image {
+    aspect-ratio: 4 / 5;
   }
 
   .home-product-details h3 {
@@ -2462,6 +2475,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   }
 
   .home-product-add {
+    width: 100%;
     padding-inline: 9px;
     font-size: 10px;
   }
@@ -2504,7 +2518,12 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   }
 
   .home-product-grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .home-product-card {
+    border-radius: 14px;
   }
 }
 

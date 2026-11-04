@@ -21,6 +21,7 @@ import { Button } from '../ui/Button';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 import { branchLocationTag } from '../../config/imageAlt';
+import { DivisionFilterEmptyState, useDivisionFilteredItems } from '../common/DivisionFilter';
 
 interface SWSPortfolioSectionProps {
   onConsultationClick: () => void;
@@ -63,12 +64,25 @@ export const SWSPortfolioSection: React.FC<SWSPortfolioSectionProps> = ({
   }, [rawPortfolio]);
 
   const [selectedCase, setSelectedCase] = useState<SWSPortfolioItem | null>(null);
+  const filteredPortfolioItems = useDivisionFilteredItems('sws-portfolio', portfolioItems, (item) => ({
+    title: item.title,
+    category: item.eventType,
+    text: [item.client, item.date, item.location, item.summary, item.detailedCase, ...item.servicesDelivered, ...item.highlights].join(' '),
+  }));
 
   if (portfolioItems.length === 0) {
     return null;
   }
 
-  const activeCase = selectedCase || portfolioItems[0];
+  if (filteredPortfolioItems.length === 0) {
+    return (
+      <SectionContainer id="portfolio" background="subtle" paddingY="xl" hasBorderBottom>
+        <DivisionFilterEmptyState label="portfolio items" />
+      </SectionContainer>
+    );
+  }
+
+  const activeCase = filteredPortfolioItems.find((item) => item.id === selectedCase?.id) || filteredPortfolioItems[0];
 
   return (
     <SectionContainer id="portfolio" background="subtle" paddingY="xl" hasBorderBottom>
@@ -86,7 +100,7 @@ export const SWSPortfolioSection: React.FC<SWSPortfolioSectionProps> = ({
           <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
             Select Featured Production
           </div>
-          {portfolioItems.map((item) => (
+          {filteredPortfolioItems.map((item) => (
             <div
               key={item.id}
               onClick={() => setSelectedCase(item)}

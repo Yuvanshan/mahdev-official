@@ -65,8 +65,9 @@ const categoryLabel = (category: string) => {
 
 function itemMatches(item: FilterableItem, filter: FilterValues): boolean {
   if (filter.category !== 'all' && categoryKey(item.category) !== filter.category) return false;
-  const query = filter.query.trim().toLowerCase();
-  if (query && !`${item.title} ${item.category || ''} ${item.text || ''}`.toLowerCase().includes(query)) return false;
+  const searchText = `${item.title} ${item.category || ''} ${item.text || ''}`.toLowerCase();
+  const queryTerms = filter.query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (queryTerms.some((term) => !searchText.includes(term))) return false;
   const price = getStartingPrice(item.price);
   if (filter.pricedOnly && price === null) return false;
   return priceInRange(price, filter.price);

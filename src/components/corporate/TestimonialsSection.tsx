@@ -212,7 +212,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
           {filteredReviews.map((review) => (
             <div
               key={review.id}
-              className="group flex min-h-[250px] w-[80%] shrink-0 snap-start flex-col justify-between rounded-2xl border border-slate-200/90 bg-slate-50/80 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-blue-400 hover:bg-white hover:shadow-lg sm:min-h-[270px] sm:w-[calc(50%-0.75rem)] sm:p-6 lg:w-[calc(33.333%-1rem)]"
+              className="group flex aspect-square w-[72%] max-w-[280px] shrink-0 snap-start flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-slate-50/80 p-4 transition-all duration-300 hover:-translate-y-1 hover:border-blue-400 hover:bg-white hover:shadow-lg sm:w-[calc(50%-0.75rem)] sm:max-w-none sm:p-5 lg:w-[calc(33.333%-1rem)]"
             >
               <div>
                 {/* Header: Stars and Division Tag */}
@@ -231,16 +231,16 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
                 </div>
 
                 {/* Review Quote */}
-                <div className="relative mb-4">
+                <div className="relative mb-3 min-h-0 overflow-hidden">
                   <Quote className="w-6 h-6 text-slate-200 mb-2 -scale-x-100" />
-                  <p className="text-xs sm:text-sm text-slate-700 leading-relaxed italic">
+                  <p title={review.text} className="line-clamp-5 text-xs leading-relaxed text-slate-700 italic sm:text-sm">
                     "{review.text}"
                   </p>
                 </div>
               </div>
 
               {/* Author Info */}
-              <div className="pt-4 border-t border-slate-200/80 flex items-center gap-3">
+              <div className="flex items-center gap-3 border-t border-slate-200/80 pt-3">
                 <div className="relative shrink-0">
                   {review.avatarUrl && review.avatarUrl.trim() !== '' ? (
                     <img

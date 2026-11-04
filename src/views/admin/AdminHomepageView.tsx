@@ -68,12 +68,18 @@ export const AdminHomepageView: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showcaseUploadProgress, setShowcaseUploadProgress] = useState<Record<string, number>>({});
   const [showcaseThumbnailUploadProgress, setShowcaseThumbnailUploadProgress] = useState<Record<string, number>>({});
+  const [newShowcaseCategory, setNewShowcaseCategory] = useState('');
+  const [showcaseCategoryDrafts, setShowcaseCategoryDrafts] = useState<Record<string, string>>({});
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
   const [mediaPickerTarget, setMediaPickerTarget] = useState<'hero' | 'seo' | string>('hero');
   const [previewVideoSrc, setPreviewVideoSrc] = useState<string>('');
 
   const currentHeroVideo = config.hero.videoUrl || (config.hero.mediaType === 'video' ? config.hero.mediaUrl : '');
+  const showcaseCategories = Array.from(new Set([
+    ...(config.decorationShowcase?.categories || []),
+    ...(config.decorationShowcase?.videos || []).map((video) => video.category),
+  ].map((category) => category.trim()).filter(Boolean)));
 
   useEffect(() => {
     let isMounted = true;
@@ -417,6 +423,26 @@ export const AdminHomepageView: React.FC = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const updateShowcaseCategories = (categories: string[], rename?: { from: string; to: string }) => {
+    setConfig((prev) => ({
+      ...prev,
+      decorationShowcase: {
+        ...(prev.decorationShowcase || {
+          badge: 'SWS Precision Event Engineering',
+          title: 'Cinematic Event & Decoration Showcase',
+          subtitle: '',
+          enabled: true,
+          videos: [],
+        }),
+        categories,
+        videos: (prev.decorationShowcase?.videos || []).map((video) =>
+          rename && video.category === rename.from ? { ...video, category: rename.to } : video
+        ),
+      },
+    }));
+    setIsDirty(true);
   };
 
   return (
@@ -1426,6 +1452,81 @@ export const AdminHomepageView: React.FC = () => {
 
             {/* Video Cards Management */}
             <div className="pt-4 border-t border-slate-100">
+              <div className="mb-5 rounded-xl border border-slate-200 bg-white p-4">
+                <h4 className="mb-1 text-sm font-bold text-slate-800">Showcase categories</h4>
+                <p className="mb-3 text-xs text-slate-500">Manage the categories available on the homepage and for each showcase video.</p>
+                <form
+                  className="mb-3 flex flex-wrap gap-2"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const category = newShowcaseCategory.trim();
+                    if (!category || category.toLowerCase() === 'all' || showcaseCategories.some((item) => item.toLowerCase() === category.toLowerCase())) return;
+                    updateShowcaseCategories([...showcaseCategories, category]);
+                    setNewShowcaseCategory('');
+                  }}
+                >
+                  <input
+                    value={newShowcaseCategory}
+                    onChange={(event) => setNewShowcaseCategory(event.target.value)}
+                    aria-label="New showcase category"
+                    placeholder="Add a category"
+                    className="min-w-[180px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-xs"
+                  />
+                  <Button type="submit" size="sm" variant="outline" leftIcon={<Plus className="h-3.5 w-3.5" />}>
+                    Add category
+                  </Button>
+                </form>
+                <div className="space-y-2">
+                  {showcaseCategories.map((category) => {
+                    const draft = showcaseCategoryDrafts[category] ?? category;
+                    return (
+                      <div key={category} className="flex flex-wrap items-center gap-2">
+                        <input
+                          value={draft}
+                          aria-label={`Edit category ${category}`}
+                          onChange={(event) => setShowcaseCategoryDrafts((prev) => ({ ...prev, [category]: event.target.value }))}
+                          className="min-w-[180px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-xs"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={!draft.trim() || draft.trim().toLowerCase() === 'all' || draft.trim() === category || showcaseCategories.some((item) => item !== category && item.toLowerCase() === draft.trim().toLowerCase())}
+                          onClick={() => {
+                            const nextName = draft.trim();
+                            updateShowcaseCategories(showcaseCategories.map((item) => item === category ? nextName : item), { from: category, to: nextName });
+                            setShowcaseCategoryDrafts((prev) => {
+                              const next = { ...prev };
+                              delete next[category];
+                              return next;
+                            });
+                          }}
+                        >
+                          Save name
+                        </Button>
+                        <button
+                          type="button"
+                          aria-label={`Remove category ${category}`}
+                          onClick={() => {
+                            const remaining = showcaseCategories.filter((item) => item !== category);
+                            const replacement = remaining[0] || 'Other';
+                            updateShowcaseCategories(remaining.length ? remaining : [replacement], { from: category, to: replacement });
+                            setShowcaseCategoryDrafts((prev) => {
+                              const next = { ...prev };
+                              delete next[category];
+                              return next;
+                            });
+                          }}
+                          className="rounded-lg p-2 text-rose-600 hover:bg-rose-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
@@ -1445,7 +1546,7 @@ export const AdminHomepageView: React.FC = () => {
                     const newVideo: DecorationShowcaseVideo = {
                       id: `decor-vid-${Date.now()}`,
                       title: 'New Luxury Event Production',
-                      category: 'Weddings',
+                      category: showcaseCategories[0] || 'Weddings',
                       location: 'Colombo, Sri Lanka',
                       duration: '0:45',
                       videoUrl: '',
@@ -1542,10 +1643,8 @@ export const AdminHomepageView: React.FC = () => {
                           }}
                           className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
                         >
-                          <option value="Weddings">Weddings</option>
-                          <option value="Floral & Canopy">Floral & Canopy</option>
-                          <option value="Lighting & Truss">Lighting & Truss</option>
-                          <option value="Corporate Galas">Corporate Galas</option>
+                          {!showcaseCategories.includes(video.category) && <option value={video.category}>{video.category}</option>}
+                          {showcaseCategories.map((category) => <option key={category} value={category}>{category}</option>)}
                         </select>
                       </div>
 

@@ -171,7 +171,7 @@ export const MartProductCard: React.FC<MartProductCardProps> = ({
             type="button"
             onClick={handleAdd}
             disabled={!product.inStock}
-            className={`flex-1 w-full min-h-[40px] px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer select-none ${
+            className={`flex-1 w-full min-h-[40px] px-2.5 py-2.5 sm:px-3.5 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer select-none ${
               justAdded
                 ? 'bg-emerald-600 text-white shadow-emerald-500/20'
                 : !product.inStock
@@ -182,12 +182,16 @@ export const MartProductCard: React.FC<MartProductCardProps> = ({
             {justAdded ? (
               <>
                 <Check className="w-4 h-4 text-emerald-200 shrink-0" />
-                <span className="truncate">Added to Cart</span>
+                <span className="truncate"><span className="sm:hidden">Added</span><span className="hidden sm:inline">Added to Cart</span></span>
               </>
             ) : (
               <>
                 <ShoppingCart className="w-4 h-4 shrink-0" />
-                <span className="truncate">{product.inStock ? 'Add to Cart' : 'Out of Stock'}</span>
+                <span className="truncate">
+                  {product.inStock
+                    ? <><span className="sm:hidden">Add</span><span className="hidden sm:inline">Add to Cart</span></>
+                    : <><span className="sm:hidden">Out</span><span className="hidden sm:inline">Out of Stock</span></>}
+                </span>
               </>
             )}
           </button>
