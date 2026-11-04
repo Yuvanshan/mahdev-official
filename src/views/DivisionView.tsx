@@ -349,7 +349,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
               (firestoreDiv?.hero as any)?.videoUrl ||
               ((firestoreDiv?.hero as any)?.mediaType === 'video' ? (firestoreDiv?.hero as any)?.mediaUrl : '') ||
               (baseDivision as any)?.heroVideoUrl ||
-              '/assets/hero_main.mp4?v=2';
+              '/assets/hero_main.mp4?v=3';
             const divImg =
               (firestoreDiv as any)?.defaultImageUrl ||
               (firestoreDiv as any)?.fallbackImageUrl ||
@@ -369,7 +369,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
               (firestoreDiv?.hero as any)?.videoUrl ||
               ((firestoreDiv?.hero as any)?.mediaType === 'video' && (firestoreDiv?.hero as any)?.mediaUrl)
             );
-            const effectiveVideo = hasFirestoreVideo ? divVideo : '/assets/hero_main.mp4?v=2';
+            const effectiveVideo = hasFirestoreVideo ? divVideo : '/assets/hero_main.mp4?v=3';
 
             return (
               <ScrollParallax targetRef={divisionHeroRef} distance={24} className="division-video-hero__media absolute -inset-y-10 right-[-2%] w-[72%] overflow-hidden">

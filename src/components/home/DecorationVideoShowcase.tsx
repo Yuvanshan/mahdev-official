@@ -178,6 +178,7 @@ const DecorationVideoShowcaseContent: React.FC<
               playsInline
               disablePictureInPicture
               disableRemotePlayback
+              preload="metadata"
               aria-label="Event production showcase video"
               className="aspect-video h-full w-full object-cover"
               onEnded={() => setActiveVideoIndex((index) => (index + 1) % playbackVideos.length)}

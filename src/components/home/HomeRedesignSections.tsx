@@ -20,7 +20,7 @@ import { formatCurrency } from '../../utils/currency';
 
 const OCCASIONS = [
   { name: 'Weddings', terms: ['wedding', 'marriage'] },
-  { name: 'Outdoor receptions', terms: ['outdoor', 'reception'] },
+  { name: 'Outdoor events', filterTerm: 'outdoor', terms: ['outdoor', 'garden', 'marquee', 'tent', 'open air', 'reception'] },
   { name: 'Engagements', terms: ['engagement', 'homecoming'] },
   { name: 'Baby showers', terms: ['baby', 'shower'] },
   { name: 'Big girl ceremonies', terms: ['big girl', 'half saree'] },
@@ -59,7 +59,7 @@ const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ on
         if (!image) return null;
         return {
           image,
-          searchText: `${item.title || ''} ${item.category || ''} ${item.tag || ''} ${item.caption || ''}`.toLowerCase(),
+          searchText: `${item.title || ''} ${item.category || ''} ${item.tag || ''} ${item.caption || ''} ${(item as any).description || ''} ${(item as any).tags?.join(' ') || ''}`.toLowerCase(),
         };
       })
       .filter((item): item is NonNullable<typeof item> => item !== null);
@@ -72,8 +72,8 @@ const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ on
       const entry = match || images.find((item) => !usedImages.has(item.image)) || images[index % images.length];
       if (!entry) return null;
       usedImages.add(entry.image);
-      return { name: occasion.name, image: entry.image, filterTerm: occasion.terms[0] };
-    })    .filter((item): item is { name: string; image: string; filterTerm: string } => item !== null);
+      return { name: occasion.name, image: entry.image, filterTerm: 'filterTerm' in occasion ? occasion.filterTerm : occasion.terms[0] };
+    }).filter((item): item is { name: string; image: string; filterTerm: string } => item !== null);
   }, [gallery]);
   const divisionCards = useMemo(() => {
     const fallbackDivisions = Object.values(DIVISIONS).map((division, order) => ({

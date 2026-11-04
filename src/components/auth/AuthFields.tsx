@@ -183,11 +183,17 @@ export const AuthSubmit: React.FC<{ busy: boolean; children: React.ReactNode; bu
       <>
         <motion.span
           aria-hidden="true"
-          className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white"
+          className="pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+          animate={{ x: ['-100%', '220%'] }}
+          transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+        />
+        <motion.span
+          aria-hidden="true"
+          className="relative z-10 h-4 w-4 rounded-full border-2 border-white/40 border-t-white"
           animate={{ rotate: 360 }}
           transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
         />
-        {busyLabel}
+        <span className="relative z-10">{busyLabel}</span>
       </>
     ) : (
       children

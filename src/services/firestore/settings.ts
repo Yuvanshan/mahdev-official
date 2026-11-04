@@ -97,10 +97,10 @@ export function getDefaultHomepageSettings(): HomepageCmsConfig {
       titleLine2: '',
       description: 'Products and services for the moments, work and ideas that move life forward.',
       mediaType: 'video',
-      mediaUrl: '/assets/hero_main.mp4?v=2',
+      mediaUrl: '/assets/hero_main.mp4?v=3',
       imageUrl: '',
       defaultImageUrl: '',
-      videoUrl: '/assets/hero_main.mp4?v=2',
+      videoUrl: '/assets/hero_main.mp4?v=3',
       primaryCtaLabel: 'Explore Ecosystem',
       primaryCtaLink: '#divisions',
       secondaryCtaLabel: 'Get In Touch',
@@ -778,7 +778,7 @@ export const firestoreSettingsService = {
     const heroUpdates = data.hero ? { ...data.hero } : undefined;
     if (heroUpdates && heroUpdates.mediaType !== 'image') {
       const v = (heroUpdates.videoUrl || (heroUpdates as any).heroVideoUrl || '').trim();
-      const effectiveVideo = v || heroUpdates.mediaUrl || existing.hero.videoUrl || '/assets/hero_main.mp4?v=2';
+      const effectiveVideo = v || heroUpdates.mediaUrl || existing.hero.videoUrl || '/assets/hero_main.mp4?v=3';
       heroUpdates.videoUrl = effectiveVideo;
       heroUpdates.mediaUrl = effectiveVideo;
       heroUpdates.mediaType = 'video';

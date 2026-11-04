@@ -13,10 +13,9 @@ interface HeroSectionProps {
   onExploreServices?: () => void;
 }
 
-const HERO_VIDEO = '/assets/hero_landing.mp4';
+const HERO_VIDEO = '/assets/hero_landing.mp4?v=3';
 // First frame shown instantly (preloaded in index.html) until the video can play.
 const HERO_POSTER = '/assets/hero_landing_poster.jpg';
-const DEFAULT_CMS_HERO_VIDEO = '/assets/hero_main.mp4?v=2';
 let savedHeroVideoTime = 0;
 
 function extractVimeoId(url: string): string | null {
@@ -34,7 +33,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
   const { homepageConfig } = useFirestoreDataContext();
   const cmsHero = homepageConfig?.hero;
   const configuredVideo = cmsHero?.videoUrl || cmsHero?.mediaUrl || '';
-  const useCmsVideo = Boolean(configuredVideo && configuredVideo !== DEFAULT_CMS_HERO_VIDEO && cmsHero?.mediaType !== 'image');
+  const isDefaultCmsVideo = configuredVideo.split('?')[0] === '/assets/hero_main.mp4';
+  const useCmsVideo = Boolean(configuredVideo && !isDefaultCmsVideo && cmsHero?.mediaType !== 'image');
   const configuredImage = cmsHero?.imageUrl || cmsHero?.mediaUrl || '';
   const useCmsImage = Boolean(configuredImage && cmsHero?.mediaType === 'image');
   const youtubeId = useCmsVideo ? extractYouTubeId(configuredVideo) : null;
@@ -83,6 +83,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
     const video = isUploadedVideoActive ? uploadedVideoRef.current : videoRef.current;
     const hero = heroRef.current;
     if (!video || !hero) return;
+    video.setAttribute('fetchpriority', 'high');
 
     let isHeroVisible = false;
     const savePlaybackPosition = () => {
@@ -273,14 +274,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
           aria-label="Scroll to discover Mahdev"
         >
           <ArrowDown aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          className="home-latest-card absolute bottom-8 right-8 z-20"
-          onClick={() => onNavigate('/portfolio')}
-        >
-          <span><small>Explore</small><strong>Recent work</strong></span>
-          <ArrowRight aria-hidden="true" />
         </button>
       </div>
     </section>

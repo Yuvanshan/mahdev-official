@@ -224,6 +224,15 @@
       ]
     },
     {
+      "source": "/assets/(hero_landing|hero_main|u1-studio-hero)\\.mp4",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, s-maxage=31536000, immutable"
+        }
+      ]
+    },
+    {
       "source": "/uploads/(.*)",
       "headers": [
         {

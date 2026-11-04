@@ -35,7 +35,7 @@ function extractVimeoId(url: string): string | null {
   return match && match[1] ? match[1] : null;
 }
 
-const DEFAULT_CORPORATE_VIDEO = '/assets/hero_main.mp4?v=2';
+const DEFAULT_CORPORATE_VIDEO = '/assets/hero_main.mp4?v=3';
 
 export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
   videoUrl,
@@ -186,6 +186,13 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
   const effectiveVideoSrc = resolvedSrc || (!trimmedVideo.startsWith('firestore://') ? trimmedVideo : '');
   const fallbackImage = imageUrl?.trim() || posterImageUrl?.trim() || '';
 
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !hasVideo || isEmbedVideo) return;
+    video.preload = 'metadata';
+    video.setAttribute('fetchpriority', 'high');
+  }, [effectiveVideoSrc, hasVideo, isEmbedVideo]);
+
   return (
     <div ref={backgroundRef} className={`absolute inset-0 z-0 overflow-hidden select-none pointer-events-none bg-[#061033] ${className}`}>
       {/* A poster is present from first paint, so a slow or unavailable video
@@ -241,7 +248,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
           // Background loop: stops Safari offering "Video Viewer" / AirPlay for it.
           disablePictureInPicture
           disableRemotePlayback
-          preload="auto"
+          preload="metadata"
           onCanPlay={handleVideoReady}
           onCanPlayThrough={() => {
             handleVideoReady();
@@ -270,7 +277,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
       ) : null}
 
       {/* 4. Electric Blue & High Contrast Shading Overlay (Always on top of media, under content) */}
-      <div className="absolute inset-0 bg-gradient-to-r from-[#061033] via-[#061033]/85 sm:via-[#061033]/70 md:via-[#061033]/45 to-transparent pointer-events-none z-10" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#061033]/40 via-[#061033]/30 sm:via-[#061033]/24 md:via-[#061033]/12 to-transparent pointer-events-none z-10" />
       <div className="absolute inset-0 bg-gradient-to-t from-[#061033] via-transparent to-[#0052FF]/10 pointer-events-none z-10" />
       {/* Only once the <video> element exists, and re-initialised when its source changes. */}
       {enableAutomaticAudio && hasVideo && effectiveVideoSrc && !isEmbedVideo && (

@@ -1488,14 +1488,23 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   margin: 0;
   border-radius: 0;
   background: var(--ink-hero);
+  isolation: isolate;
 }
 
 .division-video-hero__media {
-  left: auto;
-  right: -2%;
-  width: 82%;
-  mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,.4) 25%, #000 58%);
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,.4) 25%, #000 58%);
+  inset: -2% 0;
+  width: 100%;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+.division-video-hero::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(6,16,51,.42) 0%, rgba(6,16,51,.30) 30%, rgba(6,16,51,.14) 58%, rgba(6,16,51,.04) 100%);
+  content: "";
+  pointer-events: none;
 }
 
 .division-video-hero > div:last-child {

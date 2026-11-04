@@ -31,11 +31,16 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({ label, o
 
   const handleClick = async () => {
     setBusy(true);
-    const result = await signInWithGoogle();
-    if (result.redirecting) return; // The page is leaving for Google's sign-in page.
-    setBusy(false);
-    if (result.success && result.user) onSignedIn(result.user);
-    else if (!result.cancelled) onError(result.error || 'Google sign-in failed. Please try again.');
+    try {
+      const result = await signInWithGoogle();
+      if (result.redirecting) return;
+      setBusy(false);
+      if (result.success && result.user) onSignedIn(result.user);
+      else if (!result.cancelled) onError(result.error || 'Google sign-in failed. Please try again.');
+    } catch (error) {
+      setBusy(false);
+      onError(error instanceof Error ? error.message : 'Google sign-in failed. Please try again.');
+    }
   };
 
   return (
@@ -46,19 +51,28 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({ label, o
         disabled={busy}
         whileHover={busy ? undefined : { y: -1 }}
         whileTap={busy ? undefined : { scale: 0.98 }}
-        className="inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-[#747775] bg-white px-5 text-[15px] font-medium text-[#1F1F1F] shadow-sm transition hover:bg-slate-50 hover:shadow-md disabled:cursor-wait disabled:opacity-70 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/20"
+        aria-busy={busy}
+        className="relative inline-flex min-h-12 w-full items-center justify-center gap-3 overflow-hidden rounded-xl border border-[#747775] bg-white px-5 text-[15px] font-medium text-[#1F1F1F] shadow-sm transition hover:bg-slate-50 hover:shadow-md disabled:cursor-wait disabled:opacity-70 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/20"
       >
+        {busy && (
+          <motion.span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-blue-100/70 to-transparent"
+            animate={{ x: ['-100%', '220%'] }}
+            transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+          />
+        )}
         {busy ? (
           <motion.span
             aria-hidden="true"
-            className="h-5 w-5 rounded-full border-2 border-slate-300 border-t-[#4285F4]"
+            className="relative z-10 h-5 w-5 rounded-full border-2 border-slate-300 border-t-[#4285F4]"
             animate={{ rotate: 360 }}
             transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
           />
         ) : (
-          <GoogleLogo />
+          <span className="relative z-10"><GoogleLogo /></span>
         )}
-        {busy ? 'Connecting to Google…' : label}
+        <span className="relative z-10">{busy ? 'Waiting for sign-in…' : label}</span>
       </motion.button>
       <div className="flex items-center gap-3 text-xs font-medium uppercase tracking-wider text-slate-400" aria-hidden="true">
         <span className="h-px flex-1 bg-slate-200" /> or use email <span className="h-px flex-1 bg-slate-200" />

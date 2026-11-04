@@ -584,7 +584,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
             onClick={() => setIsMobileMenuOpen(false)}
             className="min-[900px]:hidden fixed inset-0 z-[55] bg-slate-950/35"
           />
-          <div id="mahdev-mobile-navigation" className="min-[900px]:hidden fixed inset-x-0 top-[var(--public-nav-height,4.25rem)] bottom-0 z-[61] overflow-y-auto overscroll-contain bg-[#F6F5F1] px-5 pt-5 pb-10 space-y-4 shadow-2xl animate-in slide-in-from-top-2 duration-200">
+          <div id="mahdev-mobile-navigation" className="min-[900px]:hidden fixed right-0 top-[var(--public-nav-height,4.25rem)] bottom-0 z-[61] w-[min(90vw,380px)] overflow-y-auto overscroll-contain bg-[#F6F5F1] px-5 pt-5 pb-10 space-y-4 shadow-2xl animate-in slide-in-from-right duration-300">
             {/* Account */}
             {!isAuthLoading && (
               isAuthenticated && user ? (
@@ -604,11 +604,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                   </button>
                   <button
                     type="button"
-                    onClick={handleSignOut}
-                    className="rounded-xl border border-rose-200 bg-white p-3 text-rose-600 shadow-2xs"
-                    aria-label="Sign out"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="rounded-xl border border-slate-200 bg-white p-3 text-slate-600 shadow-2xs transition hover:bg-slate-50 hover:text-slate-900"
+                    aria-label="Close navigation menu"
                   >
-                    <LogOut className="h-4 w-4" />
+                    <X className="h-4 w-4" />
                   </button>
                 </div>
               ) : (
