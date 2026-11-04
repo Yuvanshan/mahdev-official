@@ -72,8 +72,8 @@ const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ on
       const entry = match || images.find((item) => !usedImages.has(item.image)) || images[index % images.length];
       if (!entry) return null;
       usedImages.add(entry.image);
-      return { name: occasion.name, image: entry.image };
-    }).filter((item): item is { name: string; image: string } => item !== null);
+      return { name: occasion.name, image: entry.image, filterTerm: occasion.terms[0] };
+    })    .filter((item): item is { name: string; image: string; filterTerm: string } => item !== null);
   }, [gallery]);
   const divisionCards = useMemo(() => {
     const fallbackDivisions = Object.values(DIVISIONS).map((division, order) => ({
@@ -138,7 +138,9 @@ const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ on
               className={`home-occasion${index === 0 ? ' home-occasion--feature' : ''}${index === 7 ? ' home-occasion--wide' : ''}`}
               key={`${occasion.name}-${occasion.image}`}
               style={{ backgroundImage: `linear-gradient(180deg, transparent 34%, rgba(14,20,36,.72)), url("${occasion.image}")` }}
-              onClick={() => onNavigate(`/portfolio?occasion=${encodeURIComponent(occasion.name.toLowerCase().replaceAll(' ', '-'))}`)}
+              onClick={() => {
+                onNavigate(`/sws?category=${encodeURIComponent(occasion.filterTerm)}`);
+              }}
             >
               <span className="home-occasion-label">
                 <span>{occasion.name}</span>

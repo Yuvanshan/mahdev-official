@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowRight, Pause, Play, MessageCircle } from 'lucide-react';
+import { ArrowDown, ArrowRight, Pause, Play } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { ScrollParallax } from '../motion/ParallelScroll';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { resolveMediaUrl } from '../../services/firestoreMediaService';
 import { extractYouTubeId, getYouTubeEmbedUrl } from '../../utils/youtube';
-import { MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
 
 interface HeroSectionProps {
   onNavigate: (route: string) => void;
@@ -154,10 +153,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
     );
   };
 
-  const explore = () => {
-    onNavigate('/contact');
-  };
-
   const exploreDivisions = () => {
     const divisionsSection = document.getElementById('divisions');
     if (!divisionsSection) {
@@ -266,12 +261,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
             <span><em>Capturing</em> memories.</span>
           </h1>
           <div className="home-hero-actions">
-            <button type="button" className="home-button home-button--primary" onClick={explore}>
+            <button type="button" className="home-button home-button--primary" onClick={() => onNavigate('/services')}>
               Plan your event <ArrowRight aria-hidden="true" />
             </button>
-            <a className="home-button home-button--whatsapp" href={`https://wa.me/${MAHDEV_WHATSAPP_NUMBER}?text=${encodeURIComponent('Hi Mahdev, I would like to plan an event.')}`} target="_blank" rel="noopener noreferrer">
-              <MessageCircle aria-hidden="true" /> Chat on WhatsApp
-            </a>
           </div>
         </motion.div>
         <button

@@ -83,8 +83,14 @@ interface DivisionFilterContextValue {
 
 const DivisionFilterContext = createContext<DivisionFilterContextValue | null>(null);
 
-export const DivisionFilterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [filter, setFilterState] = useState<FilterValues>(EMPTY_FILTER);
+export const DivisionFilterProvider: React.FC<{ children: React.ReactNode; initialQuery?: string }> = ({
+  children,
+  initialQuery = '',
+}) => {
+  const [filter, setFilterState] = useState<FilterValues>(() => ({
+    ...EMPTY_FILTER,
+    query: initialQuery,
+  }));
   const [sources, setSources] = useState<Record<string, FilterableItem[]>>({});
 
   const setFilter = useCallback((patch: Partial<FilterValues>) => setFilterState((prev) => ({ ...prev, ...patch })), []);

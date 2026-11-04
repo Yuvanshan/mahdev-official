@@ -545,7 +545,6 @@ export const ExploreAllView: React.FC<{
       <SectionContainer background="white" paddingY="lg" hasBorderBottom>
         <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">Mahdev Marketplace</p>
             <h1 className="font-editorial text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
               {initialPage === 'gallery' ? 'Explore the Mahdev gallery' : 'Explore services, projects & products'}
             </h1>

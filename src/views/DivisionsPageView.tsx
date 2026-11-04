@@ -42,6 +42,7 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
                 key={division.id}
                 division={division}
                 onNavigate={onNavigate}
+                variant="featured"
               />
             ))}
           </div>

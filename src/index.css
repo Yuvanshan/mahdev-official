@@ -1476,11 +1476,11 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 }
 
 .division-video-hero {
-  width: calc(100% - 32px);
-  max-width: 1408px;
+  width: 100%;
+  max-width: none;
   min-height: min(820px, calc(100svh - 5rem));
-  margin: 16px auto;
-  border-radius: 36px;
+  margin: 0;
+  border-radius: 0;
   background: var(--ink-hero);
 }
 
@@ -2303,10 +2303,10 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 
 @media (max-width: 767px) {
   .division-video-hero {
-    width: calc(100% - 20px);
+    width: 100%;
     min-height: 680px;
-    margin: 10px auto;
-    border-radius: 26px;
+    margin: 0;
+    border-radius: 0;
   }
 
   .division-video-hero > div:last-child > div {
