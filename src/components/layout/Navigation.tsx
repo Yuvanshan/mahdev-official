@@ -22,6 +22,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { createPortal } from 'react-dom';
 import { BrandLogo } from './BrandLogo';
 import { MAIN_NAV_ITEMS as ALL_NAV_ITEMS } from '../../config/navigation';
 
@@ -210,6 +211,20 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsMobileMenuOpen(false);
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [isMobileMenuOpen]);
 
   const handleLinkClick = (href: string) => {
     setIsServicesOpen(false);
@@ -575,20 +590,46 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
         </div>
 
         {/* Mobile Navigation Drawer */}
-        {isMobileMenuOpen && (
-          <>
-          {/* Tap outside the floating menu to close it. */}
-          <button
-            type="button"
-            aria-label="Close menu"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="min-[900px]:hidden fixed inset-0 z-[55] bg-slate-950/35"
-          />
-          <div id="mahdev-mobile-navigation" className="min-[900px]:hidden fixed right-0 top-[var(--public-nav-height,4.25rem)] bottom-0 z-[61] w-[min(90vw,380px)] overflow-y-auto overscroll-contain bg-[#F6F5F1] px-5 pt-5 pb-10 space-y-4 shadow-2xl animate-in slide-in-from-right duration-300">
+        {typeof document !== 'undefined' && createPortal(
+          <AnimatePresence>
+            {isMobileMenuOpen && (
+              <div className="min-[900px]:hidden fixed inset-0 z-[120]" role="presentation">
+                <motion.button
+                  type="button"
+                  aria-label="Close menu"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="absolute inset-0 bg-slate-950/50"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                />
+                <motion.aside
+                  id="mahdev-mobile-navigation"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Mobile navigation"
+                  className="absolute inset-0 flex h-[100dvh] w-full flex-col overflow-hidden bg-[#F6F5F1] shadow-2xl"
+                  initial={{ x: '100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '100%' }}
+                  transition={{ type: 'spring', stiffness: 380, damping: 38 }}
+                >
+                  <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+                    <BrandLogo onClick={() => handleLinkClick('/')} />
+                    <button
+                      type="button"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="rounded-xl border border-slate-200 bg-white p-3 text-slate-600 shadow-2xs transition hover:bg-slate-50 hover:text-slate-900"
+                      aria-label="Close navigation menu"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                  <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 py-5 pb-[max(2.5rem,env(safe-area-inset-bottom))]">
             {/* Account */}
             {!isAuthLoading && (
               isAuthenticated && user ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center">
                   <button
                     type="button"
                     onClick={() => handleLinkClick(profileIncomplete ? '/account/complete' : '/account')}
@@ -601,14 +642,6 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                         {profileIncomplete ? 'Complete your profile' : 'View account'}
                       </span>
                     </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="rounded-xl border border-slate-200 bg-white p-3 text-slate-600 shadow-2xs transition hover:bg-slate-50 hover:text-slate-900"
-                    aria-label="Close navigation menu"
-                  >
-                    <X className="h-4 w-4" />
                   </button>
                 </div>
               ) : (
@@ -683,8 +716,12 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                 <span>Chat on WhatsApp</span>
               </a>
             </div>
-          </div>
-          </>
+                  </div>
+                </motion.aside>
+              </div>
+            )}
+          </AnimatePresence>,
+          document.body
         )}
       </header>
     </>
