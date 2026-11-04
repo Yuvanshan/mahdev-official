@@ -555,7 +555,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 rounded-xl text-slate-900 hover:text-[#0052FF] hover:bg-blue-50 min-[900px]:hidden focus:outline-none focus:ring-2 focus:ring-[#0052FF] cursor-pointer shrink-0 border border-blue-200/80 bg-[#FAF9F6]"
+                className="relative z-[62] p-2 rounded-xl text-slate-900 hover:text-[#0052FF] hover:bg-blue-50 min-[900px]:hidden focus:outline-none focus:ring-2 focus:ring-[#0052FF] cursor-pointer shrink-0 border border-blue-200/80 bg-[#FAF9F6]"
                 aria-label="Toggle navigation menu"
                 aria-expanded={isMobileMenuOpen}
                 aria-controls="mahdev-mobile-navigation"
