@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ArrowUpRight, Check, MessageCircle, X } from 'lucide-react';
 import { MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
 import { useAuth } from '../../context/AuthContext';
+
+const WELCOME_SHOWN_KEY = 'mahdev:whatsapp-welcome-shown';
 
 const WhatsAppMark: React.FC<{ className?: string }> = ({ className }) => (
   <svg aria-hidden="true" viewBox="0 0 24 24" className={className}>
@@ -12,14 +14,48 @@ const WhatsAppMark: React.FC<{ className?: string }> = ({ className }) => (
 export const WhatsAppWidget: React.FC = () => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [isNoticeVisible, setIsNoticeVisible] = useState(false);
+  const [hasUnreadNotice, setHasUnreadNotice] = useState(false);
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(WELCOME_SHOWN_KEY) === '1') return;
+    } catch (error) {
+      console.warn('[WhatsAppWidget] Could not read welcome state:', error);
+    }
+
+    const timer = window.setTimeout(() => {
+      setIsNoticeVisible(true);
+      setHasUnreadNotice(true);
+      try {
+        sessionStorage.setItem(WELCOME_SHOWN_KEY, '1');
+      } catch (error) {
+        console.warn('[WhatsAppWidget] Could not save welcome state:', error);
+      }
+    }, 10000);
+
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const openChat = () => {
     const name = user?.fullName?.trim().split(/\s+/)[0];
     setMessage(name
       ? `Hi, I'm ${name}. I would like to know more about your services.`
       : 'Hi MAHDEV, I would like to know more about your services.');
+    setIsNoticeVisible(false);
+    setHasUnreadNotice(false);
     setIsOpen(true);
+  };
+
+  const dismissNotice = () => {
+    setIsNoticeVisible(false);
+    setHasUnreadNotice(false);
+    try {
+      sessionStorage.setItem(WELCOME_SHOWN_KEY, '1');
+    } catch (error) {
+      console.warn('[WhatsAppWidget] Could not save welcome state:', error);
+    }
   };
 
   const sendMessage = (event: React.FormEvent) => {
@@ -32,6 +68,23 @@ export const WhatsAppWidget: React.FC = () => {
 
   return (
     <div className="whatsapp-widget fixed bottom-24 right-4 z-[120] flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
+      {isNoticeVisible && !isOpen && (
+        <aside className="whatsapp-notice" role="region" aria-label="WhatsApp support invitation" aria-live="polite">
+          <button type="button" className="whatsapp-notice-content" onClick={openChat}>
+            <span className="whatsapp-notice-icon"><MessageCircle className="h-4 w-4" /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-bold text-slate-900">Need a hand?</span>
+              <span className="mt-0.5 block text-xs leading-5 text-slate-600">Message our team on WhatsApp.</span>
+            </span>
+            <ArrowUpRight aria-hidden="true" className="h-4 w-4 shrink-0 text-emerald-700" />
+          </button>
+          <div className="whatsapp-notice-actions">
+            <button type="button" onClick={dismissNotice} aria-label="Dismiss WhatsApp invitation">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </aside>
+      )}
       {isOpen && (
         <section
           role="dialog"
@@ -105,7 +158,10 @@ export const WhatsAppWidget: React.FC = () => {
         className="whatsapp-launcher flex h-14 w-14 items-center justify-center rounded-full text-white transition duration-200 hover:scale-105 focus-visible:outline-none focus-visible:ring-4"
       >
         {isOpen ? <X className="h-6 w-6" /> : (
-          <MessageCircle className="h-7 w-7" strokeWidth={2.25} />
+          <>
+            <MessageCircle className="h-7 w-7" strokeWidth={2.25} />
+            {hasUnreadNotice && <span className="whatsapp-notification-badge" aria-hidden="true">1</span>}
+          </>
         )}
       </button>
     </div>

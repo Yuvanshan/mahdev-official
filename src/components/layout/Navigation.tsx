@@ -593,7 +593,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
         {typeof document !== 'undefined' && createPortal(
           <AnimatePresence>
             {isMobileMenuOpen && (
-              <div className="min-[900px]:hidden fixed inset-0 z-[120]" role="presentation">
+              <div className="min-[900px]:hidden fixed inset-0 z-[140]" role="presentation">
                 <motion.button
                   type="button"
                   aria-label="Close menu"
@@ -608,7 +608,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
                   role="dialog"
                   aria-modal="true"
                   aria-label="Mobile navigation"
-                  className="absolute inset-0 flex h-[100dvh] w-full flex-col overflow-hidden bg-[#F6F5F1] shadow-2xl"
+                  className="absolute inset-y-0 right-0 flex h-[100dvh] w-[min(90vw,380px)] flex-col overflow-hidden bg-[#F6F5F1] shadow-2xl"
                   initial={{ x: '100%' }}
                   animate={{ x: 0 }}
                   exit={{ x: '100%' }}
