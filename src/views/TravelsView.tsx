@@ -100,7 +100,7 @@ export const TravelsView: React.FC<TravelsViewProps> = ({ onNavigate }) => {
 
       {/* Render content progressively as each Turso-backed collection arrives.
           One shared search/category/price filter drives packages, day tours, services and gallery. */}
-      <DivisionFilterProvider>
+      <DivisionFilterProvider initialQuery={new URLSearchParams(window.location.search).get('category') || ''}>
         <DivisionFilterBar placeholder="Search Mahdev Travels packages, tours, services & gallery..." />
 
         <TravelsDestinationsSection

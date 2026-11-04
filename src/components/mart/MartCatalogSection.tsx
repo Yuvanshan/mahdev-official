@@ -17,6 +17,7 @@ import { H2, Caption, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { ScrollReveal } from '../motion/MotionWrappers';
+import { matchesFilterSearch } from '../common/DivisionFilter';
 import {
   EMPTY_PRICE_RANGE,
   PriceRange,
@@ -93,12 +94,14 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
       }
       // Search query filter
       if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchName = product.name.toLowerCase().includes(q);
-        const matchDesc = product.description.toLowerCase().includes(q);
-        const matchBrand = product.brand.toLowerCase().includes(q);
-        const matchTags = product.tags.some((t) => t.toLowerCase().includes(q));
-        if (!matchName && !matchDesc && !matchBrand && !matchTags) return false;
+        const searchableText = [
+          product.name,
+          product.description,
+          product.brand,
+          product.categoryName,
+          ...product.tags,
+        ].join(' ');
+        if (!matchesFilterSearch(searchQuery, searchableText)) return false;
       }
       // In-stock filter
       if (inStockOnly && !product.inStock) {

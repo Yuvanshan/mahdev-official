@@ -36,7 +36,9 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
   const { addToCart, totalQuantity: totalCartCount, openCart } = useCart();
   const { products: rawProducts, categories: rawCategories, divisions, companySettings, isInitialLoading, isFetching } = useFirestoreDataContext();
   const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(() =>
+    typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('category') || ''
+  );
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedProductForDetail, setSelectedProductForDetail] = useState<Product | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);

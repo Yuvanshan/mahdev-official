@@ -81,15 +81,19 @@ const searchTermVariants = (term: string) => [
   ...(term.endsWith('s') && term.length > 3 ? [term.slice(0, -1)] : []),
 ];
 
-function itemMatches(item: FilterableItem, filter: FilterValues): boolean {
-  if (filter.category !== 'all' && categoryKey(item.category) !== filter.category) return false;
-  const searchText = normalizeSearchText(`${item.title} ${item.category || ''} ${item.text || ''}`);
-  const queryTerms = normalizeSearchText(filter.query).split(/\s+/).filter(Boolean);
-  if (queryTerms.length && !queryTerms.some((term) => {
+export function matchesFilterSearch(query: string, searchableText: string): boolean {
+  const searchText = normalizeSearchText(searchableText);
+  const queryTerms = normalizeSearchText(query).split(/\s+/).filter(Boolean);
+  return !queryTerms.length || queryTerms.some((term) => {
     const variants = searchTermVariants(term);
     const aliases = variants.flatMap((variant) => SEARCH_ALIASES[variant] || [variant]);
     return aliases.some((alias) => searchText.includes(normalizeSearchText(alias)));
-  })) return false;
+  });
+}
+
+function itemMatches(item: FilterableItem, filter: FilterValues): boolean {
+  if (filter.category !== 'all' && categoryKey(item.category) !== filter.category) return false;
+  if (!matchesFilterSearch(filter.query, `${item.title} ${item.category || ''} ${item.text || ''}`)) return false;
   const price = getStartingPrice(item.price);
   if (filter.pricedOnly && price === null) return false;
   return priceInRange(price, filter.price);

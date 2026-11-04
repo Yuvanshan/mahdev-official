@@ -117,7 +117,7 @@ export const U1View: React.FC<U1ViewProps> = ({ onNavigate }) => {
 
       {/* Render content progressively as each Turso-backed collection arrives.
           One shared search/category/price filter drives services and the portfolio. */}
-      <DivisionFilterProvider>
+      <DivisionFilterProvider initialQuery={new URLSearchParams(window.location.search).get('category') || ''}>
         <DivisionFilterBar placeholder="Search U1 studio services & portfolio..." />
 
         <div id="services">

@@ -82,7 +82,7 @@ export const ITView: React.FC<ITViewProps> = ({ onNavigate }) => {
 
       {/* Render content progressively as each Turso-backed collection arrives.
           One shared search/category/price filter drives the services list. */}
-      <DivisionFilterProvider>
+      <DivisionFilterProvider initialQuery={new URLSearchParams(window.location.search).get('category') || ''}>
         <DivisionFilterBar placeholder="Search Mahdev IT services..." />
 
         <ITServicesSection

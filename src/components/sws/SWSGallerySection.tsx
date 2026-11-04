@@ -71,13 +71,20 @@ export const SWSGallerySection: React.FC = () => {
       : getDefaultGallery().filter((item) => isSameDivision(item.division, 'sws'));
 
     return source.map((item) => {
-      const cat = (item as any).category || (item as any).tag || 'Weddings';
+      const rawCategory = (item as any).category || (item as any).tag || '';
+      const cat = rawCategory || 'Weddings';
       const galleryYear = (item as any).year;
       const images = Array.isArray((item as any).images) && (item as any).images.length > 0
         ? (item as any).images.filter(Boolean).slice(0, 3)
         : ((item as any).imageUrl || (item as any).mediaUrl || (item as any).url || (item as any).image
           ? [(item as any).imageUrl || (item as any).mediaUrl || (item as any).url || (item as any).image]
           : []);
+      const description = (item as any).description || (item as any).caption || '';
+      const tags = Array.isArray((item as any).tags) ? (item as any).tags : [cat];
+      const primaryDetails = `${item.title} ${rawCategory} ${description}`.toLowerCase();
+      const searchableTags = tags.filter((tag: string) =>
+        !/^weddings?$/i.test(tag.trim()) || /\b(weddings?|marriage|marry)\b/.test(primaryDetails)
+      );
       return {
         id: item.id,
         imageAlt: (item as any).imageAlt,
@@ -87,8 +94,8 @@ export const SWSGallerySection: React.FC = () => {
         images,
         location: branchLocationTag((item as any).location),
         year: !galleryYear || String(galleryYear) === '2024' ? '2026' : String(galleryYear),
-        description: (item as any).description || (item as any).caption || '',
-        tags: (item as any).tags || [cat],
+        description,
+        tags: searchableTags,
         price: item.price,
       };
     });
