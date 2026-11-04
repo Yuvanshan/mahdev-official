@@ -67,11 +67,29 @@ const SEARCH_ALIASES: Record<string, string[]> = {
   outdoor: ['outdoor', 'open air', 'garden', 'marquee', 'tent', 'outdoor event', 'outdoor decoration', 'outdoor decor'],
 };
 
+const normalizeSearchText = (value: string) =>
+  value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
+const searchTermVariants = (term: string) => [
+  term,
+  ...(term.endsWith('ies') && term.length > 4 ? [`${term.slice(0, -3)}y`] : []),
+  ...(term.endsWith('s') && term.length > 3 ? [term.slice(0, -1)] : []),
+];
+
 function itemMatches(item: FilterableItem, filter: FilterValues): boolean {
   if (filter.category !== 'all' && categoryKey(item.category) !== filter.category) return false;
-  const searchText = `${item.title} ${item.category || ''} ${item.text || ''}`.toLowerCase();
-  const queryTerms = filter.query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  if (queryTerms.some((term) => !(SEARCH_ALIASES[term] || [term]).some((alias) => searchText.includes(alias)))) return false;
+  const searchText = normalizeSearchText(`${item.title} ${item.category || ''} ${item.text || ''}`);
+  const queryTerms = normalizeSearchText(filter.query).split(/\s+/).filter(Boolean);
+  if (queryTerms.length && !queryTerms.some((term) => {
+    const variants = searchTermVariants(term);
+    const aliases = variants.flatMap((variant) => SEARCH_ALIASES[variant] || [variant]);
+    return aliases.some((alias) => searchText.includes(normalizeSearchText(alias)));
+  })) return false;
   const price = getStartingPrice(item.price);
   if (filter.pricedOnly && price === null) return false;
   return priceInRange(price, filter.price);

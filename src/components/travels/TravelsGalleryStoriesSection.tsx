@@ -32,6 +32,8 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
           location: (g as any).location || 'Sri Lanka',
           price: g.price,
           category: g.category || g.tag || 'Travel Gallery',
+          description: (g as any).description || g.caption || '',
+          tags: Array.isArray(g.tags) ? g.tags : [],
         }));
       }
     }
@@ -43,7 +45,7 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
     title: img.title,
     category: img.category,
     price: img.price,
-    text: img.location,
+    text: [img.location, img.description, ...img.tags].join(' '),
   }));
 
   const stories = useMemo<TravelStory[]>(() => {
