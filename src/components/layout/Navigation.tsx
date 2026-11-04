@@ -248,6 +248,8 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
         className={`sticky top-0 z-[60] w-full !overflow-visible transition-all duration-300 ${
           isPublicRoute ? 'public-nav-shell' : ''
         } ${
+          isMobileMenuOpen ? 'public-nav-shell--menu-open' : ''
+        } ${
           isScrolled
             ? 'bg-white/90 backdrop-blur-2xl border-b border-slate-200/80 shadow-[0_8px_32px_-18px_rgba(15,23,42,0.24)]'
             : 'bg-white/95 backdrop-blur-xl border-b border-slate-200/80'
@@ -272,7 +274,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
           </div>
         )}
 
-        <div className={`max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 ${isPublicRoute ? 'public-nav-inner' : ''}`}>
+        <div className={`max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 ${isPublicRoute ? 'public-nav-inner' : ''} ${isMobileMenuOpen ? 'relative z-[56]' : ''}`}>
           <div className="flex items-center justify-between h-16 sm:h-[72px]">
             {/* Left: Brand Logo */}
             <div className="flex items-center shrink-0 min-w-0 mr-1 sm:mr-0">
