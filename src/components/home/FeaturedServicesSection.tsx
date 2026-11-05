@@ -1,25 +1,16 @@
-import React, { useState, useRef, useMemo } from 'react';
-import { servicePagePath } from '../../config/itemSeo';
-import { ArrowRight, CheckCircle2, Filter, Sparkles } from 'lucide-react';
-import { motion, useScroll, useTransform, useSpring } from 'motion/react';
+import React, { useState, useMemo } from 'react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { HorizontalScrollArea } from '../ui/HorizontalScrollArea';
-import { H2, Body, Caption } from '../ui/Heading';
+import { H2 } from '../ui/Heading';
 import { Button } from '../ui/Button';
-import { IconRenderer } from '../ui/IconRenderer';
-import { DivisionId } from '../../types';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { DIVISIONS } from '../../config/divisions';
 import { ParallelWatermark } from '../motion/ParallelScroll';
-import { useDeviceMotion } from '../motion/MotionWrappers';
-import { DataLoadingOverlay } from '../common/DataLoadingOverlay';
 import { ServicesSectionShimmer } from '../common/ServicesSectionShimmer';
-import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 import { newestListedFirst } from '../../utils/listingOrder';
-import { getServiceStartingPrice } from '../common/StartingPriceTag';
-import { ServiceTile } from '../services/ServiceTile';
-import { ServiceDetailsModal, toServiceDetails } from '../services/ServiceDetailsModal';
 import { getRecordImageAlt } from '../../config/imageAlt';
+import { HomeExpandableShowcase } from './HomeExpandableShowcase';
 
 interface FeaturedServicesSectionProps {
   onNavigate: (route: string) => void;
@@ -99,65 +90,10 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
   return <FeaturedServicesSectionContent {...props} activeServices={activeServices} />;
 };
 
-const FeaturedServiceCard: React.FC<{
-  service: any;
-  idx: number;
-  colTransform: any;
-  reducedMotion: boolean;
-  isTouch: boolean;
-  onNavigate: (route: string) => void;
-  divisions?: any[];
-}> = ({ service, idx, colTransform, reducedMotion, isTouch, onNavigate, divisions }) => {
-  const serviceImages: string[] = useMemo(() => {
-    if (Array.isArray(service.images) && service.images.length > 0) {
-      return service.images.filter(Boolean).slice(0, 5);
-    }
-    const single = (service as any).imageUrl || (service as any).image;
-    return single ? [single] : [];
-  }, [service]);
-
-  const divId = (service.divisionId || service.division || 'sws') as string;
-  const liveDiv = divisions?.find((d) => d.id === divId || d.slug === divId);
-  const fallbackDiv = (DIVISIONS as any)[divId];
-  const divRoute = (liveDiv && liveDiv.route) || (liveDiv && `/${liveDiv.slug || liveDiv.id}`) || (fallbackDiv && fallbackDiv.route) || `/${divId}`;
-  const divisionBadgeText =
-    service.divisionName ||
-    (liveDiv && (liveDiv.shortName || liveDiv.name)) ||
-    (fallbackDiv && fallbackDiv.shortName) ||
-    divId.toUpperCase();
-
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-
-  return (
-    <motion.div
-      key={service.id}
-      style={!reducedMotion && !isTouch ? { y: colTransform } : undefined}
-      className="h-full"
-    >
-      {/* Cards stay concise; full service details open in the modal. */}
-      <ServiceTile
-        title={service.title || service.name}
-        imageAlt={getRecordImageAlt(service, service.title || service.name)}
-        images={serviceImages}
-        onView={() => setIsDetailsOpen(true)}
-        href={servicePagePath(service)}
-        imageLoading={idx < 3 ? 'eager' : 'lazy'}
-      />
-      <ServiceDetailsModal
-        service={isDetailsOpen ? toServiceDetails(service, divisionBadgeText) : null}
-        onClose={() => setIsDetailsOpen(false)}
-        bookOnline={{ kind: 'service', id: service.id, price: getServiceStartingPrice(service), divisionId: divId }}
-        primaryAction={{ label: `Explore ${divisionBadgeText}`, onClick: () => onNavigate(divRoute) }}
-      />
-    </motion.div>
-  );
-};
-
 const FeaturedServicesSectionContent: React.FC<
   FeaturedServicesSectionProps & { activeServices: any[] }
-> = ({ onNavigate, onInquireService, activeServices }) => {
+> = ({ onNavigate, activeServices }) => {
   const { homepageConfig, divisions } = useFirestoreDataContext();
-  const { reducedMotion, isTouch } = useDeviceMotion();
 
   const [activeTab, setActiveTab] = useState<string>('all');
 
@@ -200,17 +136,6 @@ const FeaturedServicesSectionContent: React.FC<
     return tabs;
   }, [divisions]);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ['start end', 'end start'],
-  });
-
-  const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 22, mass: 0.1 });
-  const yCol1 = useTransform(smoothProgress, [0, 1], ['-15px', '15px']);
-  const yCol2 = useTransform(smoothProgress, [0, 1], ['15px', '-15px']);
-  const yCol3 = useTransform(smoothProgress, [0, 1], ['-10px', '10px']);
-
   const filteredServices = useMemo(() => {
     if (activeTab === 'all') return activeServices;
     return activeServices.filter((srv) => {
@@ -229,10 +154,11 @@ const FeaturedServicesSectionContent: React.FC<
   };
 
   return (
-    <div ref={containerRef} className="relative overflow-hidden">
+    <div className="relative">
       <ParallelWatermark text="04 // SERVICES" />
       <SectionContainer
         id="featured-services"
+        className="home-showcase-section"
         background="white"
         paddingY="xl"
         hasBorderBottom
@@ -240,6 +166,9 @@ const FeaturedServicesSectionContent: React.FC<
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between mb-8 gap-6">
           <div className="max-w-2xl">
             <H2 className="text-slate-900">{sectionMeta.title || 'Featured Services & Capabilities'}</H2>
+            {sectionMeta.subtitle && (
+              <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">{sectionMeta.subtitle}</p>
+            )}
           </div>
 
           {/* Division Filter Tabs */}
@@ -295,39 +224,35 @@ const FeaturedServicesSectionContent: React.FC<
             </div>
           </div>
         ) : (
-          <div className="relative z-10">
-            <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredServices.map((service, idx) => {
-                const colIdx = idx % 3;
-                const colTransform = colIdx === 0 ? yCol1 : colIdx === 1 ? yCol2 : yCol3;
-                return (
-                  <FeaturedServiceCard
-                    key={service.id}
-                    service={service}
-                    idx={idx}
-                    colTransform={colTransform}
-                    reducedMotion={reducedMotion}
-                    isTouch={isTouch}
-                    onNavigate={onNavigate}
-                    divisions={divisions}
-                  />
-                );
-              })}
-            </div>
-
-            {/* Bottom Explore All CTA Button */}
-            <div className="mt-12 text-center">
-              <Button
-                variant="electric"
-                size="md"
-                onClick={() => onNavigate('/services')}
-                rightIcon={<ArrowRight className="w-4 h-4" />}
-                className="font-bold cursor-pointer"
-              >
-                View All Services & Solution Packages
-              </Button>
-            </div>
-          </div>
+          <HomeExpandableShowcase
+            items={filteredServices.slice(0, 5).map((service) => {
+              const title = service.title || service.name;
+              const divisionId = service.divisionId || service.division || '';
+              const division = divisions?.find((item) =>
+                item.id === divisionId || item.slug === divisionId
+              );
+              const fallback = (DIVISIONS as any)[divisionId];
+              const normalizedDivisionId = division?.slug || division?.id || fallback?.id || divisionId || 'sws';
+              return {
+                id: service.id,
+                title,
+                category: service.category || 'Service',
+                description: service.description || 'Explore this service from Mahdev.',
+                images: [
+                  ...(Array.isArray(service.images) ? service.images : []),
+                  service.imageUrl,
+                ].filter((image): image is string => Boolean(image)).slice(0, 5),
+                imageAlt: getRecordImageAlt(service, title),
+                meta: service.divisionName || division?.shortName || division?.name || fallback?.shortName,
+                divisionId: normalizedDivisionId,
+                divisionRoute: division?.route || fallback?.route,
+              };
+            })}
+            onNavigate={onNavigate}
+            viewAllRoute="/services"
+            viewAllLabel="View all services"
+            emptyMessage="No services are available in this division yet."
+          />
         )}
       </SectionContainer>
     </div>

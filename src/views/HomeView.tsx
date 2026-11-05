@@ -78,7 +78,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
           />
         );
       case 'gallery':
-        return <HomeGallerySection key={id} />;
+        return <HomeGallerySection key={id} onNavigate={onNavigate} />;
       case 'portfolio':
         return <FeaturedWorkSection key={id} onNavigate={onNavigate} />;
       case 'decorationShowcase':
@@ -130,6 +130,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
               whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
               viewport={reducedMotion ? undefined : { once: true, amount: 0.08 }}
               transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+              className="home-dynamic-section"
             >
               <Suspense fallback={<div className="min-h-48 animate-pulse bg-slate-50" />}>
                 {content}

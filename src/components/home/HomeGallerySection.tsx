@@ -1,120 +1,21 @@
 import React, { useMemo, useState } from 'react';
-import { MapPin, MessageCircle, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { SectionContainer } from '../ui/SectionContainer';
 import { HorizontalScrollArea } from '../ui/HorizontalScrollArea';
-import { Caption, H2, Body } from '../ui/Heading';
-import { openWhatsAppInquiry } from '../../utils/whatsapp';
+import { Caption, H2 } from '../ui/Heading';
 import { GallerySectionShimmer } from '../common/GallerySectionShimmer';
-import { ImageWithShimmer } from '../ui/ImageWithShimmer';
-import { ServiceDetailsModal, wrapIndex } from '../services/ServiceDetailsModal';
-import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
-import { StartingPriceTag, getStartingPriceDetails } from '../common/StartingPriceTag';
 import { getRecordImageAlt } from '../../config/imageAlt';
+import { DIVISIONS } from '../../config/divisions';
 import { divisionIdFromName } from '../../utils/onlineBooking';
+import { HomeExpandableShowcase } from './HomeExpandableShowcase';
 
-interface HomeGalleryItem {
-  id: string;
-  images: string[];
-  url: string;
-  title: string;
-  category: string;
-  location: string;
-  price?: number | null;
-  divisionId?: string;
-  divisionName?: string;
+interface HomeGallerySectionProps {
+  onNavigate: (route: string) => void;
 }
-
-interface ActiveGalleryImage {
-  item: HomeGalleryItem;
-  imageIndex: number;
-}
-
-const HomeGalleryCard: React.FC<{
-  item: HomeGalleryItem;
-  index: number;
-  onOpen: (item: HomeGalleryItem, imageIndex: number) => void;
-}> = ({ item, index, onOpen }) => {
-  const { activeIndex, containerRef } = useAutoSlideImage(item.images.length);
-  const imageUrl = item.images[activeIndex] || item.url;
-
-  return (
-    <div
-      ref={containerRef}
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpen(item, activeIndex)}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          onOpen(item, activeIndex);
-        }
-      }}
-      className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg"
-    >
-      <div className="relative">
-        <ImageWithShimmer
-          src={imageUrl}
-          alt={getRecordImageAlt(item)}
-          className="aspect-[4/3] bg-slate-100"
-          imageFit="cover"
-          loading={index < 4 ? 'eager' : 'lazy'}
-          imageClassName="object-cover transition duration-500 group-hover:scale-[1.02]"
-          fallbackText={item.title}
-        />
-        {item.images.length > 1 && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-2 flex items-center justify-center gap-1">
-            {item.images.map((_, imageIndex) => (
-              <span
-                key={imageIndex}
-                className={`h-1.5 rounded-full transition-all ${
-                  activeIndex === imageIndex ? 'w-3.5 bg-white' : 'w-1.5 bg-white/60'
-                }`}
-              />
-            ))}
-          </div>
-        )}
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            openWhatsAppInquiry({
-              title: item.title,
-              category: item.category,
-              divisionName: item.divisionName || 'Mahdev Group',
-              itemId: item.id,
-              imageUrl,
-              location: item.location,
-              type: 'gallery',
-            });
-          }}
-          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-emerald-500 text-white shadow-lg transition hover:bg-emerald-600"
-          title="Ask on WhatsApp"
-          aria-label={`Ask about ${item.title} on WhatsApp`}
-        >
-          <MessageCircle className="h-4 w-4" />
-        </button>
-      </div>
-
-      <div className="flex flex-1 flex-col gap-2 p-3 sm:p-4">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900 sm:text-base">{item.title}</h3>
-          <span className="shrink-0 rounded-full bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-700">
-            {item.category}
-          </span>
-        </div>
-        <p className="flex items-center gap-1.5 text-xs text-slate-500">
-          <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-600" />
-          <span className="truncate">{item.location}</span>
-        </p>
-        <StartingPriceTag price={item.price} className="mt-auto pt-1" />
-      </div>
-    </div>
-  );
-};
 
 /** A premium gallery that mirrors the polished presentation used in the division pages. */
-export const HomeGallerySection: React.FC = () => {
+export const HomeGallerySection: React.FC<HomeGallerySectionProps> = ({ onNavigate }) => {
   const {
     gallery,
     divisions,
@@ -124,29 +25,34 @@ export const HomeGallerySection: React.FC = () => {
     error,
     refreshAll,
   } = useFirestoreDataContext();
-  const [activeImage, setActiveImage] = useState<ActiveGalleryImage | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const items = useMemo<HomeGalleryItem[]>(() => gallery
+  const items = useMemo(() => gallery
     .filter((item) => item.status !== 'hidden')
     .map((item) => {
       const images = (item.images?.length ? item.images : [item.mediaUrl || item.url || item.thumbnailUrl || ''])
         .filter(Boolean)
-        .slice(0, 3);
+        .slice(0, 4);
+      const divisionId = String((item as any).divisionId || item.division || '');
+      const divisionKey = divisionIdFromName(divisionId) || divisionId.toLowerCase();
+      const division = divisions.find((candidate) =>
+        candidate.id === divisionId ||
+        candidate.slug === divisionId ||
+        divisionIdFromName(candidate.id) === divisionKey ||
+        divisionIdFromName(candidate.slug) === divisionKey
+      );
       return {
         id: item.id,
+        divisionId,
+        divisionRoute: division?.route || DIVISIONS[divisionKey as keyof typeof DIVISIONS]?.route,
         images,
-        url: images[0] || '',
         title: item.title || 'Mahdev Gallery',
         category: item.category || item.tag || 'Mahdev Group',
-        location: (item as any).location || item.caption || 'Sri Lanka',
-        price: item.price,
-        divisionId: String((item as any).divisionId || item.division || ''),
-        divisionName: divisions.find((division) =>
-          division.id === (item as any).divisionId || division.id === item.division ||
-          division.slug === (item as any).divisionId || division.slug === item.division
-        )?.name,
+        description: item.caption || item.seoDescription || `Discover ${item.title || 'this project'} from the Mahdev gallery.`,
+        imageAlt: getRecordImageAlt(item),
+        location: (item as any).location || 'Sri Lanka',
+        divisionName: division?.name,
       };
     }), [divisions, gallery]);
 
@@ -160,11 +66,9 @@ export const HomeGallerySection: React.FC = () => {
     ? items
     : items.filter((item) => item.category === selectedCategory);
   const searchedItems = filteredItems.filter((item) =>
-    `${item.title} ${item.category} ${item.location}`.toLowerCase().includes(searchQuery.trim().toLowerCase())
+    `${item.title} ${item.category} ${item.location} ${item.divisionName || ''}`.toLowerCase().includes(searchQuery.trim().toLowerCase())
   );
-  const displayedItems = searchQuery.trim() || selectedCategory !== 'All'
-    ? searchedItems
-    : searchedItems.slice(0, 9);
+  const displayedItems = searchedItems.slice(0, 6);
 
   if (!items.length) {
     if (isGalleryLoading || isInitialLoading || isFetching) {
@@ -190,7 +94,13 @@ export const HomeGallerySection: React.FC = () => {
   }
 
   return (
-    <SectionContainer id="gallery" background="white" paddingY="xl" hasBorderBottom>
+    <SectionContainer
+      id="gallery"
+      className="home-showcase-section"
+      background="white"
+      paddingY="xl"
+      hasBorderBottom
+    >
       <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div className="max-w-2xl">
           <Caption className="mb-2 block text-[#0052FF]">Visual Showcase</Caption>
@@ -231,55 +141,22 @@ export const HomeGallerySection: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4 xl:grid-cols-4">
-        {displayedItems.map((item, index) => {
-          return (
-            <HomeGalleryCard
-              key={item.id}
-              item={item}
-              index={index}
-              onOpen={(openedItem, imageIndex) => setActiveImage({ item: openedItem, imageIndex })}
-            />
-          );
-        })}
-      </div>
-      {displayedItems.length === 0 && (
-        <p className="mt-8 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm text-slate-600" role="status">
-          No gallery items match “{searchQuery}”.
-        </p>
-      )}
-
-      {/* Same pop-up as services: large image, swipe/arrow keys, WhatsApp enquiry. */}
-      <ServiceDetailsModal
-        service={activeImage ? {
-          title: activeImage.item.title,
-          images: activeImage.item.images.length ? activeImage.item.images : [activeImage.item.url],
-          subtitle: [activeImage.item.category, activeImage.item.location].filter(Boolean).join(' · '),
-          divisionName: activeImage.item.divisionName,
-          ...getStartingPriceDetails(activeImage.item.price),
-        } : null}
-        initialImageIndex={activeImage?.imageIndex}
-        onClose={() => setActiveImage(null)}
-        bookOnline={activeImage ? {
-          kind: 'gallery',
-          id: activeImage.item.id,
-          price: activeImage.item.price,
-          divisionId: divisionIdFromName(activeImage.item.divisionId) || activeImage.item.divisionId,
-        } : undefined}
-        itemNavigation={(() => {
-          // Previous/Next move through the gallery items currently shown.
-          const index = activeImage ? displayedItems.findIndex((item) => item.id === activeImage.item.id) : -1;
-          if (index < 0 || displayedItems.length < 2) return undefined;
-          const open = (delta: number) =>
-            setActiveImage({ item: displayedItems[wrapIndex(index, delta, displayedItems.length)], imageIndex: 0 });
-          return { onPrevious: () => open(-1), onNext: () => open(1), positionLabel: `${index + 1} of ${displayedItems.length}` };
-        })()}
-        whatsappInquiry={activeImage ? {
-          itemId: activeImage.item.id,
-          category: activeImage.item.category,
-          location: activeImage.item.location,
-          type: 'gallery',
-        } : undefined}
+      <HomeExpandableShowcase
+        items={displayedItems.map((item) => ({
+          id: item.id,
+          title: item.title,
+          category: item.category,
+          description: item.description,
+          images: item.images,
+          imageAlt: item.imageAlt,
+          meta: [item.divisionName, item.location].filter(Boolean).join(' · '),
+          divisionId: item.divisionId,
+          divisionRoute: item.divisionRoute,
+        }))}
+        onNavigate={onNavigate}
+        viewAllRoute="/gallery"
+        viewAllLabel="View full gallery"
+        emptyMessage={`No gallery items match “${searchQuery}”.`}
       />
     </SectionContainer>
   );
