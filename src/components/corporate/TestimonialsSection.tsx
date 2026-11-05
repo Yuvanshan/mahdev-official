@@ -212,7 +212,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
           {filteredReviews.map((review) => (
             <div
               key={review.id}
-              className="group flex aspect-square w-[72%] max-w-[280px] shrink-0 snap-start flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-slate-50/80 p-4 transition-all duration-300 hover:-translate-y-1 hover:border-blue-400 hover:bg-white hover:shadow-lg sm:w-[calc(50%-0.75rem)] sm:max-w-none sm:p-5 lg:w-[calc(33.333%-1rem)]"
+              className="group flex aspect-[4/5] w-[72%] max-w-[280px] shrink-0 snap-start flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-slate-50/80 p-4 transition-all duration-300 hover:-translate-y-1 hover:border-blue-400 hover:bg-white hover:shadow-lg sm:w-[calc(50%-0.75rem)] sm:max-w-none sm:p-5 lg:w-[calc(33.333%-1rem)]"
             >
               <div>
                 {/* Header: Stars and Division Tag */}

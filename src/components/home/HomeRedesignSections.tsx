@@ -59,20 +59,19 @@ const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ on
         if (!image) return null;
         return {
           image,
-          searchText: `${item.title || ''} ${item.category || ''} ${item.tag || ''} ${item.caption || ''} ${(item as any).description || ''} ${(item as any).tags?.join(' ') || ''}`.toLowerCase(),
+          searchText: `${item.title || ''} ${item.category || ''} ${item.tag || ''} ${(item as any).tags?.join(' ') || ''}`.toLowerCase(),
         };
       })
       .filter((item): item is NonNullable<typeof item> => item !== null);
     const usedImages = new Set<string>();
 
-    return OCCASIONS.map((occasion, index) => {
+    return OCCASIONS.map((occasion) => {
       const match = images.find((item) =>
         !usedImages.has(item.image) && occasion.terms.some((term) => item.searchText.includes(term))
       );
-      const entry = match || images.find((item) => !usedImages.has(item.image)) || images[index % images.length];
-      if (!entry) return null;
-      usedImages.add(entry.image);
-      return { name: occasion.name, image: entry.image, filterTerm: 'filterTerm' in occasion ? occasion.filterTerm : occasion.terms[0] };
+      if (!match) return null;
+      usedImages.add(match.image);
+      return { name: occasion.name, image: match.image, filterTerm: 'filterTerm' in occasion ? occasion.filterTerm : occasion.terms[0] };
     }).filter((item): item is { name: string; image: string; filterTerm: string } => item !== null);
   }, [gallery]);
   const divisionCards = useMemo(() => {
