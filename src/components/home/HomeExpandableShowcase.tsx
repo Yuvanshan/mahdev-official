@@ -43,19 +43,9 @@ export const HomeExpandableShowcase: React.FC<HomeExpandableShowcaseProps> = ({
   const activeItem = items.find((item) => item.id === activeId) || items[0];
   const images = Array.from(new Set(activeItem?.images.filter(Boolean) || []));
   const { activeIndex, containerRef } = useAutoSlideImage(images.length);
-  const frontImage = images[activeIndex] || images[0] || '';
-  const relatedItems = items
-    .filter((item) => item.id !== activeItem?.id)
-    .sort((left, right) => {
-      const leftMatches = left.category === activeItem?.category ? 2 : left.divisionId === activeItem?.divisionId ? 1 : 0;
-      const rightMatches = right.category === activeItem?.category ? 2 : right.divisionId === activeItem?.divisionId ? 1 : 0;
-      return rightMatches - leftMatches;
-    });
-  const showcaseImages = Array.from(new Set([
-    frontImage,
-    ...images.filter((image) => image !== frontImage),
-    ...relatedItems.flatMap((item) => item.images),
-  ].filter(Boolean))).slice(0, 4);
+  const showcaseImages = images.length
+    ? Array.from({ length: Math.min(images.length, 4) }, (_, index) => images[(activeIndex + index) % images.length])
+    : [];
   const activePath = activeItem ? divisionCategoryPath(activeItem) : viewAllRoute;
 
   const navigate = (event: React.MouseEvent<HTMLAnchorElement>, route: string) => {
@@ -114,7 +104,7 @@ export const HomeExpandableShowcase: React.FC<HomeExpandableShowcaseProps> = ({
         >
           {showcaseImages.map((image, index) => (
             <span
-              key={`${activeItem.id}-showcase-${index}-${image}`}
+              key={`showcase-layer-${index + 1}`}
               className={`home-showcase-photo home-showcase-photo--layer home-showcase-photo--layer-${index + 1}`}
               aria-hidden="true"
             >
@@ -122,7 +112,7 @@ export const HomeExpandableShowcase: React.FC<HomeExpandableShowcaseProps> = ({
                 src={image}
                 alt=""
                 className="home-showcase-photo-image"
-                imageFit="contain"
+                imageFit="cover"
                 imageClassName="home-showcase-image-content"
                 loading="lazy"
               />
