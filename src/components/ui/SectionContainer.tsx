@@ -61,8 +61,10 @@ export const SectionContainer: React.FC<SectionContainerProps> = ({
       className={`w-full max-w-full overflow-hidden ${bgStyles[background]} ${paddingYStyles[paddingY]} ${borderTopStyle} ${borderBottomStyle} ${className}`}
       {...props}
     >
-      <div className={`w-full max-w-full min-w-0 ${maxWStyles[effectiveMaxWidth] || 'max-w-7xl'} mx-auto px-[var(--page-gutter)] ${innerClassName}`}>
-        {children}
+      <div className="public-content-frame w-full min-w-0">
+        <div className={`w-full max-w-full min-w-0 ${maxWStyles[effectiveMaxWidth] || 'max-w-7xl'} mx-auto px-[var(--page-gutter)] ${innerClassName}`}>
+          {children}
+        </div>
       </div>
     </Component>
   );

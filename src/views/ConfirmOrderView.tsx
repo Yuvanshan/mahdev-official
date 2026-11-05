@@ -270,7 +270,7 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
 
   if (loadError) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center px-4 py-16">
+      <div className="min-h-[70vh] flex items-center justify-center px-[var(--page-gutter)] py-16">
         <SEOHead title="Confirm Your Order" description="Confirm your Mahdev order." canonicalUrl={`${CANONICAL_SITE_ORIGIN}/confirm-order`} noIndex />
         <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200 p-8 text-center space-y-3">
           <AlertCircle className="w-10 h-10 text-rose-500 mx-auto" />
@@ -293,7 +293,7 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
   const images = confirmation.designImages || [];
 
   return (
-    <div className="bg-slate-50 min-h-screen py-10 sm:py-14 px-4">
+    <div className="bg-slate-50 min-h-screen py-10 sm:py-14">
       <SEOHead title="Confirm Your Order" description="Review your design and confirm your Mahdev order." canonicalUrl={`${CANONICAL_SITE_ORIGIN}/confirm-order`} noIndex />
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Design & decoration details */}

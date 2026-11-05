@@ -94,7 +94,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
   if (!isReady && isInitialLoading) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center bg-white px-4">
+      <div className="min-h-[70vh] flex items-center justify-center bg-white px-[var(--page-gutter)]">
         <div className="text-center space-y-3">
           <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-sm font-semibold text-slate-600 font-mono">
@@ -107,7 +107,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
   if (!project) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center bg-white px-4 py-24">
+      <div className="min-h-[70vh] flex items-center justify-center bg-white px-[var(--page-gutter)] py-24">
         <div className="max-w-md text-center space-y-4">
           <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
             <Layers className="w-7 h-7" />

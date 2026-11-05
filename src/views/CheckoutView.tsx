@@ -307,7 +307,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
 
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50 py-16 px-4">
+      <div className="min-h-screen bg-slate-50 px-[var(--page-gutter)] py-16">
         <div className="max-w-md mx-auto bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center space-y-4">
           <div className="w-16 h-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
             <ShoppingBag className="w-8 h-8" />

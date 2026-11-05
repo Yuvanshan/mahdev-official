@@ -170,7 +170,7 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
   if (isLoading) {
     // Skeleton of the account page while the session and history load.
     return (
-      <div className="min-h-[70vh] bg-slate-50 px-4 py-6 sm:px-6 lg:px-8" aria-busy="true" aria-label="Loading your account">
+      <div className="min-h-[70vh] bg-slate-50 px-[var(--page-gutter)] py-6" aria-busy="true" aria-label="Loading your account">
         <div className="mx-auto max-w-7xl animate-pulse space-y-6">
           <div className="h-32 rounded-3xl bg-slate-200/80" />
           <div className="grid gap-6 lg:grid-cols-12">
@@ -241,7 +241,7 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
     ) : null;
 
   return (
-    <div className="min-h-screen bg-slate-50 px-3 pb-28 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:pb-12">
+    <div className="min-h-screen bg-slate-50 px-[var(--page-gutter)] pb-28 pt-4 sm:pt-6 lg:pb-12">
       <SEOHead
         title="My Account"
         description="Manage your Mahdev orders, bookings, invoices and profile."

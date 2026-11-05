@@ -146,7 +146,7 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 py-20 px-4 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 px-[var(--page-gutter)] py-20 flex items-center justify-center">
         <div className="max-w-md w-full bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center space-y-4 animate-fadeIn">
           <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
           <h2 className="font-display text-base font-bold text-slate-900">Loading Order Details...</h2>
@@ -158,7 +158,7 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-slate-50 py-16 px-4">
+      <div className="min-h-screen bg-slate-50 px-[var(--page-gutter)] py-16">
         <div className="max-w-md mx-auto bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-5 text-center">
           <div className="w-14 h-14 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
             <AlertCircle className="w-7 h-7" />

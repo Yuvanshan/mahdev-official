@@ -730,7 +730,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
   // Switched off in the admin: an old link explains and offers WhatsApp instead.
   if (!onlineBookingEnabled && !confirmed) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center px-4 py-16">
+      <div className="min-h-[70vh] flex items-center justify-center px-[var(--page-gutter)] py-16">
         {seo}
         <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200 p-8 text-center space-y-3">
           <AlertCircle className="w-10 h-10 text-amber-500 mx-auto" />
@@ -762,7 +762,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
 
   if (!item && isCart) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center px-4 py-16">
+      <div className="min-h-[70vh] flex items-center justify-center px-[var(--page-gutter)] py-16">
         {seo}
         <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200 p-8 text-center space-y-3">
           <Package className="w-10 h-10 text-slate-400 mx-auto" />
@@ -791,7 +791,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
         <Loader2 className="w-8 h-8 text-blue-600 animate-spin" aria-label="Loading booking details" />
       </div>
     ) : (
-      <div className="min-h-[70vh] flex items-center justify-center px-4 py-16">
+      <div className="min-h-[70vh] flex items-center justify-center px-[var(--page-gutter)] py-16">
         {seo}
         <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200 p-8 text-center space-y-3">
           <AlertCircle className="w-10 h-10 text-amber-500 mx-auto" />
@@ -825,7 +825,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
   );
 
   return (
-    <div className="bg-slate-50 min-h-screen py-10 sm:py-14 px-4">
+    <div className="bg-slate-50 min-h-screen py-10 sm:py-14">
       {seo}
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Item & price details */}

@@ -296,7 +296,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
           className={`max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 ${isPublicRoute ? 'public-nav-inner' : ''} ${isMobileMenuOpen ? 'relative z-[56]' : ''}`}
           style={isMobileMenuOpen ? { backdropFilter: 'none', WebkitBackdropFilter: 'none' } : undefined}
         >
-          <div className="flex items-center justify-between h-16 sm:h-[72px]">
+          <div className={`flex items-center justify-between h-16 ${isPublicRoute ? 'min-[900px]:h-[88px]' : 'sm:h-[72px]'}`}>
             {/* Left: Brand Logo */}
             <div className="flex items-center shrink-0 min-w-0 mr-1 sm:mr-0">
               <BrandLogo

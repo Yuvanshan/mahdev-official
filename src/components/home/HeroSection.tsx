@@ -171,7 +171,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
       ref={heroRef}
       className="home-video-hero relative isolate w-full overflow-hidden"
     >
-      <div className="home-video-hero__panel relative isolate flex min-h-[680px] w-full items-center overflow-hidden bg-[#12172A] text-white sm:min-h-[740px] lg:min-h-[min(820px,calc(100svh-5rem))]">
+      <div className="home-video-hero__panel relative isolate flex min-h-[680px] w-full items-center overflow-hidden bg-[#12172A] text-white sm:min-h-[740px] lg:min-h-[clamp(640px,72svh,820px)]">
         <ScrollParallax targetRef={heroRef} distance={24} className="home-video-hero__media absolute -inset-y-10 right-[-2%] w-[72%] overflow-hidden">
           {useCmsImage ? (
             <img
@@ -251,7 +251,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
           </button>
         )}
         <motion.div
-          className="home-video-hero__content relative z-20 w-full max-w-[620px] px-[clamp(28px,5vw,64px)] py-24"
+          className="home-video-hero__content relative z-20 w-full max-w-[620px] px-[var(--page-gutter)] py-24"
           initial={reducedMotion ? false : { opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}

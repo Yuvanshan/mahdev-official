@@ -84,7 +84,7 @@ export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ slug, onNa
   if (!service) {
     if (!hasResolved) {
       return (
-        <main className="flex min-h-[55vh] items-center justify-center bg-slate-50 px-4">
+        <main className="flex min-h-[55vh] items-center justify-center bg-slate-50 px-[var(--page-gutter)]">
           <div role="status" className="h-10 w-10 animate-spin rounded-full border-4 border-blue-100 border-t-blue-700" />
         </main>
       );
