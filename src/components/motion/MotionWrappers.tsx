@@ -23,7 +23,7 @@ export const PublicScrollRevealObserver: React.FC = () => {
         entry.target.classList.add('public-scroll-revealed');
         observer.unobserve(entry.target);
       });
-    }, { threshold: 0.08, rootMargin: '0px 0px -36px 0px' });
+    }, { threshold: 0, rootMargin: '0px 0px -36px 0px' });
     const observed = new WeakSet<Element>();
 
     const observeRevealTargets = () => {
