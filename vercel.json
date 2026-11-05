@@ -153,6 +153,17 @@
       "destination": "/app-shell.html"
     },
     {
+      "source": "/:route(gallery|media)",
+      "has": [
+        {
+          "type": "query",
+          "key": "id",
+          "value": "(?<galleryId>.*)"
+        }
+      ],
+      "destination": "/api/page-shell?route=/:route&id=:galleryId"
+    },
+    {
       "source": "/favicon.ico",
       "destination": "/favicon.png"
     },

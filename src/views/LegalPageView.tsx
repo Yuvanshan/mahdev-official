@@ -175,7 +175,7 @@ export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavi
 
       {/* Header Banner */}
       <section className="bg-white border-b border-slate-200 py-8 sm:py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-[var(--page-gutter)]">
           <ScrollReveal direction="up">
             {/* Breadcrumb Navigation */}
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-4">
@@ -279,7 +279,7 @@ export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavi
       </section>
 
       {/* Main Document Layout */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+      <div className="max-w-7xl mx-auto px-[var(--page-gutter)] py-10 sm:py-12">
         {/* Shimmer Loading Skeleton */}
         {isLoading ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-pulse">

@@ -16,6 +16,7 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { ScrollReveal, TiltCard } from '../components/motion/MotionWrappers';
 import { SEOHead } from '../components/layout/SEOHead';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { useGoogleReviews, useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { DivisionId } from '../types/firestore';
 import { DIVISIONS } from '../config/divisions';
@@ -88,7 +89,7 @@ export const TestimonialsView: React.FC<TestimonialsViewProps> = ({ onNavigate }
       <SEOHead
         title="Google Reviews & Verified Client Feedback | Mahdev Pvt Ltd"
         description={`Read genuine verified reviews from Mahdev's Google Maps and Google Business Profile across Trincomalee and Colombo branches.`}
-        canonicalUrl="https://mahdev.lk/testimonials"
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/testimonials`}
       />
 
       {/* Header Banner & Google Scoreboard */}

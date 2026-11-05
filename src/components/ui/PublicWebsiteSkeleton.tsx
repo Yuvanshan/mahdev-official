@@ -18,7 +18,7 @@ export const PublicWebsiteSkeleton: React.FC = () => {
       </div>
 
       {/* 2. Top Header Navigation Bar Shimmer */}
-      <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 sm:px-6 lg:px-8 py-3.5 shadow-xs">
+      <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-slate-100 px-[var(--page-gutter)] py-3.5 shadow-xs">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           {/* Brand Logo Skeleton */}
           <div className="flex items-center gap-3">
@@ -89,7 +89,7 @@ export const PublicWebsiteSkeleton: React.FC = () => {
       </section>
 
       {/* 4. Division Showcase Matrix Skeleton */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 w-full">
+      <section className="max-w-7xl mx-auto px-[var(--page-gutter)] py-16 sm:py-24 w-full">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-12 flex flex-col items-center gap-3">
           <div className="w-32 h-5 rounded-full skeleton-shimmer" />
@@ -127,7 +127,7 @@ export const PublicWebsiteSkeleton: React.FC = () => {
       </section>
 
       {/* 5. Featured Services / Hardware Skeletons */}
-      <section className="bg-slate-50 border-t border-slate-200/60 py-16 px-4 sm:px-6 lg:px-8">
+      <section className="bg-slate-50 border-t border-slate-200/60 py-16 px-[var(--page-gutter)]">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
             <div className="flex flex-col gap-2.5">

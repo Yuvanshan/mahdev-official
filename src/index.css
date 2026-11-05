@@ -2,29 +2,31 @@
 
 @layer base {
   :root {
-    --electric-blue: #0052FF;
-    --electric-blue-hover: #0045D8;
-    --electric-blue-light: #38BDF8;
-    --electric-blue-cyan: #00D2FF;
-    --electric-blue-dark: #0A1E5C;
-    --electric-blue-deep: #061033;
-    --electric-blue-soft: #EBF2FF;
-    --electric-blue-subtle: #F4F8FF;
-    --purple-primary: #0052FF;
-    --purple-dark: #0A1E5C;
-    --purple-deep: #061033;
-    --purple-light: #38BDF8;
-    --purple-soft: #EBF2FF;
-    --purple-subtle: #F4F8FF;
+    --electric-blue: #3550E8;
+    --electric-blue-hover: #2C40C4;
+    --electric-blue-light: #7585EF;
+    --electric-blue-cyan: #B8C2FF;
+    --electric-blue-dark: #2338A8;
+    --electric-blue-deep: #161F5E;
+    --electric-blue-soft: #EEF0FF;
+    --electric-blue-subtle: #F6F7FF;
+    --purple-primary: #3550E8;
+    --purple-dark: #2338A8;
+    --purple-deep: #161F5E;
+    --purple-light: #7585EF;
+    --purple-soft: #EEF0FF;
+    --purple-subtle: #F6F7FF;
     --surface: #FAF9F6;
     --surface-card: #FFFFFF;
-    --surface-secondary: #F4F6FA;
-    --surface-tertiary: #EAF0F9;
+    --surface-secondary: #F4F3EF;
+    --surface-tertiary: #EAE8E1;
     --text-primary: #0A1128;
     --text-secondary: #334155;
     --text-muted: #64748B;
     --border: #E2E8F0;
     --border-subtle: #EDF2F7;
+    --page-gutter: clamp(1.25rem, 3vw, 2rem);
+    --content-max-width: 80rem;
   }
 
   html, body, #root {
@@ -1028,26 +1030,26 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 }
 
 .bg-electric-gradient-cyan {
-  background: linear-gradient(135deg, #0052FF 0%, #00D2FF 100%);
+  background: linear-gradient(135deg, #3550E8 0%, #7585EF 100%);
 }
 
 .bg-electric-gradient-vibrant {
-  background: linear-gradient(135deg, #0052FF 0%, #3B82F6 50%, #00D2FF 100%);
+  background: linear-gradient(135deg, #2338A8 0%, #3550E8 50%, #7585EF 100%);
 }
 
 .bg-electric-subtle,
 .bg-purple-subtle {
-  background: linear-gradient(180deg, rgba(0, 82, 255, 0.06) 0%, rgba(250, 249, 246, 1) 100%);
+  background: linear-gradient(180deg, rgb(53 80 232 / 6%) 0%, #f8f7f3 100%);
 }
 
 .electric-glow,
 .purple-glow {
-  box-shadow: 0 4px 24px -2px rgba(0, 82, 255, 0.25);
+  box-shadow: 0 4px 24px -2px rgb(53 80 232 / 20%);
 }
 
 .electric-glow-sm,
 .purple-glow-sm {
-  box-shadow: 0 2px 12px -1px rgba(0, 82, 255, 0.18);
+  box-shadow: 0 2px 12px -1px rgb(53 80 232 / 15%);
 }
 
 .border-subtle {
@@ -1383,17 +1385,17 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 :root {
   --ink: #0e1424;
   --ink-hero: #12172a;
-  --paper: #f6f5f1;
-  --surface: #f6f5f1;
+  --paper: #f8f7f3;
+  --surface: #f8f7f3;
   --surface-card: #ffffff;
-  --line: #e6e3db;
-  --line-strong: #d9d5cb;
-  --muted: #5b6274;
-  --body: #4a5163;
+  --line: #e9e7e0;
+  --line-strong: #d8d6cf;
+  --muted: #62636b;
+  --body: #4b4c53;
   --accent: #3550e8;
-  --accent-soft: #eef1ff;
-  --accent-text: #2e46cf;
-  --gold: #ffd9a0;
+  --accent-soft: #eef0ff;
+  --accent-text: #2e43c4;
+  --accent-light: #ccd4ff;
   --whatsapp: #25d366;
   --public-nav-height: 4.25rem;
 }
@@ -1531,7 +1533,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 .home-video-hero__content h1 em,
 .home-section-heading h2 em,
 .home-cta-band h2 em {
-  color: var(--gold);
+  color: var(--accent-light);
   font-family: 'Instrument Serif', Georgia, serif;
   font-weight: 400;
   letter-spacing: -.02em;
@@ -1555,7 +1557,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 }
 
 .home-hero-eyebrow span {
-  color: var(--gold);
+  color: var(--accent-light);
 }
 
 .home-hero-actions {
@@ -1603,6 +1605,12 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 .home-button--primary {
   background: var(--accent);
   color: #fff;
+  box-shadow: 0 12px 28px -16px rgb(53 80 232 / 55%);
+}
+
+.home-button--primary:hover {
+  background: var(--electric-blue-hover);
+  box-shadow: 0 16px 34px -15px rgb(53 80 232 / 55%);
 }
 
 .home-button--dark {
@@ -1701,12 +1709,12 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 }
 
 .home-trust-wrap {
-  padding: 26px 24px 12px;
+  padding: 26px var(--page-gutter) 12px;
 }
 
 .home-trust-grid,
 .home-section {
-  width: min(1280px, 100%);
+  width: min(var(--content-max-width), 100%);
   margin-inline: auto;
 }
 
@@ -1714,6 +1722,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   gap: 12px;
+  overflow: visible;
 }
 
 .home-trust-card {
@@ -1764,12 +1773,12 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 }
 
 .home-section {
-  padding: 90px 24px;
+  padding: clamp(64px, 7vw, 90px) var(--page-gutter);
 }
 
 .home-section-heading {
   max-width: 760px;
-  margin: 0 auto 34px;
+  margin: 0 auto clamp(26px, 3vw, 38px);
   text-align: center;
 }
 
@@ -1937,9 +1946,13 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 }
 
 .home-marquee-run i {
-  color: var(--gold);
+  color: var(--accent-light);
   font-style: normal;
   font-size: 16px;
+}
+
+.home-marquee-run i:nth-of-type(even) {
+  color: #8e9bea;
 }
 
 @keyframes home-marquee-scroll {
@@ -2105,8 +2118,13 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 }
 
 .home-process-section {
-  padding: 84px max(24px, calc((100% - 1280px) / 2)) 96px;
+  padding: clamp(64px, 7vw, 84px) var(--page-gutter) clamp(72px, 8vw, 96px);
   background: #fff;
+}
+
+.home-process-section > * {
+  width: min(var(--content-max-width), 100%);
+  margin-inline: auto;
 }
 
 .home-process-grid {
@@ -2150,7 +2168,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 
 .home-cta-band {
   display: flex;
-  width: min(1280px, calc(100% - 48px));
+  width: min(var(--content-max-width), calc(100% - 2 * var(--page-gutter)));
   min-height: 250px;
   align-items: center;
   justify-content: space-between;
@@ -2160,6 +2178,40 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   border-radius: 36px;
   background: var(--accent);
   color: #fff;
+}
+
+.public-scroll-section,
+.public-scroll-card,
+.public-scroll-heading {
+  opacity: 0;
+  transform: translate3d(0, 20px, 0);
+  transition:
+    opacity 620ms cubic-bezier(.2, .7, .2, 1),
+    transform 620ms cubic-bezier(.2, .7, .2, 1),
+    border-color 220ms ease,
+    box-shadow 260ms ease;
+  will-change: opacity, transform;
+}
+
+.public-scroll-card {
+  transform: translate3d(0, 18px, 0) scale(.985);
+  transition-delay: var(--public-scroll-delay, 0ms);
+}
+
+.public-scroll-heading {
+  transform: translate3d(0, 14px, 0);
+  transition-delay: var(--public-scroll-delay, 0ms);
+}
+
+.public-scroll-revealed {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+
+.public-scroll-card:is(article, a, button, [class*="rounded-"]).public-scroll-revealed:hover {
+  border-color: rgb(49 86 243 / 30%);
+  box-shadow: 0 18px 38px -28px rgb(37 83 234 / 55%);
 }
 
 .home-cta-band .home-eyebrow,
@@ -2387,7 +2439,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   }
 
   .home-trust-wrap {
-    padding: 14px 14px 0;
+    padding: 14px var(--page-gutter) 0;
   }
 
   .home-trust-grid {
@@ -2419,7 +2471,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   }
 
   .home-section {
-    padding: 64px 16px;
+    padding: 64px var(--page-gutter);
   }
 
   .home-section-heading {
@@ -2490,11 +2542,11 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   }
 
   .home-process-section {
-    padding: 64px 16px;
+    padding: 64px var(--page-gutter);
   }
 
   .home-cta-band {
-    width: calc(100% - 28px);
+    width: calc(100% - 2 * var(--page-gutter));
     min-height: 0;
     align-items: flex-start;
     flex-direction: column;
@@ -2537,7 +2589,6 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 }
 
 @supports (animation-timeline: view()) {
-  .home-trust-card,
   .home-occasion,
   .home-product-card,
   .home-process-grid li {
@@ -2553,8 +2604,15 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .public-scroll-section,
+  .public-scroll-card,
+  .public-scroll-heading {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
   .home-marquee-track,
-  .home-trust-card,
   .home-occasion,
   .home-product-card,
   .home-process-grid li {

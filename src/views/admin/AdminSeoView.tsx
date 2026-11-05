@@ -15,6 +15,8 @@ import { Button } from '../../components/ui/Button';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
 import { db } from '../../lib/firebase';
 import { doc, getDoc, setDoc } from '../../lib/tursoFirestore';
+import { CANONICAL_SITE_ORIGIN } from '../../config/site';
+import { DIVISION_SEO } from '../../config/divisionSeo';
 
 interface PageSeoEntry {
   route: string;
@@ -29,56 +31,56 @@ interface PageSeoEntry {
 const DEFAULT_SEO_CONFIGS: PageSeoEntry[] = [
   {
     route: '/',
-    title: 'Mahdev Pvt Ltd | Integrated Enterprise Conglomerate Sri Lanka',
-    description: 'Premier enterprise provider across Events (SWS), Cinematography (U1 Studio), Enterprise IT & Cloud, Luxury Travels, and Broadcast Hardware.',
+    title: 'Mahdev (Pvt) Ltd | Events, Studio, IT & Travel, Trincomalee & Colombo',
+    description: 'Mahdev provides event management, wedding decor, photography, IT, travel and production equipment in Trincomalee and Colombo, Sri Lanka.',
     keywords: 'mahdev, sws event management, u1 studio, mahdev it, mahdev travels, colombo, sri lanka',
     ogImage: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
-    canonicalUrl: 'https://mahdev.lk/',
+    canonicalUrl: `${CANONICAL_SITE_ORIGIN}/`,
     allowIndexing: true,
   },
   {
-    route: '/events',
-    title: 'SWS Event Management | Premier Stage & Audio Visual Production',
-    description: 'World-class corporate concert audio, 4K LED volume matrix stages, and luxury wedding event architecture in Sri Lanka.',
+    route: '/sws',
+    title: DIVISION_SEO.sws.title,
+    description: 'Wedding and event decoration by SWS in Trincomalee and Colombo, Sri Lanka. Call or WhatsApp 075 092 8078.',
     keywords: 'sws events, audio visual colombo, stage lighting, concert sound sri lanka, luxury wedding mandap',
     ogImage: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
-    canonicalUrl: 'https://mahdev.lk/events',
+    canonicalUrl: `${CANONICAL_SITE_ORIGIN}/sws`,
     allowIndexing: true,
   },
   {
-    route: '/studio',
-    title: 'U1 Studio | High-End 8K Cinema, Fashion & Commercial Photography',
-    description: 'Cinematic visual storytelling, 8K RED cinema production, commercial campaigns, and editorial studio photography.',
+    route: '/u1',
+    title: DIVISION_SEO.u1.title,
+    description: 'Wedding photography, films and event, portrait and product photography by U1 Studio in Trincomalee and Colombo, Sri Lanka.',
     keywords: 'u1 studio, cinema 8k, red camera colombo, commercial photography sri lanka, bridal cinema',
     ogImage: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1200&q=80',
-    canonicalUrl: 'https://mahdev.lk/studio',
+    canonicalUrl: `${CANONICAL_SITE_ORIGIN}/u1`,
     allowIndexing: true,
   },
   {
     route: '/it',
-    title: 'Mahdev IT | Enterprise Software, Cloud Architecture & Cyber Defense',
-    description: 'Enterprise React web applications, scalable microservices, low-latency APIs, and cloud infrastructure monitoring.',
+    title: DIVISION_SEO.it.title,
+    description: 'Websites, apps, ERP, POS, cloud and AI solutions by Mahdev IT Solutions in Trincomalee and Colombo, Sri Lanka.',
     keywords: 'mahdev it, enterprise software colombo, devops, cloud infrastructure, full-stack react',
     ogImage: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80',
-    canonicalUrl: 'https://mahdev.lk/it',
+    canonicalUrl: `${CANONICAL_SITE_ORIGIN}/it`,
     allowIndexing: true,
   },
   {
     route: '/travels',
-    title: 'Mahdev Travels | Luxury Bespoke Expeditions & VIP Concierge',
-    description: 'Chartered aerial transfers, luxury tea country estates, private yacht charters, and VIP concierge travel in Sri Lanka.',
+    title: DIVISION_SEO.travels.title,
+    description: 'Private tours, wildlife safaris, airport transfers and tailored holidays across Sri Lanka from Trincomalee and Colombo.',
     keywords: 'mahdev travels, luxury travel sri lanka, helicopter transfer sigiriya, vip chauffeur colombo',
     ogImage: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=80',
-    canonicalUrl: 'https://mahdev.lk/travels',
+    canonicalUrl: `${CANONICAL_SITE_ORIGIN}/travels`,
     allowIndexing: true,
   },
   {
     route: '/mart',
-    title: 'Mahdev Online Mart | Professional Broadcast & Production Equipment',
-    description: 'Authorized distributor of calibrated cinema cameras, studio lighting, pro audio trusses, and computing hardware.',
+    title: DIVISION_SEO.mart.title,
+    description: 'Shop event and home decor, lighting and electronics from Mahdev Online Mart, with island-wide delivery in Sri Lanka.',
     keywords: 'mahdev mart, buy sony fx9 colombo, broadcast gear sri lanka, studio lighting store',
     ogImage: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=1200&q=80',
-    canonicalUrl: 'https://mahdev.lk/mart',
+    canonicalUrl: `${CANONICAL_SITE_ORIGIN}/mart`,
     allowIndexing: true,
   },
 ];

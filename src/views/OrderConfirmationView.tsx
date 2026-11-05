@@ -32,6 +32,7 @@ import { PaymentTransaction, VerificationResult } from '../types/payment';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { SEOHead } from '../components/layout/SEOHead';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { PaymentGatewayModal } from '../components/payment/PaymentGatewayModal';
 import { BankTransferModal } from '../components/payment/BankTransferModal';
 import { BANK_DETAILS, COMPANY_INFO, ONLINE_PAYMENT_GATEWAY_ENABLED } from '../config/company';
@@ -201,11 +202,11 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
   const isPaid = order.paymentStatus === 'paid';
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8 print:bg-white print:p-0">
+    <div className="min-h-screen bg-slate-50 py-10 px-[var(--page-gutter)] print:bg-white print:p-0">
       <SEOHead
         title={`Order ${order.id} | Mahdev Pvt Ltd`}
         description={`Order confirmation and payment processing details for order ${order.id}.`}
-        canonicalUrl={`https://mahdev.lk/order/${order.id}`}
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/order/${order.id}`}
       />
 
       <div className="max-w-4xl mx-auto space-y-6">

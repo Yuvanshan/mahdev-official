@@ -22,18 +22,36 @@ type ItemRecord = Record<string, unknown>;
 
 /** Both branches; added to every description that does not already name them. */
 export const SERVICE_AREA = 'Trincomalee & Colombo, Sri Lanka';
-const DESCRIPTION_LIMIT = 300;
+export const META_DESCRIPTION_LIMIT = 160;
 
 const text = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
 
-/** Description that always names the Trincomalee and Colombo branches, within the length limit. */
+function truncateDescription(value: string, limit: number): string {
+  if (value.length <= limit) return value;
+  const truncated = value.slice(0, limit - 1);
+  const wordBoundary = truncated.lastIndexOf(' ');
+  const prefix = wordBoundary >= limit * 0.6 ? truncated.slice(0, wordBoundary) : truncated;
+  return `${prefix.trimEnd()}…`;
+}
+
+/** Description that names both branches and fits the search-result snippet limit. */
 export function withServiceArea(description: string): string {
-  const base = description.replace(/\s+/g, ' ').trim();
-  if (/trincomalee/i.test(base) && /colombo/i.test(base)) return base.slice(0, DESCRIPTION_LIMIT);
-  const suffix = ` Serving ${SERVICE_AREA}.`;
-  const room = DESCRIPTION_LIMIT - suffix.length;
-  const trimmed = base.length > room ? `${base.slice(0, room - 1).trimEnd()}…` : base;
-  return `${trimmed}${/[.!?…]$/.test(trimmed) || !trimmed ? '' : '.'}${suffix}`.trim();
+  const base = description.replace(/\s+/g, ' ').trim() || 'Mahdev services and solutions';
+  const hasServiceArea = /trincomalee/i.test(base) && /colombo/i.test(base);
+  if (hasServiceArea) {
+    const clipped = truncateDescription(base, META_DESCRIPTION_LIMIT);
+    if (
+      clipped.length >= 25 &&
+      /trincomalee/i.test(clipped) &&
+      /colombo/i.test(clipped)
+    ) return clipped;
+  }
+
+  const suffix = `Serving ${SERVICE_AREA}.`;
+  const baseLimit = META_DESCRIPTION_LIMIT - suffix.length - 2;
+  const shortened = truncateDescription(base, baseLimit);
+  const separator = /[.!?…]$/.test(shortened) ? ' ' : '. ';
+  return `${shortened}${separator}${suffix}`;
 }
 
 const divisionName = (record: ItemRecord) => {

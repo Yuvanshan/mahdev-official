@@ -39,6 +39,7 @@ import { compressDataUrl } from '../../utils/imageOptimizer';
 import { uploadMediaAsset } from '../../services/mediaUploadService';
 import { resolveMediaUrl } from '../../services/firestoreMediaService';
 import { getDefaultDivisionLogo, normalizeDivisionId } from '../../services/firestore/divisions';
+import { CANONICAL_SITE_ORIGIN } from '../../config/site';
 
 export const AdminDivisionsView: React.FC = () => {
   const { saveDivision, refreshAll, divisions: firestoreDivisions, companySettings, products } = useFirestoreDataContext();
@@ -473,7 +474,7 @@ export const AdminDivisionsView: React.FC = () => {
         metaTitle: div.seo?.metaTitle || `${div.name} | Mahdev Group`,
         metaDescription: div.seo?.metaDescription || div.description,
         ogImage: div.seo?.ogImage || div.heroImageUrl || '',
-        canonicalUrl: div.seo?.canonicalUrl || `https://mahdev.lk${div.route}`,
+        canonicalUrl: div.seo?.canonicalUrl || `${CANONICAL_SITE_ORIGIN}${div.route}`,
       },
     });
     setFormErrors({});
@@ -2327,7 +2328,7 @@ export const AdminDivisionsView: React.FC = () => {
                       });
                       setIsDirty(true);
                     }}
-                    placeholder="https://mahdev.lk/sws"
+                    placeholder={`${CANONICAL_SITE_ORIGIN}/sws`}
                     className="w-full px-3 py-2 border rounded-xl border-slate-200 font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>

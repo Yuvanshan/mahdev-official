@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowRight, BadgeDollarSign, Camera, Image as ImageIcon, Layers, RotateCcw, Search, SlidersHorizontal, X } from 'lucide-react';
 import { SEOHead } from '../components/layout/SEOHead';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { ServiceTile, inAppLinkClick } from '../components/services/ServiceTile';
 import { gallerySeo, productSeo, servicePagePath } from '../config/itemSeo';
@@ -540,7 +541,7 @@ export const ExploreAllView: React.FC<{
       <SEOHead
         title="Explore Services, Gallery & Products"
         description="Browse Mahdev services, event and studio gallery projects, and products in one place."
-        canonicalUrl="https://mahdev.lk/services"
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/services`}
       />
       <SectionContainer background="white" paddingY="lg" hasBorderBottom>
         <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">

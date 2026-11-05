@@ -42,6 +42,7 @@ import { useAdminAuth } from '../../context/AdminAuthContext';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { AdminNotificationCenter } from '../../components/admin/AdminNotificationCenter';
 import { SEOHead } from '../../components/layout/SEOHead';
+import { CANONICAL_SITE_ORIGIN } from '../../config/site';
 import { BrandLogo } from '../../components/layout/BrandLogo';
 import {
   ADMIN_PORTAL_PATH,
@@ -337,7 +338,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
       <SEOHead
         title={`Admin: ${activeSection.toUpperCase()} | Mahdev Pvt Ltd Console`}
         description="Administrative Operations Console for Mahdev Pvt Ltd enterprise management."
-        canonicalUrl="https://mahdev.lk/admin"
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/admin`}
       />
 
       {/* Mobile Drawer Backdrop */}

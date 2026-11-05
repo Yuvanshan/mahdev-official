@@ -17,7 +17,7 @@ export const DivisionShimmer: React.FC<DivisionShimmerProps> = ({
         {/* Shimmer pulse background */}
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 animate-pulse" />
         
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 z-20 w-full">
+        <div className="relative max-w-7xl mx-auto px-[var(--page-gutter)] py-24 z-20 w-full">
           <div className="max-w-3xl space-y-6">
             {onNavigate && (
               <button
@@ -49,7 +49,7 @@ export const DivisionShimmer: React.FC<DivisionShimmerProps> = ({
       </section>
 
       {/* Services and Details Skeleton */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 w-full space-y-12">
+      <section className="max-w-7xl mx-auto px-[var(--page-gutter)] py-16 w-full space-y-12">
         <div className="flex flex-col space-y-3">
           <div className="h-4 w-28 bg-blue-100 rounded-full animate-pulse" />
           <div className="h-8 w-64 bg-slate-200 rounded-lg animate-pulse" />

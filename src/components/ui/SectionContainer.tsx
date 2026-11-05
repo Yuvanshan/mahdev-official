@@ -48,9 +48,9 @@ export const SectionContainer: React.FC<SectionContainerProps> = ({
   const paddingYStyles = {
     none: 'py-0',
     sm: 'py-8 sm:py-12',
-    md: 'py-12 sm:py-16',
-    lg: 'py-12 sm:py-16',
-    xl: 'py-16 sm:py-20',
+    md: 'py-10 sm:py-16',
+    lg: 'py-12 sm:py-20',
+    xl: 'py-16 sm:py-24',
   };
 
   const borderTopStyle = hasBorderTop ? 'border-t border-slate-200' : '';
@@ -61,7 +61,7 @@ export const SectionContainer: React.FC<SectionContainerProps> = ({
       className={`w-full max-w-full overflow-hidden ${bgStyles[background]} ${paddingYStyles[paddingY]} ${borderTopStyle} ${borderBottomStyle} ${className}`}
       {...props}
     >
-      <div className={`w-full max-w-full min-w-0 ${maxWStyles[effectiveMaxWidth] || 'max-w-7xl'} mx-auto px-4 sm:px-6 lg:px-8 ${innerClassName}`}>
+      <div className={`w-full max-w-full min-w-0 ${maxWStyles[effectiveMaxWidth] || 'max-w-7xl'} mx-auto px-[var(--page-gutter)] ${innerClassName}`}>
         {children}
       </div>
     </Component>

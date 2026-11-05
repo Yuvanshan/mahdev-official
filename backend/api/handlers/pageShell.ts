@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { initializeTursoDatabase } from '../../db/tursoDatabase.js';
 import { handleTursoAction } from '../tursoRoutes.js';
-import { APP_ROUTE_SEGMENTS, PRIVATE_ROUTE_SEGMENTS, RETIRED_ADMIN_SEGMENTS } from '../../seo/publicRoutes.js';
+import { APP_ROUTE_SEGMENTS, PRERENDERED_ROUTES, PRIVATE_ROUTE_SEGMENTS, RETIRED_ADMIN_SEGMENTS } from '../../seo/publicRoutes.js';
 import { resolveDynamicRouteSeo } from '../../seo/dynamicRouteSeo.js';
 import { renderSeoHtml } from '../../seo/renderSeoHtml.js';
 import { CANONICAL_SITE_ORIGIN } from '../../../src/config/site.js';
@@ -51,6 +51,7 @@ async function getPublishedSlugs(): Promise<Set<string>> {
 
 // /services/{slug}, /products/{slug}, /projects/{slug}... (one item per address).
 const ITEM_PAGE_PATTERN = /^\/?(services|service|products|product|projects|project|work|portfolio)\/[^/]+\/?$/i;
+const GALLERY_ITEM_PATTERN = /^\/?(gallery|media)\/?$/i;
 // /book/service/{id}, /book/gallery/{id}, /book/product/{id}: personal booking forms.
 const ONLINE_BOOKING_PATTERN = /^\/?book\/(service|gallery|product)\//i;
 
@@ -112,6 +113,11 @@ async function serveShell(req: IncomingMessage, res: ServerResponse, forcedStatu
         // An item address whose item does not exist is a real 404, not the home page
         // with a 200 (which search engines treat as a "soft 404").
         status = 404;
+      } else if (GALLERY_ITEM_PATTERN.test(path) && url.searchParams.get('id')?.trim()) {
+        status = 404;
+      } else if (GALLERY_ITEM_PATTERN.test(path)) {
+        const servicesRoute = PRERENDERED_ROUTES.find((route) => route.path === '/services');
+        if (servicesRoute) html = renderSeoHtml(html, servicesRoute, CANONICAL_SITE_ORIGIN);
       }
     } catch (error) {
       console.error('[PageShell] Could not add page SEO; serving the plain shell:', error);

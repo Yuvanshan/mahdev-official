@@ -17,6 +17,7 @@ import { Order } from '../types/order';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { SEOHead } from '../components/layout/SEOHead';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { formatCurrency } from '../utils/currency';
 
 interface OrderLookupViewProps {
@@ -63,11 +64,11 @@ export const OrderLookupView: React.FC<OrderLookupViewProps> = ({ onNavigate }) 
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 py-12 px-[var(--page-gutter)]">
       <SEOHead
         title="Track & Lookup Orders | Mahdev Pvt Ltd Enterprise System"
         description="Search, view, and track the status of your orders, dispatch logistics, and booking reservation details across the Mahdev ecosystem."
-        canonicalUrl="https://mahdev.lk/orders"
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/orders`}
       />
 
       <div className="max-w-4xl mx-auto space-y-8">

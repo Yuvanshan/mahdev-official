@@ -8,6 +8,7 @@
 
 import type { RouteSeo } from './publicRoutes.js';
 import { SOCIAL_PROFILES } from '../../src/config/company.js';
+import { withServiceArea } from '../../src/config/itemSeo.js';
 
 // Official profiles as plain links, so crawlers that do not run JavaScript still find them.
 const SOCIAL_LINKS_HTML = SOCIAL_PROFILES
@@ -37,7 +38,7 @@ const absoluteUrl = (value: string, origin: string) => (/^https?:\/\//i.test(val
 export function renderSeoHtml(baseHtml: string, route: RouteSeo, origin: string): string {
   const url = escapeHtml(`${origin}${route.path}`);
   const title = escapeHtml(route.title);
-  const description = escapeHtml(route.description);
+  const description = escapeHtml(withServiceArea(route.description));
   let html = baseHtml;
   html = replaceTag(html, /<title>[^<]*<\/title>/, `<title>${title}</title>`, '<title>');
   html = replaceTag(html, /<meta name="description" content="[^"]*" \/>/, `<meta name="description" content="${description}" />`, 'meta description');

@@ -6,6 +6,7 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { ScrollReveal, TiltCard } from '../components/motion/MotionWrappers';
 import { SEOHead } from '../components/layout/SEOHead';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { BRAND_CONFIG } from '../config/brand';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { CallToActionSection } from '../components/home/CallToActionSection';
@@ -39,7 +40,7 @@ export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) =>
         <SEOHead
           title="Our Milestones & Achievements | Mahdev Pvt Ltd"
           description="Explore the journey of Mahdev Pvt Ltd from 2022 foundation to islandwide expansion, IT innovation, and 1,800+ delivered projects."
-          canonicalUrl="https://mahdev.lk/milestones"
+          canonicalUrl={`${CANONICAL_SITE_ORIGIN}/milestones`}
         />
         <MilestonesTimelineShimmer />
       </div>
@@ -51,7 +52,7 @@ export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) =>
       <SEOHead
         title="Our Milestones & Achievements | Mahdev Pvt Ltd"
         description="Explore the journey of Mahdev Pvt Ltd from 2022 foundation to islandwide expansion, IT innovation, and 1,800+ delivered projects."
-        canonicalUrl="https://mahdev.lk/milestones"
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/milestones`}
       />
 
       {/* Header Banner */}

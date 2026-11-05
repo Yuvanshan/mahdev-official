@@ -36,7 +36,7 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
       </ScrollParallax>
 
       {/* ================= HERO CONTENT OVER VIDEO ON LEFT SIDE ================= */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-28 z-20 w-full">
+      <div className="relative max-w-7xl mx-auto px-[var(--page-gutter)] py-20 sm:py-24 lg:py-28 z-20 w-full">
         <div className="max-w-3xl space-y-6">
           
           {/* Page heading for search engines: the business and service keywords. */}

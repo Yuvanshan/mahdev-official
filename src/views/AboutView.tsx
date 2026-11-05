@@ -18,6 +18,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { SEOHead } from '../components/layout/SEOHead';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { SectionContainer } from '../components/ui/SectionContainer';
@@ -119,12 +120,12 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
       <SEOHead
         title="About MAHDEV Pvt Ltd | Creating Moments. Capturing Memories. Delivering Innovation"
         description="Learn about MAHDEV Pvt Ltd, our vision, mission, business divisions, journey, and services across Sri Lanka."
-        canonicalUrl="https://mahdev.lk/about"
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/about`}
       />
 
       {/* Shimmer Loading State */}
       {isLoading ? (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12 animate-pulse">
+        <div className="max-w-7xl mx-auto px-[var(--page-gutter)] py-12 space-y-12 animate-pulse">
           <div className="space-y-4 max-w-3xl">
             <div className="h-6 w-36 bg-blue-100 rounded-full" />
             <div className="h-12 w-3/4 bg-slate-200 rounded-xl" />
@@ -168,7 +169,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
         <>
           {/* 1. HERO SECTION */}
           <section className="relative overflow-hidden bg-gradient-to-b from-blue-50/50 via-white to-white py-12 sm:py-20 border-b border-slate-100">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-[var(--page-gutter)]">
               <ScrollReveal direction="up">
                 <div className="max-w-3xl">
                   {/* Main Title */}
@@ -195,7 +196,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
 
           {/* 2. COMPANY INTRODUCTION ("Who We Are") */}
           <section className="py-16 sm:py-20 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-[var(--page-gutter)]">
               <ScrollReveal direction="up">
                 <div className="max-w-4xl">
                   <div className="flex items-center gap-2 mb-3">
@@ -224,7 +225,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
 
           {/* 3. VISION & MISSION */}
           <section className="py-16 bg-slate-50 border-y border-slate-200/80">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-[var(--page-gutter)]">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
                 {/* Vision Card */}
                 <ScrollReveal direction="up" delay={0.1}>
@@ -271,7 +272,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
 
           {/* 4. CORE VALUES */}
           <section className="py-16 sm:py-20 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-[var(--page-gutter)]">
               <ScrollReveal direction="up">
                 <div className="max-w-3xl mb-12">
                   <H2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-slate-900 tracking-tight">
@@ -308,7 +309,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
 
           {/* 5. OUR DIVISIONS */}
           <section className="py-16 sm:py-20 bg-slate-50/70 border-t border-slate-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-[var(--page-gutter)]">
               <ScrollReveal direction="up">
                 <div className="max-w-3xl mb-12">
                   <H2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-slate-900 tracking-tight">
@@ -376,7 +377,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
 
           {/* 6. COMPANY JOURNEY / TIMELINE */}
           <section className="py-16 sm:py-20 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-[var(--page-gutter)]">
               <ScrollReveal direction="up">
                 <div className="mb-12 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                   <div className="max-w-3xl">
@@ -417,7 +418,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
           {/* 7. MEET OUR TEAM */}
           {sortedTeam.length > 0 && (
             <section className="py-16 sm:py-20 bg-white border-t border-slate-200">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="max-w-7xl mx-auto px-[var(--page-gutter)]">
                 <ScrollReveal direction="up">
                   <div className="max-w-3xl mb-12">
                     <H2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-slate-900 tracking-tight">
@@ -466,7 +467,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
 
           {/* 8. OUR LOCATIONS */}
           <section className="py-16 sm:py-20 bg-slate-50 border-t border-slate-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-[var(--page-gutter)]">
               <ScrollReveal direction="up">
                 <div className="max-w-3xl mb-12">
                   <H2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-slate-900 tracking-tight">
@@ -545,7 +546,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
 
           {/* 8. CALL TO ACTION SECTION */}
           <section className="py-20 sm:py-24 bg-gradient-to-br from-[#06102B] via-[#0A1B44] to-[#06102B] text-white">
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+            <div className="max-w-5xl mx-auto px-[var(--page-gutter)] text-center space-y-6">
               <ScrollReveal direction="up">
                 <span className="inline-block px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 font-mono text-xs font-bold uppercase tracking-wider border border-blue-400/30">
                   Collaborate With Us

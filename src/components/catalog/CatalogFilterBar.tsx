@@ -76,7 +76,7 @@ export const CatalogFilterBar: React.FC<CatalogFilterBarProps> = ({
 
   return (
     <div className="bg-white border-b border-neutral-200 sticky top-20 z-20 shadow-xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-4">
+      <div className="max-w-7xl mx-auto px-[var(--page-gutter)] py-4 space-y-4">
         {/* Top Controls: Search + Sort + Clear */}
         <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
           {/* Search Input */}

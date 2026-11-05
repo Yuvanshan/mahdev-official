@@ -21,6 +21,7 @@ import {
 import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreDivision, DivisionId } from '../../types/firestore';
 import { DIVISIONS } from '../../config/divisions';
+import { CANONICAL_SITE_ORIGIN } from '../../config/site';
 
 const CACHE_TTL_MS = 1000 * 60 * 30; // 30 minutes cache for divisions
 let cachedDivisions: { data: FirestoreDivision[]; timestamp: number } | null = null;
@@ -275,7 +276,7 @@ export function getDefaultDivisions(): FirestoreDivision[] {
         metaDescription: d.shortDescription || d.description,
         keywords: [shortKey, d.docId, d.slug, 'mahdev', 'sri lanka'],
         ogImage: d.imageUrl,
-        canonicalUrl: `https://mahdev.lk${d.route}`,
+        canonicalUrl: `${CANONICAL_SITE_ORIGIN}${d.route}`,
       },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

@@ -3,7 +3,7 @@ import { Sparkles } from 'lucide-react';
 
 export const HomeBelowHeroShimmer: React.FC = () => {
   return (
-    <div className="w-full bg-[#FAF9F6] py-16 px-4 sm:px-6 lg:px-8 space-y-20 animate-pulse">
+    <div className="w-full bg-[#FAF9F6] py-16 px-[var(--page-gutter)] space-y-20 animate-pulse">
       {/* Top Status Indicator */}
       <div className="max-w-7xl mx-auto flex flex-col items-center text-center space-y-3">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-semibold">

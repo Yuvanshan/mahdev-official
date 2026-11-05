@@ -164,7 +164,7 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
       />
 
       {divisionLoadErrors.sws && (
-        <div className="mx-auto mt-6 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto mt-6 w-full max-w-7xl px-[var(--page-gutter)]">
           <div role="status" aria-live="polite" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950">
             <span>Showing saved SWS examples while live content reconnects.</span>
             <button

@@ -7,6 +7,7 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { DivisionId, LegalPolicyType } from './types';
 import { DIVISIONS, FORCED_COMING_SOON_DIVISIONS } from './config/divisions';
 import { CustomCursor } from './components/motion/CustomCursor';
+import { PublicScrollRevealObserver } from './components/motion/MotionWrappers';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { WhatsAppWidget } from './components/common/WhatsAppWidget';
@@ -139,7 +140,7 @@ const RouteLoadingFallback: React.FC<RouteLoadingFallbackProps> = ({ path }) => 
       className="min-h-screen bg-slate-50 pt-20 sm:pt-24"
     >
       <section className="border-b border-slate-200 bg-white py-10 sm:py-14">
-        <div className="mx-auto max-w-7xl animate-pulse px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl animate-pulse px-[var(--page-gutter)]">
           <div className="mb-6 h-4 w-40 rounded bg-slate-200" />
           <div className="h-10 w-3/4 max-w-2xl rounded-xl bg-slate-200" />
           <div className="mt-4 h-5 w-full max-w-3xl rounded bg-slate-100" />
@@ -1426,6 +1427,7 @@ function AppContent() {
             transition={{ duration: 0.24, ease: 'easeInOut' }}
             className={`w-full max-w-full min-w-0 ${isAdminRoute ? '' : 'public-editorial'}`}
           >
+            {!isAdminRoute && <PublicScrollRevealObserver />}
             <Suspense
               fallback={
                 <RouteLoadingFallback path={normalizedPath} />

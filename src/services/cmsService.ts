@@ -22,6 +22,7 @@ import { COMPANY_MILESTONES } from '../data/homeData';
 import { adminService } from './adminService';
 import { DivisionId } from '../types';
 import { COMPANY_INFO, CompanyInformation } from '../config/company';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import {
   firestoreSettingsService,
   firestoreDivisionsService,
@@ -345,7 +346,7 @@ class CmsService {
             metaTitle: `${d.name} | Mahdev Group`,
             metaDescription: d.description,
             ogImage: resolvedImg,
-            canonicalUrl: `https://mahdev.lk${d.route || '/' + shortId}`,
+            canonicalUrl: `${CANONICAL_SITE_ORIGIN}${d.route || '/' + shortId}`,
           },
           isActive: d.status !== 'inactive' && d.isPublished !== false,
           isDeleted: d.status === 'inactive' && d.isPublished === false,
@@ -798,7 +799,7 @@ class CmsService {
             metaTitle: `${d.name} | Mahdev Group`,
             metaDescription: d.description,
             ogImage: d.heroImageUrl || '',
-            canonicalUrl: `https://mahdev.lk${d.route}`,
+            canonicalUrl: `${CANONICAL_SITE_ORIGIN}${d.route}`,
           },
           isActive: d.status !== 'inactive' && d.isPublished !== false,
           isDeleted: d.status === 'inactive' && d.isPublished === false,
@@ -1975,7 +1976,7 @@ class CmsService {
         pageTitle: 'Mahdev (Pvt) Ltd - Creating Moments | Capturing Memories | Delivering Innovation',
         metaDescription: 'Creating Moments... Capturing Memories... & Delivering Innovation... Integrated enterprise spanning Event Decorations & Management, Photography & Studio Cinema, IT Solutions & Software, Travels, and Online Mart.',
         ogImage: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
-        canonicalUrl: 'https://mahdev.lk/',
+        canonicalUrl: `${CANONICAL_SITE_ORIGIN}/`,
       },
       updatedAt: new Date().toISOString(),
     };

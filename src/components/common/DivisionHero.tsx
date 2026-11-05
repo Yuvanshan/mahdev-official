@@ -43,7 +43,7 @@ export const DivisionHero: React.FC<DivisionHeroProps> = ({
         />
       </ScrollParallax>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-28 z-20 w-full">
+      <div className="relative max-w-7xl mx-auto px-[var(--page-gutter)] py-20 sm:py-24 lg:py-28 z-20 w-full">
         <div className="max-w-3xl space-y-6">
           <motion.h1
             aria-label={headline}

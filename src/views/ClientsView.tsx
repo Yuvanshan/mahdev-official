@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Handshake, Building2, ShieldCheck, Sparkles, ArrowRight } from 'lucide-react';
 import { SEOHead } from '../components/layout/SEOHead';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { SectionContainer } from '../components/ui/SectionContainer';
 import { H1, H2, Caption } from '../components/ui/Heading';
 import { Button } from '../components/ui/Button';
@@ -27,7 +28,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ onNavigate }) => {
       <SEOHead
         title="Enterprise Partners & Clients"
         description={`Discover the leading enterprises, brands, and institutions that trust ${companyName} for events, cinematography, cloud solutions, travel, and certified hardware.`}
-        canonicalUrl="https://mahdev.lk/clients"
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/clients`}
       />
 
       {/* 1. Header Banner */}

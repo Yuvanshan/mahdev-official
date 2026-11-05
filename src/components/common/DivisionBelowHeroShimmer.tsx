@@ -9,7 +9,7 @@ export const DivisionBelowHeroShimmer: React.FC<DivisionBelowHeroShimmerProps> =
   divisionName = 'Division',
 }) => {
   return (
-    <div className="w-full bg-[#FAF9F6] dark:bg-slate-950 py-16 px-4 sm:px-6 lg:px-8 space-y-20 animate-pulse transition-colors duration-300">
+    <div className="w-full bg-[#FAF9F6] dark:bg-slate-950 py-16 px-[var(--page-gutter)] space-y-20 animate-pulse transition-colors duration-300">
       {/* 1. Status Indicator */}
       <div className="max-w-7xl mx-auto flex flex-col items-center text-center space-y-3">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/60 text-blue-600 dark:text-blue-400 text-xs font-semibold shadow-2xs">

@@ -33,6 +33,7 @@ import {
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { SEOHead } from '../components/layout/SEOHead';
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { analyticsService } from '../services/analyticsService';
 import { formatCurrency, formatLKR } from '../utils/currency';
 import { openWhatsAppOrder } from '../utils/whatsapp';
@@ -324,11 +325,11 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 py-10 px-[var(--page-gutter)]">
       <SEOHead
         title="Secure Checkout | Mahdev Pvt Ltd Enterprise System"
         description="Review your order, provide delivery specifications, and transition directly into enterprise payment processing."
-        canonicalUrl="https://mahdev.lk/checkout"
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/checkout`}
       />
 
       <div className="max-w-6xl mx-auto">

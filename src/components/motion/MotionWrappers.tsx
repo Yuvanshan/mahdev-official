@@ -8,6 +8,68 @@ import {
   useMotionValue,
 } from 'motion/react';
 
+export const PublicScrollRevealObserver: React.FC = () => {
+  useEffect(() => {
+    const root = document.querySelector('.public-editorial');
+    if (
+      !root ||
+      !('IntersectionObserver' in window) ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('public-scroll-revealed');
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -36px 0px' });
+    const observed = new WeakSet<Element>();
+
+    const observeRevealTargets = () => {
+      root.querySelectorAll<HTMLElement>(
+        'section:not(.home-video-hero):not(.division-video-hero):not([aria-busy="true"]), ' +
+        '.home-section-heading, .home-trust-grid > *, .home-occasion, .home-pillar-grid > *, ' +
+        '.home-product-card, .home-process-grid > *, ' +
+        'section:not(.home-video-hero):not(.division-video-hero) .grid > article, ' +
+        'section:not(.home-video-hero):not(.division-video-hero) .grid > a, ' +
+        'section:not(.home-video-hero):not(.division-video-hero) .grid > button, ' +
+        'section:not(.home-video-hero):not(.division-video-hero) .grid > div'
+      ).forEach((element) => {
+        if (observed.has(element)) return;
+        observed.add(element);
+        const isHeading = element.matches('.home-section-heading');
+        const isCard = element.matches(
+          '.home-trust-grid > *, .home-occasion, .home-pillar-grid > *, .home-product-card, ' +
+          '.home-process-grid > *, section .grid > article, section .grid > a, ' +
+          'section .grid > button, section .grid > div'
+        );
+        element.classList.add(
+          isHeading ? 'public-scroll-heading' : isCard ? 'public-scroll-card' : 'public-scroll-section'
+        );
+        if (isCard) {
+          const index = Array.from(element.parentElement?.children || []).indexOf(element);
+          element.style.setProperty('--public-scroll-delay', `${Math.min(index, 5) * 55}ms`);
+        } else if (isHeading) {
+          element.style.setProperty('--public-scroll-delay', '70ms');
+        }
+        observer.observe(element);
+      });
+    };
+
+    observeRevealTargets();
+    const mutationObserver = new MutationObserver(observeRevealTargets);
+    mutationObserver.observe(root, { childList: true, subtree: true });
+
+    return () => {
+      mutationObserver.disconnect();
+      observer.disconnect();
+    };
+  }, []);
+
+  return null;
+};
+
 // Hook to detect prefers-reduced-motion and touch device
 export const useDeviceMotion = () => {
   const [reducedMotion, setReducedMotion] = useState(false);

@@ -151,7 +151,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
       {/* Top Breadcrumb & Return Bar */}
       <div className="pt-24 border-b border-slate-100 bg-slate-50/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-[var(--page-gutter)] py-4 flex items-center justify-between">
           <button
             onClick={() => onNavigate('/portfolio')}
             className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-blue-600 transition-colors uppercase tracking-wider cursor-pointer"
@@ -172,7 +172,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
       {/* 1. PROJECT HEADER & COVER */}
       <section className="pt-10 pb-16 border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-[var(--page-gutter)]">
           <ScrollReveal direction="up">
             {/* Meta Tags Bar */}
             <div className="flex flex-wrap items-center gap-3 mb-6">
@@ -314,7 +314,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
       {/* 2. CHALLENGE, SOLUTION, RESULT */}
       {(project.challenge || project.solution || project.result || project.fullDescription || (project.impactMetrics && project.impactMetrics.length > 0)) && (
         <section className="py-20 border-b border-slate-100 bg-slate-50/40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto px-[var(--page-gutter)]">
             <div className="max-w-3xl mb-12">
               <span className="text-xs font-bold uppercase tracking-widest text-blue-600 block mb-2">
                 Execution Breakdown
@@ -395,7 +395,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
       {/* 3. VIDEO SHOWCASE (IF AVAILABLE) */}
       {project.videoUrl && (
         <section className="py-20 border-b border-slate-100 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto px-[var(--page-gutter)]">
             <div className="max-w-3xl mb-10">
               <span className="text-xs font-bold uppercase tracking-widest text-blue-600 block mb-2">
                 Cinematic Recording
@@ -442,7 +442,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
       {/* 4. GALLERY */}
       {allImages.length > 1 && (
         <section className="py-20 border-b border-slate-100 bg-slate-50/50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto px-[var(--page-gutter)]">
             <div className="max-w-3xl mb-12">
               <span className="text-xs font-bold uppercase tracking-widest text-blue-600 block mb-2">
                 Visual Documentation
@@ -481,7 +481,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
       {/* 5. RELATED PROJECTS */}
       {relatedProjects.length > 0 && (
         <section className="py-20 border-b border-slate-100 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto px-[var(--page-gutter)]">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12">
               <div>
                 <span className="text-xs font-bold uppercase tracking-widest text-blue-600 block mb-2">
@@ -549,7 +549,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
       {/* 6. CALL TO ACTION */}
       <section className="py-24 bg-slate-950 text-white relative overflow-hidden">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+        <div className="max-w-4xl mx-auto px-[var(--page-gutter)] text-center relative z-10">
           <span className="text-xs font-bold uppercase tracking-widest text-blue-400 block mb-3">
             Start Your Engagement
           </span>
