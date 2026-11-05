@@ -220,6 +220,34 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
                   </div>
                 </div>
               </ScrollReveal>
+
+              {sortedTeam.length > 0 && (
+                <div
+                  aria-label="MAHDEV executive leadership"
+                  className="mt-10 grid max-w-4xl grid-cols-2 gap-4 sm:mt-12 sm:gap-6"
+                >
+                  {sortedTeam.slice(0, 2).map((member, idx) => (
+                    <ScrollReveal key={member.id} direction="up" delay={idx * 0.1}>
+                      <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <div className="aspect-[4/5] overflow-hidden bg-slate-100">
+                          <img
+                            src={member.imageUrl}
+                            alt={`${member.name}, ${member.title}`}
+                            loading="lazy"
+                            className="h-full w-full object-cover object-top"
+                          />
+                        </div>
+                        <div className="p-3 text-center sm:p-5">
+                          <h3 className="text-sm font-display font-bold text-slate-900 sm:text-lg">
+                            {member.name}
+                          </h3>
+                          <p className="mt-1 text-xs font-semibold text-blue-600 sm:text-sm">{member.title}</p>
+                        </div>
+                      </article>
+                    </ScrollReveal>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
 
@@ -415,57 +443,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
             </div>
           </section>
 
-          {/* 7. MEET OUR TEAM */}
-          {sortedTeam.length > 0 && (
-            <section className="py-16 sm:py-20 bg-white border-t border-slate-200">
-              <div className="max-w-7xl mx-auto px-[var(--page-gutter)]">
-                <ScrollReveal direction="up">
-                  <div className="max-w-3xl mb-12">
-                    <H2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-slate-900 tracking-tight">
-                      Meet Our Team
-                    </H2>
-                    <p className="mt-3 text-sm sm:text-base text-slate-600">
-                      Meet the leadership behind MAHDEV.
-                    </p>
-                  </div>
-                </ScrollReveal>
-
-                <div
-                  aria-label="Meet the MAHDEV team"
-                  className="flex snap-x snap-mandatory gap-5 overflow-x-auto overscroll-x-contain scroll-smooth pb-4"
-                  tabIndex={0}
-                >
-                  {sortedTeam.map((member, idx) => (
-                    <ScrollReveal
-                      key={member.id}
-                      direction="up"
-                      delay={idx * 0.1}
-                      className="!w-[min(82vw,340px)] !max-w-none !min-w-0 shrink-0 snap-start"
-                    >
-                      <article className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs">
-                        <div className="aspect-[4/3] overflow-hidden bg-slate-100">
-                          <img
-                            src={member.imageUrl}
-                            alt={`${member.name}, ${member.title}`}
-                            loading="lazy"
-                            className="h-full w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.035] motion-reduce:transition-none"
-                          />
-                        </div>
-                        <div className="p-5 sm:p-6">
-                          <h3 className="text-lg font-display font-bold text-slate-900">
-                            {member.name}
-                          </h3>
-                          <p className="mt-1 text-sm font-semibold text-blue-600">{member.title}</p>
-                        </div>
-                      </article>
-                    </ScrollReveal>
-                  ))}
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* 8. OUR LOCATIONS */}
+          {/* 7. OUR LOCATIONS */}
           <section className="py-16 sm:py-20 bg-slate-50 border-t border-slate-200">
             <div className="max-w-7xl mx-auto px-[var(--page-gutter)]">
               <ScrollReveal direction="up">

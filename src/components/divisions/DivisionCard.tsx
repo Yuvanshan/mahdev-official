@@ -31,7 +31,7 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({
   const fallbackImage = variant === 'featured'
     ? DIVISIONS[division.id as keyof typeof DIVISIONS]?.imageUrl || ''
     : '';
-  const displayMediaUrl = mediaUrl || fallbackImage;
+  const displayMediaUrl = mediaUrl || division.posterUrl || fallbackImage;
   const CategoryIcon = categoryIcons[division.id] || Building2;
 
   useEffect(() => {
@@ -105,7 +105,7 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({
           : 'border-slate-200 bg-slate-950'
       }`}
     >
-      <div className={`relative overflow-hidden bg-slate-100 ${variant === 'featured' ? 'aspect-[16/9]' : 'aspect-[16/10]'}`}>
+      <div className={`division-card-media relative overflow-hidden bg-slate-100 ${variant === 'featured' ? 'aspect-[16/9]' : 'aspect-[16/10]'}`}>
         {mediaUrl && division.mediaType === 'video' ? (
           <video
             src={mediaUrl}

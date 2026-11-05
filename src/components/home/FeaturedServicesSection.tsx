@@ -233,15 +233,15 @@ const FeaturedServicesSectionContent: React.FC<
               );
               const fallback = (DIVISIONS as any)[divisionId];
               const normalizedDivisionId = division?.slug || division?.id || fallback?.id || divisionId || 'sws';
+              const primaryImage = (
+                Array.isArray(service.images) ? service.images.find(Boolean) : undefined
+              ) || service.imageUrl || '';
               return {
                 id: service.id,
                 title,
                 category: service.category || 'Service',
                 description: service.description || 'Explore this service from Mahdev.',
-                images: [
-                  ...(Array.isArray(service.images) ? service.images : []),
-                  service.imageUrl,
-                ].filter((image): image is string => Boolean(image)).slice(0, 5),
+                images: primaryImage ? [primaryImage] : [],
                 imageAlt: getRecordImageAlt(service, title),
                 meta: service.divisionName || division?.shortName || division?.name || fallback?.shortName,
                 divisionId: normalizedDivisionId,

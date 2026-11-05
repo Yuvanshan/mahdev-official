@@ -44,7 +44,7 @@ export const HomeExpandableShowcase: React.FC<HomeExpandableShowcaseProps> = ({
   const images = Array.from(new Set(activeItem?.images.filter(Boolean) || []));
   const { activeIndex, containerRef } = useAutoSlideImage(images.length);
   const showcaseImages = images.length
-    ? Array.from({ length: Math.min(images.length, 4) }, (_, index) => images[(activeIndex + index) % images.length])
+    ? Array.from({ length: 4 }, (_, index) => images[(activeIndex + index) % images.length])
     : [];
   const activePath = activeItem ? divisionCategoryPath(activeItem) : viewAllRoute;
 
