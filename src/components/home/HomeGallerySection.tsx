@@ -8,6 +8,7 @@ import { GallerySectionShimmer } from '../common/GallerySectionShimmer';
 import { getRecordImageAlt } from '../../config/imageAlt';
 import { DIVISIONS } from '../../config/divisions';
 import { divisionIdFromName } from '../../utils/onlineBooking';
+import { getRelatedGalleryImages } from '../../utils/homeShowcaseImages';
 import { HomeExpandableShowcase } from './HomeExpandableShowcase';
 
 interface HomeGallerySectionProps {
@@ -31,10 +32,15 @@ export const HomeGallerySection: React.FC<HomeGallerySectionProps> = ({ onNaviga
   const items = useMemo(() => gallery
     .filter((item) => item.status !== 'hidden')
     .map((item) => {
-      const images = (item.images?.length ? item.images : [item.mediaUrl || item.url || item.thumbnailUrl || ''])
+      const ownImages = (item.images?.length ? item.images : [item.mediaUrl || item.url || item.thumbnailUrl || ''])
         .filter(Boolean)
         .slice(0, 4);
       const divisionId = String((item as any).divisionId || item.division || '');
+      const category = item.category || item.tag || 'Mahdev Group';
+      const images = [
+        ...ownImages,
+        ...getRelatedGalleryImages(gallery, category, divisionId, item.id),
+      ].filter((image, index, candidates) => image && candidates.indexOf(image) === index);
       const divisionKey = divisionIdFromName(divisionId) || divisionId.toLowerCase();
       const division = divisions.find((candidate) =>
         candidate.id === divisionId ||
@@ -48,7 +54,7 @@ export const HomeGallerySection: React.FC<HomeGallerySectionProps> = ({ onNaviga
         divisionRoute: division?.route || DIVISIONS[divisionKey as keyof typeof DIVISIONS]?.route,
         images,
         title: item.title || 'Mahdev Gallery',
-        category: item.category || item.tag || 'Mahdev Group',
+        category,
         description: item.caption || item.seoDescription || `Discover ${item.title || 'this project'} from the Mahdev gallery.`,
         imageAlt: getRecordImageAlt(item),
         location: (item as any).location || 'Sri Lanka',

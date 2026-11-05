@@ -224,11 +224,11 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
               {sortedTeam.length > 0 && (
                 <div
                   aria-label="MAHDEV executive leadership"
-                  className="mt-10 grid max-w-4xl grid-cols-2 gap-4 sm:mt-12 sm:gap-6"
+                  className="mt-10 grid max-w-4xl grid-cols-2 items-stretch gap-4 sm:mt-12 sm:gap-6"
                 >
                   {sortedTeam.slice(0, 2).map((member, idx) => (
-                    <ScrollReveal key={member.id} direction="up" delay={idx * 0.1}>
-                      <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <ScrollReveal key={member.id} direction="up" delay={idx * 0.1} className="h-full">
+                      <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                         <div className="aspect-[4/5] overflow-hidden bg-slate-100">
                           <img
                             src={member.imageUrl}
@@ -237,7 +237,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
                             className="h-full w-full object-cover object-top"
                           />
                         </div>
-                        <div className="p-3 text-center sm:p-5">
+                        <div className="flex flex-1 flex-col justify-center p-3 text-center sm:p-5">
                           <h3 className="text-sm font-display font-bold text-slate-900 sm:text-lg">
                             {member.name}
                           </h3>

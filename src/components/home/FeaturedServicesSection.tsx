@@ -10,6 +10,7 @@ import { ParallelWatermark } from '../motion/ParallelScroll';
 import { ServicesSectionShimmer } from '../common/ServicesSectionShimmer';
 import { newestListedFirst } from '../../utils/listingOrder';
 import { getRecordImageAlt } from '../../config/imageAlt';
+import { getRelatedGalleryImages } from '../../utils/homeShowcaseImages';
 import { HomeExpandableShowcase } from './HomeExpandableShowcase';
 
 interface FeaturedServicesSectionProps {
@@ -93,7 +94,7 @@ export const FeaturedServicesSection: React.FC<FeaturedServicesSectionProps> = (
 const FeaturedServicesSectionContent: React.FC<
   FeaturedServicesSectionProps & { activeServices: any[] }
 > = ({ onNavigate, activeServices }) => {
-  const { homepageConfig, divisions } = useFirestoreDataContext();
+  const { homepageConfig, divisions, gallery } = useFirestoreDataContext();
 
   const [activeTab, setActiveTab] = useState<string>('all');
 
@@ -236,12 +237,17 @@ const FeaturedServicesSectionContent: React.FC<
               const primaryImage = (
                 Array.isArray(service.images) ? service.images.find(Boolean) : undefined
               ) || service.imageUrl || '';
+              const category = service.category || 'Service';
+              const images = [
+                primaryImage,
+                ...getRelatedGalleryImages(gallery, category, normalizedDivisionId),
+              ].filter((image, index, candidates) => image && candidates.indexOf(image) === index);
               return {
                 id: service.id,
                 title,
-                category: service.category || 'Service',
+                category,
                 description: service.description || 'Explore this service from Mahdev.',
-                images: primaryImage ? [primaryImage] : [],
+                images,
                 imageAlt: getRecordImageAlt(service, title),
                 meta: service.divisionName || division?.shortName || division?.name || fallback?.shortName,
                 divisionId: normalizedDivisionId,
