@@ -24,15 +24,21 @@ export function useActiveSectionNavigation(
     const sectionItems = items.filter((item) => item.href.includes('#'));
     const updateActiveSection = () => {
       const navigation = document.querySelector('.public-nav-shell');
-      const threshold = (navigation?.getBoundingClientRect().bottom || 0) + 32;
+      const threshold = Math.max(120, (navigation?.getBoundingClientRect().bottom || 0) + 32);
       let nextActiveId = homeId;
 
-      for (const item of sectionItems) {
+      const sections = sectionItems.flatMap((item) => {
         const sectionId = item.href.split('#').pop();
         const section = sectionId ? document.getElementById(sectionId) : null;
-        if (section && section.getBoundingClientRect().top <= threshold) {
-          nextActiveId = item.id;
-        }
+        return section
+          ? [{ item, section, documentTop: section.getBoundingClientRect().top + window.scrollY }]
+          : [];
+      }).sort(
+        (left, right) => left.documentTop - right.documentTop
+      );
+
+      for (const { item, section } of sections) {
+        if (section.getBoundingClientRect().top <= threshold) nextActiveId = item.id;
       }
 
       setActiveId((current) => current === nextActiveId ? current : nextActiveId);
