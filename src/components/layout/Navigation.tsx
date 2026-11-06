@@ -361,14 +361,13 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
       >
         {/* Division Context Notice (when inside a child division) */}
         {activeDivisionId && isPublicRoute && (
-          <div className="division-context-notice bg-[#061033] text-white text-xs py-1.5 px-4">
+          <div className="division-context-notice text-xs py-1.5 px-4">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="division-context-title font-semibold leading-tight text-blue-300">
                   <span className="block">{divisionNameFirstLine || 'Division site'}</span>
                   {divisionNameSecondLine && <span className="block">{divisionNameSecondLine}</span>}
                 </span>
-                <span className="division-context-group text-blue-200/70 hidden sm:inline">Mahdev Group</span>
               </div>
               <button
                 type="button"

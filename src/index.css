@@ -3489,33 +3489,30 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 
 [data-division-site="sws"] .public-nav-shell,
 [data-division-site="sws"] .public-nav-inner {
-  background-color: var(--division-surface) !important;
+  background-color: #FBF8F2 !important;
 }
 
 [data-division-site="u1"] .public-nav-shell,
 [data-division-site="u1"] .public-nav-inner {
-  background-color: var(--division-surface) !important;
+  background-color: #FAFAFA !important;
 }
 
 [data-division-site="sws"] .division-context-notice {
-  background-color: var(--division-accent) !important;
+  background-color: #FBF8F2 !important;
+  border-bottom: 1px solid var(--division-line);
 }
 
 [data-division-site="sws"] .division-context-title {
-  color: var(--division-surface) !important;
-}
-
-[data-division-site="sws"] .division-context-group {
-  color: var(--division-gold) !important;
+  color: var(--division-ink) !important;
 }
 
 [data-division-site="u1"] .division-context-notice {
-  background-color: var(--division-ink) !important;
+  background-color: #FAFAFA !important;
+  border-bottom: 1px solid var(--division-line);
 }
 
-[data-division-site="u1"] .division-context-title,
-[data-division-site="u1"] .division-context-group {
-  color: var(--division-surface) !important;
+[data-division-site="u1"] .division-context-title {
+  color: var(--division-ink) !important;
 }
 
 [data-division-site="sws"] .public-nav-inner nav > a[aria-current="location"] {
@@ -3548,16 +3545,6 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 [data-division-site="u1"] .division-navigation-active-pill {
   background-color: var(--division-surface) !important;
   border: 1px solid var(--division-ink);
-}
-
-[data-division-site="sws"] .public-nav-shell,
-[data-division-site="sws"] .public-nav-shell > .public-nav-inner {
-  background-color: var(--division-surface) !important;
-}
-
-[data-division-site="u1"] .public-nav-shell,
-[data-division-site="u1"] .public-nav-shell > .public-nav-inner {
-  background-color: var(--division-surface) !important;
 }
 
 [data-division-site="sws"] .public-nav-inner {
@@ -3633,19 +3620,6 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 [data-division-site="u1"] .public-nav-inner > div > div > button[aria-label="Toggle navigation menu"] {
   border-color: var(--division-ink) !important;
   background-color: transparent !important;
-  color: var(--division-ink) !important;
-}
-
-[data-division-site="sws"] .division-context-notice,
-[data-division-site="u1"] .division-context-notice {
-  background-color: var(--division-surface) !important;
-  border-bottom: 1px solid var(--division-line);
-}
-
-[data-division-site="sws"] .division-context-title,
-[data-division-site="sws"] .division-context-group,
-[data-division-site="u1"] .division-context-title,
-[data-division-site="u1"] .division-context-group {
   color: var(--division-ink) !important;
 }
 
