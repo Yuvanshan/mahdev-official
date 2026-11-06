@@ -373,7 +373,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
               <button
                 type="button"
                 onClick={() => window.location.assign(CANONICAL_SITE_ORIGIN)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:bg-white/10 transition-colors cursor-pointer"
+                className="division-return-link inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors cursor-pointer"
                 aria-label="Return to the Mahdev company website"
               >
                 <ArrowLeft className="w-3 h-3" />
