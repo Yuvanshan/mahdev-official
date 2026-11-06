@@ -3620,6 +3620,12 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   background-color: #262626 !important;
 }
 
+[data-division-site] .public-nav-shell,
+[data-division-site] .public-nav-shell > .division-context-notice,
+[data-division-site] .public-nav-shell > .public-nav-inner {
+  background-color: var(--site-surface, #FFFFFF) !important;
+}
+
 [data-division-site="sws"] .whatsapp-launcher {
   box-shadow: 0 10px 26px rgb(111 29 58 / 34%), 0 2px 6px rgb(15 23 42 / 12%);
 }
