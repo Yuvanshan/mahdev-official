@@ -3462,57 +3462,24 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   background-color: var(--division-accent-soft) !important;
 }
 
-[data-division-site="sws"] .public-announcement-bar {
-  background-color: var(--division-surface);
-  border-color: var(--division-gold);
-  color: var(--division-ink);
+.division-context-notice {
+  background-color: #fff;
+  border-bottom: 1px solid var(--line);
 }
 
-[data-division-site="sws"] .public-announcement-link:hover {
-  color: var(--division-accent);
+.division-context-title {
+  color: var(--ink) !important;
 }
 
-[data-division-site="sws"] .public-announcement-link svg {
-  color: var(--division-gold);
+.division-return-link {
+  border-color: var(--site-accent, var(--accent));
+  background-color: var(--site-accent, var(--accent));
+  color: #fff;
 }
 
-[data-division-site="u1"] .public-announcement-bar {
-  background-color: var(--division-surface);
-  border-color: var(--division-ink);
-  color: var(--division-ink);
-}
-
-[data-division-site="u1"] .public-announcement-link:hover,
-[data-division-site="u1"] .public-announcement-link svg {
-  color: var(--division-ink);
-}
-
-[data-division-site="sws"] .public-nav-shell,
-[data-division-site="sws"] .public-nav-inner {
-  background-color: #FBF8F2 !important;
-}
-
-[data-division-site="u1"] .public-nav-shell,
-[data-division-site="u1"] .public-nav-inner {
-  background-color: #FAFAFA !important;
-}
-
-[data-division-site="sws"] .division-context-notice {
-  background-color: #FBF8F2 !important;
-  border-bottom: 1px solid var(--division-line);
-}
-
-[data-division-site="sws"] .division-context-title {
-  color: var(--division-ink) !important;
-}
-
-[data-division-site="u1"] .division-context-notice {
-  background-color: #FAFAFA !important;
-  border-bottom: 1px solid var(--division-line);
-}
-
-[data-division-site="u1"] .division-context-title {
-  color: var(--division-ink) !important;
+.division-return-link:hover {
+  border-color: var(--site-accent-hover, var(--accent-text));
+  background-color: var(--site-accent-hover, var(--accent-text));
 }
 
 [data-division-site="sws"] .public-nav-inner nav > a[aria-current="location"] {
@@ -3621,26 +3588,6 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   border-color: var(--division-ink) !important;
   background-color: transparent !important;
   color: var(--division-ink) !important;
-}
-
-[data-division-site="sws"] .division-return-link {
-  border-color: var(--division-gold);
-  background-color: var(--division-accent);
-  color: var(--division-surface);
-}
-
-[data-division-site="sws"] .division-return-link:hover {
-  background-color: var(--division-accent-hover);
-}
-
-[data-division-site="u1"] .division-return-link {
-  border-color: var(--division-ink);
-  background-color: var(--division-ink);
-  color: var(--division-surface);
-}
-
-[data-division-site="u1"] .division-return-link:hover {
-  background-color: #000000;
 }
 
 [data-division-site="sws"] #floating-bottom-navbar .public-bottom-navigation__bar {
