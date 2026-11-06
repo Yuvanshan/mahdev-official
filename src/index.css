@@ -3442,8 +3442,8 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   background-color: var(--division-accent-hover) !important;
 }
 
-[data-division-site="sws"] [style*="color:"],
-[data-division-site="sws"] [style*="color :"] {
+[data-division-site="sws"] [style*="color:"]:not(.division-video-hero *),
+[data-division-site="sws"] [style*="color :"]:not(.division-video-hero *) {
   color: var(--division-ink) !important;
 }
 
