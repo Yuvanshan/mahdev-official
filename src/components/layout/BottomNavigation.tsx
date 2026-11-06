@@ -23,8 +23,8 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
     ? {
         sws: [
           { id: 'events', label: 'Events', icon: Sparkles, href: '/#services' },
-          { id: 'rentals', label: 'Rentals', icon: ShoppingBag, href: '/#rentals' },
           { id: 'gallery', label: 'Gallery', icon: Camera, href: '/#gallery' },
+          { id: 'rentals', label: 'Rentals', icon: ShoppingBag, href: '/#rentals' },
         ],
         u1: [
           { id: 'services', label: 'Services', icon: Camera, href: '/#services' },

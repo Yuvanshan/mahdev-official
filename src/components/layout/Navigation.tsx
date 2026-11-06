@@ -35,8 +35,8 @@ const DIVISION_SITE_NAV_ITEMS: Record<DivisionSiteId, Array<{ id: string; label:
   sws: [
     { id: 'home', label: 'Home', href: '/' },
     { id: 'services', label: 'Events', href: '/#services' },
-    { id: 'rentals', label: 'Rentals', href: '/#rentals' },
     { id: 'gallery', label: 'Gallery', href: '/#gallery' },
+    { id: 'rentals', label: 'Rentals', href: '/#rentals' },
   ],
   u1: [
     { id: 'home', label: 'Home', href: '/' },

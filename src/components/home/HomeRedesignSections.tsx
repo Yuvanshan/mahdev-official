@@ -17,7 +17,6 @@ import { DivisionCard } from '../divisions/DivisionCard';
 import { getDivisionCardItems } from '../../utils/divisionPresentation';
 import { MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
 import { formatCurrency } from '../../utils/currency';
-import { BRAND_CONFIG } from '../../config/brand';
 
 const OCCASIONS = [
   { name: 'Weddings', terms: ['wedding', 'marriage'] },
@@ -44,33 +43,12 @@ export const HomeDiscoverySections: React.FC<HomeDiscoverySectionsProps> = ({ on
 );
 
 const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ onNavigate }) => {
-  const { divisions, gallery, portfolio, testimonials, companySettings } = useFirestoreDataContext();
-  const publicProjectsCount = portfolio.filter((project) =>
-    project.isPublished !== false &&
-    project.status !== 'draft' &&
-    project.status !== 'archived'
-  ).length;
-  const happyClientCount = new Set(
-    testimonials
-      .filter((testimonial) =>
-        testimonial.isPublished !== false &&
-        !testimonial.isHidden &&
-        testimonial.status !== 'pending' &&
-        testimonial.status !== 'archived' &&
-        testimonial.rating >= 4
-      )
-      .map((testimonial) =>
-        (testimonial.customerName || testimonial.authorName || testimonial.author || '').trim().toLowerCase()
-      )
-      .filter(Boolean)
-  ).size;
-  const establishedYear = Number(companySettings?.establishedYear) || BRAND_CONFIG.establishedYear;
-  const yearsOfExperience = Math.max(1, new Date().getFullYear() - establishedYear);
+  const { divisions, gallery } = useFirestoreDataContext();
   const metrics = [
-    { label: 'Projects delivered', value: publicProjectsCount, detail: 'Published project stories', icon: Briefcase },
-    { label: 'Happy clients', value: happyClientCount, detail: 'Unique published 4–5 star reviewers', icon: Users },
-    { label: 'Years of experience', value: `${yearsOfExperience}+`, detail: `Established ${establishedYear}`, icon: CalendarDays },
-    { label: 'Specialist divisions', value: Object.keys(DIVISIONS).length, detail: 'Events, studio, IT, travel & retail', icon: Building2 },
+    { label: 'Projects done', value: '1,800+', detail: 'Across all Mahdev divisions', icon: Briefcase },
+    { label: 'Customer satisfaction', value: '99.8%', detail: 'Committed to every experience', icon: Users },
+    { label: 'Years of experience', value: '5+', detail: 'Serving customers across Sri Lanka', icon: CalendarDays },
+    { label: 'Specialist divisions', value: '5', detail: 'Events, studio, IT, travel & retail', icon: Building2 },
   ];
   const galleryCards = useMemo(() => {
     const images = gallery

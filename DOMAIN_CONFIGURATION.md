@@ -4,28 +4,24 @@
 
 Keep **one Vercel project, one production deployment, one frontend codebase, and one shared backend/database**. The corporate portfolio stays at the project's main URL (currently `mahdev-official.vercel.app`). The divisions already have separate page experiences at `/sws`, `/u1`, `/it`, `/travels`, and `/mart`.
 
-Until you own and connect `mahdev.lk`, keep using those paths on the Vercel URL. A Vercel-provided `*.vercel.app` hostname is not a domain you control, so it cannot be used to create `sws.mahdev-official.vercel.app` or other custom division hosts.
+The shared Vercel project can assign temporary aliases under `*.vercel.app` to its production deployment. Each alias maps to a division at `/` using the relevant production environment variable. These are aliases of one project, not separate Vercel projects. The current project has SSO protection for non-custom domains, so a temporary alias may require visitors to sign in to Vercel. Keep that protection enabled unless the project owner explicitly approves changing it.
 
 When the custom domain is ready, add the corporate and division hostnames to the **same Vercel project**. A configured division host opens that division at `/`; the company site and the division continue to use the same deployment, `/api` functions, Firebase/Turso configuration, and admin application. This is a shared-code deployment with host-based site experiences, not five independently deployed applications.
 
 | Site | Production address | Current Vercel address |
 |---|---|---|
 | Mahdev corporate portfolio | `https://mahdev.lk` | `https://mahdev-official.vercel.app/` |
-| SWS Event Management | `https://sws.mahdev.lk` | `https://mahdev-official.vercel.app/sws` |
-| U1 Studio | `https://u1.mahdev.lk` | `https://mahdev-official.vercel.app/u1` |
-| Mahdev IT | `https://it.mahdev.lk` | `https://mahdev-official.vercel.app/it` |
-| Mahdev Travels | `https://travels.mahdev.lk` | `https://mahdev-official.vercel.app/travels` |
-| Mahdev Mart | `https://mart.mahdev.lk` | `https://mahdev-official.vercel.app/mart` |
+| SWS Event Management | `https://sws.mahdev.lk` | `https://sws-events.vercel.app` |
+| U1 Studio | `https://u1.mahdev.lk` | `https://u1-studio.vercel.app` |
+| Mahdev IT | `https://it.mahdev.lk` | `https://mahdev-it.vercel.app` |
+| Mahdev Travels | `https://travels.mahdev.lk` | `https://mahdev-travels.vercel.app` |
+| Mahdev Mart | `https://mart.mahdev.lk` | `https://mahdev-mart.vercel.app` |
 
-## Separate Vercel-provided hostnames before buying a domain
+## Temporary Vercel hostnames before configuring custom domains
 
-The current project gets the default address `mahdev-official.vercel.app`. Vercel does not let this project claim arbitrary sibling addresses such as `sws.vercel.app` or `u1.vercel.app`. To use separate Vercel-provided hostnames before purchasing `mahdev.lk`, create a separate Vercel project for each division. The exact short names (`sws.vercel.app`, `u1.vercel.app`, etc.) may already be claimed; project names such as `mahdev-sws` and `mahdev-u1` are more practical if available.
+The current project gets the default address `mahdev-official.vercel.app`. It can also assign available aliases such as `sws-events.vercel.app`, `u1-studio.vercel.app`, `mahdev-it.vercel.app`, `mahdev-mart.vercel.app`, and `mahdev-travels.vercel.app` to the same production deployment. Availability is determined by Vercel when the alias is assigned. Set each matching `VITE_*_SITE_URL` Production variable and redeploy so the application opens the correct division at `/` and redirects corporate `/sws` and `/u1` links to their division origin.
 
-Each division project can use this same repository and code, but it is a separate deployment and needs its own environment-variable configuration. To keep the existing data and admin, copy the same production Turso database settings, Firebase project settings, and other required server secrets into each division project. Secret values cannot be copied out of the existing Vercel project by the CLI; the project owner must add them in Vercel's Environment Variables settings. Do not deploy a division project without these values: its API, sign-in, and admin flows would fail.
-
-For each project, set its public division origin (for example `VITE_SWS_SITE_URL=https://mahdev-sws.vercel.app`) and keep `VITE_SITE_URL` pointed at the corporate site. Add every active `*.vercel.app` host to Firebase Authentication's **Authorized domains**. These hosts share the database and application code, but each project has a separate deployment and users may need to sign in separately on each host.
-
-When `mahdev.lk` is connected, either keep those separate projects and map a division subdomain to each, or move the custom domains to this existing project for a single shared deployment. Keep the Turso database unchanged either way.
+All aliases share the existing project, `/api` functions, database, admin portal, Firebase project, and deployed code. The current project has Vercel SSO protection on non-custom hosts; that can make `.vercel.app` aliases sign-in-gated. Do not disable project-wide SSO without the owner's approval. Once custom domains are configured, keep them on this same project and update the corresponding production host variables.
 
 ## What is separated and what is shared
 

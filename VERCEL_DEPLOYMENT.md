@@ -92,11 +92,11 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 | :--- | :--- | :--- |
 | `VITE_APP_URL` | Production: `https://mahdev-official.vercel.app`<br>Preview: `https://$VERCEL_URL`<br>Development: `http://localhost:3000` | Public runtime URL for client-side links and analytics; canonical tags use the fixed origin in `src/config/site.ts` |
 | `VITE_SITE_URL` | Production: your live domain, e.g. `https://mahdev-official.vercel.app` | The website's public domain for canonical URLs, Open Graph tags, structured data, sitemap, `robots.txt` and `llms.txt`. Must be an origin with no path. Defaults to `https://mahdev-official.vercel.app` when unset. |
-| `VITE_SWS_SITE_URL` | Production only, after domain purchase | Optional SWS site origin, e.g. `https://sws.mahdev.lk`; leave unset while using `/sws` on the Vercel URL. |
-| `VITE_U1_SITE_URL` | Production only, after domain purchase | Optional U1 Studio site origin, e.g. `https://u1.mahdev.lk`; leave unset while using `/u1` on the Vercel URL. |
-| `VITE_IT_SITE_URL` | Production only, after domain purchase | Optional Mahdev IT site origin, e.g. `https://it.mahdev.lk`; leave unset while using `/it` on the Vercel URL. |
-| `VITE_TRAVELS_SITE_URL` | Production only, after domain purchase | Optional Mahdev Travels site origin, e.g. `https://travels.mahdev.lk`; leave unset while using `/travels` on the Vercel URL. |
-| `VITE_MART_SITE_URL` | Production only, after domain purchase | Optional Mahdev Mart site origin, e.g. `https://mart.mahdev.lk`; leave unset while using `/mart` on the Vercel URL. |
+| `VITE_SWS_SITE_URL` | Production only | SWS origin. Temporary: `https://sws-events.vercel.app`; later: `https://sws.mahdev.lk`. |
+| `VITE_U1_SITE_URL` | Production only | U1 Studio origin. Temporary: `https://u1-studio.vercel.app`; later: `https://u1.mahdev.lk`. |
+| `VITE_IT_SITE_URL` | Production only | Mahdev IT origin. Temporary: `https://mahdev-it.vercel.app`; later: `https://it.mahdev.lk`. |
+| `VITE_TRAVELS_SITE_URL` | Production only | Mahdev Travels origin. Temporary: `https://mahdev-travels.vercel.app`; later: `https://travels.mahdev.lk`. |
+| `VITE_MART_SITE_URL` | Production only | Mahdev Mart origin. Temporary: `https://mahdev-mart.vercel.app`; later: `https://mart.mahdev.lk`. |
 | `PUBLIC_SITE_URL` | Optional | Legacy alias for `VITE_SITE_URL`, used only when `VITE_SITE_URL` is unset. |
 | `VITE_FIREBASE_API_KEY` | Production, Preview, Development | Public Firebase Web SDK API Key |
 | `VITE_FIREBASE_AUTH_DOMAIN` | Production, Preview, Development | Firebase Console Auth domain |
@@ -170,7 +170,9 @@ After deploying SEO changes:
 
 ## 6. Custom Domain Configuration
 
-Until `mahdev.lk` is purchased, keep the current `.vercel.app` project URL and the existing division paths. Do not try to create arbitrary subdomains under `vercel.app`.
+Until the division custom domains are configured, this shared Vercel project can assign temporary Vercel aliases to the production deployment. Each alias maps the division to `/` using its Production `VITE_*_SITE_URL` variable. These aliases are not separate projects or deployments; they share the app, backend, database, and admin.
+
+The project currently has Vercel SSO deployment protection for non-custom domains. Temporary `*.vercel.app` aliases may therefore prompt visitors to sign in to Vercel. Do not disable SSO protection project-wide without explicit approval; use the owned `mahdev.lk` custom subdomains for public access if that protection must remain enabled.
 
 After purchase, add `mahdev.lk`, `www.mahdev.lk`, `sws.mahdev.lk`, `u1.mahdev.lk`, `it.mahdev.lk`, `travels.mahdev.lk`, and `mart.mahdev.lk` to this **same project** under **Settings → Domains**. Follow the DNS targets Vercel displays for each hostname; do not assume a copied A/CNAME value is valid for this project. Configure `VITE_SITE_URL` and the division origin variables above in the Production environment, then redeploy. The app maps each division host to its division homepage while using this project's shared `/api` functions, database, storage, and admin portal. See [DOMAIN_CONFIGURATION.md](./DOMAIN_CONFIGURATION.md) for the full rollout and verification checklist.
 

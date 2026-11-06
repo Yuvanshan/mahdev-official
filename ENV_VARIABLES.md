@@ -28,11 +28,11 @@ This document outlines the environment configuration architecture for the **Mahd
 | `APP_URL` | Server | Standard | Canonical base URL | `https://mahdev.lk` |
 | `VITE_APP_URL` | Client | Public | Public origin URL for redirects | `https://mahdev.lk` |
 | `VITE_SITE_URL` | Client + Server | Public | Corporate site's public origin; drives the main site's canonical URLs and SEO metadata. Set to `https://mahdev.lk` after the domain is connected. | `https://mahdev-official.vercel.app` (default when unset) |
-| `VITE_SWS_SITE_URL` | Client + Server | Public | Optional SWS standalone origin; when unset, SWS uses `/sws` on the corporate origin. Set only in Vercel Production after connecting the host. | `https://sws.mahdev.lk` |
-| `VITE_U1_SITE_URL` | Client + Server | Public | Optional U1 Studio standalone origin; when unset, U1 uses `/u1` on the corporate origin. Set only in Vercel Production after connecting the host. | `https://u1.mahdev.lk` |
-| `VITE_IT_SITE_URL` | Client + Server | Public | Optional Mahdev IT standalone origin; when unset, IT uses `/it` on the corporate origin. Set only in Vercel Production after connecting the host. | `https://it.mahdev.lk` |
-| `VITE_TRAVELS_SITE_URL` | Client + Server | Public | Optional Mahdev Travels standalone origin; when unset, Travels uses `/travels` on the corporate origin. Set only in Vercel Production after connecting the host. | `https://travels.mahdev.lk` |
-| `VITE_MART_SITE_URL` | Client + Server | Public | Optional Mahdev Mart standalone origin; when unset, Mart uses `/mart` on the corporate origin. Set only in Vercel Production after connecting the host. | `https://mart.mahdev.lk` |
+| `VITE_SWS_SITE_URL` | Client + Server | Public | Optional SWS standalone origin; when unset, SWS uses `/sws` on the corporate origin. | `https://sws-events.vercel.app` (temporary); `https://sws.mahdev.lk` (custom domain) |
+| `VITE_U1_SITE_URL` | Client + Server | Public | Optional U1 Studio standalone origin; when unset, U1 uses `/u1` on the corporate origin. | `https://u1-studio.vercel.app` (temporary); `https://u1.mahdev.lk` (custom domain) |
+| `VITE_IT_SITE_URL` | Client + Server | Public | Optional Mahdev IT standalone origin; when unset, IT uses `/it` on the corporate origin. | `https://mahdev-it.vercel.app` (temporary); `https://it.mahdev.lk` (custom domain) |
+| `VITE_TRAVELS_SITE_URL` | Client + Server | Public | Optional Mahdev Travels standalone origin; when unset, Travels uses `/travels` on the corporate origin. | `https://mahdev-travels.vercel.app` (temporary); `https://travels.mahdev.lk` (custom domain) |
+| `VITE_MART_SITE_URL` | Client + Server | Public | Optional Mahdev Mart standalone origin; when unset, Mart uses `/mart` on the corporate origin. | `https://mahdev-mart.vercel.app` (temporary); `https://mart.mahdev.lk` (custom domain) |
 | `GEMINI_API_KEY` | Server | **Confidential** | Google Gemini AI processing | Injected by AI Studio |
 | `TURSO_DATABASE_URL` | Server | Standard | Connection URL for the existing Turso database | Set the URL from the chosen environment |
 | `TURSO_AUTH_TOKEN` | Server | **Confidential** | Authentication token for the Turso database | Generated in the Turso dashboard |
