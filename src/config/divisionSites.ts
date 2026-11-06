@@ -1,4 +1,4 @@
-import { CANONICAL_SITE_ORIGIN } from './site';
+import { CANONICAL_SITE_ORIGIN } from './site.js';
 
 export const DIVISION_SITE_IDS = ['sws', 'u1', 'it', 'travels', 'mart'] as const;
 export type DivisionSiteId = (typeof DIVISION_SITE_IDS)[number];
