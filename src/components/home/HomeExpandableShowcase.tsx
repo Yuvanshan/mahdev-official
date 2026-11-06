@@ -60,18 +60,17 @@ export const HomeExpandableShowcase: React.FC<HomeExpandableShowcaseProps> = ({
 
   return (
     <div className="home-showcase">
-      <nav className="home-showcase-list" aria-label="Featured items">
+      <div className="home-showcase-list" role="group" aria-label="Choose a featured item">
         {items.map((item, index) => {
           const isActive = item.id === activeItem.id;
-          const itemPath = divisionCategoryPath(item);
           return (
-            <a
+            <button
               key={item.id}
-              href={itemPath}
-              onClick={(event) => navigate(event, itemPath)}
-              onPointerEnter={() => setActiveId(item.id)}
+              type="button"
+              onClick={() => setActiveId(item.id)}
               onFocus={() => setActiveId(item.id)}
-              aria-expanded={isActive}
+              aria-pressed={isActive}
+              aria-label={`Show ${item.title} in the feature gallery`}
               className={`home-showcase-item${isActive ? ' is-active' : ''}`}
             >
               <span className="home-showcase-index">{String(index + 1).padStart(2, '0')}</span>
@@ -82,7 +81,7 @@ export const HomeExpandableShowcase: React.FC<HomeExpandableShowcaseProps> = ({
                 {item.meta && <span className="home-showcase-meta">{item.meta}</span>}
               </span>
               <ArrowUpRight className="home-showcase-arrow" aria-hidden="true" />
-            </a>
+            </button>
           );
         })}
         <a
@@ -93,13 +92,13 @@ export const HomeExpandableShowcase: React.FC<HomeExpandableShowcaseProps> = ({
           {viewAllLabel}
           <ArrowUpRight aria-hidden="true" />
         </a>
-      </nav>
+      </div>
 
       <div ref={containerRef} className="home-showcase-feature-wrap">
         <a
           href={activePath}
           onClick={(event) => navigate(event, activePath)}
-          className="home-showcase-feature"
+          className="home-showcase-feature is-expanded"
           aria-label={`Explore ${activeItem.title}`}
         >
           {showcaseImages.map((image, index) => (

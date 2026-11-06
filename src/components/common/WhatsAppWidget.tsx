@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowUpRight, Check, MessageCircle, X } from 'lucide-react';
+import { ArrowUp, ArrowUpRight, Check, MessageCircle, X } from 'lucide-react';
 import { MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
 import { useAuth } from '../../context/AuthContext';
 
@@ -17,6 +17,7 @@ export const WhatsAppWidget: React.FC = () => {
   const [isNoticeVisible, setIsNoticeVisible] = useState(false);
   const [hasUnreadNotice, setHasUnreadNotice] = useState(false);
   const [message, setMessage] = useState('');
+  const [isBackToTopVisible, setIsBackToTopVisible] = useState(false);
 
   useEffect(() => {
     try {
@@ -36,6 +37,13 @@ export const WhatsAppWidget: React.FC = () => {
     }, 10000);
 
     return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const updateVisibility = () => setIsBackToTopVisible(window.scrollY > 400);
+    updateVisibility();
+    window.addEventListener('scroll', updateVisibility, { passive: true });
+    return () => window.removeEventListener('scroll', updateVisibility);
   }, []);
 
   const openChat = () => {
@@ -147,6 +155,17 @@ export const WhatsAppWidget: React.FC = () => {
             <p className="whatsapp-panel-footnote">Opens WhatsApp in a new tab</p>
           </div>
         </section>
+      )}
+
+      {isBackToTopVisible && !isOpen && (
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label="Back to top"
+          className="flex h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-lg transition duration-200 hover:scale-105 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-300"
+        >
+          <ArrowUp className="h-6 w-6" aria-hidden="true" />
+        </button>
       )}
 
       <button

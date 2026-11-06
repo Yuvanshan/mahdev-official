@@ -2,13 +2,13 @@ import React, { useMemo, useState } from 'react';
 import {
   ArrowRight,
   ArrowUpRight,
+  Briefcase,
+  Building2,
+  CalendarDays,
   Check,
-  Heart,
-  MapPin,
-  MessageCircle,
   PackageCheck,
   ShoppingBag,
-  Sparkles,
+  Users,
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
@@ -17,6 +17,7 @@ import { DivisionCard } from '../divisions/DivisionCard';
 import { getDivisionCardItems } from '../../utils/divisionPresentation';
 import { MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
 import { formatCurrency } from '../../utils/currency';
+import { BRAND_CONFIG } from '../../config/brand';
 
 const OCCASIONS = [
   { name: 'Weddings', terms: ['wedding', 'marriage'] },
@@ -43,7 +44,34 @@ export const HomeDiscoverySections: React.FC<HomeDiscoverySectionsProps> = ({ on
 );
 
 const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ onNavigate }) => {
-  const { divisions, gallery } = useFirestoreDataContext();
+  const { divisions, gallery, portfolio, testimonials, companySettings } = useFirestoreDataContext();
+  const publicProjectsCount = portfolio.filter((project) =>
+    project.isPublished !== false &&
+    project.status !== 'draft' &&
+    project.status !== 'archived'
+  ).length;
+  const happyClientCount = new Set(
+    testimonials
+      .filter((testimonial) =>
+        testimonial.isPublished !== false &&
+        !testimonial.isHidden &&
+        testimonial.status !== 'pending' &&
+        testimonial.status !== 'archived' &&
+        testimonial.rating >= 4
+      )
+      .map((testimonial) =>
+        (testimonial.customerName || testimonial.authorName || testimonial.author || '').trim().toLowerCase()
+      )
+      .filter(Boolean)
+  ).size;
+  const establishedYear = Number(companySettings?.establishedYear) || BRAND_CONFIG.establishedYear;
+  const yearsOfExperience = Math.max(1, new Date().getFullYear() - establishedYear);
+  const metrics = [
+    { label: 'Projects delivered', value: publicProjectsCount, detail: 'Published project stories', icon: Briefcase },
+    { label: 'Happy clients', value: happyClientCount, detail: 'Unique published 4–5 star reviewers', icon: Users },
+    { label: 'Years of experience', value: `${yearsOfExperience}+`, detail: `Established ${establishedYear}`, icon: CalendarDays },
+    { label: 'Specialist divisions', value: Object.keys(DIVISIONS).length, detail: 'Events, studio, IT, travel & retail', icon: Building2 },
+  ];
   const galleryCards = useMemo(() => {
     const images = gallery
       .filter((item) => item.status !== 'hidden')
@@ -103,24 +131,21 @@ const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ on
 
   return (
   <>
-    <section className="home-trust-wrap" aria-label="Why choose Mahdev">
+    <section className="home-trust-wrap" aria-label="Mahdev in numbers">
       <div className="home-trust-grid">
-        <article className="home-trust-card">
-          <span className="home-trust-icon"><Heart aria-hidden="true" /></span>
-          <p><strong>Made with care</strong><span>Personal service, from first chat to final detail</span></p>
-        </article>
-        <article className="home-trust-card">
-          <span className="home-trust-icon"><Sparkles aria-hidden="true" /></span>
-          <p><strong>Five specialist teams</strong><span>Events, studio, IT, travel and retail</span></p>
-        </article>
-        <article className="home-trust-card">
-          <span className="home-trust-icon"><MapPin aria-hidden="true" /></span>
-          <p><strong>Trincomalee & Colombo</strong><span>Serving clients across Sri Lanka</span></p>
-        </article>
-        <article className="home-trust-card">
-          <span className="home-trust-icon"><MessageCircle aria-hidden="true" /></span>
-          <p><strong>Talk to a real person</strong><span>Enquire by form, phone or WhatsApp</span></p>
-        </article>
+        {metrics.map((metric) => {
+          const Icon = metric.icon;
+          return (
+            <article className="home-trust-card" key={metric.label}>
+              <span className="home-trust-icon"><Icon aria-hidden="true" /></span>
+              <p>
+                <strong className="home-trust-value">{metric.value}</strong>
+                <span className="home-trust-label">{metric.label}</span>
+                <span>{metric.detail}</span>
+              </p>
+            </article>
+          );
+        })}
       </div>
     </section>
 

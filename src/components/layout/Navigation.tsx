@@ -220,6 +220,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
   const divisionName =
     currentDivisionRecord?.name ||
     (activeDivisionId ? DIVISIONS[activeDivisionId].name : currentDivision?.name);
+  const divisionNameBreak = divisionName?.trim().indexOf(' ') ?? -1;
+  const divisionNameFirstLine =
+    divisionNameBreak > 0 ? divisionName?.trim().slice(0, divisionNameBreak) : divisionName;
+  const divisionNameSecondLine =
+    divisionNameBreak > 0 ? divisionName?.trim().slice(divisionNameBreak + 1) : '';
   const divisionBasePath =
     !isDivisionHost && activeDivisionId && (currentPath === `/${activeDivisionId}` || currentPath.startsWith(`/${activeDivisionId}/`))
       ? `/${activeDivisionId}`
@@ -354,7 +359,10 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
           <div className="bg-[#061033] text-white text-xs py-1.5 px-4">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-blue-300">{divisionName || currentDivision?.name || 'Division site'}</span>
+                <span className="font-semibold leading-tight text-blue-300">
+                  <span className="block">{divisionNameFirstLine || 'Division site'}</span>
+                  {divisionNameSecondLine && <span className="block">{divisionNameSecondLine}</span>}
+                </span>
                 <span className="text-blue-200/70 hidden sm:inline">Mahdev Group</span>
               </div>
               <button
@@ -382,8 +390,9 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                 logoUrl={divisionLogo}
               />
               {activeDivisionId && divisionName && (
-                <span className="ml-2 hidden max-w-36 truncate border-l border-slate-200 pl-3 text-sm font-semibold text-slate-800 sm:block">
-                  {divisionName}
+                <span className="ml-2 hidden border-l border-slate-200 pl-3 text-sm font-semibold leading-tight text-slate-800 min-[900px]:block">
+                  <span className="block">{divisionNameFirstLine}</span>
+                  {divisionNameSecondLine && <span className="block">{divisionNameSecondLine}</span>}
                 </span>
               )}
             </div>
