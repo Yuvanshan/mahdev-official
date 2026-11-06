@@ -38,6 +38,49 @@ import { AdminSeoFields } from '../../components/admin/AdminSeoFields';
 import { AdminGenerateSeoButton } from '../../components/admin/AdminGenerateSeoButton';
 import { seoFileName } from '../../config/imageAlt';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { ProductOptionGroup } from '../../types/catalog';
+
+interface ProductSpecificationInput {
+  label: string;
+  value: string;
+}
+
+function readProductSpecifications(value: unknown): ProductSpecificationInput[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((entry, index) => {
+      if (!entry || typeof entry !== 'object') return [];
+      const spec = entry as Record<string, unknown>;
+      const label = String(spec.label || spec.name || spec.key || `Specification ${index + 1}`);
+      const specValue = String(spec.value ?? '');
+      return label || specValue ? [{ label, value: specValue }] : [];
+    });
+  }
+  if (value && typeof value === 'object') {
+    return Object.entries(value).map(([label, specValue]) => ({
+      label,
+      value: String(specValue ?? ''),
+    }));
+  }
+  if (typeof value === 'string' && value.trim()) {
+    return [{ label: 'Details', value: value.trim() }];
+  }
+  return [];
+}
+
+function readProductOptionGroups(value: unknown): ProductOptionGroup[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry, index) => {
+    if (!entry || typeof entry !== 'object') return [];
+    const group = entry as Record<string, unknown>;
+    if (typeof group.name !== 'string' || !Array.isArray(group.options)) return [];
+    const options = group.options.filter((option): option is string => typeof option === 'string');
+    return [{
+      id: typeof group.id === 'string' && group.id ? group.id : `option-group-${index + 1}`,
+      name: group.name,
+      options,
+    }];
+  });
+}
 
 export const AdminProductsView: React.FC = () => {
   const { refreshAll } = useFirestoreDataContext();
@@ -81,6 +124,7 @@ export const AdminProductsView: React.FC = () => {
     currency: 'LKR',
     shortDescription: '',
     description: '',
+    color: '',
     imageUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80',
     galleryImages: [] as string[],
     stockQuantity: 25,
@@ -88,7 +132,8 @@ export const AdminProductsView: React.FC = () => {
     lowStockThreshold: 10,
     isFeatured: false,
     tags: [] as string[],
-    specifications: {} as Record<string, string>,
+    optionGroups: [] as ProductOptionGroup[],
+    specifications: [] as ProductSpecificationInput[],
     warrantyInfo: '1-Year Official Manufacturer Warranty',
     isActive: true,
     imageAlt: '',
@@ -142,6 +187,7 @@ export const AdminProductsView: React.FC = () => {
       currency: 'LKR',
       shortDescription: '',
       description: '',
+      color: '',
       imageUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80',
       galleryImages: [],
       stockQuantity: 20,
@@ -149,7 +195,10 @@ export const AdminProductsView: React.FC = () => {
       lowStockThreshold: 8,
       isFeatured: false,
       tags: ['Hardware', 'Authorized'],
-      specifications: { Warranty: '1-Year Island-wide Official Warranty' },
+      optionGroups: [],
+      specifications: [
+        { label: 'Warranty', value: '1-Year Island-wide Official Warranty' },
+      ],
       warrantyInfo: '1-Year Official Manufacturer Warranty',
       isActive: true,
       imageAlt: '',
@@ -175,6 +224,7 @@ export const AdminProductsView: React.FC = () => {
       currency: prod.currency || 'LKR',
       shortDescription: prod.shortDescription || '',
       description: prod.description || '',
+      color: prod.color || '',
       imageUrl: prod.imageUrl || (prod.images && prod.images[0]) || (prod.galleryImages && prod.galleryImages[0]) || '',
       galleryImages: prod.galleryImages || prod.images || [],
       stockQuantity: prod.stockQuantity,
@@ -182,7 +232,8 @@ export const AdminProductsView: React.FC = () => {
       lowStockThreshold: prod.lowStockThreshold || 10,
       isFeatured: prod.isFeatured,
       tags: prod.tags || [],
-      specifications: prod.specifications || {},
+      optionGroups: readProductOptionGroups(prod.optionGroups),
+      specifications: readProductSpecifications(prod.specifications),
       warrantyInfo: prod.warrantyInfo || '1-Year Official Manufacturer Warranty',
       isActive: prod.isActive,
       imageAlt: prod.imageAlt || '',
@@ -219,6 +270,65 @@ export const AdminProductsView: React.FC = () => {
     setIsDirty(true);
   };
 
+  const updateSpecification = (
+    index: number,
+    field: keyof ProductSpecificationInput,
+    value: string
+  ) => {
+    setFormData((previous) => ({
+      ...previous,
+      specifications: previous.specifications.map((spec, specIndex) =>
+        specIndex === index ? { ...spec, [field]: value } : spec
+      ),
+    }));
+    setIsDirty(true);
+  };
+
+  const addSpecification = () => {
+    setFormData((previous) => ({
+      ...previous,
+      specifications: [...previous.specifications, { label: '', value: '' }],
+    }));
+    setIsDirty(true);
+  };
+
+  const removeSpecification = (index: number) => {
+    setFormData((previous) => ({
+      ...previous,
+      specifications: previous.specifications.filter((_, specIndex) => specIndex !== index),
+    }));
+    setIsDirty(true);
+  };
+
+  const updateOptionGroup = (index: number, patch: Partial<ProductOptionGroup>) => {
+    setFormData((previous) => ({
+      ...previous,
+      optionGroups: previous.optionGroups.map((group, groupIndex) =>
+        groupIndex === index ? { ...group, ...patch } : group
+      ),
+    }));
+    setIsDirty(true);
+  };
+
+  const addOptionGroup = () => {
+    setFormData((previous) => ({
+      ...previous,
+      optionGroups: [
+        ...previous.optionGroups,
+        { id: `option-group-${Date.now()}`, name: '', options: [] },
+      ],
+    }));
+    setIsDirty(true);
+  };
+
+  const removeOptionGroup = (index: number) => {
+    setFormData((previous) => ({
+      ...previous,
+      optionGroups: previous.optionGroups.filter((_, groupIndex) => groupIndex !== index),
+    }));
+    setIsDirty(true);
+  };
+
   const validateForm = () => {
     const errors: Record<string, string> = {};
     if (!formData.name.trim()) errors.name = 'Product name is required';
@@ -226,6 +336,35 @@ export const AdminProductsView: React.FC = () => {
     if (formData.price < 0) errors.price = 'Price must be positive';
     if (formData.stockQuantity < 0) errors.stockQuantity = 'Stock quantity cannot be negative';
     if (!formData.imageUrl.trim()) errors.imageUrl = 'Main product image URL is required';
+    const enteredSpecifications = formData.specifications.filter(
+      ({ label, value }) => label.trim() || value.trim()
+    );
+    if (enteredSpecifications.some(({ label, value }) => !label.trim() || !value.trim())) {
+      errors.specifications = 'Each specification needs both a name and a value.';
+    } else {
+      const labels = enteredSpecifications.map(({ label }) => label.trim().toLowerCase());
+      if (new Set(labels).size !== labels.length) {
+        errors.specifications = 'Specification names must be unique.';
+      }
+    }
+    const enteredOptionGroups = formData.optionGroups.filter(
+      (group) => group.name.trim() || group.options.length > 0
+    );
+    if (enteredOptionGroups.some((group) => !group.name.trim() || group.options.length === 0)) {
+      errors.optionGroups = 'Each option group needs a name and at least one choice.';
+    } else {
+      const names = enteredOptionGroups.map(({ name }) => name.trim().toLowerCase());
+      const hasDuplicateNames = new Set(names).size !== names.length;
+      const hasInvalidOptions = enteredOptionGroups.some((group) => {
+        const values = group.options.map((option) => option.trim().toLowerCase());
+        return values.some((option) => !option) || new Set(values).size !== values.length;
+      });
+      if (hasDuplicateNames) {
+        errors.optionGroups = 'Option group names must be unique.';
+      } else if (hasInvalidOptions) {
+        errors.optionGroups = 'Choices must be non-empty and unique within each option group.';
+      }
+    }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -280,6 +419,19 @@ export const AdminProductsView: React.FC = () => {
 
       const payload: CmsProduct = {
         ...formData,
+        color: formData.color.trim(),
+        optionGroups: formData.optionGroups
+          .filter((group) => group.name.trim() && group.options.some((option) => option.trim()))
+          .map((group) => ({
+            ...group,
+            name: group.name.trim(),
+            options: group.options.map((option) => option.trim()).filter(Boolean),
+          })),
+        specifications: Object.fromEntries(
+          formData.specifications
+            .map(({ label, value }) => [label.trim(), value.trim()] as const)
+            .filter(([label, value]) => label && value)
+        ),
         imageUrl: primaryImg,
         images: allImgs,
         galleryImages: allImgs,
@@ -583,6 +735,11 @@ export const AdminProductsView: React.FC = () => {
                     <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
                       {activeItem.categoryName}
                     </span>
+                    {activeItem.color && (
+                      <span className="text-[10px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
+                        Color: {activeItem.color}
+                      </span>
+                    )}
                     <span className="text-[10px] font-mono font-bold text-slate-500">
                       ID: {activeItem.id}
                     </span>
@@ -812,7 +969,7 @@ export const AdminProductsView: React.FC = () => {
         maxWidth="3xl"
       >
         <form onSubmit={handleSave} className="space-y-4 text-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div className="sm:col-span-2">
               <label className="block font-semibold text-slate-700 mb-1">Product Title *</label>
               <input
@@ -841,6 +998,20 @@ export const AdminProductsView: React.FC = () => {
                 className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
               />
               {formErrors.sku && <p className="text-red-600 text-[10px] mt-0.5">{formErrors.sku}</p>}
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Color</label>
+              <input
+                type="text"
+                value={formData.color}
+                onChange={(e) => {
+                  setFormData({ ...formData, color: e.target.value });
+                  setIsDirty(true);
+                }}
+                placeholder="e.g. Matte black"
+                className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
             </div>
           </div>
 
@@ -1107,6 +1278,138 @@ export const AdminProductsView: React.FC = () => {
               className="w-full px-3 py-2 border rounded-xl border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
+
+          <section className="space-y-3 rounded-xl border border-slate-200 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 className="font-semibold text-slate-800">Customer Selectable Options</h3>
+                <p className="mt-0.5 text-[10px] text-slate-500">
+                  Add choices such as number, color, size, or pack quantity. Stock and price are shared across choices.
+                </p>
+              </div>
+              <Button variant="outline" size="sm" type="button" onClick={addOptionGroup}>
+                <Plus className="mr-1 h-3.5 w-3.5" />
+                Add option group
+              </Button>
+            </div>
+
+            {formData.optionGroups.length === 0 ? (
+              <p className="rounded-lg bg-slate-50 px-3 py-4 text-center text-slate-500">
+                No customer choices added.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {formData.optionGroups.map((group, index) => (
+                  <div
+                    key={group.id}
+                    className="grid grid-cols-1 items-end gap-2 sm:grid-cols-[1fr_1.5fr_auto]"
+                  >
+                    <label className="block font-medium text-slate-600">
+                      Option name
+                      <input
+                        type="text"
+                        value={group.name}
+                        onChange={(event) => updateOptionGroup(index, { name: event.target.value })}
+                        placeholder="e.g. Number"
+                        className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </label>
+                    <label className="block font-medium text-slate-600">
+                      Choices (comma separated)
+                      <input
+                        type="text"
+                        value={group.options.join(', ')}
+                        onChange={(event) =>
+                          updateOptionGroup(index, {
+                            options: event.target.value.split(',').map((option) => option.trim()),
+                          })
+                        }
+                        placeholder="e.g. 1, 2, 3, 4"
+                        className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => removeOptionGroup(index)}
+                      aria-label={`Remove option group ${group.name || index + 1}`}
+                      className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 px-3 text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {formErrors.optionGroups && (
+              <p className="text-[10px] text-red-600" role="alert">
+                {formErrors.optionGroups}
+              </p>
+            )}
+          </section>
+
+          <section className="space-y-3 rounded-xl border border-slate-200 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 className="font-semibold text-slate-800">Product Specifications</h3>
+                <p className="mt-0.5 text-[10px] text-slate-500">
+                  Add any attributes, including dimensions, capacity, model numbers, or technical details.
+                </p>
+              </div>
+              <Button variant="outline" size="sm" type="button" onClick={addSpecification}>
+                <Plus className="mr-1 h-3.5 w-3.5" />
+                Add specification
+              </Button>
+            </div>
+
+            {formData.specifications.length === 0 ? (
+              <p className="rounded-lg bg-slate-50 px-3 py-4 text-center text-slate-500">
+                No specifications added yet.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {formData.specifications.map((spec, index) => (
+                  <div
+                    key={`specification-${index}`}
+                    className="grid grid-cols-1 items-end gap-2 sm:grid-cols-[1fr_1.5fr_auto]"
+                  >
+                    <label className="block font-medium text-slate-600">
+                      Name
+                      <input
+                        type="text"
+                        value={spec.label}
+                        onChange={(event) => updateSpecification(index, 'label', event.target.value)}
+                        placeholder="e.g. Resolution"
+                        className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </label>
+                    <label className="block font-medium text-slate-600">
+                      Value
+                      <input
+                        type="text"
+                        value={spec.value}
+                        onChange={(event) => updateSpecification(index, 'value', event.target.value)}
+                        placeholder="e.g. 4K UHD / 3840 × 2160"
+                        className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => removeSpecification(index)}
+                      aria-label={`Remove specification ${spec.label || index + 1}`}
+                      className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 px-3 text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {formErrors.specifications && (
+              <p className="text-[10px] text-red-600" role="alert">
+                {formErrors.specifications}
+              </p>
+            )}
+          </section>
 
           <AdminSeoFields
             key={editingProduct?.id || 'new'}

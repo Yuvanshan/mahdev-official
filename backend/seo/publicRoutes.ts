@@ -14,6 +14,7 @@ import { withServiceArea } from '../../src/config/itemSeo.js';
 import { CAREERS_PAGE_SEO } from '../../src/config/careerSeo.js';
 import { getSwsStructuredData, SWS_BUSINESS, SWS_PRIMARY_HEADING, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS } from '../../src/data/swsLocalSeo.js';
 import { U1_PRIMARY_HEADING, U1_SERVICE_AREA_SUMMARY, U1_SERVICE_HIGHLIGHTS } from '../../src/data/u1LocalSeo.js';
+import { getCanonicalPublicUrl } from '../../src/config/divisionSites.js';
 
 export const SITE_ORIGIN = CANONICAL_SITE_ORIGIN;
 
@@ -44,7 +45,7 @@ function divisionBreadcrumb(key: keyof typeof DIVISION_SEO): Record<string, unkn
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: SITE_NAME, item: `${SITE_ORIGIN}/` },
-      { '@type': 'ListItem', position: 2, name: DIVISION_SEO[key].name, item: `${SITE_ORIGIN}/${key}` },
+      { '@type': 'ListItem', position: 2, name: DIVISION_SEO[key].name, item: getCanonicalPublicUrl(`/${key}`, SITE_ORIGIN) },
     ],
   };
 }
@@ -60,7 +61,7 @@ function divisionService(key: Exclude<keyof typeof DIVISION_SEO, 'sws'>, type: s
     '@type': type,
     name: DIVISION_SEO[key].name,
     description: DIVISION_SEO[key].description,
-    url: `${SITE_ORIGIN}/${key}`,
+    url: getCanonicalPublicUrl(`/${key}`, SITE_ORIGIN),
     parentOrganization: { '@id': `${SITE_ORIGIN}/#organization` },
     areaServed: [
       { '@type': 'City', name: 'Trincomalee' },

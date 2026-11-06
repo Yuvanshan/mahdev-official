@@ -26,6 +26,14 @@ Mahdev Pvt Ltd is a premier Sri Lankan multinational conglomerate operating five
 
 ---
 
+## 🌐 Company and division websites
+
+The project is intentionally deployed as one Vercel application with one shared backend and database. The corporate portfolio stays at the main host; divisions currently use `/sws`, `/u1`, `/it`, `/travels`, and `/mart` on the same Vercel domain. After purchasing `mahdev.lk`, each division can be assigned a host such as `sws.mahdev.lk` without creating another Vercel project or database. Division hosts have separate navigation and themes, while the admin, API, customer data, bookings, and orders remain shared.
+
+See [DOMAIN_CONFIGURATION.md](DOMAIN_CONFIGURATION.md) for the rollout checklist and [VERCEL_DEPLOYMENT.md](VERCEL_DEPLOYMENT.md) for the `VITE_*_SITE_URL` settings. Keep those division origin variables unset until the corresponding custom domains are attached to the existing Vercel project.
+
+---
+
 ## 🛠️ Technology Stack
 
 - **Frontend**: React 18, TypeScript, Tailwind CSS v4, Motion (`motion/react`), Lucide Icons.
@@ -83,7 +91,14 @@ Open the Vite URL shown in the frontend terminal. Its `/api` proxy forwards requ
 | `npm run start` | Starts the compiled backend server |
 | `npm run db:migrate` | Connects to Turso, provisions the application schema, and verifies the connection |
 | `npm run migrate:turso` | Imports a selected legacy JSON backup into Turso without overwriting existing IDs by default |
+| `npm run seed:mart-birthday` | Adds the 100 birthday-party starter products as editable drafts; existing IDs are skipped |
 | `npm run lint` | Runs TypeScript static analysis and linter (`tsc --noEmit`) |
+
+### Mart product choices and birthday starter catalog
+
+The admin product editor supports multiple customer-selectable option groups (for example **Number** and **Color**) in addition to product color and specifications. Selected choices are saved with the cart and order. Inventory and price currently apply to the whole product rather than each option combination.
+
+The birthday catalog seed adds 100 products and a Birthday Party Supplies category to the configured Turso database. It is idempotent and skips existing IDs. The starter records are drafts with zero stock and illustrative reference photos; review product details, replace images with the exact items, set actual prices/stock, and activate them in Admin before publishing.
 
 ---
 

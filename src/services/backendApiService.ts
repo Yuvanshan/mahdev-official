@@ -62,6 +62,7 @@ class BackendApiService {
       unitPrice: number;
       quantity: number;
       selectedVariant?: string;
+      selectedOptions?: Record<string, string>;
     }>;
     couponCode?: string;
     currency?: string;

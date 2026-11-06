@@ -121,6 +121,8 @@ export interface CmsProduct extends BaseCmsEntity {
   currency: string;
   shortDescription: string;
   description: string;
+  color?: string;
+  optionGroups?: { id: string; name: string; options: string[] }[];
   imageUrl: string;
   images?: string[];
   galleryImages: string[];

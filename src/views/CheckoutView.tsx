@@ -290,6 +290,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
         quantity: it.quantity,
         price: it.unitPrice,
         selectedVariant: it.selectedVariant?.name,
+        selectedOptions: it.selectedOptions,
         productId: it.productId,
         slug: it.slug,
         imageUrl: it.imageUrl,
@@ -835,6 +836,14 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                             <>
                               <span>•</span>
                               <span className="text-slate-700">{item.selectedVariant.name}</span>
+                            </>
+                          )}
+                          {item.selectedOptions && Object.keys(item.selectedOptions).length > 0 && (
+                            <>
+                              <span>•</span>
+                              <span className="text-slate-700">
+                                {Object.entries(item.selectedOptions).map(([name, value]) => `${name}: ${value}`).join(' · ')}
+                              </span>
                             </>
                           )}
                         </div>

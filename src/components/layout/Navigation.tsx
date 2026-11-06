@@ -25,10 +25,39 @@ import { AnimatePresence, motion } from 'motion/react';
 import { createPortal } from 'react-dom';
 import { BrandLogo } from './BrandLogo';
 import { MAIN_NAV_ITEMS as ALL_NAV_ITEMS } from '../../config/navigation';
+import { getDivisionSiteHref, type DivisionSiteId } from '../../config/divisionSites';
 
 // Items kept in config (and the footer) but hidden from the top bar and mobile menu.
 const HIDDEN_TOP_BAR_ITEMS = new Set(['insights']);
 const MAIN_NAV_ITEMS = ALL_NAV_ITEMS.filter((item) => !HIDDEN_TOP_BAR_ITEMS.has(item.id));
+const DIVISION_SITE_NAV_ITEMS: Record<DivisionSiteId, Array<{ id: string; label: string; href: string }>> = {
+  sws: [
+    { id: 'home', label: 'Home', href: '/' },
+    { id: 'services', label: 'Events', href: '/#services' },
+    { id: 'rentals', label: 'Rentals', href: '/#rentals' },
+    { id: 'gallery', label: 'Gallery', href: '/#gallery' },
+  ],
+  u1: [
+    { id: 'home', label: 'Home', href: '/' },
+    { id: 'services', label: 'Services', href: '/#services' },
+    { id: 'portfolio', label: 'Portfolio', href: '/#portfolio' },
+  ],
+  it: [
+    { id: 'home', label: 'Home', href: '/' },
+    { id: 'services', label: 'Services', href: '/#services' },
+    { id: 'case-studies', label: 'Case studies', href: '/#case-studies' },
+  ],
+  travels: [
+    { id: 'home', label: 'Home', href: '/' },
+    { id: 'destinations', label: 'Destinations', href: '/#destinations' },
+    { id: 'packages', label: 'Packages', href: '/#packages' },
+  ],
+  mart: [
+    { id: 'home', label: 'Home', href: '/' },
+    { id: 'categories', label: 'Categories', href: '/#categories' },
+    { id: 'products', label: 'Products', href: '/#products' },
+  ],
+};
 const DIVISION_MENU_DETAILS: Record<string, { mark: string; description: string; background: string; color: string }> = {
   sws: { mark: 'SWS', description: 'Weddings, parties & events', background: '#0E1424', color: '#fff' },
   u1: { mark: 'U1', description: 'Photography & cinema', background: '#F1E4D3', color: '#0E1424' },
@@ -50,9 +79,10 @@ import { readDeviceProfile } from '../../services/authService';
 interface NavigationProps {
   currentPath: string;
   onNavigate: (path: string) => void;
+  divisionId?: DivisionSiteId;
 }
 
-export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate }) => {
+export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate, divisionId }) => {
   const { totalQuantity, openCart } = useCart();
   const { user, isAuthenticated, isLoading: isAuthLoading, logout } = useAuth();
   const { companySettings, siteSettings, divisions } = useFirestoreDataContext();
@@ -67,6 +97,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const visibleNavItems = divisionId ? DIVISION_SITE_NAV_ITEMS[divisionId] : MAIN_NAV_ITEMS;
 
   const servicesDropdownRef = useRef<HTMLDivElement>(null);
   const accountDropdownRef = useRef<HTMLDivElement>(null);
@@ -120,7 +151,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
           ...config,
           id: canonicalId,
           name: d.name || config.name,
-          route: config.route || `/${d.slug || canonicalId}`,
+          route: getDivisionSiteHref(canonicalId),
           badge: d.hero?.badge || config.badge || 'Enterprise Division',
           iconName: config.iconName || 'Building',
           accentColor: (config as any).accentColor || (config as any).color || '#1d4ed8',
@@ -135,6 +166,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
             seen.add(defaultDiv.id);
             result.push({
               ...defaultDiv,
+              route: getDivisionSiteHref(defaultDiv.id),
               isPrimary: defaultDiv.id === 'sws',
             });
           }
@@ -233,8 +265,10 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
     if (href.startsWith('/')) {
       onNavigate(href);
+    } else if (/^https?:\/\//i.test(href)) {
+      window.location.assign(href);
     } else if (href.startsWith('#')) {
-      if (currentPath !== '/') {
+      if (currentPath !== '/' && currentPath !== `/${divisionId}`) {
         onNavigate('/' + href);
       } else {
         const element = document.querySelector(href);
@@ -274,7 +308,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
         style={isMobileMenuOpen ? { backdropFilter: 'none', WebkitBackdropFilter: 'none' } : undefined}
       >
         {/* Division Context Notice (when inside a child division) */}
-        {currentDivision && (
+        {currentDivision && !divisionId && (
           <div className="bg-[#061033] text-white text-xs py-1.5 px-4">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -302,12 +336,17 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
               <BrandLogo
                 onClick={() => onNavigate('/')}
               />
+              {divisionId && (
+                <span className="ml-2 hidden max-w-36 truncate border-l border-slate-200 pl-3 text-sm font-semibold text-slate-800 sm:block">
+                  {DIVISIONS[divisionId].name}
+                </span>
+              )}
             </div>
 
             {/* Middle: Desktop Navigation Links */}
             <nav className="hidden min-[900px]:flex items-center gap-1 xl:gap-2">
-              {MAIN_NAV_ITEMS.map((item) => {
-                if (item.id === 'divisions' || item.children) {
+              {visibleNavItems.map((item) => {
+                if ('children' in item && item.children) {
                   return (
                     <div
                       key={item.id}
@@ -657,7 +696,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
 
             {/* Primary Navigation Links */}
             <div className="space-y-1">
-              {MAIN_NAV_ITEMS.map((item) => (
+              {visibleNavItems.map((item) => (
                 <a
                   key={`mobile-${item.id}`}
                   href={item.href}
@@ -676,25 +715,27 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate 
             </div>
 
             {/* Divisions Quick List */}
-            <div className="border-t border-blue-100 pt-3 space-y-1">
-              <div className="px-3 py-1 text-xs font-bold uppercase tracking-wider text-slate-400">
-                Operating Divisions
+            {!divisionId && (
+              <div className="border-t border-blue-100 pt-3 space-y-1">
+                <div className="px-3 py-1 text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Operating Divisions
+                </div>
+                {displayDivisions.map((division) => (
+                  <a
+                    key={`mobile-nav-${division.id}`}
+                    href={division.route}
+                    onClick={(event) => handleAnchorClick(event, division.route)}
+                    className={`w-full flex items-center px-3 py-2 rounded-lg text-left text-xs font-medium cursor-pointer ${
+                      currentPath === division.route
+                        ? 'bg-blue-50 text-[#0052FF] font-semibold'
+                        : 'text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className="truncate">{division.name}</span>
+                  </a>
+                ))}
               </div>
-              {displayDivisions.map((division) => (
-                <a
-                  key={`mobile-nav-${division.id}`}
-                  href={division.route}
-                  onClick={(event) => handleAnchorClick(event, division.route)}
-                  className={`w-full flex items-center px-3 py-2 rounded-lg text-left text-xs font-medium cursor-pointer ${
-                    currentPath === division.route
-                      ? 'bg-blue-50 text-[#0052FF] font-semibold'
-                      : 'text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  <span className="truncate">{division.name}</span>
-                </a>
-              ))}
-            </div>
+            )}
 
             {/* Mobile Contact Quick Actions */}
             <div className="border-t border-blue-100 pt-3 space-y-2">

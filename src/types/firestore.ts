@@ -151,6 +151,9 @@ export interface FirestoreCategory {
   isPublished?: boolean;
   order: number;
   division?: DivisionId | string;
+  divisionId?: DivisionId | string;
+  itemCount?: number;
+  iconName?: string;
   status?: 'active' | 'inactive';
   createdAt?: string;
   updatedAt?: string;
@@ -178,6 +181,10 @@ export interface FirestoreProduct {
   slug: string;
   description: string;
   shortDescription?: string;
+  color?: string;
+  optionGroups?: { id: string; name: string; options: string[] }[];
+  tags?: string[];
+  specifications?: Record<string, string> | Array<{ label: string; value: string }>;
   price: number;
   currency?: string;
   discountPrice?: number;
@@ -270,6 +277,7 @@ export interface FirestoreOrderItem {
     id: string;
     name: string;
   };
+  selectedOptions?: Record<string, string>;
 }
 
 export type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';

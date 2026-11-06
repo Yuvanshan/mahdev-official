@@ -8,6 +8,7 @@ import {
 import { CANONICAL_SITE_ORIGIN } from '../../../src/config/site.js';
 import { DIVISIONS } from '../../../src/config/divisions.js';
 import { canonicalizeDivisionRoute } from '../../../src/config/divisionRoutes.js';
+import { getCanonicalPublicUrl } from '../../../src/config/divisionSites.js';
 
 const STATIC_PUBLIC_PATHS = [
   '/',
@@ -197,7 +198,7 @@ function entry(
   lastmod?: string | null,
   images: string[] = []
 ): string {
-  const location = escapeXml(new URL(path, origin).href);
+  const location = escapeXml(getCanonicalPublicUrl(path, origin));
   const imageTags = images.map((image) => `<image:image><image:loc>${escapeXml(image)}</image:loc></image:image>`).join('');
   return `  <url><loc>${location}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}${imageTags}</url>`;
 }

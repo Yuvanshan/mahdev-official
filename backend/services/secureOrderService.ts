@@ -26,6 +26,7 @@ export interface OrderItemInput {
   unitPrice: number;
   quantity: number;
   selectedVariant?: string;
+  selectedOptions?: Record<string, string>;
 }
 
 export interface OrderValidationInput {
@@ -133,6 +134,7 @@ export function validateAndCreateAuthoritativeOrder(input: OrderValidationInput)
       unitPrice,
       quantity: item.quantity,
       selectedVariant: item.selectedVariant,
+      selectedOptions: item.selectedOptions,
     });
   }
 

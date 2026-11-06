@@ -14,7 +14,8 @@ interface CartContextType {
     product: CatalogProduct | any,
     variant?: ProductVariantOption | CartVariantSelection | null,
     quantity?: number,
-    bookingDetails?: CartBookingDetails
+    bookingDetails?: CartBookingDetails,
+    selectedOptions?: Record<string, string>
   ) => void;
   removeFromCart: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, quantity: number) => void;
@@ -197,12 +198,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     product: CatalogProduct | any,
     variant?: ProductVariantOption | CartVariantSelection | null,
     quantity: number = 1,
-    bookingDetails?: CartBookingDetails
+    bookingDetails?: CartBookingDetails,
+    selectedOptions: Record<string, string> = {}
   ) => {
     if (quantity <= 0) return;
 
     const variantId = variant?.id || 'standard';
-    const cartItemId = `${product.id}_${variantId}`;
+    const optionKey = Object.entries(selectedOptions)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([name, value]) => `${encodeURIComponent(name)}:${encodeURIComponent(value)}`)
+      .join('|');
+    const cartItemId = `${product.id}_${variantId}${optionKey ? `_options_${optionKey}` : ''}`;
 
     const basePrice = Number(product.price) || 0;
     const priceModifier = Number(variant?.priceModifier) || 0;
@@ -249,6 +255,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 dimensions: 'dimensions' in variant ? variant.dimensions : undefined,
               }
             : undefined,
+          selectedOptions: Object.keys(selectedOptions).length ? { ...selectedOptions } : undefined,
           quantity,
           imageUrl: product.imageUrl || 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=800&q=80',
           leadTimeDays: product.leadTimeDays,

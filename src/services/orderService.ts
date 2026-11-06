@@ -168,6 +168,7 @@ class OrderService {
       divisionName: item.divisionName,
       productType: item.productType,
       selectedVariant: item.selectedVariant,
+      selectedOptions: item.selectedOptions,
       unitPrice: item.unitPrice,
       originalPrice: item.originalPrice,
       discountPercent: item.discountPercent,

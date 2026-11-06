@@ -92,6 +92,7 @@ export interface OrderItem {
   divisionName: string;
   productType: ProductType;
   selectedVariant?: CartVariantSelection;
+  selectedOptions?: Record<string, string>;
   unitPrice: number;
   originalPrice?: number;
   discountPercent?: number;

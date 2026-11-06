@@ -37,6 +37,12 @@ export interface ProductVariantGroup {
   options: ProductVariantOption[];
 }
 
+export interface ProductOptionGroup {
+  id: string;
+  name: string;
+  options: string[];
+}
+
 export interface ProductSpecification {
   label: string;
   value: string;
@@ -67,6 +73,7 @@ export interface CatalogProduct {
   categoryId: string;
   categoryName: string;
   categorySlug: string;
+  color?: string;
 
   // Descriptions & Media
   shortDescription: string;
@@ -89,6 +96,7 @@ export interface CatalogProduct {
 
   // Variants & Technical Attributes
   variants?: ProductVariantGroup;
+  optionGroups?: ProductOptionGroup[];
   specifications: ProductSpecification[];
   tags: string[];
 

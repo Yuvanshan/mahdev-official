@@ -163,6 +163,9 @@ export const OrderLookupView: React.FC<OrderLookupViewProps> = ({ onNavigate }) 
                           {order.items.slice(0, 2).map((it, idx) => (
                             <li key={idx} className="line-clamp-1">
                               • {it.quantity}x {it.name} {it.selectedVariant ? `(${it.selectedVariant.name})` : ''}
+                              {it.selectedOptions && Object.keys(it.selectedOptions).length > 0
+                                ? ` (${Object.entries(it.selectedOptions).map(([name, value]) => `${name}: ${value}`).join(', ')})`
+                                : ''}
                             </li>
                           ))}
                           {order.items.length > 2 && (

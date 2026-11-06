@@ -722,6 +722,23 @@ async function verifyOrderPricing(data: Record<string, unknown>): Promise<OrderP
       mismatches.push({ productId, reason: 'product not found' });
       continue;
     }
+    const optionGroups = Array.isArray(product.optionGroups)
+      ? product.optionGroups as Array<{ name?: unknown; options?: unknown }>
+      : [];
+    const selectedOptions = item.selectedOptions && typeof item.selectedOptions === 'object'
+      ? item.selectedOptions as Record<string, unknown>
+      : {};
+    const validSelections = optionGroups.every((group) =>
+      typeof group.name === 'string' &&
+      Array.isArray(group.options) &&
+      typeof selectedOptions[group.name] === 'string' &&
+      (group.options as unknown[]).includes(selectedOptions[group.name])
+    );
+    const knownGroupNames = new Set(optionGroups.map((group) => group.name));
+    const hasUnknownSelections = Object.keys(selectedOptions).some((name) => !knownGroupNames.has(name));
+    if (!validSelections || hasUnknownSelections) {
+      mismatches.push({ productId, reason: 'invalid or incomplete product option selection' });
+    }
     const variantId = item.selectedVariant && typeof item.selectedVariant === 'object'
       ? (item.selectedVariant as Record<string, unknown>).id
       : undefined;

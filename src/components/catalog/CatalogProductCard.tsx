@@ -39,6 +39,10 @@ export const CatalogProductCard: React.FC<CatalogProductCardProps> = ({
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (product.stockStatus === 'out_of_stock') return;
+    if (product.optionGroups?.length) {
+      onSelect(product);
+      return;
+    }
     if (onAddToCart) {
       onAddToCart(product);
     } else {

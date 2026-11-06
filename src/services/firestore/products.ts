@@ -70,7 +70,7 @@ export const firestoreProductsService = {
 
     inFlightProductsPromise = (async () => {
       try {
-        const snap = await getDocs(query(collection(db, 'products'), firestoreLimit(100)));
+        const snap = await getDocs(query(collection(db, 'products'), firestoreLimit(500)));
         if (!snap.empty) {
           const loaded = snap.docs.map((d) => ({
             ...d.data(),

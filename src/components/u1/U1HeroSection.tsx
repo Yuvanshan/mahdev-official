@@ -6,8 +6,7 @@ import { ScrollParallax } from '../motion/ParallelScroll';
 import { AnimatedHeroTitle } from '../common/AnimatedHeroTitle';
 import { U1_PRIMARY_HEADING } from '../../data/u1LocalSeo';
 
-// Sky-300 → blue-200 → white, matching the previous clipped-text gradient.
-const HERO_TITLE_GRADIENT = ['#7dd3fc', '#bfdbfe', '#ffffff'];
+const HERO_TITLE_GRADIENT = ['#F5F5F4', '#E7E5E4', '#FFFFFF'];
 
 interface U1HeroSectionProps {
   onExploreServices: () => void;
@@ -19,7 +18,7 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
   const heroRef = React.useRef<HTMLElement | null>(null);
 
   return (
-    <section ref={heroRef} className="division-video-hero relative flex min-h-[680px] w-full items-center overflow-hidden bg-[#061033] text-white sm:min-h-[740px] lg:min-h-[min(820px,calc(100svh-5rem))]">
+    <section ref={heroRef} className="division-video-hero relative flex min-h-[680px] w-full items-center overflow-hidden bg-[#111111] text-white sm:min-h-[740px] lg:min-h-[min(820px,calc(100svh-5rem))]">
       {/* Reliable Full-Width Video Background with guaranteed autoplay */}
       <ScrollParallax targetRef={heroRef} distance={24} className="division-video-hero__media absolute -inset-y-10 right-[-2%] w-[72%] overflow-hidden">
         <HeroVideoBackground
@@ -58,7 +57,7 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.25 }}
             onClick={onExploreServices}
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-6 text-sm font-semibold text-slate-950 transition-colors hover:bg-blue-50"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#F5F5F4] px-6 text-sm font-semibold text-[#111111] transition-colors hover:bg-white"
           >
             Explore Our Studio
             <ArrowRight className="h-4 w-4" />

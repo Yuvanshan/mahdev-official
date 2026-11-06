@@ -1,5 +1,5 @@
 import { catalogService } from '../services/catalogService';
-import { CatalogProduct, CatalogCategory, ProductVariantOption, ProductSpecification as BaseProductSpecification } from '../types/catalog';
+import { CatalogProduct, CatalogCategory, ProductOptionGroup, ProductVariantOption, ProductSpecification as BaseProductSpecification } from '../types/catalog';
 
 export interface ProductVariant {
   id: string;
@@ -46,6 +46,8 @@ export interface Product {
   isBestSeller?: boolean;
   isTrending?: boolean;
   brand: string;
+  color?: string;
+  optionGroups?: ProductOptionGroup[];
   sku: string;
   variants?: {
     type: string;
@@ -69,6 +71,7 @@ export interface MartCategory {
 export interface CartItem {
   product: Product;
   selectedVariant?: ProductVariant;
+  selectedOptions?: Record<string, string>;
   quantity: number;
   itemTotal: number;
 }
@@ -107,6 +110,8 @@ export function mapFirestoreProductToMart(p: any, categories: any[] = []): Produ
     isBestSeller: p.isBestSeller,
     isTrending: p.isTrending,
     brand: p.brand || 'Mahdev',
+    color: typeof p.color === 'string' ? p.color : undefined,
+    optionGroups: Array.isArray(p.optionGroups) ? p.optionGroups : [],
     sku: p.sku || `MD-${p.id?.toUpperCase().slice(0, 8) || '001'}`,
     variants: p.variants
       ? {
@@ -121,7 +126,11 @@ export function mapFirestoreProductToMart(p: any, categories: any[] = []): Produ
           })),
         }
       : undefined,
-    specifications: Array.isArray(p.specifications) ? p.specifications : [],
+    specifications: Array.isArray(p.specifications)
+      ? p.specifications
+      : p.specifications && typeof p.specifications === 'object'
+        ? Object.entries(p.specifications).map(([label, value]) => ({ label, value: String(value) }))
+        : [],
     tags: Array.isArray(p.tags) ? p.tags : [],
     reviews: Array.isArray(p.reviews) ? p.reviews : [],
   };
@@ -182,6 +191,8 @@ export const MART_PRODUCTS: Product[] = catalogService
     isBestSeller: p.isBestSeller,
     isTrending: p.isTrending,
     brand: p.brand,
+    color: p.color,
+    optionGroups: p.optionGroups,
     sku: p.sku,
     variants: p.variants
       ? {

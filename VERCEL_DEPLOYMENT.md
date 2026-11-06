@@ -92,6 +92,11 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 | :--- | :--- | :--- |
 | `VITE_APP_URL` | Production: `https://mahdev-official.vercel.app`<br>Preview: `https://$VERCEL_URL`<br>Development: `http://localhost:3000` | Public runtime URL for client-side links and analytics; canonical tags use the fixed origin in `src/config/site.ts` |
 | `VITE_SITE_URL` | Production: your live domain, e.g. `https://mahdev-official.vercel.app` | The website's public domain for canonical URLs, Open Graph tags, structured data, sitemap, `robots.txt` and `llms.txt`. Must be an origin with no path. Defaults to `https://mahdev-official.vercel.app` when unset. |
+| `VITE_SWS_SITE_URL` | Production only, after domain purchase | Optional SWS site origin, e.g. `https://sws.mahdev.lk`; leave unset while using `/sws` on the Vercel URL. |
+| `VITE_U1_SITE_URL` | Production only, after domain purchase | Optional U1 Studio site origin, e.g. `https://u1.mahdev.lk`; leave unset while using `/u1` on the Vercel URL. |
+| `VITE_IT_SITE_URL` | Production only, after domain purchase | Optional Mahdev IT site origin, e.g. `https://it.mahdev.lk`; leave unset while using `/it` on the Vercel URL. |
+| `VITE_TRAVELS_SITE_URL` | Production only, after domain purchase | Optional Mahdev Travels site origin, e.g. `https://travels.mahdev.lk`; leave unset while using `/travels` on the Vercel URL. |
+| `VITE_MART_SITE_URL` | Production only, after domain purchase | Optional Mahdev Mart site origin, e.g. `https://mart.mahdev.lk`; leave unset while using `/mart` on the Vercel URL. |
 | `PUBLIC_SITE_URL` | Optional | Legacy alias for `VITE_SITE_URL`, used only when `VITE_SITE_URL` is unset. |
 | `VITE_FIREBASE_API_KEY` | Production, Preview, Development | Public Firebase Web SDK API Key |
 | `VITE_FIREBASE_AUTH_DOMAIN` | Production, Preview, Development | Firebase Console Auth domain |
@@ -145,9 +150,9 @@ Admin portal access uses `ADMIN_LOGIN_EMAIL`, `ADMIN_LOGIN_PASSWORD_HASH`, and `
 
 ## 5. Search indexing and analytics
 
-The public sitemap is generated at request time from public site pages and published CMS pages, services, products, galleries/media, projects, active divisions, and career openings. It includes available content images using the Google Image sitemap extension. It is served from `https://mahdev-official.vercel.app/sitemap.xml` and declared in `robots.txt`. The main sitemap includes the division path URLs (`/sws`, `/u1`, `/it`, `/travels`, and `/mart`) on the same host. Add the main `https://mahdev-official.vercel.app/` property to Search Console and submit this sitemap once to discover those division pages under the same property. Public marketing pages are indexable; account, admin, and transaction routes are excluded. Individual service pages use service structured data, and division/service listing links use crawlable URLs.
+The public sitemap is generated at request time from public site pages and published CMS pages, services, products, galleries/media, projects, active divisions, and career openings. It includes available content images using the Google Image sitemap extension. Division landing-page URLs use the corresponding configured division host when its `VITE_*_SITE_URL` is set; otherwise they stay on the main host under `/sws`, `/u1`, `/it`, `/travels`, or `/mart`. Submit the resulting sitemap for the main domain and verify each custom division host in Search Console when those domains are launched. Public marketing pages are indexable; account, admin, and transaction routes are excluded.
 
-Division pages use canonical URLs on the main host, such as `https://mahdev-official.vercel.app/sws` and `https://mahdev-official.vercel.app/u1`. If a division is later moved to a different hostname, that hostname must have its own crawlable page and sitemap and be added to Search Console separately; the main site's sitemap cannot submit another host's URLs under its own property.
+All division hosts are attached to this same Vercel project. Keep the division URL variables **unset for Preview** so preview builds cannot send users or crawlers to production hosts. The values are public build-time origins and saving them requires a production redeployment.
 
 Search indexing is enabled only when Vercel sets `VERCEL_ENV=production`; Vercel preview deployments and local builds remain `noindex`. The `VITE_SITE_URL` environment variable (read by `src/config/site.ts`) is the single source of truth for the public domain: page canonical URLs, sitemap URLs, `robots.txt` and `llms.txt` all follow it. `VITE_APP_URL` is not used to override canonical URLs.
 
@@ -163,14 +168,11 @@ After deploying SEO changes:
 
 ---
 
-## 6. Custom Domain Configuration (`mahdev.lk`)
+## 6. Custom Domain Configuration
 
-1. In the Vercel Dashboard, go to **Settings > Domains**.
-2. Enter `mahdev.lk` and `www.mahdev.lk`.
-3. In your DNS provider (Cloudflare, GoDaddy, Namecheap, or LK Domain Registry), add the following DNS records:
-   - **Type A**: `@` pointing to `76.76.21.21`
-   - **Type CNAME**: `www` pointing to `cname.vercel-dns.com`
-4. Vercel will automatically provision a free SSL/TLS certificate via Let's Encrypt.
+Until `mahdev.lk` is purchased, keep the current `.vercel.app` project URL and the existing division paths. Do not try to create arbitrary subdomains under `vercel.app`.
+
+After purchase, add `mahdev.lk`, `www.mahdev.lk`, `sws.mahdev.lk`, `u1.mahdev.lk`, `it.mahdev.lk`, `travels.mahdev.lk`, and `mart.mahdev.lk` to this **same project** under **Settings → Domains**. Follow the DNS targets Vercel displays for each hostname; do not assume a copied A/CNAME value is valid for this project. Configure `VITE_SITE_URL` and the division origin variables above in the Production environment, then redeploy. The app maps each division host to its division homepage while using this project's shared `/api` functions, database, storage, and admin portal. See [DOMAIN_CONFIGURATION.md](./DOMAIN_CONFIGURATION.md) for the full rollout and verification checklist.
 
 ---
 
@@ -193,10 +195,6 @@ npm run preflight
 
 For detailed instant rollback instructions via the Vercel Dashboard or CLI, refer to [PIPELINE_AND_ROLLBACK.md](./PIPELINE_AND_ROLLBACK.md).
 
-## Changing the website domain
+## Changing the corporate or division host
 
-1. Add the new domain to the Vercel project (Settings > Domains) and wait for DNS to verify.
-2. In Settings > Environment Variables, set `VITE_SITE_URL` for Production to the new origin, e.g. `https://www.mahdev.lk` (no trailing slash or path).
-3. Redeploy production. The value is baked in at build time, so saving the variable alone does not change the live site.
-4. Add the new hostname to the Firebase App Check reCAPTCHA key and any OAuth allowed origins.
-5. Add the new domain in Google Search Console and submit its `/sitemap.xml`. Redirect the old domain to the new one in Vercel so existing links keep working.
+Add the hostname to this Vercel project, set the relevant Production-only origin variable (`VITE_SITE_URL` for the company site or one of `VITE_SWS_SITE_URL`, `VITE_U1_SITE_URL`, `VITE_IT_SITE_URL`, `VITE_TRAVELS_SITE_URL`, `VITE_MART_SITE_URL`), and redeploy. Keep each value to an origin with no path. Add the host to Firebase Authentication's authorized domains and any App Check/OAuth allowlists, then verify canonical URLs, sitemap entries, API calls, and direct page refreshes. Do not change the existing database or server secrets for a host-only move.

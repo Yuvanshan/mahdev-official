@@ -13,6 +13,11 @@ interface ImportMetaEnv {
   /** 'enterprise' (default) or 'v3'; must match the App Check provider registered in Firebase. */
   readonly VITE_FIREBASE_APPCHECK_PROVIDER?: 'enterprise' | 'v3';
   readonly VITE_SITE_DEPLOYMENT_ENV?: string;
+  readonly VITE_SWS_SITE_URL?: string;
+  readonly VITE_U1_SITE_URL?: string;
+  readonly VITE_IT_SITE_URL?: string;
+  readonly VITE_TRAVELS_SITE_URL?: string;
+  readonly VITE_MART_SITE_URL?: string;
 }
 
 interface ImportMeta {

@@ -299,6 +299,7 @@ class NotificationService {
           unitPrice: item.unitPrice,
           lineTotal: item.lineTotal,
           selectedVariant: item.selectedVariant,
+          selectedOptions: item.selectedOptions,
         })),
         subtotal: order.subtotal,
         productDiscounts: order.productDiscounts,

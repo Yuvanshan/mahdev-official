@@ -33,6 +33,7 @@ export interface CartItem {
   originalPrice?: number;
   discountPercent?: number;
   selectedVariant?: CartVariantSelection;
+  selectedOptions?: Record<string, string>;
   quantity: number;
   imageUrl: string;
   leadTimeDays?: number;

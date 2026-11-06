@@ -57,6 +57,16 @@ export function mapFirestoreProductToCatalog(
     categoryId: fp.categoryId || (cat ? cat.id : 'general'),
     categoryName: cat ? cat.name : 'General Merchandise',
     categorySlug: (cat as any)?.slug || 'general',
+    color: fp.color,
+    optionGroups: Array.isArray(fp.optionGroups)
+      ? fp.optionGroups.filter(
+          (group): group is { id: string; name: string; options: string[] } =>
+            Boolean(group) &&
+            typeof group.id === 'string' &&
+            typeof group.name === 'string' &&
+            Array.isArray(group.options)
+        )
+      : [],
     shortDescription: fp.shortDescription || fp.description?.slice(0, 150) || '',
     description: fp.description || '',
     imageUrl: img,

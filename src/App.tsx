@@ -25,6 +25,15 @@ import { catalogService } from './services/catalogService';
 import { canonicalizeDivisionRoute } from './services/firestore/divisions';
 import { getPageTitle } from './config/pageTitles';
 import { SITE_NAME } from './config/site';
+import {
+  getCurrentDivisionSite,
+  getDivisionSiteForHost,
+  getDivisionSiteOrigin,
+  toDivisionInternalPath,
+  toDivisionPublicPath,
+  DIVISION_SITE_IDS,
+  type DivisionSiteId,
+} from './config/divisionSites';
 import type { OnlineBookingKind } from './utils/onlineBooking';
 import {
   ADMIN_PORTAL_PATH,
@@ -232,6 +241,7 @@ const MaintenanceView = lazy(() => import('./views/MaintenanceView').then((modul
 import { DocumentScrollProgress } from './components/motion/ParallelScroll';
 
 function AppContent() {
+  const hostDivisionSite = getCurrentDivisionSite();
   const {
     admin: currentAdmin,
     isAuthenticated: isAdminAuthenticated,
@@ -261,7 +271,7 @@ function AppContent() {
     const hash = window.location.hash || '';
     const search = window.location.search || '';
     if (hash.startsWith('#/') && hash.length > 2) {
-      return canonicalizeAdminPath(hash.substring(1));
+      return toDivisionInternalPath(canonicalizeAdminPath(hash.substring(1)), hostDivisionSite);
     }
     const cleanHash = hash.replace(/^#\/?/, '').toLowerCase();
     const directHashRoutes = [
@@ -274,15 +284,36 @@ function AppContent() {
       directHashRoutes.includes(cleanHash) ||
       cleanHash.startsWith('admin-yuvan1709/')
     ) {
-      return `${canonicalizeAdminPath(`/${cleanHash}`)}${search}`;
+      return toDivisionInternalPath(`${canonicalizeAdminPath(`/${cleanHash}`)}${search}`, hostDivisionSite);
     }
     const searchParams = new URLSearchParams(window.location.search);
     const queryRoute = searchParams.get('route') || searchParams.get('p') || searchParams.get('path');
     if (queryRoute) {
-      return canonicalizeAdminPath(queryRoute.startsWith('/') ? queryRoute : `/${queryRoute}`) + search;
+      return toDivisionInternalPath(
+        canonicalizeAdminPath(queryRoute.startsWith('/') ? queryRoute : `/${queryRoute}`) + search,
+        hostDivisionSite
+      );
     }
-    return canonicalizeAdminPath(window.location.pathname || '/') + search;
+    return toDivisionInternalPath(
+      canonicalizeAdminPath(window.location.pathname || '/') + search,
+      hostDivisionSite
+    );
   });
+
+  useEffect(() => {
+    if (hostDivisionSite) return;
+    const canonicalPath = canonicalizeDivisionRoute(window.location.pathname || '/');
+    const divisionMatch = canonicalPath.match(/^\/(sws|u1|it|travels|mart)(\/.*)?$/);
+    if (!divisionMatch) return;
+
+    const division = divisionMatch[1] as DivisionSiteId;
+    const origin = getDivisionSiteOrigin(division);
+    if (!origin || origin === window.location.origin) return;
+
+    const divisionPath = divisionMatch[2] || '/';
+    const destination = `${origin}${divisionPath === '/' ? '' : divisionPath}${window.location.search}${window.location.hash}`;
+    window.location.replace(destination);
+  }, [currentPath, hostDivisionSite]);
 
   useEffect(() => {
     const isEditableTarget = (target: EventTarget | null): boolean =>
@@ -382,7 +413,7 @@ function AppContent() {
       const search = window.location.search || '';
       if (hash.startsWith('#/') && hash.length > 2) {
         window.dispatchEvent(new Event('mahdev:routechange'));
-        setCurrentPath(canonicalizeAdminPath(hash.substring(1)));
+        setCurrentPath(toDivisionInternalPath(canonicalizeAdminPath(hash.substring(1)), hostDivisionSite));
         return;
       }
       const cleanHash = hash.replace(/^#\/?/, '').toLowerCase();
@@ -397,18 +428,24 @@ function AppContent() {
         cleanHash.startsWith('admin-yuvan1709/')
       ) {
         window.dispatchEvent(new Event('mahdev:routechange'));
-        setCurrentPath(canonicalizeAdminPath(`/${cleanHash}`) + search);
+        setCurrentPath(toDivisionInternalPath(canonicalizeAdminPath(`/${cleanHash}`) + search, hostDivisionSite));
         return;
       }
       const searchParams = new URLSearchParams(window.location.search);
       const queryRoute = searchParams.get('route') || searchParams.get('p') || searchParams.get('path');
       if (queryRoute) {
         window.dispatchEvent(new Event('mahdev:routechange'));
-        setCurrentPath(canonicalizeAdminPath(queryRoute.startsWith('/') ? queryRoute : `/${queryRoute}`) + search);
+        setCurrentPath(toDivisionInternalPath(
+          canonicalizeAdminPath(queryRoute.startsWith('/') ? queryRoute : `/${queryRoute}`) + search,
+          hostDivisionSite
+        ));
         return;
       }
       window.dispatchEvent(new Event('mahdev:routechange'));
-      setCurrentPath(canonicalizeAdminPath(window.location.pathname || '/') + search);
+      setCurrentPath(toDivisionInternalPath(
+        canonicalizeAdminPath(window.location.pathname || '/') + search,
+        getDivisionSiteForHost(window.location.host)
+      ));
     };
     window.addEventListener('popstate', handleLocationChange);
     window.addEventListener('hashchange', handleLocationChange);
@@ -420,15 +457,37 @@ function AppContent() {
 
   // Clean navigation helper
   const navigate = (path: string) => {
+    if (/^https?:\/\//i.test(path)) {
+      window.location.assign(path);
+      return;
+    }
+
+    if (!hostDivisionSite) {
+      const requestedPath = path.split(/[?#]/, 1)[0];
+      const divisionMatch = requestedPath.match(/^\/(sws|u1|it|travels|mart)(?:\/|$)/);
+      if (divisionMatch) {
+        const division = divisionMatch[1] as DivisionSiteId;
+        const externalOrigin = getDivisionSiteOrigin(division);
+        if (externalOrigin && externalOrigin !== window.location.origin) {
+          const suffix = requestedPath.slice(division.length + 1) || '/';
+          const queryAndHash = path.slice(requestedPath.length);
+          window.location.assign(`${externalOrigin}${suffix === '/' ? '' : suffix}${queryAndHash}`);
+          return;
+        }
+      }
+    }
+
     // In-page section scrolling if format is #section or /#section (excluding direct division routes)
     const isDirectDivisionOrAdmin = ['/#admin', '/#sws', '/#u1', '/#it', '/#travels', '/#mart'].includes(path.toLowerCase()) ||
       ['#admin', '#sws', '#u1', '#it', '#travels', '#mart'].includes(path.toLowerCase());
 
     if (path.startsWith('/#') && !isDirectDivisionOrAdmin) {
       const hash = path.substring(1);
-      if (currentPath !== '/') {
-        window.history.pushState({}, '', '/');
-        setCurrentPath('/');
+      const internalRoot = toDivisionInternalPath('/', hostDivisionSite);
+      const publicRoot = toDivisionPublicPath(internalRoot, hostDivisionSite);
+      if (currentPath.split(/[?#]/, 1)[0] !== internalRoot) {
+        window.history.pushState({}, '', publicRoot);
+        setCurrentPath(internalRoot);
         setTimeout(() => {
           const el = document.querySelector(hash);
           if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -449,12 +508,16 @@ function AppContent() {
     const queryIndex = targetPath.indexOf('?');
     const targetRoute = queryIndex >= 0 ? targetPath.slice(0, queryIndex) : targetPath;
     const targetQuery = queryIndex >= 0 ? targetPath.slice(queryIndex) : '';
-    targetPath = `${canonicalizeAdminPath(targetRoute)}${targetQuery}`;
+    const internalTarget = toDivisionInternalPath(
+      `${canonicalizeAdminPath(canonicalizeDivisionRoute(targetRoute))}${targetQuery}`,
+      hostDivisionSite
+    );
+    const publicTarget = toDivisionPublicPath(internalTarget, hostDivisionSite);
 
-    if (targetPath !== currentPath) {
+    if (internalTarget !== currentPath) {
       window.dispatchEvent(new Event('mahdev:routechange'));
-      window.history.pushState({}, '', targetPath);
-      setCurrentPath(targetPath);
+      window.history.pushState({}, '', publicTarget);
+      setCurrentPath(internalTarget);
     }
   };
 
@@ -481,9 +544,9 @@ function AppContent() {
   useEffect(() => {
     if (normalizedPath === basePath || typeof window === 'undefined') return;
     const canonicalUrl = `${normalizedPath}${searchParamsString ? `?${searchParamsString}` : ''}`;
-    window.history.replaceState({}, '', canonicalUrl);
+    window.history.replaceState({}, '', toDivisionPublicPath(canonicalUrl, hostDivisionSite));
     setCurrentPath(canonicalUrl);
-  }, [basePath, normalizedPath, searchParamsString]);
+  }, [basePath, normalizedPath, searchParamsString, hostDivisionSite]);
   const lastDataRouteRef = React.useRef<string | null>(null);
   useEffect(() => {
     if (lastDataRouteRef.current === null) {
@@ -1393,8 +1456,14 @@ function AppContent() {
   // Keep the primary navigation visible across the site, including coming-soon
   // division routes, while the division-specific notice still remains in place.
   const isStandaloneComingSoon = Boolean(divisionKey && isDivisionComingSoon(divisionKey));
+  const activeDivisionSite = hostDivisionSite ||
+    DIVISION_SITE_IDS.find((id) => normalizedPath === `/${id}` || normalizedPath.startsWith(`/${id}/`)) ||
+    divisionKey;
   return (
-    <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-blue-600 selection:text-white w-full max-w-full overflow-x-hidden">
+    <div
+      data-division-site={activeDivisionSite}
+      className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-blue-600 selection:text-white w-full max-w-full overflow-x-hidden"
+    >
       {/* Top Document Scroll Progress Bar */}
       {!isStandaloneComingSoon && <DocumentScrollProgress />}
       {!isAdminRoute && <SeasonalOverlay />}
@@ -1409,7 +1478,11 @@ function AppContent() {
       {/* Sticky Top Navigation */}
       {/* Keep the campaign banner visible across the public site, including division routes. */}
       {!isAdminRoute && <AnnouncementBanner onNavigate={navigate} />}
-      <Navigation currentPath={normalizedPath} onNavigate={navigate} />
+      <Navigation
+        currentPath={normalizedPath}
+        onNavigate={navigate}
+        divisionId={hostDivisionSite}
+      />
 
       {/* Main Content Area with Smooth View Transitions */}
       <main className="flex-1 w-full max-w-full min-w-0" aria-live="polite">
@@ -1443,7 +1516,11 @@ function AppContent() {
       <BottomNavigation currentPath={normalizedPath} onNavigate={navigate} />
 
       {/* Reusable Global Footer */}
-      <Footer onNavigate={navigate} currentPath={normalizedPath} />
+      <Footer
+        onNavigate={navigate}
+        currentPath={normalizedPath}
+        divisionId={hostDivisionSite}
+      />
       {!isAdminRoute && <WhatsAppWidget />}
     </div>
   );

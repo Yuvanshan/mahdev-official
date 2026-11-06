@@ -79,8 +79,13 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleAddToCart = (product: Product, variant?: ProductVariant, quantity: number = 1) => {
-    addToCart(product, variant, quantity);
+  const handleAddToCart = (
+    product: Product,
+    variant?: ProductVariant,
+    quantity: number = 1,
+    selectedOptions: Record<string, string> = {}
+  ) => {
+    addToCart(product, variant, quantity, undefined, selectedOptions);
     showToast(`Added ${quantity}x ${product.name} to cart`);
   };
 
@@ -136,7 +141,13 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
         onSelectCategory={setSelectedCategoryId}
         onSearchChange={setSearchQuery}
         onViewProduct={(prod) => setSelectedProductForDetail(prod)}
-        onAddToCart={(prod) => handleAddToCart(prod)}
+        onAddToCart={(prod) => {
+          if (prod.optionGroups?.length) {
+            setSelectedProductForDetail(prod);
+          } else {
+            handleAddToCart(prod);
+          }
+        }}
       />
 
       {/* 4. PRODUCT DETAIL MODAL */}
@@ -144,8 +155,8 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
         product={selectedProductForDetail}
         isOpen={!!selectedProductForDetail}
         onClose={() => setSelectedProductForDetail(null)}
-        onAddToCart={(prod, variant, qty) => {
-          handleAddToCart(prod, variant, qty);
+        onAddToCart={(prod, variant, qty, selectedOptions) => {
+          handleAddToCart(prod, variant, qty, selectedOptions);
           setSelectedProductForDetail(null);
         }}
         onSelectRelatedProduct={(relProd) => setSelectedProductForDetail(relProd)}

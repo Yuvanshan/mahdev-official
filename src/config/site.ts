@@ -1,7 +1,7 @@
 /**
- * The website's public origin (canonical URLs, sitemap, structured data,
- * robots.txt and llms.txt). Set VITE_SITE_URL in the environment and redeploy
- * to move the site to a new domain; this default is used when it is unset.
+ * The corporate website's public origin. Division origins are configured
+ * independently in divisionSites.ts; unset division origins keep their
+ * existing paths on this host.
  */
 export const DEFAULT_SITE_ORIGIN = 'https://mahdev-official.vercel.app';
 

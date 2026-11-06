@@ -45,7 +45,9 @@ export const MartCartDrawer: React.FC<MartCartDrawerProps> = ({
       .map(
         (i, idx) =>
           `${idx + 1}. *${i.product.name}* ${
-            i.selectedVariant ? `(${i.selectedVariant.name})` : ''
+            [i.selectedVariant?.name, ...Object.entries(i.selectedOptions || {}).map(([name, value]) => `${name}: ${value}`)]
+              .filter(Boolean)
+              .join(', ') || ''
           } x ${i.quantity} = ${formatCurrency(i.itemTotal, 'LKR')}`
       )
       .join('\n');
@@ -153,6 +155,11 @@ export const MartCartDrawer: React.FC<MartCartDrawerProps> = ({
                   {item.selectedVariant && (
                     <div className="text-[10px] font-mono text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200 inline-block">
                       {item.selectedVariant.name}
+                    </div>
+                  )}
+                  {Object.entries(item.selectedOptions || {}).length > 0 && (
+                    <div className="text-[10px] font-mono text-slate-500">
+                      {Object.entries(item.selectedOptions || {}).map(([name, value]) => `${name}: ${value}`).join(' · ')}
                     </div>
                   )}
 

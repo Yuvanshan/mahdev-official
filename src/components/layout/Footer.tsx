@@ -9,13 +9,16 @@ import { getTelLink, getMailtoLink, getMapSearchUrl } from '../../config/company
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { getDivisionWhatsAppUrl } from '../../utils/whatsapp';
 import { SocialLinks } from '../common/SocialLinks';
+import { CANONICAL_SITE_ORIGIN } from '../../config/site';
+import type { DivisionSiteId } from '../../config/divisionSites';
 
 interface FooterProps {
   onNavigate: (path: string) => void;
   currentPath?: string;
+  divisionId?: DivisionSiteId;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath }) => {
+export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath, divisionId }) => {
   const { companySettings, siteSettings } = useFirestoreDataContext();
 
   const currentPathname = (currentPath || (typeof window !== 'undefined' ? window.location.pathname : '')).toLowerCase();
@@ -27,6 +30,15 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath }) => {
   else if (currentPathname.includes('mart') || currentPathname.includes('shop')) currentDivId = 'mart';
 
   const footerWhatsAppUrl = getDivisionWhatsAppUrl(currentDivId);
+  const footerSections = divisionId
+    ? [
+        {
+          title: 'Mahdev Group',
+          links: [{ label: 'Mahdev corporate website', href: CANONICAL_SITE_ORIGIN }],
+        },
+        ...FOOTER_SECTIONS.filter((section) => section.title === 'Legal Provisions'),
+      ]
+    : FOOTER_SECTIONS;
 
   const companyName = companySettings?.name || siteSettings?.siteName || 'Mahdev Pvt Ltd';
   const tagline = companySettings?.tagline || 'Pioneering Creative Artistry & Modern Technology';
@@ -163,7 +175,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath }) => {
             </div>
 
             {/* Link Columns: Company, Divisions, Legal Provisions */}
-            {FOOTER_SECTIONS.map((section, idx) => (
+            {footerSections.map((section, idx) => (
               <div key={idx} className="space-y-4">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
                   {section.title}
@@ -177,7 +189,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath }) => {
                           if (link.href.startsWith('/')) {
                             e.preventDefault();
                             onNavigate(link.href);
-                          } else {
+                          } else if (link.href.startsWith('#')) {
                             handleLegalClick(e, link.label);
                           }
                         }}

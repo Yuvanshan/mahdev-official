@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   X,
   Star,
@@ -24,7 +24,12 @@ interface MartProductDetailModalProps {
   product: Product | null;
   isOpen: boolean;
   onClose: () => void;
-  onAddToCart: (product: Product, variant?: ProductVariant, quantity?: number) => void;
+  onAddToCart: (
+    product: Product,
+    variant?: ProductVariant,
+    quantity?: number,
+    selectedOptions?: Record<string, string>
+  ) => void;
   onSelectRelatedProduct: (product: Product) => void;
 }
 
@@ -37,8 +42,20 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
 }) => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'specs' | 'desc' | 'reviews'>('desc');
+
+  useEffect(() => {
+    setActiveImageIndex(0);
+    setSelectedVariant(null);
+    setSelectedOptions(
+      Object.fromEntries(
+        (product?.optionGroups || []).map((group) => [group.name, group.options[0] || ''])
+      )
+    );
+    setQuantity(1);
+  }, [product?.id]);
 
   // Hooks must run on every render (before the early return), otherwise opening
   // the modal changes the hook count and React throws error #310.
@@ -75,7 +92,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
   const tagsList = Array.isArray(product.tags) ? product.tags : [];
 
   const handleAddToCart = () => {
-    onAddToCart(product, currentVariant || undefined, quantity);
+    onAddToCart(product, currentVariant || undefined, quantity, selectedOptions);
   };
 
   return (
@@ -153,6 +170,11 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                 <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight">
                   {product.name}
                 </h1>
+                {product.color && (
+                  <p className="mt-1 text-xs font-medium text-slate-600">
+                    Color: <span className="font-semibold text-slate-900">{product.color}</span>
+                  </p>
+                )}
 
                 {/* Rating & Reviews */}
                 <div className="flex items-center gap-3 mt-2">
@@ -240,6 +262,28 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                   </div>
                 </div>
               )}
+
+              {product.optionGroups?.map((group) => (
+                <label key={group.id} className="block space-y-2">
+                  <span className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-900">
+                    Select {group.name}:
+                  </span>
+                  <select
+                    value={selectedOptions[group.name] || ''}
+                    onChange={(event) =>
+                      setSelectedOptions((previous) => ({
+                        ...previous,
+                        [group.name]: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:border-[#0052FF] focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  >
+                    {group.options.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </label>
+              ))}
 
               {/* Quantity & Add to Cart Controls */}
               <div className="pt-2 border-t border-slate-100 space-y-4">

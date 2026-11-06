@@ -62,6 +62,11 @@ const CatalogProductModalContent: React.FC<
   const [selectedVariant, setSelectedVariant] = useState<ProductVariantOption | undefined>(
     product.variants?.options[0]
   );
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      (product.optionGroups || []).map((group) => [group.name, group.options[0] || ''])
+    )
+  );
   const [quantity, setQuantity] = useState(1);
   const [actionSuccess, setActionSuccess] = useState(false);
 
@@ -70,7 +75,7 @@ const CatalogProductModalContent: React.FC<
   const currentPrice = (product.price + (selectedVariant?.priceModifier || 0)) * quantity;
 
   const handleAddToCart = () => {
-    addToCart(product, selectedVariant, quantity);
+    addToCart(product, selectedVariant, quantity, undefined, selectedOptions);
     setActionSuccess(true);
     setTimeout(() => {
       setActionSuccess(false);
@@ -78,7 +83,7 @@ const CatalogProductModalContent: React.FC<
   };
 
   const handleBuyNow = () => {
-    addToCart(product, selectedVariant, quantity);
+    addToCart(product, selectedVariant, quantity, undefined, selectedOptions);
     onClose();
     openCart();
   };
@@ -180,6 +185,11 @@ const CatalogProductModalContent: React.FC<
                   <h2 className="text-2xl font-serif text-neutral-900 mb-2 font-medium leading-tight">
                     {product.name}
                   </h2>
+                  {product.color && (
+                    <p className="mb-3 text-xs text-neutral-600">
+                      Color: <span className="font-semibold text-neutral-900">{product.color}</span>
+                    </p>
+                  )}
 
                   {/* Rating & Stock Summary */}
                   <div className="flex items-center gap-4 mb-4">
@@ -250,6 +260,28 @@ const CatalogProductModalContent: React.FC<
                       </div>
                     </div>
                   )}
+
+                  {product.optionGroups?.map((group) => (
+                    <label key={group.id} className="mb-4 block space-y-2">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-neutral-700">
+                        Select {group.name}
+                      </span>
+                      <select
+                        value={selectedOptions[group.name] || ''}
+                        onChange={(event) =>
+                          setSelectedOptions((previous) => ({
+                            ...previous,
+                            [group.name]: event.target.value,
+                          }))
+                        }
+                        className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                      >
+                        {group.options.map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </label>
+                  ))}
 
                   {/* Quantity Selector for physical products */}
                   {product.productType === 'physical' && (

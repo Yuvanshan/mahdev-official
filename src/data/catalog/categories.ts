@@ -1,4 +1,5 @@
 import { CatalogCategory } from '../../types/catalog';
+import { BIRTHDAY_PARTY_CATEGORY } from './birthdayPartyCategory';
 
 export const MASTER_CATALOG_CATEGORIES: CatalogCategory[] = [
   // --- Mart Categories (Decor Items & Tech Items) ---
@@ -73,6 +74,18 @@ export const MASTER_CATALOG_CATEGORIES: CatalogCategory[] = [
     itemCount: 24,
     status: 'active',
     sortOrder: 6,
+  },
+  {
+    id: BIRTHDAY_PARTY_CATEGORY.id,
+    name: BIRTHDAY_PARTY_CATEGORY.name,
+    slug: BIRTHDAY_PARTY_CATEGORY.slug,
+    description: BIRTHDAY_PARTY_CATEGORY.description || '',
+    imageUrl: BIRTHDAY_PARTY_CATEGORY.imageUrl || '',
+    divisionId: 'mart',
+    iconName: 'Gift',
+    itemCount: 100,
+    status: 'active',
+    sortOrder: 7,
   },
 
   // --- IT & Solutions Categories ---

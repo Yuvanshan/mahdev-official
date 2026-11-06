@@ -82,7 +82,10 @@ export function invoiceFromOrder(order: Order): InvoiceDocument {
       : undefined,
     items: order.items.map((item) => ({
       name: item.name,
-      description: item.selectedVariant ? Object.values(item.selectedVariant).filter(Boolean).join(' · ') : undefined,
+      description: [
+        item.selectedVariant ? Object.values(item.selectedVariant).filter(Boolean).join(' · ') : '',
+        ...Object.entries(item.selectedOptions || {}).map(([name, value]) => `${name}: ${value}`),
+      ].filter(Boolean).join(' · ') || undefined,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       amount: item.lineTotal,

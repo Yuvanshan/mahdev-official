@@ -518,6 +518,11 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
                                   <span className="text-slate-700 font-semibold">{item.selectedVariant.name}</span>
                                 </>
                               )}
+                              {item.selectedOptions && Object.keys(item.selectedOptions).length > 0 && (
+                                <span className="ml-2 text-slate-600">
+                                  {Object.entries(item.selectedOptions).map(([name, value]) => `${name}: ${value}`).join(' · ')}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>

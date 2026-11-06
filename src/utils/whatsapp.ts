@@ -38,6 +38,7 @@ export interface WhatsAppOrderItem {
   quantity: number;
   price: number;
   selectedVariant?: string;
+  selectedOptions?: Record<string, string>;
   imageUrl?: string;
   itemUrl?: string;
   productId?: string;
@@ -307,6 +308,9 @@ export function buildWhatsAppOrderMessage(payload: WhatsAppOrderPayload): string
 
     let line = `${index + 1}. ${skuTag} *${item.name}*` +
       (item.selectedVariant ? ` (${item.selectedVariant})` : '') +
+      (item.selectedOptions && Object.keys(item.selectedOptions).length
+        ? ` (${Object.entries(item.selectedOptions).map(([name, value]) => `${name}: ${value}`).join(', ')})`
+        : '') +
       `\n   • Qty: ${item.quantity} × Rs. ${item.price.toLocaleString()} = *Rs. ${itemTotal}*` +
       `\n   • Link: ${trackedItemUrl}`;
 

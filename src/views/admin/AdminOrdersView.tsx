@@ -1090,6 +1090,11 @@ export const AdminOrdersView: React.FC = () => {
                                   Variant: {item.selectedVariant.name}
                                 </span>
                               )}
+                              {item.selectedOptions && Object.keys(item.selectedOptions).length > 0 && (
+                                <span className="text-[10px] text-slate-500 block">
+                                  {Object.entries(item.selectedOptions).map(([name, value]) => `${name}: ${value}`).join(' · ')}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </td>

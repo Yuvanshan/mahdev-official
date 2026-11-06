@@ -5,6 +5,7 @@ import { APP_ROUTE_SEGMENTS, PRERENDERED_ROUTES, PRIVATE_ROUTE_SEGMENTS, RETIRED
 import { resolveDynamicRouteSeo } from '../../seo/dynamicRouteSeo.js';
 import { renderSeoHtml } from '../../seo/renderSeoHtml.js';
 import { CANONICAL_SITE_ORIGIN } from '../../../src/config/site.js';
+import { getDivisionSiteForHost } from '../../../src/config/divisionSites.js';
 
 /**
  * GET /api/page-shell?route=/some/route (or the original page URL via a rewrite)
@@ -81,10 +82,13 @@ async function serveShell(req: IncomingMessage, res: ServerResponse, forcedStatu
   const host = (Array.isArray(req.headers['x-forwarded-host']) ? req.headers['x-forwarded-host'][0] : req.headers['x-forwarded-host'])
     || req.headers.host || 'localhost';
   const origin = `${host.startsWith('localhost') || host.startsWith('127.0.0.1') ? 'http' : 'https'}://${host}`;
+  const requestHost = new URL(origin).host;
+  const hostDivision = getDivisionSiteForHost(requestHost);
+  const seoPath = hostDivision && path === '/' ? `/${hostDivision}` : path;
 
   let status: 200 | 404 = forcedStatus ?? 200;
   try {
-    if (!forcedStatus) status = await resolveStatus(path);
+    if (!forcedStatus) status = await resolveStatus(seoPath);
   } catch (error) {
     console.error('[PageShell] Could not resolve route status; serving 200:', error);
   }
@@ -105,19 +109,22 @@ async function serveShell(req: IncomingMessage, res: ServerResponse, forcedStatu
   if (status === 200) {
     // Single service/product/project/gallery URLs get their own title, description and canonical.
     try {
-      const seo = await resolveDynamicRouteSeo(path, url.searchParams);
+      const seo = await resolveDynamicRouteSeo(seoPath, url.searchParams);
       if (seo) {
         html = renderSeoHtml(html, seo, CANONICAL_SITE_ORIGIN);
         isItemPage = true;
-      } else if (ITEM_PAGE_PATTERN.test(path) && !/^\/?services?\/category\/?$/i.test(path)) {
+      } else if (ITEM_PAGE_PATTERN.test(seoPath) && !/^\/?services?\/category\/?$/i.test(seoPath)) {
         // An item address whose item does not exist is a real 404, not the home page
         // with a 200 (which search engines treat as a "soft 404").
         status = 404;
-      } else if (GALLERY_ITEM_PATTERN.test(path) && url.searchParams.get('id')?.trim()) {
+      } else if (GALLERY_ITEM_PATTERN.test(seoPath) && url.searchParams.get('id')?.trim()) {
         status = 404;
-      } else if (GALLERY_ITEM_PATTERN.test(path)) {
-        const servicesRoute = PRERENDERED_ROUTES.find((route) => route.path === '/services');
+      } else if (GALLERY_ITEM_PATTERN.test(seoPath)) {
+        const servicesRoute = PRERENDERED_ROUTES.find((route) => route.path === (hostDivision ? `/${hostDivision}` : '/services'));
         if (servicesRoute) html = renderSeoHtml(html, servicesRoute, CANONICAL_SITE_ORIGIN);
+      } else if (hostDivision) {
+        const divisionRoute = PRERENDERED_ROUTES.find((route) => route.path === seoPath);
+        if (divisionRoute) html = renderSeoHtml(html, divisionRoute, CANONICAL_SITE_ORIGIN);
       }
     } catch (error) {
       console.error('[PageShell] Could not add page SEO; serving the plain shell:', error);

@@ -261,6 +261,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                         {item.selectedVariant.name}
                       </span>
                     )}
+                    {Object.entries(item.selectedOptions || {}).map(([name, value]) => (
+                      <span key={name} className="text-[10px] font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                        {name}: {value}
+                      </span>
+                    ))}
                     {item.productType && item.productType !== 'physical' && (
                       <span className="text-[10px] font-medium text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
                         {item.bookingKind === 'gallery'
@@ -464,6 +469,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                       quantity: it.quantity,
                       price: it.unitPrice,
                       selectedVariant: it.selectedVariant?.name,
+                      selectedOptions: it.selectedOptions,
                       productId: it.productId,
                       slug: it.slug,
                       imageUrl: it.imageUrl,
