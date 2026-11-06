@@ -7,6 +7,7 @@
  */
 
 import { CANONICAL_SITE_ORIGIN } from '../config/site.js';
+import { getDivisionSiteUrl } from '../config/divisionSites.js';
 import { keywordImageAlt, type ImageAltKeyword } from '../utils/keywordImageAlt.js';
 
 export const SWS_BUSINESS = {
@@ -16,7 +17,7 @@ export const SWS_BUSINESS = {
   phoneDisplay: '075 092 8078',
   phoneInternational: '+94750928078',
   whatsappUrl: 'https://wa.me/94750928078',
-  url: `${CANONICAL_SITE_ORIGIN}/sws`,
+  url: getDivisionSiteUrl('sws'),
   trincomalee: {
     streetAddress: 'No 95/15, Iluppaikkulam, Kanniya Road',
     locality: 'Trincomalee',
@@ -38,7 +39,7 @@ export const SWS_BUSINESS = {
   ],
 } as const;
 
-export const SWS_PRIMARY_HEADING = 'SWS Event Management – Event Decorators in Trincomalee';
+export const SWS_PRIMARY_HEADING = 'SWS Event Management – Event Planner in Trincomalee';
 
 /** Visible summary under the service headings, naming the searches the page should match. */
 export const SWS_SERVICE_AREA_SUMMARY =
@@ -127,18 +128,20 @@ export function getFaqStructuredData(): Record<string, unknown> {
   };
 }
 
-/** JSON-LD for the /sws page: the SWS EventPlanner (Trincomalee branch). FAQ schema is added at runtime from admin-managed FAQs. */
+/** JSON-LD for the SWS site: the SWS EventPlanner (Trincomalee branch). */
 export function getSwsStructuredData(): Array<Record<string, unknown>> {
+  const swsOrigin = new URL(SWS_BUSINESS.url).origin;
   return [
     {
       '@context': 'https://schema.org',
       '@type': 'EventPlanner',
       '@id': `${SWS_BUSINESS.url}#business`,
-      name: `${SWS_BUSINESS.name} Trincomalee`,
+      name: SWS_BUSINESS.name,
+      alternateName: ['SWS Events'],
       url: SWS_BUSINESS.url,
       telephone: SWS_BUSINESS.phoneInternational,
-      image: `${CANONICAL_SITE_ORIGIN}/assets/images/sws_logo.jpeg`,
-      logo: `${CANONICAL_SITE_ORIGIN}/assets/images/sws_logo.jpeg`,
+      image: `${swsOrigin}/assets/images/sws_logo.jpeg`,
+      logo: `${swsOrigin}/assets/images/sws_logo.jpeg`,
       priceRange: '$$',
       parentOrganization: { '@id': `${CANONICAL_SITE_ORIGIN}/#organization` },
       address: {

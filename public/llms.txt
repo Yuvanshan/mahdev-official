@@ -15,11 +15,21 @@
 
 ## Divisions
 
-- [SWS Event Management](https://mahdev-official.vercel.app/sws): Wedding decorators in Colombo and Trincomalee; birthday, cradle ceremony, puberty ceremony, engagement and corporate event decoration across Sri Lanka.
+- [SWS Event Management](https://sws-events.vercel.app): SWS Events, an event planner in Trincomalee for wedding, birthday, cultural ceremony and corporate event decoration in Trincomalee, Colombo and nearby areas.
 - [U1 Studio](https://mahdev-official.vercel.app/u1): Wedding photographers in Trincomalee and Colombo; pre-shoots, event, portrait and product photography, 4K films and albums.
 - [Mahdev IT](https://mahdev-official.vercel.app/it): IT and digital solutions.
 - [Mahdev Travels](https://mahdev-official.vercel.app/travels): Travel planning and experiences.
 - [Mahdev Online Mart](https://mahdev-official.vercel.app/mart): Online retail and equipment.
+
+## SWS Event Management
+
+- Official name: SWS Event Management
+- Website: https://sws-events.vercel.app
+- Trincomalee address: No 95/15, Iluppaikkulam, Kanniya Road, Trincomalee 31006
+- Colombo address: 41/22, Pickerings Road, Kotahena, Colombo 13
+- Phone / WhatsApp: +94750928078
+- Service area: Trincomalee, Nilaveli, Uppuveli, Colombo and Sri Lanka.
+- Services: wedding decoration, birthday decoration, cradle and naming ceremony decoration, puberty ceremony decoration, engagement and homecoming decoration, corporate event planning, stage decoration and event rentals.
 
 ## Policies
 

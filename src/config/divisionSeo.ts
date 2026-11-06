@@ -3,11 +3,8 @@
  * build-time prerendered HTML (backend/seo/publicRoutes.ts) and the React views,
  * so Google sees the same title before and after JavaScript runs.
  *
- * Format: "<Division> – <what it does>, Trincomalee & Colombo". The division name
- * comes first, then the two branch cities people add to local searches ("sws
- * event management trincomalee"), within ~62 characters, the point where Google
- * truncates titles with "...". The Mahdev brand is carried by the site name and
- * breadcrumb shown above the result, so it is not repeated here.
+ * Titles lead with the division name and its primary service/location intent;
+ * descriptions cover the broader service area and contact details.
  */
 export interface DivisionSeo {
   /** Division name as shown in breadcrumbs. */
@@ -19,9 +16,9 @@ export interface DivisionSeo {
 export const DIVISION_SEO = {
   sws: {
     name: 'SWS Event Management',
-    title: 'SWS Event Management – Event Decorators in Trincomalee',
+    title: 'SWS Event Management | Event Planner in Trincomalee',
     description:
-      'Wedding, birthday, cradle ceremony, puberty ceremony and corporate event decoration in Trincomalee and Colombo, Sri Lanka, by SWS Event Management. Call or WhatsApp 075 092 8078.',
+      'SWS Events (SWS Event Management) is an event planner in Trincomalee, Sri Lanka, for weddings, birthdays, cultural ceremonies and corporate events. Serving Trincomalee, Colombo and nearby areas. Call or WhatsApp 075 092 8078.',
   },
   u1: {
     name: 'U1 Studio',

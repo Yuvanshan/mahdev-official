@@ -219,8 +219,10 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
     currentDivisionRecord?.logo ||
     (activeDivisionId ? DIVISIONS[activeDivisionId].logoUrl : undefined);
   const divisionName =
-    currentDivisionRecord?.name ||
-    (activeDivisionId ? DIVISIONS[activeDivisionId].name : currentDivision?.name);
+    activeDivisionId === 'sws' || activeDivisionId === 'u1'
+      ? DIVISIONS[activeDivisionId].name
+      : currentDivisionRecord?.name ||
+        (activeDivisionId ? DIVISIONS[activeDivisionId].name : currentDivision?.name);
   const divisionNameBreak = divisionName?.trim().indexOf(' ') ?? -1;
   const divisionNameFirstLine =
     divisionNameBreak > 0 ? divisionName?.trim().slice(0, divisionNameBreak) : divisionName;

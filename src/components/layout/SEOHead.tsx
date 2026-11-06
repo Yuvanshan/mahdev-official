@@ -235,6 +235,15 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       }
       element.setAttribute('content', content);
     };
+    const ensureMetaTag = (attr: string, key: string, content: string) => {
+      const alreadyPresent = Array.from(document.querySelectorAll(`meta[${attr}="${key}"]`))
+        .some((element) => element.getAttribute('content') === content);
+      if (alreadyPresent) return;
+      const element = document.createElement('meta');
+      element.setAttribute(attr, key);
+      element.setAttribute('content', content);
+      document.head.appendChild(element);
+    };
 
     // Only production deployments may be indexed; Vercel preview and local builds remain noindex.
     setMetaTag(
@@ -259,7 +268,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     else document.querySelector('meta[name="keywords"]')?.remove();
     const googleVerification = import.meta.env.VITE_GOOGLE_SITE_VERIFICATION;
     const bingVerification = import.meta.env.VITE_BING_SITE_VERIFICATION;
-    if (googleVerification) setMetaTag('name', 'google-site-verification', googleVerification);
+    if (googleVerification) ensureMetaTag('name', 'google-site-verification', googleVerification);
     if (bingVerification) setMetaTag('name', 'msvalidate.01', bingVerification);
     setMetaTag('property', 'og:title', effectiveOgTitle);
     setMetaTag('property', 'og:description', effectiveOgDesc);
