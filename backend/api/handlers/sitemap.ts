@@ -8,7 +8,10 @@ import {
 import { CANONICAL_SITE_ORIGIN } from '../../../src/config/site.js';
 import { DIVISIONS } from '../../../src/config/divisions.js';
 import { canonicalizeDivisionRoute } from '../../../src/config/divisionRoutes.js';
-import { getCanonicalPublicUrl } from '../../../src/config/divisionSites.js';
+import {
+  DIVISION_SITE_IDS,
+  getCanonicalPublicUrl,
+} from '../../../src/config/divisionSites.js';
 
 const STATIC_PUBLIC_PATHS = [
   '/',
@@ -294,7 +297,8 @@ export function buildSitemapXml(
     STATIC_PUBLIC_PATHS
       .filter((path) =>
         !excludedPaths.has(path) &&
-          !inactiveDivisionPaths.has(path) &&
+          (!inactiveDivisionPaths.has(path) ||
+            DIVISION_SITE_IDS.some((id) => path === `/${id}`)) &&
           isPublicPath(path)
       )
       .map((path) => [

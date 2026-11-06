@@ -161,17 +161,17 @@ html[data-seasonal-theme="diwali"] {
 }
 
 [data-division-site="u1"] {
-  --site-accent: #171717;
-  --site-accent-hover: #000000;
+  --site-accent: #1F1F1F;
+  --site-accent-hover: #141414;
   --site-accent-soft: #F1F1EF;
   --site-surface: #FAFAF8;
-  --electric-blue: #171717;
-  --electric-blue-hover: #000000;
+  --electric-blue: #1F1F1F;
+  --electric-blue-hover: #141414;
   --electric-blue-dark: #262626;
   --electric-blue-deep: #111111;
   --electric-blue-soft: #F1F1EF;
   background-color: var(--site-surface);
-  color: #171717;
+  color: #1F1F1F;
 }
 
 [data-division-site="it"] {
@@ -3148,13 +3148,13 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 }
 
 [data-division-site="u1"] {
-  --division-ink: #111111;
-  --division-accent: #111111;
-  --division-accent-hover: #000000;
+  --division-ink: #1F1F1F;
+  --division-accent: #1F1F1F;
+  --division-accent-hover: #141414;
   --division-accent-soft: #F5F5F4;
-  --division-gold: #111111;
+  --division-gold: #1F1F1F;
   --division-surface: #FFFFFF;
-  --division-line: #111111;
+  --division-line: #D4D4D0;
 }
 
 [data-division-site="sws"] :is(
@@ -3643,7 +3643,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 }
 
 [data-division-site="u1"] .whatsapp-launcher::before {
-  background: linear-gradient(135deg, #000000, #737373 52%, #171717) border-box;
+  background: linear-gradient(135deg, #1F1F1F, #737373 52%, #333333) border-box;
 }
 
 [data-division-site="u1"] .whatsapp-launcher:hover {
