@@ -29,6 +29,7 @@ import { useCart } from '../../context/CartContext';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { formatCurrency } from '../../utils/currency';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
+import { ImageZoomFrame } from '../common/ImageZoomFrame';
 import { getImageAltForPhoto, getRecordImageAlt } from '../../config/imageAlt';
 
 interface CatalogProductModalProps {
@@ -128,12 +129,18 @@ const CatalogProductModalContent: React.FC<
               {/* Left Column: Gallery */}
               <div className="space-y-4">
                 <div className="relative aspect-4/3 rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200">
-                  <ImageWithShimmer
-                    src={selectedImage}
-                    alt={getRecordImageAlt(product)}
-                    className="absolute inset-0"
-                    imageFit="contain"
-                  />
+                  <ImageZoomFrame
+                    imageKey={selectedImage}
+                    label={product.name}
+                    className="absolute inset-0 rounded-xl"
+                  >
+                    <ImageWithShimmer
+                      src={selectedImage}
+                      alt={getRecordImageAlt(product)}
+                      className="absolute inset-0"
+                      imageFit="contain"
+                    />
+                  </ImageZoomFrame>
                   {product.discountPercent && (
                     <span className="absolute top-3 right-3 px-2.5 py-1 text-xs font-bold bg-red-600 text-white rounded-md">
                       -{product.discountPercent}% OFF
@@ -193,22 +200,26 @@ const CatalogProductModalContent: React.FC<
 
                   {/* Rating & Stock Summary */}
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="flex items-center gap-1.5">
-                      <div className="flex text-amber-400">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-4 h-4 ${
-                              i < Math.floor(product.rating)
-                                ? 'fill-amber-400 text-amber-400'
-                                : 'text-neutral-300'
-                            }`}
-                          />
-                        ))}
+                    {product.reviewsCount > 0 && product.rating > 0 ? (
+                      <div className="flex items-center gap-1.5">
+                        <div className="flex text-amber-400">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-4 h-4 ${
+                                i < Math.floor(product.rating)
+                                  ? 'fill-amber-400 text-amber-400'
+                                  : 'text-neutral-300'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs font-bold text-neutral-800">{product.rating}</span>
+                        <span className="text-xs text-neutral-400">({product.reviewsCount} customer reviews)</span>
                       </div>
-                      <span className="text-xs font-bold text-neutral-800">{product.rating}</span>
-                      <span className="text-xs text-neutral-400">({product.reviewsCount} customer reviews)</span>
-                    </div>
+                    ) : (
+                      <span className="text-xs text-neutral-500">No customer reviews yet</span>
+                    )}
                   </div>
 
                   {/* Pricing */}

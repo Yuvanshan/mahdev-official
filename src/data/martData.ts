@@ -97,7 +97,7 @@ export function mapFirestoreProductToMart(p: any, categories: any[] = []): Produ
     price,
     originalPrice,
     discountPercent,
-    rating: Number(p.rating) || 5.0,
+    rating: Number(p.rating) || 0,
     reviewsCount: Number(p.reviewsCount) || 0,
     shortDescription: p.shortDescription || p.description?.slice(0, 150) || '',
     description: p.description || '',

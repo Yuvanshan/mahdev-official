@@ -60,6 +60,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [inquiryRef, setInquiryRef] = useState('');
+  const [submissionError, setSubmissionError] = useState('');
 
   // Validate form fields
   const validateForm = () => {
@@ -107,65 +108,74 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (loading || !validateForm()) return;
 
     setLoading(true);
-    // Simulate real network submission with inquiry reference generator
-    setTimeout(() => {
-      setLoading(false);
-      setSubmitted(true);
-      const ref = `MDV-${Math.floor(100000 + Math.random() * 900000)}`;
-      setInquiryRef(ref);
-
-      // Persist directly to Firestore contactSubmissions collection
-      firestoreContactsService.submitContact({
+    setSubmissionError('');
+    let ref: string;
+    try {
+      ref = await firestoreContactsService.submitContact({
         fullName: formData.name,
         email: formData.email,
         phone: formData.phone || '',
         division: formData.division,
         subject: formData.serviceType || 'General Contact Inquiry',
         message: formData.message,
-      }).catch((err) => console.warn('[Contact] database save notice:', err));
+      });
+    } catch (error) {
+      console.error('[Contact] Could not save the inquiry:', error);
+      setSubmissionError('We could not submit your inquiry. Your details are still here; please try again or contact us directly.');
+      setLoading(false);
+      return;
+    }
 
-      // Dispatch notifications safely
+    setLoading(false);
+    setInquiryRef(ref);
+    setSubmitted(true);
+
+    const reportNotificationError = (error: unknown) => {
+      console.error('[Contact] Inquiry was saved, but a notification could not be dispatched:', error);
+    };
+
+    try {
       if (formData.division !== 'general' || formData.serviceType) {
         analyticsService.trackQuoteRequested(
           formData.division,
           formData.serviceType || 'General Enterprise Consultation'
         );
-
-        notificationService.notifyQuoteRequestReceived({
+        void notificationService.notifyQuoteRequestReceived({
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
           service: formData.serviceType || 'General Enterprise Consultation',
           division: formData.division,
-        }).catch(() => {});
-
-        notificationService.notifyAdminQuoteRequest({
+        }).catch(reportNotificationError);
+        void notificationService.notifyAdminQuoteRequest({
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
           division: formData.division,
           details: formData.message,
-        }).catch(() => {});
+        }).catch(reportNotificationError);
       } else {
         analyticsService.trackContactSubmitted('general', 'General Contact Inquiry');
-
-        notificationService.notifyAdminContactInquiry({
+        void notificationService.notifyAdminContactInquiry({
           name: formData.name,
           email: formData.email,
           subject: 'General Contact Inquiry',
           message: formData.message,
-        }).catch(() => {});
+        }).catch(reportNotificationError);
       }
-    }, 700);
+    } catch (error) {
+      reportNotificationError(error);
+    }
   };
 
   const handleReset = () => {
     setSubmitted(false);
+    setSubmissionError('');
     setFormData({
       name: '',
       email: '',
@@ -249,7 +259,13 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                     </div>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="space-y-4">
+                  <form onSubmit={handleSubmit} noValidate className="space-y-4">
+                    {submissionError && (
+                      <div role="alert" aria-live="assertive" className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                        <span>{submissionError}</span>
+                      </div>
+                    )}
                     {/* Bot / Throttle Alert */}
                     {(errors.bot || errors.throttle) && (
                       <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-xs text-red-700">
@@ -284,6 +300,10 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <Input
                         id="contact-name"
+                        name="name"
+                        autoComplete="name"
+                        required
+                        maxLength={120}
                         label="Full Name *"
                         placeholder="e.g. Kasun Fernando"
                         value={formData.name}
@@ -295,8 +315,12 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                       />
                       <Input
                         id="contact-email"
+                        name="email"
+                        autoComplete="email"
                         label="Email Address *"
                         type="email"
+                        required
+                        maxLength={254}
                         placeholder="kasun@enterprise.lk"
                         value={formData.email}
                         onChange={(e) => {
@@ -310,8 +334,11 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <Input
                         id="contact-phone"
+                        name="phone"
+                        autoComplete="tel"
                         label="Phone / Mobile"
                         type="tel"
+                        maxLength={20}
                         placeholder="075 092 8078"
                         value={formData.phone}
                         onChange={(e) => {
@@ -322,6 +349,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                       />
                       <Select
                         id="contact-division"
+                        name="division"
                         label="Target Division *"
                         value={formData.division}
                         onChange={(e) =>
@@ -339,7 +367,9 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
 
                     <Input
                       id="contact-subject"
+                      name="serviceType"
                       label="Service Type / Project Title"
+                      maxLength={160}
                       placeholder="e.g. 2026 Annual Gala Staging / React Cloud Portal / 8K Brand Docuseries"
                       value={formData.serviceType}
                       onChange={(e) =>
@@ -349,8 +379,12 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
 
                     <Textarea
                       id="contact-message"
+                      name="message"
                       label="Project Description / Timeline / Budget Scope *"
                       rows={4}
+                      required
+                      minLength={10}
+                      maxLength={5000}
                       placeholder="Please share details such as projected dates, guest volume, software requirements, or destination plans..."
                       value={formData.message}
                       onChange={(e) => {

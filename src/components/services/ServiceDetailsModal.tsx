@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { ArrowRight, CalendarCheck, CheckCircle2, ChevronLeft, ChevronRight, MessageCircle, ShoppingCart, Truck, X } from 'lucide-react';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 import { ImageWatermark } from '../common/ImageWatermark';
+import { ImageZoomFrame } from '../common/ImageZoomFrame';
 import { getWhatsAppInquiryUrl, type WhatsAppInquiryOptions } from '../../utils/whatsapp';
 import { getServiceStartingPrice, getStartingPriceDetails } from '../common/StartingPriceTag';
 import { getImageAlt } from '../../config/imageAlt';
@@ -194,14 +195,20 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
             onTouchEnd={onTouchEnd}
           >
             {images.length > 0 ? (
-              <ImageWithShimmer
-                src={images[imageIndex]}
-                alt={getImageAlt(service.title, service.divisionName)}
-                className="absolute inset-0 bg-slate-950"
-                imageFit="contain"
-                fallbackText={service.title}
-                loading="eager"
-              />
+              <ImageZoomFrame
+                imageKey={images[imageIndex]}
+                label={service.title}
+                className="absolute inset-0"
+              >
+                <ImageWithShimmer
+                  src={images[imageIndex]}
+                  alt={getImageAlt(service.title, service.divisionName)}
+                  className="absolute inset-0 bg-slate-950"
+                  imageFit="contain"
+                  fallbackText={service.title}
+                  loading="eager"
+                />
+              </ImageZoomFrame>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-400">No photos yet</div>
             )}

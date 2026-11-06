@@ -50,7 +50,7 @@
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     color: var(--text-primary);
     background-color: var(--surface);
-    overflow-x: hidden;
+    overflow-x: clip;
     position: relative;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
@@ -60,13 +60,6 @@
   @media (max-width: 640px) {
     body {
       line-height: 1.45;
-    }
-
-    section,
-    main,
-    header,
-    footer {
-      overflow-x: hidden;
     }
   }
 
@@ -469,65 +462,10 @@ html[data-seasonal-theme="diwali"] {
   box-shadow: 0 0 18px rgb(34 197 94 / 24%), 0 14px 32px rgb(18 140 126 / 38%), 0 2px 6px rgb(15 23 42 / 12%);
 }
 
-.whatsapp-notice {
-  position: relative;
-  display: flex;
-  width: min(20rem, calc(100vw - 2rem));
-  align-items: center;
-  gap: 4px;
-  border: 1px solid rgb(226 232 240 / 90%);
-  border-radius: 16px;
-  padding: 10px 8px 10px 12px;
-  background: #fff;
-  box-shadow: 0 12px 32px rgb(15 23 42 / 18%);
-  animation: whatsapp-panel-enter .24s cubic-bezier(.2,.8,.2,1) both;
-}
-
-.whatsapp-notice-content {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  align-items: center;
-  gap: 10px;
-  text-align: left;
-}
-
-.whatsapp-notice-icon {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  flex: 0 0 auto;
-  place-items: center;
-  border-radius: 50%;
-  color: #fff;
-  background: #128c7e;
-}
-
-.whatsapp-notice-actions {
-  display: flex;
-  flex: 0 0 auto;
-  align-self: flex-start;
-  gap: 2px;
-}
-
-.whatsapp-notice-actions button {
-  display: grid;
-  width: 28px;
-  height: 28px;
-  place-items: center;
-  border-radius: 50%;
-  color: #64748b;
-}
-
-.whatsapp-notice-actions button:hover {
-  color: #0f172a;
-  background: #f1f5f9;
-}
-
 .whatsapp-notification-badge {
   position: absolute;
-  top: -3px;
-  right: -2px;
+  top: -4px;
+  right: -3px;
   display: grid;
   width: 20px;
   height: 20px;
@@ -539,6 +477,101 @@ html[data-seasonal-theme="diwali"] {
   font-size: 10px;
   font-weight: 800;
   line-height: 1;
+  pointer-events: none;
+}
+
+.image-zoom-frame {
+  display: block;
+  overflow: hidden;
+  isolation: isolate;
+  touch-action: pan-y;
+}
+
+.image-zoom-frame img {
+  transform-origin: var(--image-zoom-x, 50%) var(--image-zoom-y, 50%);
+  transition: transform 220ms ease-out;
+}
+
+.image-zoom-active img {
+  transform: scale(2.2);
+}
+
+.image-zoom-trigger {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  cursor: zoom-in;
+  background: transparent;
+}
+
+.image-zoom-trigger:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: -5px;
+}
+
+.image-zoom-active .image-zoom-trigger {
+  cursor: zoom-out;
+}
+
+.image-zoom-focus {
+  position: absolute;
+  z-index: 6;
+  top: var(--image-zoom-y, 50%);
+  left: var(--image-zoom-x, 50%);
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 90%);
+  border-radius: 50%;
+  color: #fff;
+  background: rgb(15 23 42 / 45%);
+  box-shadow: 0 2px 8px rgb(15 23 42 / 30%);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: opacity 150ms ease;
+}
+
+.image-zoom-hint {
+  position: absolute;
+  z-index: 7;
+  right: 10px;
+  bottom: 10px;
+  border-radius: 999px;
+  padding: 5px 9px;
+  color: #fff;
+  background: rgb(15 23 42 / 68%);
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease;
+}
+
+.image-zoom-frame:hover .image-zoom-focus,
+.image-zoom-frame:focus-within .image-zoom-focus,
+.image-zoom-active .image-zoom-focus,
+.image-zoom-frame:hover .image-zoom-hint,
+.image-zoom-frame:focus-within .image-zoom-hint,
+.image-zoom-active .image-zoom-hint {
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .image-zoom-frame:hover img {
+    transform: scale(2.2);
+  }
+}
+
+@media (hover: none) {
+  .image-zoom-hint {
+    opacity: 1;
+  }
 }
 
 @keyframes whatsapp-panel-enter {
@@ -1113,14 +1146,7 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
   }
 }
 
-@media (max-width: 639px) {
-  .whatsapp-notice {
-    width: min(17rem, calc(100vw - 2rem));
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .whatsapp-notice,
   .whatsapp-panel {
     animation: none;
   }

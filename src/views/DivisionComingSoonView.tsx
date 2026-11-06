@@ -7,6 +7,7 @@ import {
   Mail,
   Calendar,
   CheckCircle2,
+  AlertCircle,
   Clock,
   Send,
   Building2,
@@ -87,9 +88,18 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
     (firestoreDiv as any)?.comingSoonTitle ||
     `${shortName} is Coming Soon`;
 
+  const defaultComingSoonMessage = normalizedKey === 'travels'
+    ? 'Mahdev Travels is preparing bespoke Sri Lankan journeys, private transport, and curated stays. We are finalizing our launch details and look forward to helping you plan your next trip.'
+    : `We are curating state-of-the-art infrastructure, exclusive enterprise services, and calibrated equipment for ${divisionName}. Our engineering and creative teams are finalizing every standard of perfection before our grand public launch.`;
+  const configuredComingSoonMessage = (firestoreDiv as any)?.comingSoonMessage;
+  const hasMismatchedTravelCopy =
+    normalizedKey === 'travels' &&
+    typeof configuredComingSoonMessage === 'string' &&
+    /\bSWS\b|wedding mandap|stage decor|event furniture|concert arena/i.test(configuredComingSoonMessage);
   const comingSoonMessage =
-    (firestoreDiv as any)?.comingSoonMessage ||
-    `We are curating state-of-the-art infrastructure, exclusive enterprise services, and calibrated equipment for ${divisionName}. Our engineering and creative teams are finalizing every standard of perfection before our grand public launch.`;
+    typeof configuredComingSoonMessage === 'string' && !hasMismatchedTravelCopy
+      ? configuredComingSoonMessage
+      : defaultComingSoonMessage;
 
   const expectedLaunch =
     (firestoreDiv as any)?.comingSoonExpectedLaunch || 'Coming Later This Year';
@@ -102,12 +112,14 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
   const [subscriberName, setSubscriberName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [subscriptionError, setSubscriptionError] = useState('');
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subscriberEmail.trim() || !subscriberEmail.includes('@')) return;
+    if (isSubmitting || !subscriberEmail.trim() || !subscriberEmail.includes('@')) return;
 
     setIsSubmitting(true);
+    setSubscriptionError('');
     try {
       await firestoreInquiriesService.createInquiry({
         name: subscriberName.trim() || 'VIP Subscriber',
@@ -120,8 +132,8 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
       });
       setIsSubscribed(true);
     } catch (err) {
-      console.warn('[ComingSoon] Inquiry error:', err);
-      setIsSubscribed(true); // Gracefully treat as success for user peace of mind
+      console.error('[ComingSoon] Could not save the launch notification request:', err);
+      setSubscriptionError('We could not save your request. Please try again or contact us on WhatsApp.');
     } finally {
       setIsSubmitting(false);
     }
@@ -252,11 +264,23 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
               </div>
             ) : (
               <form onSubmit={handleSubscribe} className="space-y-3">
+                {subscriptionError && (
+                  <p role="alert" aria-live="assertive" className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span>{subscriptionError}</span>
+                  </p>
+                )}
                 <div>
                   <input
                     type="text"
+                    name="subscriberName"
+                    autoComplete="name"
+                    maxLength={120}
                     value={subscriberName}
-                    onChange={(e) => setSubscriberName(e.target.value)}
+                    onChange={(e) => {
+                      setSubscriberName(e.target.value);
+                      setSubscriptionError('');
+                    }}
                     placeholder="Your Name / Organization"
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
                   />
@@ -264,9 +288,15 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
                 <div className="flex gap-2">
                   <input
                     type="email"
+                    name="subscriberEmail"
+                    autoComplete="email"
                     required
+                    maxLength={254}
                     value={subscriberEmail}
-                    onChange={(e) => setSubscriberEmail(e.target.value)}
+                    onChange={(e) => {
+                      setSubscriberEmail(e.target.value);
+                      setSubscriptionError('');
+                    }}
                     placeholder="Enter official email address"
                     className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
                   />

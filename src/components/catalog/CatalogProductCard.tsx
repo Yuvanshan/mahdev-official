@@ -182,11 +182,15 @@ export const CatalogProductCard: React.FC<CatalogProductCardProps> = ({
 
           {/* Rating & Stock Status Row */}
           <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-100 flex-wrap">
-            <div className="flex items-center gap-1 shrink-0">
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
-              <span className="text-xs font-bold text-neutral-800">{product.rating}</span>
-              <span className="text-[11px] text-neutral-400 font-sans">({product.reviewsCount})</span>
-            </div>
+            {product.reviewsCount > 0 && product.rating > 0 ? (
+              <div className="flex items-center gap-1 shrink-0">
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                <span className="text-xs font-bold text-neutral-800">{product.rating}</span>
+                <span className="text-[11px] text-neutral-400 font-sans">({product.reviewsCount})</span>
+              </div>
+            ) : (
+              <span className="shrink-0 text-[11px] text-neutral-400">No reviews</span>
+            )}
 
             <div>{getStockBadge(product.stockStatus, product.stockQuantity)}</div>
           </div>

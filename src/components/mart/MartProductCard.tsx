@@ -91,11 +91,15 @@ export const MartProductCard: React.FC<MartProductCardProps> = ({
               <span className="font-mono text-slate-400 truncate max-w-[120px]">
                 {product.brand}
               </span>
-              <div className="flex items-center gap-1 text-amber-500 font-bold font-mono shrink-0">
-                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                <span>{product.rating}</span>
-                <span className="text-slate-400 font-normal">({product.reviewsCount})</span>
-              </div>
+              {product.reviewsCount > 0 && product.rating > 0 ? (
+                <div className="flex items-center gap-1 text-amber-500 font-bold font-mono shrink-0">
+                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                  <span>{product.rating}</span>
+                  <span className="text-slate-400 font-normal">({product.reviewsCount})</span>
+                </div>
+              ) : (
+                <span className="shrink-0 text-[10px] font-medium text-slate-400">No reviews</span>
+              )}
             </div>
 
             {/* Product Title (stable height for short and long titles) */}

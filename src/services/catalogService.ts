@@ -100,7 +100,7 @@ export function mapFirestoreProductToCatalog(
       }
       return [];
     })(),
-    rating: (fp as any).rating || 5.0,
+    rating: Number((fp as any).rating) || 0,
     reviewsCount: (fp as any).reviewsCount || 0,
     isFeatured: (fp as any).isFeatured ?? true,
     brand: (fp as any).brand || 'Mahdev',

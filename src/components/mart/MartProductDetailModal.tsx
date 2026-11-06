@@ -19,6 +19,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { formatCurrency } from '../../utils/currency';
 import { getImageAlt, getImageAltForPhoto } from '../../config/imageAlt';
+import { ImageZoomFrame } from '../common/ImageZoomFrame';
 
 interface MartProductDetailModalProps {
   product: Product | null;
@@ -127,11 +128,17 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
             {/* Left Column: Image Gallery (5 cols) */}
             <div className="lg:col-span-6 space-y-3">
               <div className="relative aspect-square rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
-                <img
-                  src={product.gallery[activeImageIndex] || product.imageUrl}
-                  alt={getImageAlt(product.name, 'mart', product.category)}
-                  className="w-full h-full object-contain"
-                />
+                <ImageZoomFrame
+                  imageKey={product.gallery[activeImageIndex] || product.imageUrl}
+                  label={product.name}
+                  className="absolute inset-0 rounded-2xl"
+                >
+                  <img
+                    src={product.gallery[activeImageIndex] || product.imageUrl}
+                    alt={getImageAlt(product.name, 'mart', product.category)}
+                    className="h-full w-full object-contain"
+                  />
+                </ImageZoomFrame>
                 {product.discountPercent && (
                   <div className="absolute top-4 left-4 bg-rose-600 text-white text-xs font-mono font-bold px-2.5 py-1 rounded-md shadow-md">
                     {product.discountPercent}% OFF
@@ -178,13 +185,19 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
 
                 {/* Rating & Reviews */}
                 <div className="flex items-center gap-3 mt-2">
-                  <div className="flex items-center gap-1 text-amber-500">
-                    <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                    <span className="font-bold text-sm font-mono">{product.rating}</span>
-                  </div>
-                  <span className="text-xs text-slate-400">
-                    ({product.reviewsCount} customer reviews)
-                  </span>
+                  {product.reviewsCount > 0 && product.rating > 0 ? (
+                    <>
+                      <div className="flex items-center gap-1 text-amber-500">
+                        <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                        <span className="font-bold text-sm font-mono">{product.rating}</span>
+                      </div>
+                      <span className="text-xs text-slate-400">
+                        ({product.reviewsCount} customer reviews)
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-xs text-slate-500">No customer reviews yet</span>
+                  )}
                   <span className="text-slate-300">•</span>
                   <span className="text-xs font-medium text-emerald-600 flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5" />

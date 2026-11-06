@@ -3,23 +3,23 @@ import { ArrowUp, ArrowUpRight, Check, MessageCircle, X } from 'lucide-react';
 import { MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
 import { useAuth } from '../../context/AuthContext';
 
-const WELCOME_SHOWN_KEY = 'mahdev:whatsapp-welcome-shown';
-
 const WhatsAppMark: React.FC<{ className?: string }> = ({ className }) => (
   <svg aria-hidden="true" viewBox="0 0 24 24" className={className}>
     <path d="M20.5 3.5A11.8 11.8 0 0 0 12.1 0C5.5 0 .1 5.4.1 12c0 2.1.5 4.1 1.6 5.9L0 24l6.3-1.6a12 12 0 0 0 5.8 1.5h.1c6.6 0 12-5.4 12-12a11.8 11.8 0 0 0-3.7-8.4ZM12.1 22a10 10 0 0 1-5.1-1.4l-.4-.2-3.7 1 1-3.6-.3-.4A9.9 9.9 0 1 1 12.1 22Zm5.5-7.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.2-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.4-2.3-1.4-.8-.7-1.4-1.6-1.5-1.9-.2-.3 0-.4.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.1 3c.1.2 2 3.1 4.9 4.3.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 1.9-1.4.2-.7.2-1.3.1-1.4-.1-.1-.3-.2-.6-.4Z" />
   </svg>
 );
 
+const WELCOME_SHOWN_KEY = 'mahdev:whatsapp-welcome-shown';
+
 export const WhatsAppWidget: React.FC = () => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [isNoticeVisible, setIsNoticeVisible] = useState(false);
-  const [hasUnreadNotice, setHasUnreadNotice] = useState(false);
   const [message, setMessage] = useState('');
+  const [hasUnreadNotice, setHasUnreadNotice] = useState(false);
   const [isBackToTopVisible, setIsBackToTopVisible] = useState(false);
 
   useEffect(() => {
+    if (isOpen) return;
     try {
       if (sessionStorage.getItem(WELCOME_SHOWN_KEY) === '1') return;
     } catch (error) {
@@ -27,7 +27,6 @@ export const WhatsAppWidget: React.FC = () => {
     }
 
     const timer = window.setTimeout(() => {
-      setIsNoticeVisible(true);
       setHasUnreadNotice(true);
       try {
         sessionStorage.setItem(WELCOME_SHOWN_KEY, '1');
@@ -37,13 +36,32 @@ export const WhatsAppWidget: React.FC = () => {
     }, 10000);
 
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [isOpen]);
+
+  const dismissUnreadNotice = () => {
+    setHasUnreadNotice(false);
+    try {
+      sessionStorage.setItem(WELCOME_SHOWN_KEY, '1');
+    } catch (error) {
+      console.warn('[WhatsAppWidget] Could not save welcome state:', error);
+    }
+  };
 
   useEffect(() => {
-    const updateVisibility = () => setIsBackToTopVisible(window.scrollY > 400);
+    let frame = 0;
+    const updateVisibility = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const isVisible = window.scrollY > 400;
+        setIsBackToTopVisible((current) => current === isVisible ? current : isVisible);
+      });
+    };
     updateVisibility();
     window.addEventListener('scroll', updateVisibility, { passive: true });
-    return () => window.removeEventListener('scroll', updateVisibility);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', updateVisibility);
+    };
   }, []);
 
   const openChat = () => {
@@ -51,19 +69,8 @@ export const WhatsAppWidget: React.FC = () => {
     setMessage(name
       ? `Hi, I'm ${name}. I would like to know more about your services.`
       : 'Hi MAHDEV, I would like to know more about your services.');
-    setIsNoticeVisible(false);
-    setHasUnreadNotice(false);
+    dismissUnreadNotice();
     setIsOpen(true);
-  };
-
-  const dismissNotice = () => {
-    setIsNoticeVisible(false);
-    setHasUnreadNotice(false);
-    try {
-      sessionStorage.setItem(WELCOME_SHOWN_KEY, '1');
-    } catch (error) {
-      console.warn('[WhatsAppWidget] Could not save welcome state:', error);
-    }
   };
 
   const sendMessage = (event: React.FormEvent) => {
@@ -76,23 +83,6 @@ export const WhatsAppWidget: React.FC = () => {
 
   return (
     <div className="whatsapp-widget fixed bottom-24 right-4 z-[120] flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
-      {isNoticeVisible && !isOpen && (
-        <aside className="whatsapp-notice" role="region" aria-label="WhatsApp support invitation" aria-live="polite">
-          <button type="button" className="whatsapp-notice-content" onClick={openChat}>
-            <span className="whatsapp-notice-icon"><MessageCircle className="h-4 w-4" /></span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-bold text-slate-900">Need a hand?</span>
-              <span className="mt-0.5 block text-xs leading-5 text-slate-600">Message our team on WhatsApp.</span>
-            </span>
-            <ArrowUpRight aria-hidden="true" className="h-4 w-4 shrink-0 text-emerald-700" />
-          </button>
-          <div className="whatsapp-notice-actions">
-            <button type="button" onClick={dismissNotice} aria-label="Dismiss WhatsApp invitation">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </aside>
-      )}
       {isOpen && (
         <section
           role="dialog"
@@ -162,7 +152,7 @@ export const WhatsAppWidget: React.FC = () => {
           type="button"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           aria-label="Back to top"
-          className="back-to-top-button relative z-10 mb-1 flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-lg transition duration-200 hover:scale-105 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-300"
+          className="back-to-top-button relative z-20 mb-1 flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-lg transition duration-200 hover:scale-105 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-300"
         >
           <ArrowUp className="h-5 w-5" aria-hidden="true" />
         </button>
@@ -179,7 +169,15 @@ export const WhatsAppWidget: React.FC = () => {
         {isOpen ? <X className="h-6 w-6" /> : (
           <>
             <MessageCircle className="h-7 w-7" strokeWidth={2.25} />
-            {hasUnreadNotice && <span className="whatsapp-notification-badge" aria-hidden="true">1</span>}
+            {hasUnreadNotice && (
+              <span
+                className="whatsapp-notification-badge"
+                role="status"
+                aria-label="New WhatsApp support message"
+              >
+                1
+              </span>
+            )}
           </>
         )}
       </button>
