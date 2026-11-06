@@ -162,9 +162,9 @@ export const WhatsAppWidget: React.FC = () => {
           type="button"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           aria-label="Back to top"
-          className="flex h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-lg transition duration-200 hover:scale-105 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-300"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-lg transition duration-200 hover:scale-105 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-300"
         >
-          <ArrowUp className="h-6 w-6" aria-hidden="true" />
+          <ArrowUp className="h-5 w-5" aria-hidden="true" />
         </button>
       )}
 

@@ -3517,3 +3517,35 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 [data-division-site="u1"] .division-context-group {
   color: var(--division-surface) !important;
 }
+
+[data-division-site="sws"] .public-nav-inner nav > a[aria-current="location"] {
+  background-color: var(--division-accent) !important;
+  border: 1px solid var(--division-gold);
+  color: var(--division-surface) !important;
+}
+
+[data-division-site="u1"] .public-nav-inner nav > a[aria-current="location"] {
+  background-color: var(--division-ink) !important;
+  border: 1px solid var(--division-ink);
+  color: var(--division-surface) !important;
+}
+
+[data-division-site="sws"] .public-nav-inner nav > a:not([aria-current="location"]):hover {
+  background-color: var(--division-accent-soft) !important;
+  color: var(--division-accent) !important;
+}
+
+[data-division-site="u1"] .public-nav-inner nav > a:not([aria-current="location"]):hover {
+  background-color: var(--division-accent-soft) !important;
+  color: var(--division-ink) !important;
+}
+
+[data-division-site="sws"] .division-navigation-active-pill {
+  background-color: var(--division-surface) !important;
+  border: 1px solid var(--division-gold);
+}
+
+[data-division-site="u1"] .division-navigation-active-pill {
+  background-color: var(--division-surface) !important;
+  border: 1px solid var(--division-ink);
+}

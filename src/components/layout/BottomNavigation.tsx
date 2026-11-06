@@ -2,6 +2,7 @@ import React from 'react';
 import { Home, Sparkles, Camera, Terminal, Compass, ShoppingBag } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { DivisionSiteId } from '../../config/divisionSites';
+import { useActiveSectionNavigation } from '../../hooks/useActiveSectionNavigation';
 
 interface BottomNavigationProps {
   currentPath: string;
@@ -43,6 +44,11 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
         ],
       }[divisionId]
     : undefined;
+  const sectionNavItems = divisionNavItems
+    ? [{ id: 'home', href: divisionBasePath || '/' }, ...divisionNavItems]
+    : [];
+  const { activeId: activeDivisionNavId, setActiveId: setActiveDivisionNavId } =
+    useActiveSectionNavigation(sectionNavItems, divisionId || 'company', Boolean(divisionId));
 
   const companyNavItems = [
     {
@@ -110,13 +116,20 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
           id: 'home',
           label: 'Home',
           icon: Home,
-          isActive: normalizedPath === (divisionBasePath || '/'),
-          onClick: () => onNavigate(divisionBasePath || '/'),
+          isActive: activeDivisionNavId === 'home',
+          onClick: () => {
+            setActiveDivisionNavId('home');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            onNavigate(divisionBasePath || '/');
+          },
         },
         ...divisionNavItems.map((item) => ({
           ...item,
-          isActive: false,
-          onClick: () => onNavigate(`${divisionBasePath}${item.href.slice(1)}`),
+          isActive: activeDivisionNavId === item.id,
+          onClick: () => {
+            setActiveDivisionNavId(item.id);
+            onNavigate(`${divisionBasePath}${item.href.slice(1)}`);
+          },
         })),
       ]
     : companyNavItems;
@@ -142,12 +155,12 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
                 active ? 'font-semibold text-[#0052FF]' : 'text-slate-500 hover:text-slate-900'
               }`}
               aria-label={item.label}
-              aria-current={active ? 'page' : undefined}
+              aria-current={active ? (divisionNavItems ? 'location' : 'page') : undefined}
             >
               {active && (
                 <motion.div
                   layoutId="bottomNavActivePill"
-                  className="absolute inset-0 rounded-full bg-blue-50"
+                  className="division-navigation-active-pill absolute inset-0 rounded-full bg-blue-50"
                   transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                 />
               )}

@@ -77,6 +77,7 @@ import { getDivisionWhatsAppUrl } from '../../utils/whatsapp';
 import { getProfileCompletion, hasRealName } from '../../utils/profileCompletion';
 import { Avatar } from '../account/Avatar';
 import { readDeviceProfile } from '../../services/authService';
+import { useActiveSectionNavigation } from '../../hooks/useActiveSectionNavigation';
 
 interface NavigationProps {
   currentPath: string;
@@ -239,6 +240,8 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
             : item.href,
       }))
     : MAIN_NAV_ITEMS;
+  const { activeId: activeDivisionNavId, setActiveId: setActiveDivisionNavId } =
+    useActiveSectionNavigation(visibleNavItems, activeDivisionId || 'company', Boolean(activeDivisionId));
   const divisionHomePath = divisionBasePath || '/';
   const isPublicRoute = !currentPath.startsWith('/admin');
 
@@ -508,10 +511,24 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                   <a
                     key={item.id}
                     href={item.href}
-                    onClick={(event) => handleAnchorClick(event, item.href)}
-                    aria-current={currentPath === item.href ? 'page' : undefined}
+                    onClick={(event) => {
+                      if (activeDivisionId) {
+                        setActiveDivisionNavId(item.id);
+                        if (item.id === 'home') window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }
+                      handleAnchorClick(event, item.href);
+                    }}
+                    aria-current={
+                      activeDivisionId
+                        ? activeDivisionNavId === item.id ? 'location' : undefined
+                        : currentPath === item.href ? 'page' : undefined
+                    }
                     className={`px-3.5 py-2 text-sm font-medium rounded-full transition-all duration-200 cursor-pointer ${
-                      currentPath === item.href
+                      activeDivisionId
+                        ? activeDivisionNavId === item.id
+                          ? 'text-[#0052FF] font-semibold bg-blue-50 shadow-sm shadow-blue-900/5'
+                          : 'text-slate-700 hover:text-[#0052FF] hover:bg-blue-50/70'
+                        : currentPath === item.href
                         ? 'text-[#0052FF] font-semibold bg-blue-50 shadow-sm shadow-blue-900/5'
                         : 'text-slate-700 hover:text-[#0052FF] hover:bg-blue-50/70'
                     }`}
@@ -754,10 +771,24 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                 <a
                   key={`mobile-${item.id}`}
                   href={item.href}
-                  onClick={(event) => handleAnchorClick(event, item.href)}
-                  aria-current={currentPath === item.href ? 'page' : undefined}
+                  onClick={(event) => {
+                    if (activeDivisionId) {
+                      setActiveDivisionNavId(item.id);
+                      if (item.id === 'home') window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                    handleAnchorClick(event, item.href);
+                  }}
+                  aria-current={
+                    activeDivisionId
+                      ? activeDivisionNavId === item.id ? 'location' : undefined
+                      : currentPath === item.href ? 'page' : undefined
+                  }
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left text-sm font-semibold transition-colors cursor-pointer ${
-                    currentPath === item.href
+                    activeDivisionId
+                      ? activeDivisionNavId === item.id
+                        ? 'bg-[#0052FF] text-white'
+                        : 'text-slate-800 hover:bg-blue-50 hover:text-[#0052FF]'
+                      : currentPath === item.href
                       ? 'bg-[#0052FF] text-white'
                       : 'text-slate-800 hover:bg-blue-50 hover:text-[#0052FF]'
                   }`}
