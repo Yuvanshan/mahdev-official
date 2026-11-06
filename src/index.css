@@ -496,6 +496,22 @@ html[data-seasonal-theme="diwali"] {
   transform: scale(2.2);
 }
 
+.image-zoom-lens {
+  position: absolute;
+  z-index: 8;
+  width: 112px;
+  height: 112px;
+  border: 2px solid rgb(255 255 255 / 95%);
+  border-radius: 50%;
+  background-color: #fff;
+  background-repeat: no-repeat;
+  background-size: 220% 220%;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 35%);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
 .image-zoom-trigger {
   position: absolute;
   z-index: 5;
@@ -566,11 +582,52 @@ html[data-seasonal-theme="diwali"] {
   .image-zoom-frame:hover img {
     transform: scale(2.2);
   }
+  .image-zoom-frame:hover .image-zoom-lens {
+    opacity: 1;
+  }
+  .image-zoom-focus {
+    display: none;
+  }
 }
 
 @media (hover: none) {
   .image-zoom-hint {
     opacity: 1;
+  }
+  .image-zoom-frame {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .image-zoom-active img {
+    transform: scale(var(--image-mobile-scale, 2.5));
+  }
+  .image-zoom-active {
+    touch-action: none;
+  }
+  .image-zoom-active {
+    position: fixed !important;
+    z-index: 220 !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    border-radius: 0 !important;
+    background: #020617;
+  }
+  .image-zoom-active img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    border-radius: 0 !important;
+  }
+  .image-zoom-active .image-zoom-hint {
+    right: 50%;
+    bottom: max(14px, env(safe-area-inset-bottom));
+    transform: translateX(50%);
+    white-space: nowrap;
+  }
+  .image-zoom-lens {
+    display: none;
   }
 }
 

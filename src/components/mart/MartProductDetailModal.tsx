@@ -52,7 +52,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
     setSelectedVariant(null);
     setSelectedOptions(
       Object.fromEntries(
-        (product?.optionGroups || []).map((group) => [group.name, group.options[0] || ''])
+        (product?.optionGroups || []).map((group) => [group.name, ''])
       )
     );
     setQuantity(1);
@@ -76,7 +76,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
   if (!isOpen || !product) return null;
 
   // Calculate current price based on variant modifier
-  const currentVariant = selectedVariant || (product.variants?.options[0] || null);
+  const currentVariant = selectedVariant;
   const variantModifier = currentVariant?.priceModifier || 0;
   const unitPrice = product.price + variantModifier;
   const originalUnitPrice = product.originalPrice ? product.originalPrice + variantModifier : undefined;
@@ -91,8 +91,14 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
 
 
   const tagsList = Array.isArray(product.tags) ? product.tags : [];
+  const missingVariantSelection = Boolean(product.variants?.options.length && !selectedVariant);
+  const missingOptionSelection = (product.optionGroups || []).some(
+    (group) => !selectedOptions[group.name]
+  );
+  const missingRequiredSelection = missingVariantSelection || missingOptionSelection;
 
   const handleAddToCart = () => {
+    if (missingRequiredSelection) return;
     onAddToCart(product, currentVariant || undefined, quantity, selectedOptions);
   };
 
@@ -291,6 +297,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                     }
                     className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:border-[#0052FF] focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   >
+                    <option value="" disabled>Choose {group.name}</option>
                     {group.options.map((option) => (
                       <option key={option} value={option}>{option}</option>
                     ))}
@@ -329,7 +336,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                     variant="electric"
                     size="lg"
                     onClick={handleAddToCart}
-                    disabled={!product.inStock}
+                    disabled={!product.inStock || missingRequiredSelection}
                     leftIcon={<ShoppingCart className="w-4 h-4 shrink-0" />}
                     className="flex-1 w-full text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 py-3 min-h-[44px]"
                   >

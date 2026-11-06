@@ -61,21 +61,27 @@ const CatalogProductModalContent: React.FC<
   const { addToCart, openCart } = useCart();
   const [selectedImage, setSelectedImage] = useState(product.imageUrl);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariantOption | undefined>(
-    product.variants?.options[0]
+    undefined
   );
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() =>
     Object.fromEntries(
-      (product.optionGroups || []).map((group) => [group.name, group.options[0] || ''])
+      (product.optionGroups || []).map((group) => [group.name, ''])
     )
   );
   const [quantity, setQuantity] = useState(1);
   const [actionSuccess, setActionSuccess] = useState(false);
 
   const relatedProducts = catalogService.getRelatedProducts(product, 3);
+  const missingVariantSelection = Boolean(product.variants?.options.length && !selectedVariant);
+  const missingOptionSelection = (product.optionGroups || []).some(
+    (group) => !selectedOptions[group.name]
+  );
+  const missingRequiredSelection = missingVariantSelection || missingOptionSelection;
 
   const currentPrice = (product.price + (selectedVariant?.priceModifier || 0)) * quantity;
 
   const handleAddToCart = () => {
+    if (missingRequiredSelection) return;
     addToCart(product, selectedVariant, quantity, undefined, selectedOptions);
     setActionSuccess(true);
     setTimeout(() => {
@@ -84,6 +90,7 @@ const CatalogProductModalContent: React.FC<
   };
 
   const handleBuyNow = () => {
+    if (missingRequiredSelection) return;
     addToCart(product, selectedVariant, quantity, undefined, selectedOptions);
     onClose();
     openCart();
@@ -287,6 +294,7 @@ const CatalogProductModalContent: React.FC<
                         }
                         className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
                       >
+                        <option value="" disabled>Choose {group.name}</option>
                         {group.options.map((option) => (
                           <option key={option} value={option}>{option}</option>
                         ))}
@@ -329,7 +337,8 @@ const CatalogProductModalContent: React.FC<
                   <div className="flex flex-col sm:flex-row gap-2.5">
                     <button
                       onClick={handleAddToCart}
-                      className="flex-1 w-full py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all bg-slate-900 hover:bg-slate-800 text-white cursor-pointer min-h-[44px]"
+                      disabled={missingRequiredSelection}
+                      className="flex-1 w-full py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white cursor-pointer min-h-[44px]"
                     >
                       {actionSuccess ? (
                         <>
@@ -346,7 +355,8 @@ const CatalogProductModalContent: React.FC<
 
                     <button
                       onClick={handleBuyNow}
-                      className="py-3.5 px-5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all bg-[#0052FF] hover:bg-blue-700 text-white cursor-pointer min-h-[44px] shrink-0"
+                      disabled={missingRequiredSelection}
+                      className="py-3.5 px-5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all bg-[#0052FF] hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white cursor-pointer min-h-[44px] shrink-0"
                     >
                       <ShoppingCart className="w-4 h-4 shrink-0" />
                       <span>Order Now</span>

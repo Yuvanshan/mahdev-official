@@ -83,6 +83,17 @@ export const WhatsAppWidget: React.FC = () => {
 
   return (
     <div className="whatsapp-widget fixed bottom-24 right-4 z-[120] flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
+      {isBackToTopVisible && (
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label="Back to top"
+          className="back-to-top-button relative z-[125] mb-1 flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-lg transition duration-200 hover:scale-105 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-300"
+        >
+          <ArrowUp className="h-5 w-5" aria-hidden="true" />
+        </button>
+      )}
+
       {isOpen && (
         <section
           role="dialog"
@@ -145,17 +156,6 @@ export const WhatsAppWidget: React.FC = () => {
             <p className="whatsapp-panel-footnote">Opens WhatsApp in a new tab</p>
           </div>
         </section>
-      )}
-
-      {isBackToTopVisible && !isOpen && (
-        <button
-          type="button"
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          aria-label="Back to top"
-          className="back-to-top-button relative z-20 mb-1 flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-lg transition duration-200 hover:scale-105 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-300"
-        >
-          <ArrowUp className="h-5 w-5" aria-hidden="true" />
-        </button>
       )}
 
       <button
