@@ -299,6 +299,63 @@ async function createConfirmation(body: Record<string, unknown>, adminEmail: str
   return { confirmation: { ...data, id, shareUrl: shareUrl(data) } };
 }
 
+async function editConfirmation(body: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const id = text(body.id, 40);
+  const document = id ? await getTursoDocument(COLLECTION, '', id) : null;
+  if (!document) throw new RequestError('Confirmation not found.', 404);
+  if (effectiveStatus(document.data) !== 'pending') {
+    throw new RequestError('Only active pending links can be edited.');
+  }
+
+  const customerName = text(body.customerName, 100);
+  if (customerName.length < 2) throw new RequestError('Enter the customer name.');
+  const customerEmail = text(body.customerEmail, 254).toLowerCase();
+  if (customerEmail && !EMAIL_PATTERN.test(customerEmail)) throw new RequestError('Enter a valid customer email.');
+  const rawPhone = text(body.customerPhone, 32);
+  const customerPhone = rawPhone ? normaliseInternationalPhone(rawPhone) : '';
+  if (rawPhone && !customerPhone) throw new RequestError('Enter a valid phone number with its country calling code.');
+  if (!customerEmail && !customerPhone) throw new RequestError('Add a phone or email to share the link.');
+  const title = text(body.title, 140);
+  if (!title) throw new RequestError('Enter a title for the design.');
+
+  const items = parseItems(body.items);
+  const discount = amount(body.discount, 'Discount');
+  const deliveryFee = amount(body.deliveryFee, 'Delivery fee');
+  const { subtotal, total } = totals(items, discount, deliveryFee);
+  const advanceAmount = amount(body.advanceAmount, 'Advance');
+  if (advanceAmount > total) throw new RequestError('The advance cannot be more than the total.');
+  const expiryDays = Number(body.expiresInDays ?? DEFAULT_EXPIRY_DAYS);
+  if (!Number.isInteger(expiryDays) || expiryDays < 1 || expiryDays > 60) {
+    throw new RequestError('The link must expire within 1 to 60 days.');
+  }
+
+  const now = new Date();
+  const data: Record<string, unknown> = {
+    title,
+    divisionId: text(body.divisionId, 40) || 'sws',
+    divisionName: text(body.divisionName, 80) || 'SWS Event Management',
+    customerName,
+    customerEmail,
+    customerPhone: customerPhone || '',
+    designImages: parseImages(body.designImages),
+    items,
+    eventDate: text(body.eventDate, 10),
+    eventTime: text(body.eventTime, 60),
+    venue: text(body.venue, 300),
+    notes: text(body.notes, 2000),
+    subtotal,
+    discount,
+    deliveryFee,
+    advanceAmount,
+    total,
+    expiresAt: new Date(now.getTime() + expiryDays * 86_400_000).toISOString(),
+    updatedAt: now.toISOString(),
+  };
+  await writeTursoDocument({ type: 'update', collection: COLLECTION, parentPath: '', id, data });
+  const updated = { ...document.data, ...data, id };
+  return { confirmation: { ...updated, shareUrl: shareUrl(updated) } };
+}
+
 /** Sign-off: the division, then the company ("SWS Event Management," / "Mahdev Pvt Ltd"). */
 function signature(divisionName: unknown): string[] {
   return typeof divisionName === 'string' && divisionName ? [`${divisionName},`, 'Mahdev Pvt Ltd'] : ['Mahdev Pvt Ltd'];
@@ -643,6 +700,9 @@ export default async function handler(req: ConfirmationRequest, res: ServerRespo
       result = await listConfirmations();
     } else if (action === '' && req.method === 'POST') {
       result = await createConfirmation(body, (await requireAdmin(req)).email);
+    } else if (action === 'edit' && req.method === 'POST') {
+      await requireAdmin(req);
+      result = await editConfirmation(body);
     } else if (action === 'send' && req.method === 'POST') {
       await requireAdmin(req);
       result = await sendLink(body);

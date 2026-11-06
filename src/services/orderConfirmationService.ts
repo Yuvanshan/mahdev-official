@@ -112,6 +112,10 @@ export async function createConfirmation(input: ConfirmationInput): Promise<Orde
   return (await post<{ confirmation: OrderConfirmation }>('', { ...input, siteOrigin: window.location.origin })).confirmation;
 }
 
+export async function updateConfirmation(id: string, input: ConfirmationInput): Promise<OrderConfirmation> {
+  return (await post<{ confirmation: OrderConfirmation }>('/edit', { id, ...input })).confirmation;
+}
+
 /** Emails the link to the customer (WhatsApp is shared by hand with a wa.me link). */
 export function sendConfirmationLink(id: string) {
   return post<{ email?: DeliveryResult }>('/send', { id });

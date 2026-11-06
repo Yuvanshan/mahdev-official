@@ -3,6 +3,7 @@ import {
   Ban,
   Check,
   Copy,
+  Edit2,
   ExternalLink,
   Link2,
   Mail,
@@ -26,6 +27,7 @@ import { normaliseInternationalPhone } from '../../utils/sriLankaIdentity';
 import {
   cancelConfirmation,
   createConfirmation,
+  updateConfirmation,
   deleteConfirmation,
   listConfirmations,
   logWhatsAppShare,
@@ -128,6 +130,7 @@ export const AdminOrderConfirmationsView: React.FC = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingConfirmation, setEditingConfirmation] = useState<OrderConfirmation | null>(null);
   const [formData, setFormData] = useState<ConfirmationInput>(emptyForm);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isDirty, setIsDirty] = useState(false);
@@ -195,11 +198,41 @@ export const AdminOrderConfirmationsView: React.FC = () => {
   };
 
   const handleOpenCreate = () => {
+    setEditingConfirmation(null);
     setFormData(emptyForm());
     setFormErrors({});
     setIsDirty(false);
     setImageUrlInput('');
     setUploaderKey((key) => key + 1);
+    setIsEditorOpen(true);
+  };
+
+  const handleOpenEdit = (confirmation: OrderConfirmation) => {
+    const remainingDays = Math.max(1, Math.min(60, Math.ceil((Date.parse(confirmation.expiresAt) - Date.now()) / 86_400_000)));
+    setEditingConfirmation(confirmation);
+    setFormData({
+      title: confirmation.title,
+      divisionId: confirmation.divisionId,
+      divisionName: confirmation.divisionName,
+      customerName: confirmation.customerName,
+      customerEmail: confirmation.customerEmail,
+      customerPhone: confirmation.customerPhone,
+      designImages: [...confirmation.designImages],
+      items: confirmation.items.map((item) => ({ ...item })),
+      eventDate: confirmation.eventDate,
+      eventTime: confirmation.eventTime,
+      venue: confirmation.venue,
+      notes: confirmation.notes,
+      discount: confirmation.discount,
+      deliveryFee: confirmation.deliveryFee,
+      advanceAmount: confirmation.advanceAmount,
+      expiresInDays: remainingDays,
+    });
+    setFormErrors({});
+    setIsDirty(false);
+    setImageUrlInput('');
+    setUploaderKey((key) => key + 1);
+    setSharing(null);
     setIsEditorOpen(true);
   };
 
@@ -223,21 +256,30 @@ export const AdminOrderConfirmationsView: React.FC = () => {
   const handleSave = async () => {
     if (!validateForm()) return;
     setIsSaving(true);
+    const input: ConfirmationInput = {
+      ...formData,
+      items: formData.items.map((item) => ({ ...item, quantity: Number(item.quantity), unitPrice: Number(item.unitPrice) })),
+      discount: Number(formData.discount) || 0,
+      deliveryFee: Number(formData.deliveryFee) || 0,
+      advanceAmount: Number(formData.advanceAmount) || 0,
+    };
     try {
-      const created = await createConfirmation({
-        ...formData,
-        items: formData.items.map((item) => ({ ...item, quantity: Number(item.quantity), unitPrice: Number(item.unitPrice) })),
-        discount: Number(formData.discount) || 0,
-        deliveryFee: Number(formData.deliveryFee) || 0,
-        advanceAmount: Number(formData.advanceAmount) || 0,
-      });
+      if (editingConfirmation) {
+        const updated = await updateConfirmation(editingConfirmation.id, input);
+        setConfirmations((current) => current.map((confirmation) => confirmation.id === updated.id ? updated : confirmation));
+        setSharing(updated);
+        addToast('success', 'Confirmation Updated', `The existing link for ${updated.id} is unchanged.`);
+      } else {
+        const created = await createConfirmation(input);
+        setConfirmations((current) => [created, ...current]);
+        setSharing(created);
+        addToast('success', 'Link Created', `Confirmation ${created.id} is ready to share.`);
+      }
       setIsEditorOpen(false);
       setIsDirty(false);
-      setConfirmations((current) => [created, ...current]);
-      setSharing(created);
-      addToast('success', 'Link Created', `Confirmation ${created.id} is ready to share.`);
+      setEditingConfirmation(null);
     } catch (err) {
-      addToast('error', 'Could Not Create', err instanceof Error ? err.message : 'Unable to create the confirmation link.');
+      addToast('error', editingConfirmation ? 'Could Not Update' : 'Could Not Create', err instanceof Error ? err.message : 'Unable to save the confirmation link.');
     } finally {
       setIsSaving(false);
     }
@@ -393,9 +435,14 @@ export const AdminOrderConfirmationsView: React.FC = () => {
                           {c.status === 'pending' ? <><Send className="w-3.5 h-3.5 mr-1" /> Share</> : 'View'}
                         </Button>
                         {c.status === 'pending' && (
-                          <Button variant="ghost" size="sm" onClick={() => setCancelling(c)} title="Cancel link">
-                            <Ban className="w-3.5 h-3.5 text-amber-600" />
-                          </Button>
+                          <>
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(c)} title="Edit confirmation">
+                              <Edit2 className="w-3.5 h-3.5 text-blue-600" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => setCancelling(c)} title="Cancel link">
+                              <Ban className="w-3.5 h-3.5 text-amber-600" />
+                            </Button>
+                          </>
                         )}
                         <Button variant="ghost" size="sm" onClick={() => setDeleting(c)} title="Delete link">
                           <Trash2 className="w-3.5 h-3.5 text-rose-600" />
@@ -413,13 +460,18 @@ export const AdminOrderConfirmationsView: React.FC = () => {
       {/* Create */}
       <AdminModal
         isOpen={isEditorOpen}
-        onClose={() => setIsEditorOpen(false)}
-        title="New Confirmation Link"
-        subtitle="Design and decoration details the customer will confirm."
+        onClose={() => {
+          setIsEditorOpen(false);
+          setEditingConfirmation(null);
+        }}
+        title={editingConfirmation ? 'Edit Confirmation Link' : 'New Confirmation Link'}
+        subtitle={editingConfirmation
+          ? 'Update the details customers see. The existing link stays the same.'
+          : 'Design and decoration details the customer will confirm.'}
         isDirty={isDirty}
         onSave={handleSave}
         isSaving={isSaving}
-        saveLabel="Create Link"
+        saveLabel={editingConfirmation ? 'Save Changes' : 'Create Link'}
         maxWidth="4xl"
       >
         <div className="space-y-6">
@@ -627,6 +679,10 @@ export const AdminOrderConfirmationsView: React.FC = () => {
                   </div>
                   <p className="text-[11px] text-slate-500">Valid until {new Date(sharing.expiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}. Anyone with this link can confirm, so share it only with the customer.</p>
                 </div>
+
+                <Button variant="outline" size="sm" onClick={() => handleOpenEdit(sharing)}>
+                  <Edit2 className="w-3.5 h-3.5 mr-1.5" /> Edit confirmation details
+                </Button>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {sharing.customerPhone ? (

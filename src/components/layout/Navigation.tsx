@@ -3,6 +3,7 @@ import {
   ChevronDown,
   Menu,
   X,
+  ArrowLeft,
   ArrowRight,
   Sparkles,
   Compass,
@@ -66,6 +67,7 @@ const DIVISION_MENU_DETAILS: Record<string, { mark: string; description: string;
   mart: { mark: 'OM', description: 'Celebration & home essentials', background: '#FBEBDD', color: '#9A4A12' },
 };
 import { DIVISIONS, DIVISION_LIST } from '../../config/divisions';
+import { CANONICAL_SITE_ORIGIN } from '../../config/site';
 import { DivisionId } from '../../types';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -348,19 +350,21 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
         style={isMobileMenuOpen ? { backdropFilter: 'none', WebkitBackdropFilter: 'none' } : undefined}
       >
         {/* Division Context Notice (when inside a child division) */}
-        {currentDivision && !divisionId && (
+        {activeDivisionId && isPublicRoute && (
           <div className="bg-[#061033] text-white text-xs py-1.5 px-4">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-blue-300">{currentDivision.name}</span>
+                <span className="font-semibold text-blue-300">{divisionName || currentDivision?.name || 'Division site'}</span>
                 <span className="text-blue-200/70 hidden sm:inline">Mahdev Group</span>
               </div>
               <button
-                onClick={() => onNavigate('/')}
-                className="text-xs text-blue-200 hover:text-white flex items-center gap-1 font-medium underline underline-offset-2 transition-colors cursor-pointer"
+                type="button"
+                onClick={() => window.location.assign(CANONICAL_SITE_ORIGIN)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:bg-white/10 transition-colors cursor-pointer"
+                aria-label="Return to the Mahdev company website"
               >
-                <span>Home</span>
-                <ArrowRight className="w-3 h-3" />
+                <ArrowLeft className="w-3 h-3" />
+                <span>Return to Mahdev</span>
               </button>
             </div>
           </div>
