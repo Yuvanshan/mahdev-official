@@ -6,8 +6,8 @@ dotenv.config({ path: process.env.MAHDEV_ENV_FILE || '.env' });
 
 async function seedBirthdayProducts(): Promise<void> {
   const productIds = new Set(BIRTHDAY_PARTY_PRODUCTS.map((product) => product.id));
-  if (BIRTHDAY_PARTY_PRODUCTS.length !== 100 || productIds.size !== 100) {
-    throw new Error('Birthday starter catalog must contain exactly 100 products with unique IDs.');
+  if (BIRTHDAY_PARTY_PRODUCTS.length !== 150 || productIds.size !== 150) {
+    throw new Error('Birthday starter catalog must contain exactly 150 products with unique IDs.');
   }
 
   const {

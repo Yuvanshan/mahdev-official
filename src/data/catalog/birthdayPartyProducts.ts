@@ -140,6 +140,60 @@ const productTypes = [
       { id: 'pack-size', name: 'Pack Size', options: ['6 bags', '12 bags', '24 bags'] },
     ],
   },
+  {
+    slug: 'spiral-birthday-candle-set',
+    name: 'Spiral Birthday Candle Set',
+    image: birthdayImages.candle,
+    price: 550,
+    pack: 'Ten colourful spiral cake candles with reusable holders',
+    options: (colors: readonly string[]): ProductOptionGroup[] => [
+      { id: 'color', name: 'Color', options: [...colors] },
+      { id: 'pack-size', name: 'Pack Size', options: ['5 candles', '10 candles', '20 candles'] },
+    ],
+  },
+  {
+    slug: 'latex-birthday-balloon-pack',
+    name: 'Latex Birthday Balloon Pack',
+    image: birthdayImages.balloon,
+    price: 1200,
+    pack: 'Assorted latex balloons for home birthday decorations',
+    options: (colors: readonly string[]): ProductOptionGroup[] => [
+      { id: 'color', name: 'Color', options: [...colors] },
+      { id: 'pack-size', name: 'Pack Size', options: ['10 balloons', '25 balloons', '50 balloons'] },
+    ],
+  },
+  {
+    slug: 'paper-confetti-popper-set',
+    name: 'Paper Confetti Party Popper Set',
+    image: birthdayImages.favors,
+    price: 1450,
+    pack: 'Hand-operated paper confetti poppers for supervised indoor celebrations; no pyrotechnics',
+    options: (_colors: readonly string[]): ProductOptionGroup[] => [
+      { id: 'pack-size', name: 'Pack Size', options: ['2 poppers', '4 poppers', '6 poppers'] },
+      { id: 'confetti-color', name: 'Confetti Color', options: ['Pastel Mix', 'Gold & Silver', 'Rainbow'] },
+    ],
+  },
+  {
+    slug: 'hand-balloon-pump-kit',
+    name: 'Hand Balloon Pump Kit',
+    image: birthdayImages.balloon,
+    price: 950,
+    pack: 'Reusable hand pump with assorted party balloons',
+    options: (_colors: readonly string[]): ProductOptionGroup[] => [
+      { id: 'kit-size', name: 'Kit Size', options: ['Pump + 10 balloons', 'Pump + 25 balloons'] },
+    ],
+  },
+  {
+    slug: 'happy-birthday-foil-balloon',
+    name: 'Happy Birthday Foil Balloon',
+    image: birthdayImages.foil,
+    price: 1250,
+    pack: 'Reusable self-sealing Happy Birthday foil balloon; inflation straw included',
+    options: (colors: readonly string[]): ProductOptionGroup[] => [
+      { id: 'color', name: 'Color', options: [...colors] },
+      { id: 'shape', name: 'Shape', options: ['Round', 'Star', 'Heart'] },
+    ],
+  },
 ] as const;
 
 const createdAt = '2026-11-06T00:00:00.000Z';
@@ -148,6 +202,7 @@ export const BIRTHDAY_PARTY_PRODUCTS: FirestoreProduct[] = themes.flatMap((theme
   productTypes.map((productType, typeIndex) => {
     const name = `${theme.name} ${productType.name}`;
     const slug = `${theme.slug}-${productType.slug}`;
+    const image = productType.image;
     const sku = `MD-BDAY-${String(themeIndex + 1).padStart(2, '0')}${String(typeIndex + 1).padStart(2, '0')}`;
     const description = `${name} for birthdays and family celebrations. Includes ${productType.pack.toLowerCase()}. Theme colors: ${theme.colors.join(', ')}. Please confirm final dimensions, pack quantity and available stock before publishing.`;
     return {
@@ -165,14 +220,14 @@ export const BIRTHDAY_PARTY_PRODUCTS: FirestoreProduct[] = themes.flatMap((theme
       specifications: {
         Theme: theme.name,
         'Pack Contents': productType.pack,
-        'Product Image': 'Starter reference image; replace with the exact product photo before publishing.',
+        'Product Image': 'Sample image; replace with a photo of the exact product before publishing.',
       },
       price: productType.price,
       currency: 'LKR',
       compareAtPrice: productType.price,
-      images: [productType.image],
-      imageUrl: productType.image,
-      galleryImages: [productType.image],
+      images: [image],
+      imageUrl: image,
+      galleryImages: [image],
       stock: 0,
       stockQuantity: 0,
       isAvailable: false,
