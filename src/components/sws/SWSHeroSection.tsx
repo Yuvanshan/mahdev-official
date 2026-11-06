@@ -6,7 +6,8 @@ import { ScrollParallax } from '../motion/ParallelScroll';
 import { AnimatedHeroTitle } from '../common/AnimatedHeroTitle';
 import { SWS_PRIMARY_HEADING } from '../../data/swsLocalSeo';
 
-const HERO_TITLE_GRADIENT = ['#E7C77A', '#D6AF59', '#FFF7E5'];
+const HERO_TITLE_GRADIENT = ['#FFFDF8', '#E7C77A', '#C6A15B'];
+const HERO_TITLE_GRADIENT_REVERSED = [...HERO_TITLE_GRADIENT].reverse();
 
 interface SWSHeroSectionProps {
   onOpenBooking?: () => void;
@@ -52,8 +53,8 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
             className="font-editorial text-4xl font-medium leading-[1.04] tracking-[-0.035em] text-white drop-shadow-md sm:text-5xl lg:text-6xl xl:text-7xl"
           >
-            <span className="block"><AnimatedHeroTitle text="We Create Moments." /></span>
-            <span className="block"><AnimatedHeroTitle text="You Make Memories." delay={0.2} gradient={HERO_TITLE_GRADIENT} /></span>
+            <span className="block"><AnimatedHeroTitle text="We Create Moments." gradient={HERO_TITLE_GRADIENT} /></span>
+            <span className="block"><AnimatedHeroTitle text="You Make Memories." delay={0.2} gradient={HERO_TITLE_GRADIENT_REVERSED} /></span>
           </motion.p>
 
           <motion.button

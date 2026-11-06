@@ -3549,3 +3549,143 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   background-color: var(--division-surface) !important;
   border: 1px solid var(--division-ink);
 }
+
+[data-division-site="sws"] .public-nav-shell,
+[data-division-site="sws"] .public-nav-shell > .public-nav-inner {
+  background-color: var(--division-accent) !important;
+}
+
+[data-division-site="u1"] .public-nav-shell,
+[data-division-site="u1"] .public-nav-shell > .public-nav-inner {
+  background-color: var(--division-ink) !important;
+}
+
+[data-division-site="sws"] .public-nav-inner {
+  border-bottom-color: var(--division-gold);
+}
+
+[data-division-site="u1"] .public-nav-inner {
+  border-bottom-color: #FFFFFF;
+}
+
+[data-division-site="sws"] .public-nav-inner > div > div > span,
+[data-division-site="u1"] .public-nav-inner > div > div > span {
+  color: #FFFFFF !important;
+}
+
+[data-division-site="sws"] .public-nav-inner nav > a,
+[data-division-site="u1"] .public-nav-inner nav > a {
+  color: #FFFFFF !important;
+}
+
+[data-division-site="sws"] .public-nav-inner nav > a[aria-current="location"] {
+  border: 0;
+  border-bottom: 2px solid var(--division-gold);
+  background-color: transparent !important;
+  color: #FFFFFF !important;
+}
+
+[data-division-site="u1"] .public-nav-inner nav > a[aria-current="location"] {
+  border: 0;
+  border-bottom: 2px solid #FFFFFF;
+  background-color: transparent !important;
+  color: #FFFFFF !important;
+}
+
+[data-division-site="sws"] .public-nav-inner nav > a:not([aria-current="location"]):hover {
+  background-color: var(--division-accent-hover) !important;
+  color: var(--division-gold) !important;
+}
+
+[data-division-site="u1"] .public-nav-inner nav > a:not([aria-current="location"]):hover {
+  background-color: #262626 !important;
+  color: #FFFFFF !important;
+}
+
+[data-division-site="sws"] .public-nav-inner .border-l {
+  border-color: var(--division-gold);
+}
+
+[data-division-site="u1"] .public-nav-inner .border-l {
+  border-color: #FFFFFF;
+}
+
+[data-division-site="sws"] .public-nav-inner > div > div > a[aria-label^="Call Hotline"],
+[data-division-site="sws"] .public-nav-inner > div > div > a[aria-label^="Call Hotline"] svg,
+[data-division-site="sws"] .public-nav-inner > div > div > a[aria-label="Direct WhatsApp"],
+[data-division-site="sws"] .public-nav-inner > div > div > a[aria-label="Direct WhatsApp"] svg,
+[data-division-site="sws"] .public-nav-inner > div > div > button[aria-label^="View cart"],
+[data-division-site="sws"] .public-nav-inner > div > div > button[aria-label^="View cart"] svg,
+[data-division-site="sws"] .public-nav-inner > div > div > a[aria-label="Sign in to your account"],
+[data-division-site="sws"] .public-nav-inner > div > div > button[aria-label="Toggle navigation menu"] {
+  border-color: var(--division-gold) !important;
+  background-color: transparent !important;
+  color: #FFFFFF !important;
+}
+
+[data-division-site="u1"] .public-nav-inner > div > div > a[aria-label^="Call Hotline"],
+[data-division-site="u1"] .public-nav-inner > div > div > a[aria-label^="Call Hotline"] svg,
+[data-division-site="u1"] .public-nav-inner > div > div > a[aria-label="Direct WhatsApp"],
+[data-division-site="u1"] .public-nav-inner > div > div > a[aria-label="Direct WhatsApp"] svg,
+[data-division-site="u1"] .public-nav-inner > div > div > button[aria-label^="View cart"],
+[data-division-site="u1"] .public-nav-inner > div > div > button[aria-label^="View cart"] svg,
+[data-division-site="u1"] .public-nav-inner > div > div > a[aria-label="Sign in to your account"],
+[data-division-site="u1"] .public-nav-inner > div > div > button[aria-label="Toggle navigation menu"] {
+  border-color: #FFFFFF !important;
+  background-color: transparent !important;
+  color: #FFFFFF !important;
+}
+
+[data-division-site="sws"] #floating-bottom-navbar .public-bottom-navigation__bar {
+  border-color: var(--division-gold);
+  background-color: var(--division-accent);
+}
+
+[data-division-site="u1"] #floating-bottom-navbar .public-bottom-navigation__bar {
+  border-color: #FFFFFF;
+  background-color: var(--division-ink);
+}
+
+[data-division-site="sws"] #floating-bottom-navbar .public-bottom-navigation__bar button,
+[data-division-site="u1"] #floating-bottom-navbar .public-bottom-navigation__bar button {
+  color: #FFFFFF !important;
+}
+
+[data-division-site="sws"] #floating-bottom-navbar .public-bottom-navigation__bar button svg,
+[data-division-site="u1"] #floating-bottom-navbar .public-bottom-navigation__bar button svg {
+  color: #FFFFFF !important;
+}
+
+[data-division-site="sws"] #floating-bottom-navbar .division-navigation-active-pill {
+  border-color: var(--division-gold);
+  background-color: var(--division-accent-hover) !important;
+}
+
+[data-division-site="u1"] #floating-bottom-navbar .division-navigation-active-pill {
+  border-color: #FFFFFF;
+  background-color: #262626 !important;
+}
+
+[data-division-site="sws"] .whatsapp-launcher {
+  box-shadow: 0 10px 26px rgb(111 29 58 / 34%), 0 2px 6px rgb(15 23 42 / 12%);
+}
+
+[data-division-site="sws"] .whatsapp-launcher::before {
+  background: linear-gradient(135deg, #54152C, #C6A15B 52%, #6F1D3A) border-box;
+}
+
+[data-division-site="sws"] .whatsapp-launcher:hover {
+  box-shadow: 0 0 18px rgb(198 161 91 / 28%), 0 14px 32px rgb(111 29 58 / 42%), 0 2px 6px rgb(15 23 42 / 12%);
+}
+
+[data-division-site="u1"] .whatsapp-launcher {
+  box-shadow: 0 10px 26px rgb(17 17 17 / 30%), 0 2px 6px rgb(15 23 42 / 12%);
+}
+
+[data-division-site="u1"] .whatsapp-launcher::before {
+  background: linear-gradient(135deg, #000000, #737373 52%, #171717) border-box;
+}
+
+[data-division-site="u1"] .whatsapp-launcher:hover {
+  box-shadow: 0 0 18px rgb(17 17 17 / 25%), 0 14px 32px rgb(17 17 17 / 38%), 0 2px 6px rgb(15 23 42 / 12%);
+}
