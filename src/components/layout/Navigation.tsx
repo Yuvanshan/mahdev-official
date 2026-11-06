@@ -25,7 +25,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { createPortal } from 'react-dom';
 import { BrandLogo } from './BrandLogo';
 import { MAIN_NAV_ITEMS as ALL_NAV_ITEMS } from '../../config/navigation';
-import { getDivisionSiteHref, type DivisionSiteId } from '../../config/divisionSites';
+import { DIVISION_SITE_IDS, getDivisionSiteHref, type DivisionSiteId } from '../../config/divisionSites';
 
 // Items kept in config (and the footer) but hidden from the top bar and mobile menu.
 const HIDDEN_TOP_BAR_ITEMS = new Set(['insights']);
@@ -80,14 +80,15 @@ interface NavigationProps {
   currentPath: string;
   onNavigate: (path: string) => void;
   divisionId?: DivisionSiteId;
+  isDivisionHost?: boolean;
 }
 
-export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate, divisionId }) => {
+export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate, divisionId, isDivisionHost }) => {
   const { totalQuantity, openCart } = useCart();
   const { user, isAuthenticated, isLoading: isAuthLoading, logout } = useAuth();
   const { companySettings, siteSettings, divisions } = useFirestoreDataContext();
 
-  const primaryPhone = companySettings?.primaryPhone || '075 092 8078';
+  const companyPrimaryPhone = companySettings?.primaryPhone || '075 092 8078';
   const secondaryPhone = companySettings?.secondaryPhone || '075 092 8078';
   const email = companySettings?.email || 'info.mahdev.lk@gmail.com';
   const whatsappUrl = companySettings?.socials?.whatsapp || 'https://wa.me/94750928078';
@@ -97,7 +98,6 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const visibleNavItems = divisionId ? DIVISION_SITE_NAV_ITEMS[divisionId] : MAIN_NAV_ITEMS;
 
   const servicesDropdownRef = useRef<HTMLDivElement>(null);
   const accountDropdownRef = useRef<HTMLDivElement>(null);
@@ -193,12 +193,52 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
   });
 
   const currentDivision = currentDivisionKey ? DIVISIONS[currentDivisionKey] : null;
+  const activeDivisionId = divisionId || (
+    currentDivisionKey && DIVISION_SITE_IDS.includes(currentDivisionKey as DivisionSiteId)
+      ? currentDivisionKey as DivisionSiteId
+      : undefined
+  );
+  const currentDivisionRecord = activeDivisionId
+    ? divisions.find((division) =>
+        division.id === activeDivisionId ||
+        division.divisionKey === activeDivisionId ||
+        division.canonicalDocId === activeDivisionId ||
+        division.slug === activeDivisionId
+      )
+    : undefined;
+  const primaryPhone =
+    currentDivisionRecord?.contactPhone ||
+    currentDivisionRecord?.contactNumber ||
+    (activeDivisionId ? DIVISIONS[activeDivisionId].contactPhone : undefined) ||
+    companyPrimaryPhone;
+  const divisionLogo =
+    currentDivisionRecord?.logoUrl ||
+    currentDivisionRecord?.logo ||
+    (activeDivisionId ? DIVISIONS[activeDivisionId].logoUrl : undefined);
+  const divisionName =
+    currentDivisionRecord?.name ||
+    (activeDivisionId ? DIVISIONS[activeDivisionId].name : currentDivision?.name);
+  const divisionBasePath =
+    !isDivisionHost && activeDivisionId && (currentPath === `/${activeDivisionId}` || currentPath.startsWith(`/${activeDivisionId}/`))
+      ? `/${activeDivisionId}`
+      : '';
+  const visibleNavItems = activeDivisionId
+    ? DIVISION_SITE_NAV_ITEMS[activeDivisionId].map((item) => ({
+        ...item,
+        href: item.href === '/'
+          ? divisionBasePath || '/'
+          : item.href.startsWith('/#')
+            ? `${divisionBasePath}${item.href.slice(1)}`
+            : item.href,
+      }))
+    : MAIN_NAV_ITEMS;
+  const divisionHomePath = divisionBasePath || '/';
   const isPublicRoute = !currentPath.startsWith('/admin');
 
   // Dynamic WhatsApp Inquiry URL matched to the current division (e.g. Hello SWS Event Management)
   const dynamicWhatsAppUrl = useMemo(() => {
-    return getDivisionWhatsAppUrl(currentDivisionKey || currentDivision?.name);
-  }, [currentDivisionKey, currentDivision]);
+    return getDivisionWhatsAppUrl(activeDivisionId || currentDivisionKey || currentDivision?.name);
+  }, [activeDivisionId, currentDivisionKey, currentDivision]);
 
   // Handle throttled scroll detection for glass navbar effect
   useEffect(() => {
@@ -334,11 +374,12 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
             {/* Left: Brand Logo */}
             <div className="flex items-center shrink-0 min-w-0 mr-1 sm:mr-0">
               <BrandLogo
-                onClick={() => onNavigate('/')}
+                onClick={() => onNavigate(divisionHomePath)}
+                logoUrl={divisionLogo}
               />
-              {divisionId && (
+              {activeDivisionId && divisionName && (
                 <span className="ml-2 hidden max-w-36 truncate border-l border-slate-200 pl-3 text-sm font-semibold text-slate-800 sm:block">
-                  {DIVISIONS[divisionId].name}
+                  {divisionName}
                 </span>
               )}
             </div>

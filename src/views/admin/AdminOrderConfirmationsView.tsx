@@ -22,6 +22,7 @@ import { ImageUploader } from '../../components/common/ImageUploader';
 import { DIVISIONS } from '../../config/divisions';
 import { BANK_DETAILS } from '../../config/company';
 import { formatCurrency } from '../../utils/currency';
+import { normaliseInternationalPhone } from '../../utils/sriLankaIdentity';
 import {
   cancelConfirmation,
   createConfirmation,
@@ -207,6 +208,9 @@ export const AdminOrderConfirmationsView: React.FC = () => {
     if (formData.customerName.trim().length < 2) errors.customerName = 'Customer name is required';
     if (formData.customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.customerEmail.trim())) errors.customerEmail = 'Invalid email';
     if (!formData.customerEmail.trim() && !formData.customerPhone.trim()) errors.customerPhone = 'Add a phone or email to share the link';
+    if (formData.customerPhone.trim() && !normaliseInternationalPhone(formData.customerPhone)) {
+      errors.customerPhone = 'Enter a valid phone with its country code, e.g. +94 77 123 4567.';
+    }
     if (!formData.title.trim()) errors.title = 'Design title is required';
     if (formData.designImages.length === 0) errors.designImages = 'Add at least one design image';
     if (formData.items.some((item) => !item.name.trim())) errors.items = 'Every item needs a name';
@@ -424,7 +428,8 @@ export const AdminOrderConfirmationsView: React.FC = () => {
               <input className={inputClass} value={formData.customerName} onChange={(e) => update('customerName', e.target.value)} />
             </Field>
             <Field label="WhatsApp / phone" error={formErrors.customerPhone}>
-              <input className={inputClass} type="tel" placeholder="077 123 4567" value={formData.customerPhone} onChange={(e) => update('customerPhone', e.target.value)} />
+              <input className={inputClass} type="tel" autoComplete="tel" placeholder="+94 77 123 4567" value={formData.customerPhone} onChange={(e) => update('customerPhone', e.target.value)} />
+              <p className="mt-1 text-[11px] text-slate-500">Include the country calling code for international WhatsApp numbers. Local Sri Lankan numbers are also accepted.</p>
             </Field>
             <Field label="Email" error={formErrors.customerEmail}>
               <input className={inputClass} type="email" value={formData.customerEmail} onChange={(e) => update('customerEmail', e.target.value)} />

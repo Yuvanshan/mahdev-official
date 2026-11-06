@@ -114,10 +114,10 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
   // Determine active uploaded logo URL from props, live event, React context, or cached snapshot
   // Default to official uploaded PNG: /logo.png
   const rawLogo =
+    propLogoUrl ||
     (seasonalTheme.enabled &&
       seasonalTheme.activeTheme === 'christmas' &&
       (seasonalTheme.seasonalLogo?.startsWith('firestore://') ? resolvedSeasonalLogo : seasonalTheme.seasonalLogo)) ||
-    propLogoUrl ||
     liveLogoUrl ||
     (isDark && (siteSettings?.darkLogoUrl || companySettings?.darkLogoUrl)
       ? siteSettings?.darkLogoUrl || companySettings?.darkLogoUrl

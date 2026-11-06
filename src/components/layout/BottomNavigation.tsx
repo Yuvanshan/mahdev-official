@@ -1,18 +1,50 @@
 import React from 'react';
 import { Home, Sparkles, Camera, Terminal, Compass, ShoppingBag } from 'lucide-react';
 import { motion } from 'motion/react';
+import type { DivisionSiteId } from '../../config/divisionSites';
 
 interface BottomNavigationProps {
   currentPath: string;
   onNavigate: (path: string) => void;
+  divisionId?: DivisionSiteId;
+  isDivisionHost?: boolean;
 }
 
-export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath, onNavigate }) => {
+export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath, onNavigate, divisionId, isDivisionHost }) => {
   const [basePath] = (currentPath ? String(currentPath) : '/').split('?');
   const normalizedPath = (basePath || '/').toLowerCase().replace(/\/$/, '') || '/';
   const isPublicRoute = !normalizedPath.startsWith('/admin');
+  const divisionBasePath =
+    !isDivisionHost && divisionId && (normalizedPath === `/${divisionId}` || normalizedPath.startsWith(`/${divisionId}/`))
+      ? `/${divisionId}`
+      : '';
+  const divisionNavItems = divisionId
+    ? {
+        sws: [
+          { id: 'events', label: 'Events', icon: Sparkles, href: '/#services' },
+          { id: 'rentals', label: 'Rentals', icon: ShoppingBag, href: '/#rentals' },
+          { id: 'gallery', label: 'Gallery', icon: Camera, href: '/#gallery' },
+        ],
+        u1: [
+          { id: 'services', label: 'Services', icon: Camera, href: '/#services' },
+          { id: 'portfolio', label: 'Portfolio', icon: Sparkles, href: '/#portfolio' },
+        ],
+        it: [
+          { id: 'services', label: 'Services', icon: Terminal, href: '/#services' },
+          { id: 'cases', label: 'Cases', icon: Sparkles, href: '/#case-studies' },
+        ],
+        travels: [
+          { id: 'destinations', label: 'Places', icon: Compass, href: '/#destinations' },
+          { id: 'packages', label: 'Packages', icon: Sparkles, href: '/#packages' },
+        ],
+        mart: [
+          { id: 'categories', label: 'Categories', icon: ShoppingBag, href: '/#categories' },
+          { id: 'products', label: 'Products', icon: Sparkles, href: '/#products' },
+        ],
+      }[divisionId]
+    : undefined;
 
-  const navItems = [
+  const companyNavItems = [
     {
       id: 'home',
       label: 'Home',
@@ -72,6 +104,22 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
       },
     },
   ];
+  const navItems = divisionNavItems
+    ? [
+        {
+          id: 'home',
+          label: 'Home',
+          icon: Home,
+          isActive: normalizedPath === (divisionBasePath || '/'),
+          onClick: () => onNavigate(divisionBasePath || '/'),
+        },
+        ...divisionNavItems.map((item) => ({
+          ...item,
+          isActive: false,
+          onClick: () => onNavigate(`${divisionBasePath}${item.href.slice(1)}`),
+        })),
+      ]
+    : companyNavItems;
 
   return (
     <nav

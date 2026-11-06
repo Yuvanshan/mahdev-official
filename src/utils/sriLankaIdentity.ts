@@ -89,8 +89,28 @@ export function normaliseSriLankaPhone(value: string): string | null {
   return /^[1-9]\d{8}$/.test(digits) ? `+94${digits}` : null;
 }
 
+/**
+ * Normalises phone numbers to E.164. Local Sri Lankan numbers keep their
+ * existing +94 behaviour; numbers from elsewhere must include + or 00 and
+ * their country calling code so they are not mistaken for local numbers.
+ */
+export function normaliseInternationalPhone(value: string): string | null {
+  const cleaned = value.trim().replace(/[\s\-().]/g, '');
+  if (!cleaned) return null;
+  if (cleaned.startsWith('+') || cleaned.startsWith('00')) {
+    const digits = cleaned.startsWith('+') ? cleaned.slice(1) : cleaned.slice(2);
+    return /^[1-9]\d{6,14}$/.test(digits) ? `+${digits}` : null;
+  }
+  return normaliseSriLankaPhone(cleaned);
+}
+
 /** Display form of a normalised number: +94 77 123 4567. */
 export function formatSriLankaPhone(value: string): string {
   const match = /^\+94(\d{2})(\d{3})(\d{4})$/.exec(value);
   return match ? `+94 ${match[1]} ${match[2]} ${match[3]}` : value;
+}
+
+/** Formats saved Sri Lankan numbers; other E.164 numbers remain unchanged. */
+export function formatContactPhone(value: string): string {
+  return formatSriLankaPhone(value);
 }

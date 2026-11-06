@@ -27,6 +27,7 @@ export interface DivisionConfig {
   isPrimary?: boolean;
   route: string;
   domainUrl?: string;
+  logoUrl?: string;
   accentColor: string;
   gradient: string;
   image?: string;

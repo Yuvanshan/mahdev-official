@@ -11,7 +11,7 @@ import {
 } from '../../db/tursoDatabase.js';
 import { sendCustomerEmail } from '../../services/emailService.js';
 import { consumeRateLimit, getClientIp, RateLimitError } from '../../security/rateLimit.js';
-import { normaliseSriLankaPhone, parseNic } from '../../../src/utils/sriLankaIdentity.js';
+import { normaliseInternationalPhone, parseNic } from '../../../src/utils/sriLankaIdentity.js';
 
 interface AccountRecoveryRequest extends IncomingMessage {
   method?: string;
@@ -54,15 +54,18 @@ function parseIdentifier(value: unknown): RecoveryIdentifier | null {
   if (nic) {
     return { normalized: `nic:${nic.nic}`, filter: { field: 'nic', operator: '==', value: nic.nic } };
   }
-  const phone = normaliseSriLankaPhone(input);
+  const phone = normaliseInternationalPhone(input);
   if (phone) {
     const digits = phone.slice(1);
+    const legacySriLankaFormats = phone.startsWith('+94')
+      ? [`0${digits.slice(2)}`, digits.slice(2)]
+      : [];
     return {
       normalized: `phone:${phone}`,
       filter: {
         field: 'phone',
         operator: 'in',
-        value: [phone, `0${digits.slice(2)}`, digits, digits.slice(2)],
+        value: [phone, digits, ...legacySriLankaFormats],
       },
     };
   }
@@ -90,7 +93,7 @@ async function startRecovery(
 ): Promise<void> {
   const identifier = parseIdentifier(body.identifier);
   if (!identifier) {
-    sendJson(response, 400, { success: false, error: 'Enter a valid email address, Sri Lankan phone number, or NIC.' });
+    sendJson(response, 400, { success: false, error: 'Enter a valid email address, international phone number, or NIC.' });
     return;
   }
 

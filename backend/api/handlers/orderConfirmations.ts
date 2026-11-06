@@ -12,7 +12,7 @@ import { AdminSessionAuthError, requireAdminSession } from '../../auth/adminCred
 import { FirebaseTokenError, verifyFirebaseIdToken } from '../../auth/firebaseIdToken.js';
 import { consumeRateLimit, getClientIp, RateLimitError } from '../../security/rateLimit.js';
 import { sendAdminAlertEmail, sendCustomerEmail } from '../../services/emailService.js';
-import { normaliseSriLankaPhone, parseNic } from '../../../src/utils/sriLankaIdentity.js';
+import { normaliseInternationalPhone, parseNic } from '../../../src/utils/sriLankaIdentity.js';
 import { BANK_DETAILS } from '../../../src/config/company.js';
 import { CANONICAL_SITE_ORIGIN } from '../../../src/config/site.js';
 
@@ -244,8 +244,8 @@ async function createConfirmation(body: Record<string, unknown>, adminEmail: str
   const customerEmail = text(body.customerEmail, 254).toLowerCase();
   if (customerEmail && !EMAIL_PATTERN.test(customerEmail)) throw new RequestError('Enter a valid customer email.');
   const rawPhone = text(body.customerPhone, 32);
-  const customerPhone = rawPhone ? normaliseSriLankaPhone(rawPhone) : '';
-  if (rawPhone && !customerPhone) throw new RequestError('Enter a valid Sri Lankan phone number.');
+  const customerPhone = rawPhone ? normaliseInternationalPhone(rawPhone) : '';
+  if (rawPhone && !customerPhone) throw new RequestError('Enter a valid phone number with its country calling code.');
   const title = text(body.title, 140);
   if (!title) throw new RequestError('Enter a title for the design.');
 

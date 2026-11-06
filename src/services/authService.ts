@@ -31,7 +31,7 @@ import {
 import { FirestoreUser } from '../types/firestore';
 import { Order } from '../types/order';
 import { Booking } from '../types/booking';
-import { normaliseSriLankaPhone, parseNic } from '../utils/sriLankaIdentity';
+import { normaliseInternationalPhone, parseNic } from '../utils/sriLankaIdentity';
 import { safeStorage } from '../utils/safeStorage';
 
 type AuthListener = (user: CustomerUser | null) => void;
@@ -442,10 +442,10 @@ class AuthService {
     if (!fbUser || !current) return { success: false, error: 'Please sign in again.' };
 
     const fullName = input.fullName.trim().replace(/\s+/g, ' ');
-    const phone = normaliseSriLankaPhone(input.phone);
+    const phone = normaliseInternationalPhone(input.phone);
     const nic = current.nic ? null : parseNic(input.nic || '');
     if (fullName.length < 3) return { success: false, error: 'Please enter your full name.' };
-    if (!phone) return { success: false, error: 'Please enter a valid Sri Lankan contact number.' };
+    if (!phone) return { success: false, error: 'Enter a valid phone number with its country calling code (for example, +94 77 123 4567).' };
     if (!current.nic && !nic) return { success: false, error: 'Please enter a valid NIC number.' };
 
     try {
@@ -518,11 +518,11 @@ class AuthService {
     const emailClean = input.email.trim().toLowerCase();
     const fullNameClean = input.fullName.trim().replace(/\s+/g, ' ');
     const nic = parseNic(input.nic);
-    const phone = normaliseSriLankaPhone(input.phone);
+    const phone = normaliseInternationalPhone(input.phone);
 
     if (!fullNameClean) return { success: false, error: 'Full name is required.' };
     if (!nic) return { success: false, error: 'Please enter a valid NIC number.' };
-    if (!phone) return { success: false, error: 'Please enter a valid Sri Lankan contact number.' };
+    if (!phone) return { success: false, error: 'Enter a valid phone number with its country calling code (for example, +94 77 123 4567).' };
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailClean)) return { success: false, error: 'A valid email address is required.' };
     const passwordProblem = passwordPolicyError(input.password);
     if (passwordProblem) return { success: false, error: passwordProblem };
@@ -694,9 +694,9 @@ class AuthService {
     const current = this.currentUser;
     const fullName = (updates.fullName ?? current.fullName).trim().replace(/\s+/g, ' ');
     const phoneInput = updates.phone ?? current.phone;
-    const phone = phoneInput ? normaliseSriLankaPhone(phoneInput) : '';
+    const phone = phoneInput ? normaliseInternationalPhone(phoneInput) : '';
     if (!fullName) return { success: false, error: 'Full name is required.' };
-    if (phone === null) return { success: false, error: 'Please enter a valid Sri Lankan contact number.' };
+    if (phone === null) return { success: false, error: 'Enter a valid phone number with its country calling code (for example, +94 77 123 4567).' };
 
     const address = { ...current.address, ...(updates.address || {}) };
     const preferences = { ...current.preferences, ...(updates.preferences || {}) };

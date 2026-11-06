@@ -37,7 +37,7 @@ import { markAccountDataStale } from '../services/customerAccountService';
 import { Booking, BookingLineItem, BookingLocation, BookingPaymentSlip, BookingType } from '../types/booking';
 import type { CartItem } from '../types/cart';
 import { FirestoreGallery, FirestoreProduct, FirestoreService } from '../types/firestore';
-import { normaliseSriLankaPhone, parseNic } from '../utils/sriLankaIdentity';
+import { normaliseInternationalPhone, parseNic } from '../utils/sriLankaIdentity';
 import { startAccountRecovery, verifyAccountRecovery } from '../services/accountRecoveryService';
 import { formatCurrency } from '../utils/currency';
 import {
@@ -449,7 +449,9 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
     const errors: FieldErrors = {};
     if (form.fullName.trim().length < 3) errors.fullName = 'Enter your full name.';
     if (!parseNic(form.nic)) errors.nic = 'Enter a valid NIC, e.g. 951234567V or 199512345678.';
-    if (!normaliseSriLankaPhone(form.phone)) errors.phone = 'Enter a valid Sri Lankan number, e.g. 077 123 4567.';
+    if (!normaliseInternationalPhone(form.phone)) {
+      errors.phone = 'Enter a valid number with its country code, e.g. +94 77 123 4567.';
+    }
     if (!EMAIL_PATTERN.test(form.email.trim())) errors.email = 'Enter a valid email address.';
     const passwordProblem = passwordPolicyError(form.password);
     if (passwordProblem) errors.password = passwordProblem;
@@ -600,7 +602,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
     setErrorMessage(null);
     setRecoveryMessage('');
     if (!recoveryIdentifier.trim()) {
-      setErrorMessage('Enter the email, phone number, or NIC from your account.');
+      setErrorMessage('Enter the email, international phone number, or NIC from your account.');
       return;
     }
     setIsSubmitting(true);
@@ -687,7 +689,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
       customer = {
         fullName: form.fullName.trim(),
         email: form.email.trim().toLowerCase(),
-        phone: normaliseSriLankaPhone(form.phone) || form.phone.trim(),
+        phone: normaliseInternationalPhone(form.phone) || form.phone.trim(),
       };
     }
 
@@ -1215,10 +1217,11 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
                       inputMode="tel"
                       autoComplete="tel"
                       icon={<Phone className="h-4 w-4" />}
-                      placeholder="077 123 4567"
+                      placeholder="+94 77 123 4567"
                       value={form.phone}
                       onChange={(e) => update('phone', e.target.value)}
                       error={fieldErrors.phone}
+                      hint="Include your country calling code for international WhatsApp numbers."
                     />
                     <AuthField
                       label="Email address"
@@ -1291,7 +1294,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
                     {!recoveryChallengeId ? (
                       <form onSubmit={handleStartRecovery} noValidate className="space-y-4">
                         <AuthField
-                          label="Email, phone number, or NIC"
+                          label="Email, international phone number, or NIC"
                           autoComplete="off"
                           icon={<ShieldCheck className="h-4 w-4" />}
                           placeholder="Enter one account detail"

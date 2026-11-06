@@ -7,7 +7,7 @@ import { AuthShell } from '../../components/auth/AuthShell';
 import { AuthAlert, AuthField, AuthSubmit } from '../../components/auth/AuthFields';
 import { ProgressRing } from '../../components/account/ProgressRing';
 import { getProfileCompletion, hasRealName } from '../../utils/profileCompletion';
-import { ageFromDateOfBirth, formatSriLankaPhone, normaliseNic, normaliseSriLankaPhone, parseNic } from '../../utils/sriLankaIdentity';
+import { ageFromDateOfBirth, formatContactPhone, normaliseInternationalPhone, normaliseNic, parseNic } from '../../utils/sriLankaIdentity';
 import { CANONICAL_SITE_ORIGIN } from '../../config/site';
 
 interface CompleteProfileViewProps {
@@ -31,7 +31,7 @@ export const CompleteProfileView: React.FC<CompleteProfileViewProps> = ({ onNavi
   const [form, setForm] = useState(() => ({
     fullName: user && hasRealName(user) ? user.fullName : '',
     nic: '',
-    phone: user?.phone ? formatSriLankaPhone(user.phone) : '',
+    phone: user?.phone ? formatContactPhone(user.phone) : '',
     city: user?.address?.city || '',
   }));
   const [errors, setErrors] = useState<{ fullName?: string; nic?: string; phone?: string }>({});
@@ -56,7 +56,7 @@ export const CompleteProfileView: React.FC<CompleteProfileViewProps> = ({ onNavi
   const livePercent = Math.round(
     (completion.items.filter((item) => {
       if (item.key === 'fullName') return form.fullName.trim().length >= 3;
-      if (item.key === 'phone') return Boolean(normaliseSriLankaPhone(form.phone));
+      if (item.key === 'phone') return Boolean(normaliseInternationalPhone(form.phone));
       if (item.key === 'nic') return !needsNic || Boolean(nicDetails);
       return item.done;
     }).length / completion.items.length) * 100
@@ -73,7 +73,9 @@ export const CompleteProfileView: React.FC<CompleteProfileViewProps> = ({ onNavi
     const found: typeof errors = {};
     if (form.fullName.trim().length < 3) found.fullName = 'Enter your full name as shown on your NIC.';
     if (needsNic && !nicDetails) found.nic = 'Enter a valid NIC, e.g. 951234567V or 199512345678.';
-    if (!normaliseSriLankaPhone(form.phone)) found.phone = 'Enter a valid Sri Lankan number, e.g. 077 123 4567.';
+    if (!normaliseInternationalPhone(form.phone)) {
+      found.phone = 'Enter a valid number with its country code, e.g. +94 77 123 4567.';
+    }
     setErrors(found);
     if (Object.keys(found).length) return;
 
@@ -187,10 +189,11 @@ export const CompleteProfileView: React.FC<CompleteProfileViewProps> = ({ onNavi
                 inputMode="tel"
                 autoComplete="tel"
                 icon={<Phone className="h-4 w-4" />}
-                placeholder="077 123 4567"
+                placeholder="+94 77 123 4567"
                 value={form.phone}
                 onChange={(e) => update('phone', e.target.value)}
                 error={errors.phone}
+                hint="Include your country calling code for WhatsApp and booking updates."
               />
               <AuthField
                 label="City (optional)"

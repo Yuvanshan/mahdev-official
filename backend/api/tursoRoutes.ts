@@ -24,7 +24,7 @@ import {
   type FirebaseIdentity,
   verifyFirebaseIdToken,
 } from '../auth/firebaseIdToken.js';
-import { normaliseSriLankaPhone, parseNic } from '../../src/utils/sriLankaIdentity.js';
+import { normaliseInternationalPhone, parseNic } from '../../src/utils/sriLankaIdentity.js';
 
 export interface DatabaseAccess {
   role: 'admin' | 'customer' | 'public';
@@ -504,8 +504,8 @@ async function verifyCustomerIdentityFields(
     verified.name = name;
   }
   if (data.phone !== undefined && data.phone !== '') {
-    const phone = typeof data.phone === 'string' ? normaliseSriLankaPhone(data.phone) : null;
-    if (!phone) throw new Error('Enter a valid Sri Lankan contact number.');
+    const phone = typeof data.phone === 'string' ? normaliseInternationalPhone(data.phone) : null;
+    if (!phone) throw new Error('Enter a valid phone number with its country calling code.');
     // New accounts: one account per contact number (email and NIC are already unique).
     if (!existing) {
       const holders = await listTursoDocuments('users', '', [{ field: 'phone', operator: '==', value: phone }], undefined, 2);

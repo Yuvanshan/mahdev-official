@@ -321,6 +321,29 @@ export const AdminProductsView: React.FC = () => {
     setIsDirty(true);
   };
 
+  const addColorAndNumberOptionGroups = () => {
+    setFormData((previous) => {
+      const existingNames = new Set(previous.optionGroups.map((group) => group.name.trim().toLowerCase()));
+      const additions: ProductOptionGroup[] = [];
+      if (!existingNames.has('color')) {
+        additions.push({
+          id: `option-group-color-${Date.now()}`,
+          name: 'Color',
+          options: ['Gold', 'Silver', 'Red', 'Blue', 'White'],
+        });
+      }
+      if (!existingNames.has('number')) {
+        additions.push({
+          id: `option-group-number-${Date.now()}`,
+          name: 'Number',
+          options: Array.from({ length: 10 }, (_, number) => String(number)),
+        });
+      }
+      return { ...previous, optionGroups: [...previous.optionGroups, ...additions] };
+    });
+    setIsDirty(true);
+  };
+
   const removeOptionGroup = (index: number) => {
     setFormData((previous) => ({
       ...previous,
@@ -1284,12 +1307,25 @@ export const AdminProductsView: React.FC = () => {
               <div>
                 <h3 className="font-semibold text-slate-800">Customer Selectable Options</h3>
                 <p className="mt-0.5 text-[10px] text-slate-500">
-                  Add choices such as number, color, size, or pack quantity. Stock and price are shared across choices.
+                  Add multiple choices together, such as a number and color for a foil balloon. Stock and price are shared across choices.
                 </p>
               </div>
               <Button variant="outline" size="sm" type="button" onClick={addOptionGroup}>
                 <Plus className="mr-1 h-3.5 w-3.5" />
                 Add option group
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                onClick={addColorAndNumberOptionGroups}
+                disabled={
+                  formData.optionGroups.some((group) => group.name.trim().toLowerCase() === 'color') &&
+                  formData.optionGroups.some((group) => group.name.trim().toLowerCase() === 'number')
+                }
+              >
+                <Plus className="mr-1 h-3.5 w-3.5" />
+                Add Color + Number
               </Button>
             </div>
 

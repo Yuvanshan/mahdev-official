@@ -477,13 +477,20 @@ function AppContent() {
       }
     }
 
-    // In-page section scrolling if format is #section or /#section (excluding direct division routes)
+    // In-page section scrolling from the company site or a division landing route.
     const isDirectDivisionOrAdmin = ['/#admin', '/#sws', '/#u1', '/#it', '/#travels', '/#mart'].includes(path.toLowerCase()) ||
       ['#admin', '#sws', '#u1', '#it', '#travels', '#mart'].includes(path.toLowerCase());
+    const hashIndex = path.indexOf('#');
+    const sectionPath = hashIndex >= 0 ? path.slice(0, hashIndex) : '';
+    const isDivisionSectionPath = /^\/(sws|u1|it|travels|mart)\/?$/.test(sectionPath);
+    const isSectionAnchor =
+      hashIndex >= 0 &&
+      !isDirectDivisionOrAdmin &&
+      (!sectionPath || sectionPath === '/' || isDivisionSectionPath);
 
-    if (path.startsWith('/#') && !isDirectDivisionOrAdmin) {
-      const hash = path.substring(1);
-      const internalRoot = toDivisionInternalPath('/', hostDivisionSite);
+    if (isSectionAnchor) {
+      const hash = path.slice(hashIndex);
+      const internalRoot = toDivisionInternalPath(sectionPath || '/', hostDivisionSite);
       const publicRoot = toDivisionPublicPath(internalRoot, hostDivisionSite);
       if (currentPath.split(/[?#]/, 1)[0] !== internalRoot) {
         window.history.pushState({}, '', publicRoot);
@@ -1456,9 +1463,12 @@ function AppContent() {
   // Keep the primary navigation visible across the site, including coming-soon
   // division routes, while the division-specific notice still remains in place.
   const isStandaloneComingSoon = Boolean(divisionKey && isDivisionComingSoon(divisionKey));
-  const activeDivisionSite = hostDivisionSite ||
+  const activeDivisionSite: DivisionSiteId | undefined =
+    hostDivisionSite ||
     DIVISION_SITE_IDS.find((id) => normalizedPath === `/${id}` || normalizedPath.startsWith(`/${id}/`)) ||
-    divisionKey;
+    (divisionKey && DIVISION_SITE_IDS.includes(divisionKey as DivisionSiteId)
+      ? divisionKey as DivisionSiteId
+      : undefined);
   return (
     <div
       data-division-site={activeDivisionSite}
@@ -1481,7 +1491,8 @@ function AppContent() {
       <Navigation
         currentPath={normalizedPath}
         onNavigate={navigate}
-        divisionId={hostDivisionSite}
+        divisionId={activeDivisionSite}
+        isDivisionHost={Boolean(hostDivisionSite)}
       />
 
       {/* Main Content Area with Smooth View Transitions */}
@@ -1513,13 +1524,18 @@ function AppContent() {
       </main>
 
       {/* Mobile Ergonomic Bottom Navigation Bar */}
-      <BottomNavigation currentPath={normalizedPath} onNavigate={navigate} />
+      <BottomNavigation
+        currentPath={normalizedPath}
+        onNavigate={navigate}
+        divisionId={activeDivisionSite}
+        isDivisionHost={Boolean(hostDivisionSite)}
+      />
 
       {/* Reusable Global Footer */}
       <Footer
         onNavigate={navigate}
         currentPath={normalizedPath}
-        divisionId={hostDivisionSite}
+        divisionId={activeDivisionSite}
       />
       {!isAdminRoute && <WhatsAppWidget />}
     </div>

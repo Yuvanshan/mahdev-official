@@ -9,7 +9,7 @@
  */
 
 import { getServerConfig } from '../config/serverEnv.js';
-import { normaliseSriLankaPhone } from '../../src/utils/sriLankaIdentity.js';
+import { normaliseInternationalPhone } from '../../src/utils/sriLankaIdentity.js';
 
 const GRAPH_API_VERSION = 'v21.0';
 
@@ -20,10 +20,7 @@ export interface WhatsAppSendResult {
 
 /** Digits-only international number (94771234567), or null when invalid. */
 export function toWhatsAppNumber(phone: string): string | null {
-  const local = normaliseSriLankaPhone(phone);
-  if (local) return local.slice(1);
-  const digits = phone.replace(/[^\d]/g, '');
-  return digits.length >= 10 && digits.length <= 15 ? digits : null;
+  return normaliseInternationalPhone(phone)?.slice(1) || null;
 }
 
 /** wa.me click-to-chat link; always works, even without the Cloud API. */

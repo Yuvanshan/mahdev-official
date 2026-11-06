@@ -10,7 +10,8 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { getDivisionWhatsAppUrl } from '../../utils/whatsapp';
 import { SocialLinks } from '../common/SocialLinks';
 import { CANONICAL_SITE_ORIGIN } from '../../config/site';
-import type { DivisionSiteId } from '../../config/divisionSites';
+import { DIVISION_SITE_IDS, type DivisionSiteId } from '../../config/divisionSites';
+import { DIVISIONS } from '../../config/divisions';
 
 interface FooterProps {
   onNavigate: (path: string) => void;
@@ -19,18 +20,26 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath, divisionId }) => {
-  const { companySettings, siteSettings } = useFirestoreDataContext();
+  const { companySettings, siteSettings, divisions } = useFirestoreDataContext();
 
   const currentPathname = (currentPath || (typeof window !== 'undefined' ? window.location.pathname : '')).toLowerCase();
-  let currentDivId = '';
-  if (currentPathname.includes('sws') || currentPathname.includes('event')) currentDivId = 'sws';
-  else if (currentPathname.includes('u1') || currentPathname.includes('cinema') || currentPathname.includes('studio')) currentDivId = 'u1';
-  else if (currentPathname.includes('it') || currentPathname.includes('software')) currentDivId = 'it';
-  else if (currentPathname.includes('travel')) currentDivId = 'travels';
-  else if (currentPathname.includes('mart') || currentPathname.includes('shop')) currentDivId = 'mart';
+  const routeDivisionId = DIVISION_SITE_IDS.find((id) =>
+    currentPathname === `/${id}` || currentPathname.startsWith(`/${id}/`)
+  );
+  const currentDivId = divisionId || routeDivisionId;
+  const divisionConfig = currentDivId ? DIVISIONS[currentDivId] : undefined;
+  const divisionRecord = currentDivId
+    ? divisions.find((division) =>
+        division.id === currentDivId ||
+        division.divisionKey === currentDivId ||
+        division.canonicalDocId === currentDivId ||
+        division.slug === currentDivId
+      )
+    : undefined;
+  const divisionHomePath = currentDivId && routeDivisionId ? `/${currentDivId}` : '/';
 
-  const footerWhatsAppUrl = getDivisionWhatsAppUrl(currentDivId);
-  const footerSections = divisionId
+  const footerWhatsAppUrl = getDivisionWhatsAppUrl(currentDivId || '');
+  const footerSections = currentDivId
     ? [
         {
           title: 'Mahdev Group',
@@ -41,11 +50,29 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath, divisio
     : FOOTER_SECTIONS;
 
   const companyName = companySettings?.name || siteSettings?.siteName || 'Mahdev Pvt Ltd';
-  const tagline = companySettings?.tagline || 'Pioneering Creative Artistry & Modern Technology';
-  const description = companySettings?.description || 'A unified multi-division powerhouse driving creative entertainment, visual storytelling, cloud engineering, luxury travel, and verified commerce.';
-  const email = companySettings?.email || 'info.mahdev.lk@gmail.com';
-  const primaryPhone = companySettings?.primaryPhone || '075 092 8078';
+  const tagline =
+    divisionRecord?.tagline ||
+    divisionConfig?.tagline ||
+    companySettings?.tagline ||
+    'Pioneering Creative Artistry & Modern Technology';
+  const description =
+    divisionRecord?.description ||
+    divisionConfig?.description ||
+    companySettings?.description ||
+    'A unified multi-division powerhouse driving creative entertainment, visual storytelling, cloud engineering, luxury travel, and verified commerce.';
+  const email =
+    divisionRecord?.contactEmail ||
+    divisionConfig?.contactEmail ||
+    companySettings?.email ||
+    'info.mahdev.lk@gmail.com';
+  const primaryPhone =
+    divisionRecord?.contactPhone ||
+    divisionRecord?.contactNumber ||
+    divisionConfig?.contactPhone ||
+    companySettings?.primaryPhone ||
+    '075 092 8078';
   const secondaryPhone = companySettings?.secondaryPhone || '075 092 8078';
+  const divisionLogo = divisionRecord?.logoUrl || divisionRecord?.logo || divisionConfig?.logoUrl;
   const domain = companySettings?.domain || 'mahdev.lk';
 
   const colomboAddress = companySettings?.offices?.colombo?.address || '41/22, Pickerings Road, Kotahena, Colombo 13, Sri Lanka';
@@ -102,7 +129,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath, divisio
         <div className="border-b py-6 px-3 text-center sm:px-6 sm:py-8 lg:px-8">
           <div className="max-w-4xl mx-auto">
             <h3 className="font-display text-xl font-medium tracking-tight sm:text-2xl lg:text-3xl">
-              Creating Moments. Capturing Memories. Delivering Innovation.
+              {tagline}
             </h3>
           </div>
         </div>
@@ -115,7 +142,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath, divisio
               <BrandLogo
                 theme="dark"
                 size="md"
-                onClick={() => onNavigate('/')}
+                logoUrl={divisionLogo}
+                onClick={() => onNavigate(divisionHomePath)}
               />
               <SocialLinks socials={companySettings?.socials} variant="dark" />
 

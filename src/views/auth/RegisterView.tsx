@@ -21,7 +21,7 @@ import { AuthAlert, AuthField, AuthSubmit, PasswordField } from '../../component
 import { evaluateBotRisk, checkActionThrottle } from '../../utils/securityProtection';
 import { notificationService } from '../../services/notificationService';
 import { MIN_PASSWORD_LENGTH, passwordPolicyError } from '../../services/authService';
-import { ageFromDateOfBirth, normaliseNic, normaliseSriLankaPhone, parseNic } from '../../utils/sriLankaIdentity';
+import { ageFromDateOfBirth, normaliseInternationalPhone, normaliseNic, parseNic } from '../../utils/sriLankaIdentity';
 import { CANONICAL_SITE_ORIGIN } from '../../config/site';
 import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton';
 import { postSignInPath } from '../../utils/profileCompletion';
@@ -84,7 +84,9 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
     const errors: FieldErrors = {};
     if (formData.fullName.trim().length < 3) errors.fullName = 'Enter your full name.';
     if (!nicDetails) errors.nic = 'Enter a valid NIC, e.g. 951234567V or 199512345678.';
-    if (!normaliseSriLankaPhone(formData.phone)) errors.phone = 'Enter a valid Sri Lankan number, e.g. 077 123 4567.';
+    if (!normaliseInternationalPhone(formData.phone)) {
+      errors.phone = 'Enter a valid number with its country code, e.g. +94 77 123 4567.';
+    }
     return errors;
   };
 
@@ -144,7 +146,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
       const message = result.error || 'Could not create your account. Please try again.';
       setAccountExists(/already/i.test(message));
       // NIC and contact number problems are fixed on step 1, so take the customer back there.
-      if (/NIC|contact number/i.test(message)) {
+      if (/NIC|contact number|phone number/i.test(message)) {
         setDirection(-1);
         setStep(1);
         setFieldErrors(/NIC/i.test(message) ? { nic: message } : { phone: message });
@@ -309,11 +311,11 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
                   inputMode="tel"
                   autoComplete="tel"
                   icon={<Phone className="h-4 w-4" />}
-                  placeholder="077 123 4567"
+                  placeholder="+94 77 123 4567"
                   value={formData.phone}
                   onChange={(e) => update('phone', e.target.value)}
                   error={fieldErrors.phone}
-                  hint="We use this for booking updates and WhatsApp."
+                  hint="Include your country calling code for WhatsApp and booking updates. Sri Lankan local numbers are also accepted."
                 />
                 <AuthSubmit busy={false} busyLabel="Continuing…">
                   Continue <ArrowRight className="h-4 w-4" />

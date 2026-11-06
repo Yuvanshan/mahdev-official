@@ -22,7 +22,7 @@ import { ImageUploader } from '../../components/common/ImageUploader';
 import { Avatar } from '../../components/account/Avatar';
 import { AuthAlert, AuthField, PasswordField } from '../../components/auth/AuthFields';
 import { passwordPolicyError } from '../../services/authService';
-import { ageFromDateOfBirth, formatSriLankaPhone, normaliseSriLankaPhone, parseNic } from '../../utils/sriLankaIdentity';
+import { ageFromDateOfBirth, formatContactPhone, normaliseInternationalPhone, parseNic } from '../../utils/sriLankaIdentity';
 
 interface AccountProfileTabProps {
   user: CustomerUser;
@@ -70,7 +70,7 @@ export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) =>
   // ---- Personal details, address and preferences ----
   const [formData, setFormData] = useState({
     fullName: user.fullName || '',
-    phone: user.phone ? formatSriLankaPhone(user.phone) : '',
+    phone: user.phone ? formatContactPhone(user.phone) : '',
     company: user.company || '',
     avatarUrl: user.avatarUrl || '',
     address: {
@@ -95,14 +95,14 @@ export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) =>
   // field the customer has not changed (their own edits are kept).
   const shownValues = useRef({
     fullName: user.fullName || '',
-    phone: user.phone ? formatSriLankaPhone(user.phone) : '',
+    phone: user.phone ? formatContactPhone(user.phone) : '',
     company: user.company || '',
     avatarUrl: user.avatarUrl || '',
   });
   useEffect(() => {
     const fresh = {
       fullName: user.fullName || '',
-      phone: user.phone ? formatSriLankaPhone(user.phone) : '',
+      phone: user.phone ? formatContactPhone(user.phone) : '',
       company: user.company || '',
       avatarUrl: user.avatarUrl || '',
     };
@@ -127,7 +127,9 @@ export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) =>
     setProfileMessage(null);
     const errors: typeof profileErrors = {};
     if (formData.fullName.trim().length < 3) errors.fullName = 'Enter your full name.';
-    if (formData.phone && !normaliseSriLankaPhone(formData.phone)) errors.phone = 'Enter a valid Sri Lankan number.';
+    if (formData.phone && !normaliseInternationalPhone(formData.phone)) {
+      errors.phone = 'Enter a valid number with its country code, e.g. +94 77 123 4567.';
+    }
     setProfileErrors(errors);
     if (Object.keys(errors).length) return;
 
@@ -345,10 +347,11 @@ export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) =>
               type="tel"
               autoComplete="tel"
               icon={<Phone className="h-4 w-4" />}
-              placeholder="077 123 4567"
+              placeholder="+94 77 123 4567"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               error={profileErrors.phone}
+              hint="Include your country calling code for WhatsApp and booking updates."
             />
             <AuthField
               label="Company (optional)"

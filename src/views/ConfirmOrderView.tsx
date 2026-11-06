@@ -28,7 +28,7 @@ import {
   type AvailabilityResult,
   type PublicConfirmation,
 } from '../services/orderConfirmationService';
-import { normaliseNic, normaliseSriLankaPhone, parseNic } from '../utils/sriLankaIdentity';
+import { normaliseInternationalPhone, normaliseNic, parseNic } from '../utils/sriLankaIdentity';
 import { formatCurrency } from '../utils/currency';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { BANK_DETAILS } from '../config/company';
@@ -191,7 +191,9 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
     if (form.fullName.trim().length < 3) errors.fullName = 'Enter your full name.';
     if (!nicValid) errors.nic = 'Enter a valid NIC, e.g. 951234567V or 199512345678.';
     else if (nicCheck === 'taken') errors.nic = 'This NIC is already registered. Please sign in to confirm.';
-    if (!normaliseSriLankaPhone(form.phone)) errors.phone = 'Enter a valid Sri Lankan number, e.g. 077 123 4567.';
+    if (!normaliseInternationalPhone(form.phone)) {
+      errors.phone = 'Enter a valid number with its country code, e.g. +94 77 123 4567.';
+    }
     if (!emailValid) errors.email = 'Enter a valid email address.';
     else if (emailCheck === 'taken') errors.email = 'This email already has an account. Please sign in to confirm.';
     const passwordProblem = passwordPolicyError(form.password);
@@ -582,10 +584,11 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
                   inputMode="tel"
                   autoComplete="tel"
                   icon={<Phone className="h-4 w-4" />}
-                  placeholder="077 123 4567"
+                  placeholder="+94 77 123 4567"
                   value={form.phone}
                   onChange={(e) => update('phone', e.target.value)}
                   error={fieldErrors.phone}
+                  hint="Include your country calling code for WhatsApp and booking updates."
                 />
                 <AuthField
                   label="Email address"

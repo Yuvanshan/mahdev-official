@@ -17,13 +17,23 @@ When the custom domain is ready, add the corporate and division hostnames to the
 | Mahdev Travels | `https://travels.mahdev.lk` | `https://mahdev-official.vercel.app/travels` |
 | Mahdev Mart | `https://mart.mahdev.lk` | `https://mahdev-official.vercel.app/mart` |
 
+## Separate Vercel-provided hostnames before buying a domain
+
+The current project gets the default address `mahdev-official.vercel.app`. Vercel does not let this project claim arbitrary sibling addresses such as `sws.vercel.app` or `u1.vercel.app`. To use separate Vercel-provided hostnames before purchasing `mahdev.lk`, create a separate Vercel project for each division. The exact short names (`sws.vercel.app`, `u1.vercel.app`, etc.) may already be claimed; project names such as `mahdev-sws` and `mahdev-u1` are more practical if available.
+
+Each division project can use this same repository and code, but it is a separate deployment and needs its own environment-variable configuration. To keep the existing data and admin, copy the same production Turso database settings, Firebase project settings, and other required server secrets into each division project. Secret values cannot be copied out of the existing Vercel project by the CLI; the project owner must add them in Vercel's Environment Variables settings. Do not deploy a division project without these values: its API, sign-in, and admin flows would fail.
+
+For each project, set its public division origin (for example `VITE_SWS_SITE_URL=https://mahdev-sws.vercel.app`) and keep `VITE_SITE_URL` pointed at the corporate site. Add every active `*.vercel.app` host to Firebase Authentication's **Authorized domains**. These hosts share the database and application code, but each project has a separate deployment and users may need to sign in separately on each host.
+
+When `mahdev.lk` is connected, either keep those separate projects and map a division subdomain to each, or move the custom domains to this existing project for a single shared deployment. Keep the Turso database unchanged either way.
+
 ## What is separated and what is shared
 
 - **Separate presentation:** each division host opens its own division, uses its own navigation and has its own theme. SWS uses maroon, gold, and warm off-white; U1 uses black and off-white. IT, Travels, and Mart have distinct blue, green, and warm retail accents.
-- **Shared application:** the same Vercel build, API endpoints, Firestore/Turso collections, uploads, customer accounts, bookings, orders, admin portal, and server-side secrets are used. Do not duplicate or migrate the database for this change.
+- **Shared data:** the divisions can use the same Firestore/Turso collections, customer accounts, bookings, orders, and admin records. Keep using the existing database; do not duplicate or migrate it.
 - **Independent browser origins:** local storage and browser sessions are origin-scoped. Users may need to sign in separately on different subdomains; the admin login still uses the same server and data. Do not change cookie domain scope without reviewing the authentication and CSRF implications.
 - **SEO:** division canonical URLs switch to the configured division host. The generated main sitemap uses each configured division URL for its division landing page. Preview deployments should not be given production division URLs.
-- **Subdomain granularity:** this does not create separate Vercel projects, source repositories, releases, or independently scalable applications. If a division later needs a different release cadence or backend, it can be extracted into another Vercel project as a separate migration.
+- **Deployment choice:** custom domains on this existing Vercel project share one release. Separate `*.vercel.app` project hosts have separate releases and each must receive the shared backend configuration.
 
 ## When `mahdev.lk` is purchased
 
