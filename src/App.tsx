@@ -42,6 +42,7 @@ import {
   isRetiredAdminPath,
 } from './config/adminRoutes';
 import { motion, AnimatePresence } from 'motion/react';
+import { SsoBridgePage, SsoSessionBridge } from './components/auth/SsoSessionBridge';
 
 const CHUNK_RECOVERY_KEY = 'mahdev:chunk-load-recovery';
 
@@ -1469,6 +1470,8 @@ function AppContent() {
     (divisionKey && DIVISION_SITE_IDS.includes(divisionKey as DivisionSiteId)
       ? divisionKey as DivisionSiteId
       : undefined);
+  if (normalizedPath === '/auth/sso') return <SsoBridgePage />;
+
   return (
     <div
       data-division-site={activeDivisionSite}
@@ -1546,6 +1549,7 @@ export default function App() {
   return (
     <FirestoreDataProvider>
       <AuthProvider>
+        <SsoSessionBridge />
         <AdminAuthProvider>
           <CartProvider>
             <SeasonalThemeProvider>

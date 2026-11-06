@@ -47,6 +47,8 @@ This document outlines the environment configuration architecture for the **Mahd
 | `VITE_FIREBASE_STORAGE_BUCKET` | Client | Public | Cloud Storage Bucket | Firebase Console value |
 | `VITE_FIREBASE_FIRESTORE_DATABASE_ID` | Client | Public | Firestore database ID used by legacy maintenance scripts | Firebase Console value |
 | `FIREBASE_PROJECT_ID` | Server | Standard | Project ID used to validate customer ID tokens and admin customer actions | Same Firebase project as the client config |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | Server | **Confidential** | Firebase service-account JSON used by Firebase Admin services and to sign short-lived cross-site SSO custom tokens; never expose with a `VITE_` prefix | Existing Firebase service account for the configured project |
+| `SSO_ALLOWED_ORIGINS` | Server | Standard | Optional comma-separated HTTPS origins to add to the cross-site sign-in allowlist when custom corporate or division domains are introduced | `https://mahdev.lk,https://sws.mahdev.lk,https://u1.mahdev.lk` |
 | `FIREBASE_AUTH_DOMAIN` | Server | Standard | Firebase Auth host used by the same-origin auth proxy | Same domain as `VITE_FIREBASE_AUTH_DOMAIN` |
 | `FIREBASE_STORAGE_BUCKET` | Server | Standard | Firebase Admin SDK storage bucket | Same bucket as the client config |
 | `FIRESTORE_DATABASE_ID` | Maintenance scripts | Standard | Firestore database ID for legacy export/maintenance tooling | Same database configured in Firebase |
@@ -107,6 +109,7 @@ This document outlines the environment configuration architecture for the **Mahd
 - Set `SMTP_*` and `WHATSAPP_*` credentials for live customer receipts.
 - Set `VITE_FIREBASE_RECAPTCHA_SITE_KEY` to the reCAPTCHA site key registered for the production Firebase web app in App Check, and `VITE_FIREBASE_APPCHECK_PROVIDER` to the matching provider (`enterprise` by default).
 - In Firebase Console > App Check, verify that the registered app ID matches `VITE_FIREBASE_APP_ID`, add `mahdev-official.vercel.app` and each custom production hostname to the reCAPTCHA key's allowed domains, and enable enforcement for Firebase services that the site uses only after valid tokens are confirmed.
+- For cross-site sign-in, keep `FIREBASE_SERVICE_ACCOUNT_JSON` set as a server-only Vercel secret. Add each production corporate/division origin to the relevant `VITE_*_SITE_URL` variable and to `SSO_ALLOWED_ORIGINS` when introducing custom domains; deploy the same values to the production runtime. Include these origins in Firebase Authentication's authorized domains when using Firebase-hosted auth actions.
 - Deploy `firestore.rules` to the configured project. Direct client Firestore access is intentionally denied because application data is served through the server-authorized `/api/database` Turso API.
 - Verify production App Check token exchange in the browser before enabling enforcement. App Check does not replace authorization for `/api/*` routes, and it cannot prevent downloading media that is publicly displayed.
 

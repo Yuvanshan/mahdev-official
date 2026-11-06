@@ -6,6 +6,8 @@ const MAX_CLOCK_SKEW_SECONDS = 5 * 60;
 
 export interface FirebaseIdentity {
   uid: string;
+  authTime: number;
+  ssoAuthTime?: number;
   /** Set only when the email is verified; the only email trusted for access checks. */
   email?: string;
   /**
@@ -24,6 +26,7 @@ interface FirebaseTokenClaims {
   sub?: unknown;
   email?: unknown;
   email_verified?: unknown;
+  mahdev_sso_auth_time?: unknown;
 }
 
 interface FirebaseTokenHeader {
@@ -154,6 +157,10 @@ export async function verifyFirebaseIdToken(authorization: string | undefined): 
 
   return {
     uid: claims.sub,
+    authTime: claims.auth_time,
+    ...(typeof claims.mahdev_sso_auth_time === 'number'
+      ? { ssoAuthTime: claims.mahdev_sso_auth_time }
+      : {}),
     ...(claims.email_verified === true && typeof claims.email === 'string'
       ? { email: claims.email.toLowerCase() }
       : {}),

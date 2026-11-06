@@ -29,6 +29,7 @@ import { sanitizePublicSettingsDocument } from './tursoRoutes.js';
 import adminLoginHandler from './handlers/admin/auth/login.js';
 import adminLogoutHandler from './handlers/admin/auth/logout.js';
 import seasonalThemeHandler from './handlers/seasonalTheme.js';
+import ssoHandler from './handlers/sso.js';
 
 const apiRouter = Router();
 
@@ -93,6 +94,18 @@ apiRouter.post('/account/recovery', async (req: Request, res: Response) => {
 });
 apiRouter.all('/seasonal-theme', async (req: Request, res: Response) => {
   await seasonalThemeHandler(req, res);
+});
+apiRouter.post('/sso/issue', async (req: Request, res: Response) => {
+  await ssoHandler(req, res, 'issue');
+});
+apiRouter.post('/sso/exchange', async (req: Request, res: Response) => {
+  await ssoHandler(req, res, 'exchange');
+});
+apiRouter.post('/sso/session', async (req: Request, res: Response) => {
+  await ssoHandler(req, res, 'session');
+});
+apiRouter.post('/sso/logout', async (req: Request, res: Response) => {
+  await ssoHandler(req, res, 'logout');
 });
 
 apiRouter.post('/analytics', (req: Request, res: Response) => {

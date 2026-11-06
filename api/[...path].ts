@@ -20,6 +20,7 @@ import orderConfirmationsHandler from '../backend/api/handlers/orderConfirmation
 import accountCheckHandler from '../backend/api/handlers/accountCheck.js';
 import accountRecoveryHandler from '../backend/api/handlers/accountRecovery.js';
 import seasonalThemeHandler from '../backend/api/handlers/seasonalTheme.js';
+import ssoHandler from '../backend/api/handlers/sso.js';
 import firebaseAuthProxy from '../backend/api/handlers/firebaseAuthProxy.js';
 import { isFromThisSite } from '../backend/security/sameSite.js';
 import pageShellHandler, { sendNotFoundPage } from '../backend/api/handlers/pageShell.js';
@@ -170,6 +171,22 @@ export default async function handler(req: ApiRequest, res: ServerResponse): Pro
   }
   if (pathname === '/api/seasonal-theme') {
     await seasonalThemeHandler(req, res);
+    return;
+  }
+  if (pathname === '/api/sso/issue') {
+    await ssoHandler(req, res, 'issue');
+    return;
+  }
+  if (pathname === '/api/sso/exchange') {
+    await ssoHandler(req, res, 'exchange');
+    return;
+  }
+  if (pathname === '/api/sso/session') {
+    await ssoHandler(req, res, 'session');
+    return;
+  }
+  if (pathname === '/api/sso/logout') {
+    await ssoHandler(req, res, 'logout');
     return;
   }
   if (pathname === '/api/contact/submit' || pathname === '/api/inquiries/submit') {
