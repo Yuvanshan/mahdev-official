@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
-import { CANONICAL_SITE_ORIGIN } from '../../config/site';
 import { useAuth } from '../../context/AuthContext';
 import {
   buildSsoReturnUrl,
   exchangeSsoCode,
+  getSsoBrokerLoginUrl,
   getSafeSsoBrokerUrl,
   getSafeSsoReturnUrl,
   getSsoFragment,
@@ -13,6 +13,7 @@ import {
   issueSsoCode,
   isSsoSessionValid,
   replaceSsoFragment,
+  SSO_BROKER_ORIGIN,
 } from '../../services/ssoService';
 
 const SYNCED_UID_KEY = 'mahdev:sso:synced-uid';
@@ -57,6 +58,8 @@ export function SsoSessionBridge() {
       status === 'loading' ||
       status === 'error' ||
       window.location.pathname.replace(/\/+$/, '') === '/auth/sso' ||
+      (window.location.origin === SSO_BROKER_ORIGIN &&
+        window.location.pathname.replace(/\/+$/, '') === '/login') ||
       window.location.pathname.startsWith('/admin') ||
       isLocalDevelopment() ||
       isCrawler()
@@ -89,7 +92,7 @@ export function SsoSessionBridge() {
           await signOut(auth);
           return;
         }
-        if (window.location.origin === CANONICAL_SITE_ORIGIN) {
+        if (window.location.origin === SSO_BROKER_ORIGIN) {
           localStorage.setItem(SYNCED_UID_KEY, currentUser.uid);
           return;
         }
@@ -97,7 +100,7 @@ export function SsoSessionBridge() {
         const pendingAt = Number(sessionStorage.getItem(PENDING_SESSION_KEY));
         if (Number.isFinite(pendingAt) && Date.now() - pendingAt < PENDING_MAX_AGE_MS) return;
         sessionStorage.setItem(PENDING_SESSION_KEY, String(Date.now()));
-        const code = await issueSsoCode(CANONICAL_SITE_ORIGIN);
+        const code = await issueSsoCode(SSO_BROKER_ORIGIN);
         window.location.replace(getSafeSsoBrokerUrl(currentReturnUrl(), code).toString());
       })().catch((error: unknown) => {
         sessionStorage.removeItem(PENDING_SESSION_KEY);
@@ -106,9 +109,20 @@ export function SsoSessionBridge() {
       return;
     }
 
+    const returnUrl = currentReturnUrl();
+    const authPath = window.location.pathname.replace(/\/+$/, '');
+    if (
+      window.location.origin !== SSO_BROKER_ORIGIN &&
+      (authPath === '/login' || authPath === '/register')
+    ) {
+      sessionStorage.setItem(CHECKED_SESSION_KEY, '1');
+      const brokerAuthUrl = getSsoBrokerLoginUrl(returnUrl);
+      if (authPath === '/register') brokerAuthUrl.pathname = '/register';
+      window.location.replace(brokerAuthUrl.toString());
+      return;
+    }
     if (sessionStorage.getItem(CHECKED_SESSION_KEY) === '1') return;
     sessionStorage.setItem(CHECKED_SESSION_KEY, '1');
-    const returnUrl = currentReturnUrl();
     const brokerUrl = getSafeSsoBrokerUrl(returnUrl);
     window.location.replace(brokerUrl.toString());
   }, [status, user]);
@@ -127,9 +141,12 @@ export function SsoBridgePage() {
     started.current = true;
     const process = async () => {
       const params = getSsoFragment();
-      const code = params?.get('__mahdev_sso');
+      const searchParams = new URLSearchParams(window.location.search);
+      const code = params?.get('__mahdev_sso')
+        || searchParams.get('__mahdev_sso')
+        || (searchParams.has('return') ? 'start' : null);
       const returnHash = params?.get('returnHash') || '';
-      const returnUrl = getSafeSsoReturnUrl(params?.get('return') || null);
+      const returnUrl = getSafeSsoReturnUrl(params?.get('return') || searchParams.get('return'));
 
       if (!params || !code || code === 'start') {
         if (!returnUrl) {

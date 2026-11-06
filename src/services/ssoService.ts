@@ -1,10 +1,14 @@
 import { signInWithCustomToken } from 'firebase/auth';
 import { auth } from '../lib/firebase';
-import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import {
   getDivisionSiteOrigin,
   DIVISION_SITE_IDS,
 } from '../config/divisionSites';
+
+// Keep the original company Vercel host as the shared-login broker. Firebase
+// browser persistence is origin-scoped, so changing this to mahdev.lk would
+// strand sessions that customers already have on mahdev-official.vercel.app.
+export const SSO_BROKER_ORIGIN = 'https://mahdev-official.vercel.app';
 
 const KNOWN_SSO_ORIGINS = [
   'https://mahdev.lk',
@@ -21,7 +25,7 @@ export const SSO_RETURN_HASH_PARAMETER = 'returnHash';
 
 function allowedOrigins(): Set<string> {
   return new Set([
-    CANONICAL_SITE_ORIGIN,
+    SSO_BROKER_ORIGIN,
     ...KNOWN_SSO_ORIGINS,
     ...DIVISION_SITE_IDS.map(getDivisionSiteOrigin).filter((origin): origin is string => Boolean(origin)),
   ]);
@@ -115,13 +119,21 @@ export function getSafeSsoReturnUrl(value: string | null): URL | undefined {
 }
 
 export function getSafeSsoBrokerUrl(returnUrl: URL, code?: string): URL {
-  const brokerUrl = new URL('/auth/sso', CANONICAL_SITE_ORIGIN);
+  const brokerUrl = new URL('/auth/sso', SSO_BROKER_ORIGIN);
   brokerUrl.hash = new URLSearchParams({
     __mahdev_sso: code || 'start',
     return: returnUrl.toString(),
     [SSO_RETURN_HASH_PARAMETER]: returnUrl.hash,
   }).toString();
   return brokerUrl;
+}
+
+export function getSsoBrokerLoginUrl(returnUrl: URL): URL {
+  const brokerLoginUrl = new URL('/login', SSO_BROKER_ORIGIN);
+  const handoffUrl = new URL('/auth/sso', SSO_BROKER_ORIGIN);
+  handoffUrl.searchParams.set('return', returnUrl.toString());
+  brokerLoginUrl.searchParams.set('redirect', `${handoffUrl.pathname}${handoffUrl.search}`);
+  return brokerLoginUrl;
 }
 
 export function buildSsoReturnUrl(

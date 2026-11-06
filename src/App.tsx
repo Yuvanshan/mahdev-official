@@ -785,7 +785,7 @@ function AppContent() {
     }
 
     if (normalizedPath === '/register') {
-      return <RegisterView onNavigate={navigate} />;
+      return <RegisterView onNavigate={navigate} redirectPath={redirectParam || '/account'} />;
     }
 
     if (normalizedPath === '/forgot-password') {

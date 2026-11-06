@@ -29,6 +29,7 @@ import type { CustomerUser } from '../../types/customer';
 
 interface RegisterViewProps {
   onNavigate: (path: string) => void;
+  redirectPath?: string;
 }
 
 type Step = 1 | 2 | 'done';
@@ -37,7 +38,7 @@ type FieldErrors = Partial<Record<'fullName' | 'nic' | 'phone' | 'email' | 'pass
 const formatDate = (iso: string) =>
   new Date(`${iso}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
-export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
+export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate, redirectPath = '/account' }) => {
   const { register, user, isAuthenticated, consumeRedirectError } = useAuth();
   // Email registration shows its own success screen; only other sign-ins move on automatically.
   const emailRegistrationStarted = useRef(false);
@@ -45,8 +46,11 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
   const goOn = (signedIn: CustomerUser) => {
     if (hasNavigated.current) return;
     hasNavigated.current = true;
-    onNavigate(postSignInPath(signedIn));
+    onNavigate(postSignInPath(signedIn, redirectPath));
   };
+  const loginPath = redirectPath !== '/account'
+    ? `/login?redirect=${encodeURIComponent(redirectPath)}`
+    : '/login';
   const reduceMotion = useReducedMotion();
   const [formRenderTime] = useState<number>(() => Date.now());
   const [honeypotValue, setHoneypotValue] = useState('');
@@ -184,7 +188,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
           step !== 'done' && (
             <>
               Already have an account?{' '}
-              <button type="button" onClick={() => onNavigate('/login')} className="font-semibold text-blue-700 underline-offset-4 hover:underline">
+              <button type="button" onClick={() => onNavigate(loginPath)} className="font-semibold text-blue-700 underline-offset-4 hover:underline">
                 Sign in
               </button>
             </>
@@ -212,7 +216,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
         {accountExists && (
           <button
             type="button"
-            onClick={() => onNavigate('/login')}
+            onClick={() => onNavigate(loginPath)}
             className="mb-4 w-full rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm font-semibold py-2.5 hover:bg-amber-100"
           >
             Sign in to my account
@@ -479,7 +483,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate }) => {
                   type="button"
                   whileHover={{ y: -1 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => onNavigate('/account/profile')}
+                  onClick={() => user ? goOn(user) : onNavigate(redirectPath)}
                   className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#0052FF] to-indigo-600 px-5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/30"
                 >
                   Go to my profile <ArrowRight className="h-4 w-4" />
