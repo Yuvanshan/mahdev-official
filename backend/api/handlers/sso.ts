@@ -78,24 +78,38 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function ensureCodeTable(): Promise<void> {
-  tableReady ??= Promise.all([
-    getTursoClient().execute(
-      `CREATE TABLE IF NOT EXISTS sso_codes (
-        code_hash TEXT PRIMARY KEY,
-        uid TEXT NOT NULL,
-        auth_time INTEGER NOT NULL,
-        target_origin TEXT NOT NULL,
-        expires_at INTEGER NOT NULL,
-        created_at INTEGER NOT NULL
-      )`
-    ),
-    getTursoClient().execute(
-      `CREATE TABLE IF NOT EXISTS sso_sessions (
-        uid TEXT PRIMARY KEY,
-        logged_out_at INTEGER NOT NULL
-      )`
-    ),
-  ]).then(() => undefined).catch((error: unknown) => {
+  tableReady ??= (async () => {
+    const client = getTursoClient();
+    await Promise.all([
+      client.execute(
+        `CREATE TABLE IF NOT EXISTS sso_codes (
+          code_hash TEXT PRIMARY KEY,
+          uid TEXT NOT NULL,
+          auth_time INTEGER NOT NULL DEFAULT 0,
+          target_origin TEXT NOT NULL,
+          expires_at INTEGER NOT NULL,
+          created_at INTEGER NOT NULL
+        )`
+      ),
+      client.execute(
+        `CREATE TABLE IF NOT EXISTS sso_sessions (
+          uid TEXT PRIMARY KEY,
+          logged_out_at INTEGER NOT NULL
+        )`
+      ),
+    ]);
+
+    const schema = await client.execute('PRAGMA table_info(sso_codes)');
+    const hasAuthTime = schema.rows.some((column) => column.name === 'auth_time');
+    if (!hasAuthTime) {
+      try {
+        await client.execute('ALTER TABLE sso_codes ADD COLUMN auth_time INTEGER NOT NULL DEFAULT 0');
+      } catch (error) {
+        const refreshedSchema = await client.execute('PRAGMA table_info(sso_codes)');
+        if (!refreshedSchema.rows.some((column) => column.name === 'auth_time')) throw error;
+      }
+    }
+  })().catch((error: unknown) => {
     tableReady = undefined;
     throw error;
   });
@@ -275,7 +289,7 @@ export default async function ssoHandler(
     const result = await getTursoClient().execute({
       sql: `DELETE FROM sso_codes
         WHERE code_hash = ? AND target_origin = ? AND expires_at > ?
-        RETURNING uid`,
+        RETURNING uid, auth_time`,
       args: [createHash('sha256').update(code).digest('hex'), origin, Date.now()],
     });
     const uid = result.rows[0]?.uid;
