@@ -9,6 +9,7 @@ import {
 } from '../types/catalog';
 import { FirestoreProduct, FirestoreCategory } from '../types/firestore';
 import { getImageSourceCandidates } from '../utils/imageSources';
+import { getProductOptionGroups, normalizeNumberBalloonCopy } from '../utils/productOptions';
 
 export function mapFirestoreProductToCatalog(
   fp: FirestoreProduct,
@@ -45,6 +46,16 @@ export function mapFirestoreProductToCatalog(
   const origPrice = fp.compareAtPrice !== undefined ? Number(fp.compareAtPrice) : price;
   const discountPercent =
     origPrice > price ? Math.round(((origPrice - price) / origPrice) * 100) : 0;
+  const optionGroups = Array.isArray(fp.optionGroups)
+    ? fp.optionGroups.filter(
+        (group): group is { id: string; name: string; options: string[] } =>
+          Boolean(group) &&
+          typeof group.id === 'string' &&
+          typeof group.name === 'string' &&
+          Array.isArray(group.options)
+      )
+    : [];
+  const description = normalizeNumberBalloonCopy(fp.name, fp.description || '');
 
   return {
     id: fp.id,
@@ -58,17 +69,12 @@ export function mapFirestoreProductToCatalog(
     categoryName: cat ? cat.name : 'General Merchandise',
     categorySlug: (cat as any)?.slug || 'general',
     color: fp.color,
-    optionGroups: Array.isArray(fp.optionGroups)
-      ? fp.optionGroups.filter(
-          (group): group is { id: string; name: string; options: string[] } =>
-            Boolean(group) &&
-            typeof group.id === 'string' &&
-            typeof group.name === 'string' &&
-            Array.isArray(group.options)
-        )
-      : [],
-    shortDescription: fp.shortDescription || fp.description?.slice(0, 150) || '',
-    description: fp.description || '',
+    optionGroups: getProductOptionGroups(fp.name, description, optionGroups),
+    shortDescription: normalizeNumberBalloonCopy(
+      fp.name,
+      fp.shortDescription || description.slice(0, 150)
+    ),
+    description,
     imageUrl: img,
     gallery: gallery,
     price: price,

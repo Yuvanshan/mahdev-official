@@ -1,5 +1,6 @@
 import { catalogService } from '../services/catalogService';
 import { CatalogProduct, CatalogCategory, ProductOptionGroup, ProductVariantOption, ProductSpecification as BaseProductSpecification } from '../types/catalog';
+import { getProductOptionGroups, normalizeNumberBalloonCopy } from '../utils/productOptions';
 
 export interface ProductVariant {
   id: string;
@@ -87,6 +88,12 @@ export function mapFirestoreProductToMart(p: any, categories: any[] = []): Produ
     ? (img && !p.images.includes(img) ? [img, ...p.images] : p.images)
     : (p.gallery || (img ? [img] : []));
   const stock = typeof p.stock === 'number' ? p.stock : (typeof p.stockQuantity === 'number' ? p.stockQuantity : 100);
+  const description = normalizeNumberBalloonCopy(p.name || '', p.description || '');
+  const optionGroups = getProductOptionGroups(
+    p.name || '',
+    description,
+    Array.isArray(p.optionGroups) ? p.optionGroups : []
+  );
 
   return {
     id: p.id,
@@ -99,8 +106,11 @@ export function mapFirestoreProductToMart(p: any, categories: any[] = []): Produ
     discountPercent,
     rating: Number(p.rating) || 0,
     reviewsCount: Number(p.reviewsCount) || 0,
-    shortDescription: p.shortDescription || p.description?.slice(0, 150) || '',
-    description: p.description || '',
+    shortDescription: normalizeNumberBalloonCopy(
+      p.name || '',
+      p.shortDescription || description.slice(0, 150)
+    ),
+    description,
     imageUrl: img,
     gallery,
     inStock: stock > 0 && p.stockStatus !== 'out_of_stock',
@@ -111,7 +121,7 @@ export function mapFirestoreProductToMart(p: any, categories: any[] = []): Produ
     isTrending: p.isTrending,
     brand: p.brand || 'Mahdev',
     color: typeof p.color === 'string' ? p.color : undefined,
-    optionGroups: Array.isArray(p.optionGroups) ? p.optionGroups : [],
+    optionGroups,
     sku: p.sku || `MD-${p.id?.toUpperCase().slice(0, 8) || '001'}`,
     variants: p.variants
       ? {

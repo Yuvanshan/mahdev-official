@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Crosshair } from 'lucide-react';
 
+const MOBILE_IMAGE_ZOOM_SCALE = '1.4';
+
 interface ImageZoomFrameProps {
   children: React.ReactNode;
   className?: string;
@@ -23,7 +25,7 @@ export const ImageZoomFrame: React.FC<ImageZoomFrameProps> = ({
 
   useEffect(() => {
     setIsZoomed(false);
-    frameRef.current?.style.setProperty('--image-mobile-scale', '2.5');
+    frameRef.current?.style.setProperty('--image-mobile-scale', MOBILE_IMAGE_ZOOM_SCALE);
     frameRef.current?.style.setProperty('--image-zoom-x', '50%');
     frameRef.current?.style.setProperty('--image-zoom-y', '50%');
     const image = frameRef.current?.querySelector<HTMLImageElement>('img');
@@ -65,7 +67,7 @@ export const ImageZoomFrame: React.FC<ImageZoomFrameProps> = ({
       suppressClickRef.current = true;
       setIsZoomed((current) => {
         const next = !current;
-        if (!next) frameRef.current?.style.setProperty('--image-mobile-scale', '2.5');
+        if (!next) frameRef.current?.style.setProperty('--image-mobile-scale', MOBILE_IMAGE_ZOOM_SCALE);
         return next;
       });
     }, 260);
@@ -129,7 +131,7 @@ export const ImageZoomFrame: React.FC<ImageZoomFrameProps> = ({
             return;
           }
           setIsZoomed((current) => !current);
-          frameRef.current?.style.setProperty('--image-mobile-scale', '2.5');
+          frameRef.current?.style.setProperty('--image-mobile-scale', MOBILE_IMAGE_ZOOM_SCALE);
         }}
       />
       <span className="image-zoom-focus" aria-hidden="true">

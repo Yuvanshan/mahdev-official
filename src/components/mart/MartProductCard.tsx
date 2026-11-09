@@ -27,6 +27,10 @@ export const MartProductCard: React.FC<MartProductCardProps> = ({
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!product.inStock) return;
+    if (product.optionGroups?.length || product.variants?.options.length) {
+      onViewProduct(product);
+      return;
+    }
     onAddToCart(product);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 2000);
@@ -187,6 +191,11 @@ export const MartProductCard: React.FC<MartProductCardProps> = ({
               <>
                 <Check className="w-4 h-4 text-emerald-200 shrink-0" />
                 <span className="truncate"><span className="sm:hidden">Added</span><span className="hidden sm:inline">Added to Cart</span></span>
+              </>
+            ) : product.optionGroups?.length || product.variants?.options.length ? (
+              <>
+                <Eye className="w-4 h-4 shrink-0" />
+                <span className="truncate">Select options</span>
               </>
             ) : (
               <>

@@ -424,7 +424,7 @@ export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavi
             </aside>
 
             {/* Document Content Sections */}
-            <main className="lg:col-span-8 space-y-8">
+            <section className="lg:col-span-8 space-y-8">
               {currentSections.map((sec, idx) => {
                 const secId = `section-${idx + 1}`;
                 return (
@@ -504,7 +504,7 @@ export const LegalPageView: React.FC<LegalPageViewProps> = ({ policyType, onNavi
                   Questions about this document can be sent to info.mahdev.lk@gmail.com or 075 092 8078 / 076 898 8970. Document Ref: {meta.refCode}
                 </p>
               </div>
-            </main>
+            </section>
           </div>
         )}
       </div>

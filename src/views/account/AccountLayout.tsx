@@ -411,7 +411,7 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
           </aside>
 
           {/* Content */}
-          <main className="min-w-0 lg:col-span-9">
+          <section className="min-w-0 lg:col-span-9">
             {dataError && (
               <div role="alert" className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-xs font-medium text-amber-800">
                 {dataError}
@@ -459,7 +459,7 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
                 )}
               </motion.div>
             </AnimatePresence>
-          </main>
+          </section>
         </div>
       </div>
     </div>

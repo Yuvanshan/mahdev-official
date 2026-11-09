@@ -537,7 +537,7 @@ export const ExploreAllView: React.FC<{
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 pt-20">
+    <section className="min-h-screen bg-slate-50 pt-20">
       <SEOHead
         title="Explore Services, Gallery & Products"
         description="Browse Mahdev services, event and studio gallery projects, and products in one place."
@@ -699,6 +699,6 @@ export const ExploreAllView: React.FC<{
           type: 'gallery',
         } : undefined}
       />
-    </main>
+    </section>
   );
 };

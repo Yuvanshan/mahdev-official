@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X,
@@ -31,6 +31,7 @@ import { formatCurrency } from '../../utils/currency';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 import { ImageZoomFrame } from '../common/ImageZoomFrame';
 import { getImageAltForPhoto, getRecordImageAlt } from '../../config/imageAlt';
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 
 interface CatalogProductModalProps {
   product: CatalogProduct | null;
@@ -70,6 +71,8 @@ const CatalogProductModalContent: React.FC<
   );
   const [quantity, setQuantity] = useState(1);
   const [actionSuccess, setActionSuccess] = useState(false);
+  const titleId = useId();
+  const dialogRef = useDialogFocus<HTMLDivElement>(true, onClose);
 
   const relatedProducts = catalogService.getRelatedProducts(product, 3);
   const missingVariantSelection = Boolean(product.variants?.options.length && !selectedVariant);
@@ -100,11 +103,16 @@ const CatalogProductModalContent: React.FC<
     <AnimatePresence>
       <div className="fixed inset-0 z-[200] overflow-y-auto bg-neutral-950/70 backdrop-blur-sm flex items-start justify-center p-2 pb-[max(.5rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6 lg:p-8">
         <motion.div
+          ref={dialogRef}
           initial={{ opacity: 0, scale: 0.96, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 20 }}
           transition={{ duration: 0.25 }}
           className="relative my-2 bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[calc(100dvh-1rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-hidden flex flex-col border border-neutral-200 sm:my-0 sm:max-h-[90vh]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          tabIndex={-1}
         >
           {/* Top Bar with SKU & Close Button */}
           <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50">
@@ -196,7 +204,7 @@ const CatalogProductModalContent: React.FC<
                   </div>
 
                   {/* Title */}
-                  <h2 className="text-2xl font-serif text-neutral-900 mb-2 font-medium leading-tight">
+                  <h2 id={titleId} className="text-2xl font-serif text-neutral-900 mb-2 font-medium leading-tight">
                     {product.name}
                   </h2>
                   {product.color && (

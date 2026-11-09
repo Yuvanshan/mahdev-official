@@ -85,7 +85,7 @@ export const BookingView: React.FC<BookingViewProps> = ({
       />
 
       {/* 2. Main Booking Wizard Container */}
-      <main className="max-w-7xl mx-auto px-[var(--page-gutter)] -mt-8 relative z-10 pb-20">
+      <section className="max-w-7xl mx-auto px-[var(--page-gutter)] -mt-8 relative z-10 pb-20">
         <BookingWizard
           initialDivision={initialDivision}
           initialServiceId={initialServiceId}
@@ -163,7 +163,7 @@ export const BookingView: React.FC<BookingViewProps> = ({
             ))}
           </div>
         </div>
-      </main>
+      </section>
 
       {/* Success Modal */}
       {createdBooking && (

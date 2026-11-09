@@ -512,11 +512,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
         </header>
 
         {/* WORKSPACE BODY */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl w-full mx-auto">
+        <section className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl w-full mx-auto">
           <React.Suspense fallback={<AdminSectionSkeleton />}>
             {renderActiveView()}
           </React.Suspense>
-        </main>
+        </section>
       </div>
     </div>
   );

@@ -84,9 +84,9 @@ export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ slug, onNa
   if (!service) {
     if (!hasResolved) {
       return (
-        <main className="flex min-h-[55vh] items-center justify-center bg-slate-50 px-[var(--page-gutter)]">
+        <section className="flex min-h-[55vh] items-center justify-center bg-slate-50 px-[var(--page-gutter)]">
           <div role="status" className="h-10 w-10 animate-spin rounded-full border-4 border-blue-100 border-t-blue-700" />
-        </main>
+        </section>
       );
     }
     return <NotFoundView onNavigate={onNavigate} resourceType="service" attemptedSlug={slug} />;
@@ -128,7 +128,7 @@ export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ slug, onNa
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 pb-16 pt-24">
+    <section className="min-h-screen bg-slate-50 pb-16 pt-24">
       <SEOHead
         title={seo.title}
         description={seo.description}
@@ -222,6 +222,6 @@ export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ slug, onNa
           </div>
         </article>
       </SectionContainer>
-    </main>
+    </section>
   );
 };

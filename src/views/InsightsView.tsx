@@ -28,7 +28,7 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onNavigate }) => {
   }, []);
 
   return (
-    <main className="min-h-screen bg-white pt-24 pb-16">
+    <section className="min-h-screen bg-white pt-24 pb-16">
       <SEOHead
         title="Insights | Mahdev"
         description="Practical insights, project learnings, and helpful guidance from Mahdev's event, media, technology, travel, and production teams in Sri Lanka."
@@ -99,6 +99,6 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onNavigate }) => {
           </div>
         )}
       </SectionContainer>
-    </main>
+    </section>
   );
 };

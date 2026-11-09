@@ -65,6 +65,7 @@ export const ITHeroSection: React.FC<ITHeroSectionProps> = ({
       headline={headline}
       buttonLabel="Explore Services"
       onButtonClick={onExploreServices}
+      className="division-video-hero--legible"
     />
   );
 };

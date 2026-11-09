@@ -600,7 +600,7 @@ html[data-seasonal-theme="diwali"] {
     user-select: none;
   }
   .image-zoom-active img {
-    transform: scale(var(--image-mobile-scale, 2.5));
+    transform: scale(var(--image-mobile-scale, 1.4));
   }
   .image-zoom-active {
     touch-action: none;
@@ -1738,6 +1738,17 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   background: linear-gradient(90deg, rgba(6,16,51,.42) 0%, rgba(6,16,51,.30) 30%, rgba(6,16,51,.14) 58%, rgba(6,16,51,.04) 100%);
   content: "";
   pointer-events: none;
+}
+
+.division-video-hero--legible::after {
+  background: linear-gradient(
+    90deg,
+    rgba(6, 16, 51, .98) 0%,
+    rgba(6, 16, 51, .94) 38%,
+    rgba(6, 16, 51, .78) 58%,
+    rgba(6, 16, 51, .32) 78%,
+    rgba(6, 16, 51, .08) 100%
+  );
 }
 
 .division-video-hero > div:last-child {
@@ -2996,6 +3007,16 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
     min-height: 680px;
     margin: 0;
     border-radius: 0;
+  }
+
+  .division-video-hero--legible::after {
+    background: linear-gradient(
+      90deg,
+      rgba(6, 16, 51, .98) 0%,
+      rgba(6, 16, 51, .92) 58%,
+      rgba(6, 16, 51, .66) 82%,
+      rgba(6, 16, 51, .3) 100%
+    );
   }
 
   .division-video-hero h1,

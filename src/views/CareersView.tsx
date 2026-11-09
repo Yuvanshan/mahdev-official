@@ -168,7 +168,7 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
   };
 
   return (
-    <main className="min-h-screen bg-white pt-16 sm:pt-[72px]">
+    <section className="min-h-screen bg-white pt-16 sm:pt-[72px]">
       {/* A shared role link gets that opening's own title and auto-generated description. */}
       <SEOHead
         title={linkedOpening ? `${linkedOpening.title} – Careers at Mahdev` : CAREERS_PAGE_SEO.title}
@@ -364,6 +364,6 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
           </div>
         </SectionContainer>
       )}
-    </main>
+    </section>
   );
 };

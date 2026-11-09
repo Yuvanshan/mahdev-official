@@ -14,6 +14,7 @@ interface DivisionHeroProps {
   headline: string;
   buttonLabel: string;
   onButtonClick: () => void;
+  className?: string;
 }
 
 /**
@@ -28,11 +29,12 @@ export const DivisionHero: React.FC<DivisionHeroProps> = ({
   headline,
   buttonLabel,
   onButtonClick,
+  className = '',
 }) => {
   const heroRef = React.useRef<HTMLElement | null>(null);
 
   return (
-    <section ref={heroRef} className="division-video-hero relative flex min-h-[680px] w-full items-center overflow-hidden bg-[#061033] text-white sm:min-h-[740px] lg:min-h-[clamp(640px,72svh,820px)]">
+    <section ref={heroRef} className={`division-video-hero relative flex min-h-[680px] w-full items-center overflow-hidden bg-[#061033] text-white sm:min-h-[740px] lg:min-h-[clamp(640px,72svh,820px)] ${className}`}>
       <ScrollParallax targetRef={heroRef} distance={24} className="division-video-hero__media absolute -inset-y-10 right-[-2%] w-[72%] overflow-hidden">
         <HeroVideoBackground
           videoUrl={videoUrl}
@@ -46,7 +48,6 @@ export const DivisionHero: React.FC<DivisionHeroProps> = ({
       <div className="relative max-w-7xl mx-auto px-[var(--page-gutter)] py-20 sm:py-24 lg:py-28 z-20 w-full">
         <div className="max-w-3xl space-y-6">
           <motion.h1
-            aria-label={headline}
             initial={{ opacity: 0.85, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}

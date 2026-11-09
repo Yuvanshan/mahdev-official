@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import {
   X,
   Star,
@@ -20,6 +20,7 @@ import { Badge } from '../ui/Badge';
 import { formatCurrency } from '../../utils/currency';
 import { getImageAlt, getImageAltForPhoto } from '../../config/imageAlt';
 import { ImageZoomFrame } from '../common/ImageZoomFrame';
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 
 interface MartProductDetailModalProps {
   product: Product | null;
@@ -46,6 +47,8 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'specs' | 'desc' | 'reviews'>('desc');
+  const titleId = useId();
+  const dialogRef = useDialogFocus<HTMLDivElement>(isOpen, onClose);
 
   useEffect(() => {
     setActiveImageIndex(0);
@@ -105,8 +108,13 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
   return (
     <div className="fixed inset-0 z-[200] flex items-start justify-center overflow-y-auto overscroll-contain bg-slate-950/80 p-3 pb-[max(.75rem,env(safe-area-inset-bottom))] backdrop-blur-md sm:items-center sm:p-6 animate-fadeIn">
       <div
+        ref={dialogRef}
         className="relative my-0 flex max-h-[calc(100dvh-1.5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:my-8 sm:max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
       >
         {/* Top Header Bar */}
         <div className="flex items-center justify-between px-6 py-3.5 border-b border-slate-100 bg-slate-900 text-white shrink-0">
@@ -180,7 +188,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                   <span>SKU: {currentVariant?.sku || product.sku}</span>
                 </div>
 
-                <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight">
+                <h1 id={titleId} className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight">
                   {product.name}
                 </h1>
                 {product.color && (

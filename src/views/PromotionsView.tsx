@@ -47,7 +47,7 @@ export const PromotionsView: React.FC<PromotionsViewProps> = ({ onNavigate, sele
     const endDate = formatOfferDate(selectedOffer.endDate);
     return (
       <div className="min-h-[70vh] bg-slate-50">
-        <main className="mx-auto max-w-5xl px-4 py-7 sm:px-6 sm:py-10 lg:px-8">
+        <section className="mx-auto max-w-5xl px-4 py-7 sm:px-6 sm:py-10 lg:px-8">
           <button
             type="button"
             onClick={() => onNavigate('/promotion')}
@@ -110,7 +110,7 @@ export const PromotionsView: React.FC<PromotionsViewProps> = ({ onNavigate, sele
               </div>
             </div>
           </article>
-        </main>
+        </section>
       </div>
     );
   }
@@ -129,7 +129,7 @@ export const PromotionsView: React.FC<PromotionsViewProps> = ({ onNavigate, sele
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-10 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-10 lg:px-8">
         {banners.length ? (
           <div className="grid min-w-0 grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
             {banners.map((banner) => {
@@ -191,7 +191,7 @@ export const PromotionsView: React.FC<PromotionsViewProps> = ({ onNavigate, sele
             <p className="mt-2 text-sm text-slate-600">Please check back soon for our latest promotions.</p>
           </div>
         )}
-      </main>
+      </section>
     </div>
   );
 };

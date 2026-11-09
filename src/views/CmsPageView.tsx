@@ -48,7 +48,7 @@ export const CmsPageView: React.FC<CmsPageViewProps> = ({ slug, onNavigate }) =>
     page.content.replace(/[#*_`>\[\]()]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160);
 
   return (
-    <main className="max-w-5xl mx-auto w-full px-[var(--page-gutter)] py-16 sm:py-24">
+    <section className="max-w-5xl mx-auto w-full px-[var(--page-gutter)] py-16 sm:py-24">
       <SEOHead
         title={page.title}
         description={description}
@@ -69,6 +69,6 @@ export const CmsPageView: React.FC<CmsPageViewProps> = ({ slug, onNavigate }) =>
           </section>
         ))}
       </article>
-    </main>
+    </section>
   );
 };

@@ -1,6 +1,7 @@
 # Mahdev Website QA & UX Report
 
-**Assessment date:** 6 November 2026  
+**Initial assessment date:** 6 November 2026
+**Remediation update:** 9 November 2026
 **Environment:** Live Vercel deployment aliases; browser viewport observed at 433 × 454 px  
 **Initial assessment:** Preview UX **7.3/10**; production-domain readiness **blocked pending domain decision**
 
@@ -32,7 +33,13 @@ The code findings below have been addressed locally; changes still need to be de
 | Automatic WhatsApp popup obscures mobile content | **Fixed locally** | Removed the intrusive popup while restoring a subtle unread badge after 10 seconds. Opening chat clears the badge; the back-to-top button sits above it. |
 | Mobile/webview scrolling can feel trapped | **Fixed locally; smoke-tested** | Removed mobile-wide `overflow-x: hidden` from every section (which could create nested scroll containers) and use non-scroll-container clipping at the page edge. A mobile-width detail-modal scroll test advanced the content normally. |
 | Service/gallery/product images lack direct zoom affordance | **Improved locally; interaction-tested** | Added a shared hover-to-magnify desktop interaction and tap-to-toggle zoom on touch, with a focus marker at the zoom point, in service/gallery and product detail viewers. |
-| Home preload warning on division routes | **Verified in production build** | Generated home and division HTML were checked: the home page retains its poster preload, while division pages and the app shell do not. Local Vite development still serves the source HTML and may log the warning. |
+| Home preload warning on division routes | **Fixed locally** | Removed the static hero-poster preload from the shared app shell so division hosts no longer request an unused homepage image. The homepage poster is no longer explicitly preloaded either. |
+| IT hero text contrast | **Fixed locally** | Added an IT-specific background overlay so the hero heading remains legible over the image. |
+| Duplicate public `<main>` landmarks | **Fixed locally** | Replaced nested page-level main landmarks with sections/containers; standalone SSO screens keep their own main landmark. |
+| Announcement/banner scope | **Fixed locally** | Division-targeted CMS banners now respect their division, and generic event-booking banners are suppressed on irrelevant division pages, including Travels. |
+| Number foil balloon variation bypass | **Fixed locally** | Number foil balloons without configured choices now require selection of a digit from 0–9 in both catalog and Mart flows; Mart card quick-add opens product details instead. |
+| Product modal keyboard accessibility | **Improved locally** | Product dialogs now have labelled dialog semantics, Escape-to-close, focus trapping, initial focus, and focus restoration. |
+| Mobile image zoom is excessively cropped | **Fixed locally** | Shared touch zoom for gallery, services, and products now uses 1.4× instead of 2.5×; desktop zoom remains unchanged. |
 
 **Current code quality checks:** TypeScript type-check and production build pass. The local build lacks Turso credentials, so dynamic sitemap data fell back to static public routes; deployment builds should use the configured production database.
 
@@ -79,6 +86,7 @@ Scores are heuristic manual scores for the Vercel preview experience, based on p
 - Follow-up mobile-width browser check: the WhatsApp unread badge appeared after its delay; when visible, the back-to-top control was positioned above it. Opening the support chat clears the badge.
 - Follow-up mobile-width scroll check: the service detail content scroll position advanced from 0 to 228px without trapping the page.
 - Follow-up image interaction check: service detail images magnified around the desktop pointer, showed the focus marker, and toggled magnification on tap at mobile width.
+- Follow-up change: reduced shared mobile image zoom to 1.4× across gallery, service, and product viewers while retaining the full-screen image presentation.
 - With dummy Firebase configuration and an unavailable local API, exercised both contact and launch-alert failure paths: each displayed a retryable error and neither showed a success confirmation. No real inquiry was created.
 - Rechecked empty corporate-form submission locally: inline required-field errors appeared.
 - Ran `npm run typecheck`, `npm run build`, and `git diff --check` successfully. The build's sitemap script logged a missing-local-Turso warning and completed with the documented static-route fallback.
@@ -90,6 +98,7 @@ Scores are heuristic manual scores for the Vercel preview experience, based on p
 - The browser runner could not stabilize some animated controls for automated clicking. Cart/checkout behavior is therefore **not verified**, not marked failed.
 - Some third-party telemetry/reCAPTCHA requests were aborted during browser navigation; these were not counted as product defects.
 - No Lighthouse/Core Web Vitals run or cross-device browser matrix was available.
+- The current local preview could serve the built shell but could not mount the client application because Firebase client configuration is not available in this environment; the newly changed UI interactions therefore still need live-browser verification after deployment.
 - Full success-path verification for contact submission and Travels launch-alert registration still requires a configured test database and mail gateway.
 
 ## Remaining release actions

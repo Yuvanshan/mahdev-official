@@ -158,7 +158,7 @@ const RouteLoadingFallback: React.FC<RouteLoadingFallbackProps> = ({ path }) => 
           <div className="mt-2 h-5 w-2/3 max-w-2xl rounded bg-slate-100" />
         </div>
       </section>
-      <main className="mx-auto w-full max-w-7xl animate-pulse px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+      <div className="mx-auto w-full max-w-7xl animate-pulse px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
         {isAbout ? (
           <div className="space-y-10">
             <div className="h-56 rounded-3xl bg-white" />
@@ -195,7 +195,7 @@ const RouteLoadingFallback: React.FC<RouteLoadingFallbackProps> = ({ path }) => 
             </div>
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 };
@@ -1503,7 +1503,9 @@ function AppContent() {
 
       {/* Sticky Top Navigation */}
       {/* Keep the campaign banner visible across the public site, including division routes. */}
-      {!isAdminRoute && <AnnouncementBanner onNavigate={navigate} />}
+      {!isAdminRoute && (
+        <AnnouncementBanner onNavigate={navigate} divisionId={activeDivisionSite} />
+      )}
       <Navigation
         currentPath={normalizedPath}
         onNavigate={navigate}

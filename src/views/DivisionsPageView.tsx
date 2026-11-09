@@ -21,7 +21,7 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
   }, []);
 
   return (
-    <main className="divisions-directory-page bg-white">
+    <section className="divisions-directory-page bg-white">
       <SEOHead
         title={title ? `${title} | ${companySettings?.name || ''}` : companySettings?.name || ''}
         description={`Explore the business divisions of ${companySettings?.name || 'Mahdev Group'}.`}
@@ -48,6 +48,6 @@ export const DivisionsPageView: React.FC<DivisionsPageViewProps> = ({ onNavigate
           </div>
         </SectionContainer>
       )}
-    </main>
+    </section>
   );
 };
