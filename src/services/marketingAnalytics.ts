@@ -28,7 +28,7 @@ declare global {
 let initialized = false;
 let googleMeasurementId = '';
 let metaPixelId = '';
-const GOOGLE_TAG_MANAGER_ID = 'GTM-KR98DF25';
+let googleTagManagerId = '';
 const MARKETING_SITE_HOST = new URL(
   import.meta.env?.VITE_APP_URL || CANONICAL_SITE_ORIGIN
 ).hostname;
@@ -46,7 +46,7 @@ function isAllowedMarketingHost(): boolean {
 }
 
 function loadGoogleTagManager(): void {
-  if (document.getElementById('mahdev-gtm-script')) return;
+  if (!googleTagManagerId || document.getElementById('mahdev-gtm-script')) return;
 
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
@@ -54,7 +54,7 @@ function loadGoogleTagManager(): void {
   const script = document.createElement('script');
   script.id = 'mahdev-gtm-script';
   script.async = true;
-  script.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(GOOGLE_TAG_MANAGER_ID)}`;
+  script.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(googleTagManagerId)}`;
   document.head.appendChild(script);
 }
 
@@ -64,14 +64,20 @@ function initializeMarketingAnalytics(): void {
 
   googleMeasurementId = import.meta.env?.VITE_GA_MEASUREMENT_ID || '';
   metaPixelId = import.meta.env?.VITE_META_PIXEL_ID || '';
+  googleTagManagerId = import.meta.env?.VITE_GTM_CONTAINER_ID || '';
   const validGoogleId = /^G-[A-Z0-9]+$/i.test(googleMeasurementId);
   const validMetaId = /^\d{5,20}$/.test(metaPixelId);
+  const validGoogleTagManagerId = /^GTM-[A-Z0-9]+$/i.test(googleTagManagerId);
+  if (!validGoogleId && !validMetaId && !validGoogleTagManagerId) {
+    initialized = true;
+    return;
+  }
 
   window.dataLayer = window.dataLayer || [];
   window.gtag = window.gtag || ((...args: unknown[]) => {
     window.dataLayer?.push(args);
   });
-  loadGoogleTagManager();
+  if (validGoogleTagManagerId) loadGoogleTagManager();
 
   if (validGoogleId) {
     window.gtag('js', new Date());

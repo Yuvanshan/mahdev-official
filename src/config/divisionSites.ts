@@ -3,6 +3,38 @@ import { CANONICAL_SITE_ORIGIN } from './site.js';
 export const DIVISION_SITE_IDS = ['sws', 'u1', 'it', 'travels', 'mart'] as const;
 export type DivisionSiteId = (typeof DIVISION_SITE_IDS)[number];
 
+export const DIVISION_SITE_BRANDING: Record<DivisionSiteId, {
+  name: string;
+  shortName: string;
+  logoPath: string;
+}> = {
+  sws: {
+    name: 'SWS Event Management',
+    shortName: 'SWS',
+    logoPath: '/assets/images/sws_logo.jpeg',
+  },
+  u1: {
+    name: 'U1 Studio',
+    shortName: 'U1 Studio',
+    logoPath: '/assets/images/u1_logo.jpeg',
+  },
+  it: {
+    name: 'Mahdev IT Solutions',
+    shortName: 'Mahdev IT',
+    logoPath: '/assets/images/it_logo.svg',
+  },
+  travels: {
+    name: 'Mahdev Travels',
+    shortName: 'Travels',
+    logoPath: '/assets/images/travels_logo.svg',
+  },
+  mart: {
+    name: 'Mahdev Online Mart',
+    shortName: 'Mahdev Mart',
+    logoPath: '/assets/images/mart_logo.svg',
+  },
+};
+
 const divisionEnvKeys: Record<DivisionSiteId, keyof ImportMetaEnv> = {
   sws: 'VITE_SWS_SITE_URL',
   u1: 'VITE_U1_SITE_URL',

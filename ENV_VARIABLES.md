@@ -82,6 +82,7 @@ This document outlines the environment configuration architecture for the **Mahd
 | `WHATSAPP_TEMPLATE_LANGUAGE` | Server | Standard | Language code of that template | `en` |
 | `WHATSAPP_WEBHOOK_VERIFY_TOKEN` | Server | **Confidential** | Verify token Meta sends to `/api/webhook/whatsapp` during webhook setup | Random string |
 | `VITE_GA_MEASUREMENT_ID` | Client | Public | Google Analytics 4 ID | `G-XXXXXXXXXX` |
+| `VITE_GTM_CONTAINER_ID` | Client | Public | Google Tag Manager container ID | `GTM-XXXXXXXX` |
 | `VITE_GOOGLE_MAPS_API_KEY` | Client | Public | Google Maps API Display Key | `AIzaSy...` (HTTP restricted) |
 
 ---

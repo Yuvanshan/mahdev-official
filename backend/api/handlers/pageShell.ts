@@ -4,7 +4,10 @@ import { handleTursoAction } from '../tursoRoutes.js';
 import { APP_ROUTE_SEGMENTS, PRERENDERED_ROUTES, PRIVATE_ROUTE_SEGMENTS, RETIRED_ADMIN_SEGMENTS } from '../../seo/publicRoutes.js';
 import { resolveDynamicRouteSeo } from '../../seo/dynamicRouteSeo.js';
 import { renderSeoHtml } from '../../seo/renderSeoHtml.js';
-import { getDivisionSiteForHost } from '../../../src/config/divisionSites.js';
+import {
+  DIVISION_SITE_BRANDING,
+  getDivisionSiteForHost,
+} from '../../../src/config/divisionSites.js';
 
 /**
  * GET /api/page-shell?route=/some/route (or the original page URL via a rewrite)
@@ -55,6 +58,21 @@ const GALLERY_ITEM_PATTERN = /^\/?(gallery|media)\/?$/i;
 // /book/service/{id}, /book/gallery/{id}, /book/product/{id}: personal booking forms.
 const ONLINE_BOOKING_PATTERN = /^\/?book\/(service|gallery|product)\//i;
 
+function applyDivisionBranding(html: string, division: keyof typeof DIVISION_SITE_BRANDING): string {
+  const { logoPath } = DIVISION_SITE_BRANDING[division];
+  const type = logoPath.endsWith('.svg') ? 'image/svg+xml' : 'image/jpeg';
+  const faviconLinks = [
+    `<link rel="icon" type="${type}" href="${logoPath}" />`,
+    `<link rel="shortcut icon" type="${type}" href="${logoPath}" />`,
+    `<link rel="apple-touch-icon" href="${logoPath}" />`,
+  ].join('\n    ');
+  const withoutCompanyIcons = html.replace(
+    /<link\b(?=[^>]*\brel="(?:icon|shortcut icon|apple-touch-icon|manifest)")[^>]*\/>/gi,
+    ''
+  );
+  return withoutCompanyIcons.replace('</head>', `    ${faviconLinks}\n  </head>`);
+}
+
 async function resolveStatus(path: string): Promise<200 | 404> {
   const normalised = path.replace(/^\/+|\/+$/g, '').toLowerCase();
   // "%" also ends the segment so legacy "/services%{slug}" category links resolve as /services.
@@ -95,6 +113,7 @@ async function serveShell(req: IncomingMessage, res: ServerResponse, forcedStatu
   let html: string;
   try {
     html = await getShell(origin);
+    if (hostDivision) html = applyDivisionBranding(html, hostDivision);
   } catch (error) {
     console.error('[PageShell] App shell unavailable:', error);
     res.statusCode = 503;
