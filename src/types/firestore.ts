@@ -256,6 +256,8 @@ export interface FirestoreBooking {
   packageId?: string;
   packageName?: string;
   location?: FirestoreBookingLocation;
+  /** Admin-only booking costs, excluded from customer reads by the API. */
+  internalCosts?: Array<{ amount: number }>;
   createdAt: string;
   updatedAt: string;
 }

@@ -114,6 +114,8 @@ export interface Booking {
   designImages?: string[];
   /** Itemised decoration details; `price` is the total after discount and fees. */
   lineItems?: BookingLineItem[];
+  /** Admin-only costs for internal tracking; never included in customer booking views. */
+  internalCosts?: BookingInternalCost[];
   subtotal?: number;
   discount?: number;
   couponCode?: string;
@@ -145,6 +147,14 @@ export interface BookingLineItem {
   description: string;
   quantity: number;
   unitPrice: number;
+}
+
+export interface BookingInternalCost {
+  id: string;
+  description: string;
+  amount: number;
+  addedAt: string;
+  addedBy?: string;
 }
 
 export type BookingPaymentKind = 'advance' | 'balance' | 'other';

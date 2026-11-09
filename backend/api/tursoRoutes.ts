@@ -170,7 +170,7 @@ const PUBLIC_READ_COLLECTIONS = new Set([
 // creating a record cannot preset them (e.g. a fake "paid" amount or admin notes).
 const SERVER_OWNED_RECORD_FIELDS = [
   'amountPaid', 'payments', 'advanceAmount', 'discount', 'deliveryFee', 'customerUpdates',
-  'adminNotes', 'rejectionReason', 'cancellationReason', 'invoiceNumber',
+  'adminNotes', 'internalCosts', 'rejectionReason', 'cancellationReason', 'invoiceNumber',
   'confirmationEmailSentAt', 'bookingReceiptEmailSentAt', 'pricingVerification', 'contactEmail', 'paymentSlips',
 ];
 function withoutServerOwnedFields(data: Record<string, unknown>): Record<string, unknown> {
@@ -180,7 +180,7 @@ function withoutServerOwnedFields(data: Record<string, unknown>): Record<string,
 }
 
 // Internal fields customers never receive when reading their own orders and bookings.
-const CUSTOMER_HIDDEN_RECORD_FIELDS = ['adminNotes', 'pricingVerification', 'confirmationEmailSentAt', 'bookingReceiptEmailSentAt'];
+const CUSTOMER_HIDDEN_RECORD_FIELDS = ['adminNotes', 'internalCosts', 'pricingVerification', 'confirmationEmailSentAt', 'bookingReceiptEmailSentAt'];
 function hideInternalRecordFields(collection: string, document: TursoDocument): TursoDocument {
   if (collection !== 'orders' && collection !== 'bookings') return document;
   const data = { ...document.data };

@@ -8,6 +8,7 @@ import {
   BookingType,
   BookingPaymentRecord,
   BookingLineItem,
+  BookingInternalCost,
   BookingCustomerUpdate,
   BookingPaymentSlip,
 } from '../types/booking';
@@ -91,6 +92,7 @@ export function mapFirestoreBookingToUniversal(fb: any): Booking {
     designTitle: fb.designTitle,
     designImages: Array.isArray(fb.designImages) ? fb.designImages : undefined,
     lineItems: Array.isArray(fb.lineItems) ? fb.lineItems : undefined,
+    internalCosts: Array.isArray(fb.internalCosts) ? fb.internalCosts : undefined,
     subtotal: fb.subtotal,
     discount: fb.discount,
     deliveryFee: fb.deliveryFee,
@@ -994,6 +996,39 @@ class UniversalBookingService {
         message: `The total for ${booking.serviceName} is now ${formatCurrency(price)}${deliveryFee > 0 ? ` (including ${formatCurrency(deliveryFee)} transport / delivery)` : ''}.${note ? ` ${note}` : ''}`,
       }
     );
+  }
+
+  /** Saves admin-only costs without adding a customer-visible booking update. */
+  public async adminUpdateInternalCosts(
+    id: string,
+    costs: BookingInternalCost[]
+  ): Promise<{ success: boolean; booking?: Booking; error?: string }> {
+    const booking = this.getBookingById(id);
+    if (!booking) return { success: false, error: 'Booking not found.' };
+    if (!Array.isArray(costs) || costs.length > 100) {
+      return { success: false, error: 'A booking can have up to 100 internal cost entries.' };
+    }
+
+    const normalizedCosts: BookingInternalCost[] = [];
+    for (const cost of costs) {
+      const description = cost.description.trim();
+      const amount = Number(cost.amount);
+      if (!description || description.length > 160) {
+        return { success: false, error: 'Each cost needs a description of 1-160 characters.' };
+      }
+      if (!Number.isFinite(amount) || amount < 0) {
+        return { success: false, error: 'Each cost must be a valid amount of zero or more.' };
+      }
+      normalizedCosts.push({
+        id: cost.id,
+        description,
+        amount: Math.round(amount * 100) / 100,
+        addedAt: cost.addedAt || new Date().toISOString(),
+        ...(cost.addedBy ? { addedBy: cost.addedBy.slice(0, 100) } : {}),
+      });
+    }
+
+    return this.saveAdminChange(id, { internalCosts: normalizedCosts });
   }
 
   public updateBookingStatus(

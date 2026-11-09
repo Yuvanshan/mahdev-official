@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Check, ListChecks, Plus, Receipt, Trash2 } from 'lucide-react';
+import { Check, ChevronDown, ListChecks, Plus, Receipt, Trash2, Wallet } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { bookingService } from '../../services/bookingService';
 import { formatCurrency } from '../../utils/currency';
-import type { Booking, BookingLineItem, BookingStatus } from '../../types/booking';
+import type { Booking, BookingInternalCost, BookingLineItem, BookingStatus } from '../../types/booking';
 
 interface AdminBookingWorkflowPanelProps {
   booking: Booking;
@@ -53,6 +53,10 @@ export const AdminBookingWorkflowPanel: React.FC<AdminBookingWorkflowPanelProps>
   const [lines, setLines] = useState<BookingLineItem[]>(() => initialLines(booking));
   const [discount, setDiscount] = useState(String(booking.discount || 0));
   const [deliveryFee, setDeliveryFee] = useState(String(booking.deliveryFee || 0));
+  const [internalCosts, setInternalCosts] = useState<BookingInternalCost[]>(() =>
+    (booking.internalCosts || []).map((cost) => ({ ...cost }))
+  );
+  const [showInternalCosts, setShowInternalCosts] = useState(false);
   const [note, setNote] = useState('');
 
   // Reload the editor when another booking opens or the saved charges change.
@@ -60,6 +64,7 @@ export const AdminBookingWorkflowPanel: React.FC<AdminBookingWorkflowPanelProps>
     setLines(initialLines(booking));
     setDiscount(String(booking.discount || 0));
     setDeliveryFee(String(booking.deliveryFee || 0));
+    setInternalCosts((booking.internalCosts || []).map((cost) => ({ ...cost })));
     setNote('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [booking.id, booking.price, booking.updatedAt]);
@@ -93,6 +98,24 @@ export const AdminBookingWorkflowPanel: React.FC<AdminBookingWorkflowPanelProps>
 
   const updateLine = (index: number, changes: Partial<BookingLineItem>) =>
     setLines((current) => current.map((item, i) => (i === index ? { ...item, ...changes } : item)));
+
+  const updateInternalCost = (id: string, changes: Partial<BookingInternalCost>) =>
+    setInternalCosts((current) => current.map((cost) => (cost.id === id ? { ...cost, ...changes } : cost)));
+
+  const internalCostTotal = round(internalCosts.reduce((sum, cost) => sum + (Number(cost.amount) || 0), 0));
+  const internalCostsChanged = JSON.stringify(internalCosts) !== JSON.stringify(booking.internalCosts || []);
+
+  const saveInternalCosts = async () => {
+    setIsSaving(true);
+    const result = await bookingService.adminUpdateInternalCosts(booking.id, internalCosts);
+    setIsSaving(false);
+    if (result.success) {
+      notify('success', 'Internal Costs Saved', `Internal costs for ${booking.id} were updated.`);
+      onSaved();
+    } else {
+      notify('error', 'Could Not Save Costs', result.error || 'Internal costs could not be saved.');
+    }
+  };
 
   const saveCharges = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -167,6 +190,109 @@ export const AdminBookingWorkflowPanel: React.FC<AdminBookingWorkflowPanelProps>
           </div>
         )}
       </div>
+
+      {/* Internal costs are admin-only and do not change customer charges or alerts. */}
+      <section className="bg-white rounded-xl border border-amber-200 shadow-2xs overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setShowInternalCosts((open) => !open)}
+          aria-expanded={showInternalCosts}
+          className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-amber-50/60 transition-colors"
+        >
+          <span className="flex items-center gap-2 font-bold text-slate-900">
+            <Wallet className="w-4 h-4 text-amber-700" /> Internal Costs
+            <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+              Admin only
+            </span>
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="font-mono text-xs font-semibold text-slate-700">{formatCurrency(internalCostTotal, currency)}</span>
+            <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${showInternalCosts ? 'rotate-180' : ''}`} />
+          </span>
+        </button>
+        {showInternalCosts && (
+          <div className="border-t border-amber-100 p-4 space-y-3">
+            <p className="text-[11px] text-slate-500">
+              Track operational costs here. These entries are not part of the customer price, invoice, or notifications.
+            </p>
+            {internalCosts.length === 0 && (
+              <p className="text-xs text-slate-500 rounded-lg bg-slate-50 p-3">No internal costs recorded.</p>
+            )}
+            {internalCosts.map((cost) => (
+              <div key={cost.id} className="grid grid-cols-12 gap-2 items-end">
+                <div className="col-span-12 sm:col-span-7">
+                  <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Cost description</label>
+                  <input
+                    className={inputClass}
+                    value={cost.description}
+                    maxLength={160}
+                    onChange={(event) => updateInternalCost(cost.id, { description: event.target.value })}
+                    placeholder="e.g. Crew transport"
+                  />
+                </div>
+                <div className="col-span-8 sm:col-span-4">
+                  <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Cost ({currency})</label>
+                  <input
+                    className={inputClass}
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={cost.amount}
+                    onChange={(event) => updateInternalCost(cost.id, { amount: Number(event.target.value) })}
+                  />
+                </div>
+                <div className="col-span-4 sm:col-span-1 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setInternalCosts((current) => current.filter((entry) => entry.id !== cost.id))}
+                    disabled={isSaving}
+                    className="p-2 text-rose-500 hover:text-rose-700 disabled:opacity-30"
+                    aria-label={`Remove ${cost.description || 'internal cost'}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+                {cost.addedAt && (
+                  <div className="col-span-12 text-[10px] text-slate-400">
+                    Added {new Date(cost.addedAt).toLocaleDateString()} {cost.addedBy ? `by ${cost.addedBy}` : ''}
+                  </div>
+                )}
+              </div>
+            ))}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={isSaving || internalCosts.length >= 100}
+                onClick={() => setInternalCosts((current) => [
+                  ...current,
+                  {
+                    id: `COST-${Date.now().toString(36).toUpperCase()}`,
+                    description: '',
+                    amount: 0,
+                    addedAt: new Date().toISOString(),
+                    addedBy: adminName,
+                  },
+                ])}
+                className="h-8 text-xs"
+              >
+                <Plus className="w-3.5 h-3.5 mr-1" /> Add cost
+              </Button>
+              <Button
+                type="button"
+                variant="electric"
+                size="sm"
+                disabled={isSaving || !internalCostsChanged}
+                onClick={() => void saveInternalCosts()}
+                className="h-8 text-xs"
+              >
+                Save internal costs
+              </Button>
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Charges: invoice lines, discount, transport / delivery */}
       <form onSubmit={saveCharges} className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3">

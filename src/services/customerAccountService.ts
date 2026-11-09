@@ -21,6 +21,15 @@ import type { PaymentGatewayType, PaymentState, PaymentTransaction } from '../ty
 const newestFirst = <T extends { createdAt: string }>(items: T[]) =>
   items.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
+function customerVisibleBookings(bookings: Booking[]): Booking[] {
+  return bookings.map((booking) => {
+    const visible = { ...booking };
+    delete visible.internalCosts;
+    delete visible.adminNotes;
+    return visible;
+  });
+}
+
 /** Saved records win over session copies with the same id. */
 function mergeById<T extends { id: string; createdAt: string }>(saved: T[], session: T[]): T[] {
   const byId = new Map<string, T>();
@@ -38,7 +47,9 @@ export async function loadMyOrders(user: CustomerUser): Promise<Order[]> {
 
 export async function loadMyBookings(user: CustomerUser): Promise<Booking[]> {
   const snapshot = await getDocs(collection(db, 'bookings'));
-  const saved = snapshot.docs.map((document) => mapFirestoreBookingToUniversal({ ...document.data(), id: document.id }));
+  const saved = customerVisibleBookings(
+    snapshot.docs.map((document) => mapFirestoreBookingToUniversal({ ...document.data(), id: document.id }))
+  );
   // A successful server read is authoritative: merging browser copies here can
   // resurrect a booking that an administrator has deleted.
   return newestFirst(saved);
@@ -104,10 +115,18 @@ function saveTabCache() {
 
 function readTabCache(): typeof accountCache {
   try {
-    const saved = JSON.parse(safeStorage.getItem(ACCOUNT_TAB_KEY) || 'null');
+    const saved = JSON.parse(safeStorage.getItem(ACCOUNT_TAB_KEY) || 'null') as
+      | { uid?: unknown; data?: AccountData; stale?: boolean }
+      | null;
     // A page reload may restore stale history, so show it immediately but always
     // verify it against the server before treating it as current.
-    return saved && typeof saved.uid === 'string' && saved.data ? { ...saved, stale: true } : null;
+    return saved && typeof saved.uid === 'string' && saved.data
+      ? {
+          uid: saved.uid,
+          data: { ...saved.data, bookings: customerVisibleBookings(saved.data.bookings || []) },
+          stale: true,
+        }
+      : null;
   } catch {
     return null;
   }
@@ -115,7 +134,9 @@ function readTabCache(): typeof accountCache {
 
 /** Cached history for this customer, if any (may be older than the refresh window). */
 export function peekAccountData(uid: string): AccountData | null {
-  return accountCache?.uid === uid ? accountCache.data : null;
+  return accountCache?.uid === uid
+    ? { ...accountCache.data, bookings: customerVisibleBookings(accountCache.data.bookings) }
+    : null;
 }
 
 /** Whether cached history should be refreshed in the background. */
@@ -132,7 +153,10 @@ export function isAccountDataStale(uid: string): boolean {
  */
 export function loadAccountData(user: CustomerUser, { force = false } = {}): Promise<AccountData> {
   const uid = user.uid || user.id;
-  if (!force && accountCache?.uid === uid && !isAccountDataStale(uid)) return Promise.resolve(accountCache.data);
+  if (!force && accountCache?.uid === uid && !isAccountDataStale(uid)) {
+    const cached = peekAccountData(uid);
+    if (cached) return Promise.resolve(cached);
+  }
   if (accountRequest?.uid === uid) return accountRequest.promise;
 
   const promise = (async (): Promise<AccountData> => {
@@ -142,7 +166,11 @@ export function loadAccountData(user: CustomerUser, { force = false } = {}): Pro
     if (failed) console.warn('[Account] Could not load part of the account history:', { orders, bookings, payments });
     const data: AccountData = {
       orders: orders.status === 'fulfilled' ? orders.value : previous?.orders ?? orderService.getOrdersByEmail(user.email),
-      bookings: bookings.status === 'fulfilled' ? bookings.value : previous?.bookings ?? bookingService.getBookingsByCustomerEmail(user.email),
+      bookings: customerVisibleBookings(
+        bookings.status === 'fulfilled'
+          ? bookings.value
+          : previous?.bookings ?? bookingService.getBookingsByCustomerEmail(user.email)
+      ),
       payments: payments.status === 'fulfilled' ? payments.value : previous?.payments ?? [],
       error: failed ? 'Some of your history could not be loaded. Please try again shortly.' : null,
       loadedAt: Date.now(),

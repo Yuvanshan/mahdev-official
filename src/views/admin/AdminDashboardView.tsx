@@ -29,6 +29,7 @@ import {
   BarChart3,
   CalendarRange,
   Zap,
+  Wallet,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { AdminInlineImageTool } from '../../components/admin/AdminInlineImageTool';
@@ -328,6 +329,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     const martRevenue = paidOrders.reduce((s, o) => s + (Number(o.total) || 0), 0);
     const bookingRevenue = paidBookings.reduce((s, b) => s + (Number(b.price) || 0), 0);
     const periodRevenue = martRevenue + bookingRevenue;
+    const internalBookingCosts = filteredBookings.reduce(
+      (total, booking) => total + (booking.internalCosts || []).reduce((sum, cost) => sum + (Number(cost.amount) || 0), 0),
+      0
+    );
 
     // All-time gross revenue
     const allPaidOrders = orders.filter(
@@ -407,6 +412,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       allTimeRevenue,
       martRevenue,
       bookingRevenue,
+      internalBookingCosts,
       totalOrders: filteredOrders.length,
       paidOrders: paidOrders.length,
       paidBookings: paidBookings.length,
@@ -928,6 +934,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <span className="text-purple-700 font-bold">{metrics.scheduledBookings} Scheduled</span>
                   <span>•</span>
                   <span className="text-emerald-700 font-bold">{metrics.completedBookings} Delivered</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] text-amber-700 mt-2 font-semibold">
+                  <Wallet className="w-3 h-3" />
+                  <span>Internal costs (selected range): {formatCurrency(metrics.internalBookingCosts)}</span>
                 </div>
               </>
             )}

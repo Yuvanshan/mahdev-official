@@ -40,6 +40,7 @@ export const HomeExpandableShowcase: React.FC<HomeExpandableShowcaseProps> = ({
   emptyMessage,
 }) => {
   const [activeId, setActiveId] = useState(items[0]?.id || '');
+  const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
   const activeItem = items.find((item) => item.id === activeId) || items[0];
   const images = Array.from(new Set(activeItem?.images.filter(Boolean) || []));
   const { activeIndex, containerRef } = useAutoSlideImage(images.length);
@@ -59,7 +60,15 @@ export const HomeExpandableShowcase: React.FC<HomeExpandableShowcaseProps> = ({
   }
 
   return (
-    <div className="home-showcase">
+    <div
+      className="home-showcase"
+      onMouseLeave={() => setIsPreviewExpanded(false)}
+      onBlur={(event) => {
+        if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) {
+          setIsPreviewExpanded(false);
+        }
+      }}
+    >
       <div className="home-showcase-list" role="group" aria-label="Choose a featured item">
         {items.map((item, index) => {
           const isActive = item.id === activeItem.id;
@@ -67,8 +76,18 @@ export const HomeExpandableShowcase: React.FC<HomeExpandableShowcaseProps> = ({
             <button
               key={item.id}
               type="button"
-              onClick={() => setActiveId(item.id)}
-              onFocus={() => setActiveId(item.id)}
+              onClick={() => {
+                setActiveId(item.id);
+                setIsPreviewExpanded(true);
+              }}
+              onMouseEnter={() => {
+                setActiveId(item.id);
+                setIsPreviewExpanded(true);
+              }}
+              onFocus={() => {
+                setActiveId(item.id);
+                setIsPreviewExpanded(true);
+              }}
               aria-pressed={isActive}
               aria-label={`Show ${item.title} in the feature gallery`}
               className={`home-showcase-item${isActive ? ' is-active' : ''}`}
@@ -98,7 +117,9 @@ export const HomeExpandableShowcase: React.FC<HomeExpandableShowcaseProps> = ({
         <a
           href={activePath}
           onClick={(event) => navigate(event, activePath)}
-          className="home-showcase-feature is-expanded"
+          onMouseEnter={() => setIsPreviewExpanded(true)}
+          onFocus={() => setIsPreviewExpanded(true)}
+          className={`home-showcase-feature${isPreviewExpanded ? ' is-expanded' : ''}`}
           aria-label={`Explore ${activeItem.title}`}
         >
           {showcaseImages.map((image, index) => (
