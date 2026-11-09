@@ -7,9 +7,9 @@
  */
 
 import type { RouteSeo } from './publicRoutes.js';
-import { SOCIAL_PROFILES } from '../../frontend/src/config/company.js';
-import { withServiceArea } from '../../frontend/src/config/itemSeo.js';
-import { getCanonicalPublicUrl } from '../../frontend/src/config/divisionSites.js';
+import { SOCIAL_PROFILES } from '../../shared/config/company.js';
+import { withServiceArea } from '../../shared/config/itemSeo.js';
+import { getCanonicalPublicUrl } from '../../shared/config/divisionSites.js';
 
 // Official profiles as plain links, so crawlers that do not run JavaScript still find them.
 const SOCIAL_LINKS_HTML = SOCIAL_PROFILES

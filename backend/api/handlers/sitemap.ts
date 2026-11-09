@@ -5,13 +5,13 @@ import {
   listTursoDocuments,
   type TursoDocument,
 } from '../../db/tursoDatabase.js';
-import { CANONICAL_SITE_ORIGIN } from '../../../frontend/src/config/site.js';
-import { DIVISIONS } from '../../../frontend/src/config/divisions.js';
-import { canonicalizeDivisionRoute } from '../../../frontend/src/config/divisionRoutes.js';
+import { CANONICAL_SITE_ORIGIN } from '../../../shared/config/site.js';
+import { DIVISIONS } from '../../../shared/config/divisions.js';
+import { canonicalizeDivisionRoute } from '../../../shared/config/divisionRoutes.js';
 import {
   DIVISION_SITE_IDS,
   getCanonicalPublicUrl,
-} from '../../../frontend/src/config/divisionSites.js';
+} from '../../../shared/config/divisionSites.js';
 import { getRequestSiteOrigin } from '../../seo/requestOrigin.js';
 
 const STATIC_PUBLIC_PATHS = [

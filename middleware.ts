@@ -2,7 +2,7 @@ import { rewrite } from '@vercel/functions';
 import {
   DIVISION_SITE_BRANDING,
   getDivisionSiteForHost,
-} from './frontend/src/config/divisionSites.js';
+} from './shared/config/divisionSites.js';
 
 export const config = {
   runtime: 'nodejs',

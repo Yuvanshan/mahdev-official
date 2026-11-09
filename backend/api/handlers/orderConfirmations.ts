@@ -12,9 +12,9 @@ import { AdminSessionAuthError, requireAdminSession } from '../../auth/adminCred
 import { FirebaseTokenError, verifyFirebaseIdToken } from '../../auth/firebaseIdToken.js';
 import { consumeRateLimit, getClientIp, RateLimitError } from '../../security/rateLimit.js';
 import { sendAdminAlertEmail, sendCustomerEmail } from '../../services/communication/emailService.js';
-import { normaliseInternationalPhone, parseNic } from '../../../frontend/src/utils/sriLankaIdentity.js';
+import { normaliseInternationalPhone, parseNic } from '../../../shared/domain/sriLankaIdentity.js';
 import { BANK_DETAILS } from '../../../shared/config/company.js';
-import { CANONICAL_SITE_ORIGIN } from '../../../frontend/src/config/site.js';
+import { CANONICAL_SITE_ORIGIN } from '../../../shared/config/site.js';
 
 /**
  * Design order confirmations.

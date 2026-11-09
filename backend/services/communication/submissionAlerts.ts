@@ -15,7 +15,7 @@ import { sendAdminAlertEmail, sendCustomerEmail, sendEnquiryEmail } from './emai
 import { bookingDetailSections, bookingDetailsPdf } from '../booking/bookingDetailsPdf.js';
 import { bookingConfirmationPdf } from '../booking/bookingConfirmationPdf.js';
 import { BANK_DETAILS, COMPANY_INFO } from '../../../shared/config/company.js';
-import { CANONICAL_SITE_ORIGIN } from '../../../frontend/src/config/site.js';
+import { CANONICAL_SITE_ORIGIN } from '../../../shared/config/site.js';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);

@@ -1,9 +1,9 @@
 import type { IncomingMessage } from 'node:http';
-import { CANONICAL_SITE_ORIGIN } from '../../frontend/src/config/site.js';
+import { CANONICAL_SITE_ORIGIN } from '../../shared/config/site.js';
 import {
   getDivisionSiteForHost,
   getDivisionSiteOrigin,
-} from '../../frontend/src/config/divisionSites.js';
+} from '../../shared/config/divisionSites.js';
 
 export function getRequestSiteOrigin(req: IncomingMessage): string {
   const rawHost = req.headers['x-forwarded-host'] || req.headers.host;

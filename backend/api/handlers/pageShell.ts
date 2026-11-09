@@ -7,7 +7,7 @@ import { renderSeoHtml } from '../../seo/renderSeoHtml.js';
 import {
   DIVISION_SITE_BRANDING,
   getDivisionSiteForHost,
-} from '../../../frontend/src/config/divisionSites.js';
+} from '../../../shared/config/divisionSites.js';
 
 /**
  * GET /api/page-shell?route=/some/route (or the original page URL via a rewrite)

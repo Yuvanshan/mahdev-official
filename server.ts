@@ -8,7 +8,7 @@ import {
   PaymentGatewayType,
   PaymentTransaction,
   VerificationResult,
-} from './frontend/src/types/payment';
+} from './shared/types/payment';
 import {
   validateAndCreateAuthoritativeOrder,
   validateOrderStatusTransition,
