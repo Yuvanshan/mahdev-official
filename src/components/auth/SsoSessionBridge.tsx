@@ -104,19 +104,15 @@ export function SsoSessionBridge() {
       return;
     }
 
-    const returnUrl = currentReturnUrl();
     const authPath = window.location.pathname.replace(/\/+$/, '');
     if (
       window.location.origin !== SSO_BROKER_ORIGIN &&
       (authPath === '/login' || authPath === '/register')
     ) {
-      const brokerAuthUrl = getSsoBrokerLoginUrl(returnUrl);
+      const brokerAuthUrl = getSsoBrokerLoginUrl(currentReturnUrl());
       if (authPath === '/register') brokerAuthUrl.pathname = '/register';
       window.location.replace(brokerAuthUrl.toString());
-      return;
     }
-    const brokerUrl = getSafeSsoBrokerUrl(returnUrl);
-    window.location.replace(brokerUrl.toString());
   }, [status, user]);
 
   return null;
@@ -124,6 +120,7 @@ export function SsoSessionBridge() {
 
 export function SsoBridgePage() {
   const { status } = useAuth();
+  const [message, setMessage] = useState('Completing your Mahdev sign-in…');
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
 
@@ -146,6 +143,7 @@ export function SsoBridgePage() {
         }
         try {
           if (auth.currentUser) {
+            setMessage('Connecting your account to this division…');
             const ssoCode = await issueSsoCode(returnUrl.origin);
             const destination = getSsoTargetBridgeUrl(returnUrl, ssoCode);
             window.location.replace(destination.toString());
@@ -158,6 +156,7 @@ export function SsoBridgePage() {
         return;
       }
       try {
+        setMessage('Verifying your sign-in…');
         const uid = await exchangeSsoCode(code);
         localStorage.setItem(SYNCED_UID_KEY, uid);
         replaceSsoFragment();
@@ -167,6 +166,7 @@ export function SsoBridgePage() {
           return;
         }
         replaceSsoFragment(returnHash);
+        setMessage('Returning you to the division…');
       } catch (reason) {
         replaceSsoFragment();
         setError(reason instanceof Error ? reason.message : 'Could not complete cross-site sign-in.');
@@ -186,6 +186,11 @@ export function SsoBridgePage() {
       </section>
     </main>
   ) : (
-    <main aria-busy="true" aria-label="Checking your Mahdev sign-in" className="min-h-screen bg-[#FAF9F6]" />
+    <main className="flex min-h-screen items-center justify-center bg-[#FAF9F6] px-6 text-[#1B1B1B]">
+      <section className="w-full max-w-md rounded-2xl border border-black/10 bg-white p-8 text-center shadow-sm">
+        <h1 className="text-2xl font-semibold">Mahdev sign-in</h1>
+        <p className="mt-3 text-sm text-slate-600" role="status" aria-busy="true">{message}</p>
+      </section>
+    </main>
   );
 }

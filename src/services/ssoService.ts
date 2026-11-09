@@ -131,7 +131,20 @@ export function getSafeSsoBrokerUrl(returnUrl: URL, code?: string): URL {
 export function getSsoBrokerLoginUrl(returnUrl: URL): URL {
   const brokerLoginUrl = new URL('/login', SSO_BROKER_ORIGIN);
   const handoffUrl = new URL('/auth/sso', SSO_BROKER_ORIGIN);
-  handoffUrl.searchParams.set('return', returnUrl.toString());
+  const defaultDestination = new URL('/account', returnUrl.origin);
+  const requestedPath = returnUrl.searchParams.get('redirect');
+  if (requestedPath?.startsWith('/') && !requestedPath.startsWith('//')) {
+    const requestedDestination = new URL(requestedPath, returnUrl.origin);
+    if (
+      requestedDestination.origin === returnUrl.origin &&
+      !['/login', '/register', '/auth/sso'].includes(requestedDestination.pathname.replace(/\/+$/, ''))
+    ) {
+      defaultDestination.pathname = requestedDestination.pathname;
+      defaultDestination.search = requestedDestination.search;
+      defaultDestination.hash = requestedDestination.hash;
+    }
+  }
+  handoffUrl.searchParams.set('return', defaultDestination.toString());
   brokerLoginUrl.searchParams.set('redirect', `${handoffUrl.pathname}${handoffUrl.search}`);
   return brokerLoginUrl;
 }
