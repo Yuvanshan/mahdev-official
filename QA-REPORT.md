@@ -2,48 +2,50 @@
 
 **Initial assessment date:** 6 November 2026
 **Remediation update:** 9 November 2026
-**Environment:** Live Vercel deployment aliases; browser viewport observed at 433 × 454 px  
+**Environment:** Live Vercel deployment aliases; initial viewport 433 × 454 px; follow-up mobile viewport 390 × 844 px
 **Initial assessment:** Preview UX **7.3/10**; production-domain readiness **blocked pending domain decision**
 
 ## Executive summary
 
 The corporate site and five division landing pages render on their Vercel aliases. The corporate navigation, SWS service search, and contact form's empty-submit validation behaved as expected during the public smoke checks.
 
-The most important release gate is domain availability: `mahdev.lk` and all five documented division hostnames returned DNS `NXDOMAIN` from both the test resolver and Google Public DNS-over-HTTPS. The documentation describes the Vercel URLs as temporary and says custom domains are configured “when `mahdev.lk` is purchased,” so this is a launch blocker only if the custom domains are expected to be live now; it may be an acknowledged pre-launch state.
+The initial assessment found three form/content defects and misleading Mart ratings. Those code findings have since been fixed and deployed. The remaining release gate is custom-domain availability: the documented `mahdev.lk` hostnames returned DNS `NXDOMAIN` during the initial check, and `www.mahdev.lk` still failed DNS resolution during the follow-up. The Vercel aliases themselves are serving the current deployment.
 
-Three product/content issues need attention regardless of domain timing:
+The initial assessment's product/content findings were:
 
 1. The Mahdev Travels page displays SWS event-management copy.
 2. The Travels launch-alert form displays success even when saving the inquiry fails.
 3. Corporate inquiry submission displays success before the contact record is saved.
 
-The Mart storefront also labeled products “5 (0)”—a five-star rating with zero reviews—which is misleading.
+The Mart storefront also labeled products “5 (0)”—a five-star rating with zero reviews—which is misleading. These findings are recorded below with their remediation status.
 
 ## Remediation status
 
-The code findings below have been addressed locally; changes still need to be deployed before they affect public Vercel pages.
+The fixes were committed as `61412f5` and deployed to production on 9 November 2026. All six Vercel aliases returned HTTP 200 on their root pages and served the same JavaScript and CSS bundle. The live smoke check also confirmed one public `<main>` landmark per site, correct Travels copy, and event-booking banners hidden on Travels.
 
 | Finding | Status | Change / remaining action |
 |---|---|---|
-| Custom-domain DNS | **Pending external action** | All six hosts still returned `NXDOMAIN`. This cannot be fixed in application code; confirm the intended launch hosts, register/configure DNS, then recheck HTTPS. |
-| Travels page uses SWS copy | **Fixed locally** | Added division-specific travel fallback content and rejected the identified SWS/event copy for Travels. |
-| Travels launch alert reports false success | **Fixed locally** | Only confirm after a successful inquiry write; failed writes now show a retryable error and preserve form entries. |
-| Corporate form reports false success | **Fixed locally** | Confirmation now follows a successful contact-record write; write failures show an accessible retry message and preserve form entries. Inline validation and native required semantics are retained. |
-| Products show five stars with zero reviews | **Fixed locally** | Missing ratings now map to unrated, and product cards/details show “No reviews” until a real rating and review count exist. |
-| Automatic WhatsApp popup obscures mobile content | **Fixed locally** | Removed the intrusive popup while restoring a subtle unread badge after 10 seconds. Opening chat clears the badge; the back-to-top button sits above it. |
-| Mobile/webview scrolling can feel trapped | **Fixed locally; smoke-tested** | Removed mobile-wide `overflow-x: hidden` from every section (which could create nested scroll containers) and use non-scroll-container clipping at the page edge. A mobile-width detail-modal scroll test advanced the content normally. |
-| Service/gallery/product images lack direct zoom affordance | **Improved locally; interaction-tested** | Added a shared hover-to-magnify desktop interaction and tap-to-toggle zoom on touch, with a focus marker at the zoom point, in service/gallery and product detail viewers. |
-| Home preload warning on division routes | **Fixed locally** | Removed the static hero-poster preload from the shared app shell so division hosts no longer request an unused homepage image. The homepage poster is no longer explicitly preloaded either. |
-| IT hero text contrast | **Fixed locally** | Added an IT-specific background overlay so the hero heading remains legible over the image. |
-| Duplicate public `<main>` landmarks | **Fixed locally** | Replaced nested page-level main landmarks with sections/containers; standalone SSO screens keep their own main landmark. |
-| Announcement/banner scope | **Fixed locally** | Division-targeted CMS banners now respect their division, and generic event-booking banners are suppressed on irrelevant division pages, including Travels. |
-| Number foil balloon variation bypass | **Fixed locally** | Number foil balloons without configured choices now require selection of a digit from 0–9 in both catalog and Mart flows; Mart card quick-add opens product details instead. |
-| Product modal keyboard accessibility | **Improved locally** | Product dialogs now have labelled dialog semantics, Escape-to-close, focus trapping, initial focus, and focus restoration. |
-| Mobile image zoom is excessively cropped | **Fixed locally** | Shared touch zoom for gallery, services, and products now uses 1.4× instead of 2.5×; desktop zoom remains unchanged. |
+| Custom-domain DNS | **Pending external action** | The six documented custom hosts returned `NXDOMAIN` during the initial assessment; `www.mahdev.lk` also failed DNS during follow-up. Vercel aliases are live. Confirm intended launch hosts and configure DNS outside the application. |
+| Travels page uses SWS copy | **Fixed and deployed** | Live Travels page identifies itself as “Coming Soon” and no longer contains the incorrect SWS copy. |
+| Travels launch alert reports false success | **Fixed and deployed** | The form confirms only after a successful inquiry write; write failures show a retryable error and preserve form entries. Successful persistence still needs a configured test database. |
+| Corporate form reports false success | **Fixed and deployed** | Confirmation follows a successful contact-record write; write failures show an accessible retry message and preserve form entries. Successful persistence still needs a configured test database. |
+| Products show five stars with zero reviews | **Fixed and deployed** | Missing ratings map to unrated, and product cards/details show “No reviews” until a real rating and review count exist. |
+| Automatic WhatsApp popup obscures mobile content | **Fixed and deployed** | Removed the intrusive popup while restoring a subtle unread badge after 10 seconds. Opening chat clears the badge; the back-to-top button sits above it. |
+| Mobile/webview scrolling can feel trapped | **Fixed and deployed; smoke-tested** | Removed mobile-wide `overflow-x: hidden` from every section (which could create nested scroll containers) and use non-scroll-container clipping at the page edge. A mobile-width detail-modal scroll test advanced the content normally. |
+| Service/gallery/product images lack direct zoom affordance | **Improved and deployed; interaction-tested before release** | Added shared desktop hover magnification and touch zoom with a focus marker in service/gallery and product detail viewers. The production mobile stylesheet now applies the adjusted 1.4× scale; full live gesture retesting remains open. |
+| Home preload warning on division routes | **Fixed and deployed** | Removed the static hero-poster preload from the shared app shell so division hosts no longer request an unused homepage image. The homepage poster is no longer explicitly preloaded either. |
+| IT hero text contrast | **Fixed and deployed** | Added an IT-specific background overlay. A mobile-width live screenshot confirmed readable contrast. |
+| Duplicate public `<main>` landmarks | **Fixed and deployed; live-smoke-tested** | Replaced nested page-level main landmarks with sections/containers; the six live hosts each rendered one public main landmark. Standalone SSO screens keep their own main landmark. |
+| Announcement/banner scope | **Fixed and deployed; live-smoke-tested** | Division-targeted CMS banners respect their division. The 2027 booking banner appears on relevant hosts and is suppressed on Travels. |
+| Number foil balloon variation bypass | **Fixed and deployed; live interaction not re-tested** | Number foil balloons without configured choices require a digit from 0–9 in catalog and Mart flows; Mart card quick-add opens product details instead. |
+| Product modal keyboard accessibility | **Improved and deployed; live keyboard test not performed** | Product dialogs have labelled dialog semantics, Escape-to-close, focus trapping, initial focus, and focus restoration. |
+| Mobile image zoom is excessively cropped | **Fixed and deployed; CSS verified** | Shared touch zoom for gallery, services, and products now uses 1.4× instead of 2.5×; desktop zoom remains unchanged. The production CSS bundle contains the 1.4× mobile rule. |
 
-**Current code quality checks:** TypeScript type-check and production build pass. The local build lacks Turso credentials, so dynamic sitemap data fell back to static public routes; deployment builds should use the configured production database.
+**Current code quality checks:** TypeScript type-check, production build, and `git diff --check` pass. The local build lacks Turso credentials, so dynamic sitemap data fell back to static public routes; the Vercel production build completed successfully.
 
 ## Prioritized findings
+
+This table preserves the original 6 November evidence; current remediation status is summarized above.
 
 | # | Priority | Finding | Evidence / impact | Confidence |
 |---|---|---|---|---:|
@@ -57,7 +59,7 @@ The code findings below have been addressed locally; changes still need to be de
 
 ## UX scorecard and ranking
 
-Scores are heuristic manual scores for the Vercel preview experience, based on page clarity, navigation, content quality, trust, and mobile usability—not Lighthouse or lab performance scores.
+Scores are heuristic manual scores for the initial, pre-remediation Vercel preview experience, based on page clarity, navigation, content quality, trust, and mobile usability—not Lighthouse or lab performance scores. They have not been comprehensively re-scored after the fixes.
 
 | Rank | Site | Score | UX assessment |
 |---:|---|---:|---|
@@ -89,6 +91,11 @@ Scores are heuristic manual scores for the Vercel preview experience, based on p
 - Follow-up change: reduced shared mobile image zoom to 1.4× across gallery, service, and product viewers while retaining the full-screen image presentation.
 - With dummy Firebase configuration and an unavailable local API, exercised both contact and launch-alert failure paths: each displayed a retryable error and neither showed a success confirmation. No real inquiry was created.
 - Rechecked empty corporate-form submission locally: inline required-field errors appeared.
+- After deployment, all six Vercel aliases returned HTTP 200 on their root pages and served the same JavaScript and CSS bundle.
+- The production browser smoke check confirmed one public `<main>` landmark on each host, the expected page titles, no SWS fallback copy on Travels, and no booking banner on Travels.
+- Checked the production legal routes (`/terms-and-conditions`, `/privacy-policy`, `/refund-policy`, `/shipping-policy`, and `/cookie-policy`); all returned HTTP 200.
+- Checked the production CSS bundle and confirmed mobile image zoom uses `scale(var(--image-mobile-scale, 1.4))`.
+- A live IT screenshot at 390 × 844 px confirmed the overlay improves hero text contrast.
 - Ran `npm run typecheck`, `npm run build`, and `git diff --check` successfully. The build's sitemap script logged a missing-local-Turso warning and completed with the documented static-route fallback.
 
 ### Not covered / limitations
@@ -98,12 +105,12 @@ Scores are heuristic manual scores for the Vercel preview experience, based on p
 - The browser runner could not stabilize some animated controls for automated clicking. Cart/checkout behavior is therefore **not verified**, not marked failed.
 - Some third-party telemetry/reCAPTCHA requests were aborted during browser navigation; these were not counted as product defects.
 - No Lighthouse/Core Web Vitals run or cross-device browser matrix was available.
-- The current local preview could serve the built shell but could not mount the client application because Firebase client configuration is not available in this environment; the newly changed UI interactions therefore still need live-browser verification after deployment.
+- The current local preview could serve the built shell but could not mount the client application because Firebase client configuration is not available in this environment. The production smoke check does not replace full live testing of add-to-cart validation, touch-hold zoom, or keyboard focus behavior.
 - Full success-path verification for contact submission and Travels launch-alert registration still requires a configured test database and mail gateway.
 
 ## Remaining release actions
 
 1. Decide whether the custom domains are in scope for launch; if yes, configure DNS/hosting and recheck all six HTTPS hosts.
-2. Deploy the local code fixes, then repeat browser checks on the live URLs.
-3. Use a configured test database to verify successful inquiry persistence, confirmation references, and notification/email delivery.
+2. Use a configured test database to verify successful inquiry persistence, confirmation references, and notification/email delivery.
+3. Complete end-to-end Mart variant/add-to-cart and touch-hold zoom checks on a real mobile device.
 4. Complete desktop/mobile and keyboard/screen-reader testing, followed by a Lighthouse/Core Web Vitals run.
