@@ -1,4 +1,6 @@
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
+import { getDivisionSiteForHost } from '../config/divisionSites';
+import { isAdminPortalPath } from '../config/adminRoutes';
 type Gtag = (...args: unknown[]) => void;
 interface MetaPixel {
   (...args: unknown[]): void;
@@ -26,6 +28,7 @@ declare global {
 let initialized = false;
 let googleMeasurementId = '';
 let metaPixelId = '';
+const GOOGLE_TAG_MANAGER_ID = 'GTM-KR98DF25';
 const MARKETING_SITE_HOST = new URL(
   import.meta.env?.VITE_APP_URL || CANONICAL_SITE_ORIGIN
 ).hostname;
@@ -36,25 +39,41 @@ function hasTrackingOptOut(): boolean {
   return dnt === '1' || dnt === 'yes' || navigator.globalPrivacyControl === true;
 }
 
+function isAllowedMarketingHost(): boolean {
+  if (typeof window === 'undefined' || isAdminPortalPath(window.location.pathname)) return false;
+  return window.location.hostname === MARKETING_SITE_HOST ||
+    Boolean(getDivisionSiteForHost(window.location.hostname));
+}
+
+function loadGoogleTagManager(): void {
+  if (document.getElementById('mahdev-gtm-script')) return;
+
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+
+  const script = document.createElement('script');
+  script.id = 'mahdev-gtm-script';
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(GOOGLE_TAG_MANAGER_ID)}`;
+  document.head.appendChild(script);
+}
+
 function initializeMarketingAnalytics(): void {
   if (initialized || typeof window === 'undefined' || hasTrackingOptOut()) return;
-  const hostname = window.location.hostname;
-  if (hostname !== MARKETING_SITE_HOST) return;
+  if (!isAllowedMarketingHost()) return;
 
   googleMeasurementId = import.meta.env?.VITE_GA_MEASUREMENT_ID || '';
   metaPixelId = import.meta.env?.VITE_META_PIXEL_ID || '';
   const validGoogleId = /^G-[A-Z0-9]+$/i.test(googleMeasurementId);
   const validMetaId = /^\d{5,20}$/.test(metaPixelId);
-  if (!validGoogleId && !validMetaId) {
-    initialized = true;
-    return;
-  }
+
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = window.gtag || ((...args: unknown[]) => {
+    window.dataLayer?.push(args);
+  });
+  loadGoogleTagManager();
 
   if (validGoogleId) {
-    window.dataLayer = window.dataLayer || [];
-    window.gtag = (...args: unknown[]) => {
-      window.dataLayer?.push(args);
-    };
     window.gtag('js', new Date());
     window.gtag('config', googleMeasurementId, { send_page_view: false });
 
@@ -98,7 +117,7 @@ export function trackMarketingEvent(
   path: string,
   metadata: Record<string, unknown> = {}
 ): void {
-  if (hasTrackingOptOut()) return;
+  if (hasTrackingOptOut() || !isAllowedMarketingHost()) return;
   initializeMarketingAnalytics();
 
   const gaEventNames: Record<string, string> = {
@@ -177,6 +196,9 @@ export function trackMarketingEvent(
   }
 
   const gaEventName = gaEventNames[type];
+  if (gaEventName && window.dataLayer) {
+    window.dataLayer.push({ event: gaEventName, ...parameters });
+  }
   if (gaEventName && googleMeasurementId && window.gtag) {
     window.gtag('event', gaEventName, parameters);
   }
