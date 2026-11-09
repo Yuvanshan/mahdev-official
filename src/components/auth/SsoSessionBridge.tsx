@@ -17,7 +17,6 @@ import {
 } from '../../services/ssoService';
 
 const SYNCED_UID_KEY = 'mahdev:sso:synced-uid';
-const CHECKED_SESSION_KEY = 'mahdev:sso:checked';
 const PENDING_SESSION_KEY = 'mahdev:sso:pending-at';
 const PENDING_MAX_AGE_MS = 120_000;
 
@@ -43,7 +42,6 @@ export function SsoSessionBridge() {
       void isSsoSessionValid().then(async (valid) => {
         if (valid) return;
         localStorage.removeItem(SYNCED_UID_KEY);
-        sessionStorage.removeItem(CHECKED_SESSION_KEY);
         await signOut(auth);
       }).catch((error: unknown) => {
         console.error('[SSO] Could not validate the active sign-in after returning to this website:', error);
@@ -59,7 +57,7 @@ export function SsoSessionBridge() {
       status === 'error' ||
       window.location.pathname.replace(/\/+$/, '') === '/auth/sso' ||
       (window.location.origin === SSO_BROKER_ORIGIN &&
-        window.location.pathname.replace(/\/+$/, '') === '/login') ||
+        ['/login', '/register'].includes(window.location.pathname.replace(/\/+$/, ''))) ||
       window.location.pathname.startsWith('/admin') ||
       isLocalDevelopment() ||
       isCrawler()
@@ -71,13 +69,11 @@ export function SsoSessionBridge() {
     if (fragmentAction === 'complete') {
       if (auth.currentUser) localStorage.setItem(SYNCED_UID_KEY, auth.currentUser.uid);
       sessionStorage.removeItem(PENDING_SESSION_KEY);
-      sessionStorage.setItem(CHECKED_SESSION_KEY, '1');
       replaceSsoFragment(returnHash);
       return;
     }
     if (fragmentAction === 'none') {
       sessionStorage.removeItem(PENDING_SESSION_KEY);
-      sessionStorage.setItem(CHECKED_SESSION_KEY, '1');
       replaceSsoFragment(returnHash);
       return;
     }
@@ -88,7 +84,6 @@ export function SsoSessionBridge() {
       void (async () => {
         if (!(await isSsoSessionValid())) {
           localStorage.removeItem(SYNCED_UID_KEY);
-          sessionStorage.removeItem(CHECKED_SESSION_KEY);
           await signOut(auth);
           return;
         }
@@ -115,14 +110,11 @@ export function SsoSessionBridge() {
       window.location.origin !== SSO_BROKER_ORIGIN &&
       (authPath === '/login' || authPath === '/register')
     ) {
-      sessionStorage.setItem(CHECKED_SESSION_KEY, '1');
       const brokerAuthUrl = getSsoBrokerLoginUrl(returnUrl);
       if (authPath === '/register') brokerAuthUrl.pathname = '/register';
       window.location.replace(brokerAuthUrl.toString());
       return;
     }
-    if (sessionStorage.getItem(CHECKED_SESSION_KEY) === '1') return;
-    sessionStorage.setItem(CHECKED_SESSION_KEY, '1');
     const brokerUrl = getSafeSsoBrokerUrl(returnUrl);
     window.location.replace(brokerUrl.toString());
   }, [status, user]);
@@ -132,7 +124,6 @@ export function SsoSessionBridge() {
 
 export function SsoBridgePage() {
   const { status } = useAuth();
-  const [message, setMessage] = useState('Connecting your Mahdev sign-in…');
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
 
@@ -155,7 +146,6 @@ export function SsoBridgePage() {
         }
         try {
           if (auth.currentUser) {
-            setMessage('Connecting your account to this website…');
             const ssoCode = await issueSsoCode(returnUrl.origin);
             const destination = getSsoTargetBridgeUrl(returnUrl, ssoCode);
             window.location.replace(destination.toString());
@@ -167,9 +157,7 @@ export function SsoBridgePage() {
         }
         return;
       }
-
       try {
-        setMessage('Verifying your sign-in…');
         const uid = await exchangeSsoCode(code);
         localStorage.setItem(SYNCED_UID_KEY, uid);
         replaceSsoFragment();
@@ -179,7 +167,6 @@ export function SsoBridgePage() {
           return;
         }
         replaceSsoFragment(returnHash);
-        setMessage('You are signed in. Continue to your page.');
       } catch (reason) {
         replaceSsoFragment();
         setError(reason instanceof Error ? reason.message : 'Could not complete cross-site sign-in.');
@@ -188,19 +175,17 @@ export function SsoBridgePage() {
     void process();
   }, [status]);
 
-  return (
+  return error ? (
     <main className="flex min-h-screen items-center justify-center bg-[#FAF9F6] px-6 text-[#1B1B1B]">
       <section className="w-full max-w-md rounded-2xl border border-black/10 bg-white p-8 text-center shadow-sm">
         <h1 className="text-2xl font-semibold">Mahdev sign-in</h1>
-        <p className="mt-3 text-sm text-slate-600" role={error ? 'alert' : 'status'}>
-          {error || message}
-        </p>
-        {error && (
-          <a className="mt-6 inline-flex rounded-full bg-[#1B1B1B] px-5 py-3 text-sm font-medium text-white" href="/">
-            Return to the website
-          </a>
-        )}
+        <p className="mt-3 text-sm text-slate-600" role="alert">{error}</p>
+        <a className="mt-6 inline-flex rounded-full bg-[#1B1B1B] px-5 py-3 text-sm font-medium text-white" href="/">
+          Return to the website
+        </a>
       </section>
     </main>
+  ) : (
+    <main aria-busy="true" aria-label="Checking your Mahdev sign-in" className="min-h-screen bg-[#FAF9F6]" />
   );
 }

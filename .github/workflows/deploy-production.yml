@@ -1,0 +1,111 @@
+name: Deploy production and division sites
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mahdev-production-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy all sites
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_LCexuJ5l1tdVGJsl4sVSWt76
+      VERCEL_PROJECT_ID: prj_ZZ0g5Oo0rELEEvk7X5QW2DjP3GVc
+
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run lint
+
+      - name: Deploy production to Vercel
+        id: deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$VERCEL_TOKEN" ]]; then
+            echo "::error::Set VERCEL_TOKEN in GitHub Actions secrets."
+            exit 1
+          fi
+
+          deploy_log="$RUNNER_TEMP/vercel-deploy.log"
+          npx --yes vercel@64.0.2 deploy \
+            --prod \
+            --yes \
+            --project "$VERCEL_PROJECT_ID" \
+            --scope "$VERCEL_ORG_ID" \
+            --token "$VERCEL_TOKEN" 2>&1 | tee "$deploy_log"
+
+          deployment_url="$(node - "$deploy_log" <<'NODE'
+          const fs = require('node:fs');
+          const output = fs.readFileSync(process.argv[2], 'utf8');
+          const matches = [...output.matchAll(/^\s*Production\s+(https:\/\/[^\s]+)\s*$/gm)];
+          if (matches.length === 0) {
+            console.error('Could not find the ready production deployment URL in the Vercel output.');
+            process.exit(1);
+          }
+          process.stdout.write(matches[matches.length - 1][1]);
+          NODE
+          )"
+
+          echo "deployment_url=$deployment_url" >> "$GITHUB_OUTPUT"
+
+      - name: Assign main and division domains
+        shell: bash
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment_url }}
+        run: |
+          set -euo pipefail
+
+          for domain in \
+            mahdev-official.vercel.app \
+            sws-events.vercel.app \
+            u1-studio.vercel.app \
+            mahdev-it.vercel.app \
+            mahdev-mart.vercel.app \
+            mahdev-travels.vercel.app
+          do
+            npx --yes vercel@64.0.2 alias set "$DEPLOYMENT_URL" "$domain" \
+              --scope "$VERCEL_ORG_ID" \
+              --token "$VERCEL_TOKEN"
+          done
+
+      - name: Verify all production sites
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for domain in \
+            mahdev-official.vercel.app \
+            sws-events.vercel.app \
+            u1-studio.vercel.app \
+            mahdev-it.vercel.app \
+            mahdev-mart.vercel.app \
+            mahdev-travels.vercel.app
+          do
+            curl --fail --silent --show-error --retry 5 --retry-all-errors --retry-delay 3 \
+              "https://$domain/auth/sso" \
+              --output /dev/null
+            echo "Verified https://$domain/auth/sso"
+          done
