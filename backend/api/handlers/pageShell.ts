@@ -65,6 +65,7 @@ function applyDivisionBranding(html: string, division: keyof typeof DIVISION_SIT
     `<link rel="icon" type="${type}" href="${logoPath}" />`,
     `<link rel="shortcut icon" type="${type}" href="${logoPath}" />`,
     `<link rel="apple-touch-icon" href="${logoPath}" />`,
+    '<link rel="manifest" href="/site.webmanifest" />',
   ].join('\n    ');
   const withoutCompanyIcons = html.replace(
     /<link\b(?=[^>]*\brel="(?:icon|shortcut icon|apple-touch-icon|manifest)")[^>]*\/>/gi,
