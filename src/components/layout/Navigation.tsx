@@ -223,11 +223,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
       ? DIVISIONS[activeDivisionId].name
       : currentDivisionRecord?.name ||
         (activeDivisionId ? DIVISIONS[activeDivisionId].name : currentDivision?.name);
-  const divisionNameBreak = divisionName?.trim().indexOf(' ') ?? -1;
-  const divisionNameFirstLine =
-    divisionNameBreak > 0 ? divisionName?.trim().slice(0, divisionNameBreak) : divisionName;
-  const divisionNameSecondLine =
-    divisionNameBreak > 0 ? divisionName?.trim().slice(divisionNameBreak + 1) : '';
+  const singleLineDivisionName = divisionName?.trim().replace(/\s+/g, ' ');
   const divisionBasePath =
     !isDivisionHost && activeDivisionId && (currentPath === `/${activeDivisionId}` || currentPath.startsWith(`/${activeDivisionId}/`))
       ? `/${activeDivisionId}`
@@ -362,17 +358,16 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
         {/* Division Context Notice (when inside a child division) */}
         {activeDivisionId && isPublicRoute && (
           <div className="division-context-notice text-xs py-1.5 px-4">
-            <div className="max-w-7xl mx-auto flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="division-context-title font-semibold leading-tight text-blue-300">
-                  <span className="block">{divisionNameFirstLine || 'Division site'}</span>
-                  {divisionNameSecondLine && <span className="block">{divisionNameSecondLine}</span>}
+            <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <span className="division-context-title min-w-0 truncate whitespace-nowrap font-semibold leading-tight text-blue-300">
+                  {singleLineDivisionName || 'Division site'}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => window.location.assign(CANONICAL_SITE_ORIGIN)}
-                className="division-return-link inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors cursor-pointer"
+                className="division-return-link inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-semibold transition-colors cursor-pointer"
                 aria-label="Return to the Mahdev company website"
               >
                 <ArrowLeft className="w-3 h-3" />
@@ -395,8 +390,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
               />
               {activeDivisionId && divisionName && (
                 <span className="ml-2 hidden border-l border-slate-200 pl-3 text-sm font-semibold leading-tight text-slate-800 min-[900px]:block">
-                  <span className="block">{divisionNameFirstLine}</span>
-                  {divisionNameSecondLine && <span className="block">{divisionNameSecondLine}</span>}
+                  <span className="whitespace-nowrap">{singleLineDivisionName}</span>
                 </span>
               )}
             </div>

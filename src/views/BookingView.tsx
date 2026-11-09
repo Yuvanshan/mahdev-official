@@ -60,7 +60,7 @@ export const BookingView: React.FC<BookingViewProps> = ({
   const faqs = [
     {
       q: 'How quickly will my booking be confirmed?',
-      a: 'All bookings submitted through our central portal are reviewed by a dedicated division manager within 2 to 4 hours. You will receive an immediate SMS/WhatsApp confirmation and a digital invoice.',
+      a: 'Your booking request is reviewed by a division manager, usually within 2 to 4 hours. We send a booking-received email with a PDF estimate; the booking and final invoice are confirmed after our team reviews the details.',
     },
     {
       q: 'Can I reschedule my event or shoot date?',

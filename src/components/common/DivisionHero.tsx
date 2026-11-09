@@ -32,7 +32,7 @@ export const DivisionHero: React.FC<DivisionHeroProps> = ({
   const heroRef = React.useRef<HTMLElement | null>(null);
 
   return (
-    <section ref={heroRef} className="division-video-hero relative flex min-h-[680px] w-full items-center overflow-hidden bg-[#061033] text-white sm:min-h-[740px] lg:min-h-[min(820px,calc(100svh-5rem))]">
+    <section ref={heroRef} className="division-video-hero relative flex min-h-[680px] w-full items-center overflow-hidden bg-[#061033] text-white sm:min-h-[740px] lg:min-h-[clamp(640px,72svh,820px)]">
       <ScrollParallax targetRef={heroRef} distance={24} className="division-video-hero__media absolute -inset-y-10 right-[-2%] w-[72%] overflow-hidden">
         <HeroVideoBackground
           videoUrl={videoUrl}

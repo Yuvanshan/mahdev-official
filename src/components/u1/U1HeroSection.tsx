@@ -18,7 +18,7 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
   const heroRef = React.useRef<HTMLElement | null>(null);
 
   return (
-    <section ref={heroRef} className="division-video-hero relative flex min-h-[680px] w-full items-center overflow-hidden bg-[#111111] text-white sm:min-h-[740px] lg:min-h-[min(820px,calc(100svh-5rem))]">
+    <section ref={heroRef} className="division-video-hero relative flex min-h-[680px] w-full items-center overflow-hidden bg-[#111111] text-white sm:min-h-[740px] lg:min-h-[clamp(640px,72svh,820px)]">
       {/* Reliable Full-Width Video Background with guaranteed autoplay */}
       <ScrollParallax targetRef={heroRef} distance={24} className="division-video-hero__media absolute -inset-y-10 right-[-2%] w-[72%] overflow-hidden">
         <HeroVideoBackground

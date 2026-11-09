@@ -44,10 +44,13 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
 
   // The catalogue lists Mart products only (rental equipment from other divisions is never shown).
   void initialDivision;
+  const initialSearchParams = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search)
+    : new URLSearchParams();
   const [filters, setFilters] = useState<CatalogFilterOptions>({
     divisionId: CATALOG_DIVISION,
-    categoryId: initialCategory,
-    searchQuery: '',
+    categoryId: initialCategory || initialSearchParams.get('category') || undefined,
+    searchQuery: initialSearchParams.get('search') || '',
   });
 
   const sortBy: CatalogSortOption = 'featured';
@@ -187,6 +190,21 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     setFilters(newFilters);
     setCurrentPage(1);
   };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (filters.categoryId) params.set('category', filters.categoryId);
+    else params.delete('category');
+    if (filters.searchQuery?.trim()) params.set('search', filters.searchQuery.trim());
+    else params.delete('search');
+    const queryString = params.toString();
+    window.history.replaceState(
+      window.history.state,
+      '',
+      `${window.location.pathname}${queryString ? `?${queryString}` : ''}${window.location.hash}`
+    );
+  }, [filters.categoryId, filters.searchQuery]);
 
   // Reset all filters
   const handleResetFilters = () => {

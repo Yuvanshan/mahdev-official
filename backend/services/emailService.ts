@@ -517,6 +517,7 @@ export async function sendCustomerEmail(payload: {
   subject: string;
   html: string;
   text: string;
+  attachments?: Array<{ filename: string; content: Buffer; contentType: string }>;
 }): Promise<EmailDispatchResult> {
   const config = getServerConfig();
   const smtpFromEmail = process.env.SMTP_FROM_EMAIL || config.notifications.smtpUser || DEFAULT_SENDER_EMAIL;
@@ -542,6 +543,11 @@ export async function sendCustomerEmail(payload: {
       subject,
       text: payload.text,
       html: payload.html,
+      attachments: payload.attachments?.map((attachment) => ({
+        filename: attachment.filename,
+        content: attachment.content,
+        contentType: attachment.contentType,
+      })),
     });
     console.info(`[EmailService] Customer email accepted by SMTP. MessageID: ${info.messageId}`);
     return {

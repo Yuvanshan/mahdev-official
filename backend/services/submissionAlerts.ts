@@ -4,6 +4,7 @@
  * database, so the details come from the stored record, not the request.
  *
  * - Every order or booking: "received" alert email to the Mahdev team.
+ * - Every new booking: a receipt email with an invoice-style PDF to the customer.
  * - When an admin confirms an order or booking: "confirmed" email to the customer.
  */
 
@@ -12,7 +13,8 @@ import type { DatabaseAccess } from '../api/tursoRoutes.js';
 import { dispatchServerNotification } from './secureNotificationService.js';
 import { sendAdminAlertEmail, sendCustomerEmail, sendEnquiryEmail } from './emailService.js';
 import { bookingDetailSections, bookingDetailsPdf } from './bookingDetailsPdf.js';
-import { BANK_DETAILS } from '../../src/config/company.js';
+import { bookingConfirmationPdf } from './bookingConfirmationPdf.js';
+import { BANK_DETAILS, COMPANY_INFO } from '../../src/config/company.js';
 import { CANONICAL_SITE_ORIGIN } from '../../src/config/site.js';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -173,10 +175,106 @@ export async function notifyForVerifiedSubmission(input: unknown): Promise<void>
     });
   };
 
-  // The customer is emailed only when the team confirms the booking (notifyCustomerOfConfirmation).
   const teamAlert = await sendTeamAlert();
   if (!teamAlert.success) {
     console.error(`[Submission alerts] Team alert for ${collection} record ${recordId} was not delivered: ${teamAlert.message}`);
+  }
+  if (collection === 'bookings') {
+    await notifyCustomerOfBookingReceived(recordId, data);
+  }
+}
+
+/** Thank the customer for a new request and attach a clearly pending booking estimate. */
+async function notifyCustomerOfBookingReceived(id: string, data: Record<string, unknown>): Promise<void> {
+  if (data.bookingReceiptEmailSentAt) return;
+  const customer = isRecord(data.customer) ? data.customer : {};
+  const to = safeText(data.customerEmail || data.contactEmail || customer.email || data.email, '', 254).toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+    console.warn(`[Submission alerts] Booking ${id} was received, but it has no customer email.`);
+    return;
+  }
+
+  const name = safeText(customer.fullName || customer.name, 'there', 100);
+  const firstName = name.split(' ')[0] || 'there';
+  const service = safeText(data.serviceName || data.designTitle, 'your service', 160);
+  const division = safeText(data.divisionName, 'Mahdev', 100);
+  const date = safeText(data.date || data.bookingDate, '', 40);
+  const time = safeText(data.time || data.bookingTime, '', 60);
+  const location = isRecord(data.location) ? safeText(data.location.address, '', 240) : '';
+  const total = formatLkr(data.price);
+  const accountUrl = `${siteOrigin()}/account/bookings`;
+  const rows: Array<[string, string]> = [
+    ['Booking reference', id],
+    ['Service', service],
+    ['Division', division],
+    ['Package', safeText(data.packageName, '', 120)],
+    ['Date', date],
+    ['Time', time],
+    ['Venue', location],
+    ['Estimated total', total],
+    ['Status', 'Pending Mahdev team confirmation'],
+  ];
+  const table = `<table style="border-collapse:collapse;width:100%;font-size:14px;margin:12px 0">${rows
+    .filter(([, value]) => value)
+    .map(([label, value]) => `<tr><td style="padding:7px 10px;border:1px solid #e2e8f0;color:#64748b">${escapeHtml(label)}</td><td style="padding:7px 10px;border:1px solid #e2e8f0;font-weight:bold">${escapeHtml(value)}</td></tr>`)
+    .join('')}</table>`;
+  const text = [
+    `Hello ${firstName},`,
+    '',
+    `Thank you for choosing ${division}. We have received your booking request for ${service}.`,
+    `Booking reference: ${id}`,
+    date ? `Date: ${date}` : '',
+    time ? `Time: ${time}` : '',
+    location ? `Venue: ${location}` : '',
+    `Estimated total: ${total}`,
+    '',
+    'Your request is pending review. Your booking is not confirmed, and no payment is due until the Mahdev team contacts you.',
+    'The attached PDF is a booking estimate and receipt of your request, not a tax invoice.',
+    '',
+    `View your booking: ${accountUrl}`,
+    '',
+    'Thank you,',
+    'Mahdev Pvt Ltd',
+    `${COMPANY_INFO.email} | ${COMPANY_INFO.primaryPhone}`,
+  ].filter(Boolean).join('\n');
+
+  let attachments: ReturnType<typeof bookingConfirmationPdf>[] = [];
+  try {
+    attachments = [bookingConfirmationPdf(id, data)];
+  } catch (error) {
+    console.error(`[Submission alerts] Booking confirmation PDF for ${id} could not be created:`, error);
+  }
+
+  const result = await sendCustomerEmail({
+    to,
+    subject: `Thank you for your booking request: ${id}`,
+    text,
+    html: `<div style="font-family:Arial,sans-serif;font-size:15px;color:#0f172a;line-height:1.6;max-width:560px">
+      <p>Hello ${escapeHtml(firstName)},</p>
+      <p>Thank you for choosing <strong>${escapeHtml(division)}</strong>. We have received your booking request for <strong>${escapeHtml(service)}</strong>.</p>
+      ${table}
+      <p><strong>Your request is pending review.</strong> Your booking is not confirmed, and no payment is due until the Mahdev team contacts you.</p>
+      <p>The attached PDF is a booking estimate and receipt of your request, not a tax invoice.</p>
+      <p><a href="${escapeHtml(accountUrl)}" style="display:inline-block;background:#1e1b4b;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">View your booking</a></p>
+      <p>Thank you,<br>Mahdev Pvt Ltd<br>${escapeHtml(COMPANY_INFO.email)} | ${escapeHtml(COMPANY_INFO.primaryPhone)}</p>
+    </div>`,
+    attachments,
+  });
+  if (!result.delivered) {
+    console.error(`[Submission alerts] Booking receipt email for ${id} was not delivered: ${result.notice}`);
+    return;
+  }
+
+  try {
+    await writeTursoDocument({
+      type: 'update',
+      collection: 'bookings',
+      parentPath: '',
+      id,
+      data: { bookingReceiptEmailSentAt: new Date().toISOString() },
+    });
+  } catch (error) {
+    console.error(`[Submission alerts] Could not record the booking receipt email for ${id}:`, error);
   }
 }
 

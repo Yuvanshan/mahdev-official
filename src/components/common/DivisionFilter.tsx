@@ -110,15 +110,26 @@ interface DivisionFilterContextValue {
 
 const DivisionFilterContext = createContext<DivisionFilterContextValue | null>(null);
 
-export const DivisionFilterProvider: React.FC<{ children: React.ReactNode; initialQuery?: string }> = ({
+export const DivisionFilterProvider: React.FC<{
+  children: React.ReactNode;
+  initialQuery?: string;
+  initialCategory?: string;
+}> = ({
   children,
   initialQuery = '',
+  initialCategory = '',
 }) => {
   const [filter, setFilterState] = useState<FilterValues>(() => ({
     ...EMPTY_FILTER,
     query: initialQuery,
   }));
   const [sources, setSources] = useState<Record<string, FilterableItem[]>>({});
+  const [initialUrlResolved, setInitialUrlResolved] = useState(!initialCategory.trim());
+
+  const availableCategoryKeys = useMemo(
+    () => new Set(Object.values(sources).flatMap((items) => items.map((item) => categoryKey(item.category)).filter(Boolean))),
+    [sources]
+  );
 
   const setFilter = useCallback((patch: Partial<FilterValues>) => setFilterState((prev) => ({ ...prev, ...patch })), []);
   const reset = useCallback(() => setFilterState(EMPTY_FILTER), []);
@@ -130,6 +141,32 @@ export const DivisionFilterProvider: React.FC<{ children: React.ReactNode; initi
       return next;
     });
   }, []);
+
+  useEffect(() => {
+    const requestedCategory = categoryKey(initialCategory);
+    if (!requestedCategory || availableCategoryKeys.size === 0) return;
+
+    if (availableCategoryKeys.has(requestedCategory)) {
+      setFilterState((prev) => ({ ...prev, category: requestedCategory }));
+    } else if (!initialQuery.trim()) {
+      // Older shared links used `category` for a free-text search.
+      setFilterState((prev) => ({ ...prev, query: initialCategory.trim() }));
+    }
+    setInitialUrlResolved(true);
+  }, [availableCategoryKeys, initialCategory, initialQuery]);
+
+  useEffect(() => {
+    if (!initialUrlResolved || typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (filter.category === 'all') params.delete('category');
+    else params.set('category', filter.category);
+    if (filter.query.trim()) params.set('search', filter.query.trim());
+    else params.delete('search');
+
+    const queryString = params.toString();
+    const nextUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ''}${window.location.hash}`;
+    window.history.replaceState(window.history.state, '', nextUrl);
+  }, [filter.category, filter.query, initialUrlResolved]);
 
   // Sorting alone is not "filtering", so it doesn't count towards isActive
   const isActive =

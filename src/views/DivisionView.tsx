@@ -336,7 +336,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
       />
 
       {/* 1. DIVISION HERO SECTION: FULL SCREEN WIDTH VIDEO/PICTURE COVER */}
-      <section ref={divisionHeroRef} className="division-video-hero relative w-full min-h-[85vh] lg:min-h-[90vh] flex items-center overflow-hidden bg-slate-950 text-white">
+      <section ref={divisionHeroRef} className="division-video-hero relative flex min-h-[680px] w-full items-center overflow-hidden bg-slate-950 text-white sm:min-h-[740px] lg:min-h-[clamp(640px,72svh,820px)]">
         {/* Full-bleed Video or Image Background */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           {(() => {

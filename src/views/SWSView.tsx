@@ -180,7 +180,10 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
 
       {/* Sections render as their own data arrives rather than waiting for every collection.
           One shared search/category/price filter drives services, gallery and rentals. */}
-      <DivisionFilterProvider initialQuery={new URLSearchParams(window.location.search).get('category') || ''}>
+      <DivisionFilterProvider
+        initialQuery={new URLSearchParams(window.location.search).get('search') || ''}
+        initialCategory={new URLSearchParams(window.location.search).get('category') || ''}
+      >
         <DivisionFilterBar placeholder="Search SWS services, gallery & rentals..." />
 
         <SWSServicesSection

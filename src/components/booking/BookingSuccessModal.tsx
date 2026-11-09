@@ -47,7 +47,7 @@ DTSTART:${String(booking.date || '').replace(/-/g, '')}T090000Z
 SUMMARY:${booking.serviceName} (${booking.divisionName})
 DESCRIPTION:Booking ID: ${booking.id}\\nPackage: ${booking.packageName}\\nLocation: ${booking.location.address}\\nNotes: ${booking.notes}
 LOCATION:${booking.location.address}
-STATUS:CONFIRMED
+STATUS:TENTATIVE
 END:VEVENT
 END:VCALENDAR`;
 
@@ -87,10 +87,10 @@ END:VCALENDAR`;
             Booking Received & Logged
           </span>
           <h2 className="text-2xl sm:text-3xl font-serif text-white mt-1 mb-2">
-            Reservation Confirmed
+            Booking Request Received
           </h2>
           <p className="text-xs text-neutral-300 max-w-md mx-auto">
-            Your booking has been registered in the Mahdev central system. Our concierge team has been notified.
+            Thank you. Your booking request has been received and is pending review by the Mahdev team.
           </p>
 
           {/* Booking ID Highlight Banner */}
@@ -157,9 +157,9 @@ END:VCALENDAR`;
           <div className="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-start gap-3">
             <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
             <div>
-              <span className="font-bold block">Confirmation Dispatched to {booking.customer.email}</span>
+              <span className="font-bold block">Booking summary and estimate will be sent to {booking.customer.email}</span>
               <span className="text-emerald-700 text-[11px] leading-relaxed block mt-0.5">
-                Our operations director will connect with you via {booking.customer.preferredContactMethod?.toUpperCase() || 'WHATSAPP'} at {booking.customer.phone} to finalize setup logistics.
+                This request is not confirmed until our team reviews it. We will contact you via {booking.customer.preferredContactMethod?.toUpperCase() || 'WHATSAPP'} at {booking.customer.phone} to finalize the details.
               </span>
             </div>
           </div>

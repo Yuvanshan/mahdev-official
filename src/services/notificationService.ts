@@ -209,8 +209,8 @@ class NotificationService {
         phone: booking.customer.phone,
         role: 'customer',
       },
-      `Booking Confirmed: #${booking.id} (${booking.serviceName})`,
-      `Your booking #${booking.id} for "${booking.serviceName}" scheduled on ${booking.date} (${booking.time}) has been confirmed. A Mahdev division specialist will contact you shortly.`,
+      `Booking Request Received: #${booking.id} (${booking.serviceName})`,
+      `Your booking request #${booking.id} for "${booking.serviceName}" scheduled on ${booking.date} (${booking.time}) has been received and is pending review. A Mahdev division specialist will contact you shortly.`,
       {
         bookingId: booking.id,
         divisionId: booking.divisionId,

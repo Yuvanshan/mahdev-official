@@ -1717,7 +1717,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 .division-video-hero {
   width: 100%;
   max-width: none;
-  min-height: min(820px, calc(100svh - 5rem));
+  min-height: clamp(640px, 72svh, 820px);
   margin: 0;
   border-radius: 0;
   background: var(--ink-hero);

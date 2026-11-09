@@ -37,11 +37,27 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
   const { products: rawProducts, categories: rawCategories, divisions, companySettings, isInitialLoading, isFetching } = useFirestoreDataContext();
   const primaryPhone = companySettings?.primaryPhone || COMPANY_INFO.primaryPhone;
   const [searchQuery, setSearchQuery] = useState(() =>
-    typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('category') || ''
+    typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('search') || ''
   );
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(() =>
+    typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('category')
+  );
   const [selectedProductForDetail, setSelectedProductForDetail] = useState<Product | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (selectedCategoryId) params.set('category', selectedCategoryId);
+    else params.delete('category');
+    if (searchQuery.trim()) params.set('search', searchQuery.trim());
+    else params.delete('search');
+    const queryString = params.toString();
+    window.history.replaceState(
+      window.history.state,
+      '',
+      `${window.location.pathname}${queryString ? `?${queryString}` : ''}${window.location.hash}`
+    );
+  }, [searchQuery, selectedCategoryId]);
 
   // Check URL query parameters or path for sub-routes
   useEffect(() => {
