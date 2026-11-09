@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
   "framework": "vite",
-  "buildCommand": "vite build && tsx scripts/prerender-seo.ts && tsx scripts/generate-llms.ts",
+  "buildCommand": "npm run build:frontend",
   "outputDirectory": "dist",
   "redirects": [
     {

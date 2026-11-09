@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { notifyCustomerOfConfirmation, notifyForVerifiedSubmission } from '../services/submissionAlerts.js';
+import { notifyCustomerOfConfirmation, notifyForVerifiedSubmission } from '../services/communication/submissionAlerts.js';
 import { consumeRateLimit, getClientIp, PUBLIC_SUBMISSION_LIMITS, RateLimitError } from '../security/rateLimit.js';
 import {
   checkTursoConnection,
@@ -24,7 +24,7 @@ import {
   type FirebaseIdentity,
   verifyFirebaseIdToken,
 } from '../auth/firebaseIdToken.js';
-import { normaliseInternationalPhone, parseNic } from '../../src/utils/sriLankaIdentity.js';
+import { normaliseInternationalPhone, parseNic } from '../../frontend/src/utils/sriLankaIdentity.js';
 
 export interface DatabaseAccess {
   role: 'admin' | 'customer' | 'public';

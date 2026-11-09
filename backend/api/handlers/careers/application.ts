@@ -5,7 +5,7 @@ import {
   initializeTursoDatabase,
   writeTursoDocument,
 } from '../../../db/tursoDatabase.js';
-import { deleteCareerCv } from '../../../services/adminMediaUpload.js';
+import { deleteCareerCv } from '../../../services/media/adminMediaUpload.js';
 
 interface CareerApplicationRequest extends IncomingMessage {
   method?: string;

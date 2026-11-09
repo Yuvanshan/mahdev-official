@@ -34,12 +34,12 @@ This guide documents the end-to-end deployment lifecycle for hosting the **Mahde
 
 ## 2. Vercel Project Configuration
 
-The repository keeps browser code in `src/` and backend implementation in `backend/`. The top-level `api/` directory contains thin Vercel function entrypoints that forward requests to backend handlers. This preserves same-origin routes and HttpOnly login cookies while keeping Turso access server-only.
+The repository keeps browser code and static assets in `frontend/` and backend implementation in `backend/`. The top-level `api/` directory contains thin Vercel function entrypoints that forward requests to backend handlers. This preserves same-origin routes and HttpOnly login cookies while keeping Turso access server-only.
 
-The project includes a root `vercel.json` configured specifically for modern React + Vite single-page applications. Before deployment, run `npm run lint` and `npm run build`; this repository no longer includes test files or test runner scripts.
+The project includes a root `vercel.json` configured specifically for modern React + Vite single-page applications. Frontend and Express backend build commands are separate (`npm run build:frontend` and `npm run build:backend`); `npm run build` runs both. GitHub Actions validates these independently and gates production deployment on both. Before deployment, run `npm run typecheck` and `npm run build`.
 
 - **Framework**: `vite`
-- **Build Command**: `vite build && tsx scripts/prerender-seo.ts && tsx scripts/generate-llms.ts` (from `vercel.json`)
+- **Build Command**: `npm run build:frontend` (from `vercel.json`)
 - **Output Directory**: `dist`
 - **Install Command**: `npm install`
 - **Node.js Version**: `20.x` or `22.x`

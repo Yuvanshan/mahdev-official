@@ -12,11 +12,11 @@ const [
   { getDivisionSiteUrl },
   { SWS_BUSINESS, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS },
 ] = await Promise.all([
-  import('../src/config/site.js'),
-  import('../src/config/company.js'),
-  import('../src/config/brand.js'),
-  import('../src/config/divisionSites.js'),
-  import('../src/data/swsLocalSeo.js'),
+  import('../frontend/src/config/site.js'),
+  import('../frontend/src/config/company.js'),
+  import('../frontend/src/config/brand.js'),
+  import('../frontend/src/config/divisionSites.js'),
+  import('../frontend/src/data/swsLocalSeo.js'),
 ]);
 
 const pages = [

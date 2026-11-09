@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
-import { BIRTHDAY_PARTY_PRODUCTS } from '../src/data/catalog/birthdayPartyProducts';
-import { BIRTHDAY_PARTY_CATEGORY } from '../src/data/catalog/birthdayPartyCategory';
+import { BIRTHDAY_PARTY_PRODUCTS } from '../frontend/src/data/catalog/birthdayPartyProducts';
+import { BIRTHDAY_PARTY_CATEGORY } from '../frontend/src/data/catalog/birthdayPartyCategory';
 
 dotenv.config({ path: process.env.MAHDEV_ENV_FILE || '.env' });
 

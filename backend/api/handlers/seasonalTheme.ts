@@ -4,7 +4,7 @@ import {
   type SeasonalThemeConfig,
   type SeasonalThemeSchedule,
   type SeasonalThemeId,
-} from '../../../src/types/seasonalTheme.js';
+} from '../../../frontend/src/types/seasonalTheme.js';
 import { getTursoDocument, initializeTursoDatabase, writeTursoDocument } from '../../db/tursoDatabase.js';
 import { requireAdminSession, AdminSessionAuthError } from '../../auth/adminCredentialAuth.js';
 import { isFromThisSite } from '../../security/sameSite.js';

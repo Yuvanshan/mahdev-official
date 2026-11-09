@@ -11,7 +11,7 @@ import {
   setDoc,
   getDoc,
 } from 'firebase/firestore';
-import { COMPANY_INFO } from '../src/config/company';
+import { COMPANY_INFO } from '../frontend/src/config/company';
 import { getFirebaseConfig } from './firebaseConfig';
 
 const { firebaseConfig, firestoreDatabaseId } = getFirebaseConfig();

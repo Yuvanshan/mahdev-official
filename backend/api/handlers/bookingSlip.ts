@@ -4,9 +4,9 @@ import { getTursoDocument, initializeTursoDatabase, writeTursoDocument } from '.
 import { AdminSessionAuthError, requireAdminSession } from '../../auth/adminCredentialAuth.js';
 import { FirebaseTokenError, verifyFirebaseIdToken } from '../../auth/firebaseIdToken.js';
 import { consumeRateLimit, RateLimitError } from '../../security/rateLimit.js';
-import { MAX_BOOKING_SLIP_BYTES, readBookingSlip, storeBookingSlip } from '../../services/adminMediaUpload.js';
-import { sendEnquiryEmail } from '../../services/emailService.js';
-import { bookingDetailSections, bookingDetailsPdf } from '../../services/bookingDetailsPdf.js';
+import { MAX_BOOKING_SLIP_BYTES, readBookingSlip, storeBookingSlip } from '../../services/media/adminMediaUpload.js';
+import { sendEnquiryEmail } from '../../services/communication/emailService.js';
+import { bookingDetailSections, bookingDetailsPdf } from '../../services/booking/bookingDetailsPdf.js';
 
 /**
  * Bank transfer slips for bookings.

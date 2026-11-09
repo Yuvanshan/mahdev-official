@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { AdminSessionAuthError, requireAdminSession } from '../../../auth/adminCredentialAuth.js';
 import { initializeTursoDatabase, getTursoDocument } from '../../../db/tursoDatabase.js';
-import { readCareerCv, storeCareerCv } from '../../../services/adminMediaUpload.js';
+import { readCareerCv, storeCareerCv } from '../../../services/media/adminMediaUpload.js';
 
 const MAX_CV_BYTES = 10 * 1024 * 1024;
 const UPLOAD_WINDOW_MS = 10 * 60 * 1000;

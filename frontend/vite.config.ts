@@ -6,7 +6,8 @@ import {defineConfig, loadEnv} from 'vite';
 import { DEFAULT_SITE_ORIGIN, resolveSiteOrigin } from './src/config/site';
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
+  const projectRoot = path.resolve(__dirname, '..');
+  const env = loadEnv(mode, projectRoot, '');
   const vercelEnvironment = env.VERCEL_ENV || process.env.VERCEL_ENV || 'development';
   // The public domain comes from VITE_SITE_URL (.env files or the Vercel dashboard).
   const siteOrigin = resolveSiteOrigin(env.VITE_SITE_URL || env.PUBLIC_SITE_URL);
@@ -21,6 +22,8 @@ export default defineConfig(({ mode }) => {
     }));
 
   return {
+    root: __dirname,
+    envDir: projectRoot,
     define: {
       'import.meta.env.VITE_SITE_DEPLOYMENT_ENV': JSON.stringify(vercelEnvironment),
       // Same resolved origin in the browser bundle as in index.html.
@@ -52,7 +55,7 @@ export default defineConfig(({ mode }) => {
         closeBundle() {
           if (siteOrigin === DEFAULT_SITE_ORIGIN) return;
           for (const file of ['llms.txt']) {
-            const target = path.resolve(__dirname, 'dist', file);
+            const target = path.resolve(projectRoot, 'dist', file);
             if (!existsSync(target)) continue;
             writeFileSync(target, readFileSync(target, 'utf8').replaceAll(DEFAULT_SITE_ORIGIN, siteOrigin));
           }
@@ -61,10 +64,12 @@ export default defineConfig(({ mode }) => {
     ],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(__dirname, 'src'),
       },
     },
     build: {
+      outDir: path.resolve(projectRoot, 'dist'),
+      emptyOutDir: true,
       rollupOptions: {
         output: {
           manualChunks(id) {

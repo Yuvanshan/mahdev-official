@@ -12,7 +12,7 @@ import {
   ADMIN_MEDIA_CHUNK_BYTES,
   createAdminMediaUpload,
   forwardAdminMediaUploadChunk,
-} from '../services/adminMediaUpload.js';
+} from '../services/media/adminMediaUpload.js';
 import careerCvHandler from './handlers/careers/cv.js';
 import careerStatusHandler from './handlers/careers/status.js';
 import careerApplicationHandler from './handlers/careers/application.js';

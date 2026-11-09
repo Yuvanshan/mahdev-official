@@ -10,7 +10,7 @@ import {
   listTursoDocuments,
   writeTursoDocument,
 } from '../../../db/tursoDatabase.js';
-import { getFirebaseAdminApp } from '../../../services/adminMediaUpload.js';
+import { getFirebaseAdminApp } from '../../../services/media/adminMediaUpload.js';
 
 interface AdminCustomersRequest extends IncomingMessage {
   method?: string;

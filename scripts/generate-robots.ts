@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { CANONICAL_SITE_ORIGIN } from '../src/config/site.js';
+import { CANONICAL_SITE_ORIGIN } from '../frontend/src/config/site.js';
 import { buildRobotsTxt } from '../backend/api/handlers/robots.js';
 
 const outputPath = path.resolve('dist/robots.txt');

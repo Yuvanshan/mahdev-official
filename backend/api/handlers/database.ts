@@ -7,7 +7,7 @@ import {
   handleTursoAction,
   type DatabaseAccess,
 } from '../tursoRoutes.js';
-import { notifyCustomerOfConfirmation, notifyForVerifiedSubmission } from '../../services/submissionAlerts.js';
+import { notifyCustomerOfConfirmation, notifyForVerifiedSubmission } from '../../services/communication/submissionAlerts.js';
 import { changedPublicUrls, isIndexNowEnabled, submitToIndexNow } from '../../seo/indexNow.js';
 import {
   consumeRateLimit,

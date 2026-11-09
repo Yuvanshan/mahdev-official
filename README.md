@@ -34,10 +34,41 @@ See [DOMAIN_CONFIGURATION.md](DOMAIN_CONFIGURATION.md) for the rollout checklist
 
 ---
 
+## 🧱 Repository Architecture
+
+The repository is organized as a modular monolith with separate browser and server code:
+
+```text
+frontend/
+  src/
+    components/       Reusable UI
+    views/            Route-level pages
+    context/          Application state providers
+    services/         Client-side domain/API services
+    hooks/            Reusable React hooks
+    config/ data/     Frontend and public-site configuration/content
+  public/             Static files served by Vite
+backend/
+  api/                HTTP routes and request handlers
+  auth/ db/ security/ Server infrastructure
+  services/
+    booking/          Booking documents and PDFs
+    communication/    Email, notifications, WhatsApp
+    invoices/         Invoice generation
+    media/            Secure media upload
+    orders/           Order validation and signing
+api/                  Thin Vercel function adapters to backend handlers
+scripts/              Build, migration, and maintenance tooling
+```
+
+Keep HTTP transport concerns in route/handler modules and business/service work in the corresponding service module. Vercel adapters remain at the repository root because that is where Vercel discovers functions; they delegate to the same backend handlers used by the Express server. The root package manifest and deployment configuration coordinate both applications.
+
+---
+
 ## 🛠️ Technology Stack
 
 - **Frontend**: React 18, TypeScript, Tailwind CSS v4, Motion (`motion/react`), Lucide Icons.
-- **Backend & APIs**: Node.js, Express, Vite middleware mode, ESBuild CommonJS bundler.
+- **Backend & APIs**: Node.js, Express, Vercel function adapters, ESBuild CommonJS bundler.
 - **Data & Storage**: Turso (libSQL) collection tables, Firebase Authentication, Firebase Storage, Firebase App Check (reCAPTCHA Enterprise).
 - **Payments & IPG**: LankaPay National Payment Network, Stripe IPG, Bank Direct Transfer, HMAC-SHA256 verification.
 - **Security & Integrity**: Sub-second velocity filtering, Honeypot traps, Rate limiting, Cryptographic invoice signing.

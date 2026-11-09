@@ -7,7 +7,7 @@ import {
   ADMIN_MEDIA_CHUNK_BYTES,
   createAdminMediaUpload,
   forwardAdminMediaUploadChunk,
-} from '../../../services/adminMediaUpload.js';
+} from '../../../services/media/adminMediaUpload.js';
 
 export const config = {
   api: {

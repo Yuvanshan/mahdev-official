@@ -7,14 +7,14 @@
  * the home page's head. The React app still takes over in the browser.
  */
 
-import { CANONICAL_SITE_ORIGIN, SITE_NAME } from '../../src/config/site.js';
-import { DIVISION_SEO } from '../../src/config/divisionSeo.js';
-import { getPageTitle } from '../../src/config/pageTitles.js';
-import { withServiceArea } from '../../src/config/itemSeo.js';
-import { CAREERS_PAGE_SEO } from '../../src/config/careerSeo.js';
-import { getSwsStructuredData, SWS_BUSINESS, SWS_PRIMARY_HEADING, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS } from '../../src/data/swsLocalSeo.js';
-import { U1_PRIMARY_HEADING, U1_SERVICE_AREA_SUMMARY, U1_SERVICE_HIGHLIGHTS } from '../../src/data/u1LocalSeo.js';
-import { getCanonicalPublicUrl } from '../../src/config/divisionSites.js';
+import { CANONICAL_SITE_ORIGIN, SITE_NAME } from '../../frontend/src/config/site.js';
+import { DIVISION_SEO } from '../../frontend/src/config/divisionSeo.js';
+import { getPageTitle } from '../../frontend/src/config/pageTitles.js';
+import { withServiceArea } from '../../frontend/src/config/itemSeo.js';
+import { CAREERS_PAGE_SEO } from '../../frontend/src/config/careerSeo.js';
+import { getSwsStructuredData, SWS_BUSINESS, SWS_PRIMARY_HEADING, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS } from '../../frontend/src/data/swsLocalSeo.js';
+import { U1_PRIMARY_HEADING, U1_SERVICE_AREA_SUMMARY, U1_SERVICE_HIGHLIGHTS } from '../../frontend/src/data/u1LocalSeo.js';
+import { getCanonicalPublicUrl } from '../../frontend/src/config/divisionSites.js';
 
 export const SITE_ORIGIN = CANONICAL_SITE_ORIGIN;
 

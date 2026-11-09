@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { sendEnquiryEmail } from '../../services/emailService.js';
+import { sendEnquiryEmail } from '../../services/communication/emailService.js';
 import { isPublicEmailRequestAllowed } from '../publicEmailRateLimit.js';
 
 interface PublicEmailRequest extends IncomingMessage {

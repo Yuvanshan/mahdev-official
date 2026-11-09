@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { dispatchServerNotification, type NotificationPayload } from '../../services/secureNotificationService.js';
+import { dispatchServerNotification, type NotificationPayload } from '../../services/communication/secureNotificationService.js';
 import { isPublicEmailRequestAllowed } from '../publicEmailRateLimit.js';
 
 interface NotificationRequest extends IncomingMessage {

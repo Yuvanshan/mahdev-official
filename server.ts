@@ -8,18 +8,18 @@ import {
   PaymentGatewayType,
   PaymentTransaction,
   VerificationResult,
-} from './src/types/payment';
+} from './frontend/src/types/payment';
 import {
   validateAndCreateAuthoritativeOrder,
   validateOrderStatusTransition,
   generateOrderSignature,
-} from './backend/services/secureOrderService';
+} from './backend/services/orders/secureOrderService';
 import {
   generateSecureFiscalInvoice,
-} from './backend/services/secureInvoiceService';
+} from './backend/services/invoices/secureInvoiceService';
 import {
   dispatchServerNotification,
-} from './backend/services/secureNotificationService';
+} from './backend/services/communication/secureNotificationService';
 import {
   getTursoDocument,
   initializeTursoDatabase,
@@ -34,8 +34,8 @@ import {
 } from './backend/auth/adminCredentialAuth';
 import {
   sendEnquiryEmail,
-} from './backend/services/emailService';
-import { createAdminMediaUpload } from './backend/services/adminMediaUpload';
+} from './backend/services/communication/emailService';
+import { createAdminMediaUpload } from './backend/services/media/adminMediaUpload';
 import {
   getServerConfig,
   validateServerSecrets,
@@ -208,7 +208,7 @@ async function startServer() {
   });
 
   // Static uploads directory serving
-  const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+  const uploadsDir = path.join(process.cwd(), 'frontend', 'public', 'uploads');
   const distUploadsDir = path.join(process.cwd(), 'dist', 'uploads');
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
@@ -234,7 +234,7 @@ async function startServer() {
   });
 
   // Static assets directory serving (/public/assets)
-  const assetsDir = path.join(process.cwd(), 'public', 'assets');
+  const assetsDir = path.join(process.cwd(), 'frontend', 'public', 'assets');
   if (!fs.existsSync(assetsDir)) {
     fs.mkdirSync(assetsDir, { recursive: true });
   }

@@ -5,7 +5,7 @@ import {
   loadPublicSitemapData,
   scopeSitemapXmlToOrigin,
 } from '../backend/api/handlers/sitemap.js';
-import { CANONICAL_SITE_ORIGIN } from '../src/config/site.js';
+import { CANONICAL_SITE_ORIGIN } from '../frontend/src/config/site.js';
 
 const outputPath = path.resolve(process.argv[2] || 'dist/sitemap.xml');
 let xml: string;

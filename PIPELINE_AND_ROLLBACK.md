@@ -22,13 +22,18 @@ This operations manual governs deployment from **GitHub** to **Vercel** producti
 │      Deployment         │  ➔ Isolated test sandbox & QA evaluation
 └────────────┬────────────┘
              │
-             ▼ Type check and production build
-┌─────────────────────────┐
-│  Pull Request to `main`  │  ➔ Vercel Preview deployment
-└────────────┬────────────┘
-             │
-             ├── 1. Type check (`npm run lint`)
-             └── 2. Production bundle build (`npm run build`)
+             ▼ Independent frontend and backend validation
+┌─────────────────────────┐   ┌─────────────────────────┐
+│ Frontend pipeline       │   │ Backend pipeline        │
+│ npm run build:frontend  │   │ npm run typecheck       │
+│ SEO prerender checks    │   │ npm run build:backend   │
+└────────────┬────────────┘   └────────────┬────────────┘
+             └──────────────┬──────────────┘
+                            ▼
+             ┌─────────────────────────┐
+             │ Production deployment   │
+             │ Only after both pass    │
+             └────────────┬────────────┘
              │
              ▼ PR merged to `main`
 ┌─────────────────────────┐
@@ -50,8 +55,11 @@ Run the following checks before promoting a build to production:
 
 | Check Category | Command | Pass Criteria | Strict Policy |
 | :--- | :--- | :--- | :--- |
-| **Type Safety** | `npm run lint` | `tsc --noEmit` exits with status `0`. | Required before deployment |
-| **Production Build** | `npm run build` | Vite client and backend bundles compile cleanly. | Required before deployment |
+| **Frontend build** | `npm run build:frontend` | Vite client and SEO prerender complete. | Required before deployment |
+| **Type Safety** | `npm run typecheck` | `tsc --noEmit` exits with status `0`. | Required before deployment |
+| **Backend build** | `npm run build:backend` | Express backend bundle compiles. | Required before deployment |
+
+The GitHub Actions production workflow runs frontend and backend validation as separate jobs. The Vercel production job runs only after both jobs succeed, then deploys the shared project and assigns its five division aliases.
 
 Automated test files and test-runner commands have been removed from this repository. Do not treat historical test reports elsewhere in this manual as current verification.
 

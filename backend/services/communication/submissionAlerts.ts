@@ -8,14 +8,14 @@
  * - When an admin confirms an order or booking: "confirmed" email to the customer.
  */
 
-import { getTursoDocument, writeTursoDocument } from '../db/tursoDatabase.js';
-import type { DatabaseAccess } from '../api/tursoRoutes.js';
+import { getTursoDocument, writeTursoDocument } from '../../db/tursoDatabase.js';
+import type { DatabaseAccess } from '../../api/tursoRoutes.js';
 import { dispatchServerNotification } from './secureNotificationService.js';
 import { sendAdminAlertEmail, sendCustomerEmail, sendEnquiryEmail } from './emailService.js';
-import { bookingDetailSections, bookingDetailsPdf } from './bookingDetailsPdf.js';
-import { bookingConfirmationPdf } from './bookingConfirmationPdf.js';
-import { BANK_DETAILS, COMPANY_INFO } from '../../src/config/company.js';
-import { CANONICAL_SITE_ORIGIN } from '../../src/config/site.js';
+import { bookingDetailSections, bookingDetailsPdf } from '../booking/bookingDetailsPdf.js';
+import { bookingConfirmationPdf } from '../booking/bookingConfirmationPdf.js';
+import { BANK_DETAILS, COMPANY_INFO } from '../../../frontend/src/config/company.js';
+import { CANONICAL_SITE_ORIGIN } from '../../../frontend/src/config/site.js';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);

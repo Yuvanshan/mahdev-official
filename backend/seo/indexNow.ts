@@ -8,8 +8,8 @@
  */
 
 import { getTursoDocument, type TursoDocument } from '../db/tursoDatabase.js';
-import { gallerySeo, productSeo, projectSeo, serviceSeo } from '../../src/config/itemSeo.js';
-import { CANONICAL_SITE_ORIGIN } from '../../src/config/site.js';
+import { gallerySeo, productSeo, projectSeo, serviceSeo } from '../../frontend/src/config/itemSeo.js';
+import { CANONICAL_SITE_ORIGIN } from '../../frontend/src/config/site.js';
 
 export const INDEXNOW_KEY = '445d15ea64a06507bab51845f551f763';
 const INDEXNOW_ENDPOINT = 'https://api.indexnow.org/indexnow';

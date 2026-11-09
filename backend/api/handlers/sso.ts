@@ -1,6 +1,6 @@
 import { createHash, createSign, randomBytes } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { CANONICAL_SITE_ORIGIN } from '../../../src/config/site.js';
+import { CANONICAL_SITE_ORIGIN } from '../../../frontend/src/config/site.js';
 import { getTursoClient } from '../../db/tursoDatabase.js';
 import { verifyFirebaseIdToken, FirebaseTokenError } from '../../auth/firebaseIdToken.js';
 import { consumeRateLimit, getClientIp, RateLimitError } from '../../security/rateLimit.js';

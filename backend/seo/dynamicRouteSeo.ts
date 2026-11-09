@@ -6,9 +6,9 @@
  */
 
 import { initializeTursoDatabase, listTursoDocuments, type TursoDocument } from '../db/tursoDatabase.js';
-import { gallerySeo, productSeo, projectSeo, serviceSeo, type ItemSeo } from '../../src/config/itemSeo.js';
-import { CANONICAL_SITE_ORIGIN, SITE_NAME } from '../../src/config/site.js';
-import { BRANCH_CONTENT_LOCATIONS, getRecordImageAlt } from '../../src/config/imageAlt.js';
+import { gallerySeo, productSeo, projectSeo, serviceSeo, type ItemSeo } from '../../frontend/src/config/itemSeo.js';
+import { CANONICAL_SITE_ORIGIN, SITE_NAME } from '../../frontend/src/config/site.js';
+import { BRANCH_CONTENT_LOCATIONS, getRecordImageAlt } from '../../frontend/src/config/imageAlt.js';
 import type { RouteSeo } from './publicRoutes.js';
 
 // Records change rarely (admin edits); the page responses are also cached by the CDN.

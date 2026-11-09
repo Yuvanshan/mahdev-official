@@ -8,8 +8,8 @@
  * send that template instead. Its body parameters are passed in order.
  */
 
-import { getServerConfig } from '../config/serverEnv.js';
-import { normaliseInternationalPhone } from '../../src/utils/sriLankaIdentity.js';
+import { getServerConfig } from '../../config/serverEnv.js';
+import { normaliseInternationalPhone } from '../../../frontend/src/utils/sriLankaIdentity.js';
 
 const GRAPH_API_VERSION = 'v21.0';
 

@@ -9,9 +9,9 @@ import {
   markAccountRecoveryChallengeUsed,
   pruneExpiredAccountRecoveryChallenges,
 } from '../../db/tursoDatabase.js';
-import { sendCustomerEmail } from '../../services/emailService.js';
+import { sendCustomerEmail } from '../../services/communication/emailService.js';
 import { consumeRateLimit, getClientIp, RateLimitError } from '../../security/rateLimit.js';
-import { normaliseInternationalPhone, parseNic } from '../../../src/utils/sriLankaIdentity.js';
+import { normaliseInternationalPhone, parseNic } from '../../../frontend/src/utils/sriLankaIdentity.js';
 
 interface AccountRecoveryRequest extends IncomingMessage {
   method?: string;
