@@ -149,16 +149,6 @@
       "destination": "/api/[...path]"
     },
     {
-      "source": "/:path((?!api(?:/|$)|assets(?:/|$)|uploads(?:/|$)|admin-yuvan1709(?:/|$)|.*\\.).*)",
-      "has": [
-        {
-          "type": "host",
-          "value": "^(sws-events\\.vercel\\.app|sws\\.mahdev\\.lk|u1-studio\\.vercel\\.app|u1\\.mahdev\\.lk|mahdev-it\\.vercel\\.app|it\\.mahdev\\.lk|mahdev-travels\\.vercel\\.app|travels\\.mahdev\\.lk|mahdev-mart\\.vercel\\.app|mart\\.mahdev\\.lk)$"
-        }
-      ],
-      "destination": "/api/page-shell?route=/:path"
-    },
-    {
       "source": "/:route(divisions|sws|u1|it|travels|mart|services|insights|catalog|book|about|portfolio|milestones|testimonials|careers|clients|contact|promotions|privacy-policy|terms-and-conditions|refund-policy|shipping-policy|cookie-policy)",
       "destination": "/:route/index.html"
     },
