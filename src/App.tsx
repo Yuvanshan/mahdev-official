@@ -43,6 +43,7 @@ import {
 } from './config/adminRoutes';
 import { motion, AnimatePresence } from 'motion/react';
 import { SsoBridgePage, SsoSessionBridge } from './components/auth/SsoSessionBridge';
+import { getSsoBrokerLoginUrl, SSO_BROKER_ORIGIN } from './services/ssoService';
 
 const CHUNK_RECOVERY_KEY = 'mahdev:chunk-load-recovery';
 
@@ -542,6 +543,18 @@ function AppContent() {
     (_match, slug: string) => `/services/category/${slug.toLowerCase()}`
   );
   const normalizedPath = canonicalizeAdminPath(canonicalizeDivisionRoute(legacyCategoryPath));
+  useEffect(() => {
+    if (
+      !hostDivisionSite ||
+      !['/login', '/register'].includes(normalizedPath.split(/[?#]/, 1)[0]) ||
+      window.location.origin === SSO_BROKER_ORIGIN
+    ) return;
+
+    const brokerUrl = getSsoBrokerLoginUrl(new URL(window.location.href));
+    if (normalizedPath.split(/[?#]/, 1)[0] === '/register') brokerUrl.pathname = '/register';
+    window.location.replace(brokerUrl.toString());
+  }, [normalizedPath, hostDivisionSite]);
+
   // Set the tab title on every route change ("Careers - Mahdev (Pvt) Ltd"), so a page
   // without its own SEOHead never keeps the previous page's title. A layout effect runs
   // before the pages' own effects, so pages with a specific title (a service, project
