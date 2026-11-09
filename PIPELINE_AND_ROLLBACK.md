@@ -59,7 +59,7 @@ Run the following checks before promoting a build to production:
 | **Type Safety** | `npm run typecheck` | `tsc --noEmit` exits with status `0`. | Required before deployment |
 | **Backend build** | `npm run build:backend` | Express backend bundle compiles. | Required before deployment |
 
-The GitHub Actions production workflow runs frontend and backend validation as separate jobs. The Vercel production job runs only after both jobs succeed, then deploys the shared project and assigns its five division aliases.
+Frontend CI and backend CI are defined in separate reusable workflows: `.github/workflows/frontend-ci.yml` and `.github/workflows/backend-ci.yml`. The production workflow calls both and deploys only after both succeed, then assigns the shared project and its five division aliases. Each validation workflow can also be run manually from GitHub Actions.
 
 Automated test files and test-runner commands have been removed from this repository. Do not treat historical test reports elsewhere in this manual as current verification.
 

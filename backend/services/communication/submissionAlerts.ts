@@ -14,7 +14,7 @@ import { dispatchServerNotification } from './secureNotificationService.js';
 import { sendAdminAlertEmail, sendCustomerEmail, sendEnquiryEmail } from './emailService.js';
 import { bookingDetailSections, bookingDetailsPdf } from '../booking/bookingDetailsPdf.js';
 import { bookingConfirmationPdf } from '../booking/bookingConfirmationPdf.js';
-import { BANK_DETAILS, COMPANY_INFO } from '../../../frontend/src/config/company.js';
+import { BANK_DETAILS, COMPANY_INFO } from '../../../shared/config/company.js';
 import { CANONICAL_SITE_ORIGIN } from '../../../frontend/src/config/site.js';
 
 function isRecord(value: unknown): value is Record<string, unknown> {

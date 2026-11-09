@@ -16,44 +16,11 @@ concurrency:
 jobs:
   validate-frontend:
     name: Frontend pipeline
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out main
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build frontend and prerender SEO pages
-        run: npm run build:frontend
+    uses: ./.github/workflows/frontend-ci.yml
 
   validate-backend:
     name: Backend pipeline
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out main
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Type-check frontend and backend
-        run: npm run typecheck
-
-      - name: Build Express backend
-        run: npm run build:backend
+    uses: ./.github/workflows/backend-ci.yml
 
   deploy:
     name: Deploy production and division aliases

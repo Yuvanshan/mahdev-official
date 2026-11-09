@@ -24,7 +24,7 @@ import {
   type FirebaseIdentity,
   verifyFirebaseIdToken,
 } from '../auth/firebaseIdToken.js';
-import { normaliseInternationalPhone, parseNic } from '../../frontend/src/utils/sriLankaIdentity.js';
+import { normaliseInternationalPhone, parseNic } from '../../shared/domain/sriLankaIdentity.js';
 
 export interface DatabaseAccess {
   role: 'admin' | 'customer' | 'public';

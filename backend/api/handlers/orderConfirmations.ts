@@ -13,7 +13,7 @@ import { FirebaseTokenError, verifyFirebaseIdToken } from '../../auth/firebaseId
 import { consumeRateLimit, getClientIp, RateLimitError } from '../../security/rateLimit.js';
 import { sendAdminAlertEmail, sendCustomerEmail } from '../../services/communication/emailService.js';
 import { normaliseInternationalPhone, parseNic } from '../../../frontend/src/utils/sriLankaIdentity.js';
-import { BANK_DETAILS } from '../../../frontend/src/config/company.js';
+import { BANK_DETAILS } from '../../../shared/config/company.js';
 import { CANONICAL_SITE_ORIGIN } from '../../../frontend/src/config/site.js';
 
 /**

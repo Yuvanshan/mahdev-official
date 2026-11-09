@@ -4,7 +4,7 @@ import {
   scryptSync,
   timingSafeEqual,
 } from 'node:crypto';
-import type { AdminRole, AdminUser } from '../../frontend/src/types/admin.js';
+import type { AdminRole, AdminUser } from '../../shared/types/admin.js';
 import { getTursoDocument, initializeTursoDatabase, writeTursoDocument } from '../db/tursoDatabase.js';
 
 const SESSION_COOKIE = 'mahdev_admin_session';

@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { COMPANY_INFO } from '../../../frontend/src/config/company.js';
+import { COMPANY_INFO } from '../../../shared/config/company.js';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);

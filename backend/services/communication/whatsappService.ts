@@ -9,7 +9,7 @@
  */
 
 import { getServerConfig } from '../../config/serverEnv.js';
-import { normaliseInternationalPhone } from '../../../frontend/src/utils/sriLankaIdentity.js';
+import { normaliseInternationalPhone } from '../../../shared/domain/sriLankaIdentity.js';
 
 const GRAPH_API_VERSION = 'v21.0';
 

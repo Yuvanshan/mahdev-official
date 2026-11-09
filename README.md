@@ -57,11 +57,16 @@ backend/
     invoices/         Invoice generation
     media/            Secure media upload
     orders/           Order validation and signing
+shared/
+  domain/             Framework-independent domain rules
+  config/ types/      Public configuration and cross-layer contracts
 api/                  Thin Vercel function adapters to backend handlers
 scripts/              Build, migration, and maintenance tooling
 ```
 
 Keep HTTP transport concerns in route/handler modules and business/service work in the corresponding service module. Vercel adapters remain at the repository root because that is where Vercel discovers functions; they delegate to the same backend handlers used by the Express server. The root package manifest and deployment configuration coordinate both applications.
+
+Frontend CI and backend CI are separate reusable workflows under `.github/workflows/`; the production deployment workflow calls both and runs only after both validations pass. Framework-independent domain rules, shared public configuration, and cross-layer contracts belong in `shared/`. Service responsibilities are catalogued in [backend/services/README.md](backend/services/README.md) and [frontend/src/services/README.md](frontend/src/services/README.md).
 
 ---
 
