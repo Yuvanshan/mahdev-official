@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowUp, ArrowUpRight, Check, MessageCircle, X } from 'lucide-react';
-import { MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
+import { MAHDEV_WHATSAPP_NUMBER, notifyWhatsAppClick } from '../../utils/whatsapp';
 import { useAuth } from '../../context/AuthContext';
 
 const WhatsAppMark: React.FC<{ className?: string }> = ({ className }) => (
@@ -78,6 +78,7 @@ export const WhatsAppWidget: React.FC = () => {
     const cleanMessage = message.trim();
     if (!cleanMessage) return;
     const url = `https://wa.me/${MAHDEV_WHATSAPP_NUMBER}?text=${encodeURIComponent(cleanMessage)}`;
+    notifyWhatsAppClick();
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 

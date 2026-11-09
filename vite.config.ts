@@ -51,7 +51,7 @@ export default defineConfig(({ mode }) => {
         apply: 'build',
         closeBundle() {
           if (siteOrigin === DEFAULT_SITE_ORIGIN) return;
-          for (const file of ['robots.txt', 'llms.txt']) {
+          for (const file of ['llms.txt']) {
             const target = path.resolve(__dirname, 'dist', file);
             if (!existsSync(target)) continue;
             writeFileSync(target, readFileSync(target, 'utf8').replaceAll(DEFAULT_SITE_ORIGIN, siteOrigin));

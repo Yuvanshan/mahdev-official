@@ -34,6 +34,14 @@ const pages = [
   ['Mahdev Online Mart', '/mart', 'Online retail for event and home products.'],
 ] as const;
 
+const divisionIds: Record<string, 'sws' | 'u1' | 'it' | 'travels' | 'mart'> = {
+  '/sws': 'sws',
+  '/u1': 'u1',
+  '/it': 'it',
+  '/travels': 'travels',
+  '/mart': 'mart',
+};
+
 const lines = [
   `# ${COMPANY_INFO.legalName}`,
   '',
@@ -52,9 +60,8 @@ const lines = [
   '## Public pages',
   '',
   ...pages.map(([label, route, description]) => {
-    const url = route === '/sws'
-      ? getDivisionSiteUrl('sws')
-      : `${CANONICAL_SITE_ORIGIN}${route}`;
+    const division = divisionIds[route];
+    const url = division ? getDivisionSiteUrl(division) : `${CANONICAL_SITE_ORIGIN}${route}`;
     return `- [${label}](${url}): ${description}`;
   }),
   '',

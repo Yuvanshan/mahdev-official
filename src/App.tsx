@@ -44,6 +44,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { SsoBridgePage, SsoSessionBridge } from './components/auth/SsoSessionBridge';
 import { getSsoBrokerLoginUrl, SSO_BROKER_ORIGIN } from './services/ssoService';
+import { isWhatsAppUrl } from './utils/whatsapp';
 
 const CHUNK_RECOVERY_KEY = 'mahdev:chunk-load-recovery';
 
@@ -734,6 +735,30 @@ function AppContent() {
     if (divisionKey) {
       analyticsService.trackDivisionView(divisionKey, DIVISIONS[divisionKey].name);
     }
+  }, [normalizedPath, divisionKey]);
+
+  useEffect(() => {
+    const recordWhatsAppClick = () => {
+      analyticsService.trackEvent(
+        'whatsapp_click',
+        normalizedPath,
+        { linkType: 'whatsapp' },
+        divisionKey
+      );
+    };
+    const handleWhatsAppAnchorClick = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const anchor = target.closest<HTMLAnchorElement>('a[href]');
+      if (anchor && isWhatsAppUrl(anchor.href)) recordWhatsAppClick();
+    };
+
+    document.addEventListener('click', handleWhatsAppAnchorClick, true);
+    window.addEventListener('mahdev:whatsapp-click', recordWhatsAppClick);
+    return () => {
+      document.removeEventListener('click', handleWhatsAppAnchorClick, true);
+      window.removeEventListener('mahdev:whatsapp-click', recordWhatsAppClick);
+    };
   }, [normalizedPath, divisionKey]);
 
   // Priority division data hydration on navigation. Attempt once per division

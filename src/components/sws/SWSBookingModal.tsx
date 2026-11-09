@@ -27,7 +27,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
-import { buildWhatsAppMessage, MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
+import { buildWhatsAppMessage, MAHDEV_WHATSAPP_NUMBER, notifyWhatsAppClick } from '../../utils/whatsapp';
 import { firestoreInquiriesService } from '../../services/firestore/inquiries';
 
 interface SWSBookingModalProps {
@@ -150,6 +150,7 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
       .catch((err) => console.warn('[SWSBookingModal] Inquiry dispatch notice:', err));
 
     try {
+      notifyWhatsAppClick();
       window.open(getFullWhatsAppUrl(ref), '_blank');
     } catch (err) {
       console.warn('[SWSBookingModal] WhatsApp redirect error:', err);

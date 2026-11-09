@@ -6,6 +6,25 @@
 export const MAHDEV_WHATSAPP_NUMBER = '94750928078'; // WhatsApp international format
 export const MAHDEV_DISPLAY_PHONE = '075 092 8078';
 
+export function isWhatsAppUrl(value: string): boolean {
+  try {
+    const host = new URL(value, typeof window !== 'undefined' ? window.location.href : 'https://mahdev.lk')
+      .hostname.toLowerCase();
+    return host === 'wa.me' ||
+      host === 'api.whatsapp.com' ||
+      host === 'whatsapp.com' ||
+      host.endsWith('.whatsapp.com') ||
+      host === 'whatsapp.net' ||
+      host.endsWith('.whatsapp.net');
+  } catch {
+    return false;
+  }
+}
+
+export function notifyWhatsAppClick(): void {
+  window.dispatchEvent(new Event('mahdev:whatsapp-click'));
+}
+
 export interface WhatsAppInquiryOptions {
   title: string;
   category?: string;
@@ -408,6 +427,7 @@ export function getWhatsAppOrderUrl(payload: WhatsAppOrderPayload): string {
  */
 export function openWhatsAppInquiry(options: WhatsAppInquiryOptions): void {
   const url = getWhatsAppInquiryUrl(options);
+  notifyWhatsAppClick();
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
@@ -416,5 +436,6 @@ export function openWhatsAppInquiry(options: WhatsAppInquiryOptions): void {
  */
 export function openWhatsAppOrder(payload: WhatsAppOrderPayload): void {
   const url = getWhatsAppOrderUrl(payload);
+  notifyWhatsAppClick();
   window.open(url, '_blank', 'noopener,noreferrer');
 }

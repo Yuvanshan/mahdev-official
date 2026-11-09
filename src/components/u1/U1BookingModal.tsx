@@ -18,7 +18,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
-import { buildWhatsAppMessage, MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
+import { buildWhatsAppMessage, MAHDEV_WHATSAPP_NUMBER, notifyWhatsAppClick } from '../../utils/whatsapp';
 import { firestoreInquiriesService } from '../../services/firestore/inquiries';
 
 interface U1BookingModalProps {
@@ -124,6 +124,7 @@ export const U1BookingModal: React.FC<U1BookingModalProps> = ({
       .catch((err) => console.warn('[U1BookingModal] Inquiry dispatch notice:', err));
 
     try {
+      notifyWhatsAppClick();
       window.open(getFullWhatsAppUrl(ref), '_blank');
     } catch (err) {
       console.warn('[U1BookingModal] WhatsApp redirect error:', err);

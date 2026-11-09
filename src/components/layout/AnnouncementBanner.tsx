@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { useAvailableCmsBanners } from '../../hooks/useAvailableCmsBanners';
 import type { DivisionSiteId } from '../../config/divisionSites';
+import { isWhatsAppUrl, notifyWhatsAppClick } from '../../utils/whatsapp';
 
 interface AnnouncementBannerProps {
   onNavigate?: (route: string) => void;
@@ -61,6 +62,7 @@ export const AnnouncementBanner: React.FC<AnnouncementBannerProps> = ({ onNaviga
           onClick={() => {
             const link = firestoreAnnouncement?.link || '/contact';
             if (/^https?:\/\//i.test(link)) {
+              if (isWhatsAppUrl(link)) notifyWhatsAppClick();
               window.open(link, '_blank', 'noopener,noreferrer');
             } else {
               onNavigate?.(link);

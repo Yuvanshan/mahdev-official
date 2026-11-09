@@ -17,6 +17,7 @@ export type AnalyticsEventType =
   | 'booking_completed'
   | 'contact_submitted'
   | 'quote_requested'
+  | 'whatsapp_click'
   | 'search_performed'
   | 'download_brochure'
   | 'custom';

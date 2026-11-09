@@ -41,7 +41,21 @@ The fixes were committed as `61412f5` and deployed to production on 9 November 2
 | Product modal keyboard accessibility | **Improved and deployed; live keyboard test not performed** | Product dialogs have labelled dialog semantics, Escape-to-close, focus trapping, initial focus, and focus restoration. |
 | Mobile image zoom is excessively cropped | **Fixed and deployed; CSS verified** | Shared touch zoom for gallery, services, and products now uses 1.4× instead of 2.5×; desktop zoom remains unchanged. The production CSS bundle contains the 1.4× mobile rule. |
 
-**Current code quality checks:** TypeScript type-check, production build, and `git diff --check` pass. The local build lacks Turso credentials, so dynamic sitemap data fell back to static public routes; the Vercel production build completed successfully.
+**Current code quality checks:** TypeScript type-check, production build, Vercel build, and `git diff --check` pass. Public sitemap and robots responses are request-time endpoints; local Turso credentials are required to populate the sitemap with live CMS records.
+
+## SEO, GEO and indexing review
+
+The initial live crawl found that all six Vercel hosts returned the same 269-entry sitemap, including URLs on all six hosts. The division robots files also advertised the corporate sitemap. Cross-host sitemap entries are not a reliable way to submit each independent host, so indexing is now organized per host:
+
+- `/sitemap.xml` and `/robots.txt` remain public URLs served dynamically per verified corporate or division host; only stale static copies were removed so they cannot override host-specific responses. Each sitemap includes canonical public routes, published content and available page-associated image URLs, without duplicate canonical locations or admin/private routes.
+- Each host's `/robots.txt` points to its own sitemap and disallows admin, account, checkout, personal booking and API paths.
+- Extensionless page requests on the five known division domains are routed through the page-shell handler, which supplies route-specific title, description, canonical, Open Graph, structured data and crawlable heading in the initial response. Static files, API routes and the admin portal bypass that rewrite.
+- Admin Analytics groups first-party visitor sessions into readable referrer sources (including Google, Facebook, WhatsApp and Direct) and counts outbound WhatsApp link clicks separately from incoming WhatsApp-attributed visits. Clicks do not imply that a message was sent; DNT/GPC opt-outs remain respected.
+- `llms.txt` now points to each division's own canonical host, rather than listing some division pages as corporate subpaths.
+- Existing SEO foundations include server-rendered titles, descriptions, canonical links and crawlable page headings; Organization/WebSite, LocalBusiness/Service and Breadcrumb structured data; page-specific metadata for listed services/products/projects/gallery entries; image alt-text guidance; and an image sitemap.
+- Admin's internal booking-cost entry panel, dashboard rollup and dedicated cost-update service method were removed. Historic `internalCosts` fields remain in the data model so existing records are preserved; customer-facing booking price/discount/delivery controls are unchanged.
+
+**Remaining SEO actions:** verify all six host properties in Google Search Console and Bing Webmaster Tools, submit each host's sitemap, request indexing of key pages, and monitor impressions/clicks/query relevance. Ensure division alias DNS and canonical links remain valid when moving to `mahdev.lk` subdomains. Strengthen each division with original, useful location/service content and real project examples; maintain accurate Google Business Profiles and local citations. Measure mobile Core Web Vitals and fix field-data issues. Search rank depends on competition, content quality, trust and external signals; no implementation can guarantee a top position.
 
 ## Prioritized findings
 
@@ -96,7 +110,9 @@ Scores are heuristic manual scores for the initial, pre-remediation Vercel previ
 - Checked the production legal routes (`/terms-and-conditions`, `/privacy-policy`, `/refund-policy`, `/shipping-policy`, and `/cookie-policy`); all returned HTTP 200.
 - Checked the production CSS bundle and confirmed mobile image zoom uses `scale(var(--image-mobile-scale, 1.4))`.
 - A live IT screenshot at 390 × 844 px confirmed the overlay improves hero text contrast.
-- Ran `npm run typecheck`, `npm run build`, and `git diff --check` successfully. The build's sitemap script logged a missing-local-Turso warning and completed with the documented static-route fallback.
+- Inspected `/sitemap.xml` and `/robots.txt` across all six hosts before this SEO update; found duplicate cross-host sitemap contents, corrected by the new host-scoped dynamic endpoints.
+- Verified the deployed site's homepage, legal routes and division routes return HTTP 200. Full Search Console/Bing ownership verification and index-request actions were not available in this environment.
+- Ran `npm run typecheck`, `npm run build`, and `git diff --check` successfully. The local build intentionally has no static sitemap or robots copies; the public URLs are API-backed, and published sitemap inventory requires Turso credentials. The new division-host rewrite and raw HTML metadata still require production deployment and live verification.
 
 ### Not covered / limitations
 
@@ -111,6 +127,7 @@ Scores are heuristic manual scores for the initial, pre-remediation Vercel previ
 ## Remaining release actions
 
 1. Decide whether the custom domains are in scope for launch; if yes, configure DNS/hosting and recheck all six HTTPS hosts.
-2. Use a configured test database to verify successful inquiry persistence, confirmation references, and notification/email delivery.
-3. Complete end-to-end Mart variant/add-to-cart and touch-hold zoom checks on a real mobile device.
-4. Complete desktop/mobile and keyboard/screen-reader testing, followed by a Lighthouse/Core Web Vitals run.
+2. Verify and submit each host-specific sitemap in Search Console and Bing Webmaster Tools.
+3. Use a configured test database to verify successful inquiry persistence, confirmation references, and notification/email delivery.
+4. Complete end-to-end Mart variant/add-to-cart and touch-hold zoom checks on a real mobile device.
+5. Complete desktop/mobile and keyboard/screen-reader testing, followed by a Lighthouse/Core Web Vitals run.

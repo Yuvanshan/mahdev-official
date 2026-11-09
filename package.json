@@ -7,7 +7,7 @@
     "dev": "tsx backend/server.ts",
     "dev:frontend": "vite",
     "dev:backend": "tsx backend/server.ts",
-    "build": "vite build && tsx scripts/prerender-seo.ts && tsx scripts/generate-sitemap.ts && tsx scripts/generate-robots.ts && tsx scripts/generate-llms.ts && esbuild backend/server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/backend.cjs",
+    "build": "vite build && tsx scripts/prerender-seo.ts && tsx scripts/generate-llms.ts && esbuild backend/server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/backend.cjs",
     "start": "node dist/backend.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",

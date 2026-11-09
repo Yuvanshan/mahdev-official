@@ -3,7 +3,7 @@
  * High-performance, privacy-compliant event tracking and executive intelligence aggregator.
  * 
  * Features:
- * - Session-scoped event tracking without unsupported network dispatch
+ * - First-party batched event delivery without third-party cross-site cookies
  * - Strict adherence to Do-Not-Track (DNT) browser settings
  * - Anonymized session IDs with zero third-party cross-site cookies
  * - Real dynamic report generation calculated from Orders, Bookings, CMS, and Site Events
@@ -53,6 +53,24 @@ function aggregateTraffic(
   });
   return [...counts.entries()]
     .map(([label, views]) => ({ label, views }))
+    .sort((a, b) => b.views - a.views)
+    .slice(0, maxItems);
+}
+
+function aggregateUniqueVisitors(
+  events: AnalyticsEvent[],
+  getLabel: (event: AnalyticsEvent) => string,
+  maxItems: number
+): Array<{ label: string; views: number }> {
+  const sessionsByLabel = new Map<string, Set<string>>();
+  events.forEach((event) => {
+    const label = getLabel(event).trim() || 'Unknown';
+    const sessions = sessionsByLabel.get(label) || new Set<string>();
+    sessions.add(event.sessionId);
+    sessionsByLabel.set(label, sessions);
+  });
+  return [...sessionsByLabel.entries()]
+    .map(([label, sessions]) => ({ label, views: sessions.size }))
     .sort((a, b) => b.views - a.views)
     .slice(0, maxItems);
 }
@@ -533,7 +551,7 @@ class AnalyticsService {
         : '';
       return [...searchEngineHosts].some((searchHost) =>
         host === searchHost || host.endsWith(`.${searchHost}`)
-      );
+      ) || /^google\.[a-z]{2,3}(?:\.[a-z]{2})?$/.test(host);
     });
     const organicSearchVisitors = new Set(organicSearchEvents.map((event) => event.sessionId)).size;
     const campaignEvents = pageViewEvents.filter((event) =>
@@ -902,7 +920,7 @@ class AnalyticsService {
       dailyTrends,
       traffic: {
         topPages: aggregateTraffic(pageViewEvents, (event) => event.path, 10),
-        topReferrers: aggregateTraffic(pageViewEvents, (event) => trafficSourceLabel(event.metadata), 8),
+        topReferrers: aggregateUniqueVisitors(pageViewEvents, (event) => trafficSourceLabel(event.metadata), 8),
         deviceBreakdown: aggregateTraffic(pageViewEvents, (event) =>
           typeof event.metadata?.deviceType === 'string' ? event.metadata.deviceType : 'Unknown',
           3

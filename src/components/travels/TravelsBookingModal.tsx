@@ -21,7 +21,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { COMPANY_INFO, getTelLink, getMailtoLink } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
-import { buildWhatsAppMessage, MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
+import { buildWhatsAppMessage, MAHDEV_WHATSAPP_NUMBER, notifyWhatsAppClick } from '../../utils/whatsapp';
 import { firestoreInquiriesService } from '../../services/firestore/inquiries';
 
 interface TravelsBookingModalProps {
@@ -128,6 +128,7 @@ export const TravelsBookingModal: React.FC<TravelsBookingModalProps> = ({
       .catch((err) => console.warn('[TravelsBookingModal] Inquiry dispatch notice:', err));
 
     try {
+      notifyWhatsAppClick();
       window.open(getWhatsAppBookingLink(ref), '_blank');
     } catch (err) {
       console.warn('[TravelsBookingModal] WhatsApp launch error:', err);

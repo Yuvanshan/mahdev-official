@@ -39,7 +39,7 @@ The repository keeps browser code in `src/` and backend implementation in `backe
 The project includes a root `vercel.json` configured specifically for modern React + Vite single-page applications. Before deployment, run `npm run lint` and `npm run build`; this repository no longer includes test files or test runner scripts.
 
 - **Framework**: `vite`
-- **Build Command**: `vite build`
+- **Build Command**: `vite build && tsx scripts/prerender-seo.ts && tsx scripts/generate-llms.ts` (from `vercel.json`)
 - **Output Directory**: `dist`
 - **Install Command**: `npm install`
 - **Node.js Version**: `20.x` or `22.x`
@@ -47,7 +47,7 @@ The project includes a root `vercel.json` configured specifically for modern Rea
 ### Security & Caching Headers
 - **Defense in Depth**: Content Security Policy, Permissions Policy, `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`.
 - **Immutable Static Assets**: `Cache-Control: public, max-age=31536000, immutable` for all files in `/assets/`.
-- **SPA Fallback**: Clean URL rewrite routing all unmatched routes to `/index.html`.
+- **SPA fallback**: Unmatched page requests use the server-side page-shell handler for route status and SEO metadata. Recognized division hosts also route extensionless pages through this handler so crawlers receive host- and page-specific metadata before JavaScript runs; API, static asset, and admin portal paths are excluded.
 
 ### API coverage limitation
 
@@ -150,19 +150,19 @@ Admin portal access uses `ADMIN_LOGIN_EMAIL`, `ADMIN_LOGIN_PASSWORD_HASH`, and `
 
 ## 5. Search indexing and analytics
 
-The public sitemap is generated at request time from public site pages and published CMS pages, services, products, galleries/media, projects, active divisions, and career openings. It includes available content images using the Google Image sitemap extension. Division landing-page URLs use the corresponding configured division host when its `VITE_*_SITE_URL` is set; otherwise they stay on the main host under `/sws`, `/u1`, `/it`, `/travels`, or `/mart`. Submit the resulting sitemap for the main domain and verify each custom division host in Search Console when those domains are launched. Public marketing pages are indexable; account, admin, and transaction routes are excluded.
+`/sitemap.xml` and `/robots.txt` remain public URLs, served by request-time endpoints. Do not add static copies under `public/`: Vercel can serve static files before rewrites, which would bypass host-specific responses. Each host gets a sitemap containing only canonical URLs on that same host, avoiding cross-host sitemap entries. It includes public site routes and published CMS pages, services, products, galleries/media, projects, active divisions, and career openings, plus available page-associated images using Google's Image sitemap extension. Draft, deleted, private, account, admin, and transaction routes are excluded. Every host's `robots.txt` points to its own sitemap. Verify and submit each corporate/division host in Search Console and Bing Webmaster Tools.
 
 All division hosts are attached to this same Vercel project. Keep the division URL variables **unset for Preview** so preview builds cannot send users or crawlers to production hosts. The values are public build-time origins and saving them requires a production redeployment.
 
-Search indexing is enabled only when Vercel sets `VERCEL_ENV=production`; Vercel preview deployments and local builds remain `noindex`. The `VITE_SITE_URL` environment variable (read by `src/config/site.ts`) is the single source of truth for the public domain: page canonical URLs, sitemap URLs, `robots.txt` and `llms.txt` all follow it. `VITE_APP_URL` is not used to override canonical URLs.
+Search indexing is enabled only when Vercel sets `VERCEL_ENV=production`; Vercel preview deployments and local builds remain `noindex`. `VITE_SITE_URL` is the canonical corporate origin. The `VITE_*_SITE_URL` division origins are used for each division's canonical URLs and host-specific sitemap. `llms.txt` lists the corporate and division sites. `VITE_APP_URL` is not used to override canonical URLs.
 
 After deploying SEO changes:
 
-1. Verify `https://mahdev-official.vercel.app/robots.txt` and `https://mahdev-official.vercel.app/sitemap.xml` return successfully.
+1. Verify `/robots.txt` and `/sitemap.xml` on the corporate host and all five division hosts return successfully and list only URLs from their own host.
 2. Add `https://mahdev-official.vercel.app/` as a URL-prefix property in Google Search Console. The Google HTML-token meta tag and HTML-file verification methods are included in the production build (`/` and `/google557fd5590c618eb4.html`). After deploying, use either HTML verification method in Search Console. The supplied DNS TXT value is `google-site-verification=oDHseI7gVMRQyDiFx63DQwSAKbXVJdR2y6cqBL_Dn0Q`; DNS verification requires control of the domain's DNS zone and cannot be configured on the shared `vercel.app` domain. For Bing, set `VITE_BING_SITE_VERIFICATION` in Vercel Production and redeploy before verification.
-3. Submit `https://mahdev-official.vercel.app/sitemap.xml` in both webmaster consoles, then inspect the homepage and key service/career URLs and request indexing where offered. Indexing and ranking are decided by each search engine and cannot be guaranteed.
+3. Submit each host's own `/sitemap.xml` in both webmaster consoles, then inspect the homepage and key service/career URLs and request indexing where offered. Indexing and ranking are decided by each search engine and cannot be guaranteed.
 4. In **Admin > Settings > Company**, enter the full public profile URLs for Facebook, Instagram, LinkedIn, YouTube, TikTok, and WhatsApp. Saved links appear as icons in the global footer and About page; blank or invalid URLs are omitted.
-5. If using external analytics, create the GA4 web data stream and/or Meta Pixel, set `VITE_GA_MEASUREMENT_ID` and/or `VITE_META_PIXEL_ID` in the Production Vercel environment, then redeploy. Both are optional and remain disabled when unset; page views, leads, quotes, bookings, checkout starts, purchases, and cart additions are tracked without sending contact details. Tracking respects DNT and GPC.
+5. If using external analytics, create the GA4 web data stream and/or Meta Pixel, set `VITE_GA_MEASUREMENT_ID` and/or `VITE_META_PIXEL_ID` in the Production Vercel environment, then redeploy. Both are optional and remain disabled when unset; page views, leads, quotes, bookings, checkout starts, purchases, cart additions, and WhatsApp outbound clicks are tracked without sending contact details. The Admin > Analytics traffic view groups unique visitors into sources such as Google, Facebook, WhatsApp, and Direct. WhatsApp click counts measure link clicks, not messages sent. Tracking respects DNT and GPC.
 6. Use complete, accurate service descriptions, prices/quote guidance, features, images, and division assignments. Published services receive individual `/services/{slug}` pages and are included in the sitemap. Publish active divisions and useful CMS case studies; drafts and inactive items are excluded. Do not publish placeholder pages or keyword-only articles.
 7. For paid campaigns, add Google Ads and Meta campaign links with `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, and `utm_content` values. First-party page-view records retain these campaign labels, and **Admin > Analytics** reports tagged campaigns and visits referred by search engines. Search Console query, impression, and click metrics require reviewing the verified Search Console account.
 

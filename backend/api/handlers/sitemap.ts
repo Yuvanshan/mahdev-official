@@ -12,6 +12,7 @@ import {
   DIVISION_SITE_IDS,
   getCanonicalPublicUrl,
 } from '../../../src/config/divisionSites.js';
+import { getRequestSiteOrigin } from '../../seo/requestOrigin.js';
 
 const STATIC_PUBLIC_PATHS = [
   '/',
@@ -59,9 +60,15 @@ const PRIVATE_PATH_PREFIXES = [
   '/login',
   '/register',
   '/forgot-password',
+  '/reset-password',
+  '/auth',
+  '/verify-email',
+  '/book/service',
+  '/book/gallery',
+  '/book/product',
   '/api',
 ];
-const MAX_PUBLIC_CONTENT_ROWS = 1000;
+const MAX_PUBLIC_CONTENT_ROWS = 10000;
 
 function isPublicPath(path: string): boolean {
   return !PRIVATE_PATH_PREFIXES.some(
@@ -77,11 +84,6 @@ function escapeXml(value: string): string {
     "'": '&apos;',
     '"': '&quot;',
   })[character] || character);
-}
-
-// Configured with VITE_SITE_URL (or PUBLIC_SITE_URL); validated in src/config/site.ts.
-function getSiteOrigin(): string {
-  return CANONICAL_SITE_ORIGIN;
 }
 
 function publicSlug(value: unknown): string | null {
@@ -419,6 +421,31 @@ export function buildSitemapXml(
   ].join('\n');
 }
 
+export function scopeSitemapXmlToOrigin(xml: string, origin: string): string {
+  const allowedOrigin = new URL(origin).origin;
+  const urlEntries = xml.match(/  <url>[\s\S]*?<\/url>/g) || [];
+  const scopedEntries = new Map<string, string>();
+  for (const urlEntry of urlEntries) {
+    const location = urlEntry.match(/<loc>(.*?)<\/loc>/)?.[1];
+    if (!location) continue;
+    try {
+      if (new URL(location.replace(/&amp;/g, '&')).origin !== allowedOrigin) continue;
+    } catch {
+      continue;
+    }
+    const existing = scopedEntries.get(location);
+    scopedEntries.set(location, existing ? mergeEntries(existing, urlEntry) : urlEntry);
+  }
+
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">',
+    ...scopedEntries.values(),
+    '</urlset>',
+    '',
+  ].join('\n');
+}
+
 let initialization: Promise<void> | undefined;
 
 export async function loadPublicSitemapData(): Promise<{
@@ -469,7 +496,9 @@ export default async function sitemapHandler(
   }
 
   try {
-    const xml = buildSitemapXml(await loadPublicSitemapData(), getSiteOrigin());
+    const origin = getRequestSiteOrigin(req);
+    const sitemap = buildSitemapXml(await loadPublicSitemapData(), origin);
+    const xml = scopeSitemapXmlToOrigin(sitemap, origin);
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400');

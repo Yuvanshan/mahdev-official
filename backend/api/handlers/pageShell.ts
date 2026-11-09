@@ -4,7 +4,6 @@ import { handleTursoAction } from '../tursoRoutes.js';
 import { APP_ROUTE_SEGMENTS, PRERENDERED_ROUTES, PRIVATE_ROUTE_SEGMENTS, RETIRED_ADMIN_SEGMENTS } from '../../seo/publicRoutes.js';
 import { resolveDynamicRouteSeo } from '../../seo/dynamicRouteSeo.js';
 import { renderSeoHtml } from '../../seo/renderSeoHtml.js';
-import { CANONICAL_SITE_ORIGIN } from '../../../src/config/site.js';
 import { getDivisionSiteForHost } from '../../../src/config/divisionSites.js';
 
 /**
@@ -111,7 +110,7 @@ async function serveShell(req: IncomingMessage, res: ServerResponse, forcedStatu
     try {
       const seo = await resolveDynamicRouteSeo(seoPath, url.searchParams);
       if (seo) {
-        html = renderSeoHtml(html, seo, CANONICAL_SITE_ORIGIN);
+        html = renderSeoHtml(html, seo, origin);
         isItemPage = true;
       } else if (ITEM_PAGE_PATTERN.test(seoPath) && !/^\/?services?\/category\/?$/i.test(seoPath)) {
         // An item address whose item does not exist is a real 404, not the home page
@@ -121,10 +120,10 @@ async function serveShell(req: IncomingMessage, res: ServerResponse, forcedStatu
         status = 404;
       } else if (GALLERY_ITEM_PATTERN.test(seoPath)) {
         const servicesRoute = PRERENDERED_ROUTES.find((route) => route.path === (hostDivision ? `/${hostDivision}` : '/services'));
-        if (servicesRoute) html = renderSeoHtml(html, servicesRoute, CANONICAL_SITE_ORIGIN);
+        if (servicesRoute) html = renderSeoHtml(html, servicesRoute, origin);
       } else if (hostDivision) {
-        const divisionRoute = PRERENDERED_ROUTES.find((route) => route.path === seoPath);
-        if (divisionRoute) html = renderSeoHtml(html, divisionRoute, CANONICAL_SITE_ORIGIN);
+        const route = PRERENDERED_ROUTES.find((candidate) => candidate.path === seoPath);
+        if (route) html = renderSeoHtml(html, route, origin);
       }
     } catch (error) {
       console.error('[PageShell] Could not add page SEO; serving the plain shell:', error);

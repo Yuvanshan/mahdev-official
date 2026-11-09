@@ -4,6 +4,7 @@ import apiRouter from './api/index.js';
 import { runMigrations } from './db/index.js';
 import { createTursoRouter } from './api/tursoRoutes.js';
 import sitemapHandler from './api/handlers/sitemap.js';
+import robotsHandler from './api/handlers/robots.js';
 
 const app = express();
 const port = Number(process.env.BACKEND_PORT || process.env.PORT || 4000);
@@ -19,6 +20,9 @@ app.use(express.json({
 app.use(express.urlencoded({ extended: true, limit: '4mb' }));
 app.get('/sitemap.xml', (req, res) => {
   void sitemapHandler(req, res);
+});
+app.get('/robots.txt', (req, res) => {
+  robotsHandler(req, res);
 });
 app.use('/api/database', createTursoRouter());
 app.use('/api', apiRouter);

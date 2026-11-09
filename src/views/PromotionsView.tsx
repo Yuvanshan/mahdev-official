@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft, ArrowRight, CalendarDays, Tag } from 'lucide-react';
 import { useAvailableCmsBanners } from '../hooks/useAvailableCmsBanners';
+import { isWhatsAppUrl, notifyWhatsAppClick } from '../utils/whatsapp';
 
 interface PromotionsViewProps {
   onNavigate: (route: string) => void;
@@ -20,6 +21,7 @@ export const PromotionsView: React.FC<PromotionsViewProps> = ({ onNavigate, sele
 
   const openOffer = (targetUrl: string) => {
     if (/^https?:\/\//i.test(targetUrl)) {
+      if (isWhatsAppUrl(targetUrl)) notifyWhatsAppClick();
       window.open(targetUrl, '_blank', 'noopener,noreferrer');
       return;
     }

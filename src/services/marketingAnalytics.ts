@@ -113,6 +113,7 @@ export function trackMarketingEvent(
     booking_completed: 'generate_lead',
     contact_submitted: 'generate_lead',
     quote_requested: 'generate_lead',
+    whatsapp_click: 'whatsapp_click',
   };
   const metaEventNames: Record<string, string> = {
     page_view: 'PageView',
@@ -126,6 +127,7 @@ export function trackMarketingEvent(
     booking_completed: 'Schedule',
     contact_submitted: 'Contact',
     quote_requested: 'Lead',
+    whatsapp_click: 'Contact',
   };
   const allowedParameters = [
     'currency',

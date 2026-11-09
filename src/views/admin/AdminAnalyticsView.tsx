@@ -73,6 +73,22 @@ function summarizeTrafficEvents(
     .sort((left, right) => right.views - left.views || left.label.localeCompare(right.label));
 }
 
+function summarizeUniqueTrafficVisitors(
+  events: AnalyticsEvent[],
+  getLabel: (event: AnalyticsEvent) => string
+): Array<{ label: string; views: number }> {
+  const sessionsBySource = new Map<string, Set<string>>();
+  events.forEach((event) => {
+    const label = getLabel(event).trim() || 'Unknown';
+    const sessions = sessionsBySource.get(label) || new Set<string>();
+    sessions.add(event.sessionId);
+    sessionsBySource.set(label, sessions);
+  });
+  return [...sessionsBySource.entries()]
+    .map(([label, sessions]) => ({ label, views: sessions.size }))
+    .sort((left, right) => right.views - left.views || left.label.localeCompare(right.label));
+}
+
 function summarizeItemViews(
   events: AnalyticsEvent[],
   eventType: AnalyticsEvent['type'],
@@ -138,6 +154,10 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
     () => trafficPageViews.filter((event) => isWhatsAppTraffic(event.metadata)),
     [trafficPageViews]
   );
+  const whatsappClickEvents = useMemo(
+    () => filteredTrafficEvents.filter((event) => event.type === 'whatsapp_click'),
+    [filteredTrafficEvents]
+  );
   const topViewedProducts = useMemo(
     () => summarizeItemViews(filteredTrafficEvents, 'product_view', 'productId', 'productName'),
     [filteredTrafficEvents]
@@ -162,7 +182,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
   }, [trafficPageViews]);
 
   const trafficSources = useMemo(
-    () => summarizeTrafficEvents(
+    () => summarizeUniqueTrafficVisitors(
       trafficPageViews,
       (event) => trafficSourceLabel(event.metadata)
     ),
@@ -767,7 +787,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
           <h2 className="text-sm font-bold text-slate-900">Visitor sources</h2>
-          <p className="mt-1 text-xs text-slate-500">Referring sites and direct visits</p>
+          <p className="mt-1 text-xs text-slate-500">Unique visitors by referring site or direct visit</p>
           <div className="mt-4 space-y-3">
             {report.traffic.topReferrers.length ? report.traffic.topReferrers.map((source) => (
               <div key={source.label} className="flex items-center justify-between gap-3 text-xs">
@@ -831,7 +851,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
 
       {activeTab === 'traffic' && (
         <div className="space-y-6">
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5" aria-label="Website traffic summary">
+          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6" aria-label="Website traffic summary">
             {[
               { label: 'Page views', value: trafficPageViews.length.toLocaleString() },
               {
@@ -842,6 +862,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
                 label: 'WhatsApp visitors',
                 value: new Set(whatsappPageViews.map((event) => event.sessionId)).size.toLocaleString(),
               },
+              { label: 'WhatsApp link clicks', value: whatsappClickEvents.length.toLocaleString() },
               { label: 'Tracked events', value: filteredTrafficEvents.length.toLocaleString() },
               { label: 'Search visits', value: report.traffic.organicSearchVisits.toLocaleString() },
             ].map((metric) => (
@@ -852,7 +873,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
             ))}
           </section>
           <p className="text-xs text-slate-500">
-            Visitor counts use anonymous browser session IDs, not personal identities. WhatsApp visits are identified from tagged links or available referrers; shares without tags or a browser referrer cannot always be attributed.
+            Source counts use anonymous browser sessions, not personal identities. WhatsApp visits need a tagged link or available referrer; WhatsApp link clicks count outbound clicks, not messages sent.
           </p>
 
           {hasMoreEvents && (
