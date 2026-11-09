@@ -46,6 +46,8 @@ export const BookingLookupModal: React.FC<BookingLookupModalProps> = ({
   const [adminMode, setAdminMode] = useState<boolean>(false);
   const [adminNotes, setAdminNotes] = useState<string>('');
   const [actionSuccessMessage, setActionSuccessMessage] = useState<string>('');
+  const [actionErrorMessage, setActionErrorMessage] = useState<string>('');
+  const [isCompletingBooking, setIsCompletingBooking] = useState(false);
 
   // Reschedule state
   const [isRescheduling, setIsRescheduling] = useState<boolean>(false);
@@ -114,13 +116,21 @@ export const BookingLookupModal: React.FC<BookingLookupModalProps> = ({
     }
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!selectedBooking) return;
-    const res = bookingService.completeBooking(selectedBooking.id, 'Service execution verified & completed.');
-    if (res.success) {
-      setActionSuccessMessage(`Booking ${selectedBooking.id} marked as COMPLETED.`);
-      refreshBooking(selectedBooking.id);
-      setTimeout(() => setActionSuccessMessage(''), 3000);
+    setIsCompletingBooking(true);
+    setActionErrorMessage('');
+    try {
+      const res = await bookingService.completeBooking(selectedBooking.id, 'Service execution verified & completed.');
+      if (res.success) {
+        setActionSuccessMessage(`Booking ${selectedBooking.id} marked as COMPLETED. The customer will see this update in their account.`);
+        refreshBooking(selectedBooking.id);
+        setTimeout(() => setActionSuccessMessage(''), 3000);
+      } else {
+        setActionErrorMessage(res.error || 'The booking could not be marked completed.');
+      }
+    } finally {
+      setIsCompletingBooking(false);
     }
   };
 
@@ -238,6 +248,11 @@ export const BookingLookupModal: React.FC<BookingLookupModalProps> = ({
         {actionSuccessMessage && (
           <div className="px-6 py-2.5 bg-emerald-600 text-white text-xs font-semibold flex items-center justify-between">
             <span>{actionSuccessMessage}</span>
+          </div>
+        )}
+        {actionErrorMessage && (
+          <div className="px-6 py-2.5 bg-rose-100 text-rose-800 text-xs font-semibold" role="alert">
+            {actionErrorMessage}
           </div>
         )}
 
@@ -479,10 +494,11 @@ export const BookingLookupModal: React.FC<BookingLookupModalProps> = ({
                         Confirm
                       </button>
                       <button
-                        onClick={handleComplete}
-                        className="py-2 px-3 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold rounded-lg transition-colors"
+                        onClick={() => void handleComplete()}
+                        disabled={isCompletingBooking}
+                        className="py-2 px-3 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        Complete
+                        {isCompletingBooking ? 'Updating…' : 'Complete'}
                       </button>
                       <button
                         onClick={handleReject}

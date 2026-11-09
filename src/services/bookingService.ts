@@ -709,27 +709,13 @@ class UniversalBookingService {
     return { success: true, booking };
   }
 
-  public completeBooking(id: string, notes?: string): { success: boolean; booking?: Booking; error?: string } {
-    const booking = this.getBookingById(id);
-    if (!booking) return { success: false, error: 'Booking not found.' };
-
-    booking.status = 'completed';
-    if (notes) {
-      booking.adminNotes = (booking.adminNotes ? `${booking.adminNotes}\n` : '') + `[Completed]: ${notes}`;
-    }
-    booking.updatedAt = new Date().toISOString();
-    this.saveToStorage();
-    this.notifySubscribers();
-
-    firestoreBookingsService
-      .updateBooking(id, {
-        status: 'completed',
-        ...(booking.adminNotes ? { adminNotes: booking.adminNotes } : {}),
-        updatedAt: booking.updatedAt,
-      } as any)
-      .catch((err) => console.warn('[BookingService] database complete error:', err));
-
-    return { success: true, booking };
+  public completeBooking(
+    id: string,
+    notes?: string
+  ): Promise<{ success: boolean; booking?: Booking; error?: string }> {
+    return this.adminSetStatus(id, 'completed', {
+      adminNote: notes ? `[Completed]: ${notes}` : undefined,
+    });
   }
 
   public updatePaymentStatus(id: string, paymentStatus: PaymentStatus): { success: boolean; booking?: Booking; error?: string } {
