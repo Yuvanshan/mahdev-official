@@ -5,7 +5,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Modal } from '../ui/Modal';
 import { FOOTER_SECTIONS } from '../../config/navigation';
-import { getTelLink, getMailtoLink, getMapSearchUrl } from '../../config/company';
+import { getTelLink, getMailtoLink, getMapSearchUrl, YOUTUBE_URL } from '../../config/company';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { getDivisionWhatsAppUrl } from '../../utils/whatsapp';
 import { SocialLinks } from '../common/SocialLinks';
@@ -146,7 +146,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath, divisio
                 logoUrl={divisionLogo}
                 onClick={() => onNavigate(divisionHomePath)}
               />
-              <SocialLinks socials={companySettings?.socials} variant="dark" />
+              <SocialLinks socials={{ ...companySettings?.socials, youtube: YOUTUBE_URL }} variant="dark" />
 
               {/* Direct Contact Anchors */}
               <div className="public-footer-contact space-y-3 pt-2 text-xs">

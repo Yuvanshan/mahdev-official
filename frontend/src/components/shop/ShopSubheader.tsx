@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Heart, Search, SlidersHorizontal } from 'lucide-react';
 import { reportSearch } from '../../services/searchHistoryService';
-import { clearSearches, getRecentSearches, recordSearch } from '../../utils/usageProfile';
+import { clearSearches, getRecentSearches, recordSearch, recordView } from '../../utils/usageProfile';
 import { useWishlist } from '../../context/WishlistContext';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 
@@ -10,6 +10,17 @@ interface ShopSubheaderProps {
 }
 
 // Where the search goes. The explore page already has the type, category, price and sort filters.
+const HISTORY_SHOWN = 3;
+const SUGGESTIONS_PER_KIND = 3;
+
+interface Suggestion {
+  key: string;
+  label: string;
+  kind: 'Category' | 'Service' | 'Gallery' | 'Product';
+  imageUrl?: string;
+  href: string;
+}
+
 const SCOPES = [
   { value: 'all', label: 'All', path: '/services' },
   { value: 'services', label: 'Services', path: '/services/category/type-services' },
@@ -19,7 +30,7 @@ const SCOPES = [
 
 // Search bar plus a category strip of the divisions, shown under the main navigation (Flipkart header).
 export const ShopSubheader: React.FC<ShopSubheaderProps> = ({ onNavigate }) => {
-  const { divisions } = useFirestoreDataContext();
+  const { divisions, services, gallery, products, categories: catalogCategories } = useFirestoreDataContext();
   const [keyword, setKeyword] = useState('');
   const [scope, setScope] = useState<(typeof SCOPES)[number]['value']>('all');
   const [showFilters, setShowFilters] = useState(false);
@@ -28,6 +39,38 @@ export const ShopSubheader: React.FC<ShopSubheaderProps> = ({ onNavigate }) => {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const { wishlistItems } = useWishlist();
+
+  // Matches for what the visitor is typing: categories first, then services, gallery and products.
+  const term = keyword.trim().toLowerCase();
+  const suggestions = useMemo<Suggestion[]>(() => {
+    if (term.length < 1) return [];
+    const match = (...parts: Array<string | undefined>) => parts.some((part) => part?.toLowerCase().includes(term));
+    const categoryHits = catalogCategories
+      .filter((item) => item.isPublished !== false && item.slug && match(item.name))
+      .slice(0, SUGGESTIONS_PER_KIND)
+      .map<Suggestion>((item) => ({ key: `c-${item.id}`, label: item.name, kind: 'Category', imageUrl: item.imageUrl, href: `/services/category/${item.slug}` }));
+    const serviceHits = services
+      .filter((item) => item.isPublished !== false && item.status !== 'inactive' && item.status !== 'draft' && match(item.title, item.name, item.category))
+      .slice(0, SUGGESTIONS_PER_KIND)
+      .map<Suggestion>((item) => ({ key: `s-${item.id}`, label: item.title || item.name, kind: 'Service', imageUrl: item.imageUrl || item.images?.[0], href: `/services/${item.slug || item.id}` }));
+    const galleryHits = gallery
+      .filter((item) => item.type === 'image' && match(item.title, item.category, item.tag, ...(item.tags || [])))
+      .slice(0, SUGGESTIONS_PER_KIND)
+      .map<Suggestion>((item) => ({ key: `g-${item.id}`, label: item.title, kind: 'Gallery', imageUrl: item.thumbnailUrl || item.mediaUrl || item.url, href: `/gallery?id=${encodeURIComponent(item.id)}` }));
+    const productHits = products
+      .filter((item) => (item as { status?: string }).status !== 'archived' && (item as { status?: string }).status !== 'draft' && match(item.name))
+      .slice(0, SUGGESTIONS_PER_KIND)
+      .map<Suggestion>((item) => ({ key: `p-${item.id}`, label: item.name, kind: 'Product', imageUrl: item.imageUrl || item.images?.[0], href: `/mart?product=${encodeURIComponent(item.id)}` }));
+    return [...categoryHits, ...serviceHits, ...galleryHits, ...productHits];
+  }, [term, catalogCategories, services, gallery, products]);
+
+  const openSuggestion = (suggestion: Suggestion) => {
+    recordSearch(suggestion.label);
+    recordView(suggestion.label);
+    setShowHistory(false);
+    setKeyword('');
+    onNavigate(suggestion.href);
+  };
 
   const submitSearch = (event: React.FormEvent) => {
     event.preventDefault();
@@ -60,7 +103,7 @@ export const ShopSubheader: React.FC<ShopSubheaderProps> = ({ onNavigate }) => {
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
             onFocus={() => {
-              setHistory(getRecentSearches());
+              setHistory(getRecentSearches(HISTORY_SHOWN));
               setShowHistory(true);
             }}
             onBlur={() => setShowHistory(false)}
@@ -68,20 +111,36 @@ export const ShopSubheader: React.FC<ShopSubheaderProps> = ({ onNavigate }) => {
             aria-label="Search the Mahdev catalogue"
             className="min-w-0 flex-1 bg-transparent px-4 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-500"
           />
-          {showHistory && history.length > 0 && (
+          {showHistory && (term.length < 1 ? history.length > 0 : suggestions.length > 0) && (
             // onMouseDown keeps the input focused so a click lands before the blur closes the list.
-            <ul onMouseDown={(event) => event.preventDefault()} aria-label="Recent searches" className="absolute left-0 right-0 top-full z-30 mt-px max-h-72 overflow-y-auto border border-slate-200 bg-white shadow-lg">
-              <li className="flex items-center justify-between px-4 py-1.5 text-xs font-semibold text-slate-500">
-                Recent searches
-                <button type="button" onClick={() => { clearSearches(); setHistory([]); }} className="text-blue-700 hover:underline">Clear</button>
-              </li>
-              {history.map((term) => (
-                <li key={term}>
-                  <button type="button" onClick={() => { setKeyword(term); setShowHistory(false); }} className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-800 hover:bg-slate-50">
-                    <Search aria-hidden="true" className="h-3.5 w-3.5 text-slate-400" /> {term}
-                  </button>
-                </li>
-              ))}
+            <ul onMouseDown={(event) => event.preventDefault()} aria-label={term.length < 1 ? 'Recent searches' : 'Suggestions'} className="absolute left-0 right-0 top-full z-30 mt-px max-h-80 overflow-y-auto border border-slate-200 bg-white shadow-lg">
+              {term.length < 1 ? (
+                <>
+                  <li className="flex items-center justify-between px-4 py-1.5 text-xs font-semibold text-slate-500">
+                    Recent searches
+                    <button type="button" onClick={() => { clearSearches(); setHistory([]); }} className="text-blue-700 hover:underline">Clear</button>
+                  </li>
+                  {history.map((entry) => (
+                    <li key={entry}>
+                      <button type="button" onClick={() => { setKeyword(entry); setShowHistory(false); }} className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-800 hover:bg-slate-50">
+                        <Search aria-hidden="true" className="h-3.5 w-3.5 text-slate-400" /> {entry}
+                      </button>
+                    </li>
+                  ))}
+                </>
+              ) : (
+                suggestions.map((suggestion) => (
+                  <li key={suggestion.key}>
+                    <button type="button" onClick={() => openSuggestion(suggestion)} className="flex w-full items-center gap-3 px-4 py-2 text-left hover:bg-slate-50">
+                      <span className="h-10 w-10 shrink-0 overflow-hidden rounded-sm border border-slate-200 bg-slate-100">
+                        {suggestion.imageUrl && <img src={suggestion.imageUrl} alt="" loading="lazy" draggable={false} className="h-full w-full object-cover" />}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-sm text-slate-900">{suggestion.label}</span>
+                      <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{suggestion.kind}</span>
+                    </button>
+                  </li>
+                ))
+              )}
             </ul>
           )}
           <button

@@ -25,10 +25,15 @@ import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
 import { DivisionId } from '../../types';
 import { DIVISIONS } from '../../config/divisions';
 
-export const AdminBannersView: React.FC = () => {
+interface AdminBannersViewProps {
+  /** Lock the list and new banners to one placement (the "Top Banner" drawer page). */
+  fixedPlacement?: CmsBanner['placement'];
+}
+
+export const AdminBannersView: React.FC<AdminBannersViewProps> = ({ fixedPlacement }) => {
   const [banners, setBanners] = useState<CmsBanner[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [placementFilter, setPlacementFilter] = useState<string>('all');
+  const [placementFilter, setPlacementFilter] = useState<string>(fixedPlacement ?? 'all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'deleted'>('all');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -101,7 +106,7 @@ export const AdminBannersView: React.FC = () => {
     setFormData({
       title: '',
       subtitle: '',
-      placement: 'announcement_bar',
+      placement: fixedPlacement ?? 'announcement_bar',
       divisionId: 'all',
       targetUrl: '/promotion',
       buttonText: 'View Offers',
@@ -260,11 +265,13 @@ export const AdminBannersView: React.FC = () => {
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-blue-600" />
             <h2 className="font-display text-lg font-bold text-slate-900">
-              Promotional Banners & Announcements ({banners.length})
+              {fixedPlacement === 'home_hero' ? 'Top Banner (home page slider)' : 'Promotional Banners & Announcements'} ({banners.length})
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Manage homepage hero takeovers, sticky top announcement strips, division-specific campaigns, and seasonal sales.
+            {fixedPlacement === 'home_hero'
+              ? 'Banners here fill the slider at the top of the home page. Upload a wide image for desktop and a 4:3 image for mobile; the highest priority shows first.'
+              : 'Manage homepage hero takeovers, sticky top announcement strips, division-specific campaigns, and seasonal sales.'}
           </p>
         </div>
 
@@ -293,7 +300,7 @@ export const AdminBannersView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
-          <div className="flex items-center gap-1.5">
+          {!fixedPlacement && <div className="flex items-center gap-1.5">
             <span className="text-xs font-semibold text-slate-500">Placement:</span>
             <select
               value={placementFilter}
@@ -306,7 +313,7 @@ export const AdminBannersView: React.FC = () => {
               <option value="division_banner">Division Banner</option>
               <option value="mart_sale">Online Mart Sale Bar</option>
             </select>
-          </div>
+          </div>}
 
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-semibold text-slate-500">Status:</span>

@@ -37,6 +37,7 @@ import {
   Gift,
   Star,
   Search,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { activeDatabaseName } from '../../lib/firebase';
 import { AdminSectionId } from '../../types/admin';
@@ -142,6 +143,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { id: 'searches', label: 'Search History', icon: Search },
   { id: 'faqs', label: 'FAQs', icon: HelpCircle },
   { id: 'pages', label: 'Pages', icon: FileCode },
+  { id: 'top-banner', label: 'Top Banner', icon: ImageIcon },
   { id: 'banners', label: 'Banners', icon: Tag },
   { id: 'coupons', label: 'Coupons', icon: Tag },
   { id: 'enquiries', label: 'Website Enquiries', icon: Mail, badge: 'Live' },
@@ -305,6 +307,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
         return <AdminFaqsView />;
       case 'pages':
         return <AdminPagesView />;
+      case 'top-banner':
+        return <AdminBannersView fixedPlacement="home_hero" />;
       case 'banners':
         return <AdminBannersView />;
       case 'coupons':

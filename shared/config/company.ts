@@ -83,7 +83,7 @@ export const COMPANY_INFO: CompanyInformation = {
     linkedin: 'https://www.linkedin.com/company/mahdev-pvt-ltd/',
     facebook: 'https://www.facebook.com/SWSEventsManagement/',
     instagram: 'https://www.instagram.com/sws_event_management/',
-    youtube: 'https://www.youtube.com/@swseventmanagement5126',
+    youtube: 'https://www.youtube.com/sws_event_management',
     tiktok: 'https://www.tiktok.com/@sws_event_management',
     whatsapp: 'https://wa.me/94750928078?text=Hello%20Mahdev%20Pvt%20Ltd',
   },
@@ -117,11 +117,14 @@ export const ONLINE_PAYMENT_GATEWAY_ENABLED = false;
  * index.html and from the links in each page's server-sent HTML; a test keeps
  * index.html in step with this list.
  */
+/** Official YouTube channel, shown in the site footer and About page. */
+export const YOUTUBE_URL = 'https://www.youtube.com/sws_event_management';
+
 export const SOCIAL_PROFILES: Array<{ label: string; url: string }> = [
   { label: 'Facebook', url: 'https://www.facebook.com/SWSEventsManagement/' },
   { label: 'Instagram', url: 'https://www.instagram.com/sws_event_management/' },
   { label: 'LinkedIn', url: 'https://www.linkedin.com/company/mahdev-pvt-ltd/' },
-  { label: 'YouTube', url: 'https://www.youtube.com/@swseventmanagement5126' },
+  { label: 'YouTube', url: 'https://www.youtube.com/sws_event_management' },
   { label: 'TikTok', url: 'https://www.tiktok.com/@sws_event_management' },
 ];
 

@@ -126,6 +126,7 @@ export type AdminSectionId =
   | 'searches'
   | 'pages'
   | 'banners'
+  | 'top-banner'
   | 'coupons'
   | 'enquiries'
   | 'orders'

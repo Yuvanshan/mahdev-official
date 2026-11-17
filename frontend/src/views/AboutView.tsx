@@ -29,7 +29,7 @@ import {
   websiteContentService,
   DEFAULT_ABOUT_US_CONTENT,
 } from '../services/firestore/websiteContent';
-import { getOfficeMapUrl } from '../config/company';
+import { getOfficeMapUrl, YOUTUBE_URL } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { SocialLinks } from '../components/common/SocialLinks';
 
@@ -413,7 +413,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
                       Company Journey
                     </H2>
                   </div>
-                  <SocialLinks socials={companySettings?.socials} />
+                  <SocialLinks socials={{ ...companySettings?.socials, youtube: YOUTUBE_URL }} />
                 </div>
               </ScrollReveal>
 

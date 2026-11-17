@@ -23,6 +23,10 @@ const STATIC_PUBLIC_PATHS = [
   '/travels',
   '/mart',
   '/services',
+  // Browse pages for each kind of item, so crawlers find services, gallery and products lists.
+  '/services/category/type-services',
+  '/services/category/type-gallery',
+  '/services/category/type-products',
   '/insights',
   '/catalog',
   '/book',
@@ -240,6 +244,7 @@ export function buildSitemapXml(
     gallery?: TursoDocument[];
     mediaAssets?: TursoDocument[];
     products?: TursoDocument[];
+    categories?: TursoDocument[];
     homepage?: TursoDocument | null;
     siteSettings?: TursoDocument | null;
     companySettings?: TursoDocument | null;
@@ -367,6 +372,14 @@ export function buildSitemapXml(
       true,
     ),
     ...recordsToEntries(
+      (content.categories || []).filter(({ data }) => data.isPublished !== false && data.status !== 'inactive' && data.isDeleted !== true),
+      ({ data }) => {
+        const slug = publicSlug(data.slug);
+        return slug && !slug.includes('/') ? `/services/category/${slug}` : null;
+      },
+      origin,
+    ),
+    ...recordsToEntries(
       (content.products || []).filter(({ data }) =>
         data.isPublished !== false &&
         data.status !== 'inactive' &&
@@ -457,6 +470,7 @@ export async function loadPublicSitemapData(): Promise<{
   gallery: TursoDocument[];
   mediaAssets: TursoDocument[];
   products: TursoDocument[];
+  categories: TursoDocument[];
   homepage: TursoDocument | null;
   siteSettings: TursoDocument | null;
   companySettings: TursoDocument | null;
@@ -467,7 +481,7 @@ export async function loadPublicSitemapData(): Promise<{
     throw error;
   });
   await initialization;
-  const [pages, careerOpenings, divisions, services, portfolio, gallery, mediaAssets, products, homepage, siteSettings, companySettings, seoConfig] = await Promise.all([
+  const [pages, careerOpenings, divisions, services, portfolio, gallery, mediaAssets, products, categories, homepage, siteSettings, companySettings, seoConfig] = await Promise.all([
     listTursoDocuments('pages', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     listTursoDocuments('careerOpenings', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     listTursoDocuments('divisions', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
@@ -476,12 +490,13 @@ export async function loadPublicSitemapData(): Promise<{
     listTursoDocuments('gallery', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     listTursoDocuments('media_assets', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     listTursoDocuments('products', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
+    listTursoDocuments('categories', '', [], undefined, MAX_PUBLIC_CONTENT_ROWS),
     getTursoDocument('settings', '', 'homepage'),
     getTursoDocument('settings', '', 'site'),
     getTursoDocument('settings', '', 'company'),
     getTursoDocument('settings', '', 'seo'),
   ]);
-  return { pages, careerOpenings, divisions, services, portfolio, gallery, mediaAssets, products, homepage, siteSettings, companySettings, seoConfig };
+  return { pages, careerOpenings, divisions, services, portfolio, gallery, mediaAssets, products, categories, homepage, siteSettings, companySettings, seoConfig };
 }
 
 export default async function sitemapHandler(

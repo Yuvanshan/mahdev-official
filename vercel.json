@@ -6,6 +6,116 @@
   "outputDirectory": "dist",
   "redirects": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "^sws[-a-z0-9]*\\.vercel\\.app$"
+        }
+      ],
+      "destination": "https://mahdev-official.vercel.app/sws",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "^sws[-a-z0-9]*\\.vercel\\.app$"
+        }
+      ],
+      "destination": "https://mahdev-official.vercel.app/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "^u1[-a-z0-9]*\\.vercel\\.app$"
+        }
+      ],
+      "destination": "https://mahdev-official.vercel.app/u1",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "^u1[-a-z0-9]*\\.vercel\\.app$"
+        }
+      ],
+      "destination": "https://mahdev-official.vercel.app/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "^(mahdev-)?it[-a-z0-9]*\\.vercel\\.app$"
+        }
+      ],
+      "destination": "https://mahdev-official.vercel.app/it",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "^(mahdev-)?it[-a-z0-9]*\\.vercel\\.app$"
+        }
+      ],
+      "destination": "https://mahdev-official.vercel.app/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "^(mahdev-)?travels?[-a-z0-9]*\\.vercel\\.app$"
+        }
+      ],
+      "destination": "https://mahdev-official.vercel.app/travels",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "^(mahdev-)?travels?[-a-z0-9]*\\.vercel\\.app$"
+        }
+      ],
+      "destination": "https://mahdev-official.vercel.app/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "^(mahdev-)?mart[-a-z0-9]*\\.vercel\\.app$"
+        }
+      ],
+      "destination": "https://mahdev-official.vercel.app/mart",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "^(mahdev-)?mart[-a-z0-9]*\\.vercel\\.app$"
+        }
+      ],
+      "destination": "https://mahdev-official.vercel.app/:path*",
+      "permanent": true
+    },
+    {
       "source": "/:alias(sws-event-management|sws-events|sws-event|event-management|events-management|events|decorations|decor)",
       "destination": "/sws",
       "permanent": true

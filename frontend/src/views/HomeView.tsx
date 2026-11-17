@@ -11,6 +11,8 @@ import { DynamicSectionItem } from '../types/cms';
 import { motion, useReducedMotion } from 'motion/react';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { ShopHome } from '../components/shop/ShopHome';
+import { FaqSection } from '../components/common/FaqSection';
+import { usePageFaqs } from '../hooks/usePageFaqs';
 
 const FeaturedServicesSection = lazy(() =>
   import('../components/home/FeaturedServicesSection').then((module) => ({ default: module.FeaturedServicesSection }))
@@ -44,6 +46,8 @@ interface HomeViewProps {
 export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
   const { companySettings, siteSettings, homepageConfig } = useFirestoreDataContext();
   const reducedMotion = useReducedMotion();
+  // Visible questions on the home page; FaqSection publishes the matching FAQPage data.
+  const faqs = usePageFaqs('home');
 
   // Keep the homepage focused on the core offer and avoid rendering every CMS module at once.
   const activeSections: DynamicSectionItem[] = React.useMemo(() => {
@@ -142,6 +146,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
         })}
       </div>
       <HomeConversionSections onNavigate={onNavigate} />
+      <FaqSection items={faqs} id="home-faq" background="subtle" />
     </div>
   );
 };
