@@ -9,6 +9,7 @@ import { DIVISIONS, FORCED_COMING_SOON_DIVISIONS } from './config/divisions';
 import { CustomCursor } from './components/motion/CustomCursor';
 import { PublicScrollRevealObserver } from './components/motion/MotionWrappers';
 import { CartProvider } from './context/CartContext';
+import { WishlistProvider } from './context/WishlistContext';
 import { AuthProvider } from './context/AuthContext';
 import { WhatsAppWidget } from './components/common/WhatsAppWidget';
 import { SeasonalThemeProvider } from './context/SeasonalThemeContext';
@@ -17,6 +18,7 @@ import { SeasonalWishesPopup } from './components/seasonal/SeasonalWishesPopup';
 import { AdminAuthProvider, useAdminAuth } from './context/AdminAuthContext';
 import { FirestoreDataProvider, useFirestoreDataContext } from './context/FirestoreDataContext';
 import { CartDrawer } from './components/cart/CartDrawer';
+import { ShopSubheader } from './components/shop/ShopSubheader';
 import { AnnouncementBanner } from './components/layout/AnnouncementBanner';
 import { BottomNavigation } from './components/layout/BottomNavigation';
 import { initAppCheck } from './lib/firebase';
@@ -25,15 +27,7 @@ import { catalogService } from './services/catalogService';
 import { canonicalizeDivisionRoute } from './services/firestore/divisions';
 import { getPageTitle } from './config/pageTitles';
 import { SITE_NAME } from './config/site';
-import {
-  getCurrentDivisionSite,
-  getDivisionSiteForHost,
-  getDivisionSiteOrigin,
-  toDivisionInternalPath,
-  toDivisionPublicPath,
-  DIVISION_SITE_IDS,
-  type DivisionSiteId,
-} from './config/divisionSites';
+import { DIVISION_SITE_IDS, type DivisionSiteId } from './config/divisionSites';
 import type { OnlineBookingKind } from './utils/onlineBooking';
 import {
   ADMIN_PORTAL_PATH,
@@ -42,8 +36,6 @@ import {
   isRetiredAdminPath,
 } from './config/adminRoutes';
 import { motion, AnimatePresence } from 'motion/react';
-import { SsoBridgePage, SsoSessionBridge } from './components/auth/SsoSessionBridge';
-import { getSsoBrokerLoginUrl, SSO_BROKER_ORIGIN } from './services/ssoService';
 import { isWhatsAppUrl } from './utils/whatsapp';
 
 const CHUNK_RECOVERY_KEY = 'mahdev:chunk-load-recovery';
@@ -88,7 +80,7 @@ const RouteLoadingFallback: React.FC<RouteLoadingFallbackProps> = ({ path }) => 
           role="status"
           aria-busy="true"
           aria-label="Loading page"
-          className="flex min-h-[680px] items-center bg-gradient-to-br from-[#061033] via-[#0b1c4c] to-[#0052FF] px-5 py-20 text-white sm:min-h-[740px] sm:px-8 lg:min-h-[min(820px,calc(100svh-5rem))]"
+          className="flex min-h-[680px] items-center bg-gradient-to-br from-[#2A0810] via-[#2A0810] to-[#861F31] px-5 py-20 text-white sm:min-h-[740px] sm:px-8 lg:min-h-[min(820px,calc(100svh-5rem))]"
         >
           <div className="mx-auto w-full max-w-7xl">
             <motion.h1
@@ -211,6 +203,7 @@ const TravelsView = lazy(() => import('./views/TravelsView').then((module) => ({
 const MartView = lazy(() => import('./views/MartView').then((module) => ({ default: module.MartView })));
 const CatalogView = lazy(() => import('./views/CatalogView').then((module) => ({ default: module.CatalogView })));
 const BookingView = lazy(() => import('./views/BookingView').then((module) => ({ default: module.BookingView })));
+const WishlistView = lazy(() => import('./views/WishlistView').then((module) => ({ default: module.WishlistView })));
 const CheckoutView = lazy(() => import('./views/CheckoutView').then((module) => ({ default: module.CheckoutView })));
 const OrderConfirmationView = lazy(() => import('./views/OrderConfirmationView').then((module) => ({ default: module.OrderConfirmationView })));
 const ConfirmOrderView = lazy(() => import('./views/ConfirmOrderView').then((module) => ({ default: module.ConfirmOrderView })));
@@ -244,7 +237,6 @@ const MaintenanceView = lazy(() => import('./views/MaintenanceView').then((modul
 import { DocumentScrollProgress } from './components/motion/ParallelScroll';
 
 function AppContent() {
-  const hostDivisionSite = getCurrentDivisionSite();
   const {
     admin: currentAdmin,
     isAuthenticated: isAdminAuthenticated,
@@ -274,49 +266,28 @@ function AppContent() {
     const hash = window.location.hash || '';
     const search = window.location.search || '';
     if (hash.startsWith('#/') && hash.length > 2) {
-      return toDivisionInternalPath(canonicalizeAdminPath(hash.substring(1)), hostDivisionSite);
+      return canonicalizeAdminPath(hash.substring(1));
     }
     const cleanHash = hash.replace(/^#\/?/, '').toLowerCase();
     const directHashRoutes = [
       'admin-yuvan1709',
       'sws', 'u1', 'it', 'travels', 'mart',
       'sws-events', 'sws-event-management', 'u1-studio', 'it-solutions', 'mahdev-travels', 'online-mart',
-      'about', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'catalog', 'track-order', 'order', 'orders'
+      'about', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'wishlist', 'catalog', 'track-order', 'order', 'orders'
     ];
     if (
       directHashRoutes.includes(cleanHash) ||
       cleanHash.startsWith('admin-yuvan1709/')
     ) {
-      return toDivisionInternalPath(`${canonicalizeAdminPath(`/${cleanHash}`)}${search}`, hostDivisionSite);
+      return `${canonicalizeAdminPath(`/${cleanHash}`)}${search}`;
     }
     const searchParams = new URLSearchParams(window.location.search);
     const queryRoute = searchParams.get('route') || searchParams.get('p') || searchParams.get('path');
     if (queryRoute) {
-      return toDivisionInternalPath(
-        canonicalizeAdminPath(queryRoute.startsWith('/') ? queryRoute : `/${queryRoute}`) + search,
-        hostDivisionSite
-      );
+      return canonicalizeAdminPath(queryRoute.startsWith('/') ? queryRoute : `/${queryRoute}`) + search;
     }
-    return toDivisionInternalPath(
-      canonicalizeAdminPath(window.location.pathname || '/') + search,
-      hostDivisionSite
-    );
+    return canonicalizeAdminPath(window.location.pathname || '/') + search;
   });
-
-  useEffect(() => {
-    if (hostDivisionSite) return;
-    const canonicalPath = canonicalizeDivisionRoute(window.location.pathname || '/');
-    const divisionMatch = canonicalPath.match(/^\/(sws|u1|it|travels|mart)(\/.*)?$/);
-    if (!divisionMatch) return;
-
-    const division = divisionMatch[1] as DivisionSiteId;
-    const origin = getDivisionSiteOrigin(division);
-    if (!origin || origin === window.location.origin) return;
-
-    const divisionPath = divisionMatch[2] || '/';
-    const destination = `${origin}${divisionPath === '/' ? '' : divisionPath}${window.location.search}${window.location.hash}`;
-    window.location.replace(destination);
-  }, [currentPath, hostDivisionSite]);
 
   useEffect(() => {
     const isEditableTarget = (target: EventTarget | null): boolean =>
@@ -416,7 +387,7 @@ function AppContent() {
       const search = window.location.search || '';
       if (hash.startsWith('#/') && hash.length > 2) {
         window.dispatchEvent(new Event('mahdev:routechange'));
-        setCurrentPath(toDivisionInternalPath(canonicalizeAdminPath(hash.substring(1)), hostDivisionSite));
+        setCurrentPath(canonicalizeAdminPath(hash.substring(1)));
         return;
       }
       const cleanHash = hash.replace(/^#\/?/, '').toLowerCase();
@@ -424,31 +395,25 @@ function AppContent() {
         'admin-yuvan1709',
         'sws', 'u1', 'it', 'travels', 'mart',
         'sws-events', 'sws-event-management', 'u1-studio', 'it-solutions', 'mahdev-travels', 'online-mart',
-        'about', 'about-us', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'catalog', 'track-order', 'order', 'orders', 'promotion', 'promotions', 'terms-and-conditions', 'privacy-policy', 'refund-policy', 'shipping-policy', 'cookie-policy'
+        'about', 'about-us', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'wishlist', 'catalog', 'track-order', 'order', 'orders', 'promotion', 'promotions', 'terms-and-conditions', 'privacy-policy', 'refund-policy', 'shipping-policy', 'cookie-policy'
       ];
       if (
         directHashRoutes.includes(cleanHash) ||
         cleanHash.startsWith('admin-yuvan1709/')
       ) {
         window.dispatchEvent(new Event('mahdev:routechange'));
-        setCurrentPath(toDivisionInternalPath(canonicalizeAdminPath(`/${cleanHash}`) + search, hostDivisionSite));
+        setCurrentPath(canonicalizeAdminPath(`/${cleanHash}`) + search);
         return;
       }
       const searchParams = new URLSearchParams(window.location.search);
       const queryRoute = searchParams.get('route') || searchParams.get('p') || searchParams.get('path');
       if (queryRoute) {
         window.dispatchEvent(new Event('mahdev:routechange'));
-        setCurrentPath(toDivisionInternalPath(
-          canonicalizeAdminPath(queryRoute.startsWith('/') ? queryRoute : `/${queryRoute}`) + search,
-          hostDivisionSite
-        ));
+        setCurrentPath(canonicalizeAdminPath(queryRoute.startsWith('/') ? queryRoute : `/${queryRoute}`) + search);
         return;
       }
       window.dispatchEvent(new Event('mahdev:routechange'));
-      setCurrentPath(toDivisionInternalPath(
-        canonicalizeAdminPath(window.location.pathname || '/') + search,
-        getDivisionSiteForHost(window.location.host)
-      ));
+      setCurrentPath(canonicalizeAdminPath(window.location.pathname || '/') + search);
     };
     window.addEventListener('popstate', handleLocationChange);
     window.addEventListener('hashchange', handleLocationChange);
@@ -465,21 +430,6 @@ function AppContent() {
       return;
     }
 
-    if (!hostDivisionSite) {
-      const requestedPath = path.split(/[?#]/, 1)[0];
-      const divisionMatch = requestedPath.match(/^\/(sws|u1|it|travels|mart)(?:\/|$)/);
-      if (divisionMatch) {
-        const division = divisionMatch[1] as DivisionSiteId;
-        const externalOrigin = getDivisionSiteOrigin(division);
-        if (externalOrigin && externalOrigin !== window.location.origin) {
-          const suffix = requestedPath.slice(division.length + 1) || '/';
-          const queryAndHash = path.slice(requestedPath.length);
-          window.location.assign(`${externalOrigin}${suffix === '/' ? '' : suffix}${queryAndHash}`);
-          return;
-        }
-      }
-    }
-
     // In-page section scrolling from the company site or a division landing route.
     const isDirectDivisionOrAdmin = ['/#admin', '/#sws', '/#u1', '/#it', '/#travels', '/#mart'].includes(path.toLowerCase()) ||
       ['#admin', '#sws', '#u1', '#it', '#travels', '#mart'].includes(path.toLowerCase());
@@ -493,8 +443,8 @@ function AppContent() {
 
     if (isSectionAnchor) {
       const hash = path.slice(hashIndex);
-      const internalRoot = toDivisionInternalPath(sectionPath || '/', hostDivisionSite);
-      const publicRoot = toDivisionPublicPath(internalRoot, hostDivisionSite);
+      const internalRoot = sectionPath || '/';
+      const publicRoot = internalRoot;
       if (currentPath.split(/[?#]/, 1)[0] !== internalRoot) {
         window.history.pushState({}, '', publicRoot);
         setCurrentPath(internalRoot);
@@ -518,11 +468,8 @@ function AppContent() {
     const queryIndex = targetPath.indexOf('?');
     const targetRoute = queryIndex >= 0 ? targetPath.slice(0, queryIndex) : targetPath;
     const targetQuery = queryIndex >= 0 ? targetPath.slice(queryIndex) : '';
-    const internalTarget = toDivisionInternalPath(
-      `${canonicalizeAdminPath(canonicalizeDivisionRoute(targetRoute))}${targetQuery}`,
-      hostDivisionSite
-    );
-    const publicTarget = toDivisionPublicPath(internalTarget, hostDivisionSite);
+    const internalTarget = `${canonicalizeAdminPath(canonicalizeDivisionRoute(targetRoute))}${targetQuery}`;
+    const publicTarget = internalTarget;
 
     if (internalTarget !== currentPath) {
       window.dispatchEvent(new Event('mahdev:routechange'));
@@ -544,18 +491,6 @@ function AppContent() {
     (_match, slug: string) => `/services/category/${slug.toLowerCase()}`
   );
   const normalizedPath = canonicalizeAdminPath(canonicalizeDivisionRoute(legacyCategoryPath));
-  useEffect(() => {
-    if (
-      !hostDivisionSite ||
-      !['/login', '/register'].includes(normalizedPath.split(/[?#]/, 1)[0]) ||
-      window.location.origin === SSO_BROKER_ORIGIN
-    ) return;
-
-    const brokerUrl = getSsoBrokerLoginUrl(new URL(window.location.href));
-    if (normalizedPath.split(/[?#]/, 1)[0] === '/register') brokerUrl.pathname = '/register';
-    window.location.replace(brokerUrl.toString());
-  }, [normalizedPath, hostDivisionSite]);
-
   // Set the tab title on every route change ("Careers - Mahdev (Pvt) Ltd"), so a page
   // without its own SEOHead never keeps the previous page's title. A layout effect runs
   // before the pages' own effects, so pages with a specific title (a service, project
@@ -566,9 +501,9 @@ function AppContent() {
   useEffect(() => {
     if (normalizedPath === basePath || typeof window === 'undefined') return;
     const canonicalUrl = `${normalizedPath}${searchParamsString ? `?${searchParamsString}` : ''}`;
-    window.history.replaceState({}, '', toDivisionPublicPath(canonicalUrl, hostDivisionSite));
+    window.history.replaceState({}, '', canonicalUrl);
     setCurrentPath(canonicalUrl);
-  }, [basePath, normalizedPath, searchParamsString, hostDivisionSite]);
+  }, [basePath, normalizedPath, searchParamsString]);
   const lastDataRouteRef = React.useRef<string | null>(null);
   useEffect(() => {
     if (lastDataRouteRef.current === null) {
@@ -984,6 +919,10 @@ function AppContent() {
 
     if (normalizedPath === '/checkout') {
       return <CheckoutView onNavigate={navigate} />;
+    }
+
+    if (normalizedPath === '/wishlist') {
+      return <WishlistView onNavigate={navigate} />;
     }
 
     // Division direct routes: /sws, /u1, /it, /travels, /mart (and aliases)
@@ -1503,16 +1442,13 @@ function AppContent() {
   // division routes, while the division-specific notice still remains in place.
   const isStandaloneComingSoon = Boolean(divisionKey && isDivisionComingSoon(divisionKey));
   const activeDivisionSite: DivisionSiteId | undefined =
-    hostDivisionSite ||
     DIVISION_SITE_IDS.find((id) => normalizedPath === `/${id}` || normalizedPath.startsWith(`/${id}/`)) ||
     (divisionKey && DIVISION_SITE_IDS.includes(divisionKey as DivisionSiteId)
       ? divisionKey as DivisionSiteId
       : undefined);
-  if (normalizedPath === '/auth/sso') return <SsoBridgePage />;
 
   return (
     <div
-      data-division-site={activeDivisionSite}
       className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-blue-600 selection:text-white w-full max-w-full overflow-x-hidden"
     >
       {/* Top Document Scroll Progress Bar */}
@@ -1529,14 +1465,13 @@ function AppContent() {
       {/* Sticky Top Navigation */}
       {/* Keep the campaign banner visible across the public site, including division routes. */}
       {!isAdminRoute && (
-        <AnnouncementBanner onNavigate={navigate} divisionId={activeDivisionSite} />
+        <AnnouncementBanner onNavigate={navigate} />
       )}
       <Navigation
         currentPath={normalizedPath}
         onNavigate={navigate}
-        divisionId={activeDivisionSite}
-        isDivisionHost={Boolean(hostDivisionSite)}
       />
+      {!isAdminRoute && !isStandaloneComingSoon && <ShopSubheader onNavigate={navigate} />}
 
       {/* Main Content Area with Smooth View Transitions */}
       <main className="flex-1 w-full max-w-full min-w-0" aria-live="polite">
@@ -1570,15 +1505,12 @@ function AppContent() {
       <BottomNavigation
         currentPath={normalizedPath}
         onNavigate={navigate}
-        divisionId={activeDivisionSite}
-        isDivisionHost={Boolean(hostDivisionSite)}
       />
 
       {/* Reusable Global Footer */}
       <Footer
         onNavigate={navigate}
         currentPath={normalizedPath}
-        divisionId={activeDivisionSite}
       />
       {!isAdminRoute && <WhatsAppWidget />}
     </div>
@@ -1589,14 +1521,15 @@ export default function App() {
   return (
     <FirestoreDataProvider>
       <AuthProvider>
-        <SsoSessionBridge />
         <AdminAuthProvider>
           <CartProvider>
-            <SeasonalThemeProvider>
-              <AppContent />
-            </SeasonalThemeProvider>
-            <Analytics />
-            <SpeedInsights />
+            <WishlistProvider>
+              <SeasonalThemeProvider>
+                <AppContent />
+              </SeasonalThemeProvider>
+              <Analytics />
+              <SpeedInsights />
+            </WishlistProvider>
           </CartProvider>
         </AdminAuthProvider>
       </AuthProvider>

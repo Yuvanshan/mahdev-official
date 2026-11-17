@@ -177,7 +177,7 @@ export const AuthSubmit: React.FC<{ busy: boolean; children: React.ReactNode; bu
     disabled={busy || disabled}
     whileHover={busy || disabled ? undefined : { y: -1 }}
     whileTap={busy || disabled ? undefined : { scale: 0.98 }}
-    className="relative inline-flex min-h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#0052FF] to-indigo-600 px-5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/30"
+    className="relative inline-flex min-h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#861F31] to-indigo-600 px-5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/30"
   >
     {busy ? (
       <>

@@ -570,7 +570,7 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
                 </div>
                 <div className="flex justify-between text-base font-bold text-slate-900 pt-2 border-t border-slate-200">
                   <span>Grand Total:</span>
-                  <span className="font-mono text-lg text-[#0052FF]">
+                  <span className="font-mono text-lg text-[#861F31]">
                     {formatCurrency(order.total, 'LKR')}
                   </span>
                 </div>

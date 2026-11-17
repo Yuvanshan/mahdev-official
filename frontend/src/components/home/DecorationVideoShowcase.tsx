@@ -151,7 +151,7 @@ const DecorationVideoShowcaseContent: React.FC<
                   aria-pressed={selectedCategory === category}
                   className={`cursor-pointer whitespace-nowrap rounded-xl px-4 py-2 text-xs font-semibold transition-all ${
                     selectedCategory === category
-                      ? 'bg-gradient-to-r from-[#0052FF] to-[#0066FF] text-white shadow-lg shadow-blue-500/25'
+                      ? 'bg-gradient-to-r from-[#861F31] to-[#A8434F] text-white shadow-lg shadow-blue-500/25'
                       : 'border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
                   }`}
                 >

@@ -17,6 +17,7 @@ import { Order } from '../types/order';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { SEOHead } from '../components/layout/SEOHead';
+import { ProgressSteps } from '../components/shop/ProgressSteps';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { formatCurrency } from '../utils/currency';
 
@@ -153,6 +154,16 @@ export const OrderLookupView: React.FC<OrderLookupViewProps> = ({ onNavigate }) 
                       </div>
                     </div>
 
+                    {order.status === 'cancelled' ? (
+                      <p className="rounded-sm bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700">This order was cancelled.</p>
+                    ) : (
+                      <ProgressSteps
+                        label="Order progress"
+                        steps={['Order placed', 'Processing', 'Confirmed', 'Dispatched', 'Completed']}
+                        current={Math.max(0, ['pending_payment', 'processing', 'confirmed', 'dispatched', 'completed'].indexOf(order.status)) + (order.status === 'completed' ? 1 : 0)}
+                      />
+                    )}
+
                     {/* Items preview */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                       <div>
@@ -194,7 +205,7 @@ export const OrderLookupView: React.FC<OrderLookupViewProps> = ({ onNavigate }) 
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                       <div>
                         <span className="text-[10px] text-slate-400">Total Amount:</span>
-                        <div className="font-mono text-sm font-bold text-[#0052FF]">
+                        <div className="font-mono text-sm font-bold text-[#861F31]">
                           {formatCurrency(order.total, 'LKR')}
                         </div>
                       </div>

@@ -5,8 +5,6 @@ import { APP_ROUTE_SEGMENTS, PRERENDERED_ROUTES, PRIVATE_ROUTE_SEGMENTS, RETIRED
 import { resolveDynamicRouteSeo } from '../../seo/dynamicRouteSeo.js';
 import { renderSeoHtml } from '../../seo/renderSeoHtml.js';
 import {
-  DIVISION_SITE_BRANDING,
-  getDivisionSiteForHost,
 } from '../../../shared/config/divisionSites.js';
 
 /**
@@ -58,22 +56,6 @@ const GALLERY_ITEM_PATTERN = /^\/?(gallery|media)\/?$/i;
 // /book/service/{id}, /book/gallery/{id}, /book/product/{id}: personal booking forms.
 const ONLINE_BOOKING_PATTERN = /^\/?book\/(service|gallery|product)\//i;
 
-function applyDivisionBranding(html: string, division: keyof typeof DIVISION_SITE_BRANDING): string {
-  const { logoPath } = DIVISION_SITE_BRANDING[division];
-  const type = logoPath.endsWith('.svg') ? 'image/svg+xml' : 'image/jpeg';
-  const faviconLinks = [
-    `<link rel="icon" type="${type}" href="${logoPath}" />`,
-    `<link rel="shortcut icon" type="${type}" href="${logoPath}" />`,
-    `<link rel="apple-touch-icon" href="${logoPath}" />`,
-    '<link rel="manifest" href="/site.webmanifest" />',
-  ].join('\n    ');
-  const withoutCompanyIcons = html.replace(
-    /<link\b(?=[^>]*\brel="(?:icon|shortcut icon|apple-touch-icon|manifest)")[^>]*\/>/gi,
-    ''
-  );
-  return withoutCompanyIcons.replace('</head>', `    ${faviconLinks}\n  </head>`);
-}
-
 async function resolveStatus(path: string): Promise<200 | 404> {
   const normalised = path.replace(/^\/+|\/+$/g, '').toLowerCase();
   // "%" also ends the segment so legacy "/services%{slug}" category links resolve as /services.
@@ -100,9 +82,7 @@ async function serveShell(req: IncomingMessage, res: ServerResponse, forcedStatu
   const host = (Array.isArray(req.headers['x-forwarded-host']) ? req.headers['x-forwarded-host'][0] : req.headers['x-forwarded-host'])
     || req.headers.host || 'localhost';
   const origin = `${host.startsWith('localhost') || host.startsWith('127.0.0.1') ? 'http' : 'https'}://${host}`;
-  const requestHost = new URL(origin).host;
-  const hostDivision = getDivisionSiteForHost(requestHost);
-  const seoPath = hostDivision && path === '/' ? `/${hostDivision}` : path;
+  const seoPath = path;
 
   let status: 200 | 404 = forcedStatus ?? 200;
   try {
@@ -114,7 +94,6 @@ async function serveShell(req: IncomingMessage, res: ServerResponse, forcedStatu
   let html: string;
   try {
     html = await getShell(origin);
-    if (hostDivision) html = applyDivisionBranding(html, hostDivision);
   } catch (error) {
     console.error('[PageShell] App shell unavailable:', error);
     res.statusCode = 503;
@@ -139,11 +118,8 @@ async function serveShell(req: IncomingMessage, res: ServerResponse, forcedStatu
       } else if (GALLERY_ITEM_PATTERN.test(seoPath) && url.searchParams.get('id')?.trim()) {
         status = 404;
       } else if (GALLERY_ITEM_PATTERN.test(seoPath)) {
-        const servicesRoute = PRERENDERED_ROUTES.find((route) => route.path === (hostDivision ? `/${hostDivision}` : '/services'));
+        const servicesRoute = PRERENDERED_ROUTES.find((route) => route.path === '/services');
         if (servicesRoute) html = renderSeoHtml(html, servicesRoute, origin);
-      } else if (hostDivision) {
-        const route = PRERENDERED_ROUTES.find((candidate) => candidate.path === seoPath);
-        if (route) html = renderSeoHtml(html, route, origin);
       }
     } catch (error) {
       console.error('[PageShell] Could not add page SEO; serving the plain shell:', error);

@@ -194,7 +194,7 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
   }, [effectiveVideoSrc, hasVideo, isEmbedVideo]);
 
   return (
-    <div ref={backgroundRef} className={`absolute inset-0 z-0 overflow-hidden select-none pointer-events-none bg-[#061033] ${className}`}>
+    <div ref={backgroundRef} className={`absolute inset-0 z-0 overflow-hidden select-none pointer-events-none bg-[#2A0810] ${className}`}>
       {/* A poster is present from first paint, so a slow or unavailable video
           never exposes a black box, loader, or recovery panel on the landing page. */}
       {fallbackImage && (
@@ -277,8 +277,8 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
       ) : null}
 
       {/* 4. Electric Blue & High Contrast Shading Overlay (Always on top of media, under content) */}
-      <div className="absolute inset-0 bg-gradient-to-r from-[#061033]/40 via-[#061033]/30 sm:via-[#061033]/24 md:via-[#061033]/12 to-transparent pointer-events-none z-10" />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#061033] via-transparent to-[#0052FF]/10 pointer-events-none z-10" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#2A0810]/40 via-[#2A0810]/30 sm:via-[#2A0810]/24 md:via-[#2A0810]/12 to-transparent pointer-events-none z-10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#2A0810] via-transparent to-[#861F31]/10 pointer-events-none z-10" />
       {/* Only once the <video> element exists, and re-initialised when its source changes. */}
       {enableAutomaticAudio && hasVideo && effectiveVideoSrc && !isEmbedVideo && (
         <HeroVideoControls

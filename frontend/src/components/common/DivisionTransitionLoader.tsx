@@ -48,16 +48,16 @@ export const DivisionTransitionLoader: React.FC<DivisionTransitionLoaderProps> =
   const accentColor =
     divConfig?.color ||
     (divisionId === 'sws'
-      ? '#0052FF'
+      ? '#861F31'
       : divisionId === 'u1'
       ? '#7C3AED'
       : divisionId === 'it'
-      ? '#0284C7'
+      ? '#861F31'
       : divisionId === 'travels'
       ? '#059669'
       : divisionId === 'mart'
       ? '#EA580C'
-      : '#0052FF');
+      : '#861F31');
 
   const currentTagline = BRAND_TAGLINES[taglineIndex];
 

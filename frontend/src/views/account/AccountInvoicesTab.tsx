@@ -84,7 +84,7 @@ export const AccountInvoicesTab: React.FC<AccountInvoicesTabProps> = ({ orders, 
       onClick={() => void handleDownload(invoice)}
       disabled={downloading === invoice.number}
       className={`inline-flex items-center justify-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-colors disabled:opacity-60 ${
-        primary ? 'bg-[#1e1b4b] text-white hover:bg-[#312e81]' : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
+        primary ? 'bg-[#3F0C17] text-white hover:bg-[#2A0810]' : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
       }`}
     >
       {downloading === invoice.number ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
@@ -127,11 +127,11 @@ export const AccountInvoicesTab: React.FC<AccountInvoicesTabProps> = ({ orders, 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map((invoice) => (
             <div key={invoice.number} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-              <div className="h-1.5 bg-gradient-to-r from-[#1e1b4b] via-[#312e81] to-[#c49a2c]" />
+              <div className="h-1.5 bg-gradient-to-r from-[#3F0C17] via-[#2A0810] to-[#c49a2c]" />
               <div className="p-5 space-y-3 flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <span className="font-mono text-xs font-bold text-[#1e1b4b]">{invoice.number}</span>
+                    <span className="font-mono text-xs font-bold text-[#3F0C17]">{invoice.number}</span>
                     <h4 className="font-display text-sm font-bold text-slate-900 truncate mt-0.5">{invoice.title || invoice.items[0]?.name || invoice.reference}</h4>
                     <p className="text-[11px] text-slate-500">{invoice.divisionName || (invoice.kind === 'order' ? 'Order' : 'Booking')} · {formatInvoiceDate(invoice.issuedAt)}</p>
                   </div>
@@ -167,7 +167,7 @@ export const AccountInvoicesTab: React.FC<AccountInvoicesTabProps> = ({ orders, 
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-start sm:items-center justify-center p-4 overflow-y-auto" onClick={() => setSelected(null)}>
           <div className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl overflow-hidden my-6" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
-            <div className="relative bg-[#1e1b4b] text-white px-6 sm:px-8 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-4 border-[#c49a2c]">
+            <div className="relative bg-[#3F0C17] text-white px-6 sm:px-8 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-4 border-[#c49a2c]">
               <div className="flex items-center gap-3">
                 <div className="bg-white rounded-xl p-1.5">
                   <img src="/logo.png" alt={company.legalName} className="h-12 w-auto" />
@@ -215,7 +215,7 @@ export const AccountInvoicesTab: React.FC<AccountInvoicesTabProps> = ({ orders, 
 
               <div className="rounded-2xl border border-slate-200 overflow-hidden">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#1e1b4b] text-white text-[10px] uppercase tracking-wider">
+                  <thead className="bg-[#3F0C17] text-white text-[10px] uppercase tracking-wider">
                     <tr>
                       <th className="py-2.5 px-4">Description</th>
                       <th className="py-2.5 px-3 text-center">Qty</th>
@@ -241,7 +241,7 @@ export const AccountInvoicesTab: React.FC<AccountInvoicesTabProps> = ({ orders, 
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="rounded-2xl bg-indigo-50/70 border border-indigo-100 p-4 text-xs space-y-1">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#1e1b4b] mb-1">Payment details (bank transfer)</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#3F0C17] mb-1">Payment details (bank transfer)</div>
                   {[
                     ['Account name', BANK_DETAILS.accountName],
                     ['Bank', BANK_DETAILS.bankName],
@@ -260,7 +260,7 @@ export const AccountInvoicesTab: React.FC<AccountInvoicesTabProps> = ({ orders, 
                   {selected.discount > 0 && <Row label="Discount" value={`- ${formatCurrency(selected.discount, selected.currency)}`} tone="text-emerald-700" />}
                   {selected.fee > 0 && <Row label={selected.feeLabel} value={formatCurrency(selected.fee, selected.currency)} />}
                   {selected.tax > 0 && <Row label="Tax" value={formatCurrency(selected.tax, selected.currency)} />}
-                  <div className="flex justify-between rounded-xl bg-[#1e1b4b] text-white px-3 py-2 text-sm font-bold">
+                  <div className="flex justify-between rounded-xl bg-[#3F0C17] text-white px-3 py-2 text-sm font-bold">
                     <span>Total</span>
                     <span className="font-mono">{formatCurrency(selected.total, selected.currency)}</span>
                   </div>

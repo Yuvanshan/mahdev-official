@@ -259,7 +259,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
                         }}
                         className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
                           isSelected
-                            ? 'border-[#0052FF] bg-blue-50/50 ring-2 ring-blue-500/20 shadow-xs'
+                            ? 'border-[#861F31] bg-blue-50/50 ring-2 ring-blue-500/20 shadow-xs'
                             : 'border-slate-200 hover:border-slate-300 bg-slate-50/40'
                         }`}
                       >
@@ -457,12 +457,12 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
                 <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-3">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                     <div className="flex items-center gap-2">
-                      <FileCheck className="w-4 h-4 text-[#0052FF]" />
+                      <FileCheck className="w-4 h-4 text-[#861F31]" />
                       <span className="text-xs font-bold text-slate-900">
                         Bank Transfer
                       </span>
                     </div>
-                    <Badge size="sm" variant="default" className="bg-[#0052FF]/10 text-[#0052FF] text-[10px]">
+                    <Badge size="sm" variant="default" className="bg-[#861F31]/10 text-[#861F31] text-[10px]">
                       B2B Invoicing
                     </Badge>
                   </div>

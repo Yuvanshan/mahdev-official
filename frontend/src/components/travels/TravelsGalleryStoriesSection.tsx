@@ -79,7 +79,7 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
       {/* 1. CINEMATIC GALLERY */}
       <div className="max-w-3xl mb-12">
         <ScrollReveal direction="up">
-          <Caption className="text-[#0052FF] mb-2 block font-mono">
+          <Caption className="text-[#861F31] mb-2 block font-mono">
             Cinematic Visual Chronicles
           </Caption>
           <H2 className="text-slate-900">
@@ -144,7 +144,7 @@ export const TravelsGalleryStoriesSection: React.FC = () => {
         <>
           <div className="max-w-3xl mb-10">
             <ScrollReveal direction="up">
-              <Caption className="text-[#0052FF] mb-2 block font-mono">
+              <Caption className="text-[#861F31] mb-2 block font-mono">
                 Guest Chronicles
               </Caption>
               <H2 className="text-slate-900">

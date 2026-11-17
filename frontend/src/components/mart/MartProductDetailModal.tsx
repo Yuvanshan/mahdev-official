@@ -21,6 +21,7 @@ import { formatCurrency } from '../../utils/currency';
 import { getImageAlt, getImageAltForPhoto } from '../../config/imageAlt';
 import { ImageZoomFrame } from '../common/ImageZoomFrame';
 import { useDialogFocus } from '../../hooks/useDialogFocus';
+import { ProductReviews } from '../shop/ProductReviews';
 
 interface MartProductDetailModalProps {
   product: Product | null;
@@ -169,7 +170,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                       onClick={() => setActiveImageIndex(idx)}
                       className={`w-20 h-20 rounded-xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
                         activeImageIndex === idx
-                          ? 'border-[#0052FF] scale-105 shadow-sm'
+                          ? 'border-[#861F31] scale-105 shadow-sm'
                           : 'border-slate-200 opacity-70 hover:opacity-100'
                       }`}
                     >
@@ -273,7 +274,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                           onClick={() => setSelectedVariant(opt)}
                           className={`px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                             isSelected
-                              ? 'border-[#0052FF] bg-blue-50 text-[#0052FF] shadow-xs'
+                              ? 'border-[#861F31] bg-blue-50 text-[#861F31] shadow-xs'
                               : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400'
                           }`}
                         >
@@ -303,7 +304,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                         [group.name]: event.target.value,
                       }))
                     }
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:border-[#0052FF] focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:border-[#861F31] focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   >
                     <option value="" disabled>Choose {group.name}</option>
                     {group.options.map((option) => (
@@ -380,7 +381,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                 onClick={() => setActiveTab('desc')}
                 className={`pb-2.5 text-xs font-mono font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
                   activeTab === 'desc'
-                    ? 'border-[#0052FF] text-[#0052FF]'
+                    ? 'border-[#861F31] text-[#861F31]'
                     : 'border-transparent text-slate-400 hover:text-slate-700'
                 }`}
               >
@@ -391,7 +392,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                 onClick={() => setActiveTab('specs')}
                 className={`pb-2.5 text-xs font-mono font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
                   activeTab === 'specs'
-                    ? 'border-[#0052FF] text-[#0052FF]'
+                    ? 'border-[#861F31] text-[#861F31]'
                     : 'border-transparent text-slate-400 hover:text-slate-700'
                 }`}
               >
@@ -402,7 +403,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                 onClick={() => setActiveTab('reviews')}
                 className={`pb-2.5 text-xs font-mono font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
                   activeTab === 'reviews'
-                    ? 'border-[#0052FF] text-[#0052FF]'
+                    ? 'border-[#861F31] text-[#861F31]'
                     : 'border-transparent text-slate-400 hover:text-slate-700'
                 }`}
               >
@@ -453,30 +454,8 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
             )}
 
             {activeTab === 'reviews' && (
-              <div className="space-y-4 max-w-3xl">
-                {product.reviews && product.reviews.length > 0 ? (
-                  product.reviews.map((rev) => (
-                    <div
-                      key={rev.id}
-                      className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-900">{rev.author}</span>
-                        <span className="text-slate-400 font-mono">{rev.date}</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-amber-400">
-                        {[...Array(rev.rating)].map((_, i) => (
-                          <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
-                        ))}
-                      </div>
-                      <p className="text-slate-600 italic leading-relaxed">{rev.comment}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-xs text-slate-500 italic">
-                    No customer reviews logged yet for this batch. Be the first to review!
-                  </p>
-                )}
+              <div className="max-w-3xl">
+                <ProductReviews productId={product.id} />
               </div>
             )}
           </div>
@@ -492,7 +471,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                   <div
                     key={rel.id}
                     onClick={() => onSelectRelatedProduct(rel)}
-                    className="p-3 rounded-xl border border-slate-200 bg-white hover:border-[#0052FF] hover:shadow-md transition-all cursor-pointer flex items-center gap-3"
+                    className="p-3 rounded-xl border border-slate-200 bg-white hover:border-[#861F31] hover:shadow-md transition-all cursor-pointer flex items-center gap-3"
                   >
                     <img
                       src={rel.imageUrl}
@@ -503,7 +482,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                       <h4 className="font-display text-xs font-bold text-slate-900 truncate">
                         {rel.name}
                       </h4>
-                      <div className="font-mono text-xs font-bold text-[#0052FF] mt-0.5">
+                      <div className="font-mono text-xs font-bold text-[#861F31] mt-0.5">
                         {formatCurrency(rel.price, 'LKR')}
                       </div>
                     </div>

@@ -66,7 +66,7 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
   const divisionName = firestoreDiv?.name || fallbackConfig.name;
   const shortName = firestoreDiv?.shortName || fallbackConfig.shortName || divisionName;
   const tagline = firestoreDiv?.tagline || fallbackConfig.tagline;
-  const accentColor = firestoreDiv?.accentColor || fallbackConfig.accentColor || '#0052FF';
+  const accentColor = firestoreDiv?.accentColor || fallbackConfig.accentColor || '#861F31';
   const heroImage =
     (firestoreDiv as any)?.defaultImageUrl ||
     (firestoreDiv as any)?.fallbackImageUrl ||

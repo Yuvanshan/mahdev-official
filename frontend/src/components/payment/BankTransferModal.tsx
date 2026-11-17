@@ -106,7 +106,7 @@ export const BankTransferModal: React.FC<BankTransferModalProps> = ({
         className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-y-auto max-h-[calc(100vh-2rem)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-6 py-5 bg-gradient-to-br from-[#1e1b4b] to-[#312e81] text-white flex items-start justify-between">
+        <div className="px-6 py-5 bg-gradient-to-br from-[#3F0C17] to-[#2A0810] text-white flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
               <Building2 className="w-5 h-5 text-amber-300" />
@@ -199,7 +199,7 @@ export const BankTransferModal: React.FC<BankTransferModalProps> = ({
                 type="button"
                 onClick={() => void handleUpload()}
                 disabled={uploading}
-                className="flex items-center justify-center gap-2 w-full rounded-xl bg-[#0052FF] hover:bg-blue-700 text-white text-sm font-semibold py-3 disabled:opacity-60"
+                className="flex items-center justify-center gap-2 w-full rounded-xl bg-[#861F31] hover:bg-blue-700 text-white text-sm font-semibold py-3 disabled:opacity-60"
               >
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                 {uploading ? 'Uploading…' : 'Upload slip'}

@@ -106,7 +106,7 @@ export const TimelineCinematic: React.FC<TimelineCinematicProps> = ({ initialDiv
       <ScrollReveal direction="up">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
           <div className="max-w-2xl">
-            <Caption className="text-[#0052FF] mb-2 block font-bold uppercase tracking-wider">
+            <Caption className="text-[#861F31] mb-2 block font-bold uppercase tracking-wider">
               {meta.badge || 'Verified Track Record'}
             </Caption>
             <H2 className="text-slate-900 mb-3">{meta.title || 'Our Milestones & Trajectory'}</H2>
@@ -122,7 +122,7 @@ export const TimelineCinematic: React.FC<TimelineCinematicProps> = ({ initialDiv
               onClick={() => setSelectedDivision('all')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 selectedDivision === 'all'
-                  ? 'bg-[#0052FF] text-white shadow-xs'
+                  ? 'bg-[#861F31] text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
@@ -132,7 +132,7 @@ export const TimelineCinematic: React.FC<TimelineCinematicProps> = ({ initialDiv
               onClick={() => setSelectedDivision('sws')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 selectedDivision === 'sws'
-                  ? 'bg-[#0052FF] text-white shadow-xs'
+                  ? 'bg-[#861F31] text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
@@ -142,7 +142,7 @@ export const TimelineCinematic: React.FC<TimelineCinematicProps> = ({ initialDiv
               onClick={() => setSelectedDivision('u1')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 selectedDivision === 'u1'
-                  ? 'bg-[#0052FF] text-white shadow-xs'
+                  ? 'bg-[#861F31] text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
@@ -152,7 +152,7 @@ export const TimelineCinematic: React.FC<TimelineCinematicProps> = ({ initialDiv
               onClick={() => setSelectedDivision('it')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 selectedDivision === 'it'
-                  ? 'bg-[#0052FF] text-white shadow-xs'
+                  ? 'bg-[#861F31] text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
@@ -165,7 +165,7 @@ export const TimelineCinematic: React.FC<TimelineCinematicProps> = ({ initialDiv
       {/* Interactive Milestone Scrubber Rail */}
       <div className="relative max-w-5xl mx-auto mb-10">
         {/* Visual connecting gradient line */}
-        <div className="hidden md:block absolute top-10 left-6 right-6 h-0.5 bg-gradient-to-r from-blue-200 via-[#0052FF] to-blue-300 z-0" />
+        <div className="hidden md:block absolute top-10 left-6 right-6 h-0.5 bg-gradient-to-r from-blue-200 via-[#861F31] to-blue-300 z-0" />
 
         {/* Milestone Steps Matrix - Horizontal Scroll Rail on Mobile */}
         <div className="flex overflow-x-auto no-scrollbar snap-x gap-3 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 md:grid-cols-5 sm:overflow-visible relative z-10">
@@ -179,14 +179,14 @@ export const TimelineCinematic: React.FC<TimelineCinematicProps> = ({ initialDiv
                     onClick={() => setActiveMilestoneId(ms.id || '')}
                     className={`w-full p-4 rounded-2xl cursor-pointer transition-all duration-300 border text-center h-full flex flex-col justify-between select-none ${
                       isActive
-                        ? 'bg-white border-[#0052FF] shadow-lg ring-2 ring-blue-500/20'
+                        ? 'bg-white border-[#861F31] shadow-lg ring-2 ring-blue-500/20'
                         : 'bg-white/80 border-slate-200/90 hover:border-blue-300 hover:bg-white'
                     }`}
                   >
                     <div
                       className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center text-xs font-bold mb-2 transition-all ${
                         isActive
-                          ? 'bg-[#0052FF] text-white shadow-md shadow-blue-500/30 scale-110'
+                          ? 'bg-[#861F31] text-white shadow-md shadow-blue-500/30 scale-110'
                           : 'bg-slate-100 text-slate-700 border border-slate-300'
                       }`}
                     >
@@ -197,7 +197,7 @@ export const TimelineCinematic: React.FC<TimelineCinematicProps> = ({ initialDiv
                       <div className="font-display font-bold text-sm text-slate-900 mb-0.5">
                         {ms.title || ms.year}
                       </div>
-                      <div className="text-[11px] font-semibold text-[#0052FF] truncate">
+                      <div className="text-[11px] font-semibold text-[#861F31] truncate">
                         {ms.badge || 'Milestone'}
                       </div>
                     </div>
@@ -216,11 +216,11 @@ export const TimelineCinematic: React.FC<TimelineCinematicProps> = ({ initialDiv
             <div className="p-7 sm:p-9 rounded-2xl bg-white border border-slate-200 shadow-xl relative overflow-hidden">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-100">
                 <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#0052FF] flex items-center justify-center border border-blue-100">
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#861F31] flex items-center justify-center border border-blue-100">
                     <Sparkles className="w-6 h-6" />
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-[#0052FF] uppercase tracking-wider block">
+                    <span className="text-xs font-bold text-[#861F31] uppercase tracking-wider block">
                       {activeMilestone.year} Chapter
                     </span>
                     <h3 className="font-display text-2xl font-bold text-slate-900">
@@ -229,7 +229,7 @@ export const TimelineCinematic: React.FC<TimelineCinematicProps> = ({ initialDiv
                   </div>
                 </div>
                 {activeMilestone.badge && (
-                  <Badge variant="secondary" className="bg-blue-50 text-[#0052FF] border-blue-200 w-fit">
+                  <Badge variant="secondary" className="bg-blue-50 text-[#861F31] border-blue-200 w-fit">
                     {activeMilestone.badge}
                   </Badge>
                 )}

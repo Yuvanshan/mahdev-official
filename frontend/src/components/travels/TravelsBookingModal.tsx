@@ -402,7 +402,7 @@ export const TravelsBookingModal: React.FC<TravelsBookingModalProps> = ({
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 max-w-md mx-auto space-y-2 text-xs text-left font-mono">
                 <div className="flex justify-between pb-1.5 border-b border-slate-200">
                   <span className="text-slate-400">Reference:</span>
-                  <span className="font-bold text-[#0052FF]">{ticketRef}</span>
+                  <span className="font-bold text-[#861F31]">{ticketRef}</span>
                 </div>
                 <div className="flex justify-between pb-1.5 border-b border-slate-200">
                   <span className="text-slate-400">Option:</span>
@@ -418,7 +418,7 @@ export const TravelsBookingModal: React.FC<TravelsBookingModalProps> = ({
                 </div>
                 <div className="flex justify-between pt-0.5">
                   <span className="text-slate-400">Dispatched To:</span>
-                  <span className="text-[#0052FF] font-bold">info.mahdev.lk@gmail.com</span>
+                  <span className="text-[#861F31] font-bold">info.mahdev.lk@gmail.com</span>
                 </div>
               </div>
 
@@ -435,12 +435,12 @@ export const TravelsBookingModal: React.FC<TravelsBookingModalProps> = ({
                 </a>
 
                 <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-semibold text-slate-600 pt-2">
-                  <a href={getTelLink(primaryPhone)} className="flex items-center gap-1.5 hover:text-[#0052FF]">
+                  <a href={getTelLink(primaryPhone)} className="flex items-center gap-1.5 hover:text-[#861F31]">
                     <Phone className="w-3.5 h-3.5 text-blue-600" />
                     <span>Direct Call: {primaryPhone}</span>
                   </a>
                   <span className="text-slate-300">|</span>
-                  <a href={getMailtoLink(contactEmail)} className="flex items-center gap-1.5 hover:text-[#0052FF]">
+                  <a href={getMailtoLink(contactEmail)} className="flex items-center gap-1.5 hover:text-[#861F31]">
                     <Mail className="w-3.5 h-3.5 text-blue-600" />
                     <span>{contactEmail}</span>
                   </a>

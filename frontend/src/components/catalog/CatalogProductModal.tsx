@@ -26,6 +26,7 @@ import {
 import { CatalogProduct, ProductVariantOption } from '../../types/catalog';
 import { catalogService } from '../../services/catalogService';
 import { useCart } from '../../context/CartContext';
+import { ProductReviews } from '../shop/ProductReviews';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { formatCurrency } from '../../utils/currency';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
@@ -364,7 +365,7 @@ const CatalogProductModalContent: React.FC<
                     <button
                       onClick={handleBuyNow}
                       disabled={missingRequiredSelection}
-                      className="py-3.5 px-5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all bg-[#0052FF] hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white cursor-pointer min-h-[44px] shrink-0"
+                      className="py-3.5 px-5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all bg-[#861F31] hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white cursor-pointer min-h-[44px] shrink-0"
                     >
                       <ShoppingCart className="w-4 h-4 shrink-0" />
                       <span>Order Now</span>
@@ -419,6 +420,10 @@ const CatalogProductModalContent: React.FC<
                 </div>
               </div>
             )}
+
+            <div className="mt-6 border-t border-neutral-200 pt-6">
+              <ProductReviews productId={product.id} />
+            </div>
 
             {/* Related Products from Master Catalog */}
             {relatedProducts.length > 0 && (

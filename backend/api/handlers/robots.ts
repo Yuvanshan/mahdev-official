@@ -13,6 +13,7 @@ const DISALLOWED_PATHS = [
   '/account/',
   '/checkout',
   '/cart',
+  '/wishlist',
   '/bookings',
   '/order',
   '/order/',
@@ -30,13 +31,27 @@ const DISALLOWED_PATHS = [
   '/api/',
 ];
 
+// Search and AI answer engines may read the public pages (SEO, AEO, GEO).
+const AI_CRAWLERS = [
+  'GPTBot', 'ChatGPT-User', 'OAI-SearchBot', 'ClaudeBot', 'Claude-User', 'Claude-SearchBot',
+  'PerplexityBot', 'Perplexity-User', 'Google-Extended', 'Applebot-Extended', 'Bingbot',
+];
+
 export function buildRobotsTxt(origin: string): string {
+  const crawlerRules = AI_CRAWLERS.flatMap((agent) => [
+    `User-agent: ${agent}`,
+    'Allow: /',
+    ...DISALLOWED_PATHS.map((path) => `Disallow: ${path}`),
+    '',
+  ]);
   return [
+    ...crawlerRules,
     'User-agent: *',
     'Allow: /',
     ...DISALLOWED_PATHS.map((path) => `Disallow: ${path}`),
     '',
     `Sitemap: ${origin}/sitemap.xml`,
+    `# LLM guidance: ${origin}/llms.txt`,
     '',
   ].join('\n');
 }

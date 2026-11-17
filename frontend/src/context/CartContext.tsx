@@ -20,6 +20,10 @@ interface CartContextType {
   removeFromCart: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, quantity: number) => void;
   clearCart: () => void;
+  savedItems: CartItem[];
+  saveForLater: (cartItemId: string) => void;
+  moveToCart: (cartItemId: string) => void;
+  removeSavedItem: (cartItemId: string) => void;
   appliedCoupon: CouponCode | null;
   validateCoupon: (
     code: string,
@@ -70,11 +74,12 @@ const DEFAULT_SHIPPING_RATE = 650; // LKR islandwide delivery
 
 // The cart is kept on this device so it survives refreshes and later visits.
 const CART_STORAGE_KEY = 'mahdev_cart_v1';
+const SAVED_STORAGE_KEY = 'mahdev_cart_saved_v1';
 
-function loadStoredCart(): CartItem[] {
+function loadStoredCart(key: string = CART_STORAGE_KEY): CartItem[] {
   if (typeof window === 'undefined') return [];
   try {
-    const parsed: unknown = JSON.parse(window.localStorage.getItem(CART_STORAGE_KEY) || '[]');
+    const parsed: unknown = JSON.parse(window.localStorage.getItem(key) || '[]');
     return Array.isArray(parsed)
       ? parsed.filter((item): item is CartItem =>
           Boolean(item) && typeof item === 'object' &&
@@ -104,6 +109,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Storage may be full or blocked (private mode); the cart still works for this visit.
     }
   }, [cartItems]);
+  const [savedItems, setSavedItems] = useState<CartItem[]>(() => loadStoredCart(SAVED_STORAGE_KEY));
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SAVED_STORAGE_KEY, JSON.stringify(savedItems));
+    } catch {
+      // Storage may be full or blocked; saved items still work for this visit.
+    }
+  }, [savedItems]);
   const [appliedCoupon, setAppliedCoupon] = useState<CouponCode | null>(null);
 
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
@@ -281,6 +294,32 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCartItems((prev) => prev.filter((item) => item.id !== cartItemId));
   };
 
+  // Save for later: move a line out of the cart into the saved list, and back again.
+  const saveForLater = (cartItemId: string) => {
+    const item = cartItems.find((current) => current.id === cartItemId);
+    if (!item) return;
+    setCartItems((prev) => prev.filter((current) => current.id !== cartItemId));
+    setSavedItems((prev) => [...prev.filter((current) => current.id !== cartItemId), item]);
+  };
+
+  const moveToCart = (cartItemId: string) => {
+    const item = savedItems.find((current) => current.id === cartItemId);
+    if (!item) return;
+    setSavedItems((prev) => prev.filter((current) => current.id !== cartItemId));
+    setCartItems((prev) => {
+      const existing = prev.find((current) => current.id === cartItemId);
+      if (!existing) return [...prev, item];
+      const quantity = existing.quantity + item.quantity;
+      return prev.map((current) => current.id === cartItemId
+        ? { ...current, quantity, itemTotal: current.unitPrice * quantity }
+        : current);
+    });
+  };
+
+  const removeSavedItem = (cartItemId: string) => {
+    setSavedItems((prev) => prev.filter((current) => current.id !== cartItemId));
+  };
+
   const updateQuantity = (cartItemId: string, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(cartItemId);
@@ -402,6 +441,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         removeFromCart,
         updateQuantity,
         clearCart,
+        savedItems,
+        saveForLater,
+        moveToCart,
+        removeSavedItem,
         appliedCoupon,
         validateCoupon,
         applyCoupon,

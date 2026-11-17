@@ -76,7 +76,7 @@ export const MartCategoriesSection: React.FC<MartCategoriesSectionProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8">
         <div>
           <ScrollReveal direction="up">
-            <Caption className="text-[#0052FF] mb-1 block font-mono">
+            <Caption className="text-[#861F31] mb-1 block font-mono">
               Curated Departments
             </Caption>
             <H2 className="text-slate-900">Explore by Category</H2>
@@ -90,7 +90,7 @@ export const MartCategoriesSection: React.FC<MartCategoriesSectionProps> = ({
           <div
             key={cat.id}
             onClick={() => onSelectCategory(cat.id)}
-            className="group p-4 rounded-2xl bg-slate-50 border border-slate-200/80 hover:border-[#0052FF] hover:bg-white hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col justify-between"
+            className="group p-4 rounded-2xl bg-slate-50 border border-slate-200/80 hover:border-[#861F31] hover:bg-white hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col justify-between"
           >
             <div className="space-y-3">
               <div className="w-12 h-12 rounded-xl bg-white shadow-2xs border border-slate-200/60 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -98,7 +98,7 @@ export const MartCategoriesSection: React.FC<MartCategoriesSectionProps> = ({
               </div>
 
               <div>
-                <h3 className="font-display text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[#0052FF] transition-colors leading-snug line-clamp-2">
+                <h3 className="font-display text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[#861F31] transition-colors leading-snug line-clamp-2">
                   {cat.name}
                 </h3>
                 <p className="text-[11px] text-slate-400 mt-0.5">

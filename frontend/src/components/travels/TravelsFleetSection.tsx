@@ -61,7 +61,7 @@ export const TravelsFleetSection: React.FC<TravelsFleetSectionProps> = ({
       {/* Header */}
       <div className="max-w-3xl mb-12">
         <ScrollReveal direction="up">
-          <Caption className="text-[#0052FF] mb-2 block font-mono">
+          <Caption className="text-[#861F31] mb-2 block font-mono">
             Chauffeur Fleet & Private Mobility
           </Caption>
           <H2 className="text-slate-900">
@@ -91,7 +91,7 @@ export const TravelsFleetSection: React.FC<TravelsFleetSectionProps> = ({
               </div>
 
               <div className="p-5 space-y-3">
-                <h3 className="font-display text-sm font-bold text-slate-900 group-hover:text-[#0052FF] transition-colors leading-snug">
+                <h3 className="font-display text-sm font-bold text-slate-900 group-hover:text-[#861F31] transition-colors leading-snug">
                   {v.name}
                 </h3>
 
@@ -129,7 +129,7 @@ export const TravelsFleetSection: React.FC<TravelsFleetSectionProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => onBookTransport(v)}
-                className="w-full text-xs hover:border-[#0052FF] hover:text-[#0052FF]"
+                className="w-full text-xs hover:border-[#861F31] hover:text-[#861F31]"
               >
                 Book This Vehicle
               </Button>

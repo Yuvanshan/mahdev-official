@@ -43,7 +43,7 @@ export const WhatsAppInquiryButton: React.FC<WhatsAppInquiryButtonProps> = ({
     solid:
       'bg-[#25D366] hover:bg-[#20bd5a] text-white shadow-xs hover:shadow-md hover:shadow-emerald-500/20 font-bold border border-emerald-600/30',
     outline:
-      'border border-[#0052FF] text-[#0052FF] hover:bg-blue-50 hover:border-blue-600 font-semibold bg-white',
+      'border border-[#861F31] text-[#861F31] hover:bg-blue-50 hover:border-blue-600 font-semibold bg-white',
     subtle:
       'bg-blue-50 text-blue-800 hover:bg-blue-100/80 border border-blue-200 font-semibold',
     floating:

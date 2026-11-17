@@ -2,7 +2,7 @@
   <defs>
     <linearGradient id="it-grad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#4F46E5"/>
-      <stop offset="100%" stop-color="#1E1B4B"/>
+      <stop offset="100%" stop-color="#3F0C17"/>
     </linearGradient>
     <linearGradient id="cyan-grad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#67E8F9"/>

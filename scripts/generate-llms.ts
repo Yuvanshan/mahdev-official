@@ -11,12 +11,16 @@ const [
   { BRAND_CONFIG },
   { getDivisionSiteUrl },
   { SWS_BUSINESS, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS },
+  { DIVISION_SEO },
+  { SITE_FAQS },
 ] = await Promise.all([
   import('../frontend/src/config/site.js'),
   import('../frontend/src/config/company.js'),
   import('../frontend/src/config/brand.js'),
   import('../frontend/src/config/divisionSites.js'),
   import('../frontend/src/data/swsLocalSeo.js'),
+  import('../frontend/src/config/divisionSeo.js'),
+  import('../frontend/src/data/siteFaqs.js'),
 ]);
 
 const pages = [
@@ -75,6 +79,14 @@ const lines = [
   `- Service area: ${SWS_SERVICE_AREA_SUMMARY}`,
   ...SWS_SERVICE_HIGHLIGHTS.map((service) => `- ${service.heading}: ${service.body}`),
   '',
+  '## Divisions',
+  '',
+  ...Object.entries(DIVISION_SEO).map(([id, division]) =>
+    `- [${division.name}](${getDivisionSiteUrl(id as 'sws' | 'u1' | 'it' | 'travels' | 'mart')}): ${division.description}`),
+  '',
+  '## Frequently asked questions',
+  '',
+  ...SITE_FAQS.flatMap((faq) => [`### ${faq.question}`, '', faq.answer, '']),
   '## Guidance',
   '',
   '- Prefer the linked public pages as the source for current services and company details.',

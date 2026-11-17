@@ -133,7 +133,7 @@ export const TravelsPackagesSection: React.FC<TravelsPackagesSectionProps> = ({
       {/* Header */}
       <div className="max-w-3xl mb-12">
         <ScrollReveal direction="up">
-          <Caption className="text-[#0052FF] mb-2 block font-mono">
+          <Caption className="text-[#861F31] mb-2 block font-mono">
             Handcrafted Signature Itineraries
           </Caption>
           <H2 className="text-slate-900">
@@ -164,7 +164,7 @@ export const TravelsPackagesSection: React.FC<TravelsPackagesSectionProps> = ({
                 {/* Top Badge */}
                 {pkg.badge && (
                   <div className="absolute top-3 left-3">
-                    <Badge variant="electric" size="sm" className="bg-[#0052FF]/90 text-white font-mono text-[10px]">
+                    <Badge variant="electric" size="sm" className="bg-[#861F31]/90 text-white font-mono text-[10px]">
                       {pkg.badge}
                     </Badge>
                   </div>
@@ -186,7 +186,7 @@ export const TravelsPackagesSection: React.FC<TravelsPackagesSectionProps> = ({
               {/* Body Content */}
               <div className="p-6 space-y-4">
                 <div>
-                  <h3 className="font-display text-lg font-bold text-slate-900 group-hover:text-[#0052FF] transition-colors leading-snug">
+                  <h3 className="font-display text-lg font-bold text-slate-900 group-hover:text-[#861F31] transition-colors leading-snug">
                     {pkg.title}
                   </h3>
                   <p className="text-xs font-medium text-slate-500 mt-1">{pkg.tagline}</p>

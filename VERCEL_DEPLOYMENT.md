@@ -92,11 +92,6 @@ Configure these variables in **Project Settings > Environment Variables** in Ver
 | :--- | :--- | :--- |
 | `VITE_APP_URL` | Production: `https://mahdev-official.vercel.app`<br>Preview: `https://$VERCEL_URL`<br>Development: `http://localhost:3000` | Public runtime URL for client-side links and analytics; canonical tags use the fixed origin in `src/config/site.ts` |
 | `VITE_SITE_URL` | Production: your live domain, e.g. `https://mahdev-official.vercel.app` | The website's public domain for canonical URLs, Open Graph tags, structured data, sitemap, `robots.txt` and `llms.txt`. Must be an origin with no path. Defaults to `https://mahdev-official.vercel.app` when unset. |
-| `VITE_SWS_SITE_URL` | Production only | SWS origin. Temporary: `https://sws-events.vercel.app`; later: `https://sws.mahdev.lk`. |
-| `VITE_U1_SITE_URL` | Production only | U1 Studio origin. Temporary: `https://u1-studio.vercel.app`; later: `https://u1.mahdev.lk`. |
-| `VITE_IT_SITE_URL` | Production only | Mahdev IT origin. Temporary: `https://mahdev-it.vercel.app`; later: `https://it.mahdev.lk`. |
-| `VITE_TRAVELS_SITE_URL` | Production only | Mahdev Travels origin. Temporary: `https://mahdev-travels.vercel.app`; later: `https://travels.mahdev.lk`. |
-| `VITE_MART_SITE_URL` | Production only | Mahdev Mart origin. Temporary: `https://mahdev-mart.vercel.app`; later: `https://mart.mahdev.lk`. |
 | `PUBLIC_SITE_URL` | Optional | Legacy alias for `VITE_SITE_URL`, used only when `VITE_SITE_URL` is unset. |
 | `VITE_FIREBASE_API_KEY` | Production, Preview, Development | Public Firebase Web SDK API Key |
 | `VITE_FIREBASE_AUTH_DOMAIN` | Production, Preview, Development | Firebase Console Auth domain |
@@ -202,4 +197,4 @@ For detailed instant rollback instructions via the Vercel Dashboard or CLI, refe
 
 ## Changing the corporate or division host
 
-Add the hostname to this Vercel project, set the relevant Production-only origin variable (`VITE_SITE_URL` for the company site or one of `VITE_SWS_SITE_URL`, `VITE_U1_SITE_URL`, `VITE_IT_SITE_URL`, `VITE_TRAVELS_SITE_URL`, `VITE_MART_SITE_URL`), and redeploy. Keep each value to an origin with no path. Add the host to Firebase Authentication's authorized domains and any App Check/OAuth allowlists, then verify canonical URLs, sitemap entries, API calls, and direct page refreshes. Do not change the existing database or server secrets for a host-only move.
+Add the hostname to this Vercel project, set `VITE_SITE_URL` to the new origin (no path, query or trailing route), and redeploy.

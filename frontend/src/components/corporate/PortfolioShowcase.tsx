@@ -97,7 +97,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
       <ScrollReveal direction="up">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10">
           <div className="max-w-2xl">
-            <Caption className="text-[#0052FF] mb-2 block">Portfolio & Case Studies</Caption>
+            <Caption className="text-[#861F31] mb-2 block">Portfolio & Case Studies</Caption>
             <H2 className="text-slate-900 mb-3">Hallmark Engagements</H2>
             <Body className="text-slate-600 text-base">
               A curated catalog of premier events, cinema-grade films, enterprise software architectures, and luxury travel operations.
@@ -125,7 +125,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
               }}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 selectedDivision === divId
-                  ? 'bg-[#0052FF] text-white shadow-md shadow-blue-500/20'
+                  ? 'bg-[#861F31] text-white shadow-md shadow-blue-500/20'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
@@ -256,7 +256,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                           <MessageCircle className="w-3.5 h-3.5" />
                           <span>WhatsApp</span>
                         </button>
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#0052FF] bg-white px-3 py-1.5 rounded-full shadow-md group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#861F31] bg-white px-3 py-1.5 rounded-full shadow-md group-hover:bg-blue-600 group-hover:text-white transition-colors">
                           Explore <ChevronRight className="w-3.5 h-3.5" />
                         </span>
                       </div>
@@ -315,7 +315,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                             onClick={() => setActiveGalleryIndex(i)}
                             className={`w-20 h-14 rounded-lg overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
                               activeGalleryIndex === i
-                                ? 'border-[#0052FF] ring-2 ring-blue-500/20 scale-105'
+                                ? 'border-[#861F31] ring-2 ring-blue-500/20 scale-105'
                                 : 'border-slate-200 opacity-60 hover:opacity-100'
                             }`}
                           >
@@ -350,7 +350,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
               </div>
               <div>
                 <span className="text-slate-500 uppercase font-semibold block mb-0.5">Division</span>
-                <span className="font-bold text-[#0052FF]">{divisionLabels[selectedProject.divisionId]}</span>
+                <span className="font-bold text-[#861F31]">{divisionLabels[selectedProject.divisionId]}</span>
               </div>
             </div>
 
@@ -370,7 +370,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                 </span>
                 {selectedProject.highlights.map((hl, i) => (
                   <div key={i} className="flex items-start gap-2 text-xs text-slate-600">
-                    <CheckCircle2 className="w-4 h-4 text-[#0052FF] shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-[#861F31] shrink-0 mt-0.5" />
                     <span>{hl}</span>
                   </div>
                 ))}
@@ -383,7 +383,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                   </span>
                   {selectedProject.deliverables.map((del, i) => (
                     <div key={i} className="flex items-start gap-2 text-xs text-slate-600">
-                      <Sparkles className="w-4 h-4 text-[#0052FF] shrink-0 mt-0.5" />
+                      <Sparkles className="w-4 h-4 text-[#861F31] shrink-0 mt-0.5" />
                       <span>{del}</span>
                     </div>
                   ))}

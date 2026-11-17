@@ -151,7 +151,7 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <ScrollReveal direction="up">
-              <Caption className="text-[#0052FF] mb-1 block font-mono">
+              <Caption className="text-[#861F31] mb-1 block font-mono">
                 Storefront Collection
               </Caption>
               <H2 className="text-slate-900">
@@ -169,7 +169,7 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
             <button
               type="button"
               onClick={onViewAllProducts}
-              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#0052FF] px-5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#861F31] px-5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
             >
               View all products
               <span aria-hidden="true">→</span>
@@ -221,7 +221,7 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
                 onClick={() => onSelectCategory(null)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                   selectedCategoryId === null
-                    ? 'bg-[#0052FF] text-white shadow-xs'
+                    ? 'bg-[#861F31] text-white shadow-xs'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
@@ -238,7 +238,7 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
                     onClick={() => onSelectCategory(isSelected ? null : cat.id)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-[#0052FF] text-white shadow-xs'
+                        ? 'bg-[#861F31] text-white shadow-xs'
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >

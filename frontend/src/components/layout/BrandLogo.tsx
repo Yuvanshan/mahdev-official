@@ -176,15 +176,15 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
   // Vector dynamic monogram emblem (used when no uploaded logo or as standalone symbol)
   const renderVectorEmblem = () => (
     <div
-      className={`relative ${currentSize.mark} rounded-xl bg-gradient-to-br from-[#0052FF] via-[#0066FF] to-[#00D2FF] p-[1.5px] shadow-sm flex items-center justify-center shrink-0 select-none group-hover:shadow-md group-hover:shadow-blue-500/20 transition-all`}
+      className={`relative ${currentSize.mark} rounded-xl bg-gradient-to-br from-[#861F31] via-[#A8434F] to-[#DFC070] p-[1.5px] shadow-sm flex items-center justify-center shrink-0 select-none group-hover:shadow-md group-hover:shadow-blue-500/20 transition-all`}
     >
       <div
         className={`w-full h-full ${
-          isDark ? 'bg-[#061033]' : 'bg-[#0A1E5C]'
+          isDark ? 'bg-[#2A0810]' : 'bg-[#2A0810]'
         } rounded-[10px] flex items-center justify-center relative overflow-hidden`}
       >
         {/* Subtle geometric light reflection */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-[#0052FF]/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-[#861F31]/30 to-transparent" />
         <span className="relative z-10 font-black tracking-tight text-white font-serif">
           {brandInitial}
         </span>
@@ -213,7 +213,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
               className={`font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full shadow-xs shrink-0 ${
                 isDark
                   ? 'bg-blue-900/80 text-blue-200 border border-blue-600/50'
-                  : 'bg-blue-50 text-[#0052FF] border border-blue-200'
+                  : 'bg-blue-50 text-[#861F31] border border-blue-200'
               } ${currentSize.tag}`}
             >
               {divisionLabel}
@@ -233,7 +233,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
               >
                 {brandName}
               </span>
-              <span className="text-[#0052FF] font-bold text-xs">.</span>
+              <span className="text-[#861F31] font-bold text-xs">.</span>
             </div>
             <span
               className={`font-medium tracking-wider uppercase ${currentSize.subtitle} ${
@@ -249,7 +249,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
               className={`ml-1 font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full shadow-xs shrink-0 ${
                 isDark
                   ? 'bg-blue-900/80 text-blue-200 border border-blue-600/50'
-                  : 'bg-blue-50 text-[#0052FF] border border-blue-200'
+                  : 'bg-blue-50 text-[#861F31] border border-blue-200'
               } ${currentSize.tag}`}
             >
               {divisionLabel}
@@ -265,7 +265,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
               className={`ml-2 font-bold tracking-wider uppercase px-2 py-0.5 rounded-full shrink-0 ${
                 isDark
                   ? 'bg-blue-900/80 text-blue-200 border border-blue-600/50'
-                  : 'bg-blue-50 text-[#0052FF] border border-blue-200'
+                  : 'bg-blue-50 text-[#861F31] border border-blue-200'
               } ${currentSize.tag}`}
             >
               {divisionLabel}

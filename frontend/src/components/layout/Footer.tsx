@@ -26,7 +26,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath, divisio
   const routeDivisionId = DIVISION_SITE_IDS.find((id) =>
     currentPathname === `/${id}` || currentPathname.startsWith(`/${id}/`)
   );
-  const currentDivId = divisionId || routeDivisionId;
+  // One website: every page uses the main Mahdev footer.
+  const currentDivId = divisionId;
   const divisionConfig = currentDivId ? DIVISIONS[currentDivId] : undefined;
   const divisionRecord = currentDivId
     ? divisions.find((division) =>
@@ -153,18 +154,18 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath, divisio
                   href={getMailtoLink(email)}
                   className="flex items-center gap-2 transition-colors group"
                 >
-                  <Mail className="h-3.5 w-3.5 shrink-0 text-[#0052FF]" />
+                  <Mail className="h-3.5 w-3.5 shrink-0 text-[#861F31]" />
                   <span className="break-all">{email}</span>
                 </a>
                 
                 <div className="space-y-1.5 pt-0.5">
                   <div className="flex items-center gap-2">
-                    <Phone className="h-3.5 w-3.5 shrink-0 text-[#0052FF]" />
+                    <Phone className="h-3.5 w-3.5 shrink-0 text-[#861F31]" />
                     <div className="flex items-center gap-1.5">
                       <span className="text-[11px] text-slate-500">Hotline:</span>
                       <a
                         href={getTelLink(primaryPhone)}
-                        className="font-mono font-medium text-slate-900 transition-colors hover:text-[#0052FF]"
+                        className="font-mono font-medium text-slate-900 transition-colors hover:text-[#861F31]"
                         title={`Call Hotline ${primaryPhone}`}
                       >
                         {primaryPhone}
@@ -191,11 +192,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath, divisio
 
                 <div className="space-y-2 border-t border-slate-200 pt-2">
                   <div className="flex items-start gap-2 text-[11px] text-slate-600">
-                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#0052FF]" />
+                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#861F31]" />
                     <span>Colombo: {colomboAddress}</span>
                   </div>
                   <div className="flex items-start gap-2 text-[11px] text-slate-600">
-                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#0052FF]" />
+                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#861F31]" />
                     <span>Trincomalee: {trincomaleeAddress}</span>
                   </div>
                 </div>
@@ -221,7 +222,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath, divisio
                             handleLegalClick(e, link.label);
                           }
                         }}
-                        className="flex items-center justify-between text-slate-600 transition-colors group hover:text-[#0052FF]"
+                        className="flex items-center justify-between text-slate-600 transition-colors group hover:text-[#861F31]"
                       >
                         <span>{link.label}</span>
                         {link.badge && (

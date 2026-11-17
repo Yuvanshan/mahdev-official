@@ -255,7 +255,7 @@ async function notifyCustomerOfBookingReceived(id: string, data: Record<string, 
       ${table}
       <p><strong>Your request is pending review.</strong> Your booking is not confirmed, and no payment is due until the Mahdev team contacts you.</p>
       <p>The attached PDF is a booking estimate and receipt of your request, not a tax invoice.</p>
-      <p><a href="${escapeHtml(accountUrl)}" style="display:inline-block;background:#1e1b4b;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">View your booking</a></p>
+      <p><a href="${escapeHtml(accountUrl)}" style="display:inline-block;background:#3F0C17;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">View your booking</a></p>
       <p>Thank you,<br>Mahdev Pvt Ltd<br>${escapeHtml(COMPANY_INFO.email)} | ${escapeHtml(COMPANY_INFO.primaryPhone)}</p>
     </div>`,
     attachments,
@@ -339,7 +339,7 @@ export function confirmedEmail(collection: 'orders' | 'bookings', id: string, da
 <p><strong>Good news: your ${what} with ${escapeHtml(division)} is confirmed.</strong></p>
 ${table(rows)}
 ${toPay > 0 ? `<p><strong>Please pay by bank transfer:</strong></p>${table(bankRows)}<p style="font-size:13px;color:#64748b">Send the transfer slip on WhatsApp (075 092 8078) with your reference.</p>` : ''}
-<p><a href="${escapeHtml(accountUrl)}" style="display:inline-block;background:#0052FF;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">See my ${what}</a></p>
+<p><a href="${escapeHtml(accountUrl)}" style="display:inline-block;background:#861F31;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">See my ${what}</a></p>
 <p style="font-size:13px;color:#64748b">Cancellations and refunds follow our <a href="${escapeHtml(`${siteOrigin()}/refund-policy`)}">Refund and Cancellation Policy</a>.</p>
 <p>${escapeHtml(division)},<br>Mahdev Pvt Ltd<br>info.mahdev.lk@gmail.com | 075 092 8078 / 076 898 8970</p>
 </div>`;

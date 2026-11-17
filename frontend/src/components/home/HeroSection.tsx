@@ -171,7 +171,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
       ref={heroRef}
       className="home-video-hero relative isolate w-full overflow-hidden"
     >
-      <div className="home-video-hero__panel relative isolate flex min-h-[680px] w-full items-center overflow-hidden bg-[#12172A] text-white sm:min-h-[740px] lg:min-h-[clamp(640px,72svh,820px)]">
+      <div className="home-video-hero__panel relative isolate flex min-h-[680px] w-full items-center overflow-hidden bg-[#2A0810] text-white sm:min-h-[740px] lg:min-h-[clamp(640px,72svh,820px)]">
         <ScrollParallax targetRef={heroRef} distance={24} className="home-video-hero__media absolute -inset-y-10 right-[-2%] w-[72%] overflow-hidden">
           {useCmsImage ? (
             <img

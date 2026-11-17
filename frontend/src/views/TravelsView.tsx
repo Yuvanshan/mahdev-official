@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { ShopDivisionRows } from '../components/shop/ShopDivisionRows';
 import {
   Compass,
   ChevronLeft,
@@ -97,6 +98,8 @@ export const TravelsView: React.FC<TravelsViewProps> = ({ onNavigate }) => {
         onExplorePackages={() => scrollToAnchor('packages')}
         onExploreDestinations={() => scrollToAnchor('destinations')}
       />
+
+      <ShopDivisionRows divisionId="travels" onNavigate={onNavigate} />
 
       {/* Render content progressively as each Turso-backed collection arrives.
           One shared search/category/price filter drives packages, day tours, services and gallery. */}

@@ -177,8 +177,8 @@ export const CareersView: React.FC<CareersViewProps> = ({ onNavigate }) => {
         keywords={[...CAREERS_PAGE_SEO.keywords]}
       />
 
-      <section className="relative isolate overflow-hidden bg-[#07152f] text-white">
-        <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_10%,rgba(37,99,235,0.4),transparent_45%),linear-gradient(125deg,#07152f_8%,#102b54_65%,#07152f)]" />
+      <section className="relative isolate overflow-hidden bg-[#2A0810] text-white">
+        <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_10%,rgba(134,31,49,0.4),transparent_45%),linear-gradient(125deg,#07152f_8%,#102b54_65%,#2A0810)]" />
         <div aria-hidden="true" className="absolute -right-20 top-10 h-72 w-72 rounded-full border border-white/10 sm:right-[8%] sm:h-[28rem] sm:w-[28rem]" />
         <SectionContainer background="none" paddingY="xl">
           <div className="relative max-w-3xl py-8 sm:py-14">

@@ -12,7 +12,6 @@ import {
 import { ADMIN_PORTAL_PATH } from '../../config/adminRoutes';
 import { getPageTitle } from '../../config/pageTitles';
 import { withServiceArea } from '../../config/itemSeo';
-import { getCurrentDivisionSite } from '../../config/divisionSites';
 
 const SEO_CACHE_KEY = 'mahdev_cached_seo_configs';
 const SEO_ORIGIN = CANONICAL_SITE_ORIGIN;
@@ -153,11 +152,10 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     const currentPath = window.location.pathname || '/';
     // 1200x630 share images (Facebook/WhatsApp/X): division pages use their own,
     // others the admin-configured image or the default. Must be absolute URLs.
-    const activeDivisionSite = getCurrentDivisionSite();
-    const activeSiteOrigin = activeDivisionSite ? window.location.origin : SEO_ORIGIN;
-    const divisionShareImage = /^\/sws(\/|$)/.test(currentPath) || activeDivisionSite === 'sws'
+    const activeSiteOrigin = SEO_ORIGIN;
+    const divisionShareImage = /^\/sws(\/|$)/.test(currentPath)
       ? '/assets/og/og-sws.jpg'
-      : /^\/u1(\/|$)/.test(currentPath) || activeDivisionSite === 'u1' ? '/assets/og/og-u1.jpg' : '';
+      : /^\/u1(\/|$)/.test(currentPath) ? '/assets/og/og-u1.jpg' : '';
     const shareImage = divisionShareImage || siteSettings?.ogImageUrl || '/assets/og/og-default.jpg';
     let effectiveOgImage = shareImage.startsWith('/') ? `${activeSiteOrigin}${shareImage}` : shareImage;
     let effectiveKeywords = keywords;
@@ -188,12 +186,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
 
     // Path plus any query the view declares (gallery items are /gallery?id=…).
     const canonicalTarget = effectiveCanonical ? new URL(effectiveCanonical, window.location.origin) : null;
-    let canonicalPath = canonicalTarget ? `${canonicalTarget.pathname}${canonicalTarget.search}` : currentPath;
-    if (activeDivisionSite) {
-      const divisionPrefix = `/${activeDivisionSite}`;
-      if (canonicalPath === divisionPrefix) canonicalPath = '/';
-      else if (canonicalPath.startsWith(`${divisionPrefix}/`)) canonicalPath = canonicalPath.slice(divisionPrefix.length);
-    }
+    const canonicalPath = canonicalTarget ? `${canonicalTarget.pathname}${canonicalTarget.search}` : currentPath;
     effectiveCanonical = `${activeSiteOrigin}${canonicalPath === '/' ? '' : canonicalPath}`;
 
     const privateRoutePrefixes = [

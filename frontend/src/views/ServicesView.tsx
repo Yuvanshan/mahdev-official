@@ -390,7 +390,7 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
                   onClick={() => handleSelectDivision(tab.id as any)}
                   className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
                     selectedDivision === tab.id
-                      ? 'bg-[#0052FF] text-white shadow-md shadow-blue-500/20'
+                      ? 'bg-[#861F31] text-white shadow-md shadow-blue-500/20'
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 hover:text-slate-900'
                   }`}
                 >
@@ -414,7 +414,7 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search services or features..."
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-[#0052FF] focus:bg-white transition-all"
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-[#861F31] focus:bg-white transition-all"
               />
               {searchQuery && (
                 <button
@@ -481,7 +481,7 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
       <SectionContainer background="white" paddingY="xl" hasBorderBottom>
         {filteredServices.length === 0 ? (
           <div className="text-center py-16 px-4 max-w-md mx-auto space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#0052FF] flex items-center justify-center mx-auto">
+            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#861F31] flex items-center justify-center mx-auto">
               <Sparkles className="w-7 h-7" />
             </div>
             <h3 className="font-display text-xl font-bold text-slate-900">
@@ -584,7 +584,7 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
       {/* 5. Division Spotlight Matrix */}
       <SectionContainer background="white" paddingY="lg" hasBorderBottom>
         <div className="text-center max-w-2xl mx-auto mb-10">
-          <Caption className="text-[#0052FF] mb-2 block">Direct Portals</Caption>
+          <Caption className="text-[#861F31] mb-2 block">Direct Portals</Caption>
           <H2 className="text-slate-900 mb-3">Explore Dedicated Division Portals</H2>
           <Body className="text-slate-600 text-sm">
             Visit the dedicated microsites for in-depth technical specs, sample reels, hardware inventories, and division contacts.
@@ -597,20 +597,20 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
             <div
               key={division.id}
               onClick={() => onNavigate(division.route)}
-              className="min-w-[220px] sm:min-w-0 snap-center p-4 rounded-xl bg-white border border-slate-200 hover:border-[#0052FF] hover:shadow-md transition-all cursor-pointer flex flex-col justify-between group shrink-0"
+              className="min-w-[220px] sm:min-w-0 snap-center p-4 rounded-xl bg-white border border-slate-200 hover:border-[#861F31] hover:shadow-md transition-all cursor-pointer flex flex-col justify-between group shrink-0"
             >
               <div>
-                <div className="w-10 h-10 rounded-lg bg-blue-50 text-[#0052FF] flex items-center justify-center mb-3 group-hover:bg-[#0052FF] group-hover:text-white transition-colors">
+                <div className="w-10 h-10 rounded-lg bg-blue-50 text-[#861F31] flex items-center justify-center mb-3 group-hover:bg-[#861F31] group-hover:text-white transition-colors">
                   <IconRenderer name={division.iconName} className="w-5 h-5" />
                 </div>
-                <h4 className="font-display font-bold text-sm text-slate-900 mb-1 group-hover:text-[#0052FF] transition-colors">
+                <h4 className="font-display font-bold text-sm text-slate-900 mb-1 group-hover:text-[#861F31] transition-colors">
                   {division.shortName}
                 </h4>
                 <p className="text-[11px] text-slate-500 line-clamp-2">
                   {division.tagline}
                 </p>
               </div>
-              <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-semibold text-[#0052FF]">
+              <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-semibold text-[#861F31]">
                 <span>Visit Division</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </div>

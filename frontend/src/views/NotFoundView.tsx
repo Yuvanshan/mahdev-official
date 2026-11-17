@@ -80,7 +80,7 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
   return (
     <div
       id="not-found-view"
-      className="relative w-full min-h-[85vh] flex flex-col justify-center py-12 sm:py-20 bg-gradient-to-b from-slate-50 via-white to-slate-50/80 overflow-hidden selection:bg-[#0052FF] selection:text-white"
+      className="relative w-full min-h-[85vh] flex flex-col justify-center py-12 sm:py-20 bg-gradient-to-b from-slate-50 via-white to-slate-50/80 overflow-hidden selection:bg-[#861F31] selection:text-white"
     >
       <SEOHead
         title={`404 — ${headingText} | ${companyName}`}
@@ -130,11 +130,11 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
             >
               {/* Layered Floating 404 Display Typography */}
               <div className="relative">
-                <span className="font-display font-black text-7xl sm:text-9xl tracking-tighter bg-gradient-to-br from-slate-950 via-[#0052FF] to-blue-800 bg-clip-text text-transparent drop-shadow-xs">
+                <span className="font-display font-black text-7xl sm:text-9xl tracking-tighter bg-gradient-to-br from-slate-950 via-[#861F31] to-blue-800 bg-clip-text text-transparent drop-shadow-xs">
                   404
                 </span>
                 {/* Subtle Electric Underline Glow */}
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-24 h-1.5 bg-gradient-to-r from-transparent via-[#0052FF] to-transparent rounded-full blur-xs opacity-70" />
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-24 h-1.5 bg-gradient-to-r from-transparent via-[#861F31] to-transparent rounded-full blur-xs opacity-70" />
               </div>
             </motion.div>
 
@@ -150,9 +150,9 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
-              className="absolute -top-3 -right-6 px-2.5 py-1 rounded-full bg-blue-600/10 border border-blue-500/20 text-[#0052FF] text-[10px] font-bold font-mono tracking-wider backdrop-blur-xs flex items-center gap-1.5 shadow-2xs"
+              className="absolute -top-3 -right-6 px-2.5 py-1 rounded-full bg-blue-600/10 border border-blue-500/20 text-[#861F31] text-[10px] font-bold font-mono tracking-wider backdrop-blur-xs flex items-center gap-1.5 shadow-2xs"
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0052FF] animate-ping" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#861F31] animate-ping" />
               <span>UNRESOLVED</span>
             </motion.div>
           </div>
@@ -163,7 +163,7 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 mb-4 rounded-full bg-blue-50/80 border border-blue-200/80 text-[#0052FF] text-xs font-bold font-mono uppercase tracking-wider shadow-2xs"
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 mb-4 rounded-full bg-blue-50/80 border border-blue-200/80 text-[#861F31] text-xs font-bold font-mono uppercase tracking-wider shadow-2xs"
         >
           <FileQuestion className="w-3.5 h-3.5" />
           <span>{badgeText}</span>
@@ -205,11 +205,11 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search products, services, or divisions..."
-              className="w-full pl-10 pr-24 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl shadow-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#0052FF] focus:ring-2 focus:ring-blue-500/20 transition-all"
+              className="w-full pl-10 pr-24 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl shadow-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#861F31] focus:ring-2 focus:ring-blue-500/20 transition-all"
             />
             <button
               type="submit"
-              className="absolute right-1.5 px-3 py-1.5 bg-[#0052FF] hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+              className="absolute right-1.5 px-3 py-1.5 bg-[#861F31] hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
             >
               Search
             </button>
@@ -237,8 +237,8 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
             variant="outline"
             size="lg"
             onClick={() => onNavigate('/#divisions')}
-            leftIcon={<Layers className="w-4 h-4 text-[#0052FF]" />}
-            className="font-bold text-xs sm:text-sm border-slate-300 hover:border-[#0052FF] bg-white"
+            leftIcon={<Layers className="w-4 h-4 text-[#861F31]" />}
+            className="font-bold text-xs sm:text-sm border-slate-300 hover:border-[#861F31] bg-white"
           >
             Explore Divisions
           </Button>
@@ -283,17 +283,17 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
               <button
                 key={div.id}
                 onClick={() => onNavigate(div.route)}
-                className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-white hover:border-[#0052FF] hover:shadow-xs transition-all group text-left cursor-pointer"
+                className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-white hover:border-[#861F31] hover:shadow-xs transition-all group text-left cursor-pointer"
               >
                 <div className="min-w-0 pr-2">
-                  <div className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[#0052FF] transition-colors truncate">
+                  <div className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[#861F31] transition-colors truncate">
                     {div.name}
                   </div>
                   <div className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
                     {div.tagline}
                   </div>
                 </div>
-                <div className="w-8 h-8 rounded-lg bg-slate-50 group-hover:bg-blue-50 border border-slate-200 group-hover:border-blue-200 flex items-center justify-center text-slate-400 group-hover:text-[#0052FF] transition-colors shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-slate-50 group-hover:bg-blue-50 border border-slate-200 group-hover:border-blue-200 flex items-center justify-center text-slate-400 group-hover:text-[#861F31] transition-colors shrink-0">
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </div>
               </button>
@@ -315,7 +315,7 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
 
           <a
             href={getTelLink(hotline)}
-            className="inline-flex items-center gap-1.5 font-bold text-slate-700 hover:text-[#0052FF] transition-colors"
+            className="inline-flex items-center gap-1.5 font-bold text-slate-700 hover:text-[#861F31] transition-colors"
           >
             <Phone className="w-3.5 h-3.5 text-slate-400" />
             <span>{hotline}</span>
@@ -323,7 +323,7 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
 
           <a
             href={getMailtoLink(email, 'Assistance with missing page')}
-            className="inline-flex items-center gap-1.5 font-bold text-slate-700 hover:text-[#0052FF] transition-colors"
+            className="inline-flex items-center gap-1.5 font-bold text-slate-700 hover:text-[#861F31] transition-colors"
           >
             <Mail className="w-3.5 h-3.5 text-slate-400" />
             <span>{email}</span>

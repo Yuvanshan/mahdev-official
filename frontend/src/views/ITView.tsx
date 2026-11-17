@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { ShopDivisionRows } from '../components/shop/ShopDivisionRows';
 import {
   Cpu,
   ChevronLeft,
@@ -79,6 +80,8 @@ export const ITView: React.FC<ITViewProps> = ({ onNavigate }) => {
         onContactTeam={() => handleOpenQuoteModal(undefined, 'contact')}
         onExploreServices={() => scrollToAnchor('services')}
       />
+
+      <ShopDivisionRows divisionId="it" onNavigate={onNavigate} />
 
       {/* Render content progressively as each Turso-backed collection arrives.
           One shared search/category/price filter drives the services list. */}

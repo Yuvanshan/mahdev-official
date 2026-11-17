@@ -6,7 +6,6 @@ import {
   AuthStatus,
 } from '../types/customer';
 import { authService, type ProfileCompletionInput, type SocialSignInResult } from '../services/authService';
-import { registerSsoLogout } from '../services/ssoService';
 
 interface AuthContextType {
   user: CustomerUser | null;
@@ -129,11 +128,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    try {
-      await registerSsoLogout();
-    } catch (logoutError) {
-      console.error('[Auth] Could not invalidate sign-in sessions on other Mahdev websites:', logoutError);
-    }
     await authService.logout();
     setUser(null);
     setStatus('unauthenticated');

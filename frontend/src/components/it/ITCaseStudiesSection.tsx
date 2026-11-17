@@ -86,7 +86,7 @@ export const ITCaseStudiesSection: React.FC<ITCaseStudiesSectionProps> = ({
       {/* Header */}
       <div className="max-w-3xl mb-12">
         <ScrollReveal direction="up">
-          <Caption className="text-[#0052FF] mb-2 block font-mono">
+          <Caption className="text-[#861F31] mb-2 block font-mono">
             Proven Engineering Deployments
           </Caption>
           <H2 className="text-slate-900">
@@ -119,7 +119,7 @@ export const ITCaseStudiesSection: React.FC<ITCaseStudiesSectionProps> = ({
         <div className="lg:col-span-7 p-6 sm:p-8 space-y-6 flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-mono font-bold text-[#0052FF] uppercase tracking-wider">
+              <span className="text-xs font-mono font-bold text-[#861F31] uppercase tracking-wider">
                 {activeCase.clientIndustry} • {activeCase.year}
               </span>
               <Badge variant="electric" size="sm" className="font-mono text-[10px]">

@@ -152,7 +152,7 @@ function generateEnquiryHtmlEmail(data: WebsiteEnquiryPayload, targetEmail: stri
           
           <!-- Header Banner -->
           <tr>
-            <td style="background-color: #0a1128; padding: 28px 32px; border-bottom: 3px solid #0052FF;">
+            <td style="background-color: #0a1128; padding: 28px 32px; border-bottom: 3px solid #861F31;">
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
                   <td>
@@ -161,7 +161,7 @@ function generateEnquiryHtmlEmail(data: WebsiteEnquiryPayload, targetEmail: stri
                     <p style="margin: 4px 0 0 0; font-size: 13px; color: #94a3b8;">Dispatched to ${targetEmailHtml}</p>
                   </td>
                   <td align="right" valign="top">
-                    <span style="display: inline-block; background-color: #0052FF; color: #ffffff; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <span style="display: inline-block; background-color: #861F31; color: #ffffff; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.5px;">
                       ${divisionName}
                     </span>
                   </td>
@@ -176,7 +176,7 @@ function generateEnquiryHtmlEmail(data: WebsiteEnquiryPayload, targetEmail: stri
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
                   <td style="font-size: 13px; color: #64748b;">
-                    <strong>Reference ID:</strong> <span style="font-family: monospace; color: #0052FF; font-weight: 700;">${refId}</span>
+                    <strong>Reference ID:</strong> <span style="font-family: monospace; color: #861F31; font-weight: 700;">${refId}</span>
                   </td>
                   <td align="right" style="font-size: 13px; color: #64748b;">
                     <strong>Received:</strong> ${time}
@@ -189,7 +189,7 @@ function generateEnquiryHtmlEmail(data: WebsiteEnquiryPayload, targetEmail: stri
           <!-- Customer Details Card -->
           <tr>
             <td style="padding: 24px 32px 16px 32px;">
-              <h2 style="margin: 0 0 16px 0; font-size: 15px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; border-left: 3px solid #0052FF; padding-left: 8px;">
+              <h2 style="margin: 0 0 16px 0; font-size: 15px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; border-left: 3px solid #861F31; padding-left: 8px;">
                 Customer Contact Details
               </h2>
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
@@ -199,8 +199,8 @@ function generateEnquiryHtmlEmail(data: WebsiteEnquiryPayload, targetEmail: stri
                 </tr>
                 <tr>
                   <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #64748b; font-weight: 600;">Email Address</td>
-                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0052FF; font-weight: 600;">
-                    <a href="${replyMailto}" style="color: #0052FF; text-decoration: none;">${senderEmail}</a>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #861F31; font-weight: 600;">
+                    <a href="${replyMailto}" style="color: #861F31; text-decoration: none;">${senderEmail}</a>
                   </td>
                 </tr>
                 <tr>
@@ -235,7 +235,7 @@ ${(data.details || [])
           <!-- ${escapeHtml(section.title)} Details Card -->
           <tr>
             <td style="padding: 8px 32px 16px 32px;">
-              <h2 style="margin: 0 0 12px 0; font-size: 15px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; border-left: 3px solid #0052FF; padding-left: 8px;">
+              <h2 style="margin: 0 0 12px 0; font-size: 15px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; border-left: 3px solid #861F31; padding-left: 8px;">
                 ${escapeHtml(section.title)} Details
               </h2>
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
@@ -257,7 +257,7 @@ ${(data.details || [])
           <!-- Message / Requirements Card -->
           <tr>
             <td style="padding: 8px 32px 24px 32px;">
-              <h2 style="margin: 0 0 12px 0; font-size: 15px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; border-left: 3px solid #0052FF; padding-left: 8px;">
+              <h2 style="margin: 0 0 12px 0; font-size: 15px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; border-left: 3px solid #861F31; padding-left: 8px;">
                 Subject: ${subject}
               </h2>
               <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; font-size: 14px; line-height: 1.6; color: #1e293b; white-space: pre-wrap;">${message}</div>
@@ -270,7 +270,7 @@ ${(data.details || [])
               <table role="presentation" border="0" cellspacing="0" cellpadding="0">
                 <tr>
                   <td style="padding-right: 12px;">
-                    <a href="${replyMailto}" style="display: inline-block; background-color: #0052FF; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,82,255,0.2);">
+                    <a href="${replyMailto}" style="display: inline-block; background-color: #861F31; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 8px; box-shadow: 0 2px 4px rgba(134,31,49,0.2);">
                       &larr; Reply to ${senderName} (${senderEmail})
                     </a>
                   </td>

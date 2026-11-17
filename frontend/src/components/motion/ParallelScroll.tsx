@@ -184,7 +184,7 @@ export const DocumentScrollProgress: React.FC = () => {
   return (
     <motion.div
       style={{ scaleX }}
-      className="fixed top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#0052FF] via-[#0066FF] to-[#00D2FF] origin-left z-[100] pointer-events-none shadow-sm shadow-[#0052FF]/50"
+      className="fixed top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#861F31] via-[#A8434F] to-[#DFC070] origin-left z-[100] pointer-events-none shadow-sm shadow-[#861F31]/50"
     />
   );
 };

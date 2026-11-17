@@ -60,7 +60,7 @@ export const TravelsDestinationsSection: React.FC<TravelsDestinationsSectionProp
       {/* Header */}
       <div className="max-w-3xl mb-12">
         <ScrollReveal direction="up">
-          <Caption className="text-[#0052FF] mb-2 block font-mono">
+          <Caption className="text-[#861F31] mb-2 block font-mono">
             Iconic Sri Lankan Landscapes
           </Caption>
           <H2 className="text-slate-900">
@@ -81,7 +81,7 @@ export const TravelsDestinationsSection: React.FC<TravelsDestinationsSectionProp
                 onClick={() => setActiveDestId(dest.id)}
                 className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                   isSelected
-                    ? 'border-[#0052FF] bg-blue-50/50 shadow-md ring-1 ring-blue-500/20'
+                    ? 'border-[#861F31] bg-blue-50/50 shadow-md ring-1 ring-blue-500/20'
                     : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >
@@ -97,7 +97,7 @@ export const TravelsDestinationsSection: React.FC<TravelsDestinationsSectionProp
                   <p className="text-xs text-slate-500 line-clamp-1">{dest.tagline}</p>
                 </div>
 
-                <div className={`p-1 rounded-full ${isSelected ? 'text-[#0052FF]' : 'text-slate-400'}`}>
+                <div className={`p-1 rounded-full ${isSelected ? 'text-[#861F31]' : 'text-slate-400'}`}>
                   <ChevronRight className="w-4 h-4" />
                 </div>
               </div>
@@ -169,7 +169,7 @@ export const TravelsDestinationsSection: React.FC<TravelsDestinationsSectionProp
           <div className="p-6 pt-0 flex items-center justify-between">
             <button
               onClick={() => onPlanTripForDestination(activeDest)}
-              className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-[#0052FF] text-white text-xs font-bold transition-colors cursor-pointer shadow-md"
+              className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-[#861F31] text-white text-xs font-bold transition-colors cursor-pointer shadow-md"
             >
               <span>Customize Itinerary Including {activeDest.name}</span>
               <ChevronRight className="w-3.5 h-3.5" />

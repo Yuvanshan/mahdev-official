@@ -29,7 +29,7 @@ import { sanitizePublicSettingsDocument } from './tursoRoutes.js';
 import adminLoginHandler from './handlers/admin/auth/login.js';
 import adminLogoutHandler from './handlers/admin/auth/logout.js';
 import seasonalThemeHandler from './handlers/seasonalTheme.js';
-import ssoHandler from './handlers/sso.js';
+import productReviewsHandler from './handlers/productReviews.js';
 
 const apiRouter = Router();
 
@@ -48,6 +48,15 @@ apiRouter.get('/careers/status', async (req: Request, res: Response) => {
 });
 apiRouter.delete('/careers/application', async (req: Request, res: Response) => {
   await careerApplicationHandler(req, res);
+});
+
+apiRouter.all('/product-reviews', async (req: Request, res: Response) => {
+  // Only this website's own pages may read or write reviews.
+  if (!isFromThisSite(req)) {
+    res.status(404).json({ success: false, error: 'Not found.' });
+    return;
+  }
+  await productReviewsHandler(req, res);
 });
 
 // Bank transfer slips: the customer uploads (raw file body), the admin views.
@@ -94,18 +103,6 @@ apiRouter.post('/account/recovery', async (req: Request, res: Response) => {
 });
 apiRouter.all('/seasonal-theme', async (req: Request, res: Response) => {
   await seasonalThemeHandler(req, res);
-});
-apiRouter.post('/sso/issue', async (req: Request, res: Response) => {
-  await ssoHandler(req, res, 'issue');
-});
-apiRouter.post('/sso/exchange', async (req: Request, res: Response) => {
-  await ssoHandler(req, res, 'exchange');
-});
-apiRouter.post('/sso/session', async (req: Request, res: Response) => {
-  await ssoHandler(req, res, 'session');
-});
-apiRouter.post('/sso/logout', async (req: Request, res: Response) => {
-  await ssoHandler(req, res, 'logout');
 });
 
 apiRouter.post('/analytics', (req: Request, res: Response) => {

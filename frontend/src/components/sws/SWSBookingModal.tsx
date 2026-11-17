@@ -180,7 +180,7 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#0052FF] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#861F31] flex items-center justify-center">
               <Calendar className="w-5 h-5" />
             </div>
             <div>
@@ -229,7 +229,7 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
               <div className="max-w-md mx-auto p-4 rounded-xl bg-slate-50 border border-slate-200 text-left space-y-2 text-xs">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                   <span className="text-slate-500">Reference ID:</span>
-                  <span className="font-mono font-bold text-[#0052FF]">{inquiryRef}</span>
+                  <span className="font-mono font-bold text-[#861F31]">{inquiryRef}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Event Type:</span>
@@ -249,7 +249,7 @@ export const SWSBookingModal: React.FC<SWSBookingModalProps> = ({
                 </div>
                 <div className="flex items-center justify-between pt-1 border-t border-slate-200/80">
                   <span className="text-slate-500">Dispatched To:</span>
-                  <span className="font-semibold text-[#0052FF]">info.mahdev.lk@gmail.com</span>
+                  <span className="font-semibold text-[#861F31]">info.mahdev.lk@gmail.com</span>
                 </div>
               </div>
 

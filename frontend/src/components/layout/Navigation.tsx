@@ -60,9 +60,9 @@ const DIVISION_SITE_NAV_ITEMS: Record<DivisionSiteId, Array<{ id: string; label:
   ],
 };
 const DIVISION_MENU_DETAILS: Record<string, { mark: string; description: string; background: string; color: string }> = {
-  sws: { mark: 'SWS', description: 'Weddings, parties & events', background: '#0E1424', color: '#fff' },
-  u1: { mark: 'U1', description: 'Photography & cinema', background: '#F1E4D3', color: '#0E1424' },
-  it: { mark: 'IT', description: 'Web, apps & digital products', background: '#E8ECFF', color: '#2E46CF' },
+  sws: { mark: 'SWS', description: 'Weddings, parties & events', background: '#2A0810', color: '#fff' },
+  u1: { mark: 'U1', description: 'Photography & cinema', background: '#F1E4D3', color: '#2A0810' },
+  it: { mark: 'IT', description: 'Web, apps & digital products', background: '#F6E4E5', color: '#861F31' },
   travels: { mark: 'MT', description: 'Thoughtful island journeys', background: '#E4F0EB', color: '#0E6B4F' },
   mart: { mark: 'OM', description: 'Celebration & home essentials', background: '#FBEBDD', color: '#9A4A12' },
 };
@@ -83,10 +83,9 @@ interface NavigationProps {
   currentPath: string;
   onNavigate: (path: string) => void;
   divisionId?: DivisionSiteId;
-  isDivisionHost?: boolean;
 }
 
-export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate, divisionId, isDivisionHost }) => {
+export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate, divisionId }) => {
   const { totalQuantity, openCart } = useCart();
   const { user, isAuthenticated, isLoading: isAuthLoading, logout } = useAuth();
   const { companySettings, siteSettings, divisions } = useFirestoreDataContext();
@@ -157,7 +156,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
           route: getDivisionSiteHref(canonicalId),
           badge: d.hero?.badge || config.badge || 'Enterprise Division',
           iconName: config.iconName || 'Building',
-          accentColor: (config as any).accentColor || (config as any).color || '#1d4ed8',
+          accentColor: (config as any).accentColor || (config as any).color || '#6E1727',
           tagline: d.hero?.subtitle || config.tagline || '',
           isPrimary: (config as any).isPrimary || canonicalId === 'sws',
         });
@@ -196,11 +195,8 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
   });
 
   const currentDivision = currentDivisionKey ? DIVISIONS[currentDivisionKey] : null;
-  const activeDivisionId = divisionId || (
-    currentDivisionKey && DIVISION_SITE_IDS.includes(currentDivisionKey as DivisionSiteId)
-      ? currentDivisionKey as DivisionSiteId
-      : undefined
-  );
+  // One website: every page uses the main Mahdev navigation, so no division-specific header.
+  const activeDivisionId: DivisionSiteId | undefined = undefined;
   const currentDivisionRecord = activeDivisionId
     ? divisions.find((division) =>
         division.id === activeDivisionId ||
@@ -225,7 +221,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
         (activeDivisionId ? DIVISIONS[activeDivisionId].name : currentDivision?.name);
   const singleLineDivisionName = divisionName?.trim().replace(/\s+/g, ' ');
   const divisionBasePath =
-    !isDivisionHost && activeDivisionId && (currentPath === `/${activeDivisionId}` || currentPath.startsWith(`/${activeDivisionId}/`))
+    activeDivisionId && (currentPath === `/${activeDivisionId}` || currentPath.startsWith(`/${activeDivisionId}/`))
       ? `/${activeDivisionId}`
       : '';
   const visibleNavItems = activeDivisionId
@@ -411,7 +407,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                       <div className={`inline-flex items-center rounded-full transition-all duration-200 ${
                           isServicesOpen || currentDivision
                             ? 'bg-blue-50 font-semibold shadow-sm shadow-blue-900/5'
-                            : 'text-slate-700 hover:text-[#0052FF] hover:bg-blue-50/70'
+                            : 'text-slate-700 hover:text-[#861F31] hover:bg-blue-50/70'
                         }`}
                       >
                         <a
@@ -419,7 +415,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                           onClick={(event) => handleAnchorClick(event, item.href)}
                           aria-current={currentPath === item.href ? 'page' : undefined}
                           className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-l-full transition-colors ${
-                            isServicesOpen || currentDivision ? 'text-[#0052FF]' : ''
+                            isServicesOpen || currentDivision ? 'text-[#861F31]' : ''
                           }`}
                         >
                           Divisions
@@ -427,14 +423,14 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                         <button
                           type="button"
                           onClick={() => setIsServicesOpen(!isServicesOpen)}
-                          className="inline-flex items-center rounded-r-full px-1.5 py-2 text-slate-500 hover:text-[#0052FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0052FF]"
+                          className="inline-flex items-center rounded-r-full px-1.5 py-2 text-slate-500 hover:text-[#861F31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#861F31]"
                           aria-label="Show division links"
                           aria-expanded={isServicesOpen}
                           aria-haspopup="true"
                         >
                           <ChevronDown
                             className={`w-4 h-4 transition-transform duration-200 ${
-                              isServicesOpen ? 'rotate-180 text-[#0052FF]' : ''
+                              isServicesOpen ? 'rotate-180 text-[#861F31]' : ''
                             }`}
                           />
                         </button>
@@ -454,8 +450,8 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                                 const detail = DIVISION_MENU_DETAILS[division.id] || {
                                   mark: division.name.slice(0, 2).toUpperCase(),
                                   description: division.tagline || 'Explore this Mahdev division',
-                                  background: '#EEF1FF',
-                                  color: '#2E46CF',
+                                  background: '#F6E4E5',
+                                  color: '#861F31',
                                 };
                                 return (
                               <a
@@ -477,7 +473,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                                   {detail.mark}
                                 </span>
                                 <span className="min-w-0">
-                                  <span className="block truncate text-sm font-semibold group-hover:text-[#3550E8] transition-colors">
+                                  <span className="block truncate text-sm font-semibold group-hover:text-[#861F31] transition-colors">
                                     {division.name}
                                   </span>
                                   <span className="mt-0.5 block truncate text-xs text-slate-500">{detail.description}</span>
@@ -489,7 +485,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                             <button
                               type="button"
                               onClick={() => handleLinkClick('/portfolio')}
-                              className="col-span-2 flex min-h-14 items-center justify-between rounded-2xl bg-[#0E1424] px-4 text-left text-sm font-semibold text-white transition-colors hover:bg-[#20283c]"
+                              className="col-span-2 flex min-h-14 items-center justify-between rounded-2xl bg-[#2A0810] px-4 text-left text-sm font-semibold text-white transition-colors hover:bg-[#2A0810]"
                             >
                               See all our work <ArrowRight className="h-4 w-4" aria-hidden="true" />
                             </button>
@@ -521,11 +517,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                     className={`px-3.5 py-2 text-sm font-medium rounded-full transition-all duration-200 cursor-pointer ${
                       activeDivisionId
                         ? activeDivisionNavId === item.id
-                          ? 'text-[#0052FF] font-semibold bg-blue-50 shadow-sm shadow-blue-900/5'
-                          : 'text-slate-700 hover:text-[#0052FF] hover:bg-blue-50/70'
+                          ? 'text-[#861F31] font-semibold bg-blue-50 shadow-sm shadow-blue-900/5'
+                          : 'text-slate-700 hover:text-[#861F31] hover:bg-blue-50/70'
                         : currentPath === item.href
-                        ? 'text-[#0052FF] font-semibold bg-blue-50 shadow-sm shadow-blue-900/5'
-                        : 'text-slate-700 hover:text-[#0052FF] hover:bg-blue-50/70'
+                        ? 'text-[#861F31] font-semibold bg-blue-50 shadow-sm shadow-blue-900/5'
+                        : 'text-slate-700 hover:text-[#861F31] hover:bg-blue-50/70'
                     }`}
                   >
                     {item.label}
@@ -539,11 +535,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
               {/* Phone Hotline Link */}
               <a
                 href={getTelLink(primaryPhone)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50/90 hover:bg-blue-100 border border-blue-200/80 text-xs font-mono font-bold text-slate-900 hover:text-[#0052FF] transition-colors shadow-2xs shrink-0"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50/90 hover:bg-blue-100 border border-blue-200/80 text-xs font-mono font-bold text-slate-900 hover:text-[#861F31] transition-colors shadow-2xs shrink-0"
                 title={`Call Hotline ${primaryPhone}`}
                 aria-label={`Call Hotline ${primaryPhone}`}
               >
-                <Phone className="w-3.5 h-3.5 text-[#0052FF] shrink-0" />
+                <Phone className="w-3.5 h-3.5 text-[#861F31] shrink-0" />
                 <span className="hidden sm:inline">{primaryPhone}</span>
               </a>
 
@@ -572,7 +568,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                 aria-label={`View cart, ${totalQuantity} ${totalQuantity === 1 ? 'item' : 'items'}`}
               >
                 <ShoppingCart className="w-4 h-4 text-slate-800 shrink-0" />
-                <span className="absolute -right-1.5 -top-1.5 min-w-5 h-5 px-1 rounded-full bg-[#0052FF] text-white text-[10px] font-bold leading-5 text-center shadow">
+                <span className="absolute -right-1.5 -top-1.5 min-w-5 h-5 px-1 rounded-full bg-[#861F31] text-white text-[10px] font-bold leading-5 text-center shadow">
                   {totalQuantity > 99 ? '99+' : totalQuantity}
                 </span>
               </button>
@@ -644,7 +640,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                               role="menuitem"
                               onClick={() => handleLinkClick(href)}
                               className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors ${
-                                currentPath === href ? 'bg-blue-50 text-[#0052FF]' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                                currentPath === href ? 'bg-blue-50 text-[#861F31]' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
                               }`}
                             >
                               <Icon className="h-4 w-4 text-slate-400" aria-hidden="true" />
@@ -670,7 +666,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                 <a
                   href={signInHref}
                   onClick={(event) => handleAnchorClick(event, signInHref)}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-2xs transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-[#0052FF]"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-2xs transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-[#861F31]"
                   title="Sign in"
                   aria-label="Sign in to your account"
                 >
@@ -683,7 +679,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="relative z-[62] p-2 rounded-xl text-slate-900 hover:text-[#0052FF] hover:bg-blue-50 min-[900px]:hidden focus:outline-none focus:ring-2 focus:ring-[#0052FF] cursor-pointer shrink-0 border border-blue-200/80 bg-[#FAF9F6]"
+                className="relative z-[62] p-2 rounded-xl text-slate-900 hover:text-[#861F31] hover:bg-blue-50 min-[900px]:hidden focus:outline-none focus:ring-2 focus:ring-[#861F31] cursor-pointer shrink-0 border border-blue-200/80 bg-[#FAF6EF]"
                 aria-label="Toggle navigation menu"
                 aria-expanded={isMobileMenuOpen}
                 aria-controls="mahdev-mobile-navigation"
@@ -753,7 +749,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                 <a
                   href={signInHref}
                   onClick={(event) => handleAnchorClick(event, signInHref)}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0052FF] px-3 py-3 text-sm font-semibold text-white shadow-md shadow-blue-500/20"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#861F31] px-3 py-3 text-sm font-semibold text-white shadow-md shadow-blue-500/20"
                 >
                   <User className="h-4 w-4" aria-hidden="true" /> Sign in or create an account
                 </a>
@@ -781,11 +777,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left text-sm font-semibold transition-colors cursor-pointer ${
                     activeDivisionId
                       ? activeDivisionNavId === item.id
-                        ? 'bg-[#0052FF] text-white'
-                        : 'text-slate-800 hover:bg-blue-50 hover:text-[#0052FF]'
+                        ? 'bg-[#861F31] text-white'
+                        : 'text-slate-800 hover:bg-blue-50 hover:text-[#861F31]'
                       : currentPath === item.href
-                      ? 'bg-[#0052FF] text-white'
-                      : 'text-slate-800 hover:bg-blue-50 hover:text-[#0052FF]'
+                      ? 'bg-[#861F31] text-white'
+                      : 'text-slate-800 hover:bg-blue-50 hover:text-[#861F31]'
                   }`}
                 >
                   <span>{item.label}</span>
@@ -807,7 +803,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                     onClick={(event) => handleAnchorClick(event, division.route)}
                     className={`w-full flex items-center px-3 py-2 rounded-lg text-left text-xs font-medium cursor-pointer ${
                       currentPath === division.route
-                        ? 'bg-blue-50 text-[#0052FF] font-semibold'
+                        ? 'bg-blue-50 text-[#861F31] font-semibold'
                         : 'text-slate-700 hover:bg-slate-50'
                     }`}
                   >
@@ -821,9 +817,9 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
             <div className="border-t border-blue-100 pt-3 space-y-2">
               <a
                 href={getTelLink(primaryPhone)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-white rounded-xl border border-blue-200 text-xs font-mono font-bold text-slate-900 hover:text-[#0052FF] shadow-2xs"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-white rounded-xl border border-blue-200 text-xs font-mono font-bold text-slate-900 hover:text-[#861F31] shadow-2xs"
               >
-                <Phone className="w-4 h-4 text-[#0052FF]" />
+                <Phone className="w-4 h-4 text-[#861F31]" />
                 <span>Call Hotline: {primaryPhone}</span>
               </a>
 

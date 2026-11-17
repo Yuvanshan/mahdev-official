@@ -60,8 +60,8 @@ export function getPricePresets(bounds: { min: number; max: number }): Array<{ l
 // Two overlaid range inputs; only the thumbs take pointer events so both stay draggable.
 const THUMB_CLASSES =
   'pointer-events-none absolute inset-0 h-5 w-full cursor-pointer appearance-none bg-transparent ' +
-  '[&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#0052FF] [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow ' +
-  '[&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#0052FF] [&::-moz-range-thumb]:bg-white';
+  '[&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#861F31] [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow ' +
+  '[&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#861F31] [&::-moz-range-thumb]:bg-white';
 
 interface PriceRangeFilterProps {
   bounds: { min: number; max: number };
@@ -115,7 +115,7 @@ export const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({ bounds, valu
             <button
               type="button"
               onClick={() => onChange(EMPTY_PRICE_RANGE)}
-              className="ml-2 font-medium text-[#0052FF] hover:underline"
+              className="ml-2 font-medium text-[#861F31] hover:underline"
             >
               Any price
             </button>
@@ -135,7 +135,7 @@ export const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({ bounds, valu
                 onClick={() => onChange(selected ? EMPTY_PRICE_RANGE : preset.range)}
                 aria-pressed={selected}
                 className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                  selected ? 'bg-[#0052FF] text-white' : 'border border-slate-200 bg-white text-slate-700 hover:border-blue-300'
+                  selected ? 'bg-[#861F31] text-white' : 'border border-slate-200 bg-white text-slate-700 hover:border-blue-300'
                 }`}
               >
                 {preset.label}
@@ -148,7 +148,7 @@ export const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({ bounds, valu
       <div className="relative h-5">
         <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-slate-200" />
         <div
-          className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-[#0052FF]"
+          className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-[#861F31]"
           style={{ left: `${lowPct}%`, right: `${100 - highPct}%` }}
         />
         <input

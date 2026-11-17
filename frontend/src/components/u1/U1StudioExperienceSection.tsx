@@ -120,7 +120,7 @@ export const U1StudioExperienceSection: React.FC = () => {
               </div>
 
               <div className="p-5 space-y-2">
-                <h3 className="font-display text-base font-bold text-slate-900 group-hover:text-[#0052FF] transition-colors">
+                <h3 className="font-display text-base font-bold text-slate-900 group-hover:text-[#861F31] transition-colors">
                   {f.title}
                 </h3>
                 <p className="text-xs text-slate-600 leading-relaxed">{f.desc}</p>

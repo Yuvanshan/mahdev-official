@@ -47,7 +47,7 @@ export const FEATURED_SERVICES: FeaturedService[] = [
     iconName: 'Sparkles',
     popular: true,
     badge: 'Events & Production',
-    accentColor: '#0052FF',
+    accentColor: '#861F31',
     turnaroundTime: 'Custom Timeline'
   },
   {
@@ -66,7 +66,7 @@ export const FEATURED_SERVICES: FeaturedService[] = [
     iconName: 'Camera',
     popular: true,
     badge: 'Media & Film',
-    accentColor: '#0052FF',
+    accentColor: '#861F31',
     turnaroundTime: '2-3 Weeks Delivery'
   },
   {
@@ -85,7 +85,7 @@ export const FEATURED_SERVICES: FeaturedService[] = [
     iconName: 'Cpu',
     popular: true,
     badge: 'Tech & Engineering',
-    accentColor: '#0052FF',
+    accentColor: '#861F31',
     turnaroundTime: 'Agile Sprints'
   },
   {
@@ -104,7 +104,7 @@ export const FEATURED_SERVICES: FeaturedService[] = [
     iconName: 'Plane',
     popular: false,
     badge: 'Travel & Expeditions',
-    accentColor: '#0052FF',
+    accentColor: '#861F31',
     turnaroundTime: 'Immediate Confirmation'
   },
   {
@@ -123,7 +123,7 @@ export const FEATURED_SERVICES: FeaturedService[] = [
     iconName: 'ShoppingBag',
     popular: false,
     badge: 'Decor & Smart Tech',
-    accentColor: '#0052FF',
+    accentColor: '#861F31',
     turnaroundTime: '24-48h Dispatch'
   }
 ];
@@ -146,7 +146,7 @@ export const FEATURED_WORK: FeaturedWorkItem[] = [
     ],
     badge: 'Event Production',
     imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1200&auto=format&fit=crop',
-    accentColor: '#0052FF',
+    accentColor: '#861F31',
     metric: {
       label: 'Delegates Hosted',
       value: '2,200+'
@@ -169,7 +169,7 @@ export const FEATURED_WORK: FeaturedWorkItem[] = [
     ],
     badge: 'Cinematography',
     imageUrl: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=1200&auto=format&fit=crop',
-    accentColor: '#0052FF',
+    accentColor: '#861F31',
     metric: {
       label: 'Global Viewership',
       value: '1.4M+'
@@ -192,7 +192,7 @@ export const FEATURED_WORK: FeaturedWorkItem[] = [
     ],
     badge: 'Enterprise Software',
     imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1200&auto=format&fit=crop',
-    accentColor: '#0052FF',
+    accentColor: '#861F31',
     metric: {
       label: 'Efficiency Boost',
       value: '+42%'
@@ -215,7 +215,7 @@ export const FEATURED_WORK: FeaturedWorkItem[] = [
     ],
     badge: 'Luxury Travel',
     imageUrl: 'https://images.unsplash.com/photo-1546708973-b339540b5162?q=80&w=1200&auto=format&fit=crop',
-    accentColor: '#0052FF',
+    accentColor: '#861F31',
     metric: {
       label: 'Guest Rating',
       value: '5.0 / 5'
@@ -238,7 +238,7 @@ export const FEATURED_WORK: FeaturedWorkItem[] = [
     ],
     badge: 'Procurement',
     imageUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1200&auto=format&fit=crop',
-    accentColor: '#0052FF',
+    accentColor: '#861F31',
     metric: {
       label: 'Units Deployed',
       value: '120+ Units'

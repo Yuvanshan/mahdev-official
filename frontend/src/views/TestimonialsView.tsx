@@ -98,7 +98,7 @@ export const TestimonialsView: React.FC<TestimonialsViewProps> = ({ onNavigate }
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
             <div className="max-w-2xl">
               <div className="flex items-center gap-2 mb-3">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#0052FF] text-xs font-bold">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#861F31] text-xs font-bold">
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -209,7 +209,7 @@ export const TestimonialsView: React.FC<TestimonialsViewProps> = ({ onNavigate }
                   onClick={() => setSelectedDivision(divId)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                     selectedDivision === divId
-                      ? 'bg-[#0052FF] text-white shadow-xs'
+                      ? 'bg-[#861F31] text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
@@ -276,7 +276,7 @@ export const TestimonialsView: React.FC<TestimonialsViewProps> = ({ onNavigate }
                 setMinRating(0);
                 setSearchQuery('');
               }}
-              className="mt-4 px-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-[#0052FF] hover:bg-blue-50 transition-colors cursor-pointer"
+              className="mt-4 px-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-[#861F31] hover:bg-blue-50 transition-colors cursor-pointer"
             >
               Reset Filters
             </button>
@@ -286,7 +286,7 @@ export const TestimonialsView: React.FC<TestimonialsViewProps> = ({ onNavigate }
             {filteredReviews.map((review, idx) => (
               <ScrollReveal key={review.id} direction="up" delay={idx * 0.04}>
                 <TiltCard maxTilt={3} glareEffect className="h-full">
-                  <div className="h-full p-7 rounded-3xl bg-slate-50/80 border border-slate-200/90 hover:border-[#0052FF] hover:bg-white hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
+                  <div className="h-full p-7 rounded-3xl bg-slate-50/80 border border-slate-200/90 hover:border-[#861F31] hover:bg-white hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
                     <div>
                       {/* Top Google Badge, Branch & Division */}
                       <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-200/70">
@@ -354,7 +354,7 @@ export const TestimonialsView: React.FC<TestimonialsViewProps> = ({ onNavigate }
                         </div>
 
                         <div>
-                          <h4 className="font-display font-bold text-sm text-slate-900 group-hover:text-[#0052FF] transition-colors">
+                          <h4 className="font-display font-bold text-sm text-slate-900 group-hover:text-[#861F31] transition-colors">
                             {review.authorName}
                           </h4>
                           <p className="text-xs text-slate-500">

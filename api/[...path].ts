@@ -5,6 +5,7 @@ import mediaHandler from '../backend/api/handlers/upload/media.js';
 import careerApplicationHandler from '../backend/api/handlers/careers/application.js';
 import careerCvHandler from '../backend/api/handlers/careers/cv.js';
 import careerStatusHandler from '../backend/api/handlers/careers/status.js';
+import productReviewsHandler from '../backend/api/handlers/productReviews.js';
 import bookingSlipHandler from '../backend/api/handlers/bookingSlip.js';
 import adminLoginHandler from '../backend/api/handlers/admin/auth/login.js';
 import adminLogoutHandler from '../backend/api/handlers/admin/auth/logout.js';
@@ -20,7 +21,6 @@ import orderConfirmationsHandler from '../backend/api/handlers/orderConfirmation
 import accountCheckHandler from '../backend/api/handlers/accountCheck.js';
 import accountRecoveryHandler from '../backend/api/handlers/accountRecovery.js';
 import seasonalThemeHandler from '../backend/api/handlers/seasonalTheme.js';
-import ssoHandler from '../backend/api/handlers/sso.js';
 import firebaseAuthProxy from '../backend/api/handlers/firebaseAuthProxy.js';
 import { isFromThisSite } from '../backend/security/sameSite.js';
 import pageShellHandler, { sendNotFoundPage } from '../backend/api/handlers/pageShell.js';
@@ -116,7 +116,7 @@ function isBrowserPageRequest(req: ApiRequest): boolean {
 // Data APIs used only by the website itself.
 // Images under /api/public/media/ stay public so link previews and image search work.
 // '/api/account/check' reveals whether an account exists, so only this site's pages may ask.
-const SITE_ONLY_API_PREFIXES = ['/api/public/snapshot', '/api/database', '/api/data/', '/api/analytics', '/api/account/check', '/api/account/recovery'];
+const SITE_ONLY_API_PREFIXES = ['/api/public/snapshot', '/api/database', '/api/data/', '/api/analytics', '/api/account/check', '/api/account/recovery', '/api/product-reviews'];
 
 
 export default async function handler(req: ApiRequest, res: ServerResponse): Promise<void> {
@@ -173,22 +173,6 @@ export default async function handler(req: ApiRequest, res: ServerResponse): Pro
     await seasonalThemeHandler(req, res);
     return;
   }
-  if (pathname === '/api/sso/issue') {
-    await ssoHandler(req, res, 'issue');
-    return;
-  }
-  if (pathname === '/api/sso/exchange') {
-    await ssoHandler(req, res, 'exchange');
-    return;
-  }
-  if (pathname === '/api/sso/session') {
-    await ssoHandler(req, res, 'session');
-    return;
-  }
-  if (pathname === '/api/sso/logout') {
-    await ssoHandler(req, res, 'logout');
-    return;
-  }
   if (pathname === '/api/contact/submit' || pathname === '/api/inquiries/submit') {
     await publicEmailHandler(req, res);
     return;
@@ -233,6 +217,10 @@ export default async function handler(req: ApiRequest, res: ServerResponse): Pro
   }
   if (pathname === '/api/bookings/slip') {
     await bookingSlipHandler(req, res);
+    return;
+  }
+  if (pathname === '/api/product-reviews') {
+    await productReviewsHandler(req, res);
     return;
   }
   if (pathname === '/api/careers/status') {

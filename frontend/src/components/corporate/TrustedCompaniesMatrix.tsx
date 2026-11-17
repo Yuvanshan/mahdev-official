@@ -75,12 +75,12 @@ export const TrustedCompaniesMatrix: React.FC<TrustedCompaniesMatrixProps> = ({ 
                 <TiltCard maxTilt={5} glareEffect className="h-full">
                   <div
                     onClick={() => setSelectedCompany(company)}
-                    className="group h-full p-6 rounded-2xl bg-slate-50/80 border border-slate-200/90 hover:border-[#0052FF] hover:bg-white hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer"
+                    className="group h-full p-6 rounded-2xl bg-slate-50/80 border border-slate-200/90 hover:border-[#861F31] hover:bg-white hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer"
                   >
                     <div>
                       {/* Header: Monogram Logo & Industry Badge */}
                       <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 shadow-2xs flex items-center justify-center font-display font-bold text-slate-800 text-sm group-hover:bg-[#0052FF] group-hover:text-white group-hover:border-[#0052FF] transition-all duration-300">
+                        <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 shadow-2xs flex items-center justify-center font-display font-bold text-slate-800 text-sm group-hover:bg-[#861F31] group-hover:text-white group-hover:border-[#861F31] transition-all duration-300">
                           {company.logoUrl && company.logoUrl.trim() !== '' ? (
                             <img src={company.logoUrl} alt={company.name} className="w-8 h-8 object-contain" />
                           ) : (
@@ -92,7 +92,7 @@ export const TrustedCompaniesMatrix: React.FC<TrustedCompaniesMatrixProps> = ({ 
                         </Badge>
                       </div>
 
-                      <h3 className="font-display text-lg font-bold text-slate-900 mb-1 group-hover:text-[#0052FF] transition-colors">
+                      <h3 className="font-display text-lg font-bold text-slate-900 mb-1 group-hover:text-[#861F31] transition-colors">
                         {company.name}
                       </h3>
                       <p className="text-xs font-semibold text-blue-600 mb-3">
@@ -108,7 +108,7 @@ export const TrustedCompaniesMatrix: React.FC<TrustedCompaniesMatrixProps> = ({ 
 
                     {/* Card Footer */}
                     <div className="mt-5 pt-3 border-t border-slate-200/80 flex items-center justify-between text-xs text-slate-500">
-                      <span className="text-[11px] font-medium text-[#0052FF] group-hover:underline flex items-center gap-1">
+                      <span className="text-[11px] font-medium text-[#861F31] group-hover:underline flex items-center gap-1">
                         Partnership Scope <ExternalLink className="w-3 h-3" />
                       </span>
                       <span className="text-[10px] uppercase tracking-wider text-slate-400 font-mono">
@@ -130,7 +130,7 @@ export const TrustedCompaniesMatrix: React.FC<TrustedCompaniesMatrixProps> = ({ 
             variant="outline"
             size="sm"
             onClick={onExplorePartners}
-            className="text-xs font-semibold hover:border-[#0052FF] hover:text-[#0052FF]"
+            className="text-xs font-semibold hover:border-[#861F31] hover:text-[#861F31]"
           >
             Explore Client Case Studies & Testimonials →
           </Button>

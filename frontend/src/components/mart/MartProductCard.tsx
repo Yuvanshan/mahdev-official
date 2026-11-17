@@ -65,7 +65,7 @@ export const MartProductCard: React.FC<MartProductCardProps> = ({
               </span>
             )}
             {product.isTrending && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[#0052FF] text-white shadow-xs">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[#861F31] text-white shadow-xs">
                 TRENDING
               </span>
             )}
@@ -109,7 +109,7 @@ export const MartProductCard: React.FC<MartProductCardProps> = ({
             {/* Product Title (stable height for short and long titles) */}
             <h3
               onClick={() => onViewProduct(product)}
-              className="font-display text-sm font-bold text-slate-900 group-hover:text-[#0052FF] transition-colors leading-snug line-clamp-2 cursor-pointer min-h-[2.5rem]"
+              className="font-display text-sm font-bold text-slate-900 group-hover:text-[#861F31] transition-colors leading-snug line-clamp-2 cursor-pointer min-h-[2.5rem]"
               title={product.name}
             >
               {product.name}
@@ -167,7 +167,7 @@ export const MartProductCard: React.FC<MartProductCardProps> = ({
               e.stopPropagation();
               onViewProduct(product);
             }}
-            className="p-2.5 sm:px-3 sm:py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-blue-300 text-slate-700 hover:text-[#0052FF] text-xs font-semibold transition-colors flex items-center justify-center shrink-0 min-h-[40px] cursor-pointer"
+            className="p-2.5 sm:px-3 sm:py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-blue-300 text-slate-700 hover:text-[#861F31] text-xs font-semibold transition-colors flex items-center justify-center shrink-0 min-h-[40px] cursor-pointer"
             title="View Product Details"
             aria-label="View Product Details"
           >
@@ -184,7 +184,7 @@ export const MartProductCard: React.FC<MartProductCardProps> = ({
                 ? 'bg-emerald-600 text-white shadow-emerald-500/20'
                 : !product.inStock
                 ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
-                : 'bg-[#0052FF] hover:bg-blue-700 active:bg-blue-800 text-white shadow-md shadow-blue-500/20'
+                : 'bg-[#861F31] hover:bg-blue-700 active:bg-blue-800 text-white shadow-md shadow-blue-500/20'
             }`}
           >
             {justAdded ? (

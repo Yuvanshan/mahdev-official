@@ -8,15 +8,14 @@ interface BottomNavigationProps {
   currentPath: string;
   onNavigate: (path: string) => void;
   divisionId?: DivisionSiteId;
-  isDivisionHost?: boolean;
 }
 
-export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath, onNavigate, divisionId, isDivisionHost }) => {
+export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath, onNavigate, divisionId }) => {
   const [basePath] = (currentPath ? String(currentPath) : '/').split('?');
   const normalizedPath = (basePath || '/').toLowerCase().replace(/\/$/, '') || '/';
   const isPublicRoute = !normalizedPath.startsWith('/admin');
   const divisionBasePath =
-    !isDivisionHost && divisionId && (normalizedPath === `/${divisionId}` || normalizedPath.startsWith(`/${divisionId}/`))
+    divisionId && (normalizedPath === `/${divisionId}` || normalizedPath.startsWith(`/${divisionId}/`))
       ? `/${divisionId}`
       : '';
   const divisionNavItems = divisionId
@@ -152,7 +151,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
               id={`nav-tab-${item.id}`}
               onClick={item.onClick}
               className={`relative flex-1 min-w-0 flex flex-col items-center justify-center py-1.5 px-0.5 rounded-full transition-all duration-200 cursor-pointer select-none touch-manipulation active:scale-95 ${
-                active ? 'font-semibold text-[#0052FF]' : 'text-slate-500 hover:text-slate-900'
+                active ? 'font-semibold text-[#861F31]' : 'text-slate-500 hover:text-slate-900'
               }`}
               aria-label={item.label}
               aria-current={active ? (divisionNavItems ? 'location' : 'page') : undefined}
@@ -168,7 +167,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentPath,
               <div className="relative z-10 flex items-center justify-center">
                 <Icon
                   className={`w-4 h-4 transition-transform duration-200 ${
-                    active ? 'scale-110 text-[#0052FF]' : 'text-slate-500 group-hover:text-slate-900'
+                    active ? 'scale-110 text-[#861F31]' : 'text-slate-500 group-hover:text-slate-900'
                   }`}
                 />
               </div>

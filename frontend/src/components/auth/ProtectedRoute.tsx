@@ -67,7 +67,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
               size="md"
               fullWidth
               onClick={() => onNavigate(`/login?redirect=${encodeURIComponent(currentPath)}`)}
-              className="bg-[#0052FF] hover:bg-[#0040CC]"
+              className="bg-[#861F31] hover:bg-[#861F31]"
             >
               Sign In to Continue
               <ArrowRight className="w-4 h-4 ml-2" />

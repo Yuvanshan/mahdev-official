@@ -523,7 +523,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
           </section>
 
           {/* 8. CALL TO ACTION SECTION */}
-          <section className="py-20 sm:py-24 bg-gradient-to-br from-[#06102B] via-[#0A1B44] to-[#06102B] text-white">
+          <section className="py-20 sm:py-24 bg-gradient-to-br from-[#2A0810] via-[#2A0810] to-[#2A0810] text-white">
             <div className="max-w-5xl mx-auto px-[var(--page-gutter)] text-center space-y-6">
               <ScrollReveal direction="up">
                 <span className="inline-block px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 font-mono text-xs font-bold uppercase tracking-wider border border-blue-400/30">

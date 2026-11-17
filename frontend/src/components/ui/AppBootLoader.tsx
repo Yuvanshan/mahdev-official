@@ -39,7 +39,7 @@ export const AppBootLoader: React.FC<AppBootLoaderProps> = ({
       name: 'SWS Event Management',
       shortName: 'Events & Galas',
       icon: CalendarHeart,
-      color: '#0052FF',
+      color: '#861F31',
       badge: 'Primary Division',
       statusText: 'Connecting stage design & event production pipelines...',
     },
@@ -57,7 +57,7 @@ export const AppBootLoader: React.FC<AppBootLoaderProps> = ({
       name: 'IT & Cloud Solutions',
       shortName: 'Tech & Engineering',
       icon: Code2,
-      color: '#2563EB',
+      color: '#6E1727',
       badge: 'Cloud & AI Systems',
       statusText: 'Initializing cloud infrastructure, APIs & portals...',
     },
@@ -102,12 +102,12 @@ export const AppBootLoader: React.FC<AppBootLoaderProps> = ({
   return (
     <div
       id="app-boot-loader"
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#FAF9F6] text-slate-900 select-none px-4 overflow-hidden"
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#FAF6EF] text-slate-900 select-none px-4 overflow-hidden"
       role="status"
       aria-label="Loading application"
     >
       {/* Ambient background glow nodes */}
-      <div className="absolute w-[500px] h-[500px] rounded-full bg-[#0052FF]/12 blur-[130px] pointer-events-none -top-32 -left-32 animate-pulse" />
+      <div className="absolute w-[500px] h-[500px] rounded-full bg-[#861F31]/12 blur-[130px] pointer-events-none -top-32 -left-32 animate-pulse" />
       <div
         className="absolute w-[500px] h-[500px] rounded-full bg-cyan-400/10 blur-[130px] pointer-events-none -bottom-32 -right-32 animate-pulse"
         style={{ animationDuration: '4s' }}
@@ -115,7 +115,7 @@ export const AppBootLoader: React.FC<AppBootLoaderProps> = ({
 
       <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
         style={{
-          backgroundImage: 'radial-gradient(#0f172a 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(#240E14 1px, transparent 1px)',
           backgroundSize: '24px 24px',
         }}
       />
@@ -145,7 +145,7 @@ export const AppBootLoader: React.FC<AppBootLoaderProps> = ({
               <button
                 type="button"
                 onClick={onRetry}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#0052FF] hover:bg-[#0045D8] text-white text-xs font-bold shadow-lg shadow-blue-500/25 transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#861F31] hover:bg-[#861F31] text-white text-xs font-bold shadow-lg shadow-blue-500/25 transition-all cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Retry Connection</span>
@@ -168,10 +168,10 @@ export const AppBootLoader: React.FC<AppBootLoaderProps> = ({
           >
             {/* Monogram Brand Header using PNG Asset */}
             <div className="relative mb-6 flex items-center justify-center">
-              <div className="absolute -inset-6 rounded-full bg-[#0052FF]/20 blur-2xl animate-pulse" />
+              <div className="absolute -inset-6 rounded-full bg-[#861F31]/20 blur-2xl animate-pulse" />
 
               <div
-                className="absolute -inset-4 rounded-full border border-blue-500/20 border-t-[#0052FF] border-r-blue-400 animate-spin"
+                className="absolute -inset-4 rounded-full border border-blue-500/20 border-t-[#861F31] border-r-blue-400 animate-spin"
                 style={{ animationDuration: '3.5s' }}
               />
               <div
@@ -192,7 +192,7 @@ export const AppBootLoader: React.FC<AppBootLoaderProps> = ({
             </div>
 
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold tracking-wider mb-3">
-              <span className="w-2 h-2 rounded-full bg-[#0052FF] animate-ping" />
+              <span className="w-2 h-2 rounded-full bg-[#861F31] animate-ping" />
               <span>Mahdev Enterprise Group</span>
               <Sparkles className="w-3.5 h-3.5 text-blue-500" />
             </div>
@@ -230,7 +230,7 @@ export const AppBootLoader: React.FC<AppBootLoaderProps> = ({
                     key={div.id}
                     className={`relative flex flex-col items-center gap-1.5 p-2.5 sm:p-3 rounded-2xl border transition-all duration-300 ${
                       isActive
-                        ? 'bg-blue-50 border-[#0052FF] text-slate-900 shadow-lg shadow-blue-500/10 scale-105 ring-2 ring-blue-500/20'
+                        ? 'bg-blue-50 border-[#861F31] text-slate-900 shadow-lg shadow-blue-500/10 scale-105 ring-2 ring-blue-500/20'
                         : isPassed
                         ? 'bg-slate-100 border-slate-200 text-slate-700'
                         : 'bg-white/70 border-slate-200 text-slate-500'
@@ -238,13 +238,13 @@ export const AppBootLoader: React.FC<AppBootLoaderProps> = ({
                   >
                     {/* Active highlight corner dot */}
                     {isActive && (
-                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#0052FF] animate-ping" />
+                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#861F31] animate-ping" />
                     )}
 
                     <div
                       className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center transition-colors ${
                         isActive
-                          ? 'bg-[#0052FF] text-white shadow-md'
+                          ? 'bg-[#861F31] text-white shadow-md'
                           : isPassed
                           ? 'bg-slate-200 text-blue-600'
                           : 'bg-slate-100 text-slate-400'
@@ -264,7 +264,7 @@ export const AppBootLoader: React.FC<AppBootLoaderProps> = ({
             {/* Clean Glowing Progress Line (No generic shimmer) */}
             <div className="w-64 sm:w-80 h-1.5 bg-slate-200 rounded-full overflow-hidden relative border border-slate-200 mb-6">
               <div
-                className="h-full bg-gradient-to-r from-blue-600 via-[#0052FF] to-cyan-400 rounded-full transition-all duration-300"
+                className="h-full bg-gradient-to-r from-blue-600 via-[#861F31] to-cyan-400 rounded-full transition-all duration-300"
                 style={{ width: `${resolvedProgress}%` }}
               />
             </div>
@@ -275,7 +275,7 @@ export const AppBootLoader: React.FC<AppBootLoaderProps> = ({
             </div>
 
             <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500 font-medium">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#0052FF]" />
+              <ShieldCheck className="w-3.5 h-3.5 text-[#861F31]" />
               <span>Secure Enterprise Network Stream</span>
             </div>
           </motion.div>

@@ -392,7 +392,7 @@ async function sendLink(body: Record<string, unknown>): Promise<Record<string, u
   const message = linkMessage(data);
   const html = `<div style="font-family:Arial,sans-serif;font-size:15px;color:#0f172a;line-height:1.6">${
     escapeHtml(message).replace(/\n/g, '<br>')
-  }<p><a href="${escapeHtml(shareUrl(data))}" style="display:inline-block;background:#0052FF;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Review &amp; confirm my order</a></p></div>`;
+  }<p><a href="${escapeHtml(shareUrl(data))}" style="display:inline-block;background:#861F31;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Review &amp; confirm my order</a></p></div>`;
   const sent = await sendCustomerEmail({
     to: String(data.customerEmail),
     subject: `Please confirm your order: ${data.title}`,
@@ -597,7 +597,7 @@ ${image && /^https?:\/\//.test(image) ? `<img src="${escapeHtml(image)}" alt="Yo
 <table style="width:100%;border-collapse:collapse;margin:12px 0"><thead><tr style="background:#f1f5f9"><th style="padding:8px;text-align:left">Item</th><th style="padding:8px">Qty</th><th style="padding:8px;text-align:right">Amount</th></tr></thead><tbody>${rows}</tbody></table>
 <p style="text-align:right;font-size:16px"><strong>Total: ${formatLkr(total)}</strong>${advance ? `<br><span style="font-size:13px">Advance to reserve the date: ${formatLkr(advance)}</span>` : ''}</p>
 <p style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;font-size:13px">${bankLines().map(escapeHtml).join('<br>')}</p>
-<p><a href="${escapeHtml(accountUrl)}" style="display:inline-block;background:#0052FF;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Track my booking &amp; invoice</a></p>
+<p><a href="${escapeHtml(accountUrl)}" style="display:inline-block;background:#861F31;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Track my booking &amp; invoice</a></p>
 <p style="color:#64748b;font-size:12px">${signature(divisionName).map(escapeHtml).join('<br>')}</p></div>`;
   return { text: textBody, html };
 }

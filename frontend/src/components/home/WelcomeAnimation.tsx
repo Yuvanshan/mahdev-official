@@ -115,18 +115,18 @@ export const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({ onComplete }
           animate={{ opacity: 1 }}
           exit={{ opacity: 0, y: -20, filter: 'blur(8px)' }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-[#070D18] text-white px-4 sm:px-6 select-none overflow-hidden"
+          className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-[#2A0810] text-white px-4 sm:px-6 select-none overflow-hidden"
           role="dialog"
           aria-label="Welcome to Mahdev Pvt Ltd"
         >
           {/* Subtle Ambient Radial Glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] sm:w-[800px] sm:h-[800px] bg-gradient-to-tr from-[#0052FF]/20 via-[#0052FF]/10 to-transparent blur-3xl rounded-full pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] sm:w-[800px] sm:h-[800px] bg-gradient-to-tr from-[#861F31]/20 via-[#861F31]/10 to-transparent blur-3xl rounded-full pointer-events-none" />
           <div className="absolute inset-0 bg-[radial-gradient(#ffffff08_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none opacity-40" />
 
           {/* Top Header Bar with Skip Button */}
           <div className="absolute top-6 left-0 right-0 px-6 sm:px-10 flex items-center justify-between z-10">
             <div className="flex items-center gap-2 text-xs font-semibold tracking-widest text-slate-400 uppercase">
-              <span className="w-2 h-2 rounded-full bg-[#0052FF] animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-[#861F31] animate-pulse" />
               <span>Official Portal</span>
             </div>
 
@@ -171,7 +171,7 @@ export const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({ onComplete }
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-400/20 text-[#60A5FA] text-xs font-semibold tracking-wider uppercase mb-3"
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-400/20 text-[#DFC070] text-xs font-semibold tracking-wider uppercase mb-3"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Multi-Division Enterprise Group</span>
@@ -238,7 +238,7 @@ export const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({ onComplete }
 
               <button
                 onClick={handleDismiss}
-                className="w-full py-2.5 px-5 rounded-xl bg-gradient-to-r from-[#0052FF] to-[#0040CC] hover:from-[#0047E0] hover:to-[#0035A8] text-white text-xs sm:text-sm font-semibold tracking-wide shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-2.5 px-5 rounded-xl bg-gradient-to-r from-[#861F31] to-[#861F31] hover:from-[#861F31] hover:to-[#571220] text-white text-xs sm:text-sm font-semibold tracking-wide shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Explore Mahdev</span>
                 <ArrowRight className="w-4 h-4" />

@@ -25,7 +25,7 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyles =
-    'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0052FF] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap active:scale-[0.98] select-none cursor-pointer';
+    'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#861F31] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap active:scale-[0.98] select-none cursor-pointer';
 
   const sizeStyles: Record<ButtonSize, string> = {
     sm: 'text-xs px-3 py-1.5 min-h-[36px] gap-1.5',
@@ -35,15 +35,15 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variantStyles: Record<ButtonVariant, string> = {
     primary:
-      'bg-[#0052FF] bg-gradient-to-r from-[#0052FF] to-[#003BB3] hover:from-[#0045D8] hover:to-[#002B99] text-white shadow-sm hover:shadow-md hover:shadow-blue-600/20 border border-[#0052FF]',
+      'bg-[#861F31] bg-gradient-to-r from-[#861F31] to-[#6E1727] hover:from-[#861F31] hover:to-[#571220] text-white shadow-sm hover:shadow-md hover:shadow-blue-600/20 border border-[#861F31]',
     electric:
-      'bg-gradient-to-r from-[#0052FF] via-[#0066FF] to-[#00D2FF] text-white hover:opacity-95 shadow-md shadow-blue-500/25 border border-transparent',
+      'bg-gradient-to-r from-[#861F31] via-[#A8434F] to-[#DFC070] text-white hover:opacity-95 shadow-md shadow-blue-500/25 border border-transparent',
     secondary:
-      'bg-blue-50 text-[#0052FF] hover:bg-blue-100/80 border border-blue-200/80',
+      'bg-blue-50 text-[#861F31] hover:bg-blue-100/80 border border-blue-200/80',
     outline:
-      'bg-transparent text-[#0052FF] hover:bg-blue-50/60 border border-blue-300 hover:border-[#0052FF]',
+      'bg-transparent text-[#861F31] hover:bg-blue-50/60 border border-blue-300 hover:border-[#861F31]',
     ghost:
-      'bg-transparent text-slate-700 hover:text-[#0052FF] hover:bg-blue-50/60 border border-transparent',
+      'bg-transparent text-slate-700 hover:text-[#861F31] hover:bg-blue-50/60 border border-transparent',
     danger:
       'bg-red-600 text-white hover:bg-red-700 shadow-sm border border-red-600 hover:border-red-700',
     destructive:

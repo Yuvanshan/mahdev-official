@@ -74,7 +74,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     name: 'Mahdev Enterprise',
     shortName: 'Mahdev',
     badge: 'Enterprise Capability',
-    accentColor: '#0052FF',
+    accentColor: '#861F31',
     route: `/${effectiveDivisionId}`,
   };
 

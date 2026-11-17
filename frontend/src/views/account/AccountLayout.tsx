@@ -255,7 +255,7 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
           initial={reduceMotion ? false : { opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#061033] via-[#0b1f5c] to-[#0052FF] p-5 text-white shadow-xl shadow-blue-900/15 sm:p-7"
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#2A0810] via-[#2A0810] to-[#861F31] p-5 text-white shadow-xl shadow-blue-900/15 sm:p-7"
         >
           <motion.div
             aria-hidden="true"
@@ -336,7 +336,7 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
                   {isActive && (
                     <motion.span
                       layoutId="account-tab-pill-mobile"
-                      className="absolute inset-0 rounded-xl bg-[#0052FF] shadow-md shadow-blue-500/25"
+                      className="absolute inset-0 rounded-xl bg-[#861F31] shadow-md shadow-blue-500/25"
                       transition={{ type: 'spring', stiffness: 420, damping: 34 }}
                     />
                   )}
@@ -371,7 +371,7 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
                     {isActive && (
                       <motion.span
                         layoutId="account-tab-pill-desktop"
-                        className="absolute inset-0 rounded-xl bg-[#0052FF] shadow-md shadow-blue-500/20"
+                        className="absolute inset-0 rounded-xl bg-[#861F31] shadow-md shadow-blue-500/20"
                         transition={{ type: 'spring', stiffness: 420, damping: 34 }}
                       />
                     )}

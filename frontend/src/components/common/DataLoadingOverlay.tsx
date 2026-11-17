@@ -33,7 +33,7 @@ export const DataLoadingOverlay: React.FC<DataLoadingOverlayProps> = ({
           <div className={`relative w-14 h-14 rounded-full ${dark ? 'bg-blue-950/80' : 'bg-blue-50'} flex items-center justify-center`}>
             <div className={`absolute inset-0 rounded-full border-[3px] ${ringClass} animate-spin [animation-duration:1.5s]`} />
             <div className={`absolute inset-2 rounded-full border border-dashed ${dark ? 'border-blue-300/60' : 'border-blue-200'} animate-pulse`} />
-            <div className={`absolute top-1.5 right-2 h-2.5 w-2.5 rounded-full ${dark ? 'bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.9)]' : 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.75)]'}`} />
+            <div className={`absolute top-1.5 right-2 h-2.5 w-2.5 rounded-full ${dark ? 'bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.9)]' : 'bg-blue-500 shadow-[0_0_10px_rgba(134,31,49,0.75)]'}`} />
             <Sparkles className={`relative z-10 w-5 h-5 ${dark ? 'text-blue-300' : 'text-blue-600'}`} />
           </div>
           <div>

@@ -33,6 +33,7 @@ import {
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { SEOHead } from '../components/layout/SEOHead';
+import { ProgressSteps } from '../components/shop/ProgressSteps';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { analyticsService } from '../services/analyticsService';
 import { formatCurrency, formatLKR } from '../utils/currency';
@@ -334,6 +335,9 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
       />
 
       <div className="max-w-6xl mx-auto">
+        <div className="mx-auto mb-6 max-w-2xl rounded-sm border border-slate-200 bg-white px-4 py-4 shadow-sm">
+          <ProgressSteps label="Checkout progress" steps={['Cart', 'Details & payment', 'Confirmation']} current={1} />
+        </div>
         {/* Header Breadcrumb */}
         <div className="mb-6 flex items-center justify-between">
           <button
@@ -518,7 +522,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                             onClick={() => setSelectedMethodId(method.id)}
                             className={`p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
                               isSelected
-                                ? 'border-[#0052FF] bg-blue-50/50 shadow-xs'
+                                ? 'border-[#861F31] bg-blue-50/50 shadow-xs'
                                 : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'
                             }`}
                           >
@@ -935,7 +939,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
 
                   <div className="flex justify-between text-base font-bold text-slate-900 pt-2 border-t border-slate-200">
                     <span>Total Payable</span>
-                    <span className="font-mono text-lg text-[#0052FF]">
+                    <span className="font-mono text-lg text-[#861F31]">
                       {formatCurrency(finalTotal, 'LKR')}
                     </span>
                   </div>

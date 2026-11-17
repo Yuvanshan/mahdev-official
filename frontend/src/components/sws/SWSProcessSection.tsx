@@ -66,7 +66,7 @@ export const SWSProcessSection: React.FC = () => {
                 <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-200 flex items-center justify-center group-hover:scale-110 transition-transform">
                   {step.icon}
                 </div>
-                <span className="font-mono text-2xl font-black text-slate-300 group-hover:text-[#0052FF] transition-colors">
+                <span className="font-mono text-2xl font-black text-slate-300 group-hover:text-[#861F31] transition-colors">
                   {step.number}
                 </span>
               </div>

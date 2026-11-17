@@ -1,5 +1,4 @@
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
-import { getDivisionSiteForHost } from '../config/divisionSites';
 import { isAdminPortalPath } from '../config/adminRoutes';
 type Gtag = (...args: unknown[]) => void;
 interface MetaPixel {
@@ -41,8 +40,7 @@ function hasTrackingOptOut(): boolean {
 
 function isAllowedMarketingHost(): boolean {
   if (typeof window === 'undefined' || isAdminPortalPath(window.location.pathname)) return false;
-  return window.location.hostname === MARKETING_SITE_HOST ||
-    Boolean(getDivisionSiteForHost(window.location.hostname));
+  return window.location.hostname === MARKETING_SITE_HOST;
 }
 
 function loadGoogleTagManager(): void {

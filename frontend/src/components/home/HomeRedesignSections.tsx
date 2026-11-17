@@ -139,7 +139,7 @@ const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ on
               type="button"
               className={`home-occasion${index === 0 ? ' home-occasion--feature' : ''}${index === 7 ? ' home-occasion--wide' : ''}`}
               key={`${occasion.name}-${occasion.image}`}
-              style={{ backgroundImage: `linear-gradient(180deg, transparent 34%, rgba(14,20,36,.72)), url("${occasion.image}")` }}
+              style={{ backgroundImage: `linear-gradient(180deg, transparent 34%, rgba(42,8,16,.72)), url("${occasion.image}")` }}
               onClick={() => {
                 onNavigate(`/sws?category=${encodeURIComponent(occasion.filterTerm)}`);
               }}

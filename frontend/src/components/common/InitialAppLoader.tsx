@@ -49,14 +49,14 @@ export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, scale: 1.015 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed inset-0 z-[100] bg-[#FAF9F6] flex flex-col items-center justify-between p-6 sm:p-10 select-none antialiased overflow-hidden"
+      className="fixed inset-0 z-[100] bg-[#FAF6EF] flex flex-col items-center justify-between p-6 sm:p-10 select-none antialiased overflow-hidden"
     >
       {/* Subtle, soft ambient background illumination */}
       <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
         <div
           className="w-[480px] h-[480px] rounded-full opacity-40 blur-[120px] pointer-events-none"
           style={{
-            background: 'radial-gradient(circle, rgba(0,82,255,0.12) 0%, rgba(0,210,255,0.04) 60%, transparent 80%)',
+            background: 'radial-gradient(circle, rgba(134,31,49,0.12) 0%, rgba(201,162,74,0.04) 60%, transparent 80%)',
           }}
         />
       </div>

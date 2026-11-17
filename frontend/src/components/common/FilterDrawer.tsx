@@ -83,7 +83,7 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
           >
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
               <div className="flex items-center gap-2">
-                <SlidersHorizontal className="h-4 w-4 text-[#0052FF]" />
+                <SlidersHorizontal className="h-4 w-4 text-[#861F31]" />
                 <h2 id="filter-drawer-title" className="font-display text-lg font-bold text-slate-900">Filters</h2>
               </div>
               <button
@@ -112,7 +112,7 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
                         selected ? 'bg-white shadow-sm ring-1 ring-slate-200' : 'hover:bg-white/70'
                       }`}
                     >
-                      <span className={`inline-flex items-center gap-1.5 text-xs font-bold ${selected ? 'text-[#0052FF]' : 'text-slate-700'}`}>
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-bold ${selected ? 'text-[#861F31]' : 'text-slate-700'}`}>
                         {panel.icon}
                         {panel.label}
                       </span>
@@ -142,7 +142,7 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 rounded-xl bg-[#0052FF] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700"
+                className="flex-1 rounded-xl bg-[#861F31] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700"
               >
                 Show {resultCount} {resultCount === 1 ? 'result' : 'results'}
               </button>
@@ -202,10 +202,10 @@ export const FilterOptionRow: React.FC<{
       <span
         aria-hidden="true"
         className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
-          selected ? 'border-[#0052FF]' : 'border-slate-300'
+          selected ? 'border-[#861F31]' : 'border-slate-300'
         }`}
       >
-        {selected && <span className="h-2 w-2 rounded-full bg-[#0052FF]" />}
+        {selected && <span className="h-2 w-2 rounded-full bg-[#861F31]" />}
       </span>
       {icon}
       <span className="truncate">{label}</span>

@@ -70,7 +70,7 @@ export const TravelsDayToursSection: React.FC<TravelsDayToursSectionProps> = ({
       {/* Header */}
       <div className="max-w-3xl mb-12">
         <ScrollReveal direction="up">
-          <Caption className="text-[#0052FF] mb-2 block font-mono">
+          <Caption className="text-[#861F31] mb-2 block font-mono">
             Single-Day Guided Excursions
           </Caption>
           <H2 className="text-slate-900">
@@ -105,7 +105,7 @@ export const TravelsDayToursSection: React.FC<TravelsDayToursSectionProps> = ({
               </div>
 
               <div className="p-5 space-y-3">
-                <h3 className="font-display text-sm font-bold text-slate-900 group-hover:text-[#0052FF] transition-colors leading-snug">
+                <h3 className="font-display text-sm font-bold text-slate-900 group-hover:text-[#861F31] transition-colors leading-snug">
                   {tour.title}
                 </h3>
                 <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
@@ -128,7 +128,7 @@ export const TravelsDayToursSection: React.FC<TravelsDayToursSectionProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => onBookDayTour(tour)}
-                className="w-full text-xs hover:border-[#0052FF] hover:text-[#0052FF]"
+                className="w-full text-xs hover:border-[#861F31] hover:text-[#861F31]"
               >
                 Book Day Tour
               </Button>

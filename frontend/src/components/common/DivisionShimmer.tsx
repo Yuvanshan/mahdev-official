@@ -11,7 +11,7 @@ export const DivisionShimmer: React.FC<DivisionShimmerProps> = ({
   divisionName = 'Enterprise Division',
 }) => {
   return (
-    <div className="w-full min-h-screen bg-[#FAF9F6] flex flex-col">
+    <div className="w-full min-h-screen bg-[#FAF6EF] flex flex-col">
       {/* Hero Skeleton */}
       <section className="relative w-full min-h-[80vh] flex items-center bg-slate-950 overflow-hidden">
         {/* Shimmer pulse background */}

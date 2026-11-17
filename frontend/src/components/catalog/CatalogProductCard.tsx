@@ -15,9 +15,11 @@ import {
   Infinity as InfinityIcon,
   XCircle,
   Check,
+  Heart,
 } from 'lucide-react';
 import { CatalogProduct, ProductType, StockStatus } from '../../types/catalog';
 import { useCart } from '../../context/CartContext';
+import { useWishlist } from '../../context/WishlistContext';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 import { formatCurrency } from '../../utils/currency';
 import { getRecordImageAlt } from '../../config/imageAlt';
@@ -34,6 +36,8 @@ export const CatalogProductCard: React.FC<CatalogProductCardProps> = ({
   onAddToCart,
 }) => {
   const { addToCart } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  const saved = isInWishlist(product.id);
   const [addedRecently, setAddedRecently] = React.useState(false);
 
   const handleQuickAdd = (e: React.MouseEvent) => {
@@ -141,6 +145,27 @@ export const CatalogProductCard: React.FC<CatalogProductCardProps> = ({
             </span>
           )}
 
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleWishlist({
+                id: product.id,
+                name: product.name,
+                imageUrl: product.imageUrl,
+                price: product.price,
+                originalPrice: product.originalPrice,
+                currency: 'LKR',
+                href: `/catalog?search=${encodeURIComponent(product.name)}`,
+              });
+            }}
+            aria-pressed={saved}
+            aria-label={saved ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
+            className={`absolute bottom-3 right-3 z-10 rounded-full bg-white/90 p-1.5 shadow ${saved ? 'text-rose-600' : 'text-slate-400 hover:text-rose-600'}`}
+          >
+            <Heart className={`h-4 w-4 ${saved ? 'fill-current' : ''}`} />
+          </button>
+
           {/* Quick View Button Hover Overlay */}
           <div className="absolute inset-0 bg-neutral-900/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center p-4">
             <button
@@ -183,10 +208,11 @@ export const CatalogProductCard: React.FC<CatalogProductCardProps> = ({
           {/* Rating & Stock Status Row */}
           <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-100 flex-wrap">
             {product.reviewsCount > 0 && product.rating > 0 ? (
-              <div className="flex items-center gap-1 shrink-0">
-                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
-                <span className="text-xs font-bold text-neutral-800">{product.rating}</span>
-                <span className="text-[11px] text-neutral-400 font-sans">({product.reviewsCount})</span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="inline-flex items-center gap-0.5 rounded-sm bg-emerald-600 px-1.5 py-0.5 text-xs font-semibold text-white">
+                  {product.rating} <Star className="w-3 h-3 fill-current shrink-0" />
+                </span>
+                <span className="text-[11px] text-neutral-500 font-sans">({product.reviewsCount})</span>
               </div>
             ) : (
               <span className="shrink-0 text-[11px] text-neutral-400">No reviews</span>
@@ -208,6 +234,11 @@ export const CatalogProductCard: React.FC<CatalogProductCardProps> = ({
             {product.originalPrice && product.originalPrice > product.price && (
               <span className="text-xs text-neutral-400 line-through font-mono">
                 {formatCurrency(product.originalPrice, 'LKR')}
+              </span>
+            )}
+            {product.originalPrice && product.originalPrice > product.price && (
+              <span className="text-xs font-semibold text-emerald-600">
+                {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% off
               </span>
             )}
           </div>

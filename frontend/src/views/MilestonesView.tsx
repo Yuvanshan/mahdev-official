@@ -78,7 +78,7 @@ export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) =>
       <SectionContainer background="white" paddingY="xl" hasBorderBottom>
         <div className="max-w-4xl mx-auto relative">
           {/* Vertical timeline center guideline */}
-          <div className="absolute left-4 sm:left-1/2 top-4 bottom-4 w-0.5 bg-gradient-to-b from-[#0052FF] via-blue-300 to-slate-200 -translate-x-1/2" />
+          <div className="absolute left-4 sm:left-1/2 top-4 bottom-4 w-0.5 bg-gradient-to-b from-[#861F31] via-blue-300 to-slate-200 -translate-x-1/2" />
 
           <div className="space-y-12 sm:space-y-16 relative z-10">
             {displayMilestones.map((ms: any, index: number) => {
@@ -92,16 +92,16 @@ export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) =>
                     } gap-6 sm:gap-12 relative`}
                   >
                     {/* Year Marker Center Node */}
-                    <div className="absolute left-4 sm:left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-[#0052FF] text-white font-bold text-xs flex items-center justify-center shadow-md shadow-blue-500/30 ring-4 ring-white z-20">
+                    <div className="absolute left-4 sm:left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-[#861F31] text-white font-bold text-xs flex items-center justify-center shadow-md shadow-blue-500/30 ring-4 ring-white z-20">
                       {ms.year.slice(2)}
                     </div>
 
                     {/* Timeline Content Card */}
                     <div className={`w-full sm:w-[calc(50%-2rem)] pl-12 sm:pl-0 ${isEven ? 'sm:text-right' : ''}`}>
                       <TiltCard maxTilt={4} glareEffect>
-                        <div className="p-6 sm:p-7 rounded-2xl bg-slate-50 border border-slate-200 hover:border-[#0052FF] hover:bg-white hover:shadow-xl transition-all duration-300 group overflow-hidden">
+                        <div className="p-6 sm:p-7 rounded-2xl bg-slate-50 border border-slate-200 hover:border-[#861F31] hover:bg-white hover:shadow-xl transition-all duration-300 group overflow-hidden">
                           <div className={`flex items-center gap-2 mb-3 flex-wrap ${isEven ? 'sm:justify-end' : ''}`}>
-                            <span className="px-2.5 py-1 rounded-md bg-blue-100/90 text-[#0052FF] font-bold text-xs">
+                            <span className="px-2.5 py-1 rounded-md bg-blue-100/90 text-[#861F31] font-bold text-xs">
                               {ms.year}
                             </span>
                             {ms.date && (
@@ -116,12 +116,12 @@ export const MilestonesView: React.FC<MilestonesViewProps> = ({ onNavigate }) =>
                             )}
                           </div>
 
-                          <h3 className="font-display text-xl sm:text-2xl font-bold text-slate-900 mb-1 group-hover:text-[#0052FF] transition-colors">
+                          <h3 className="font-display text-xl sm:text-2xl font-bold text-slate-900 mb-1 group-hover:text-[#861F31] transition-colors">
                             {ms.title}
                           </h3>
 
                           {ms.subtitle && (
-                            <p className="text-xs font-semibold text-[#0052FF] mb-2">
+                            <p className="text-xs font-semibold text-[#861F31] mb-2">
                               {ms.subtitle}
                             </p>
                           )}

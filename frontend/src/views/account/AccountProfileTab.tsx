@@ -229,7 +229,7 @@ export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) =>
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4 }}
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#061033] via-[#0b1f5c] to-[#0052FF] p-6 text-white shadow-xl shadow-blue-900/20 sm:p-8"
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#2A0810] via-[#2A0810] to-[#861F31] p-6 text-white shadow-xl shadow-blue-900/20 sm:p-8"
       >
         <div aria-hidden="true" className="absolute -right-12 -top-12 h-48 w-48 rounded-full border border-white/10" />
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center">
@@ -439,7 +439,7 @@ export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) =>
                   checked={formData.preferences[key]}
                   onChange={(e) => setFormData({ ...formData, preferences: { ...formData.preferences, [key]: e.target.checked } })}
                 />
-                <span className="absolute inset-0 rounded-full bg-slate-300 transition-colors peer-checked:bg-[#0052FF] peer-focus-visible:ring-4 peer-focus-visible:ring-blue-600/20" />
+                <span className="absolute inset-0 rounded-full bg-slate-300 transition-colors peer-checked:bg-[#861F31] peer-focus-visible:ring-4 peer-focus-visible:ring-blue-600/20" />
                 <motion.span
                   className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow"
                   initial={false}
@@ -459,7 +459,7 @@ export const AccountProfileTab: React.FC<AccountProfileTabProps> = ({ user }) =>
               disabled={isSaving}
               whileHover={isSaving ? undefined : { y: -1 }}
               whileTap={isSaving ? undefined : { scale: 0.98 }}
-              className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-gradient-to-r from-[#0052FF] to-indigo-600 px-7 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 disabled:opacity-60"
+              className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-gradient-to-r from-[#861F31] to-indigo-600 px-7 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 disabled:opacity-60"
             >
               <Save className="h-4 w-4" /> {isSaving ? 'Saving…' : 'Save changes'}
             </motion.button>

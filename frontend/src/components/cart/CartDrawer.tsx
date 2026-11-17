@@ -41,6 +41,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
     cartSummary,
     updateQuantity,
     removeFromCart,
+    savedItems,
+    saveForLater,
+    moveToCart,
+    removeSavedItem,
     clearCart,
     appliedCoupon,
     applyCoupon,
@@ -164,7 +168,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
             <div className="w-full h-1.5 bg-blue-200 rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all duration-300 ${
-                  cartSummary.isFreeShipping ? 'bg-[#0052FF]' : 'bg-blue-600'
+                  cartSummary.isFreeShipping ? 'bg-[#861F31]' : 'bg-blue-600'
                 }`}
                 style={{ width: `${progressPercent}%` }}
               />
@@ -245,13 +249,21 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                         {item.name}
                       </h4>
                     </div>
-                    <button
-                      onClick={() => removeFromCart(item.id)}
-                      className="text-slate-400 hover:text-rose-600 transition-colors p-0.5 cursor-pointer"
-                      title="Remove item"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => saveForLater(item.id)}
+                        className="text-[10px] font-semibold uppercase tracking-wide text-blue-700 hover:underline cursor-pointer"
+                      >
+                        Save for later
+                      </button>
+                      <button
+                        onClick={() => removeFromCart(item.id)}
+                        className="text-slate-400 hover:text-rose-600 transition-colors p-0.5 cursor-pointer"
+                        title="Remove item"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Variant & Service Metadata */}
@@ -322,6 +334,31 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
               </div>
             ))
           )}
+
+          {savedItems.length > 0 && (
+            <div className="pt-4">
+              <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-700">
+                Saved for later ({savedItems.length})
+              </h3>
+              <ul className="divide-y divide-slate-100">
+                {savedItems.map((item) => (
+                  <li key={item.id} className="flex items-center gap-3 py-2">
+                    <img src={item.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg border border-slate-200 bg-slate-100 object-contain" />
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-1 text-xs font-semibold text-slate-900">{item.name}</p>
+                      <p className="text-[11px] text-slate-500">{formatCurrency(item.unitPrice, 'LKR')}</p>
+                    </div>
+                    <button onClick={() => moveToCart(item.id)} className="text-[10px] font-semibold uppercase tracking-wide text-blue-700 hover:underline cursor-pointer">
+                      Move to cart
+                    </button>
+                    <button onClick={() => removeSavedItem(item.id)} className="p-0.5 text-slate-400 hover:text-rose-600 cursor-pointer" title="Remove saved item" aria-label="Remove saved item">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* Footer Summary & Checkout */}
@@ -332,7 +369,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
               {appliedCoupon ? (
                 <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50 border border-blue-200 text-xs">
                   <div className="flex items-center gap-1.5 text-blue-900 font-medium">
-                    <Tag className="w-3.5 h-3.5 text-[#0052FF]" />
+                    <Tag className="w-3.5 h-3.5 text-[#861F31]" />
                     <span>Coupon <strong>{appliedCoupon.code}</strong> Applied</span>
                   </div>
                   <button
@@ -429,7 +466,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
 
               <div className="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-slate-200">
                 <span>Grand Total</span>
-                <span className="font-mono text-base text-[#0052FF] font-bold">
+                <span className="font-mono text-base text-[#861F31] font-bold">
                   {formatCurrency(cartSummary.grandTotal, 'LKR')}
                 </span>
               </div>
@@ -451,7 +488,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
               <button
                 type="button"
                 onClick={handleBookOnline}
-                className="w-full min-h-12 py-3 px-4 rounded-xl bg-[#0052FF] hover:bg-blue-700 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
+                className="w-full min-h-12 py-3 px-4 rounded-xl bg-[#861F31] hover:bg-blue-700 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
               >
                 <Calendar className="w-4 h-4" />
                 <span>Book online</span>
@@ -491,7 +528,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
               {SHOW_ONLINE_CHECKOUT && (
               <button
                 onClick={handleProceedToCheckout}
-                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#0052FF] to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
+                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#861F31] to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
               >
                 <span>Proceed to Checkout</span>
                 <ArrowRight className="w-4 h-4" />
@@ -510,7 +547,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                     closeCart();
                     if (onNavigate) onNavigate('/catalog');
                   }}
-                  className="font-semibold text-[#0052FF] hover:text-blue-800 cursor-pointer"
+                  className="font-semibold text-[#861F31] hover:text-blue-800 cursor-pointer"
                 >
                   Browse Products →
                 </button>

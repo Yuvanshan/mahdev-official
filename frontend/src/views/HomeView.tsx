@@ -10,6 +10,7 @@ import { DEFAULT_HOMEPAGE_SECTIONS } from '../services/firestore/settings';
 import { DynamicSectionItem } from '../types/cms';
 import { motion, useReducedMotion } from 'motion/react';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
+import { ShopHome } from '../components/shop/ShopHome';
 
 const FeaturedServicesSection = lazy(() =>
   import('../components/home/FeaturedServicesSection').then((module) => ({ default: module.FeaturedServicesSection }))
@@ -112,6 +113,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
         ogDescription={homepageConfig?.seo?.metaDescription}
       />
 
+      <ShopHome onNavigate={onNavigate} />
       <HeroSection
         onNavigate={onNavigate}
         onExploreMahdev={() => onNavigate('/services')}

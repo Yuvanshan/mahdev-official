@@ -118,7 +118,7 @@ export const AdminDivisionsView: React.FC = () => {
     route: '',
     externalUrl: '',
     logoUrl: '',
-    accentColor: '#0052FF',
+    accentColor: '#861F31',
     gradient: 'from-blue-600 to-indigo-700',
     heroHeadline: '',
     heroSubheadline: '',
@@ -359,7 +359,7 @@ export const AdminDivisionsView: React.FC = () => {
       route: '',
       externalUrl: '',
       logoUrl: '',
-      accentColor: '#0052FF',
+      accentColor: '#861F31',
       gradient: 'from-blue-600 to-indigo-700',
       heroHeadline: '',
       heroSubheadline: '',
@@ -1240,7 +1240,7 @@ export const AdminDivisionsView: React.FC = () => {
                         <div className="flex items-center gap-3">
                           <div
                             className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-white shadow-xs overflow-hidden shrink-0"
-                            style={{ backgroundColor: div.accentColor || '#0052FF' }}
+                            style={{ backgroundColor: div.accentColor || '#861F31' }}
                           >
                             {div.logoUrl ? (
                               <img

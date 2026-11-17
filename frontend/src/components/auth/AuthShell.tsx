@@ -50,7 +50,7 @@ export const AuthShell: React.FC<AuthShellProps> = ({ title, subtitle, icon, chi
       <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-10 sm:px-6 sm:py-16 lg:grid-cols-[1fr_minmax(0,30rem)] lg:px-8">
         {/* Brand panel */}
         <motion.aside {...rise(0)} className="hidden lg:block">
-          <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#061033] via-[#0b1f5c] to-[#0052FF] p-10 text-white shadow-2xl shadow-blue-900/20">
+          <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#2A0810] via-[#2A0810] to-[#861F31] p-10 text-white shadow-2xl shadow-blue-900/20">
             <div aria-hidden="true" className="absolute -right-16 -top-16 h-56 w-56 rounded-full border border-white/10" />
             <div aria-hidden="true" className="absolute -right-4 top-10 h-32 w-32 rounded-full border border-white/10" />
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-200">Mahdev account</p>

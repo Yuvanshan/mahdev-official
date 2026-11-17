@@ -121,7 +121,7 @@ export const CompleteProfileView: React.FC<CompleteProfileViewProps> = ({ onNavi
             </motion.div>
           ) : (
             <motion.form key="form" exit={{ opacity: 0 }} onSubmit={handleSubmit} noValidate className="space-y-4">
-              <div className="flex items-center gap-4 rounded-2xl bg-blue-50 p-4 text-[#0052FF]">
+              <div className="flex items-center gap-4 rounded-2xl bg-blue-50 p-4 text-[#861F31]">
                 <ProgressRing percent={livePercent} />
                 <div className="text-sm text-slate-700">
                   <p className="font-semibold text-slate-900">Your profile is {livePercent}% complete</p>

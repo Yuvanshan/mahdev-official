@@ -162,7 +162,7 @@ export const ITQuoteModal: React.FC<ITQuoteModalProps> = ({
                 <h3 className="font-display text-base sm:text-lg font-bold text-white">
                   {modalTitle}
                 </h3>
-                <Badge variant="electric" size="sm" className="bg-[#0052FF]/30 text-blue-300 font-mono text-[10px]">
+                <Badge variant="electric" size="sm" className="bg-[#861F31]/30 text-blue-300 font-mono text-[10px]">
                   IT Division
                 </Badge>
               </div>
@@ -186,7 +186,7 @@ export const ITQuoteModal: React.FC<ITQuoteModalProps> = ({
             onClick={() => setModalType('quote')}
             className={`pb-2.5 border-b-2 transition-all cursor-pointer ${
               modalType === 'quote'
-                ? 'border-[#0052FF] text-[#0052FF]'
+                ? 'border-[#861F31] text-[#861F31]'
                 : 'border-transparent text-slate-500 hover:text-slate-900'
             }`}
           >
@@ -197,7 +197,7 @@ export const ITQuoteModal: React.FC<ITQuoteModalProps> = ({
             onClick={() => setModalType('project')}
             className={`pb-2.5 border-b-2 transition-all cursor-pointer ${
               modalType === 'project'
-                ? 'border-[#0052FF] text-[#0052FF]'
+                ? 'border-[#861F31] text-[#861F31]'
                 : 'border-transparent text-slate-500 hover:text-slate-900'
             }`}
           >
@@ -208,7 +208,7 @@ export const ITQuoteModal: React.FC<ITQuoteModalProps> = ({
             onClick={() => setModalType('contact')}
             className={`pb-2.5 border-b-2 transition-all cursor-pointer ${
               modalType === 'contact'
-                ? 'border-[#0052FF] text-[#0052FF]'
+                ? 'border-[#861F31] text-[#861F31]'
                 : 'border-transparent text-slate-500 hover:text-slate-900'
             }`}
           >
@@ -238,7 +238,7 @@ export const ITQuoteModal: React.FC<ITQuoteModalProps> = ({
               <div className="max-w-md mx-auto p-4 rounded-xl bg-slate-50 border border-slate-200 text-left space-y-2 text-xs">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                   <span className="text-slate-500 font-mono">Reference Ticket:</span>
-                  <span className="font-mono font-bold text-[#0052FF]">{ticketRef}</span>
+                  <span className="font-mono font-bold text-[#861F31]">{ticketRef}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Service Track:</span>
@@ -264,7 +264,7 @@ export const ITQuoteModal: React.FC<ITQuoteModalProps> = ({
                 </div>
                 <div className="flex items-center justify-between pt-1 border-t border-slate-200/80">
                   <span className="text-slate-500">Dispatched To:</span>
-                  <span className="font-semibold text-[#0052FF]">info.mahdev.lk@gmail.com</span>
+                  <span className="font-semibold text-[#861F31]">info.mahdev.lk@gmail.com</span>
                 </div>
               </div>
 
@@ -425,7 +425,7 @@ export const ITQuoteModal: React.FC<ITQuoteModalProps> = ({
                   }}
                   className={`p-4 rounded-xl border-2 border-dashed text-center transition-all cursor-pointer ${
                     isDragging
-                      ? 'border-[#0052FF] bg-blue-50/50'
+                      ? 'border-[#861F31] bg-blue-50/50'
                       : 'border-slate-300 hover:border-slate-400 bg-slate-50/50'
                   }`}
                   onClick={() => {

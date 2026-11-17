@@ -40,7 +40,7 @@ export const ITArchitectureSection: React.FC = () => {
     {
       title: 'Zero-Downtime CI/CD Deployments',
       desc: 'Automated blue/green or rolling Kubernetes deployments with canary analysis and instant automated rollback if error rates exceed 0.01%.',
-      icon: <GitBranch className="w-5 h-5 text-[#0052FF]" />,
+      icon: <GitBranch className="w-5 h-5 text-[#861F31]" />,
       badge: 'Zero-Downtime Rollouts',
     },
   ];
@@ -69,7 +69,7 @@ export const ITArchitectureSection: React.FC = () => {
       {/* Section Header */}
       <div className="max-w-3xl mb-12">
         <ScrollReveal direction="up">
-          <Caption className="text-[#0052FF] mb-2 block font-mono">
+          <Caption className="text-[#861F31] mb-2 block font-mono">
             Architectural Philosophy & Standards
           </Caption>
           <H2 className="text-slate-900">
@@ -126,7 +126,7 @@ export const ITArchitectureSection: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {techMatrix.map((matrix, mIdx) => (
             <div key={mIdx} className="space-y-3">
-              <div className="text-xs font-mono font-bold text-[#60A5FA] uppercase tracking-wider">
+              <div className="text-xs font-mono font-bold text-[#DFC070] uppercase tracking-wider">
                 {matrix.category}
               </div>
               <div className="flex flex-wrap gap-1.5">

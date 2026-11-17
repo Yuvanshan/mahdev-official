@@ -152,7 +152,7 @@ export const AuthActionView: React.FC<AuthActionViewProps> = ({ onNavigate }) =>
             <button
               type="button"
               onClick={() => onNavigate(nextPath)}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0052FF] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#861F31] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
             >
               {nextLabel} <ArrowRight className="h-4 w-4" />
             </button>

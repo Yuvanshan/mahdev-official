@@ -358,7 +358,7 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
                     features: service.features,
                   });
                 }}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0052FF] px-3 text-xs font-semibold text-white hover:bg-blue-700 sm:min-h-12 sm:px-5 sm:text-sm"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#861F31] px-3 text-xs font-semibold text-white hover:bg-blue-700 sm:min-h-12 sm:px-5 sm:text-sm"
               >
                 <CalendarCheck className="h-4 w-4" aria-hidden="true" /> Book online
               </button>

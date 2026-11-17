@@ -152,13 +152,13 @@ export const U1PackagesSection: React.FC<U1PackagesSectionProps> = ({ onBookPack
               key={pkg.id}
               className={`rounded-2xl bg-white border transition-all duration-300 flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-xl ${
                 pkg.popular
-                  ? 'border-[#0052FF] ring-2 ring-blue-500/20 relative'
+                  ? 'border-[#861F31] ring-2 ring-blue-500/20 relative'
                   : 'border-slate-200/90 hover:border-blue-400'
               }`}
             >
               {/* Popular ribbon */}
               {pkg.popular && (
-                <div className="bg-[#0052FF] text-white text-center py-1 text-[11px] font-bold tracking-wider uppercase flex items-center justify-center gap-1.5">
+                <div className="bg-[#861F31] text-white text-center py-1 text-[11px] font-bold tracking-wider uppercase flex items-center justify-center gap-1.5">
                   <Star className="w-3 h-3 fill-current" />
                   <span>{pkg.badge || 'Signature Choice'}</span>
                 </div>
@@ -214,7 +214,7 @@ export const U1PackagesSection: React.FC<U1PackagesSectionProps> = ({ onBookPack
                     <h3 className="font-display text-lg font-bold text-slate-900 leading-snug">
                       {pkg.name}
                     </h3>
-                    <p className="text-xs text-[#0052FF] font-medium mt-0.5">{pkg.tagline}</p>
+                    <p className="text-xs text-[#861F31] font-medium mt-0.5">{pkg.tagline}</p>
                   </div>
 
                   {/* Price Block */}

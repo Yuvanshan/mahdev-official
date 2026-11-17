@@ -106,7 +106,7 @@ export const SWSPortfolioSection: React.FC<SWSPortfolioSectionProps> = ({
               onClick={() => setSelectedCase(item)}
               className={`p-4 rounded-xl transition-all cursor-pointer border ${
                 activeCase.id === item.id
-                  ? 'bg-white border-[#0052FF] shadow-md ring-2 ring-blue-500/15'
+                  ? 'bg-white border-[#861F31] shadow-md ring-2 ring-blue-500/15'
                   : 'bg-white/60 hover:bg-white border-slate-200/80 hover:border-slate-300'
               }`}
             >
@@ -122,7 +122,7 @@ export const SWSPortfolioSection: React.FC<SWSPortfolioSectionProps> = ({
                   watermarkLabel="SWS EVENT MANAGEMENT"
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#0052FF]">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#861F31]">
                     {item.eventType}
                   </div>
                   <h4 className="font-display text-sm font-bold text-slate-900 truncate">
@@ -181,7 +181,7 @@ export const SWSPortfolioSection: React.FC<SWSPortfolioSectionProps> = ({
             </div>
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400 block">Attendance</span>
-              <span className="font-semibold text-[#0052FF]">{activeCase.guestCount}</span>
+              <span className="font-semibold text-[#861F31]">{activeCase.guestCount}</span>
             </div>
           </div>
 

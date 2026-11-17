@@ -111,8 +111,8 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   return (
     <div className={`flex flex-col items-center justify-center p-12 text-center ${className}`}>
       <div className="relative mb-4 flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-[#0052FF]/20 border-t-[#0052FF] rounded-full animate-spin" />
-        <span className="absolute text-[10px] font-black text-[#0052FF] font-display">M</span>
+        <div className="w-10 h-10 border-2 border-[#861F31]/20 border-t-[#861F31] rounded-full animate-spin" />
+        <span className="absolute text-[10px] font-black text-[#861F31] font-display">M</span>
       </div>
       <p className="text-xs sm:text-sm font-semibold text-slate-700">{message}</p>
       <p className="text-[11px] text-slate-400 mt-1">Live Real-Time Updates</p>

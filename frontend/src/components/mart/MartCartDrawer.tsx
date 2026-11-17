@@ -105,7 +105,7 @@ export const MartCartDrawer: React.FC<MartCartDrawerProps> = ({
           <div className="w-full h-1.5 bg-blue-200 rounded-full overflow-hidden">
             <div
               className={`h-full transition-all duration-300 ${
-                isFreeShipping ? 'bg-emerald-500' : 'bg-[#0052FF]'
+                isFreeShipping ? 'bg-emerald-500' : 'bg-[#861F31]'
               }`}
               style={{ width: `${progressPercent}%` }}
             />
@@ -210,7 +210,7 @@ export const MartCartDrawer: React.FC<MartCartDrawerProps> = ({
               </div>
               <div className="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-slate-200">
                 <span>Total</span>
-                <span className="font-mono text-base text-[#0052FF]">
+                <span className="font-mono text-base text-[#861F31]">
                   {formatCurrency(subtotal + (isFreeShipping ? 0 : 5), 'LKR')}
                 </span>
               </div>

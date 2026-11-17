@@ -393,7 +393,7 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
                   <div className="flex justify-between text-slate-600"><span>Transport & setup</span><span className="font-mono">{formatCurrency(confirmation.deliveryFee, 'LKR')}</span></div>
                 )}
                 <div className="flex justify-between text-base font-bold text-slate-900 pt-2 border-t border-slate-200">
-                  <span>Total</span><span className="font-mono text-[#0052FF]">{formatCurrency(confirmation.total, 'LKR')}</span>
+                  <span>Total</span><span className="font-mono text-[#861F31]">{formatCurrency(confirmation.total, 'LKR')}</span>
                 </div>
                 {confirmation.advanceAmount > 0 && (
                   <div className="flex justify-between text-slate-600"><span>Advance to reserve the date</span><span className="font-mono font-bold">{formatCurrency(confirmation.advanceAmount, 'LKR')}</span></div>
@@ -478,7 +478,7 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
                 )}
                 {isAuthenticated ? (
                   <div className="grid grid-cols-2 gap-2">
-                    <button type="button" onClick={() => onNavigate('/account/bookings')} className="rounded-xl bg-[#0052FF] text-white text-sm font-semibold py-3 hover:bg-blue-700">
+                    <button type="button" onClick={() => onNavigate('/account/bookings')} className="rounded-xl bg-[#861F31] text-white text-sm font-semibold py-3 hover:bg-blue-700">
                       Track progress
                     </button>
                     <button type="button" onClick={() => onNavigate('/account/invoices')} className="rounded-xl border border-slate-300 text-slate-800 text-sm font-semibold py-3 hover:bg-slate-50 inline-flex items-center justify-center gap-1.5">
@@ -486,7 +486,7 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
                     </button>
                   </div>
                 ) : (
-                  <button type="button" onClick={() => onNavigate('/login?redirect=/account/bookings')} className="w-full rounded-xl bg-[#0052FF] text-white text-sm font-semibold py-3 hover:bg-blue-700">
+                  <button type="button" onClick={() => onNavigate('/login?redirect=/account/bookings')} className="w-full rounded-xl bg-[#861F31] text-white text-sm font-semibold py-3 hover:bg-blue-700">
                     Sign in to see your booking
                   </button>
                 )}
@@ -516,7 +516,7 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
                     <button
                       type="button"
                       onClick={() => onNavigate(`/account/complete?redirect=${encodeURIComponent(`/confirm-order/${token}`)}`)}
-                      className="w-full rounded-xl bg-[#0052FF] text-white text-sm font-semibold py-3 hover:bg-blue-700"
+                      className="w-full rounded-xl bg-[#861F31] text-white text-sm font-semibold py-3 hover:bg-blue-700"
                     >
                       Complete my details
                     </button>

@@ -44,7 +44,7 @@ export const Avatar: React.FC<AvatarProps> = ({ name, email, src, className = 'h
   );
 
   return (
-    <span className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-[#0052FF] to-indigo-600 font-bold text-white ${className}`}>
+    <span className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-[#861F31] to-indigo-600 font-bold text-white ${className}`}>
       <span className={textClassName} aria-hidden={Boolean(src && loaded && !failed)}>
         {initialsFor(name, email)}
       </span>

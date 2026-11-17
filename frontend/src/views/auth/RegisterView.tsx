@@ -203,7 +203,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate, redirect
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-[#0052FF] to-indigo-600"
+                className="h-full rounded-full bg-gradient-to-r from-[#861F31] to-indigo-600"
                 initial={false}
                 animate={{ width: step === 1 ? '50%' : '100%' }}
                 transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
@@ -484,7 +484,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate, redirect
                   whileHover={{ y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => user ? goOn(user) : onNavigate(redirectPath)}
-                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#0052FF] to-indigo-600 px-5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/30"
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#861F31] to-indigo-600 px-5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/30"
                 >
                   Go to my profile <ArrowRight className="h-4 w-4" />
                 </motion.button>

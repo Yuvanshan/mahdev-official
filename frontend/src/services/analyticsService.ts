@@ -656,9 +656,9 @@ class AnalyticsService {
     const divisionColors: Record<string, string> = {
       sws: '#B91C1C',     // Luxury Crimson
       u1: '#D97706',      // Amber Lens
-      it: '#2563EB',      // Enterprise Cobalt
+      it: '#6E1727',      // Enterprise Cobalt
       travels: '#0D9488', // Ceylon Emerald
-      mart: '#6366F1',    // Modern Indigo
+      mart: '#861F31',    // Modern Indigo
     };
 
     const divisionPerformance: DivisionAnalyticsSummary[] = DIVISION_LIST.map((div) => {
@@ -690,7 +690,7 @@ class AnalyticsService {
         divisionId: div.id,
         name: div.name,
         shortCode: div.shortName || div.id.toUpperCase(),
-        color: divisionColors[div.id] || '#2563EB',
+        color: divisionColors[div.id] || '#6E1727',
         pageViews: pViews,
         inquiries: inq,
         quoteRequests: rfp,

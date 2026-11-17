@@ -25,6 +25,7 @@ import { DIVISION_SEO } from '../config/divisionSeo';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useCart } from '../context/CartContext';
+import { ShopDivisionRows } from '../components/shop/ShopDivisionRows';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { DataLoadingOverlay } from '../components/common/DataLoadingOverlay';
 
@@ -140,6 +141,8 @@ export const MartView: React.FC<MartViewProps> = ({ onNavigate }) => {
         // Hero button opens the full Mart product catalogue.
         onExploreAll={() => onNavigate('/catalog')}
       />
+
+      <ShopDivisionRows divisionId="mart" onNavigate={onNavigate} />
 
       {/* 2. CATEGORIES SECTION */}
       <MartCategoriesSection

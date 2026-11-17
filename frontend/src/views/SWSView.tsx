@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { ShopDivisionRows } from '../components/shop/ShopDivisionRows';
 import {
   Sparkles,
   Calendar,
@@ -148,7 +149,7 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="division-experience public-editorial min-h-screen w-full flex flex-col bg-[#FAF9F6]">
+    <div className="division-experience public-editorial min-h-screen w-full flex flex-col bg-[#FAF6EF]">
       <SEOHead
         title={DIVISION_SEO.sws.title}
         description={DIVISION_SEO.sws.description}
@@ -162,6 +163,8 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
         onExploreServices={() => scrollToAnchor('services')}
         onExploreRentals={() => scrollToAnchor('rentals')}
       />
+
+      <ShopDivisionRows divisionId="sws" onNavigate={onNavigate} />
 
       {divisionLoadErrors.sws && (
         <div className="mx-auto mt-6 w-full max-w-7xl px-[var(--page-gutter)]">

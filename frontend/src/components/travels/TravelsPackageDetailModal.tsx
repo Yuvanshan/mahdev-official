@@ -58,7 +58,7 @@ export const TravelsPackageDetailModal: React.FC<TravelsPackageDetailModalProps>
                   {pkg.title}
                 </h3>
                 {pkg.badge && (
-                  <Badge variant="electric" size="sm" className="bg-[#0052FF]/30 text-blue-300 text-[10px]">
+                  <Badge variant="electric" size="sm" className="bg-[#861F31]/30 text-blue-300 text-[10px]">
                     {pkg.badge}
                   </Badge>
                 )}
@@ -101,7 +101,7 @@ export const TravelsPackageDetailModal: React.FC<TravelsPackageDetailModalProps>
                     key={idx}
                     onClick={() => setActiveGalleryIndex(idx)}
                     className={`w-20 h-14 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
-                      activeGalleryIndex === idx ? 'border-[#0052FF] scale-105' : 'border-transparent opacity-70 hover:opacity-100'
+                      activeGalleryIndex === idx ? 'border-[#861F31] scale-105' : 'border-transparent opacity-70 hover:opacity-100'
                     }`}
                   >
                     <img src={img} alt={getImageAltForPhoto(getImageAlt(pkg.title, 'travels'), idx, pkg.gallery.length)} className="w-full h-full object-cover" />
@@ -113,7 +113,7 @@ export const TravelsPackageDetailModal: React.FC<TravelsPackageDetailModalProps>
 
           {/* 2. OVERVIEW & HIGHLIGHTS */}
           <div className="space-y-3">
-            <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#0052FF]">
+            <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#861F31]">
               Expedition Overview
             </h4>
             <p className="text-sm text-slate-700 leading-relaxed">
@@ -160,7 +160,7 @@ export const TravelsPackageDetailModal: React.FC<TravelsPackageDetailModalProps>
                       className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 transition-colors cursor-pointer"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="w-8 h-8 rounded-lg bg-blue-50 text-[#0052FF] font-mono text-xs font-bold flex items-center justify-center shrink-0">
+                        <span className="w-8 h-8 rounded-lg bg-blue-50 text-[#861F31] font-mono text-xs font-bold flex items-center justify-center shrink-0">
                           D{day.day}
                         </span>
                         <div>
@@ -239,7 +239,7 @@ export const TravelsPackageDetailModal: React.FC<TravelsPackageDetailModalProps>
                 {pkg.pricingTiers.map((tier, idx) => (
                   <div key={idx} className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
                     <div className="text-xs font-bold text-slate-900">{tier.tier}</div>
-                    <div className="font-mono text-base font-bold text-[#0052FF]">{tier.price}</div>
+                    <div className="font-mono text-base font-bold text-[#861F31]">{tier.price}</div>
                     <div className="text-[11px] text-slate-500 leading-tight">{tier.description}</div>
                   </div>
                 ))}

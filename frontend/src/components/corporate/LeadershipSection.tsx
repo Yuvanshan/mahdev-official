@@ -61,7 +61,7 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({ onContactL
               <TiltCard maxTilt={6} glareEffect className="h-full">
                 <div
                   onClick={() => setSelectedMember(member)}
-                  className="group h-full rounded-2xl bg-white border border-slate-200/90 hover:border-[#0052FF] hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer"
+                  className="group h-full rounded-2xl bg-white border border-slate-200/90 hover:border-[#861F31] hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer"
                 >
                   {/* Photo & Division Header */}
                   <div>
@@ -123,7 +123,7 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({ onContactL
 
                   {/* Footer Action Strip */}
                   <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 group-hover:bg-blue-50/50 transition-colors">
-                    <span className="font-medium text-[#0052FF] inline-flex items-center gap-1">
+                    <span className="font-medium text-[#861F31] inline-flex items-center gap-1">
                       View Profile <ChevronRight className="w-3.5 h-3.5" />
                     </span>
                     <div className="flex items-center gap-2">
@@ -210,7 +210,7 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({ onContactL
                 <h3 className="font-display text-2xl font-bold text-slate-900">
                   {selectedMember.name}
                 </h3>
-                <p className="text-sm font-semibold text-[#0052FF]">
+                <p className="text-sm font-semibold text-[#861F31]">
                   {selectedMember.title}
                 </p>
                 <p className="text-xs text-slate-500">
@@ -246,7 +246,7 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({ onContactL
 
             <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="flex items-center gap-3 text-xs text-slate-600">
-                <Mail className="w-4 h-4 text-[#0052FF]" />
+                <Mail className="w-4 h-4 text-[#861F31]" />
                 <span>{selectedMember.email}</span>
               </div>
               <div className="flex items-center gap-2">
@@ -255,7 +255,7 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({ onContactL
                     href={selectedMember.linkedin}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 rounded-lg bg-slate-100 text-slate-700 hover:text-[#0052FF] hover:bg-blue-50 transition-colors"
+                    className="p-2 rounded-lg bg-slate-100 text-slate-700 hover:text-[#861F31] hover:bg-blue-50 transition-colors"
                     aria-label="LinkedIn Profile"
                   >
                     <Linkedin className="w-4 h-4" />

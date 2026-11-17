@@ -62,7 +62,7 @@ export const CompanyStorySection: React.FC<CompanyStorySectionProps> = ({ onExpl
           {COMPANY_STORY.stats.map((stat, idx) => (
             <ScrollReveal key={stat.label} direction="up" delay={idx * 0.08}>
               <TiltCard maxTilt={8} className="h-full">
-                <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/90 h-full flex flex-col justify-between hover:border-[#0052FF] hover:shadow-lg transition-all">
+                <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/90 h-full flex flex-col justify-between hover:border-[#861F31] hover:shadow-lg transition-all">
                   <div>
                     <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 block mb-2">
                       {stat.label}
@@ -71,7 +71,7 @@ export const CompanyStorySection: React.FC<CompanyStorySectionProps> = ({ onExpl
                       {stat.value}
                     </div>
                   </div>
-                  <p className="text-xs font-medium text-[#0052FF] mt-3 pt-3 border-t border-slate-200">
+                  <p className="text-xs font-medium text-[#861F31] mt-3 pt-3 border-t border-slate-200">
                     {stat.subtext}
                   </p>
                 </div>
@@ -85,7 +85,7 @@ export const CompanyStorySection: React.FC<CompanyStorySectionProps> = ({ onExpl
       <div className="mb-20">
         <ScrollReveal direction="up">
           <div className="text-center max-w-2xl mx-auto mb-10">
-            <Caption className="text-[#0052FF] mb-2 block">Guiding Principles</Caption>
+            <Caption className="text-[#861F31] mb-2 block">Guiding Principles</Caption>
             <H2 className="text-slate-900 mb-3">Vision & Mission</H2>
             <Body className="text-slate-600 text-base">
               The foundational purpose that shapes our multi-sector strategy and daily operational execution.
@@ -97,9 +97,9 @@ export const CompanyStorySection: React.FC<CompanyStorySectionProps> = ({ onExpl
           {/* Mission Card */}
           <ScrollReveal direction="up" delay={0.1}>
             <TiltCard maxTilt={6} className="h-full">
-              <div className="p-8 rounded-3xl bg-white border border-slate-200 shadow-md h-full flex flex-col justify-between hover:border-[#0052FF] transition-all">
+              <div className="p-8 rounded-3xl bg-white border border-slate-200 shadow-md h-full flex flex-col justify-between hover:border-[#861F31] transition-all">
                 <div>
-                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#0052FF] flex items-center justify-center mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#861F31] flex items-center justify-center mb-6">
                     <Target className="w-6 h-6" />
                   </div>
                   <Badge variant="electric" size="sm" className="mb-3">
@@ -119,7 +119,7 @@ export const CompanyStorySection: React.FC<CompanyStorySectionProps> = ({ onExpl
                   </span>
                   {MISSION_VISION.mission.keyPoints.map((pt, i) => (
                     <div key={i} className="flex items-start gap-2.5 text-xs text-slate-600">
-                      <CheckCircle2 className="w-4 h-4 text-[#0052FF] shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-4 h-4 text-[#861F31] shrink-0 mt-0.5" />
                       <span>{pt}</span>
                     </div>
                   ))}
@@ -168,7 +168,7 @@ export const CompanyStorySection: React.FC<CompanyStorySectionProps> = ({ onExpl
       <div>
         <ScrollReveal direction="up">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <Caption className="text-[#0052FF] mb-2 block">Our DNA</Caption>
+            <Caption className="text-[#861F31] mb-2 block">Our DNA</Caption>
             <H2 className="text-slate-900 mb-3">Core Values</H2>
             <Body className="text-slate-600 text-base">
               The five non-negotiable principles that drive our standards of workmanship, governance, and client relationships.
@@ -180,10 +180,10 @@ export const CompanyStorySection: React.FC<CompanyStorySectionProps> = ({ onExpl
           {COMPANY_VALUES.map((val, idx) => (
             <ScrollReveal key={val.id} direction="up" delay={idx * 0.07}>
               <TiltCard maxTilt={6} className="h-full">
-                <div className="p-7 rounded-2xl bg-slate-50/80 border border-slate-200/90 h-full flex flex-col justify-between hover:border-[#0052FF] hover:bg-white hover:shadow-lg transition-all duration-300 group">
+                <div className="p-7 rounded-2xl bg-slate-50/80 border border-slate-200/90 h-full flex flex-col justify-between hover:border-[#861F31] hover:bg-white hover:shadow-lg transition-all duration-300 group">
                   <div>
                     <div className="flex items-center justify-between mb-4">
-                      <div className="w-11 h-11 rounded-xl bg-blue-100 text-[#0052FF] flex items-center justify-center group-hover:bg-[#0052FF] group-hover:text-white transition-colors duration-300">
+                      <div className="w-11 h-11 rounded-xl bg-blue-100 text-[#861F31] flex items-center justify-center group-hover:bg-[#861F31] group-hover:text-white transition-colors duration-300">
                         <IconRenderer name={val.iconName} className="w-5 h-5" />
                       </div>
                       <Badge variant="outline" size="sm" className="text-slate-500 font-mono">
@@ -191,7 +191,7 @@ export const CompanyStorySection: React.FC<CompanyStorySectionProps> = ({ onExpl
                       </Badge>
                     </div>
 
-                    <h3 className="font-display text-lg font-bold text-slate-900 mb-1 group-hover:text-[#0052FF] transition-colors">
+                    <h3 className="font-display text-lg font-bold text-slate-900 mb-1 group-hover:text-[#861F31] transition-colors">
                       {val.title}
                     </h3>
                     <p className="text-xs font-semibold text-blue-600 mb-3">
@@ -203,7 +203,7 @@ export const CompanyStorySection: React.FC<CompanyStorySectionProps> = ({ onExpl
                   </div>
 
                   <div className="pt-3 border-t border-slate-200 text-xs font-medium text-slate-700 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#0052FF] shrink-0" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#861F31] shrink-0" />
                     <span>{val.commitment}</span>
                   </div>
                 </div>

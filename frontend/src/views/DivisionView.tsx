@@ -106,7 +106,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
     badge: 'Specialized Division',
     route: `/${divisionId}`,
     domainUrl: `${CANONICAL_SITE_ORIGIN}/${divisionId}`,
-    accentColor: '#0052FF',
+    accentColor: '#861F31',
     gradient: 'from-blue-600 to-indigo-700',
     heroHeadline: 'Delivering Innovation & Specialized Services',
     heroSubheadline: 'Tailored solutions and high-standard enterprise operations across Sri Lanka.',
@@ -328,7 +328,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
   };
 
   return (
-    <div className="w-full flex flex-col bg-[#FAF9F6]">
+    <div className="w-full flex flex-col bg-[#FAF6EF]">
       <SEOHead
         title={division.name}
         description={`${division.tagline} — ${division.description}`}
@@ -419,7 +419,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
                   if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }}
                 rightIcon={<ArrowRight className="w-4 h-4" />}
-                className="shadow-lg shadow-blue-600/30 font-bold px-7 py-3.5 bg-[#0052FF] hover:bg-blue-600 cursor-pointer"
+                className="shadow-lg shadow-blue-600/30 font-bold px-7 py-3.5 bg-[#861F31] hover:bg-blue-600 cursor-pointer"
               >
                 Request Consultation
               </Button>
@@ -551,15 +551,15 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
             </H2>
 
             <div className="p-5 rounded-2xl bg-blue-50/60 border border-blue-100 text-xs text-slate-700 space-y-3">
-              <div className="font-bold text-[#0052FF] flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-[#0052FF]" />
+              <div className="font-bold text-[#861F31] flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-[#861F31]" />
                 <span>Mahdev Quality SLA Guarantee</span>
               </div>
               <div className="pt-2 border-t border-blue-100/70 flex items-center justify-between">
                 <span className="text-slate-500">Official Hotline:</span>
                 <a
                   href={getTelLink(division.contactPhone || corporatePhone)}
-                  className="font-bold text-slate-900 hover:text-[#0052FF]"
+                  className="font-bold text-slate-900 hover:text-[#861F31]"
                 >
                   {division.contactPhone || corporatePhone}
                 </a>

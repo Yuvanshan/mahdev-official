@@ -153,7 +153,7 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
         <div>
           <ScrollReveal direction="up">
             <div className="flex items-center gap-2 mb-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-[#0052FF]">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-[#861F31]">
                 <Layers className="w-3.5 h-3.5" />
                 Comprehensive Rental Inventory
               </span>
@@ -224,7 +224,7 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
                 {/* Content Body */}
                 <div className="p-5 flex-1 flex flex-col justify-between">
                   <div>
-                    <h3 className="font-display text-base font-bold text-slate-900 group-hover:text-[#0052FF] transition-colors leading-snug">
+                    <h3 className="font-display text-base font-bold text-slate-900 group-hover:text-[#861F31] transition-colors leading-snug">
                       {item.name}
                     </h3>
                     <p className="text-xs text-slate-500 font-medium mt-1 mb-3 line-clamp-1">
@@ -285,7 +285,7 @@ export const SWSRentalsSection: React.FC<SWSRentalsSectionProps> = ({
       {/* Bottom Guarantee Banner */}
       <div className="mt-12 bg-white rounded-2xl border border-slate-200 p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#0052FF] flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#861F31] flex items-center justify-center shrink-0">
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>

@@ -122,6 +122,7 @@ export type AdminSectionId =
   | 'companies'
   | 'testimonials'
   | 'faqs'
+  | 'reviews'
   | 'pages'
   | 'banners'
   | 'coupons'

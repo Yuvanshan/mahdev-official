@@ -31,7 +31,7 @@ export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({ co
         >
           <div
             className={`relative flex flex-col gap-4 rounded-3xl border p-5 sm:flex-row sm:items-center sm:p-6 ${
-              urgent ? 'border-amber-200 bg-gradient-to-r from-amber-50 via-orange-50 to-white text-amber-600' : 'border-blue-100 bg-gradient-to-r from-blue-50 to-white text-[#0052FF]'
+              urgent ? 'border-amber-200 bg-gradient-to-r from-amber-50 via-orange-50 to-white text-amber-600' : 'border-blue-100 bg-gradient-to-r from-blue-50 to-white text-[#861F31]'
             }`}
           >
             <ProgressRing percent={completion.percent} size={68} />
@@ -73,7 +73,7 @@ export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({ co
               whileTap={{ scale: 0.97 }}
               onClick={() => onNavigate(urgent ? '/account/complete' : '/account/profile')}
               className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white shadow-md ${
-                urgent ? 'bg-amber-500 shadow-amber-500/25 hover:bg-amber-600' : 'bg-[#0052FF] shadow-blue-500/25 hover:bg-blue-700'
+                urgent ? 'bg-amber-500 shadow-amber-500/25 hover:bg-amber-600' : 'bg-[#861F31] shadow-blue-500/25 hover:bg-blue-700'
               }`}
             >
               {urgent ? 'Complete profile' : 'Finish profile'} <ArrowRight className="h-4 w-4" />

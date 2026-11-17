@@ -191,7 +191,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
     <SectionContainer id="contact" background="white" paddingY="xl" hasBorderBottom>
       <ScrollReveal direction="up">
         <div className="text-center max-w-2xl mx-auto mb-14">
-          <Caption className="text-[#0052FF] mb-2 block">Direct Inquiry</Caption>
+          <Caption className="text-[#861F31] mb-2 block">Direct Inquiry</Caption>
           <H2 className="text-slate-900 mb-3">Connect With Mahdev</H2>
           <Body className="text-slate-600 text-base">
             Reach out to our Colombo executive office or direct your brief to a specific division. Guaranteed 24-hour turnaround across all inquiries.
@@ -236,7 +236,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-400">Dispatched To:</span>
-                        <span className="font-bold text-[#0052FF]">info.mahdev.lk@gmail.com</span>
+                        <span className="font-bold text-[#861F31]">info.mahdev.lk@gmail.com</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-400">Response SLA:</span>
@@ -247,7 +247,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-2 max-w-md mx-auto">
                       <a
                         href={`mailto:info.mahdev.lk@gmail.com?subject=${encodeURIComponent(`[${inquiryRef}] Website Inquiry: ${formData.serviceType || formData.division}`)}&body=${encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone || 'N/A'}\nDivision: ${formData.division}\n\nMessage:\n${formData.message}`)}`}
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#0052FF] text-xs font-semibold border border-blue-200 transition-colors"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#861F31] text-xs font-semibold border border-blue-200 transition-colors"
                       >
                         <Mail className="w-3.5 h-3.5" />
                         <span>Send Direct Mail Copy</span>
@@ -513,7 +513,7 @@ export const ContactCorporateSection: React.FC<ContactCorporateSectionProps> = (
               <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200 shadow-xs space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-[#0052FF] flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-[#861F31] flex items-center justify-center">
                       <Building2 className="w-4 h-4" />
                     </div>
                     <div>

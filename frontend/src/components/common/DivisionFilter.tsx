@@ -224,7 +224,7 @@ export const DivisionFilterEmptyState: React.FC<{ label: string }> = ({ label })
     <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center" role="status">
       <p className="text-sm font-semibold text-slate-700">No {label} match your filters.</p>
       {ctx?.isActive && (
-        <button type="button" onClick={ctx.reset} className="mt-2 text-xs font-bold text-[#0052FF] hover:underline">
+        <button type="button" onClick={ctx.reset} className="mt-2 text-xs font-bold text-[#861F31] hover:underline">
           Clear filters
         </button>
       )}

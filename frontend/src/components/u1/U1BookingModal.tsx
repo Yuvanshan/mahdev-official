@@ -154,7 +154,7 @@ export const U1BookingModal: React.FC<U1BookingModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#0052FF] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#861F31] flex items-center justify-center">
               <Camera className="w-5 h-5" />
             </div>
             <div>
@@ -203,7 +203,7 @@ export const U1BookingModal: React.FC<U1BookingModalProps> = ({
               <div className="max-w-md mx-auto p-4 rounded-xl bg-slate-50 border border-slate-200 text-left space-y-2 text-xs">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                   <span className="text-slate-500">Reference ID:</span>
-                  <span className="font-mono font-bold text-[#0052FF]">{bookingRef}</span>
+                  <span className="font-mono font-bold text-[#861F31]">{bookingRef}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Selected Discipline:</span>
@@ -227,7 +227,7 @@ export const U1BookingModal: React.FC<U1BookingModalProps> = ({
                 </div>
                 <div className="flex items-center justify-between pt-1 border-t border-slate-200/80">
                   <span className="text-slate-500">Dispatched To:</span>
-                  <span className="font-semibold text-[#0052FF]">info.mahdev.lk@gmail.com</span>
+                  <span className="font-semibold text-[#861F31]">info.mahdev.lk@gmail.com</span>
                 </div>
               </div>
 
@@ -355,7 +355,7 @@ export const U1BookingModal: React.FC<U1BookingModalProps> = ({
                     }}
                     className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
                       locationType === 'studio'
-                        ? 'border-[#0052FF] bg-blue-50/40 ring-1 ring-blue-500/20'
+                        ? 'border-[#861F31] bg-blue-50/40 ring-1 ring-blue-500/20'
                         : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
                     }`}
                   >
@@ -374,7 +374,7 @@ export const U1BookingModal: React.FC<U1BookingModalProps> = ({
                     }}
                     className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
                       locationType === 'location'
-                        ? 'border-[#0052FF] bg-blue-50/40 ring-1 ring-blue-500/20'
+                        ? 'border-[#861F31] bg-blue-50/40 ring-1 ring-blue-500/20'
                         : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
                     }`}
                   >

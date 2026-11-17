@@ -109,7 +109,7 @@ export const HomeGallerySection: React.FC<HomeGallerySectionProps> = ({ onNaviga
     >
       <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div className="max-w-2xl">
-          <Caption className="mb-2 block text-[#0052FF]">Visual Showcase</Caption>
+          <Caption className="mb-2 block text-[#861F31]">Visual Showcase</Caption>
           <H2 className="font-editorial text-slate-900">Selected Work Across Every Division</H2>
         </div>
 
@@ -136,7 +136,7 @@ export const HomeGallerySection: React.FC<HomeGallerySectionProps> = ({ onNaviga
                 onClick={() => setSelectedCategory(category)}
                 className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
                   selectedCategory === category
-                    ? 'border-[#0052FF] bg-[#0052FF] text-white'
+                    ? 'border-[#861F31] bg-[#861F31] text-white'
                     : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >

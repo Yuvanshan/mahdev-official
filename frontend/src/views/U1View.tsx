@@ -103,7 +103,7 @@ export const U1View: React.FC<U1ViewProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="division-experience min-h-screen w-full flex flex-col bg-[#FAF9F6]">
+    <div className="division-experience min-h-screen w-full flex flex-col bg-[#FAF6EF]">
       <SEOHead
         title={DIVISION_SEO.u1.title}
         description={DIVISION_SEO.u1.description}

@@ -343,7 +343,7 @@ export const AccountBookingsTab: React.FC<AccountBookingsTabProps> = ({
                       <button
                         type="button"
                         onClick={() => setPaying(b)}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1e1b4b] hover:bg-[#312e81] text-white text-xs font-bold transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#3F0C17] hover:bg-[#2A0810] text-white text-xs font-bold transition-colors"
                       >
                         Pay / upload slip
                       </button>

@@ -771,7 +771,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
           <h1 className="font-display text-lg font-bold text-slate-900">Your cart is empty</h1>
           <p className="text-sm text-slate-600">Add products, services or gallery experiences to your cart, then book them online or contact our team.</p>
           <div className="grid gap-2 sm:grid-cols-3">
-            <button type="button" onClick={() => onNavigate('/catalog')} className="rounded-xl bg-[#0052FF] text-white text-sm font-semibold py-3 hover:bg-blue-700">
+            <button type="button" onClick={() => onNavigate('/catalog')} className="rounded-xl bg-[#861F31] text-white text-sm font-semibold py-3 hover:bg-blue-700">
               Products
             </button>
             <button type="button" onClick={() => onNavigate('/services')} className="rounded-xl border border-slate-300 text-slate-800 text-sm font-semibold py-3 hover:bg-slate-50">
@@ -800,7 +800,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
           <h1 className="font-display text-lg font-bold text-slate-900">This item is no longer available</h1>
           <p className="text-sm text-slate-600">It may have been removed or renamed. Browse our services and gallery to choose another.</p>
           <div className="grid grid-cols-2 gap-2 pt-2">
-            <button type="button" onClick={() => onNavigate('/services')} className="rounded-xl bg-[#0052FF] text-white text-sm font-semibold py-3 hover:bg-blue-700">
+            <button type="button" onClick={() => onNavigate('/services')} className="rounded-xl bg-[#861F31] text-white text-sm font-semibold py-3 hover:bg-blue-700">
               Services
             </button>
             <button type="button" onClick={() => onNavigate('/gallery')} className="rounded-xl border border-slate-300 text-slate-800 text-sm font-semibold py-3 hover:bg-slate-50">
@@ -939,7 +939,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
               <div className="w-full sm:w-72 space-y-1.5 text-xs">
                 <div className="flex justify-between text-base font-bold text-slate-900">
                   <span>{hasPrice ? (isProducts ? 'Estimated total' : 'Starting from') : 'Price'}</span>
-                  <span className="font-mono text-[#0052FF]">{hasPrice ? formatCurrency(estimatedTotal, 'LKR') : 'On quotation'}</span>
+                  <span className="font-mono text-[#861F31]">{hasPrice ? formatCurrency(estimatedTotal, 'LKR') : 'On quotation'}</span>
                 </div>
                 {couponDiscount > 0 && (
                   <div className="flex justify-between text-emerald-700">
@@ -1034,7 +1034,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
                   </p>
                 )}
                 <div className="grid grid-cols-2 gap-2">
-                  <button type="button" onClick={() => onNavigate('/account/bookings')} className="rounded-xl bg-[#0052FF] text-white text-sm font-semibold py-3 hover:bg-blue-700">
+                  <button type="button" onClick={() => onNavigate('/account/bookings')} className="rounded-xl bg-[#861F31] text-white text-sm font-semibold py-3 hover:bg-blue-700">
                     Track my booking
                   </button>
                   <button type="button" onClick={() => onNavigate('/')} className="rounded-xl border border-slate-300 text-slate-800 text-sm font-semibold py-3 hover:bg-slate-50">
@@ -1134,7 +1134,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
                     <button
                       type="button"
                       onClick={() => onNavigate(`/account/complete?redirect=${encodeURIComponent(onlineBookingPath(kind, itemId))}`)}
-                      className="w-full rounded-xl bg-[#0052FF] text-white text-sm font-semibold py-3 hover:bg-blue-700"
+                      className="w-full rounded-xl bg-[#861F31] text-white text-sm font-semibold py-3 hover:bg-blue-700"
                     >
                       Complete my details
                     </button>
@@ -1501,7 +1501,7 @@ const BankTransferDetails: React.FC<{ reference: string; total: number; advance:
         {advance > 0 && (
           <div className="text-right">
             <div className="text-[10px] text-slate-500">Advance ({depositPercent}%)</div>
-            <div className="font-mono text-base font-bold text-[#0052FF]">{formatCurrency(advance, 'LKR')}</div>
+            <div className="font-mono text-base font-bold text-[#861F31]">{formatCurrency(advance, 'LKR')}</div>
           </div>
         )}
       </div>

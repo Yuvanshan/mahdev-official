@@ -1,30 +1,78 @@
 @import "tailwindcss";
 
+/* Mahdev brand palette: dark maroon, gold and off-white. The default Tailwind blue,
+   slate and amber scales are remapped so every existing utility follows the brand. */
+@theme {
+  --color-blue-50: #FBF3F3; --color-blue-100: #F6E4E5; --color-blue-200: #ECC9CC;
+  --color-blue-300: #DFC070; --color-blue-400: #D4AF55; --color-blue-500: #A8434F;
+  --color-blue-600: #861F31; --color-blue-700: #6E1727; --color-blue-800: #571220;
+  --color-blue-900: #3F0C17; --color-blue-950: #2A0810;
+  --color-indigo-50: #FBF3F3; --color-indigo-100: #F6E4E5; --color-indigo-200: #ECC9CC;
+  --color-indigo-300: #DFC070; --color-indigo-400: #D4AF55; --color-indigo-500: #A8434F;
+  --color-indigo-600: #861F31; --color-indigo-700: #6E1727; --color-indigo-800: #571220;
+  --color-indigo-900: #3F0C17; --color-indigo-950: #2A0810;
+  --color-purple-50: #FBF3F3; --color-purple-100: #F6E4E5; --color-purple-200: #ECC9CC;
+  --color-purple-300: #DFC070; --color-purple-400: #D4AF55; --color-purple-500: #A8434F;
+  --color-purple-600: #861F31; --color-purple-700: #6E1727; --color-purple-800: #571220;
+  --color-purple-900: #3F0C17; --color-purple-950: #2A0810;
+  --color-violet-50: #FBF3F3; --color-violet-100: #F6E4E5; --color-violet-200: #ECC9CC;
+  --color-violet-300: #DFC070; --color-violet-400: #D4AF55; --color-violet-500: #A8434F;
+  --color-violet-600: #861F31; --color-violet-700: #6E1727; --color-violet-800: #571220;
+  --color-violet-900: #3F0C17; --color-violet-950: #2A0810;
+  --color-sky-50: #FBF3F3; --color-sky-100: #F6E4E5; --color-sky-200: #ECC9CC;
+  --color-sky-300: #DFC070; --color-sky-400: #D4AF55; --color-sky-500: #A8434F;
+  --color-sky-600: #861F31; --color-sky-700: #6E1727; --color-sky-800: #571220;
+  --color-sky-900: #3F0C17; --color-sky-950: #2A0810;
+  --color-cyan-50: #FBF3F3; --color-cyan-100: #F6E4E5; --color-cyan-200: #ECC9CC;
+  --color-cyan-300: #DFC070; --color-cyan-400: #D4AF55; --color-cyan-500: #A8434F;
+  --color-cyan-600: #861F31; --color-cyan-700: #6E1727; --color-cyan-800: #571220;
+  --color-cyan-900: #3F0C17; --color-cyan-950: #2A0810;
+
+  /* Warm neutrals tinted toward maroon, so text and borders sit well on off-white. */
+  --color-slate-50: #FAF6EF; --color-slate-100: #F3ECE1; --color-slate-200: #E6DCCD;
+  --color-slate-300: #D3C4B2; --color-slate-400: #A8958A; --color-slate-500: #7F6B67;
+  --color-slate-600: #5F4A49; --color-slate-700: #46302F; --color-slate-800: #33191E;
+  --color-slate-900: #240E14; --color-slate-950: #170509;
+
+  --color-amber-50: #FBF7EA; --color-amber-100: #F5EBC9; --color-amber-200: #EBD79A;
+  --color-amber-300: #DFC070; --color-amber-400: #D4AF55; --color-amber-500: #C9A24A;
+  --color-amber-600: #B08A34; --color-amber-700: #8C6B25; --color-amber-800: #6B511F;
+  --color-amber-900: #4D3A18; --color-amber-950: #2E220E;
+
+  --color-maroon: #861F31;
+  --color-maroon-deep: #3F0C17;
+  --color-gold: #C9A24A;
+  --color-ivory: #FAF6EF;
+}
+
 @layer base {
   :root {
-    --electric-blue: #3550E8;
-    --electric-blue-hover: #2C40C4;
-    --electric-blue-light: #7585EF;
-    --electric-blue-cyan: #B8C2FF;
-    --electric-blue-dark: #2338A8;
-    --electric-blue-deep: #161F5E;
-    --electric-blue-soft: #EEF0FF;
-    --electric-blue-subtle: #F6F7FF;
-    --purple-primary: #3550E8;
-    --purple-dark: #2338A8;
-    --purple-deep: #161F5E;
-    --purple-light: #7585EF;
-    --purple-soft: #EEF0FF;
-    --purple-subtle: #F6F7FF;
-    --surface: #FAF9F6;
+    --electric-blue: #861F31;
+    --electric-blue-hover: #6E1727;
+    --electric-blue-light: #C86F79;
+    --electric-blue-cyan: #EBD79A;
+    --electric-blue-dark: #571220;
+    --electric-blue-deep: #2A0810;
+    --electric-blue-soft: #F6E4E5;
+    --electric-blue-subtle: #FBF3F3;
+    --purple-primary: #861F31;
+    --purple-dark: #571220;
+    --purple-deep: #2A0810;
+    --purple-light: #C86F79;
+    --purple-soft: #F6E4E5;
+    --purple-subtle: #FBF3F3;
+    --gold: #C9A24A;
+    --gold-light: #EBD79A;
+    --gold-dark: #8C6B25;
+    --surface: #FAF6EF;
     --surface-card: #FFFFFF;
-    --surface-secondary: #F4F3EF;
-    --surface-tertiary: #EAE8E1;
-    --text-primary: #0A1128;
-    --text-secondary: #334155;
-    --text-muted: #64748B;
-    --border: #E2E8F0;
-    --border-subtle: #EDF2F7;
+    --surface-secondary: #F3ECE1;
+    --surface-tertiary: #E6DCCD;
+    --text-primary: #240E14;
+    --text-secondary: #46302F;
+    --text-muted: #7F6B67;
+    --border: #E6DCCD;
+    --border-subtle: #EFE7DA;
     --page-gutter: clamp(1.25rem, 2.78vw, 2.5rem);
     --content-max-width: 100vw;
   }
@@ -112,7 +160,7 @@ html[data-seasonal-theme="christmas"] {
   --electric-blue-hover: #1e40af;
   --electric-blue-dark: #10254f;
   --electric-blue-deep: #08152f;
-  --electric-blue-soft: #eff6ff;
+  --electric-blue-soft: #F6E4E5;
 }
 
 html[data-seasonal-theme="newYear"] {
@@ -139,118 +187,39 @@ html[data-seasonal-theme="diwali"] {
   --electric-blue-soft: #fff6df;
 }
 
-[data-division-site="sws"] {
-  --site-accent: #6F1D3A;
-  --site-accent-hover: #54152C;
-  --site-accent-soft: #F4E9ED;
-  --site-surface: #FBF8F2;
-  --electric-blue: #6F1D3A;
-  --electric-blue-hover: #54152C;
-  --electric-blue-dark: #3B1021;
-  --electric-blue-deep: #260A15;
-  --electric-blue-soft: #F4E9ED;
+/* Every division shares the Mahdev brand theme. */
+[data-division-site] {
+  --site-accent: #861F31;
+  --site-accent-hover: #6E1727;
+  --site-accent-soft: #F6E4E5;
+  --site-surface: #FAF6EF;
+  --electric-blue: #861F31;
+  --electric-blue-hover: #6E1727;
+  --electric-blue-dark: #571220;
+  --electric-blue-deep: #2A0810;
+  --electric-blue-soft: #F6E4E5;
   background-color: var(--site-surface);
-  color: #241820;
-}
-
-[data-division-site="u1"] {
-  --site-accent: #1F1F1F;
-  --site-accent-hover: #141414;
-  --site-accent-soft: #F1F1EF;
-  --site-surface: #FAFAF8;
-  --electric-blue: #1F1F1F;
-  --electric-blue-hover: #141414;
-  --electric-blue-dark: #262626;
-  --electric-blue-deep: #111111;
-  --electric-blue-soft: #F1F1EF;
-  background-color: var(--site-surface);
-  color: #1F1F1F;
-}
-
-[data-division-site="it"] {
-  --site-accent: #3550E8;
-  --site-accent-hover: #2C40C4;
-  --site-accent-soft: #EEF0FF;
-  --site-surface: #F8F9FF;
-  background-color: var(--site-surface);
-}
-
-[data-division-site="travels"] {
-  --site-accent: #0E6B4F;
-  --site-accent-hover: #0A513B;
-  --site-accent-soft: #E4F0EB;
-  --site-surface: #F7FAF8;
-  background-color: var(--site-surface);
-}
-
-[data-division-site="mart"] {
-  --site-accent: #9A4A12;
-  --site-accent-hover: #78380E;
-  --site-accent-soft: #FBEBDD;
-  --site-surface: #FFFAF5;
-  background-color: var(--site-surface);
-}
-
-[data-division-site="sws"] [class~="text-blue-600"],
-[data-division-site="sws"] [class~="text-blue-700"],
-[data-division-site="sws"] [class~="text-[#0052FF]"],
-[data-division-site="u1"] [class~="text-blue-600"],
-[data-division-site="u1"] [class~="text-blue-700"],
-[data-division-site="u1"] [class~="text-[#0052FF]"] {
-  color: var(--site-accent) !important;
-}
-
-[data-division-site="sws"] [class~="bg-blue-50"],
-[data-division-site="sws"] [class~="bg-blue-100"],
-[data-division-site="u1"] [class~="bg-blue-50"],
-[data-division-site="u1"] [class~="bg-blue-100"] {
-  background-color: var(--site-accent-soft) !important;
-}
-
-[data-division-site="sws"] [class~="bg-blue-600"],
-[data-division-site="sws"] [class~="bg-[#0052FF]"],
-[data-division-site="u1"] [class~="bg-blue-600"],
-[data-division-site="u1"] [class~="bg-[#0052FF]"] {
-  background-color: var(--site-accent) !important;
-}
-
-[data-division-site="sws"] [class~="border-blue-600"],
-[data-division-site="sws"] [class~="border-[#0052FF]"],
-[data-division-site="u1"] [class~="border-blue-600"],
-[data-division-site="u1"] [class~="border-[#0052FF]"] {
-  border-color: var(--site-accent) !important;
-}
-
-[data-division-site="sws"] [class~="hover:bg-blue-50"]:hover,
-[data-division-site="sws"] [class~="hover:bg-blue-100"]:hover,
-[data-division-site="u1"] [class~="hover:bg-blue-50"]:hover,
-[data-division-site="u1"] [class~="hover:bg-blue-100"]:hover {
-  background-color: var(--site-accent-soft) !important;
-}
-
-[data-division-site="sws"] [class~="hover:bg-blue-700"]:hover,
-[data-division-site="u1"] [class~="hover:bg-blue-700"]:hover {
-  background-color: var(--site-accent-hover) !important;
+  color: var(--text-primary);
 }
 
 .seasonal-preview {
   color: #172554;
-  background-color: #f8fafc;
+  background-color: #FAF6EF;
 }
 
 .seasonal-preview-default {
   color: #172554;
-  background: linear-gradient(140deg, #f8fafc, #eaf2ff);
+  background: linear-gradient(140deg, #FAF6EF, #F6E4E5);
 }
 
 .seasonal-preview-christmas {
   color: #10254f;
-  background: linear-gradient(140deg, #f8fbff, #fcebed);
+  background: linear-gradient(140deg, #F6E4E5, #fcebed);
 }
 
 .seasonal-preview-newYear {
   color: #172554;
-  background: linear-gradient(140deg, #fffdf6, #eaf2ff);
+  background: linear-gradient(140deg, #fffdf6, #F6E4E5);
 }
 
 .seasonal-preview-valentines {
@@ -366,7 +335,7 @@ html[data-seasonal-theme="diwali"] {
 .whatsapp-message-time {
   display: block;
   margin-top: 3px;
-  color: #94a3b8;
+  color: #A8958A;
   font-size: 10px;
   text-align: right;
 }
@@ -393,14 +362,14 @@ html[data-seasonal-theme="diwali"] {
   border: 0;
   border-radius: 9px;
   padding: 10px 8px;
-  color: #0f172a;
+  color: #240E14;
   background: transparent;
   font-size: 13px;
   outline: none;
 }
 
 .whatsapp-message-input::placeholder {
-  color: #94a3b8;
+  color: #A8958A;
 }
 
 .whatsapp-send-button {
@@ -430,7 +399,7 @@ html[data-seasonal-theme="diwali"] {
 }
 
 .whatsapp-panel-footnote {
-  color: #94a3b8;
+  color: #A8958A;
   font-size: 10px;
   text-align: center;
 }
@@ -612,7 +581,7 @@ html[data-seasonal-theme="diwali"] {
     width: 100vw !important;
     height: 100dvh !important;
     border-radius: 0 !important;
-    background: #020617;
+    background: #2A0810;
   }
   .image-zoom-active img {
     width: 100% !important;
@@ -861,9 +830,9 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
   position: relative;
   width: min(100%, 390px);
   padding: 26px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #E6DCCD;
   border-radius: 22px;
-  color: #0f172a;
+  color: #240E14;
   background: #fff;
   box-shadow: 0 25px 70px rgb(15 23 42 / 35%);
   animation: seasonal-offer-pop 220ms ease-out both;
@@ -871,9 +840,9 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 
 .seasonal-offer-panel h2 { font-size: 25px; }
 .seasonal-offer-discount { margin: 12px 0 4px; color: #9f1239; font-size: 24px; font-weight: 900; }
-.seasonal-offer-code { margin: 6px 0 10px; padding: 12px; border: 1px dashed #cbd5e1; border-radius: 10px; background: #f8fafc; font-family: ui-monospace, monospace; font-size: 18px; font-weight: 800; letter-spacing: .12em; text-align: center; }
+.seasonal-offer-code { margin: 6px 0 10px; padding: 12px; border: 1px dashed #D3C4B2; border-radius: 10px; background: #FAF6EF; font-family: ui-monospace, monospace; font-size: 18px; font-weight: 800; letter-spacing: .12em; text-align: center; }
 .seasonal-offer-copy { width: 100%; color: #7f1d1d; background: white; box-shadow: none; }
-.seasonal-offer-close { color: #475569; background: #f1f5f9; border-color: #e2e8f0; }
+.seasonal-offer-close { color: #475569; background: #F3ECE1; border-color: #E6DCCD; }
 
 .seasonal-wishes-preview {
   position: relative;
@@ -904,7 +873,7 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
   place-items: center;
   border: 1px solid rgb(148 163 184 / 35%);
   border-radius: 50%;
-  color: #334155;
+  color: #46302F;
   background: rgb(255 255 255 / 88%);
   box-shadow: 0 2px 9px rgb(15 23 42 / 10%);
   transform: translateY(-50%);
@@ -1212,15 +1181,15 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 /* Custom Design System Utility Helpers */
 .bg-electric-gradient,
 .bg-purple-gradient {
-  background: linear-gradient(135deg, #0052FF 0%, #002B99 100%);
+  background: linear-gradient(135deg, #861F31 0%, #571220 100%);
 }
 
 .bg-electric-gradient-cyan {
-  background: linear-gradient(135deg, #3550E8 0%, #7585EF 100%);
+  background: linear-gradient(135deg, #861F31 0%, #7585EF 100%);
 }
 
 .bg-electric-gradient-vibrant {
-  background: linear-gradient(135deg, #2338A8 0%, #3550E8 50%, #7585EF 100%);
+  background: linear-gradient(135deg, #2338A8 0%, #861F31 50%, #7585EF 100%);
 }
 
 .bg-electric-subtle,
@@ -1244,11 +1213,11 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 
 /* Hero Right-to-Left Media Shading Gradient in Off-White & Deep Electric Blue */
 .hero-media-shade {
-  background: linear-gradient(to left, transparent 0%, rgba(250, 249, 246, 0.1) 20%, rgba(250, 249, 246, 0.8) 65%, #FAF9F6 100%);
+  background: linear-gradient(to left, transparent 0%, rgba(250, 249, 246, 0.1) 20%, rgba(250, 249, 246, 0.8) 65%, #FAF6EF 100%);
 }
 
 .hero-media-shade-dark {
-  background: linear-gradient(to left, transparent 0%, rgba(6, 16, 51, 0.2) 20%, rgba(6, 16, 51, 0.88) 65%, #061033 100%);
+  background: linear-gradient(to left, transparent 0%, rgba(42,8,16, 0.2) 20%, rgba(42,8,16, 0.88) 65%, #2A0810 100%);
 }
 
 /* Hide scrollbar for clean horizontal rails */
@@ -1311,11 +1280,11 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    #f1f5f9 0%,
-    #e2e8f0 35%,
+    #F3ECE1 0%,
+    #E6DCCD 35%,
     #ffffff 50%,
-    #e2e8f0 65%,
-    #f1f5f9 100%
+    #E6DCCD 65%,
+    #F3ECE1 100%
   );
   background-size: 300% 100%;
   animation: shimmer-sweep 1.6s ease-in-out infinite;
@@ -1324,11 +1293,11 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 .skeleton-shimmer-dark {
   background: linear-gradient(
     90deg,
-    #1e293b 0%,
-    #334155 35%,
+    #33191E 0%,
+    #46302F 35%,
     #475569 50%,
-    #334155 65%,
-    #1e293b 100%
+    #46302F 65%,
+    #33191E 100%
   );
   background-size: 300% 100%;
   animation: shimmer-sweep 1.6s ease-in-out infinite;
@@ -1343,7 +1312,7 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 }
 
 .division-experience.public-editorial {
-  background-color: #faf9f6;
+  background-color: #FAF6EF;
 }
 
 .public-editorial :is(h1, h2, h3, h4, h5, h6, .font-display, .font-editorial) {
@@ -1458,8 +1427,8 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 .public-announcement-bar {
   min-height: 34px;
   border-bottom: 1px solid rgb(56 189 248 / 24%);
-  background: #061033;
-  color: #f8fafc;
+  background: #2A0810;
+  color: #FAF6EF;
 }
 
 .public-announcement-link {
@@ -1473,17 +1442,17 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 }
 
 .public-announcement-link:hover {
-  color: #bae6fd;
+  color: #F6E4E5;
 }
 
 .public-announcement-link svg {
-  color: #7dd3fc;
+  color: #DFC070;
 }
 
 .public-site-footer {
   border-color: #1e3a8a;
-  background: #061033;
-  color: #e2e8f0;
+  background: #2A0810;
+  color: #E6DCCD;
 }
 
 .public-site-footer > div:first-child {
@@ -1525,24 +1494,24 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 }
 
 .public-site-footer > div:first-child h3 {
-  color: #f8fafc;
+  color: #FAF6EF;
 }
 
 .public-site-footer h4,
 .public-site-footer .font-display {
-  color: #f8fafc;
+  color: #FAF6EF;
 }
 
 .public-site-footer :is(.text-slate-500, .text-slate-600, .text-slate-700, .text-slate-900) {
-  color: #cbd5e1;
+  color: #D3C4B2;
 }
 
 .public-site-footer a {
-  color: #dbeafe;
+  color: #F6E4E5;
 }
 
 .public-site-footer .public-footer-contact a:hover {
-  color: #7dd3fc;
+  color: #DFC070;
 }
 
 .public-site-footer .border-slate-200 {
@@ -1552,7 +1521,7 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 .public-site-footer .bg-blue-50 {
   border-color: rgb(147 197 253 / 30%);
   background: rgb(30 58 138 / 45%);
-  color: #bfdbfe;
+  color: #F6E4E5;
 }
 
 .public-site-footer > div:last-of-type > div:last-child {
@@ -1566,7 +1535,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar {
 }
 
 nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-current="page"]) {
-  color: #64748b;
+  color: #7F6B67;
 }
 
 @media (max-width: 639px) {
@@ -1597,8 +1566,8 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 
 /* Mahdev V2 public design system */
 :root {
-  --ink: #0e1424;
-  --ink-hero: #12172a;
+  --ink: #2A0810;
+  --ink-hero: #2A0810;
   --paper: #f8f7f3;
   --surface: #f8f7f3;
   --surface-card: #ffffff;
@@ -1606,10 +1575,10 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   --line-strong: #d8d6cf;
   --muted: #62636b;
   --body: #4b4c53;
-  --accent: #3550e8;
+  --accent: #861F31;
   --accent-soft: #eef0ff;
-  --accent-text: #2e43c4;
-  --accent-light: #ccd4ff;
+  --accent-text: #6E1727;
+  --accent-light: #EBD79A;
   --whatsapp: #25d366;
   --public-nav-height: 4.25rem;
 }
@@ -1735,7 +1704,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   position: absolute;
   z-index: 1;
   inset: 0;
-  background: linear-gradient(90deg, rgba(6,16,51,.42) 0%, rgba(6,16,51,.30) 30%, rgba(6,16,51,.14) 58%, rgba(6,16,51,.04) 100%);
+  background: linear-gradient(90deg, rgba(42,8,16,.42) 0%, rgba(42,8,16,.30) 30%, rgba(42,8,16,.14) 58%, rgba(42,8,16,.04) 100%);
   content: "";
   pointer-events: none;
 }
@@ -1743,11 +1712,11 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 .division-video-hero--legible::after {
   background: linear-gradient(
     90deg,
-    rgba(6, 16, 51, .98) 0%,
-    rgba(6, 16, 51, .94) 38%,
-    rgba(6, 16, 51, .78) 58%,
-    rgba(6, 16, 51, .32) 78%,
-    rgba(6, 16, 51, .08) 100%
+    rgba(42,8,16, .98) 0%,
+    rgba(42,8,16, .94) 38%,
+    rgba(42,8,16, .78) 58%,
+    rgba(42,8,16, .32) 78%,
+    rgba(42,8,16, .08) 100%
   );
 }
 
@@ -1827,7 +1796,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 
 .home-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 26px -12px rgba(53, 80, 232, .7);
+  box-shadow: 0 12px 26px -12px rgba(134,31,49, .7);
 }
 
 .home-button svg,
@@ -2498,7 +2467,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 
 .home-occasion:hover {
   transform: translateY(-4px);
-  box-shadow: 0 28px 50px -28px rgba(14,20,36,.45);
+  box-shadow: 0 28px 50px -28px rgba(42,8,16,.45);
 }
 
 .home-occasion:hover::before {
@@ -2585,7 +2554,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 }
 
 .home-marquee-run i:nth-of-type(even) {
-  color: #8e9bea;
+  color: #DFC070;
 }
 
 @keyframes home-marquee-scroll {
@@ -2639,7 +2608,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 
 .home-product-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 28px 50px -28px rgba(14,20,36,.45);
+  box-shadow: 0 28px 50px -28px rgba(42,8,16,.45);
 }
 
 .home-product-image {
@@ -2943,7 +2912,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 
 .public-nav-shell [class*="w-[560px]"] {
   border-color: var(--line);
-  box-shadow: 0 28px 60px -30px rgba(14,20,36,.38);
+  box-shadow: 0 28px 60px -30px rgba(42,8,16,.38);
 }
 
 .public-nav-shell #mahdev-mobile-navigation {
@@ -2955,7 +2924,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 .home-pillar-grid > a:focus-visible,
 .home-product-add:focus-visible {
   outline: 0;
-  box-shadow: 0 0 0 4px rgba(53,80,232,.35);
+  box-shadow: 0 0 0 4px rgba(134,31,49,.35);
 }
 
 .home-button--whatsapp:focus-visible {
@@ -3012,10 +2981,10 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   .division-video-hero--legible::after {
     background: linear-gradient(
       90deg,
-      rgba(6, 16, 51, .98) 0%,
-      rgba(6, 16, 51, .92) 58%,
-      rgba(6, 16, 51, .66) 82%,
-      rgba(6, 16, 51, .3) 100%
+      rgba(42,8,16, .98) 0%,
+      rgba(42,8,16, .92) 58%,
+      rgba(42,8,16, .66) 82%,
+      rgba(42,8,16, .3) 100%
     );
   }
 
@@ -3339,7 +3308,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   [class*="text-zinc-"],
   [class*="text-neutral-"],
   [class*="text-stone-"],
-  [class*="text-[#0052FF]"]
+  [class*="text-[#861F31]"]
 ) {
   color: var(--division-ink) !important;
 }
@@ -3373,7 +3342,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   [class*="text-zinc-"],
   [class*="text-neutral-"],
   [class*="text-stone-"],
-  [class*="text-[#0052FF]"]
+  [class*="text-[#861F31]"]
 ) {
   color: var(--division-ink) !important;
 }
@@ -3397,10 +3366,10 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   [class*="bg-zinc-"],
   [class*="bg-neutral-"],
   [class*="bg-stone-"],
-  [class*="bg-[#0052FF]"],
+  [class*="bg-[#861F31]"],
   [class*="bg-[#25D366]"],
-  [class~="bg-[#0E1424]"],
-  [class~="bg-[#061033]"]
+  [class~="bg-[#2A0810]"],
+  [class~="bg-[#2A0810]"]
 ) {
   background-color: var(--division-accent) !important;
 }
@@ -3459,10 +3428,10 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   [class*="bg-zinc-"],
   [class*="bg-neutral-"],
   [class*="bg-stone-"],
-  [class*="bg-[#0052FF]"],
+  [class*="bg-[#861F31]"],
   [class*="bg-[#25D366]"],
-  [class~="bg-[#0E1424]"],
-  [class~="bg-[#061033]"]
+  [class~="bg-[#2A0810]"],
+  [class~="bg-[#2A0810]"]
 ) {
   background-color: var(--division-ink) !important;
 }
@@ -3521,7 +3490,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   [class*="border-zinc-"],
   [class*="border-neutral-"],
   [class*="border-stone-"],
-  [class*="border-[#0052FF]"]
+  [class*="border-[#861F31]"]
 ) {
   border-color: var(--division-line) !important;
 }
@@ -3547,7 +3516,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   [class*="border-zinc-"],
   [class*="border-neutral-"],
   [class*="border-stone-"],
-  [class*="border-[#0052FF]"]
+  [class*="border-[#861F31]"]
 ) {
   border-color: var(--division-line) !important;
 }
@@ -3924,4 +3893,95 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 [data-division-site="u1"] .public-nav-inner .division-navigation-active-pill,
 [data-division-site="u1"] .public-nav-inner nav > a[aria-current="location"] {
   border-color: #C6A15B;
+}
+
+/* ── Brand motion: hover and scroll-parallax effects ───────────────────────── */
+:root {
+  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
+  --shadow-gold: 0 18px 40px -18px rgba(134, 31, 49, 0.35), 0 0 0 1px rgba(201, 162, 74, 0.35);
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--gold-light);
+  color: var(--electric-blue-deep);
+}
+
+/* Cards lift and gain a gold edge on hover. */
+.public-scroll-card:is(article, a, button, [class*="rounded-"]) {
+  transition: transform 0.45s var(--ease-brand), box-shadow 0.45s var(--ease-brand), border-color 0.3s ease;
+}
+.public-scroll-card:is(article, a, [class*="rounded-"]):hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-gold);
+}
+
+/* Images inside cards zoom slowly on hover (the card clips them). */
+.overflow-hidden > img,
+.overflow-hidden > picture > img {
+  transition: scale 0.8s var(--ease-brand);
+}
+.overflow-hidden:hover > img,
+.overflow-hidden:hover > picture > img {
+  scale: 1.06;
+}
+
+/* Buttons and links: gold shine sweep and a press effect. */
+button, [role="button"], a[class*="rounded"] {
+  transition: transform 0.25s var(--ease-brand), box-shadow 0.25s ease, background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+button:not(:disabled):hover, a[class*="bg-blue-6"]:hover, a[class*="bg-[#861F31]"]:hover {
+  box-shadow: 0 10px 24px -12px rgba(134, 31, 49, 0.55);
+}
+button:not(:disabled):active, [role="button"]:active { transform: scale(0.97); }
+
+[class*="bg-blue-600"]:is(button, a), [class*="bg-[#861F31]"]:is(button, a) {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+[class*="bg-blue-600"]:is(button, a)::after, [class*="bg-[#861F31]"]:is(button, a)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(105deg, transparent 35%, rgba(235, 215, 154, 0.45) 50%, transparent 65%);
+  transform: translateX(-120%);
+  transition: transform 0.7s var(--ease-brand);
+}
+[class*="bg-blue-600"]:is(button, a):hover::after, [class*="bg-[#861F31]"]:is(button, a):hover::after {
+  transform: translateX(120%);
+}
+
+/* Scroll-driven parallax: images drift against the scroll, clipped by their frame.
+   Only where the browser supports scroll timelines; others keep the static image. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes brand-parallax {
+      from { transform: translateY(-6%) scale(1.14); }
+      to { transform: translateY(6%) scale(1.14); }
+    }
+    @keyframes brand-parallax-slow {
+      from { transform: translateY(-4%); }
+      to { transform: translateY(8%); }
+    }
+    .overflow-hidden > img.object-cover,
+    .overflow-hidden > picture > img.object-cover {
+      animation: brand-parallax linear both;
+      animation-timeline: view();
+    }
+    .home-video-hero video, .division-video-hero video {
+      animation: brand-parallax-slow linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 100vh;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-scroll-card:hover, .overflow-hidden:hover > img { transform: none; scale: 1; }
 }
