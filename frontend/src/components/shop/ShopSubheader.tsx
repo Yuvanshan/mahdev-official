@@ -97,7 +97,7 @@ export const ShopSubheader: React.FC<ShopSubheaderProps> = ({ onNavigate }) => {
     <div className="w-full border-b border-slate-200 bg-white shadow-sm">
       <div className="mx-auto flex max-w-7xl flex-col gap-2 px-3 py-2 sm:px-6">
         <div className="flex items-center gap-2">
-        <form onSubmit={submitSearch} role="search" className="relative flex min-w-0 flex-1 overflow-hidden rounded-sm border border-slate-300 bg-slate-50 focus-within:border-blue-600 focus-within:bg-white">
+        <form onSubmit={submitSearch} role="search" className="relative flex min-w-0 flex-1 rounded-sm border border-slate-300 bg-slate-50 focus-within:border-blue-600 focus-within:bg-white">
           <input
             type="search"
             value={keyword}
@@ -152,7 +152,7 @@ export const ShopSubheader: React.FC<ShopSubheaderProps> = ({ onNavigate }) => {
           >
             <SlidersHorizontal className="h-4 w-4" />
           </button>
-          <button type="submit" aria-label="Search" className="bg-blue-600 px-5 text-white hover:bg-blue-700">
+          <button type="submit" aria-label="Search" className="rounded-r-sm bg-blue-600 px-5 text-white hover:bg-blue-700">
             <Search className="h-4 w-4" />
           </button>
         </form>
