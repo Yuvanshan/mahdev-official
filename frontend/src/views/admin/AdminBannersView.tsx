@@ -43,6 +43,8 @@ export const AdminBannersView: React.FC = () => {
 
   // Media Picker
   const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
+  // Which picture the media picker fills: the wide one or the phone one.
+  const [pickerTarget, setPickerTarget] = useState<'imageUrl' | 'mobileImageUrl'>('imageUrl');
 
   // Form State
   const [formData, setFormData] = useState({
@@ -53,6 +55,7 @@ export const AdminBannersView: React.FC = () => {
     targetUrl: '/promotion',
     buttonText: 'View Offers',
     imageUrl: '',
+    mobileImageUrl: '',
     videoUrl: '',
     bgGradient: 'from-blue-900/90 via-slate-900 to-indigo-950',
     badgeText: 'SPECIAL OFFER',
@@ -103,6 +106,7 @@ export const AdminBannersView: React.FC = () => {
       targetUrl: '/promotion',
       buttonText: 'View Offers',
       imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
+      mobileImageUrl: '',
       videoUrl: '',
       bgGradient: 'from-blue-900/90 via-slate-900 to-indigo-950',
       badgeText: 'ENTERPRISE SPOTLIGHT',
@@ -126,6 +130,7 @@ export const AdminBannersView: React.FC = () => {
       targetUrl: banner.targetUrl,
       buttonText: banner.buttonText || 'Learn More',
       imageUrl: banner.imageUrl || '',
+      mobileImageUrl: banner.mobileImageUrl || '',
       videoUrl: banner.videoUrl || '',
       bgGradient: banner.bgGradient || 'from-blue-900/90 via-slate-900 to-indigo-950',
       badgeText: banner.badgeText || '',
@@ -178,6 +183,7 @@ export const AdminBannersView: React.FC = () => {
           targetUrl: formData.targetUrl,
           buttonText: formData.buttonText,
           imageUrl: formData.imageUrl,
+          mobileImageUrl: formData.mobileImageUrl,
           videoUrl: formData.videoUrl,
           bgGradient: formData.bgGradient,
           badgeText: formData.badgeText,
@@ -196,6 +202,7 @@ export const AdminBannersView: React.FC = () => {
           targetUrl: formData.targetUrl,
           buttonText: formData.buttonText,
           imageUrl: formData.imageUrl,
+          mobileImageUrl: formData.mobileImageUrl,
           videoUrl: formData.videoUrl,
           bgGradient: formData.bgGradient,
           badgeText: formData.badgeText,
@@ -588,11 +595,11 @@ export const AdminBannersView: React.FC = () => {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Background Image Graphic
+                Desktop / Tablet Image (wide, about 1920 x 600)
               </label>
               <button
                 type="button"
-                onClick={() => setIsMediaPickerOpen(true)}
+                onClick={() => { setPickerTarget('imageUrl'); setIsMediaPickerOpen(true); }}
                 className="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1"
               >
                 <ImageIcon className="w-3.5 h-3.5" /> Select Media
@@ -608,6 +615,32 @@ export const AdminBannersView: React.FC = () => {
               placeholder="https://images.unsplash.com/..."
               className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
             />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Mobile Image (about 4:3, e.g. 1080 x 810)
+              </label>
+              <button
+                type="button"
+                onClick={() => { setPickerTarget('mobileImageUrl'); setIsMediaPickerOpen(true); }}
+                className="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1"
+              >
+                <ImageIcon className="w-3.5 h-3.5" /> Select Media
+              </button>
+            </div>
+            <input
+              type="url"
+              value={formData.mobileImageUrl}
+              onChange={(e) => {
+                setFormData({ ...formData, mobileImageUrl: e.target.value });
+                setIsDirty(true);
+              }}
+              placeholder="Optional. Phones use the desktop image when empty."
+              className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+            />
+            <p className="mt-1 text-[11px] text-slate-500">Both pictures are scaled to fit the screen. Keep the main subject near the centre.</p>
           </div>
 
           <div>
@@ -705,7 +738,7 @@ export const AdminBannersView: React.FC = () => {
         isOpen={isMediaPickerOpen}
         onClose={() => setIsMediaPickerOpen(false)}
         onSelect={(url) => {
-          setFormData({ ...formData, imageUrl: url });
+          setFormData({ ...formData, [pickerTarget]: url });
           setIsDirty(true);
           setIsMediaPickerOpen(false);
         }}

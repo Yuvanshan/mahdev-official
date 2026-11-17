@@ -123,6 +123,7 @@ export type AdminSectionId =
   | 'testimonials'
   | 'faqs'
   | 'reviews'
+  | 'searches'
   | 'pages'
   | 'banners'
   | 'coupons'

@@ -292,6 +292,8 @@ export interface CmsBanner extends BaseCmsEntity {
   targetUrl: string;
   buttonText: string;
   imageUrl?: string;
+  /** Narrower picture for phones (about 4:3). Falls back to imageUrl. */
+  mobileImageUrl?: string;
   videoUrl?: string;
   bgGradient?: string;
   badgeText?: string;

@@ -36,6 +36,7 @@ import {
   Sparkles,
   Gift,
   Star,
+  Search,
 } from 'lucide-react';
 import { activeDatabaseName } from '../../lib/firebase';
 import { AdminSectionId } from '../../types/admin';
@@ -66,6 +67,7 @@ const AdminGalleryView = React.lazy(() => import('./AdminGalleryView').then((mod
 const AdminFaqsView = React.lazy(() => import('./AdminFaqsView').then((module) => ({ default: module.AdminFaqsView })));
 const AdminMilestonesView = React.lazy(() => import('./AdminMilestonesView').then((module) => ({ default: module.AdminMilestonesView })));
 const AdminCompaniesView = React.lazy(() => import('./AdminCompaniesView').then((module) => ({ default: module.AdminCompaniesView })));
+const AdminSearchesView = React.lazy(() => import('./AdminSearchesView').then((module) => ({ default: module.AdminSearchesView })));
 const AdminReviewsView = React.lazy(() => import('./AdminReviewsView').then((module) => ({ default: module.AdminReviewsView })));
 const AdminTestimonialsView = React.lazy(() => import('./AdminTestimonialsView').then((module) => ({ default: module.AdminTestimonialsView })));
 const AdminPagesView = React.lazy(() => import('./AdminPagesView').then((module) => ({ default: module.AdminPagesView })));
@@ -137,6 +139,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { id: 'companies', label: 'Companies', icon: Building },
   { id: 'testimonials', label: 'Testimonials', icon: MessageSquare },
   { id: 'reviews', label: 'Product Reviews', icon: Star },
+  { id: 'searches', label: 'Search History', icon: Search },
   { id: 'faqs', label: 'FAQs', icon: HelpCircle },
   { id: 'pages', label: 'Pages', icon: FileCode },
   { id: 'banners', label: 'Banners', icon: Tag },
@@ -296,6 +299,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
         return <AdminTestimonialsView />;
       case 'reviews':
         return <AdminReviewsView />;
+      case 'searches':
+        return <AdminSearchesView />;
       case 'faqs':
         return <AdminFaqsView />;
       case 'pages':

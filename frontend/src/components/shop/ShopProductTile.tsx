@@ -1,6 +1,7 @@
 import React from 'react';
 import { Heart, Star } from 'lucide-react';
 import { useWishlist } from '../../context/WishlistContext';
+import { recordView } from '../../utils/usageProfile';
 import { formatCurrency } from '../../utils/currency';
 
 export interface ShopTileData {
@@ -13,6 +14,8 @@ export interface ShopTileData {
   reviewsCount?: number;
   caption?: string;
   href?: string;
+  /** Text the visitor's interests are learned from when they open this tile. */
+  interest?: string;
   currency?: string;
 }
 
@@ -33,7 +36,10 @@ export const ShopProductTile: React.FC<ShopProductTileProps> = ({ item, onSelect
     <div className="relative w-40 shrink-0 snap-start sm:w-48">
     <button
       type="button"
-      onClick={onSelect}
+      onClick={() => {
+        recordView(item.interest || item.name);
+        onSelect();
+      }}
       className="group flex w-full flex-col items-start gap-1.5 rounded-sm p-3 text-left transition-shadow hover:shadow-lg"
     >
       <span className="mx-auto block h-36 w-full overflow-hidden sm:h-40">

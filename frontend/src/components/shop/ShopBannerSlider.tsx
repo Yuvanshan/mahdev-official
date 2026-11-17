@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export interface ShopBanner {
@@ -6,7 +6,10 @@ export interface ShopBanner {
   title: string;
   subtitle?: string;
   imageUrl: string;
+  /** Narrower picture used below 640px wide. */
+  mobileImageUrl?: string;
   route: string;
+  buttonText?: string;
 }
 
 interface ShopBannerSliderProps {
@@ -15,11 +18,14 @@ interface ShopBannerSliderProps {
 }
 
 const AUTOPLAY_MS = 5000;
+const SWIPE_PX = 40;
 
 // Auto-advancing banner carousel with arrows and dots (Flipkart home banner).
 export const ShopBannerSlider: React.FC<ShopBannerSliderProps> = ({ banners, onNavigate }) => {
   const [index, setIndex] = useState(0);
   const count = banners.length;
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const swiped = useRef(false);
 
   useEffect(() => {
     if (count < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -34,24 +40,47 @@ export const ShopBannerSlider: React.FC<ShopBannerSliderProps> = ({ banners, onN
     <section
       aria-roledescription="carousel"
       aria-label="Featured offers"
-      className="group/banner relative h-48 w-full overflow-hidden rounded-sm bg-slate-900 shadow sm:h-72 lg:h-80"
+      className="group/banner relative aspect-[4/3] w-full touch-pan-y overflow-hidden rounded-sm bg-slate-900 shadow sm:aspect-[16/5] sm:max-h-[26rem]"
+      // Swipe left or right to change the banner; vertical scrolling is left alone.
+      onTouchStart={(event) => {
+        touchStart.current = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+        swiped.current = false;
+      }}
+      onTouchEnd={(event) => {
+        const start = touchStart.current;
+        touchStart.current = null;
+        if (!start) return;
+        const dx = event.changedTouches[0].clientX - start.x;
+        const dy = event.changedTouches[0].clientY - start.y;
+        if (Math.abs(dx) > SWIPE_PX && Math.abs(dx) > Math.abs(dy)) {
+          swiped.current = true;
+          go(dx < 0 ? 1 : -1);
+        }
+      }}
     >
       <div className="flex h-full transition-transform duration-700 ease-out" style={{ transform: `translateX(-${index * 100}%)` }}>
         {banners.map((banner, position) => (
           <button
             key={banner.id}
             type="button"
-            onClick={() => onNavigate(banner.route)}
+            onClick={() => {
+              // A swipe ends with a click on the banner; ignore that one.
+              if (swiped.current) return;
+              onNavigate(banner.route);
+            }}
             aria-hidden={position !== index}
             tabIndex={position === index ? 0 : -1}
             className="relative h-full w-full shrink-0 text-left"
           >
-            <img src={banner.imageUrl} alt="" loading={position === 0 ? 'eager' : 'lazy'} draggable={false} className="h-full w-full object-cover" />
+            <picture>
+              {banner.mobileImageUrl && <source media="(max-width: 639px)" srcSet={banner.mobileImageUrl} />}
+              <img src={banner.imageUrl} alt="" loading={position === 0 ? 'eager' : 'lazy'} draggable={false} className="h-full w-full object-cover" />
+            </picture>
             <span className="absolute inset-0 bg-gradient-to-r from-blue-950/80 via-blue-950/30 to-transparent" />
             <span className="absolute inset-y-0 left-0 flex max-w-xl flex-col justify-center gap-2 px-6 sm:px-12">
               <span className="text-2xl font-bold text-white sm:text-4xl">{banner.title}</span>
               {banner.subtitle && <span className="line-clamp-2 text-sm text-slate-100 sm:text-base">{banner.subtitle}</span>}
-              <span className="mt-1 w-fit rounded-sm bg-amber-400 px-4 py-2 text-xs font-bold uppercase tracking-wide text-blue-950">Explore</span>
+              <span className="mt-1 w-fit rounded-sm bg-amber-400 px-4 py-2 text-xs font-bold uppercase tracking-wide text-blue-950">{banner.buttonText || 'Explore'}</span>
             </span>
           </button>
         ))}

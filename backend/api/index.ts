@@ -30,6 +30,7 @@ import adminLoginHandler from './handlers/admin/auth/login.js';
 import adminLogoutHandler from './handlers/admin/auth/logout.js';
 import seasonalThemeHandler from './handlers/seasonalTheme.js';
 import productReviewsHandler from './handlers/productReviews.js';
+import searchHistoryHandler from './handlers/searchHistory.js';
 
 const apiRouter = Router();
 
@@ -57,6 +58,15 @@ apiRouter.all('/product-reviews', async (req: Request, res: Response) => {
     return;
   }
   await productReviewsHandler(req, res);
+});
+
+apiRouter.all('/search-history', async (req: Request, res: Response) => {
+  // Only this website's own pages may record or read searches.
+  if (!isFromThisSite(req)) {
+    res.status(404).json({ success: false, error: 'Not found.' });
+    return;
+  }
+  await searchHistoryHandler(req, res);
 });
 
 // Bank transfer slips: the customer uploads (raw file body), the admin views.

@@ -3,6 +3,8 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { ShopBanner, ShopBannerSlider } from './ShopBannerSlider';
 import { ShopSlider } from './ShopSlider';
 import { ShopProductTile, ShopTileData } from './ShopProductTile';
+import { useAvailableCmsBanners } from '../../hooks/useAvailableCmsBanners';
+import { useSuggestedGallery } from './useSuggestedGallery';
 
 interface ShopHomeProps {
   onNavigate: (route: string) => void;
@@ -12,11 +14,25 @@ const SLIDER_LIMIT = 14;
 
 // Flipkart-style storefront top of the home page: banner, then rows of deals, services and divisions.
 export const ShopHome: React.FC<ShopHomeProps> = ({ onNavigate }) => {
-  const { divisions, products, services } = useFirestoreDataContext();
+  const { divisions, products, services, gallery } = useFirestoreDataContext();
+  const cmsBanners = useAvailableCmsBanners();
 
-  const banners = useMemo<ShopBanner[]>(
-    () =>
-      divisions
+  // Banners uploaded in the admin portal (placement "Home hero") come first; divisions are the fallback.
+  const banners = useMemo<ShopBanner[]>(() => {
+    const uploaded: ShopBanner[] = cmsBanners
+      .filter((banner) => banner.placement === 'home_hero' && banner.imageUrl)
+      .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
+      .map((banner) => ({
+        id: banner.id,
+        title: banner.title,
+        subtitle: banner.subtitle,
+        imageUrl: banner.imageUrl as string,
+        mobileImageUrl: banner.mobileImageUrl || undefined,
+        route: banner.targetUrl || '/services',
+        buttonText: banner.buttonText || undefined,
+      }));
+    if (uploaded.length > 0) return uploaded;
+    return divisions
         .filter((division) => division.isPublished !== false && (division.heroImageUrl || division.imageUrl || division.defaultImageUrl))
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
         .map((division) => ({
@@ -25,9 +41,10 @@ export const ShopHome: React.FC<ShopHomeProps> = ({ onNavigate }) => {
           subtitle: division.shortDescription || division.description,
           imageUrl: (division.heroImageUrl || division.imageUrl || division.defaultImageUrl) as string,
           route: division.route || `/${division.slug || division.id}`,
-        })),
-    [divisions]
-  );
+        }));
+  }, [cmsBanners, divisions]);
+
+  const suggestedTiles = useSuggestedGallery(gallery, SLIDER_LIMIT);
 
   const productTiles = useMemo(() => {
     const visible = products.filter((product) => (product as { status?: string }).status !== 'archived' && (product as { status?: string }).status !== 'draft');
@@ -65,17 +82,11 @@ export const ShopHome: React.FC<ShopHomeProps> = ({ onNavigate }) => {
   );
 
   const deals = productTiles.filter((tile) => tile.onSale).slice(0, SLIDER_LIMIT);
-  const newArrivals = productTiles.slice(0, SLIDER_LIMIT);
   const openProduct = (id: string) => onNavigate(`/mart?product=${encodeURIComponent(id)}`);
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-2 py-3 sm:px-4">
       <ShopBannerSlider banners={banners} onNavigate={onNavigate} />
-      {deals.length > 0 && (
-        <ShopSlider title="Discounts for You" tagline="Limited-time offers from Mahdev Mart" onViewAll={() => onNavigate('/catalog')}>
-          {deals.map((tile) => <ShopProductTile key={tile.id} item={tile} onSelect={() => openProduct(tile.id)} />)}
-        </ShopSlider>
-      )}
       {serviceTiles.length > 0 && (
         <ShopSlider title="Top Services" tagline="Events, studio, IT and travel, ready to book" onViewAll={() => onNavigate('/services')}>
           {serviceTiles.slice(0, SLIDER_LIMIT).map((tile) => (
@@ -83,9 +94,14 @@ export const ShopHome: React.FC<ShopHomeProps> = ({ onNavigate }) => {
           ))}
         </ShopSlider>
       )}
-      {newArrivals.length > 0 && (
-        <ShopSlider title="Suggested for You" tagline="Fresh in Mahdev Mart" onViewAll={() => onNavigate('/mart')}>
-          {newArrivals.map((tile) => <ShopProductTile key={tile.id} item={tile} onSelect={() => openProduct(tile.id)} />)}
+      {suggestedTiles.length > 0 && (
+        <ShopSlider title="Suggested for You" tagline="From the Mahdev gallery: your searches and views first, plus new items" onViewAll={() => onNavigate('/gallery')}>
+          {suggestedTiles.map((tile) => <ShopProductTile key={tile.id} item={tile} onSelect={() => onNavigate(tile.href || '/gallery')} />)}
+        </ShopSlider>
+      )}
+      {deals.length > 0 && (
+        <ShopSlider title="Discounts for You" tagline="Limited-time offers from Mahdev Mart" onViewAll={() => onNavigate('/catalog')}>
+          {deals.map((tile) => <ShopProductTile key={tile.id} item={tile} onSelect={() => openProduct(tile.id)} />)}
         </ShopSlider>
       )}
     </div>

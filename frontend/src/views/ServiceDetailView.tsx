@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { recordView } from '../utils/usageProfile';
 import { ArrowLeft, ArrowRight, CalendarDays, CheckCircle2, MessageCircle } from 'lucide-react';
 import { SEOHead } from '../components/layout/SEOHead';
 import { SectionContainer } from '../components/ui/SectionContainer';
@@ -41,6 +42,11 @@ export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ slug, onNa
     () => findService(services, slug) || loadedService,
     [services, slug, loadedService]
   );
+
+  // Learn from what the visitor opens (kept in this browser only).
+  useEffect(() => {
+    if (service) recordView([service.title || service.name, service.category, service.divisionName].filter(Boolean).join(' '));
+  }, [service?.id]);
 
   useEffect(() => {
     let active = true;

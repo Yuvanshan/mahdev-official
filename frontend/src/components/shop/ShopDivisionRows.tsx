@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { ShopSlider } from './ShopSlider';
 import { ShopProductTile } from './ShopProductTile';
+import { rankByInterest, useSuggestedGallery } from './useSuggestedGallery';
 
 interface ShopDivisionRowsProps {
   /** Division route id: 'mart', 'sws', 'u1', 'it' or 'travels'. */
@@ -13,9 +14,12 @@ const ROW_LIMIT = 14;
 const matchesDivision = (record: { divisionId?: string; division?: string }, divisionId: string) =>
   (record.divisionId || record.division || '').toLowerCase() === divisionId;
 
-// Flipkart-style rows (deals and top picks) shown at the top of a division page.
+// Flipkart-style rows (top picks, suggested, discounts) shown at the top of a division page.
 export const ShopDivisionRows: React.FC<ShopDivisionRowsProps> = ({ divisionId, onNavigate }) => {
-  const { products, services } = useFirestoreDataContext();
+  const { products, services, gallery } = useFirestoreDataContext();
+  // Only this division's gallery; the mart has no gallery of its own, so it shows none.
+  const divisionGallery = useMemo(() => gallery.filter((item) => matchesDivision(item, divisionId)), [gallery, divisionId]);
+  const galleryTiles = useSuggestedGallery(divisionGallery, ROW_LIMIT);
 
   const productTiles = useMemo(
     () =>
@@ -57,24 +61,29 @@ export const ShopDivisionRows: React.FC<ShopDivisionRowsProps> = ({ divisionId, 
   );
 
   const deals = productTiles.filter((tile) => tile.onSale).slice(0, ROW_LIMIT);
-  const picks = productTiles.slice(0, ROW_LIMIT);
-  if (deals.length + picks.length + serviceTiles.length === 0) return null;
+  // The mart has no gallery, so its suggestions come from its products.
+  const suggestedTiles = useMemo(
+    () => (divisionId === 'mart' ? rankByInterest(productTiles.map((tile) => ({ ...tile, interest: tile.name })), ROW_LIMIT) : galleryTiles),
+    [divisionId, productTiles, galleryTiles]
+  );
+  const suggestedHref = divisionId === 'mart' ? '/mart' : '/gallery';
+  if (deals.length + suggestedTiles.length + serviceTiles.length === 0) return null;
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-2 py-3 sm:px-4">
-      {deals.length > 0 && (
-        <ShopSlider title="Deals of the Day" tagline="Limited-time offers" onViewAll={() => onNavigate('/catalog')}>
-          {deals.map((tile) => <ShopProductTile key={tile.id} item={tile} onSelect={() => onNavigate(tile.href)} />)}
-        </ShopSlider>
-      )}
       {serviceTiles.length > 0 && (
         <ShopSlider title="Top Picks" tagline="Popular services, ready to book" onViewAll={() => onNavigate('/services')}>
           {serviceTiles.slice(0, ROW_LIMIT).map((tile) => <ShopProductTile key={tile.id} item={tile} onSelect={() => onNavigate(tile.href)} />)}
         </ShopSlider>
       )}
-      {picks.length > 0 && (
-        <ShopSlider title="Suggested for You" onViewAll={() => onNavigate('/catalog')}>
-          {picks.map((tile) => <ShopProductTile key={tile.id} item={tile} onSelect={() => onNavigate(tile.href)} />)}
+      {suggestedTiles.length > 0 && (
+        <ShopSlider title="Suggested for You" tagline="Picked from what you searched and viewed, plus new items" onViewAll={() => onNavigate(suggestedHref)}>
+          {suggestedTiles.map((tile) => <ShopProductTile key={tile.id} item={tile} onSelect={() => onNavigate(tile.href || suggestedHref)} />)}
+        </ShopSlider>
+      )}
+      {deals.length > 0 && (
+        <ShopSlider title="Discounts for You" tagline="Limited-time offers" onViewAll={() => onNavigate('/catalog')}>
+          {deals.map((tile) => <ShopProductTile key={tile.id} item={tile} onSelect={() => onNavigate(tile.href)} />)}
         </ShopSlider>
       )}
     </div>

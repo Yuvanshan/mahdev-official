@@ -201,6 +201,17 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
     if (skuParam) {
       setSearchQuery(skuParam);
     }
+    // Filters chosen in the header search bar.
+    const category = params.get('category');
+    if (category) setSelectedCategory(category);
+    const minPrice = Number(params.get('minPrice'));
+    const maxPrice = Number(params.get('maxPrice'));
+    if (params.get('minPrice') || params.get('maxPrice')) {
+      setPriceRange({
+        min: params.get('minPrice') && Number.isFinite(minPrice) ? minPrice : null,
+        max: params.get('maxPrice') && Number.isFinite(maxPrice) ? maxPrice : null,
+      });
+    }
   }, []);
 
   const rentalCount = getRentalAssetCount(
