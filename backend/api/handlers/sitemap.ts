@@ -6,6 +6,7 @@ import {
   type TursoDocument,
 } from '../../db/tursoDatabase.js';
 import { CANONICAL_SITE_ORIGIN } from '../../../shared/config/site.js';
+import { gallerySeo } from '../../../shared/config/itemSeo.js';
 import { DIVISIONS } from '../../../shared/config/divisions.js';
 import { canonicalizeDivisionRoute } from '../../../shared/config/divisionRoutes.js';
 import {
@@ -45,7 +46,7 @@ const STATIC_PUBLIC_PATHS = [
   '/cookie-policy',
 ];
 // /gallery is not listed: it renders the /services page and declares /services as
-// canonical. Single gallery items (/gallery?id=…) are listed below with their own head.
+// canonical. Single gallery items (/gallery/<title>-<id>) are listed below with their own head.
 const RESERVED_PATHS = new Set([...STATIC_PUBLIC_PATHS, '/gallery']);
 const PRIVATE_PATH_PREFIXES = [
   '/admin',
@@ -402,7 +403,7 @@ export function buildSitemapXml(
         data.status !== 'draft' &&
         data.status !== 'archived'
       ),
-      ({ id }) => `/gallery?id=${encodeURIComponent(id)}`,
+      ({ data, id }) => gallerySeo(data, id).path,
       origin,
       true,
     ),

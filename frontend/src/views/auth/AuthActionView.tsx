@@ -110,7 +110,7 @@ export const AuthActionView: React.FC<AuthActionViewProps> = ({ onNavigate }) =>
       <AuthShell icon={icon} title={copy.title} subtitle={copy.subtitle}>
         {phase === 'checking' && (
           <div className="flex justify-center py-6" role="status" aria-label="Checking your link">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <Loader2 className="h-8 w-8 animate-spin text-[#861F31]" />
           </div>
         )}
 
@@ -152,7 +152,7 @@ export const AuthActionView: React.FC<AuthActionViewProps> = ({ onNavigate }) =>
             <button
               type="button"
               onClick={() => onNavigate(nextPath)}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#861F31] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#861F31] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-[#861F31]/20 transition hover:bg-[#6B1827]"
             >
               {nextLabel} <ArrowRight className="h-4 w-4" />
             </button>

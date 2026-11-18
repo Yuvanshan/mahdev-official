@@ -888,7 +888,10 @@ function AppContent() {
       normalizedPath === '/media' ||
       normalizedPath.startsWith('/media/')
     ) {
+      // Clean item URL: /gallery/<title>-<id>
+      const slugFromPath = normalizedPath.split('/')[2];
       const gallerySku =
+        (slugFromPath && decodeURIComponent(slugFromPath.replace(/%(?![0-9a-f]{2})/gi, '%25'))) ||
         searchParams.get('sku') ||
         searchParams.get('mediaSku') ||
         searchParams.get('id') ||

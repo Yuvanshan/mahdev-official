@@ -1,12 +1,12 @@
 /**
  * Page head for the single service, product, project and gallery URLs listed in
- * the sitemap (/services/x, /products/x, /projects/x, /gallery?id=x). The page
+ * the sitemap (/services/x, /products/x, /projects/x, /gallery/title-id, older /gallery?id=x). The page
  * shell writes it into the HTML so each URL reaches Google with its own title,
  * description and canonical URL instead of the home page's.
  */
 
 import { initializeTursoDatabase, listTursoDocuments, type TursoDocument } from '../db/tursoDatabase.js';
-import { gallerySeo, productSeo, projectSeo, serviceSeo, type ItemSeo } from '../../shared/config/itemSeo.js';
+import { gallerySeo, gallerySlugMatchesId, productSeo, projectSeo, serviceSeo, type ItemSeo } from '../../shared/config/itemSeo.js';
 import { CANONICAL_SITE_ORIGIN, SITE_NAME } from '../../shared/config/site.js';
 import { BRANCH_CONTENT_LOCATIONS, getRecordImageAlt } from '../../shared/config/imageAlt.js';
 import type { RouteSeo } from './publicRoutes.js';
@@ -117,12 +117,12 @@ export async function resolveDynamicRouteSeo(path: string, search: URLSearchPara
     return toRouteSeo(projectSeo(record.data, record.id), `A ${SITE_NAME} project.`, record.data);
   }
 
-  const galleryId = search.get('id')?.trim();
-  if (!second && (segment === 'gallery' || segment === 'media') && galleryId) {
-    const wanted = galleryId.toLowerCase();
+  // Clean URL /gallery/<title>-<id>, or the older /gallery?id=<id> (its canonical is the clean URL).
+  const galleryKey = segment === 'gallery' || segment === 'media' ? (second && !rest.length ? key : search.get('id')?.trim()) : '';
+  if (galleryKey) {
     const [gallery, mediaAssets] = await Promise.all([listCollection('gallery'), listCollection('media_assets')]);
     const record = [...gallery, ...mediaAssets].find(
-      (document) => isListedGalleryItem(document) && document.id.toLowerCase() === wanted
+      (document) => isListedGalleryItem(document) && gallerySlugMatchesId(galleryKey, document.id)
     );
     if (!record) return null;
     return toRouteSeo(gallerySeo(record.data, record.id), `From the ${SITE_NAME} gallery.`, record.data);

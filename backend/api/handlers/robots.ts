@@ -4,7 +4,7 @@ import { getRequestSiteOrigin } from '../../seo/requestOrigin.js';
 const DISALLOWED_PATHS = [
   '/admin',
   '/admin/',
-  '/admin-yuvan1709',
+  // The private admin URL is not listed here: robots.txt is public. It is protected by an X-Robots-Tag noindex header (vercel.json).
   '/admin-login',
   '/adminlogin',
   '/adminportal',

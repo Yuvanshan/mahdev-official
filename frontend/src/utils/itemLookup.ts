@@ -1,4 +1,5 @@
 import { deriveLookupSku } from './whatsapp';
+import { gallerySlugMatchesId } from '../config/itemSeo';
 
 export interface DisplayGalleryItem {
   id: string;
@@ -74,6 +75,10 @@ export function matchGalleryItem(
   // Gallery rows can expand one database record into multiple image IDs.
   const parentIdMatch = items.find((i) => i.id?.toLowerCase().startsWith(`${rawClean}-`));
   if (parentIdMatch) return parentIdMatch;
+
+  // Clean URLs end with the record id: /gallery/cradle-ceremony-decoration-gal-mtmkxpbi-q1c4
+  const slugMatch = items.find((i) => i.recordId && gallerySlugMatchesId(rawClean, i.recordId));
+  if (slugMatch) return slugMatch;
 
   // 3. Normalized SKU match (ignoring dashes and spacing)
   const normSku = items.find((i) => normalizeCode(i.sku) === normalizedQuery);

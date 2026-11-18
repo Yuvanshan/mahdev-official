@@ -26,7 +26,7 @@ export const AuthField = forwardRef<HTMLInputElement, AuthFieldProps>(
         </label>
         <div className="group relative">
           {icon && (
-            <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-slate-400 transition-colors group-focus-within:text-blue-600">
+            <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-slate-400 transition-colors group-focus-within:text-[#861F31]">
               {icon}
             </span>
           )}
@@ -40,7 +40,7 @@ export const AuthField = forwardRef<HTMLInputElement, AuthFieldProps>(
             } ${trailing ? 'pr-11' : 'pr-3.5'} ${
               error
                 ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/15'
-                : 'border-slate-300 hover:border-slate-400 focus:border-blue-600 focus:ring-blue-600/15'
+                : 'border-slate-300 hover:border-slate-400 focus:border-[#861F31] focus:ring-[#861F31]/15'
             } ${className}`}
             {...props}
           />
@@ -106,7 +106,7 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({ showStrength, valu
           <button
             type="button"
             onClick={() => setVisible((current) => !current)}
-            className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#861F31]"
             aria-label={visible ? 'Hide password' : 'Show password'}
           >
             {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -177,7 +177,7 @@ export const AuthSubmit: React.FC<{ busy: boolean; children: React.ReactNode; bu
     disabled={busy || disabled}
     whileHover={busy || disabled ? undefined : { y: -1 }}
     whileTap={busy || disabled ? undefined : { scale: 0.98 }}
-    className="relative inline-flex min-h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#861F31] to-indigo-600 px-5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/30"
+    className="relative inline-flex min-h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#861F31] to-[#B23A4E] px-5 text-sm font-semibold text-white shadow-lg shadow-[#861F31]/25 transition disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#861F31]/30"
   >
     {busy ? (
       <>

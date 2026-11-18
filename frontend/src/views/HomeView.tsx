@@ -14,14 +14,11 @@ import { ShopHome } from '../components/shop/ShopHome';
 import { FaqSection } from '../components/common/FaqSection';
 import { usePageFaqs } from '../hooks/usePageFaqs';
 
-const FeaturedServicesSection = lazy(() =>
-  import('../components/home/FeaturedServicesSection').then((module) => ({ default: module.FeaturedServicesSection }))
+const ServicesSolutionsSection = lazy(() =>
+  import('../components/home/ServicesSolutionsSection').then((module) => ({ default: module.ServicesSolutionsSection }))
 );
 const FeaturedWorkSection = lazy(() =>
   import('../components/home/FeaturedWorkSection').then((module) => ({ default: module.FeaturedWorkSection }))
-);
-const HomeGallerySection = lazy(() =>
-  import('../components/home/HomeGallerySection').then((module) => ({ default: module.HomeGallerySection }))
 );
 const DecorationVideoShowcase = lazy(() =>
   import('../components/home/DecorationVideoShowcase').then((module) => ({ default: module.DecorationVideoShowcase }))
@@ -66,24 +63,24 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
       'cta',
     ]);
 
+    // Services and gallery share one "Services & Solutions" section, shown at the first of the two.
+    let hasServicesAndGallery = false;
     return [...sections]
       .filter((section) => section.enabled !== false && HOMEPAGE_SECTIONS.has(section.sectionKey))
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
+      .sort((a, b) => (a.order || 0) - (b.order || 0))
+      .filter((section) => {
+        if (section.sectionKey !== 'services' && section.sectionKey !== 'gallery') return true;
+        if (hasServicesAndGallery) return false;
+        hasServicesAndGallery = true;
+        return true;
+      });
   }, [homepageConfig?.sectionsOrder]);
 
-  const renderSectionByKey = (sectionKey: string, id: string, publishedOnly = false) => {
+  const renderSectionByKey = (sectionKey: string, id: string) => {
     switch (sectionKey) {
       case 'services':
-        return (
-          <FeaturedServicesSection
-            key={id}
-            onNavigate={onNavigate}
-            publishedOnly={publishedOnly}
-            showEmptyState={publishedOnly}
-          />
-        );
       case 'gallery':
-        return <HomeGallerySection key={id} onNavigate={onNavigate} />;
+        return <ServicesSolutionsSection key={id} onNavigate={onNavigate} />;
       case 'portfolio':
         return <FeaturedWorkSection key={id} onNavigate={onNavigate} />;
       case 'decorationShowcase':
