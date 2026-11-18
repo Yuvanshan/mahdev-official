@@ -72,7 +72,7 @@ const Spotlight: React.FC<SpotlightProps> = ({ items, onNavigate }) => {
   };
 
   return (
-    <div className="grid gap-4 lg:grid-cols-3 lg:grid-rows-[minmax(0,1fr)_9rem]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-3 lg:grid-rows-[minmax(0,1fr)_9rem]">
       <a
         href={selected.path}
         onClick={open}
@@ -114,7 +114,7 @@ const Spotlight: React.FC<SpotlightProps> = ({ items, onNavigate }) => {
             type="button"
             onClick={() => setSelectedId(item.id)}
             aria-pressed={item.id === selected.id}
-            className={`truncate rounded-lg px-3 py-2 text-left text-sm font-semibold transition-colors ${
+            className={`truncate rounded-lg px-3 py-2.5 text-center text-sm font-semibold transition-colors ${
               item.id === selected.id ? 'bg-[#861F31] text-white' : 'text-slate-700 hover:bg-slate-100'
             }`}
           >

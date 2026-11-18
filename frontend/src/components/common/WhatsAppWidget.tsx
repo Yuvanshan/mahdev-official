@@ -3,13 +3,13 @@ import { ArrowUp, ArrowUpRight, Check, MessageCircle, X } from 'lucide-react';
 import { MAHDEV_WHATSAPP_NUMBER, notifyWhatsAppClick } from '../../utils/whatsapp';
 import { useAuth } from '../../context/AuthContext';
 
+const WELCOME_SHOWN_KEY = 'mahdev:whatsapp-welcome-shown';
+
 const WhatsAppMark: React.FC<{ className?: string }> = ({ className }) => (
   <svg aria-hidden="true" viewBox="0 0 24 24" className={className}>
     <path d="M20.5 3.5A11.8 11.8 0 0 0 12.1 0C5.5 0 .1 5.4.1 12c0 2.1.5 4.1 1.6 5.9L0 24l6.3-1.6a12 12 0 0 0 5.8 1.5h.1c6.6 0 12-5.4 12-12a11.8 11.8 0 0 0-3.7-8.4ZM12.1 22a10 10 0 0 1-5.1-1.4l-.4-.2-3.7 1 1-3.6-.3-.4A9.9 9.9 0 1 1 12.1 22Zm5.5-7.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.2-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.4-2.3-1.4-.8-.7-1.4-1.6-1.5-1.9-.2-.3 0-.4.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.1 3c.1.2 2 3.1 4.9 4.3.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 1.9-1.4.2-.7.2-1.3.1-1.4-.1-.1-.3-.2-.6-.4Z" />
   </svg>
 );
-
-const WELCOME_SHOWN_KEY = 'mahdev:whatsapp-welcome-shown';
 
 /** Short two-note chime from the Web Audio API (no audio file). Browsers may block it before the first tap or click; that is fine. */
 const playNotificationSound = () => {
@@ -30,7 +30,18 @@ const playNotificationSound = () => {
       oscillator.start(start);
       oscillator.stop(start + 0.24);
     });
-    window.setTimeout(() => void context.close(), 600);
+    // Autoplay is usually blocked on landing: the context stays suspended, so the chime plays on the first tap, click or key press.
+    const closeLater = () => window.setTimeout(() => void context.close(), 600);
+    if (context.state === 'suspended') {
+      const resume = () => {
+        void context.resume();
+        closeLater();
+        ['pointerdown', 'keydown', 'touchstart'].forEach((name) => window.removeEventListener(name, resume));
+      };
+      ['pointerdown', 'keydown', 'touchstart'].forEach((name) => window.addEventListener(name, resume, { once: true }));
+    } else {
+      closeLater();
+    }
   } catch (error) {
     console.warn('[WhatsAppWidget] Could not play notification sound:', error);
   }
@@ -59,7 +70,7 @@ export const WhatsAppWidget: React.FC = () => {
       } catch (error) {
         console.warn('[WhatsAppWidget] Could not save welcome state:', error);
       }
-    }, 10000);
+    }, 500);
 
     return () => window.clearTimeout(timer);
   }, [isOpen]);
@@ -186,10 +197,15 @@ export const WhatsAppWidget: React.FC = () => {
       )}
 
       {hasUnreadNotice && !isOpen && (
-        <button type="button" onClick={openChat} className="whatsapp-popup-notification" aria-label="Open WhatsApp chat">
-          <span className="whatsapp-popup-title">MAHDEV Support</span>
-          <span className="whatsapp-popup-text">Hi! How can we help you today?</span>
-        </button>
+        <div className="whatsapp-popup-notification">
+          <button type="button" onClick={openChat} className="whatsapp-popup-body" aria-label="Open WhatsApp chat">
+            <span className="whatsapp-popup-title">MAHDEV Support</span>
+            <span className="whatsapp-popup-text">Hi! How can we help you today?</span>
+          </button>
+          <button type="button" onClick={dismissUnreadNotice} aria-label="Close notification" className="whatsapp-popup-close">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
       )}
 
       <button

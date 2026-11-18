@@ -432,17 +432,38 @@ html[data-seasonal-theme="diwali"] {
 }
 
 .whatsapp-popup-notification {
-  display: flex;
+  position: relative;
   max-width: min(18rem, calc(100vw - 6rem));
-  flex-direction: column;
-  gap: 2px;
-  padding: 10px 14px;
+  padding: 0;
   border-radius: 14px 14px 4px 14px;
   background: #fff;
   box-shadow: 0 10px 28px rgb(15 23 42 / 18%);
+  animation: whatsapp-popup-in 0.35s ease-out;
+}
+
+.whatsapp-popup-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 34px 10px 14px;
   text-align: left;
   cursor: pointer;
-  animation: whatsapp-popup-in 0.35s ease-out;
+}
+
+.whatsapp-popup-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  color: #64748b;
+}
+
+.whatsapp-popup-close:hover {
+  background: #f1f5f9;
 }
 
 .whatsapp-popup-title {
