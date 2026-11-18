@@ -12,9 +12,6 @@ import {
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
-import { DIVISIONS } from '../../config/divisions';
-import { DivisionCard } from '../divisions/DivisionCard';
-import { getDivisionCardItems } from '../../utils/divisionPresentation';
 import { MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
 import { formatCurrency } from '../../utils/currency';
 
@@ -43,7 +40,7 @@ export const HomeDiscoverySections: React.FC<HomeDiscoverySectionsProps> = ({ on
 );
 
 const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ onNavigate }) => {
-  const { divisions, gallery } = useFirestoreDataContext();
+  const { gallery } = useFirestoreDataContext();
   const metrics = [
     { label: 'Projects done', value: '1,800+', detail: 'Across all Mahdev divisions', icon: Briefcase },
     { label: 'Customer satisfaction', value: '99.8%', detail: 'Committed to every experience', icon: Users },
@@ -80,33 +77,6 @@ const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ on
       return { name: occasion.name, image: match.image, filterTerm: 'filterTerm' in occasion ? occasion.filterTerm : occasion.terms[0] };
     }).filter((item): item is { name: string; image: string; filterTerm: string } => item !== null);
   }, [gallery]);
-  const divisionCards = useMemo(() => {
-    const fallbackDivisions = Object.values(DIVISIONS).map((division, order) => ({
-      id: division.id,
-      name: division.name,
-      slug: division.id,
-      description: division.description,
-      shortName: division.shortName,
-      route: division.route,
-      imageUrl: division.imageUrl,
-      order,
-      isPublished: true,
-      createdAt: '',
-      updatedAt: '',
-    }));
-    const requiredOrder = ['sws', 'u1', 'it', 'travels', 'mart'];
-    const cards = getDivisionCardItems(divisions.length ? divisions : fallbackDivisions);
-    return cards
-      .filter((division) => requiredOrder.includes(division.id))
-      .sort((left, right) => requiredOrder.indexOf(left.id) - requiredOrder.indexOf(right.id))
-      .slice(0, 5)
-      .map((division) => ({
-        ...division,
-        mediaType: 'image' as const,
-        mediaUrl: division.mediaType === 'video' ? division.posterUrl : division.mediaUrl,
-      }));
-  }, [divisions]);
-
   return (
   <>
     <section className="home-trust-wrap" aria-label="Mahdev in numbers">
@@ -164,29 +134,6 @@ const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ on
         ))}
       </div>
     </div>
-
-    <section className="home-section home-pillars">
-      <div className="home-section-heading home-section-heading--split">
-        <div>
-          <p className="home-eyebrow">One group, many possibilities</p>
-          <h2>Five pillars, <em>one</em> standard of care.</h2>
-        </div>
-        <button type="button" className="home-text-link" onClick={() => onNavigate('/contact')}>
-          Not sure where to start? Ask us <ArrowRight aria-hidden="true" />
-        </button>
-      </div>
-      <div className="home-pillar-grid">
-        {divisionCards.map((division) => (
-          <DivisionCard
-            key={division.id}
-            division={division}
-            onNavigate={onNavigate}
-            variant="standard"
-            showLogo={false}
-          />
-        ))}
-      </div>
-    </section>
   </>
   );
 };

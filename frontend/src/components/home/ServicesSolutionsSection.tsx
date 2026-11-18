@@ -37,7 +37,29 @@ interface SpotlightProps {
   onNavigate: (route: string) => void;
 }
 
-/** One large selected card with the other items as small cards beside it (below it on phones). */
+/** Small clickable photo that makes its item the large one. */
+const SmallCard: React.FC<{ item: SpotlightItem; onSelect: (id: string) => void }> = ({ item, onSelect }) => (
+  <button
+    type="button"
+    onClick={() => onSelect(item.id)}
+    aria-label={`Show ${item.title} larger`}
+    className="group relative min-h-[120px] overflow-hidden rounded-xl bg-slate-900 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#861F31]"
+  >
+    <ImageWithShimmer
+      src={item.image}
+      alt={item.imageAlt}
+      className="absolute inset-0 h-full w-full"
+      imageFit="cover"
+      imageClassName="transition-transform duration-500 group-hover:scale-105"
+      loading="lazy"
+    />
+  </button>
+);
+
+/**
+ * Desktop: big image top-left, two small photos beside it, two small photos under it and the title list
+ * bottom-right. Phones stack them. Picking a title or small photo swaps the big image.
+ */
 const Spotlight: React.FC<SpotlightProps> = ({ items, onNavigate }) => {
   const [selectedId, setSelectedId] = useState(items[0].id);
   const selected = items.find((item) => item.id === selectedId) || items[0];
@@ -50,12 +72,12 @@ const Spotlight: React.FC<SpotlightProps> = ({ items, onNavigate }) => {
   };
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-stretch">
+    <div className="grid gap-4 lg:grid-cols-3 lg:grid-rows-[minmax(0,1fr)_9rem]">
       <a
         href={selected.path}
         onClick={open}
         aria-label={`Explore ${selected.title}`}
-        className="group relative block min-h-[320px] overflow-hidden rounded-2xl bg-slate-900 sm:min-h-[420px] lg:min-h-[520px]"
+        className="group relative block min-h-[320px] overflow-hidden rounded-2xl bg-slate-900 sm:min-h-[420px] lg:col-span-2 lg:min-h-[420px]"
       >
         <ImageWithShimmer
           key={selected.id}
@@ -77,32 +99,26 @@ const Spotlight: React.FC<SpotlightProps> = ({ items, onNavigate }) => {
         </span>
       </a>
 
-      <div
-        role="group"
-        aria-label="Choose an item to show larger"
-        className="grid grid-cols-2 gap-3 lg:grid-cols-1 lg:grid-rows-4"
-      >
-        {others.map((item) => (
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-1 lg:grid-rows-2">
+        {others.slice(0, 2).map((item) => <SmallCard key={item.id} item={item} onSelect={setSelectedId} />)}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 lg:col-span-2">
+        {others.slice(2, 4).map((item) => <SmallCard key={item.id} item={item} onSelect={setSelectedId} />)}
+      </div>
+
+      <div role="group" aria-label="Choose an item to show larger" className="flex flex-col justify-center gap-1">
+        {items.map((item) => (
           <button
             key={item.id}
             type="button"
             onClick={() => setSelectedId(item.id)}
-            aria-label={`Show ${item.title} larger`}
-            className="group relative min-h-[120px] overflow-hidden rounded-xl bg-slate-900 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#861F31]"
+            aria-pressed={item.id === selected.id}
+            className={`truncate rounded-lg px-3 py-2 text-left text-sm font-semibold transition-colors ${
+              item.id === selected.id ? 'bg-[#861F31] text-white' : 'text-slate-700 hover:bg-slate-100'
+            }`}
           >
-            <ImageWithShimmer
-              src={item.image}
-              alt={item.imageAlt}
-              className="absolute inset-0 h-full w-full"
-              imageFit="cover"
-              imageClassName="transition-transform duration-500 group-hover:scale-105"
-              loading="lazy"
-            />
-            <span className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" aria-hidden="true" />
-            <span className="absolute inset-x-0 bottom-0 p-3 text-white">
-              <span className="block text-[11px] font-semibold uppercase tracking-wider text-white/70">{item.category}</span>
-              <span className="line-clamp-2 text-sm font-semibold">{item.title}</span>
-            </span>
+            {item.title}
           </button>
         ))}
       </div>

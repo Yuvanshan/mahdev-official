@@ -11,6 +11,31 @@ const WhatsAppMark: React.FC<{ className?: string }> = ({ className }) => (
 
 const WELCOME_SHOWN_KEY = 'mahdev:whatsapp-welcome-shown';
 
+/** Short two-note chime from the Web Audio API (no audio file). Browsers may block it before the first tap or click; that is fine. */
+const playNotificationSound = () => {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const context = new AudioContextClass();
+    [880, 1175].forEach((frequency, index) => {
+      const start = context.currentTime + index * 0.14;
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.value = frequency;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.15, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.22);
+      oscillator.connect(gain).connect(context.destination);
+      oscillator.start(start);
+      oscillator.stop(start + 0.24);
+    });
+    window.setTimeout(() => void context.close(), 600);
+  } catch (error) {
+    console.warn('[WhatsAppWidget] Could not play notification sound:', error);
+  }
+};
+
 export const WhatsAppWidget: React.FC = () => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -28,6 +53,7 @@ export const WhatsAppWidget: React.FC = () => {
 
     const timer = window.setTimeout(() => {
       setHasUnreadNotice(true);
+      playNotificationSound();
       try {
         sessionStorage.setItem(WELCOME_SHOWN_KEY, '1');
       } catch (error) {
@@ -157,6 +183,13 @@ export const WhatsAppWidget: React.FC = () => {
             <p className="whatsapp-panel-footnote">Opens WhatsApp in a new tab</p>
           </div>
         </section>
+      )}
+
+      {hasUnreadNotice && !isOpen && (
+        <button type="button" onClick={openChat} className="whatsapp-popup-notification" aria-label="Open WhatsApp chat">
+          <span className="whatsapp-popup-title">MAHDEV Support</span>
+          <span className="whatsapp-popup-text">Hi! How can we help you today?</span>
+        </button>
       )}
 
       <button
