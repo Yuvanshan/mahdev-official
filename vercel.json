@@ -197,10 +197,6 @@
       "destination": "/api/sitemap"
     },
     {
-      "source": "/robots.txt",
-      "destination": "/api/robots"
-    },
-    {
       "source": "/__/auth/:path*",
       "destination": "/api/firebase-auth/:path*"
     },
@@ -286,7 +282,7 @@
       "destination": "/favicon.png"
     },
     {
-      "source": "/:path((?!api/|sitemap\\.xml).*)",
+      "source": "/:path((?!api/|sitemap\\.xml|robots\\.txt).*)",
       "destination": "/api/page-shell?route=/:path"
     }
   ],
