@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CrossfadeImage } from '../common/CrossfadeImage';
 import { ImageWatermark } from '../common/ImageWatermark';
 import { getImageSourceCandidates } from '../../utils/imageSources';
+import { withOptimizedSources } from '../../utils/optimizedImage';
 
 const EMPTY_IMAGE_SOURCES: string[] = [];
 
@@ -31,7 +32,7 @@ export const ImageWithShimmer: React.FC<ImageWithShimmerProps> = ({
   watermarkLabel,
 }) => {
   const [hasLoadedImage, setHasLoadedImage] = useState(false);
-  const sourceCandidates = getImageSourceCandidates(src, fallbackSources);
+  const sourceCandidates = withOptimizedSources(getImageSourceCandidates(src, fallbackSources));
   const candidateKey = sourceCandidates.join('\n');
   const hasPositionClass = className
     .split(/\s+/)

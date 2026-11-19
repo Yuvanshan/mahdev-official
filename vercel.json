@@ -384,5 +384,23 @@
         }
       ]
     }
-  ]
+  ],
+  "images": {
+    "sizes": [
+      640,
+      1080,
+      1920
+    ],
+    "formats": [
+      "image/webp"
+    ],
+    "minimumCacheTTL": 31536000,
+    "remotePatterns": [
+      {
+        "protocol": "https",
+        "hostname": "firebasestorage.googleapis.com",
+        "pathname": "/v0/b/for-her-33ea9.firebasestorage.app/**"
+      }
+    ]
+  }
 }

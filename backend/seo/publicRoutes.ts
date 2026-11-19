@@ -12,7 +12,7 @@ import { DIVISION_SEO } from '../../shared/config/divisionSeo.js';
 import { getPageTitle } from '../../shared/config/pageTitles.js';
 import { withServiceArea } from '../../shared/config/itemSeo.js';
 import { CAREERS_PAGE_SEO } from '../../shared/config/careerSeo.js';
-import { getSwsStructuredData, SWS_BUSINESS, SWS_PRIMARY_HEADING, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS } from '../../shared/data/swsLocalSeo.js';
+import { getFaqStructuredData, getSwsStructuredData, SWS_BUSINESS, SWS_PRIMARY_HEADING, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS } from '../../shared/data/swsLocalSeo.js';
 import { U1_PRIMARY_HEADING, U1_SERVICE_AREA_SUMMARY, U1_SERVICE_HIGHLIGHTS } from '../../shared/data/u1LocalSeo.js';
 import { getCanonicalPublicUrl } from '../../shared/config/divisionSites.js';
 
@@ -89,7 +89,7 @@ const ROUTES: RouteSeo[] = [
     heading: SWS_PRIMARY_HEADING,
     subheadings: SWS_SERVICE_HIGHLIGHTS.map((service) => service.heading),
     intro: `${SWS_SERVICE_AREA_SUMMARY} ${SWS_BUSINESS.displayName}. Trincomalee: ${SWS_BUSINESS.trincomalee.full}. Colombo: ${SWS_BUSINESS.colombo.full}. Hotline / WhatsApp: ${SWS_BUSINESS.phoneDisplay}.`,
-    structuredData: [...getSwsStructuredData(), divisionBreadcrumb('sws')],
+    structuredData: [...getSwsStructuredData(), getFaqStructuredData(), divisionBreadcrumb('sws')],
   },
   {
     path: '/u1',

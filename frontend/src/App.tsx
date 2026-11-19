@@ -376,8 +376,21 @@ function AppContent() {
   ]);
 
   // Initialize App Check once; database health is checked only from diagnostics.
+  // It loads the 350 KB reCAPTCHA script, so wait for the first touch, click or key
+  // press (or 6 s) instead of slowing the first paint; Firebase waits for its token.
   useEffect(() => {
-    initAppCheck();
+    const events = ['pointerdown', 'keydown', 'scroll'] as const;
+    const start = () => {
+      events.forEach((name) => window.removeEventListener(name, start));
+      window.clearTimeout(timer);
+      initAppCheck();
+    };
+    const timer = window.setTimeout(start, 6000);
+    events.forEach((name) => window.addEventListener(name, start, { once: true, passive: true }));
+    return () => {
+      events.forEach((name) => window.removeEventListener(name, start));
+      window.clearTimeout(timer);
+    };
   }, []);
 
   // Handle browser back/forward and hash navigation

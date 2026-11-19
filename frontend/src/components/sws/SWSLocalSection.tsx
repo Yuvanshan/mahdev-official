@@ -1,14 +1,14 @@
 import React from 'react';
-import { MapPin, Phone, MessageCircle } from 'lucide-react';
+import { Clock, MapPin, Phone, MessageCircle } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body } from '../ui/Heading';
 import { ScrollReveal } from '../motion/MotionWrappers';
-import { SWS_BUSINESS, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS } from '../../data/swsLocalSeo';
+import { SWS_BUSINESS, SWS_FAQS, SWS_PROFILE_SERVICES, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS } from '../../data/swsLocalSeo';
 
 /**
  * Local search section for /sws: keyword service headings, the exact business
  * name/address/phone from the Google Business Profile, an embedded map of the
- * Trincomalee pin. (FAQs are shown on the Contact page only.) Content comes from src/data/swsLocalSeo.ts,
+ * Trincomalee pin and the FAQs (the same list feeds the page's FAQPage data, which must match what is visible). Content comes from src/data/swsLocalSeo.ts,
  * which also feeds the page's structured data.
  */
 export const SWSLocalSection: React.FC = () => {
@@ -22,6 +22,11 @@ export const SWSLocalSection: React.FC = () => {
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">Trincomalee &amp; Colombo</p>
           <p className="font-editorial text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">Event decoration and styling services</p>
           <Body className="mt-3 max-w-3xl text-slate-600">{SWS_SERVICE_AREA_SUMMARY}</Body>
+          <ul className="mt-5 flex flex-wrap gap-2" aria-label="SWS Event Management services">
+            {SWS_PROFILE_SERVICES.map((name) => (
+              <li key={name} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-700">{name}</li>
+            ))}
+          </ul>
           <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2">
             {SWS_SERVICE_HIGHLIGHTS.map((service) => (
               <article key={service.heading} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
@@ -34,7 +39,21 @@ export const SWSLocalSection: React.FC = () => {
         </ScrollReveal>
       </SectionContainer>
 
-      <SectionContainer background="subtle" paddingY="xl" id="sws-visit-us">
+      <SectionContainer background="subtle" paddingY="xl" id="sws-faq">
+        <ScrollReveal>
+          <H2 className="text-slate-900">Event planning in Trincomalee: common questions</H2>
+          <div className="mt-6 max-w-3xl divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
+            {SWS_FAQS.map((faq) => (
+              <details key={faq.question} className="group p-5">
+                <summary className="cursor-pointer text-base font-semibold text-slate-900">{faq.question}</summary>
+                <Body className="mt-2 text-slate-600">{faq.answer}</Body>
+              </details>
+            ))}
+          </div>
+        </ScrollReveal>
+      </SectionContainer>
+
+      <SectionContainer background="white" paddingY="xl" id="sws-visit-us">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
           <ScrollReveal>
             <H2 className="text-slate-900">Visit or contact SWS Event Management</H2>
@@ -54,6 +73,10 @@ export const SWSLocalSection: React.FC = () => {
                   <strong>Hotline / WhatsApp:</strong>{' '}
                   <a className="text-blue-700 underline" href={`tel:${SWS_BUSINESS.phoneInternational}`}>{SWS_BUSINESS.phoneDisplay}</a>
                 </span>
+              </p>
+              <p className="flex items-center gap-3">
+                <Clock className="h-5 w-5 shrink-0 text-blue-600" aria-hidden="true" />
+                <span><strong>Open:</strong> 24 hours, 7 days a week</span>
               </p>
             </address>
             <div className="mt-6 flex flex-wrap gap-3">

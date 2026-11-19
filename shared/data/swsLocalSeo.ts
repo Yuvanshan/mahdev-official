@@ -7,6 +7,7 @@
  */
 
 import { CANONICAL_SITE_ORIGIN } from '../config/site.js';
+import { SOCIAL_PROFILES } from '../config/company.js';
 import { getDivisionSiteUrl } from '../config/divisionSites.js';
 import { keywordImageAlt, type ImageAltKeyword } from '../domain/keywordImageAlt.js';
 
@@ -34,8 +35,8 @@ export const SWS_BUSINESS = {
   },
   sameAs: [
     'https://maps.google.com/maps?cid=11092678752787023184',
-    'https://web.facebook.com/SWSEventsManagement',
-    'https://www.instagram.com/sws_event_management/',
+    // The brand profiles (not the parent company's LinkedIn page) all link to this /sws page.
+    ...SOCIAL_PROFILES.filter(({ label }) => label !== 'LinkedIn').map(({ url }) => url),
   ],
 } as const;
 
@@ -44,6 +45,14 @@ export const SWS_PRIMARY_HEADING = 'SWS Event Management – Event Planner in Tr
 /** Visible summary under the service headings, naming the searches the page should match. */
 export const SWS_SERVICE_AREA_SUMMARY =
   'SWS Event Management decorates every kind of event: wedding decoration, birthday decoration, cradle ceremony decoration, puberty ceremony decoration, engagement, homecoming, anniversary, baby shower and corporate event decoration in Trincomalee, Nilaveli, Uppuveli and Colombo, Sri Lanka.';
+
+/** Services as listed on the Google Business Profile (category: Event management company). Keep in step with it. */
+export const SWS_PROFILE_SERVICES = [
+  'Event planning', 'Weddings', 'Wedding and engagement', 'Wedding florist services', 'Birthday party planning',
+  "Children's party planning", 'Baby shower planning', 'Anniversary party planning', 'Retirement party planning',
+  'Theme parties', 'Event decor design', 'Corporate events', 'Corporate and conference', 'School event',
+  'Religious event', 'Quinceanera', 'Catering', 'Photography',
+] as const;
 
 // Each heading is rendered as an <h2> on /sws and in the prerendered HTML, so
 // each one leads with the search phrase people type ("birthday decoration trincomalee").
@@ -106,8 +115,32 @@ export const SWS_FAQS = [
     answer: 'SWS Event Management specialises in luxury wedding decorating, Manavarai setups, birthday party styling and cultural ceremonies across Trincomalee, Nilaveli and Uppuveli.',
   },
   {
+    question: 'What is SWS Event Management?',
+    answer: 'SWS Event Management (SWS Events) is an event planner and decoration team in Trincomalee, Sri Lanka, and a division of MAHDEV Pvt. Ltd. We plan and decorate weddings, birthdays, cultural ceremonies and corporate events in Trincomalee, Colombo and nearby areas.',
+  },
+  {
+    question: 'Which event management company should I choose in Trincomalee?',
+    answer: 'Choose a team that handles planning, decoration, rentals, photography and catering together. SWS Event Management offers all of these from one team, with offices in Trincomalee and Colombo, so one contact looks after your whole event.',
+  },
+  {
+    question: 'Do you offer wedding decoration in Trincomalee?',
+    answer: 'Yes. We decorate weddings in Trincomalee, Nilaveli, Uppuveli and Colombo, including Manavarai and Poruwa stages, floral backdrops, entrance arches, table settings and beach wedding setups.',
+  },
+  {
+    question: 'Do you do birthday decoration in Trincomalee?',
+    answer: 'Yes. We style first birthdays, kids’ parties, milestone birthdays and surprise parties with themed balloon decoration, backdrops and cake tables, at homes, halls and hotels in Trincomalee and Colombo.',
+  },
+  {
     question: 'Do you handle traditional ceremonies like Manjal Neerattu Vizha?',
     answer: 'Yes. We offer traditional stage decoration, floral backdrops and seating arrangements for puberty ceremonies (Manjal Neerattu Vizha), Ponnurukku and cradle ceremonies.',
+  },
+  {
+    question: 'Which areas do you serve?',
+    answer: 'We serve Trincomalee, Nilaveli, Uppuveli and Colombo. For other places in Sri Lanka, send us your location and date on WhatsApp and we will confirm availability.',
+  },
+  {
+    question: 'How do I get a quotation for my event?',
+    answer: 'Message us on WhatsApp at 075 092 8078 with the type of event, date, venue and your preferred style. We will discuss the scope and share a quotation.',
   },
   {
     question: 'How can I book SWS Event Management for my wedding?',
@@ -157,15 +190,25 @@ export function getSwsStructuredData(): Array<Record<string, unknown>> {
         longitude: SWS_BUSINESS.trincomalee.longitude,
       },
       hasMap: SWS_BUSINESS.trincomalee.mapsUrl,
+      // Hotline answers around the clock, every day: keep this the same as the Google Business Profile hours.
+      openingHoursSpecification: {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+        opens: '00:00',
+        closes: '23:59',
+      },
       areaServed: ['Trincomalee', 'Nilaveli', 'Uppuveli', 'Colombo'],
       // The decoration services by name, so searches like "cradle ceremony decoration sri lanka" match the listing.
       hasOfferCatalog: {
         '@type': 'OfferCatalog',
         name: 'Event decoration services',
-        itemListElement: SWS_SERVICE_HIGHLIGHTS.map((service) => ({
-          '@type': 'Offer',
-          itemOffered: { '@type': 'Service', name: service.heading, description: service.body },
-        })),
+        itemListElement: [
+          ...SWS_SERVICE_HIGHLIGHTS.map((service) => ({
+            '@type': 'Offer',
+            itemOffered: { '@type': 'Service', name: service.heading, description: service.body },
+          })),
+          ...SWS_PROFILE_SERVICES.map((name) => ({ '@type': 'Offer', itemOffered: { '@type': 'Service', name } })),
+        ],
       },
       sameAs: [...SWS_BUSINESS.sameAs],
     },
