@@ -188,7 +188,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate, redirect
           step !== 'done' && (
             <>
               Already have an account?{' '}
-              <button type="button" onClick={() => onNavigate(loginPath)} className="font-semibold text-blue-700 underline-offset-4 hover:underline">
+              <button type="button" onClick={() => onNavigate(loginPath)} className="font-semibold text-[#861F31] underline-offset-4 hover:underline">
                 Sign in
               </button>
             </>
@@ -198,12 +198,12 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate, redirect
         {step !== 'done' && (
           <div className="mb-6">
             <div className="mb-2 flex justify-between text-xs font-semibold">
-              <span className={step === 1 ? 'text-blue-700' : 'text-slate-500'}>1. About you</span>
-              <span className={step === 2 ? 'text-blue-700' : 'text-slate-400'}>2. Login details</span>
+              <span className={step === 1 ? 'text-[#861F31]' : 'text-slate-500'}>1. About you</span>
+              <span className={step === 2 ? 'text-[#861F31]' : 'text-slate-400'}>2. Login details</span>
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-[#861F31] to-indigo-600"
+                className="h-full rounded-full bg-gradient-to-r from-[#861F31] to-[#B23A4E]"
                 initial={false}
                 animate={{ width: step === 1 ? '50%' : '100%' }}
                 transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
@@ -415,15 +415,15 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate, redirect
                       type="checkbox"
                       checked={formData.agreeToTerms}
                       onChange={(e) => update('agreeToTerms', e.target.checked)}
-                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#861F31] focus:ring-[#861F31]"
                     />
                     <span>
                       I agree to the{' '}
-                      <a href="/terms-and-conditions" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-700 underline">
+                      <a href="/terms-and-conditions" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#861F31] underline">
                         Terms
                       </a>{' '}
                       and{' '}
-                      <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-700 underline">
+                      <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#861F31] underline">
                         Privacy Policy
                       </a>
                       , including how Mahdev stores my NIC details.
@@ -484,7 +484,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate, redirect
                   whileHover={{ y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => user ? goOn(user) : onNavigate(redirectPath)}
-                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#861F31] to-indigo-600 px-5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/30"
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#861F31] to-[#B23A4E] px-5 text-sm font-semibold text-white shadow-lg shadow-[#861F31]/25 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#861F31]/30"
                 >
                   Go to my profile <ArrowRight className="h-4 w-4" />
                 </motion.button>

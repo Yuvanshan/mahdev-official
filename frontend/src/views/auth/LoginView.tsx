@@ -76,7 +76,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onNavigate, redirectPath =
             <button
               type="button"
               onClick={() => onNavigate(redirectPath !== '/account' ? `/register?redirect=${encodeURIComponent(redirectPath)}` : '/register')}
-              className="font-semibold text-blue-700 underline-offset-4 hover:underline"
+              className="font-semibold text-[#861F31] underline-offset-4 hover:underline"
             >
               Create an account
             </button>
@@ -111,7 +111,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onNavigate, redirectPath =
               <button
                 type="button"
                 onClick={() => onNavigate('/forgot-password')}
-                className="text-xs font-semibold text-blue-700 underline-offset-4 hover:underline"
+                className="text-xs font-semibold text-[#861F31] underline-offset-4 hover:underline"
               >
                 Forgot password?
               </button>

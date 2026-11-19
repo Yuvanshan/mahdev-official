@@ -38,7 +38,7 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({ onNaviga
   };
 
   const backToSignIn = (
-    <button type="button" onClick={() => onNavigate('/login')} className="inline-flex items-center gap-1.5 font-semibold text-blue-700 underline-offset-4 hover:underline">
+    <button type="button" onClick={() => onNavigate('/login')} className="inline-flex items-center gap-1.5 font-semibold text-[#861F31] underline-offset-4 hover:underline">
       <ArrowLeft className="h-4 w-4" /> Back to sign in
     </button>
   );
@@ -71,7 +71,7 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({ onNaviga
               <button
                 type="button"
                 onClick={() => setSentMessage(null)}
-                className="text-sm font-semibold text-blue-700 underline-offset-4 hover:underline"
+                className="text-sm font-semibold text-[#861F31] underline-offset-4 hover:underline"
               >
                 Use a different email
               </button>

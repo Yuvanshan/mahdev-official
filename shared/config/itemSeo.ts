@@ -9,7 +9,7 @@ import { formatPageTitle } from './pageTitles.js';
  * seoDescription (auto-filled in the admin editors) is used when present.
  */
 export interface ItemSeo {
-  /** Canonical path, including ?id= for gallery items. */
+  /** Canonical path (gallery items: /gallery/<title>-<id>). */
   path: string;
   title: string;
   description: string;
@@ -112,13 +112,29 @@ export function projectSeo(record: ItemRecord, id: string): ItemSeo {
   };
 }
 
-/** A gallery record or media asset, linked as /gallery?id=<record id>. */
+/** Lower-case, hyphenated words for a URL slug. */
+const slugWords = (value: string) => value.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+/** Clean gallery path: /gallery/<title words>-<record id>. The id suffix keeps every URL unique. */
+export function galleryPath(title: string, id: string): string {
+  const words = slugWords(title).slice(0, 60).replace(/-+$/, '');
+  return `/gallery/${words ? `${words}-` : ''}${encodeURIComponent(id.toLowerCase())}`;
+}
+
+/** True when a /gallery/<slug> value names this record (the bare id or "<words>-<id>"). */
+export function gallerySlugMatchesId(slug: string, id: string): boolean {
+  const wanted = slug.toLowerCase();
+  const recordId = id.toLowerCase();
+  return wanted === recordId || wanted.endsWith(`-${recordId}`);
+}
+
+/** A gallery record or media asset, linked as /gallery/<title>-<record id>. */
 export function gallerySeo(record: ItemRecord, id: string): ItemSeo {
   const title = text(record.title) || 'Mahdev Production Showcase';
   const category = text(record.category) || text(record.tag);
   const label = category && category.toLowerCase() !== title.toLowerCase() ? `${title} | ${category}` : title;
   return {
-    path: `/gallery?id=${encodeURIComponent(id)}`,
+    path: galleryPath(title, id),
     title: formatPageTitle(label),
     description: withServiceArea(
       text(record.seoDescription) || text(record.description) || text(record.caption) || `${title}${category ? ` – ${category}` : ''} by ${divisionName(record)}.`
