@@ -71,8 +71,6 @@ function divisionService(key: Exclude<keyof typeof DIVISION_SEO, 'sws'>, type: s
   };
 }
 
-// /gallery is not listed: the app renders it as the /services page and declares
-// /services as its canonical URL, so a separate prerendered head would conflict.
 const ROUTES: RouteSeo[] = [
   {
     path: '/divisions',
@@ -128,9 +126,16 @@ const ROUTES: RouteSeo[] = [
   {
     path: '/services',
     title: titleFor('/services'),
-    description: 'Browse Mahdev services, event and studio gallery projects, and products in one place: events, photography, IT, travel and production equipment.',
-    heading: 'Explore services, gallery and products',
-    intro: 'Search Mahdev services, gallery projects and products across every division in one place.',
+    description: 'Explore Mahdev services across event management, photography, IT, travel and production equipment in Sri Lanka.',
+    heading: 'Explore Mahdev services',
+    intro: 'Find event, studio, technology and travel services from across the Mahdev divisions.',
+  },
+  {
+    path: '/gallery',
+    title: titleFor('/gallery'),
+    description: 'Explore event, photography, and project gallery work from all Mahdev divisions in Sri Lanka.',
+    heading: 'Mahdev project gallery',
+    intro: 'Discover visual work from Mahdev events, photography, cinema and creative projects.',
   },
   {
     path: '/insights',
@@ -142,9 +147,9 @@ const ROUTES: RouteSeo[] = [
   {
     path: '/catalog',
     title: titleFor('/catalog'),
-    description: 'Browse the Mahdev Mart product catalogue: event and home decor, foil balloons, gifts and more, with island-wide delivery in Sri Lanka. Order easily on WhatsApp.',
-    heading: 'Mahdev Mart product catalogue',
-    intro: 'Search Mahdev Mart products by name or category and order directly on WhatsApp with island-wide delivery.',
+    description: 'Browse Mahdev services, event and studio gallery projects, and products from every division in Sri Lanka.',
+    heading: 'Mahdev services, gallery and product catalog',
+    intro: 'Search services, gallery projects and products across the Mahdev divisions in one place.',
   },
   {
     path: '/book',
@@ -270,7 +275,7 @@ export const PRERENDERED_ROUTES: RouteSeo[] = ROUTES.map((route) => ({
  */
 export const APP_ROUTE_SEGMENTS = new Set([
   '', 'about', 'about-us', 'account', 'admin-yuvan1709', 'articles', 'auth', 'blog', 'book', 'bookings', 'careers', 'cart',
-  'catalog', 'checkout', 'cinema', 'clients', 'companies', 'company', 'confirm-order', 'contact', 'cookie-policy', 'decor',
+  'catalog', 'catelog', 'checkout', 'cinema', 'clients', 'companies', 'company', 'confirm-order', 'contact', 'cookie-policy', 'decor',
   'decorations', 'division', 'divisions', 'event-management', 'events', 'events-management', 'featured-services',
   'forgot-password', 'gallery', 'insights', 'it', 'it-services', 'it-solutions', 'jobs', 'journey', 'login',
   'mahdev-it', 'mahdev-mart', 'mahdev-travels', 'mart', 'media', 'milestones', 'online-mart', 'order', 'orders',

@@ -76,6 +76,11 @@ const RouteLoadingFallback: React.FC<RouteLoadingFallbackProps> = ({ path }) => 
 
     return (
       <>
+        {divisionPath === '/' && (
+          <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-2 py-3 sm:px-4" aria-hidden="true">
+            <div className="aspect-[4/3] w-full animate-pulse rounded-sm bg-slate-200 sm:aspect-[16/5] sm:max-h-[26rem]" />
+          </div>
+        )}
         <section
           role="status"
           aria-busy="true"
@@ -1275,7 +1280,21 @@ function AppContent() {
       );
     }
 
-    if (normalizedPath === '/catalog' || normalizedPath.startsWith('/catalog/')) {
+    if (normalizedPath === '/catalog' || normalizedPath === '/catelog') {
+      const productId = searchParams.get('id') || searchParams.get('product') || searchParams.get('sku');
+      if (productId) {
+        return <CatalogView initialProductId={productId} initialDivision="mart" onNavigate={navigate} />;
+      }
+      return (
+        <ExploreAllView
+          onNavigate={navigate}
+          initialPage="catalog"
+          initialCategorySlug={searchParams.get('category') || undefined}
+        />
+      );
+    }
+
+    if (normalizedPath.startsWith('/catalog/')) {
       const parts = normalizedPath.split('/').filter(Boolean);
       let initialProductId: string | undefined;
       let initialCategory: string | undefined;

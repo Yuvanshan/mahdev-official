@@ -189,6 +189,11 @@
       "source": "/featured-services",
       "destination": "/services",
       "permanent": true
+    },
+    {
+      "source": "/catelog",
+      "destination": "/catalog",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -257,6 +262,16 @@
     {
       "source": "/:route(divisions|sws|u1|it|travels|mart|services|insights|catalog|book|about|portfolio|milestones|testimonials|careers|clients|contact|promotions|privacy-policy|terms-and-conditions|refund-policy|shipping-policy|cookie-policy)",
       "destination": "/:route/index.html"
+    },
+    {
+      "source": "/gallery",
+      "missing": [
+        {
+          "type": "query",
+          "key": "id"
+        }
+      ],
+      "destination": "/gallery/index.html"
     },
     {
       "source": "/admin-yuvan1709",

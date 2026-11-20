@@ -84,7 +84,7 @@ const readInitialParams = () => {
   };
   const sort = params.get('sort') as ListingSort | null;
   return {
-    query: params.get('q')?.trim() || '',
+    query: params.get('q')?.trim() || params.get('search')?.trim() || '',
     price: { min: amount('min'), max: amount('max') } as PriceRange,
     pricedOnly: params.get('priced') === '1',
     sort: sort && LISTING_SORT_OPTIONS.some((option) => option.value === sort) ? sort : 'recommended' as ListingSort,
@@ -186,7 +186,7 @@ const BrowseCard: React.FC<{
 export const ExploreAllView: React.FC<{
   onNavigate: (route: string) => void;
   initialCategorySlug?: string;
-  initialPage?: 'services' | 'gallery';
+  initialPage?: 'services' | 'gallery' | 'catalog';
 }> = ({ onNavigate, initialCategorySlug, initialPage = 'services' }) => {
   const {
     services,
@@ -203,8 +203,11 @@ export const ExploreAllView: React.FC<{
   const [priceRange, setPriceRange] = useState<PriceRange>(initialParams.price);
   const [pricedOnly, setPricedOnly] = useState(initialParams.pricedOnly);
   const [sortBy, setSortBy] = useState<ListingSort>(initialParams.sort);
+  const defaultFilter = initialPage === 'gallery' ? 'type:gallery' : 'all';
   // Select the category from the URL immediately, so a direct visit never flashes "All items".
-  const [selectedFilter, setSelectedFilter] = useState(() => toFilterFromSlug(initialCategorySlug));
+  const [selectedFilter, setSelectedFilter] = useState(() =>
+    initialCategorySlug ? toFilterFromSlug(initialCategorySlug) : defaultFilter
+  );
   const [selectedService, setSelectedService] = useState<FirestoreService | null>(null);
   const [selectedGalleryItem, setSelectedGalleryItem] = useState<{ data: FirestoreGallery; images: string[] } | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
@@ -315,14 +318,17 @@ export const ExploreAllView: React.FC<{
 
   const categories = useMemo(() => {
     const counts = new Map<string, number>();
-    allItems.forEach((item) => counts.set(item.category, (counts.get(item.category) || 0) + 1));
+    const categoryItems = initialPage === 'gallery'
+      ? allItems.filter((item) => item.type === 'gallery')
+      : allItems;
+    categoryItems.forEach((item) => counts.set(item.category, (counts.get(item.category) || 0) + 1));
     return [...counts.entries()].sort(([a], [b]) => a.localeCompare(b));
-  }, [allItems]);
+  }, [allItems, initialPage]);
 
   // Keep the selection in sync when the URL's category changes (back/forward navigation).
   useEffect(() => {
-    setSelectedFilter(toFilterFromSlug(initialCategorySlug));
-  }, [initialCategorySlug]);
+    setSelectedFilter(initialCategorySlug ? toFilterFromSlug(initialCategorySlug) : defaultFilter);
+  }, [initialCategorySlug, defaultFilter]);
 
   // Items in the selected type/category; the price slider limits follow this selection.
   const itemsInSelection = useMemo(() => allItems.filter((item) => {
@@ -402,7 +408,9 @@ export const ExploreAllView: React.FC<{
 
   const isLoading = isServicesLoading || isProductsLoading || isGalleryLoading;
 
-  const selectedFilterLabel = selectedFilter.startsWith('category:')
+  const selectedFilterLabel = selectedFilter === defaultFilter
+    ? undefined
+    : selectedFilter.startsWith('category:')
     ? categories.find(([category]) => toCategorySlug(category) === selectedFilter.slice('category:'.length))?.[0]
       || selectedFilter.slice('category:'.length)
     : selectedFilter.startsWith('type:')
@@ -411,7 +419,8 @@ export const ExploreAllView: React.FC<{
   const priceLabel = describePriceRange(priceRange, formatLKR) || (pricedOnly ? 'Priced only' : undefined);
   const hasPricedItems = priceBounds !== null;
   const showPriceSlider = priceBounds !== null && priceBounds.max > priceBounds.min;
-  const isFiltered = query.trim() !== '' || selectedFilter !== 'all' || isPriceRangeActive(priceRange) || pricedOnly;
+  const isFiltered = query.trim() !== '' || selectedFilter !== defaultFilter || isPriceRangeActive(priceRange) || pricedOnly;
+  const pagePath = initialPage === 'gallery' ? '/gallery' : initialPage === 'catalog' ? '/catalog' : '/services';
 
   // Carries price/sort/search across the category route change (see readInitialParams).
   const buildQueryString = () => {
@@ -427,6 +436,7 @@ export const ExploreAllView: React.FC<{
   const updateFilter = (filter: string, keepOtherFilters = true) => {
     setSelectedFilter(filter);
     setOpenPanel(null);
+    if (initialPage !== 'services') return;
     const queryString = keepOtherFilters ? buildQueryString() : '';
     if (filter === 'all') {
       onNavigate(`/services${queryString}`);
@@ -447,7 +457,7 @@ export const ExploreAllView: React.FC<{
     setPriceRange(EMPTY_PRICE_RANGE);
     setPricedOnly(false);
     setSortBy('recommended');
-    if (selectedFilter !== 'all') updateFilter('all', false);
+    if (selectedFilter !== defaultFilter) updateFilter(defaultFilter, false);
   };
 
   // Removable chips summarising what is currently applied
@@ -469,8 +479,13 @@ export const ExploreAllView: React.FC<{
         <>
           <h3 className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Show</h3>
           <nav aria-label="Catalog categories" className="space-y-1">
-            <FilterOptionRow label="All items" count={allItems.length} selected={selectedFilter === 'all'} onClick={() => updateFilter('all')} />
-            {(['service', 'gallery', 'product'] as BrowseType[]).map((type) => (
+            <FilterOptionRow
+              label={initialPage === 'gallery' ? 'All gallery items' : 'All items'}
+              count={initialPage === 'gallery' ? allItems.filter((item) => item.type === 'gallery').length : allItems.length}
+              selected={selectedFilter === defaultFilter}
+              onClick={() => updateFilter(defaultFilter)}
+            />
+            {(initialPage === 'gallery' ? [] : ['service', 'gallery', 'product'] as BrowseType[]).map((type) => (
               <FilterOptionRow
                 key={type}
                 label={KIND_LABELS[type]}
@@ -539,15 +554,21 @@ export const ExploreAllView: React.FC<{
   return (
     <section className="min-h-screen bg-slate-50 pt-20">
       <SEOHead
-        title="Explore Services, Gallery & Products"
-        description="Browse Mahdev services, event and studio gallery projects, and products in one place."
-        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/services`}
+        title={initialPage === 'gallery' ? 'Mahdev Gallery' : initialPage === 'catalog' ? 'Mahdev Services, Gallery & Product Catalog' : 'Explore Services, Gallery & Products'}
+        description={initialPage === 'gallery'
+          ? 'Explore event, photography, and project gallery work from all Mahdev divisions in Sri Lanka.'
+          : 'Browse Mahdev services, event and studio gallery projects, and products from every division in one place.'}
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}${pagePath}`}
       />
       <SectionContainer background="white" paddingY="lg" hasBorderBottom>
         <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="font-editorial text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-              {initialPage === 'gallery' ? 'Explore the Mahdev gallery' : 'Explore services, projects & products'}
+              {initialPage === 'gallery'
+                ? 'Explore the Mahdev gallery'
+                : initialPage === 'catalog'
+                  ? 'Services, gallery & products'
+                  : 'Explore services, projects & products'}
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
               {initialPage === 'gallery'

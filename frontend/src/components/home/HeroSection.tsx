@@ -83,9 +83,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
     const video = isUploadedVideoActive ? uploadedVideoRef.current : videoRef.current;
     const hero = heroRef.current;
     if (!video || !hero) return;
-    video.setAttribute('fetchpriority', 'high');
+    video.setAttribute('fetchpriority', 'low');
 
     let isHeroVisible = false;
+    let playbackTimer: number | undefined;
     const savePlaybackPosition = () => {
       if (Number.isFinite(video.currentTime)) savedHeroVideoTime = video.currentTime;
     };
@@ -98,14 +99,20 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
     if (video.readyState >= HTMLMediaElement.HAVE_METADATA) restorePlaybackPosition();
     const syncPlayback = () => {
       if (reducedMotion || isVideoPaused || !isHeroVisible || document.visibilityState === 'hidden') {
+        if (playbackTimer !== undefined) window.clearTimeout(playbackTimer);
+        playbackTimer = undefined;
         savePlaybackPosition();
         video.pause();
         return;
       }
-      video.muted = true;
-      void video.play().catch((error: unknown) => {
-        console.warn('[HomeHero] Muted autoplay was blocked:', error);
-      });
+      if (playbackTimer !== undefined) window.clearTimeout(playbackTimer);
+      playbackTimer = window.setTimeout(() => {
+        playbackTimer = undefined;
+        video.muted = true;
+        void video.play().catch((error: unknown) => {
+          console.warn('[HomeHero] Muted autoplay was blocked:', error);
+        });
+      }, 1500);
     };
     const onVisibilityChange = () => syncPlayback();
     document.addEventListener('visibilitychange', onVisibilityChange);
@@ -125,6 +132,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
 
     return () => {
       observer?.disconnect();
+      if (playbackTimer !== undefined) window.clearTimeout(playbackTimer);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       video.removeEventListener('timeupdate', savePlaybackPosition);
       video.removeEventListener('loadedmetadata', restorePlaybackPosition);
@@ -202,12 +210,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
                 ref={videoRef}
                 src={HERO_VIDEO}
                 poster={HERO_POSTER}
-                autoPlay={!reducedMotion && !isVideoPaused}
+                autoPlay={false}
                 loop
                 playsInline
                 disableRemotePlayback
                 muted
-                preload="metadata"
+                preload="none"
                 aria-hidden="true"
                 disablePictureInPicture
                 className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 brightness-[1.04] contrast-[1.12] saturate-[1.08] ${
@@ -224,7 +232,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
                   playsInline
                   disableRemotePlayback
                   muted
-                  preload="metadata"
+                  preload="none"
                   aria-hidden="true"
                   disablePictureInPicture
                   onCanPlay={activateUploadedVideo}

@@ -24,6 +24,7 @@ const STATIC_PUBLIC_PATHS = [
   '/travels',
   '/mart',
   '/services',
+  '/gallery',
   // Browse pages for each kind of item, so crawlers find services, gallery and products lists.
   '/services/category/type-services',
   '/services/category/type-gallery',
@@ -45,9 +46,7 @@ const STATIC_PUBLIC_PATHS = [
   '/shipping-policy',
   '/cookie-policy',
 ];
-// /gallery is not listed: it renders the /services page and declares /services as
-// canonical. Single gallery items (/gallery/<title>-<id>) are listed below with their own head.
-const RESERVED_PATHS = new Set([...STATIC_PUBLIC_PATHS, '/gallery']);
+const RESERVED_PATHS = new Set(STATIC_PUBLIC_PATHS);
 const PRIVATE_PATH_PREFIXES = [
   '/admin',
   '/admin-yuvan1709',

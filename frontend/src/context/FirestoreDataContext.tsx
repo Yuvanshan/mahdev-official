@@ -790,6 +790,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       '/promotions': '/promotion',
       '/featured-services': '/services',
       '/media': '/gallery',
+      '/catelog': '/catalog',
       '/work': '/portfolio',
       '/projects': '/portfolio',
       '/journey': '/milestones',
@@ -925,6 +926,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         normalizedRoute.startsWith('/book/') ||
         // Legacy "/services%{slug}" category links, before the app redirects them.
         /^\/(?:services|gallery)%/.test(normalizedRoute) ||
+        normalizedRoute === '/catalog' ||
         normalizedRoute === '/promotion'
       ) {
         await refreshServices();
@@ -956,10 +958,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         // Stale-while-revalidate: show the saved gallery instantly, then fetch the latest
         // in the background (one snapshot request per page load) and update quietly.
         const galleryWasCached = !forceRefresh && hasValidDeviceCacheItem('mahdev_cached_gallery');
-        await refreshServices();
         await refreshGallery();
-        await refreshProducts();
-        await refreshCategories();
         if (galleryWasCached) {
           void firestoreGalleryService.getGallery(undefined, true)
             .then((fresh) => {
@@ -1103,14 +1102,9 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         setDeviceCacheItem('mahdev_cached_testimonials', JSON.stringify(reviews));
         setDeviceCacheItem('mahdev_cached_google_reviews_config', JSON.stringify(googleReviewConfig));
         setDeviceCacheItem('mahdev_cached_google_reviews', JSON.stringify(googleReviewData));
-        await Promise.all([
-          cmsService.loadPublicCollections(forceRefresh).catch((cmsError: unknown) => {
+        await cmsService.loadPublicCollections(forceRefresh).catch((cmsError: unknown) => {
             console.error('[FirestoreDataContext] Could not refresh public CMS collections:', cmsError);
-          }),
-          getPublishedCareerOpenings(forceRefresh).catch((careerError: unknown) => {
-            console.error('[FirestoreDataContext] Could not refresh published career openings:', careerError);
-          }),
-        ]);
+        });
         return;
       }
     } catch (cause) {
@@ -1538,31 +1532,23 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
       if (divisions.length > 0) cmsService.syncEntityFromFirestore('divisions', divisions);
       if (homepageConfig) cmsService.syncHomepageConfig(homepageConfig);
       const route = getCurrentRoutePath();
-      const refresh = route === '/' || route === '/divisions'
-        ? refreshAll(true)
-        : loadRouteData(route, true);
-      void refresh.catch((error: unknown) => {
-        console.error('[FirestoreDataContext] Route refresh failed:', error);
-      });
+      window.setTimeout(() => {
+        void loadRouteData(route, true).catch((error: unknown) => {
+          console.error('[FirestoreDataContext] Background route refresh failed:', error);
+        });
+      }, 3000);
       return;
     }
 
     if (!bootLoadStartedRef.current) {
       bootLoadStartedRef.current = true;
       const route = getCurrentRoutePath();
-      if (route === '/' || route === '/divisions') {
-        void refreshAll(true);
-      } else if (isHardReloadNavigation()) {
-        void loadRouteData(route, true).catch((error: unknown) => {
-          console.error('[FirestoreDataContext] Route refresh failed:', error);
-        });
-      } else {
-        void loadRouteData(route).catch((error: unknown) => {
-          console.error('[FirestoreDataContext] Initial route data load failed:', error);
-        });
-      }
+      const forceRefresh = isHardReloadNavigation();
+      void loadRouteData(route, forceRefresh).catch((error: unknown) => {
+        console.error('[FirestoreDataContext] Initial route data load failed:', error);
+      });
     }
-  }, [hasCachedData, products, services, divisions, homepageConfig, refreshAll, loadRouteData]);
+  }, [hasCachedData, products, services, divisions, homepageConfig, loadRouteData]);
 
   const activeDivisions = useMemo(() => {
     return divisions.filter((d) => d.status === 'active');

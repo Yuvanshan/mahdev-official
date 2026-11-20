@@ -30,6 +30,8 @@ const PROCESS = ['Explore services', 'Contact us', 'Confirm your booking', 'Enjo
 
 const WHATSAPP_URL =
   `https://wa.me/${MAHDEV_WHATSAPP_NUMBER}?text=${encodeURIComponent('Hi Mahdev, I would like to plan an event.')}`;
+const HOME_GALLERY_PLACEHOLDERS = [0, 1, 2, 3];
+const HOME_PRODUCT_PLACEHOLDERS = [0, 1, 2, 3];
 
 interface HomeDiscoverySectionsProps {
   onNavigate: (route: string) => void;
@@ -40,7 +42,7 @@ export const HomeDiscoverySections: React.FC<HomeDiscoverySectionsProps> = ({ on
 );
 
 const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ onNavigate }) => {
-  const { gallery } = useFirestoreDataContext();
+  const { gallery, isGalleryLoading } = useFirestoreDataContext();
   const metrics = [
     { label: 'Projects done', value: '1,800+', detail: 'Across all Mahdev divisions', icon: Briefcase },
     { label: 'Customer satisfaction', value: '99.8%', detail: 'Committed to every experience', icon: Users },
@@ -97,29 +99,37 @@ const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ on
       </div>
     </section>
 
-    {galleryCards.length > 0 && (
+    {(galleryCards.length > 0 || isGalleryLoading) && (
       <section className="home-section home-occasions">
         <div className="home-section-heading">
           <p className="home-eyebrow">From the Mahdev gallery</p>
           <h2>What are you <em>celebrating?</em></h2>
         </div>
         <div className="home-occasion-grid">
-          {galleryCards.map((occasion, index) => (
-            <button
-              type="button"
-              className={`home-occasion${index === 0 ? ' home-occasion--feature' : ''}${index === 7 ? ' home-occasion--wide' : ''}`}
-              key={`${occasion.name}-${occasion.image}`}
-              style={{ backgroundImage: `linear-gradient(180deg, transparent 34%, rgba(42,8,16,.72)), url("${occasion.image}")` }}
-              onClick={() => {
-                onNavigate(`/sws?category=${encodeURIComponent(occasion.filterTerm)}`);
-              }}
-            >
-              <span className="home-occasion-label">
-                <span>{occasion.name}</span>
-                <span className="home-occasion-more">Explore this collection <ArrowRight aria-hidden="true" /></span>
-              </span>
-            </button>
-          ))}
+          {galleryCards.length
+            ? galleryCards.map((occasion, index) => (
+                <button
+                  type="button"
+                  className={`home-occasion${index === 0 ? ' home-occasion--feature' : ''}${index === 7 ? ' home-occasion--wide' : ''}`}
+                  key={`${occasion.name}-${occasion.image}`}
+                  style={{ backgroundImage: `linear-gradient(180deg, transparent 34%, rgba(42,8,16,.72)), url("${occasion.image}")` }}
+                  onClick={() => {
+                    onNavigate(`/sws?category=${encodeURIComponent(occasion.filterTerm)}`);
+                  }}
+                >
+                  <span className="home-occasion-label">
+                    <span>{occasion.name}</span>
+                    <span className="home-occasion-more">Explore this collection <ArrowRight aria-hidden="true" /></span>
+                  </span>
+                </button>
+              ))
+            : HOME_GALLERY_PLACEHOLDERS.map((item, index) => (
+                <div
+                  key={item}
+                  aria-hidden="true"
+                  className={`home-occasion animate-pulse bg-slate-200${index === 0 ? ' home-occasion--feature' : ''}`}
+                />
+              ))}
         </div>
       </section>
     )}
@@ -143,7 +153,7 @@ interface HomeConversionSectionsProps {
 }
 
 export const HomeConversionSections: React.FC<HomeConversionSectionsProps> = ({ onNavigate }) => {
-  const { products } = useFirestoreDataContext();
+  const { products, isProductsLoading } = useFirestoreDataContext();
   const { addToCart, cartItems } = useCart();
   const [cartNotice, setCartNotice] = useState('');
   const featuredProducts = useMemo(
@@ -211,6 +221,15 @@ export const HomeConversionSections: React.FC<HomeConversionSectionsProps> = ({ 
                 </article>
               );
             })}
+          </div>
+        ) : isProductsLoading ? (
+          <div className="home-product-grid" aria-hidden="true">
+            {HOME_PRODUCT_PLACEHOLDERS.map((item) => (
+              <div className="home-product-card animate-pulse" key={item}>
+                <div className="home-product-image bg-slate-200" />
+                <div className="home-product-details bg-white" />
+              </div>
+            ))}
           </div>
         ) : (
           <div className="home-product-empty">
