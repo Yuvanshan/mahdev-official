@@ -2307,6 +2307,12 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   overflow: visible !important;
 }
 
+@media (min-width: 1024px) {
+  #featured-services.home-showcase-section {
+    padding-block: 2.5rem;
+  }
+}
+
 .home-showcase-section:has(.home-showcase-feature:focus-visible) {
   z-index: 2;
 }

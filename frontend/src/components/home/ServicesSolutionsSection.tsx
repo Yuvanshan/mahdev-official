@@ -43,7 +43,7 @@ const SmallCard: React.FC<{ item: SpotlightItem; onSelect: (id: string) => void 
     type="button"
     onClick={() => onSelect(item.id)}
     aria-label={`Show ${item.title} larger`}
-    className="group relative min-h-[120px] overflow-hidden rounded-xl bg-slate-900 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#861F31]"
+    className="group relative min-h-[120px] overflow-hidden rounded-xl bg-slate-900 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#861F31] lg:min-h-[100px]"
   >
     <BlurredImageFrame
       src={item.image}
@@ -76,7 +76,7 @@ const Spotlight: React.FC<SpotlightProps> = ({ items, onNavigate }) => {
         href={selected.path}
         onClick={open}
         aria-label={`Explore ${selected.title}`}
-        className="group relative block min-h-[320px] overflow-hidden rounded-2xl bg-slate-900 sm:min-h-[420px] lg:col-span-2 lg:min-h-[420px]"
+        className="group relative block min-h-[320px] overflow-hidden rounded-2xl bg-slate-900 sm:min-h-[420px] lg:col-span-2 lg:min-h-[240px]"
       >
         <BlurredImageFrame
           key={selected.id}
@@ -112,7 +112,7 @@ const Spotlight: React.FC<SpotlightProps> = ({ items, onNavigate }) => {
             type="button"
             onClick={() => setSelectedId(item.id)}
             aria-pressed={item.id === selected.id}
-            className={`w-full min-w-0 whitespace-normal break-words rounded-lg px-3 py-2.5 text-center text-sm font-semibold leading-5 transition-colors ${
+            className={`w-full min-w-0 whitespace-normal break-words rounded-lg px-3 py-2.5 text-center text-sm font-semibold leading-5 transition-colors lg:py-1.5 ${
               item.id === selected.id ? 'bg-[#861F31] text-white' : 'text-slate-700 hover:bg-slate-100'
             }`}
           >
@@ -191,7 +191,7 @@ export const ServicesSolutionsSection: React.FC<ServicesSolutionsSectionProps> =
 
   return (
     <SectionContainer id="featured-services" className="home-showcase-section" background="white" paddingY="xl" hasBorderBottom>
-      <div className="mb-8 flex flex-col items-center gap-5">
+      <div className="mb-8 flex flex-col items-center gap-5 lg:mb-5 lg:gap-3">
         <H2 className="text-center text-slate-900">Services &amp; Solutions</H2>
         <div role="tablist" aria-label="Show services or gallery" className="flex gap-1.5 rounded-xl border border-slate-200 bg-slate-100/90 p-1">
           {availableTabs.map(({ id, label }) => (
@@ -214,7 +214,7 @@ export const ServicesSolutionsSection: React.FC<ServicesSolutionsSectionProps> =
       {/* Keyed by tab, so switching tabs starts with the newest item selected. */}
       <Spotlight key={activeTab.id} items={itemsByTab[activeTab.id]} onNavigate={onNavigate} />
 
-      <div className="mt-6 flex justify-end">
+      <div className="mt-6 flex justify-end lg:mt-4">
         <a
           href={activeTab.viewAll}
           onClick={(event) => {
