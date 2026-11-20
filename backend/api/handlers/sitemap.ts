@@ -29,7 +29,7 @@ const STATIC_PUBLIC_PATHS = [
   '/services/category/type-services',
   '/services/category/type-gallery',
   '/services/category/type-products',
-  '/insights',
+  '/blog',
   '/catalog',
   '/book',
   '/about',
@@ -127,6 +127,7 @@ const IMAGE_FIELDS = new Set([
   'ogImage',
   'poster',
   'posterUrl',
+  'sections',
   'thumbnail',
   'thumbnailUrl',
   'url',
@@ -322,7 +323,7 @@ export function buildSitemapXml(
       ({ data }) => {
         const slug = publicSlug(data.slug);
         if (!slug) return null;
-        return data.category === 'insights' ? `/insights/${slug}` : `/${slug}`;
+        return data.category === 'insights' ? `/blog/${slug}` : `/${slug}`;
       },
       origin,
       true,

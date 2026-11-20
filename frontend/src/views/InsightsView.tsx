@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ArrowRight, BookOpen, CalendarDays } from 'lucide-react';
 import { SEOHead } from '../components/layout/SEOHead';
 import { SectionContainer } from '../components/ui/SectionContainer';
+import { BlurredImageFrame } from '../components/common/BlurredImageFrame';
 import { CmsPage } from '../types/cms';
 import { cmsService } from '../services/cmsService';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
@@ -30,24 +31,34 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onNavigate }) => {
   return (
     <section className="min-h-screen bg-white pt-24 pb-16">
       <SEOHead
-        title="Insights | Mahdev"
-        description="Practical insights, project learnings, and helpful guidance from Mahdev's event, media, technology, travel, and production teams in Sri Lanka."
-        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/insights`}
-        keywords={['Mahdev insights', 'Sri Lanka event and production insights', 'business technology Sri Lanka']}
-        noIndex={articles.length === 0}
+        title="Mahdev Blog | Event, Media & Business Guides"
+        description="Practical event planning, wedding decoration, photography, technology and travel guides from the Mahdev teams in Sri Lanka."
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/blog`}
+        keywords={['Mahdev blog', 'event planner Trincomalee', 'wedding decoration Sri Lanka', 'event management Colombo']}
       />
       <SectionContainer background="subtle" paddingY="lg" hasBorderBottom>
-        <div className="max-w-3xl">
-          <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-blue-700">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="mb-3 inline-flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-wider text-blue-700">
             <BookOpen aria-hidden="true" className="h-4 w-4" />
-            Mahdev Insights
+            Mahdev Blog
           </p>
           <h1 className="font-display text-3xl font-bold tracking-tight text-slate-950 sm:text-5xl">
-            Useful ideas and stories from our teams
+            Guides and stories from our teams
           </h1>
           <p className="mt-4 text-base leading-relaxed text-slate-600">
-            Read practical guidance and project stories published by Mahdev's teams across Sri Lanka.
+            Read practical event planning, decoration and project guides published by Mahdev teams across Sri Lanka.
           </p>
+          <a
+            href="/catalog"
+            onClick={(event) => {
+              if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+              event.preventDefault();
+              onNavigate('/catalog');
+            }}
+            className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#861F31] px-5 text-sm font-semibold text-white transition hover:bg-[#6e1427]"
+          >
+            Explore services &amp; decorations <ArrowRight aria-hidden="true" className="h-4 w-4" />
+          </a>
         </div>
       </SectionContainer>
 
@@ -55,46 +66,49 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onNavigate }) => {
         {articles.length > 0 ? (
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {articles.map((article) => (
-              <article key={article.id} className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">
-                  {article.heroSubheading || 'Mahdev Insights'}
-                </p>
-                <h2 className="mt-3 font-display text-xl font-bold text-slate-950">
-                  {article.title}
-                </h2>
-                <p className="mt-3 line-clamp-4 flex-1 text-sm leading-relaxed text-slate-600">
-                  {article.metaDescription}
-                </p>
-                {article.publishedAt && (
-                  <p className="mt-5 inline-flex items-center gap-2 text-xs text-slate-500">
-                    <CalendarDays aria-hidden="true" className="h-4 w-4" />
-                    <time dateTime={article.publishedAt}>
-                      {new Date(article.publishedAt).toLocaleDateString('en-LK', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                    </time>
+              <article key={article.id} className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <BlurredImageFrame src={article.heroImageUrl} alt={article.title} className="w-full" />
+                <div className="flex flex-1 flex-col items-center p-6 text-center">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">
+                    {article.heroSubheading || 'Mahdev Blog'}
                   </p>
-                )}
-                <a
-                  href={`/insights/${encodeURIComponent(article.slug)}`}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    onNavigate(`/insights/${encodeURIComponent(article.slug)}`);
-                  }}
-                  className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-900"
-                >
-                  Read article <ArrowRight aria-hidden="true" className="h-4 w-4" />
-                </a>
+                  <h2 className="mt-3 font-display text-xl font-bold text-slate-950">
+                    {article.title}
+                  </h2>
+                  <p className="mt-3 line-clamp-4 flex-1 text-sm leading-relaxed text-slate-600">
+                    {article.metaDescription}
+                  </p>
+                  {article.publishedAt && (
+                    <p className="mt-5 inline-flex items-center gap-2 text-xs text-slate-500">
+                      <CalendarDays aria-hidden="true" className="h-4 w-4" />
+                      <time dateTime={article.publishedAt}>
+                        {new Date(article.publishedAt).toLocaleDateString('en-LK', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </time>
+                    </p>
+                  )}
+                  <a
+                    href={`/blog/${encodeURIComponent(article.slug)}`}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      onNavigate(`/blog/${encodeURIComponent(article.slug)}`);
+                    }}
+                    className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-900"
+                  >
+                    Read article <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                  </a>
+                </div>
               </article>
             ))}
           </div>
         ) : (
           <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center">
-            <h2 className="font-display text-xl font-bold text-slate-900">New insights are in progress</h2>
+            <h2 className="font-display text-xl font-bold text-slate-900">New blog posts are in progress</h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-600">
-              Our team is preparing practical articles and project stories. Please check back soon.
+              Our team is preparing practical guides and project stories. Please check back soon.
             </p>
           </div>
         )}

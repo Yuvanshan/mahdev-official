@@ -8,7 +8,7 @@ import { gallerySeo, productSeo, servicePagePath } from '../config/itemSeo';
 import { ServiceDetailsModal, toServiceDetails, wrapIndex } from '../components/services/ServiceDetailsModal';
 import { CatalogProductModal } from '../components/catalog/CatalogProductModal';
 import { GallerySectionShimmer } from '../components/common/GallerySectionShimmer';
-import { ImageWithShimmer } from '../components/ui/ImageWithShimmer';
+import { BlurredImageFrame } from '../components/common/BlurredImageFrame';
 import { SectionContainer } from '../components/ui/SectionContainer';
 import { mapFirestoreProductToCatalog } from '../services/catalogService';
 import { analyticsService } from '../services/analyticsService';
@@ -127,14 +127,14 @@ const BrowseCard: React.FC<{
       <a
         href={href}
         onClick={openDetails}
-        className="relative block aspect-[4/3] w-full overflow-hidden bg-slate-100 text-left"
+        className="relative block aspect-[4/5] w-full overflow-hidden bg-slate-100 text-left"
         aria-label={`View ${item.title}`}
       >
         {imageSources.length ? (
-          <ImageWithShimmer
+          <BlurredImageFrame
             src={imageSources[0]}
-            fallbackSources={imageSources.slice(1)}
             alt={preferSavedAlt(item.data.imageAlt, getImageAlt(item.title, item.division, item.category))}
+            fallbackSources={imageSources.slice(1)}
             className="absolute inset-0"
             loading={imageLoading}
           />

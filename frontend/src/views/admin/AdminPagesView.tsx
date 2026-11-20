@@ -14,6 +14,7 @@ import {
   Globe,
   Layers,
   FileText,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { CmsPage } from '../../types/cms';
 import { cmsService } from '../../services/cmsService';
@@ -21,12 +22,21 @@ import { Button } from '../../components/ui/Button';
 import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { AdminToast, ToastMessage } from '../../components/admin/AdminToast';
+import { MediaPickerModal } from '../../components/admin/MediaPickerModal';
 import { CANONICAL_SITE_HOST } from '../../config/site';
 
-export const AdminPagesView: React.FC = () => {
+interface AdminPagesViewProps {
+  contentType?: 'pages' | 'blog';
+}
+
+const normalizePageSlug = (value: string) =>
+  value.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
+
+export const AdminPagesView: React.FC<AdminPagesViewProps> = ({ contentType = 'pages' }) => {
+  const isBlogMode = contentType === 'blog';
   const [pages, setPages] = useState<CmsPage[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>(isBlogMode ? 'insights' : 'all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'deleted'>('all');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -35,6 +45,7 @@ export const AdminPagesView: React.FC = () => {
   const [editingPage, setEditingPage] = useState<CmsPage | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [imagePickerTarget, setImagePickerTarget] = useState<{ type: 'cover' } | { type: 'section'; index: number } | null>(null);
 
   // Confirm Delete State
   const [deletingPage, setDeletingPage] = useState<CmsPage | null>(null);
@@ -47,6 +58,7 @@ export const AdminPagesView: React.FC = () => {
     metaDescription: '',
     heroHeading: '',
     heroSubheading: '',
+    heroImageUrl: '',
     content: '',
     sections: [] as { heading: string; body: string; imageUrl?: string }[],
     isPublished: true,
@@ -79,6 +91,10 @@ export const AdminPagesView: React.FC = () => {
   };
 
   useEffect(() => {
+    setCategoryFilter(isBlogMode ? 'insights' : 'all');
+  }, [isBlogMode]);
+
+  useEffect(() => {
     loadPages();
     const unsub = cmsService.subscribe('pages', loadPages);
     return () => unsub();
@@ -89,12 +105,13 @@ export const AdminPagesView: React.FC = () => {
     setFormData({
       slug: '',
       title: '',
-      category: 'custom',
+      category: isBlogMode ? 'insights' : 'custom',
       metaDescription: '',
       heroHeading: '',
       heroSubheading: '',
-      content: '### Overview\nEnter your page overview and rich text specifications here.',
-      sections: [{ heading: 'Key Provisions', body: 'Detailed description and guidelines.' }],
+      heroImageUrl: '',
+      content: isBlogMode ? 'Write your blog post here.' : '### Overview\nEnter your page overview and rich text specifications here.',
+      sections: isBlogMode ? [{ heading: 'Article section', body: '' }] : [{ heading: 'Key Provisions', body: 'Detailed description and guidelines.' }],
       isPublished: true,
     });
     setFormErrors({});
@@ -111,6 +128,7 @@ export const AdminPagesView: React.FC = () => {
       metaDescription: page.metaDescription,
       heroHeading: page.heroHeading,
       heroSubheading: page.heroSubheading || '',
+      heroImageUrl: page.heroImageUrl || '',
       content: page.content,
       sections: page.sections || [],
       isPublished: page.isPublished,
@@ -123,7 +141,17 @@ export const AdminPagesView: React.FC = () => {
   const validateForm = () => {
     const errors: Record<string, string> = {};
     if (!formData.title.trim()) errors.title = 'Page title is required';
-    if (!formData.slug.trim()) errors.slug = 'URL slug is required';
+    const slug = normalizePageSlug(formData.slug);
+    if (!slug) errors.slug = 'Enter a valid URL slug.';
+    if (isBlogMode) {
+      const duplicate = cmsService.getAll<CmsPage>('pages').some((page) =>
+        page.category === 'insights' &&
+        page.slug === slug &&
+        page.id !== editingPage?.id &&
+        !page.isDeleted
+      );
+      if (slug && duplicate) errors.slug = 'A blog post already uses this URL slug.';
+    }
     if (!formData.metaDescription.trim()) errors.metaDescription = 'Meta description is required for SEO';
     if (!formData.heroHeading.trim()) errors.heroHeading = 'Hero display heading is required';
     setFormErrors(errors);
@@ -136,36 +164,40 @@ export const AdminPagesView: React.FC = () => {
 
     try {
       const now = new Date().toISOString();
-      const slugFormatted = formData.slug.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      const slugFormatted = normalizePageSlug(formData.slug);
 
       if (editingPage) {
         await cmsService.update<CmsPage>('pages', editingPage.id, {
           slug: slugFormatted,
           title: formData.title,
-          category: formData.category,
+          category: isBlogMode ? 'insights' : formData.category,
           metaDescription: formData.metaDescription,
           heroHeading: formData.heroHeading,
           heroSubheading: formData.heroSubheading,
+          heroImageUrl: formData.heroImageUrl || '',
           content: formData.content,
           sections: formData.sections,
           isPublished: formData.isPublished,
           publishedAt: formData.isPublished ? (editingPage.publishedAt || now) : undefined,
         });
-        addToast('success', 'Page Updated', `"${formData.title}" was successfully updated.`);
+        addToast('success', isBlogMode ? 'Blog Post Updated' : 'Page Updated', `"${formData.title}" was successfully updated.`);
       } else {
         await cmsService.create<CmsPage>('pages', {
           slug: slugFormatted,
           title: formData.title,
-          category: formData.category,
+          category: isBlogMode ? 'insights' : formData.category,
           metaDescription: formData.metaDescription,
           heroHeading: formData.heroHeading,
           heroSubheading: formData.heroSubheading,
+          heroImageUrl: formData.heroImageUrl || '',
           content: formData.content,
           sections: formData.sections,
           isPublished: formData.isPublished,
           publishedAt: formData.isPublished ? now : undefined,
         });
-        addToast('success', 'Page Created', `"${formData.title}" was published to custom pages.`);
+        addToast('success', isBlogMode ? 'Blog Post Created' : 'Page Created', isBlogMode
+          ? `"${formData.title}" was saved to the blog.`
+          : `"${formData.title}" was published to custom pages.`);
       }
 
       setIsEditorOpen(false);
@@ -226,6 +258,21 @@ export const AdminPagesView: React.FC = () => {
     setIsDirty(true);
   };
 
+  const handleImageSelect = (url: string) => {
+    if (imagePickerTarget?.type === 'cover') {
+      setFormData((previous) => ({ ...previous, heroImageUrl: url }));
+    } else if (imagePickerTarget?.type === 'section') {
+      setFormData((previous) => ({
+        ...previous,
+        sections: previous.sections.map((section, index) =>
+          index === imagePickerTarget.index ? { ...section, imageUrl: url } : section
+        ),
+      }));
+    }
+    setIsDirty(true);
+    setImagePickerTarget(null);
+  };
+
   return (
     <div className="space-y-6">
       {/* Toast Notification Container */}
@@ -237,11 +284,13 @@ export const AdminPagesView: React.FC = () => {
           <div className="flex items-center gap-2">
             <FileCode className="w-5 h-5 text-blue-600" />
             <h2 className="font-display text-lg font-bold text-slate-900">
-              Pages & Static Content Architecture ({pages.length})
+              {isBlogMode ? 'Blog Posts' : 'Pages & Static Content Architecture'} ({pages.length})
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Manage legal policies, corporate governance disclaimers, custom landing layouts, and route definitions.
+            {isBlogMode
+              ? 'Write and publish articles with cover and in-article images.'
+              : 'Manage legal policies, corporate governance disclaimers, custom landing layouts, and route definitions.'}
           </p>
         </div>
 
@@ -252,7 +301,7 @@ export const AdminPagesView: React.FC = () => {
           leftIcon={<Plus className="w-4 h-4" />}
           className="text-xs font-bold shrink-0"
         >
-          Create New Page
+          {isBlogMode ? 'Create Blog Post' : 'Create New Page'}
         </Button>
       </div>
 
@@ -270,7 +319,7 @@ export const AdminPagesView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
-          <div className="flex items-center gap-1.5">
+          {!isBlogMode && <div className="flex items-center gap-1.5">
             <span className="text-xs font-semibold text-slate-500">Category:</span>
             <select
               value={categoryFilter}
@@ -284,7 +333,7 @@ export const AdminPagesView: React.FC = () => {
               <option value="custom">Custom Content</option>
               <option value="insights">Insights Article</option>
             </select>
-          </div>
+          </div>}
 
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-semibold text-slate-500">Status:</span>
@@ -343,7 +392,7 @@ export const AdminPagesView: React.FC = () => {
                 <div className="py-3 space-y-2">
                   <div className="text-xs text-slate-500 font-mono bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 flex items-center gap-1.5">
                     <Globe className="w-3 h-3 text-slate-400" />
-                    <span>/{p.slug}</span>
+                    <span>/{p.category === 'insights' ? 'blog/' : ''}{p.slug}</span>
                   </div>
 
                   <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
@@ -414,12 +463,12 @@ export const AdminPagesView: React.FC = () => {
         {pages.length === 0 && (
           <div className="col-span-full py-16 text-center bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-3">
             <FileCode className="w-12 h-12 text-slate-300 mx-auto" />
-            <h3 className="font-display text-base font-bold text-slate-900">No pages found</h3>
+            <h3 className="font-display text-base font-bold text-slate-900">{isBlogMode ? 'No blog posts found' : 'No pages found'}</h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              No static or legal pages match your filters.
+              {isBlogMode ? 'Create your first post to start publishing on the blog.' : 'No static or legal pages match your filters.'}
             </p>
             <Button variant="electric" size="sm" onClick={handleOpenCreate} leftIcon={<Plus className="w-4 h-4" />}>
-              Create New Page
+              {isBlogMode ? 'Create Blog Post' : 'Create New Page'}
             </Button>
           </div>
         )}
@@ -429,8 +478,8 @@ export const AdminPagesView: React.FC = () => {
       <AdminModal
         isOpen={isEditorOpen}
         onClose={() => setIsEditorOpen(false)}
-        title={editingPage ? `Edit Page: ${editingPage.title}` : 'Create Custom Page'}
-        subtitle="Manage page content, SEO metadata, hero headings, and dynamic sub-sections."
+        title={editingPage ? `Edit ${isBlogMode ? 'Blog Post' : 'Page'}: ${editingPage.title}` : isBlogMode ? 'Create Blog Post' : 'Create Custom Page'}
+        subtitle={isBlogMode ? 'Manage article content, publication status, SEO metadata and images.' : 'Manage page content, SEO metadata, hero headings, and dynamic sub-sections.'}
         isDirty={isDirty}
         onSave={handleSave}
         isSaving={isSaving}
@@ -463,8 +512,9 @@ export const AdminPagesView: React.FC = () => {
               </label>
               <select
                 value={formData.category}
+                disabled={isBlogMode}
                 onChange={(e) => {
-                  setFormData({ ...formData, category: e.target.value as any });
+                  setFormData({ ...formData, category: e.target.value as CmsPage['category'] });
                   setIsDirty(true);
                 }}
                 className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none"
@@ -473,6 +523,7 @@ export const AdminPagesView: React.FC = () => {
                 <option value="corporate">Corporate Governance</option>
                 <option value="landing">Landing & Campaign</option>
                 <option value="custom">Custom Content</option>
+                <option value="insights">Blog Article</option>
               </select>
             </div>
           </div>
@@ -484,7 +535,7 @@ export const AdminPagesView: React.FC = () => {
               </label>
               <div className="flex items-center">
                 <span className="px-3 py-2 bg-slate-100 border border-r-0 border-slate-200 rounded-l-xl text-xs text-slate-500 font-mono">
-                  {CANONICAL_SITE_HOST}/{formData.category === 'insights' ? 'insights/' : ''}
+                  {CANONICAL_SITE_HOST}/{formData.category === 'insights' ? 'blog/' : ''}
                 </span>
                 <input
                   type="text"
@@ -555,9 +606,36 @@ export const AdminPagesView: React.FC = () => {
             />
           </div>
 
+          {isBlogMode && (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-700">Cover image</p>
+                  <p className="mt-1 text-[11px] text-slate-500">Shown on the blog listing and at the top of the article.</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setImagePickerTarget({ type: 'cover' })}
+                  leftIcon={<ImageIcon className="h-4 w-4" />}
+                >
+                  {formData.heroImageUrl ? 'Change image' : 'Add image'}
+                </Button>
+              </div>
+              {formData.heroImageUrl && (
+                <img
+                  src={formData.heroImageUrl}
+                  alt=""
+                  className="mt-3 max-h-56 w-full rounded-lg object-cover"
+                />
+              )}
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Page Content Body (Markdown / Narrative)
+              {isBlogMode ? 'Article Content' : 'Page Content Body (Markdown / Narrative)'}
             </label>
             <textarea
               rows={6}
@@ -597,6 +675,18 @@ export const AdminPagesView: React.FC = () => {
                       placeholder="Section Heading"
                       className="w-2/3 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800"
                     />
+                    {isBlogMode && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setImagePickerTarget({ type: 'section', index: idx })}
+                        leftIcon={<ImageIcon className="h-3.5 w-3.5" />}
+                        className="h-8 text-xs"
+                      >
+                        {sec.imageUrl ? 'Change image' : 'Add image'}
+                      </Button>
+                    )}
                     <button
                       type="button"
                       onClick={() => removeSection(idx)}
@@ -612,6 +702,9 @@ export const AdminPagesView: React.FC = () => {
                     placeholder="Section body text..."
                     className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-600"
                   />
+                  {isBlogMode && sec.imageUrl && (
+                    <img src={sec.imageUrl} alt="" className="max-h-48 w-full rounded-lg object-cover" />
+                  )}
                 </div>
               ))}
             </div>
@@ -636,6 +729,22 @@ export const AdminPagesView: React.FC = () => {
           </div>
         </div>
       </AdminModal>
+
+      <MediaPickerModal
+        isOpen={!!imagePickerTarget}
+        onClose={() => setImagePickerTarget(null)}
+        onSelect={handleImageSelect}
+        currentUrl={
+          imagePickerTarget?.type === 'cover'
+            ? formData.heroImageUrl
+            : imagePickerTarget?.type === 'section'
+              ? formData.sections[imagePickerTarget.index]?.imageUrl || ''
+              : ''
+        }
+        title="Choose a blog image"
+        category="general"
+        storageCategory="general"
+      />
 
       {/* Confirm Delete Dialog */}
       <AdminConfirmDialog

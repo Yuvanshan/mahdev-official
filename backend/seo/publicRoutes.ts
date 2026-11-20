@@ -12,7 +12,7 @@ import { DIVISION_SEO } from '../../shared/config/divisionSeo.js';
 import { getPageTitle } from '../../shared/config/pageTitles.js';
 import { withServiceArea } from '../../shared/config/itemSeo.js';
 import { CAREERS_PAGE_SEO } from '../../shared/config/careerSeo.js';
-import { getFaqStructuredData, getSwsStructuredData, SWS_BUSINESS, SWS_PRIMARY_HEADING, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS } from '../../shared/data/swsLocalSeo.js';
+import { getFaqStructuredData, getSwsStructuredData, SWS_BUSINESS, SWS_PRIMARY_HEADING, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS, SWS_TARGET_KEYWORDS } from '../../shared/data/swsLocalSeo.js';
 import { U1_PRIMARY_HEADING, U1_SERVICE_AREA_SUMMARY, U1_SERVICE_HIGHLIGHTS } from '../../shared/data/u1LocalSeo.js';
 import { getCanonicalPublicUrl } from '../../shared/config/divisionSites.js';
 
@@ -30,6 +30,9 @@ export interface RouteSeo {
   ogImage?: string;
   /** Extra JSON-LD blocks added to this page's prerendered <head>. */
   structuredData?: Array<Record<string, unknown>>;
+  keywords?: readonly string[];
+  /** Plain text content rendered in the crawlable fallback for CMS articles. */
+  articleContent?: Array<{ heading?: string; text: string; imageUrl?: string }>;
 }
 
 // Same "Careers - Mahdev (Pvt) Ltd" title the app shows in the browser tab.
@@ -86,6 +89,7 @@ const ROUTES: RouteSeo[] = [
     description: DIVISION_SEO.sws.description,
     heading: SWS_PRIMARY_HEADING,
     subheadings: SWS_SERVICE_HIGHLIGHTS.map((service) => service.heading),
+    keywords: SWS_TARGET_KEYWORDS,
     intro: `${SWS_SERVICE_AREA_SUMMARY} ${SWS_BUSINESS.displayName}. Trincomalee: ${SWS_BUSINESS.trincomalee.full}. Colombo: ${SWS_BUSINESS.colombo.full}. Hotline / WhatsApp: ${SWS_BUSINESS.phoneDisplay}.`,
     structuredData: [...getSwsStructuredData(), getFaqStructuredData(), divisionBreadcrumb('sws')],
   },
@@ -138,11 +142,11 @@ const ROUTES: RouteSeo[] = [
     intro: 'Discover visual work from Mahdev events, photography, cinema and creative projects.',
   },
   {
-    path: '/insights',
-    title: titleFor('/insights'),
-    description: "Practical insights, project learnings and guidance from Mahdev's event, media, technology, travel and production teams in Sri Lanka.",
-    heading: 'Insights',
-    intro: 'Learnings and guidance from the Mahdev teams.',
+    path: '/blog',
+    title: titleFor('/blog'),
+    description: 'Practical event planning, wedding decoration, photography, technology and travel guides from the Mahdev teams in Sri Lanka.',
+    heading: 'Mahdev Blog',
+    intro: 'Read practical event planning, decoration and project guides published by Mahdev teams across Sri Lanka.',
   },
   {
     path: '/catalog',

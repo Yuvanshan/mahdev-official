@@ -118,6 +118,7 @@ export type AdminSectionId =
   | 'portfolio'
   | 'careers'
   | 'gallery'
+  | 'blogs'
   | 'milestones'
   | 'companies'
   | 'testimonials'

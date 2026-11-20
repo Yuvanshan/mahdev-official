@@ -42,16 +42,16 @@ export const FaqSection: React.FC<FaqSectionProps> = ({
   return (
   <SectionContainer background={background} paddingY="xl" id={id}>
     <ScrollReveal>
-      <H2 className="text-slate-900">{title}</H2>
-      <div className="mt-6 divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
+      <H2 className="text-center text-slate-900">{title}</H2>
+      <div className="mx-auto mt-6 max-w-3xl divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
         {items.map((faq) => (
           <details key={faq.question} className="group p-5">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-slate-900 [&::-webkit-details-marker]:hidden">
-              <H3 className="text-base">{faq.question}</H3>
+            <summary className="relative flex cursor-pointer list-none items-center justify-center gap-4 font-semibold text-slate-900 [&::-webkit-details-marker]:hidden">
+              <H3 className="text-center text-base">{faq.question}</H3>
               {/* Arrow shows the item can be opened; it turns down when open. */}
-              <ArrowRight className="h-5 w-5 shrink-0 text-blue-600 transition-transform duration-200 group-open:rotate-90" aria-hidden="true" />
+              <ArrowRight className="absolute right-0 h-5 w-5 shrink-0 text-blue-600 transition-transform duration-200 group-open:rotate-90" aria-hidden="true" />
             </summary>
-            <Body className="mt-3 text-slate-600">{faq.answer}</Body>
+            <Body className="mt-3 text-center text-slate-600">{faq.answer}</Body>
           </details>
         ))}
       </div>

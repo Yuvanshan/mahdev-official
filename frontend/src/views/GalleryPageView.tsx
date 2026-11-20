@@ -20,7 +20,7 @@ import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { InquiredItemShimmer } from '../components/common/InquiredItemShimmer';
 import { InquiryItemNotFound } from '../components/common/InquiryItemNotFound';
 import { getDefaultGallery } from '../services/firestore/gallery';
-import { ImageWithShimmer } from '../components/ui/ImageWithShimmer';
+import { BlurredImageFrame } from '../components/common/BlurredImageFrame';
 import { ServiceDetailsModal, wrapIndex } from '../components/services/ServiceDetailsModal';
 import { StartingPriceTag, getStartingPrice, getStartingPriceDetails } from '../components/common/StartingPriceTag';
 import { getRecordImageAlt } from '../config/imageAlt';
@@ -349,8 +349,8 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
                 onClick={() => setActiveItem(item)}
                 className="group relative cursor-pointer overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg"
               >
-                <div className="aspect-[4/3] w-full overflow-hidden bg-slate-100 relative">
-                  <ImageWithShimmer
+                <div className="relative aspect-[4/5] w-full overflow-hidden bg-slate-100">
+                  <BlurredImageFrame
                     src={item.url}
                     alt={getRecordImageAlt(item)}
                     className="absolute inset-0"

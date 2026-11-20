@@ -45,6 +45,8 @@ export const SEOHead: React.FC<SEOMetaData> = ({
   ogTitle,
   ogDescription,
   ogType = 'website',
+  ogImage,
+  structuredData,
   keywords = [],
   noIndex = false,
 }) => {
@@ -176,8 +178,12 @@ export const SEOHead: React.FC<SEOMetaData> = ({
           ? matched.keywords
           : matched.keywords.split(',').map((keyword) => keyword.trim()).filter(Boolean);
       }
-      effectiveOgTitle = matched.title;
-      effectiveOgDesc = matched.description;
+      if (!ogTitle && matched.title) effectiveOgTitle = matched.title;
+      if (!ogDescription && matched.description) effectiveOgDesc = matched.description;
+    }
+
+    if (ogImage) {
+      effectiveOgImage = ogImage.startsWith('/') ? `${activeSiteOrigin}${ogImage}` : ogImage;
     }
 
     // Every description names the Trincomalee and Colombo branches, as the prerendered HTML does.
@@ -353,7 +359,19 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       '@context': 'https://schema.org',
       '@graph': [organizationSchema, websiteSchema],
     });
-  }, [title, description, canonicalUrl, ogTitle, ogDescription, ogType, keywords, noIndex, siteSettings, companySettings, seoConfigs]);
+
+    const pageSchemaId = 'mahdev-page-json-ld';
+    const pageSchema = document.getElementById(pageSchemaId) as HTMLScriptElement | null;
+    if (structuredData) {
+      const pageSchemaScript = pageSchema || document.createElement('script');
+      pageSchemaScript.id = pageSchemaId;
+      pageSchemaScript.type = 'application/ld+json';
+      pageSchemaScript.textContent = JSON.stringify(structuredData);
+      if (!pageSchema) document.head.appendChild(pageSchemaScript);
+    } else {
+      pageSchema?.remove();
+    }
+  }, [title, description, canonicalUrl, ogTitle, ogDescription, ogType, ogImage, structuredData, keywords, noIndex, siteSettings, companySettings, seoConfigs]);
 
   return null;
 };

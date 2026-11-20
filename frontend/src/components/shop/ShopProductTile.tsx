@@ -3,6 +3,7 @@ import { Heart, Star } from 'lucide-react';
 import { useWishlist } from '../../context/WishlistContext';
 import { recordView } from '../../utils/usageProfile';
 import { formatCurrency } from '../../utils/currency';
+import { BlurredImageFrame } from '../common/BlurredImageFrame';
 
 export interface ShopTileData {
   id: string;
@@ -40,22 +41,12 @@ export const ShopProductTile: React.FC<ShopProductTileProps> = ({ item, onSelect
         recordView(item.interest || item.name);
         onSelect();
       }}
-      className="group flex w-full flex-col items-start gap-1.5 rounded-sm p-3 text-left transition-shadow hover:shadow-lg"
+      className="group flex w-full flex-col items-stretch gap-1.5 rounded-sm p-3 text-center transition-shadow hover:shadow-lg"
     >
-      <span className="mx-auto block h-36 w-full overflow-hidden sm:h-40">
-        {item.imageUrl && (
-          <img
-            src={item.imageUrl}
-            alt={item.name}
-            loading="lazy"
-            draggable={false}
-            className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-110"
-          />
-        )}
-      </span>
+      <BlurredImageFrame src={item.imageUrl} alt={item.name} className="mx-auto w-full transition-transform duration-200 group-hover:scale-[1.02]" />
       <span className="line-clamp-2 min-h-[2.5rem] text-sm text-slate-900 group-hover:text-blue-700">{item.name}</span>
       {item.rating ? (
-        <span className="flex items-center gap-1.5 text-xs text-slate-500">
+        <span className="flex items-center justify-center gap-1.5 text-xs text-slate-500">
           <span className="inline-flex items-center gap-0.5 rounded-sm bg-emerald-600 px-1.5 py-0.5 font-semibold text-white">
             {item.rating.toFixed(1)} <Star className="h-3 w-3 fill-current" aria-hidden="true" />
           </span>
@@ -63,7 +54,7 @@ export const ShopProductTile: React.FC<ShopProductTileProps> = ({ item, onSelect
         </span>
       ) : null}
       {item.price !== undefined ? (
-        <span className="flex flex-wrap items-center gap-1.5 text-sm font-semibold text-slate-900">
+        <span className="flex flex-wrap items-center justify-center gap-1.5 text-sm font-semibold text-slate-900">
           {formatCurrency(item.price, currency)}
           {hasDiscount && (
             <>

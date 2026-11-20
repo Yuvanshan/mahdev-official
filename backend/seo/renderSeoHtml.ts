@@ -43,6 +43,10 @@ export function renderSeoHtml(baseHtml: string, route: RouteSeo, origin: string)
   let html = baseHtml;
   html = replaceTag(html, /<title>[^<]*<\/title>/, `<title>${title}</title>`, '<title>');
   html = replaceTag(html, /<meta name="description" content="[^"]*" \/>/, `<meta name="description" content="${description}" />`, 'meta description');
+  if (route.keywords?.length) {
+    const keywords = escapeHtml(route.keywords.join(', '));
+    html = upsertTag(html, /<meta name="keywords" content="[^"]*" \/>/, `<meta name="keywords" content="${keywords}" />`);
+  }
   html = upsertTag(html, /<link rel="canonical" href="[^"]*" \/>/, `<link rel="canonical" href="${url}" />`);
   html = replaceTag(html, /<meta property="og:title" content="[^"]*" \/>/, `<meta property="og:title" content="${title}" />`, 'og:title');
   html = replaceTag(html, /<meta property="og:description" content="[^"]*" \/>/, `<meta property="og:description" content="${description}" />`, 'og:description');
@@ -56,16 +60,25 @@ export function renderSeoHtml(baseHtml: string, route: RouteSeo, origin: string)
   }
   // Route-specific crawlable copy inside the (visually hidden) fallback block.
   const subheadings = (route.subheadings ?? []).map((heading) => `\n        <h2>${escapeHtml(heading)}</h2>`).join('');
+  const articleImage = route.articleContent?.length && route.ogImage
+    ? `\n        <img src="${escapeHtml(absoluteUrl(route.ogImage, origin))}" alt="${escapeHtml(route.heading)}" />`
+    : '';
+  const articleContent = (route.articleContent ?? []).map(({ heading: sectionHeading, text, imageUrl }) =>
+    `${sectionHeading ? `\n        <h2>${escapeHtml(sectionHeading)}</h2>` : ''}${text ? `\n        <p>${escapeHtml(text)}</p>` : ''}${imageUrl ? `\n        <img src="${escapeHtml(absoluteUrl(imageUrl, origin))}" alt="${escapeHtml(sectionHeading || route.heading)}" />` : ''}`
+  ).join('');
   html = replaceTag(
     html,
     /(<main id="seo-fallback"[^>]*>)[\s\S]*?(<\/main>)/,
-    (_match, open, close) => `${open}\n        <h1>${escapeHtml(route.heading)}</h1>\n        <p>${escapeHtml(route.intro)}</p>\n        <p>${description}</p>${subheadings}\n        <nav aria-label="Mahdev sites"><a href="/">Mahdev home</a> · <a href="/sws">SWS Event Management</a> · <a href="/u1">U1 Studio</a> · <a href="/it">Mahdev IT</a> · <a href="/travels">Mahdev Travels</a> · <a href="/mart">Mahdev Mart</a> · <a href="/services">Services</a> · <a href="/portfolio">Portfolio</a> · <a href="/about">About</a> · <a href="/contact">Contact</a></nav>\n        <p>Follow Mahdev: ${SOCIAL_LINKS_HTML}</p>\n      ${close}`,
+    (_match, open, close) => `${open}\n        <h1>${escapeHtml(route.heading)}</h1>\n        <p>${escapeHtml(route.intro)}</p>\n        <p>${description}</p>${subheadings}${articleImage}${articleContent}\n        <nav aria-label="Mahdev sites"><a href="/">Mahdev home</a> · <a href="/sws">SWS Event Management</a> · <a href="/u1">U1 Studio</a> · <a href="/it">Mahdev IT</a> · <a href="/travels">Mahdev Travels</a> · <a href="/mart">Mahdev Mart</a> · <a href="/services">Services</a> · <a href="/portfolio">Portfolio</a> · <a href="/about">About</a> · <a href="/contact">Contact</a></nav>\n        <p>Follow Mahdev: ${SOCIAL_LINKS_HTML}</p>\n      ${close}`,
     'seo-fallback block'
   );
   if (route.structuredData?.length) {
     // JSON-LD is data, not script code: escape "<" so content can never close the tag.
     const blocks = route.structuredData
-      .map((block) => `    <script type="application/ld+json">${JSON.stringify(block).replace(/</g, '\\u003c')}</script>`)
+      .map((block) => {
+        const id = block['@type'] === 'BlogPosting' ? ' id="mahdev-page-json-ld"' : '';
+        return `    <script${id} type="application/ld+json">${JSON.stringify(block).replace(/</g, '\\u003c')}</script>`;
+      })
       .join('\n');
     html = replaceTag(html, /<\/head>/, `${blocks}\n  </head>`, '</head>');
   }

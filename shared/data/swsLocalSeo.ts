@@ -32,6 +32,10 @@ export const SWS_BUSINESS = {
     streetAddress: '41/22, Pickerings Road, Kotahena',
     locality: 'Colombo',
     full: '41/22, Pickerings Road, Kotahena, Colombo 13',
+    postalCode: '01300',
+    latitude: 6.9500542,
+    longitude: 79.8587206,
+    mapsUrl: 'https://maps.google.com/maps?cid=5377861460541524515',
   },
   sameAs: [
     'https://maps.google.com/maps?cid=11092678752787023184',
@@ -45,6 +49,19 @@ export const SWS_PRIMARY_HEADING = 'SWS Event Management – Event Planner in Tr
 /** Visible summary under the service headings, naming the searches the page should match. */
 export const SWS_SERVICE_AREA_SUMMARY =
   'SWS Event Management decorates every kind of event: wedding decoration, birthday decoration, cradle ceremony decoration, puberty ceremony decoration, engagement, homecoming, anniversary, baby shower and corporate event decoration in Trincomalee, Nilaveli, Uppuveli and Colombo, Sri Lanka.';
+
+export const SWS_TARGET_KEYWORDS = [
+  'event planner in Trincomalee',
+  'best event planner in Trincomalee',
+  'event management company in Trincomalee',
+  'wedding decorators in Trincomalee',
+  'wedding decoration in Colombo',
+  'birthday decoration in Trincomalee',
+  'beach wedding decoration in Nilaveli',
+  'corporate event planner in Colombo',
+  'cultural ceremony decoration in Sri Lanka',
+  'event rentals in Trincomalee',
+] as const;
 
 /** Services as listed on the Google Business Profile (category: Event management company). Keep in step with it. */
 export const SWS_PROFILE_SERVICES = [
@@ -111,40 +128,64 @@ export function getSwsImageAlt(title: string, ...context: Array<string | undefin
 
 export const SWS_FAQS = [
   {
-    question: 'Who are the best event decorators in Trincomalee?',
-    answer: 'SWS Event Management specialises in luxury wedding decorating, Manavarai setups, birthday party styling and cultural ceremonies across Trincomalee, Nilaveli and Uppuveli.',
+    question: 'Who is the best event planner in Trincomalee?',
+    answer: 'If you are looking for an event planner in Trincomalee, SWS Event Management plans and decorates weddings, birthdays, cultural ceremonies and corporate events in Trincomalee, Nilaveli, Uppuveli and Colombo. Compare recent work, services, availability and quotations to find the right planner for your event.',
   },
   {
-    question: 'What is SWS Event Management?',
-    answer: 'SWS Event Management (SWS Events) is an event planner and decoration team in Trincomalee, Sri Lanka, and a division of MAHDEV Pvt. Ltd. We plan and decorate weddings, birthdays, cultural ceremonies and corporate events in Trincomalee, Colombo and nearby areas.',
+    question: 'What types of wedding decorations do you offer?',
+    answer: 'We provide wedding styling including traditional Hindu Manavarai stages, Poruwa setups, floral backdrops, bridal walkways, table centerpieces, lighting and outdoor beach wedding arrangements.',
   },
   {
-    question: 'Which event management company should I choose in Trincomalee?',
-    answer: 'Choose a team that handles planning, decoration, rentals, photography and catering together. SWS Event Management offers all of these from one team, with offices in Trincomalee and Colombo, so one contact looks after your whole event.',
+    question: 'How much does wedding or birthday decoration cost in Trincomalee?',
+    answer: 'Decoration packages are quoted based on the venue, design, materials and event requirements. Message SWS Event Management on WhatsApp at 075 092 8078 with your reference image, venue and event date to discuss a quotation.',
   },
   {
-    question: 'Do you offer wedding decoration in Trincomalee?',
-    answer: 'Yes. We decorate weddings in Trincomalee, Nilaveli, Uppuveli and Colombo, including Manavarai and Poruwa stages, floral backdrops, entrance arches, table settings and beach wedding setups.',
+    question: 'Do you offer birthday party decorations in Trincomalee and Colombo?',
+    answer: 'Yes. SWS can style first birthdays, children’s themed parties, milestone birthdays and surprise celebrations with balloon arrangements, backdrops, cake tables and themed decor at homes, halls and hotels.',
   },
   {
-    question: 'Do you do birthday decoration in Trincomalee?',
-    answer: 'Yes. We style first birthdays, kids’ parties, milestone birthdays and surprise parties with themed balloon decoration, backdrops and cake tables, at homes, halls and hotels in Trincomalee and Colombo.',
+    question: 'Can you recreate a decoration design from a reference photo?',
+    answer: 'Share your reference photos and event details with our team. We can discuss the colours, backdrop, floral styling and materials and provide a design proposal suited to your event and budget.',
   },
   {
-    question: 'Do you handle traditional ceremonies like Manjal Neerattu Vizha?',
-    answer: 'Yes. We offer traditional stage decoration, floral backdrops and seating arrangements for puberty ceremonies (Manjal Neerattu Vizha), Ponnurukku and cradle ceremonies.',
+    question: 'Can I book SWS Event Management for a last-minute event?',
+    answer: 'Short-notice bookings may be possible depending on the date, venue and setup requirements. Contact us as soon as possible to check availability.',
   },
   {
-    question: 'Which areas do you serve?',
-    answer: 'We serve Trincomalee, Nilaveli, Uppuveli and Colombo. For other places in Sri Lanka, send us your location and date on WhatsApp and we will confirm availability.',
+    question: 'Do you decorate traditional Tamil and Sri Lankan cultural ceremonies?',
+    answer: 'Yes. SWS can provide decor for cultural and family ceremonies such as Manjal Neerattu Vizha, Ponnurukku, cradle ceremonies, baby showers, engagements, Mehendi functions and housewarmings.',
   },
   {
-    question: 'How do I get a quotation for my event?',
-    answer: 'Message us on WhatsApp at 075 092 8078 with the type of event, date, venue and your preferred style. We will discuss the scope and share a quotation.',
+    question: 'Do you provide event rentals like chairs, marquees and buffet sets in Trincomalee?',
+    answer: 'Event rental options include marquee tents, canopies, chairs, tables, buffet setups, stage platforms, sound and lighting equipment. Availability depends on your event date and location.',
   },
   {
-    question: 'How can I book SWS Event Management for my wedding?',
-    answer: 'You can reach us 24/7 on WhatsApp at 075 092 8078, or visit our office at No 95/15, Iluppaikkulam, Kanniya Road, Trincomalee.',
+    question: 'Does SWS Event Management also provide wedding photography and videography?',
+    answer: 'Photography and videography can be coordinated through our U1 Studio media team, including wedding photography, event coverage and video production. Contact us to confirm the package and availability.',
+  },
+  {
+    question: 'Do you organize corporate events and conferences in Trincomalee and Colombo?',
+    answer: 'Yes. SWS plans and styles corporate events, conferences, product launches, annual dinners and team events, with stage backdrops, audio-visual setup and on-site coordination.',
+  },
+  {
+    question: 'Which areas in Sri Lanka do you serve?',
+    answer: 'SWS is based in Trincomalee and Colombo. The team serves Trincomalee, Nilaveli, Uppuveli, Kanniya, Kinniya, Mutur, Kantale and Greater Colombo, and can discuss travel for events elsewhere in Sri Lanka.',
+  },
+  {
+    question: 'How far in advance should I book wedding or event decoration?',
+    answer: 'For weddings and large receptions, contact us one to three months ahead when possible. For birthdays, engagements and smaller functions, one to two weeks’ notice is helpful. Availability varies, so ask us about your date.',
+  },
+  {
+    question: 'Do you handle outdoor and beach wedding setups in Nilaveli and Uppuveli?',
+    answer: 'Yes. SWS can plan outdoor wedding decor such as ceremony arches, reception canopies, lighting walkways and seaside dining arrangements. The design and setup depend on the venue and weather conditions.',
+  },
+  {
+    question: 'Can you arrange cakes, catering and makeup as part of a full event package?',
+    answer: 'We can discuss coordinating cakes, catering, makeup and entertainment with your event setup. Tell us which services you need so we can confirm availability and the providers for your date.',
+  },
+  {
+    question: 'How do I book or get a quotation from SWS Event Management?',
+    answer: 'Call or WhatsApp 075 092 8078 or 076 898 8970. Share your event type, date, venue and reference images so our team can discuss availability and a tailored quotation.',
   },
 ] as const;
 
@@ -164,53 +205,148 @@ export function getFaqStructuredData(): Record<string, unknown> {
 /** JSON-LD for the SWS site: the SWS EventPlanner (Trincomalee branch). */
 export function getSwsStructuredData(): Array<Record<string, unknown>> {
   const swsOrigin = new URL(SWS_BUSINESS.url).origin;
-  return [
-    {
-      '@context': 'https://schema.org',
-      '@type': 'EventPlanner',
-      '@id': `${SWS_BUSINESS.url}#business`,
-      name: SWS_BUSINESS.name,
-      alternateName: ['SWS Events'],
-      url: SWS_BUSINESS.url,
-      telephone: SWS_BUSINESS.phoneInternational,
-      image: `${swsOrigin}/assets/images/sws_logo.jpeg`,
-      logo: `${swsOrigin}/assets/images/sws_logo.jpeg`,
-      priceRange: '$$',
-      parentOrganization: { '@id': `${CANONICAL_SITE_ORIGIN}/#organization` },
-      address: {
-        '@type': 'PostalAddress',
-        streetAddress: SWS_BUSINESS.trincomalee.streetAddress,
-        addressLocality: SWS_BUSINESS.trincomalee.locality,
-        postalCode: SWS_BUSINESS.trincomalee.postalCode,
-        addressCountry: 'LK',
-      },
-      geo: {
-        '@type': 'GeoCoordinates',
-        latitude: SWS_BUSINESS.trincomalee.latitude,
-        longitude: SWS_BUSINESS.trincomalee.longitude,
-      },
-      hasMap: SWS_BUSINESS.trincomalee.mapsUrl,
-      // Hotline answers around the clock, every day: keep this the same as the Google Business Profile hours.
-      openingHoursSpecification: {
-        '@type': 'OpeningHoursSpecification',
-        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-        opens: '00:00',
-        closes: '23:59',
-      },
-      areaServed: ['Trincomalee', 'Nilaveli', 'Uppuveli', 'Colombo'],
-      // The decoration services by name, so searches like "cradle ceremony decoration sri lanka" match the listing.
-      hasOfferCatalog: {
-        '@type': 'OfferCatalog',
-        name: 'Event decoration services',
-        itemListElement: [
-          ...SWS_SERVICE_HIGHLIGHTS.map((service) => ({
-            '@type': 'Offer',
-            itemOffered: { '@type': 'Service', name: service.heading, description: service.body },
-          })),
-          ...SWS_PROFILE_SERVICES.map((name) => ({ '@type': 'Offer', itemOffered: { '@type': 'Service', name } })),
-        ],
-      },
-      sameAs: [...SWS_BUSINESS.sameAs],
+  const parentOrganization = { '@id': `${CANONICAL_SITE_ORIGIN}/#organization` };
+  const openingHoursSpecification = {
+    '@type': 'OpeningHoursSpecification',
+    dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    opens: '00:00',
+    closes: '23:59',
+  };
+  const makeBranch = (
+    id: string,
+    name: string,
+    address: {
+      streetAddress: string;
+      locality: string;
+      region: string;
+      postalCode: string;
+      latitude: number;
+      longitude: number;
+      mapsUrl: string;
     },
+    areaServed: Array<{ '@type': string; name: string }>,
+    catalogName: string,
+    offers: Array<{ name: string; description: string }>,
+  ): Record<string, unknown> => ({
+    '@context': 'https://schema.org',
+    '@type': ['EventPlanner', 'LocalBusiness'],
+    '@id': `${SWS_BUSINESS.url}#${id}`,
+    name,
+    alternateName: ['SWS Events'],
+    description: `${name} is an event planning and decoration service in Sri Lanka, specializing in weddings, birthdays, cultural ceremonies and corporate events.`,
+    url: SWS_BUSINESS.url,
+    telephone: SWS_BUSINESS.phoneInternational,
+    image: `${swsOrigin}/assets/images/sws_logo.jpeg`,
+    logo: `${swsOrigin}/assets/images/sws_logo.jpeg`,
+    priceRange: '$$',
+    currenciesAccepted: 'LKR',
+    paymentAccepted: ['Cash', 'Bank Transfer', 'Online Payment'],
+    parentOrganization,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: address.streetAddress,
+      addressLocality: address.locality,
+      addressRegion: address.region,
+      postalCode: address.postalCode,
+      addressCountry: 'LK',
+    },
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: address.latitude,
+      longitude: address.longitude,
+    },
+    hasMap: address.mapsUrl,
+    openingHoursSpecification,
+    areaServed,
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: catalogName,
+      itemListElement: offers.map((offer) => ({
+        '@type': 'Offer',
+        itemOffered: { '@type': 'Service', ...offer },
+      })),
+    },
+    sameAs: [...SWS_BUSINESS.sameAs],
+  });
+
+  return [
+    makeBranch(
+      'trincomalee',
+      SWS_BUSINESS.name,
+      {
+        ...SWS_BUSINESS.trincomalee,
+        region: 'Eastern Province',
+      },
+      [
+        { '@type': 'City', name: 'Trincomalee' },
+        { '@type': 'Place', name: 'Nilaveli' },
+        { '@type': 'Place', name: 'Uppuveli' },
+        { '@type': 'Place', name: 'Kanniya' },
+        { '@type': 'City', name: 'Kinniya' },
+        { '@type': 'City', name: 'Mutur' },
+        { '@type': 'City', name: 'Kantale' },
+      ],
+      'Trincomalee Event Planning & Decoration Services',
+      [
+        {
+          name: 'Wedding Decoration & Planning',
+          description: 'Custom wedding decorations, Manavarai and Poruwa bridal backdrops, floral setups and wedding planning in Trincomalee and Nilaveli.',
+        },
+        {
+          name: 'Birthday Party Decoration',
+          description: 'Custom birthday decorations with balloon arches, backdrops and lighting in Trincomalee.',
+        },
+        {
+          name: 'Cultural & Traditional Ceremony Decor',
+          description: 'Stage and home decorations for puberty ceremonies, cradle ceremonies, baby showers, engagements and Mehendi functions.',
+        },
+        {
+          name: 'Event Photography & Rentals',
+          description: 'Event photography and rentals including marquees, chairs, tables and buffet setups in Trincomalee.',
+        },
+      ],
+    ),
+    makeBranch(
+      'colombo',
+      'SWS Event Management Colombo',
+      {
+        streetAddress: SWS_BUSINESS.colombo.streetAddress,
+        locality: 'Colombo 13',
+        region: 'Western Province',
+        postalCode: SWS_BUSINESS.colombo.postalCode,
+        latitude: SWS_BUSINESS.colombo.latitude,
+        longitude: SWS_BUSINESS.colombo.longitude,
+        mapsUrl: SWS_BUSINESS.colombo.mapsUrl,
+      },
+      [
+        { '@type': 'City', name: 'Colombo' },
+        { '@type': 'City', name: 'Dehiwala-Mount Lavinia' },
+        { '@type': 'City', name: 'Sri Jayawardenepura Kotte' },
+        { '@type': 'Place', name: 'Nugegoda' },
+        { '@type': 'Place', name: 'Battaramulla' },
+        { '@type': 'Place', name: 'Maharagama' },
+        { '@type': 'Place', name: 'Malabe' },
+        { '@type': 'Place', name: 'Wellawatte' },
+      ],
+      'Colombo Event Planning & Decoration Services',
+      [
+        {
+          name: 'Wedding Decoration & Planning in Colombo',
+          description: 'Wedding stage decorations, floral backdrops, engagement setups and wedding coordination across Greater Colombo.',
+        },
+        {
+          name: 'Birthday Party Decoration in Colombo',
+          description: 'Themed birthday party setups with balloon arches, backdrops and table styling in Colombo.',
+        },
+        {
+          name: 'Corporate Event & Conference Styling',
+          description: 'Stage design, backdrop setups and event coordination for corporate functions and conferences in Colombo.',
+        },
+        {
+          name: 'Wedding & Event Photography',
+          description: 'Event coverage, wedding photography and milestone celebration photography across Colombo.',
+        },
+      ],
+    ),
   ];
 }

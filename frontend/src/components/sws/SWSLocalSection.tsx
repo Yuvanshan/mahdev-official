@@ -41,12 +41,12 @@ export const SWSLocalSection: React.FC = () => {
 
       <SectionContainer background="subtle" paddingY="xl" id="sws-faq">
         <ScrollReveal>
-          <H2 className="text-slate-900">Event planning in Trincomalee: common questions</H2>
-          <div className="mt-6 max-w-3xl divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
+          <H2 className="text-center text-slate-900">Event planning in Trincomalee: common questions</H2>
+          <div className="mx-auto mt-6 max-w-3xl divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
             {SWS_FAQS.map((faq) => (
               <details key={faq.question} className="group p-5">
-                <summary className="cursor-pointer text-base font-semibold text-slate-900">{faq.question}</summary>
-                <Body className="mt-2 text-slate-600">{faq.answer}</Body>
+                <summary className="cursor-pointer text-center text-base font-semibold text-slate-900">{faq.question}</summary>
+                <Body className="mt-2 text-center text-slate-600">{faq.answer}</Body>
               </details>
             ))}
           </div>

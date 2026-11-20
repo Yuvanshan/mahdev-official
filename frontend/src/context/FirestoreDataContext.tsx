@@ -1033,7 +1033,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
         return;
       }
 
-      if (normalizedRoute === '/insights') {
+      if (normalizedRoute === '/insights' || normalizedRoute === '/blog' || /^\/(?:insights|blog)\//.test(normalizedRoute)) {
         await cmsService.loadPublicCollections(forceRefresh);
         return;
       }

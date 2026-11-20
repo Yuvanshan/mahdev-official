@@ -34,7 +34,7 @@ async function getShell(origin: string): Promise<string> {
   throw new Error('App shell is unavailable.');
 }
 
-// Published CMS page slugs ("about-x", "insights/y"), cached briefly per instance.
+// Published CMS page slugs ("about-x", "blog/y"), cached briefly per instance.
 async function getPublishedSlugs(): Promise<Set<string>> {
   if (publishedSlugs && Date.now() - publishedSlugs.loadedAt < PAGES_CACHE_MS) return publishedSlugs.slugs;
   await initializeTursoDatabase();
@@ -43,7 +43,7 @@ async function getPublishedSlugs(): Promise<Set<string>> {
   for (const document of (result.body.documents as Array<{ data: Record<string, unknown> }> | undefined) || []) {
     const { slug, isPublished, category } = document.data;
     if (isPublished && typeof slug === 'string' && slug) {
-      slugs.add((category === 'insights' ? `insights/${slug}` : slug).toLowerCase());
+      slugs.add((category === 'insights' ? `blog/${slug}` : slug).toLowerCase());
     }
   }
   publishedSlugs = { slugs, loadedAt: Date.now() };
@@ -53,6 +53,7 @@ async function getPublishedSlugs(): Promise<Set<string>> {
 // /services/{slug}, /products/{slug}, /projects/{slug}... (one item per address).
 const ITEM_PAGE_PATTERN = /^\/?(services|service|products|product|projects|project|work|portfolio)\/[^/]+\/?$/i;
 const GALLERY_ITEM_PATTERN = /^\/?(gallery|media)\/?$/i;
+const BLOG_ARTICLE_PATTERN = /^\/?(blog|insights)\/[^/]+\/?$/i;
 // /book/service/{id}, /book/gallery/{id}, /book/product/{id}: personal booking forms.
 const ONLINE_BOOKING_PATTERN = /^\/?book\/(service|gallery|product)\//i;
 
@@ -110,12 +111,14 @@ async function serveShell(req: IncomingMessage, res: ServerResponse, forcedStatu
       const seo = await resolveDynamicRouteSeo(seoPath, url.searchParams);
       if (seo) {
         html = renderSeoHtml(html, seo, origin);
-        isItemPage = true;
+        isItemPage = !seo.path.toLowerCase().startsWith('/blog/');
       } else if (ITEM_PAGE_PATTERN.test(seoPath) && !/^\/?services?\/category\/?$/i.test(seoPath)) {
         // An item address whose item does not exist is a real 404, not the home page
         // with a 200 (which search engines treat as a "soft 404").
         status = 404;
       } else if (GALLERY_ITEM_PATTERN.test(seoPath) && url.searchParams.get('id')?.trim()) {
+        status = 404;
+      } else if (BLOG_ARTICLE_PATTERN.test(seoPath)) {
         status = 404;
       } else if (GALLERY_ITEM_PATTERN.test(seoPath)) {
         const servicesRoute = PRERENDERED_ROUTES.find((route) => route.path === '/services');

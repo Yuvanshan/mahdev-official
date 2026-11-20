@@ -180,6 +180,8 @@ export interface SEOMetaData {
   ogTitle?: string;
   ogDescription?: string;
   ogType?: 'website' | 'article' | 'profile';
+  ogImage?: string;
+  structuredData?: Record<string, unknown>;
   keywords?: string[];
   noIndex?: boolean;
 }

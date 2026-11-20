@@ -28,9 +28,7 @@ import { BrandLogo } from './BrandLogo';
 import { MAIN_NAV_ITEMS as ALL_NAV_ITEMS } from '../../config/navigation';
 import { DIVISION_SITE_IDS, getDivisionSiteHref, type DivisionSiteId } from '../../config/divisionSites';
 
-// Items kept in config (and the footer) but hidden from the top bar and mobile menu.
-const HIDDEN_TOP_BAR_ITEMS = new Set(['insights']);
-const MAIN_NAV_ITEMS = ALL_NAV_ITEMS.filter((item) => !HIDDEN_TOP_BAR_ITEMS.has(item.id));
+const MAIN_NAV_ITEMS = ALL_NAV_ITEMS;
 const DIVISION_SITE_NAV_ITEMS: Record<DivisionSiteId, Array<{ id: string; label: string; href: string }>> = {
   sws: [
     { id: 'home', label: 'Home', href: '/' },

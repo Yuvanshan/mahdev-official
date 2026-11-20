@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2 } from '../ui/Heading';
-import { ImageWithShimmer } from '../ui/ImageWithShimmer';
+import { BlurredImageFrame } from '../common/BlurredImageFrame';
 import { ServicesSectionShimmer } from '../common/ServicesSectionShimmer';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { newestListedFirst } from '../../utils/listingOrder';
@@ -45,11 +45,10 @@ const SmallCard: React.FC<{ item: SpotlightItem; onSelect: (id: string) => void 
     aria-label={`Show ${item.title} larger`}
     className="group relative min-h-[120px] overflow-hidden rounded-xl bg-slate-900 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#861F31]"
   >
-    <ImageWithShimmer
+    <BlurredImageFrame
       src={item.image}
       alt={item.imageAlt}
       className="absolute inset-0 h-full w-full"
-      imageFit="cover"
       imageClassName="transition-transform duration-500 group-hover:scale-105"
       loading="lazy"
     />
@@ -72,26 +71,25 @@ const Spotlight: React.FC<SpotlightProps> = ({ items, onNavigate }) => {
   };
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-3 lg:grid-rows-[minmax(0,1fr)_9rem]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-3 lg:grid-rows-[minmax(0,1fr)_auto]">
       <a
         href={selected.path}
         onClick={open}
         aria-label={`Explore ${selected.title}`}
         className="group relative block min-h-[320px] overflow-hidden rounded-2xl bg-slate-900 sm:min-h-[420px] lg:col-span-2 lg:min-h-[420px]"
       >
-        <ImageWithShimmer
+        <BlurredImageFrame
           key={selected.id}
           src={selected.image}
           alt={selected.imageAlt}
           className="absolute inset-0 h-full w-full"
-          imageFit="cover"
           imageClassName="transition-transform duration-700 group-hover:scale-105"
           loading="lazy"
         />
         <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" aria-hidden="true" />
-        <span className="absolute inset-x-0 bottom-0 flex flex-col gap-2 p-5 text-white sm:p-8">
+        <span className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-2 p-5 text-center text-white sm:p-8">
           <span className="text-xs font-semibold uppercase tracking-widest text-white/75">{selected.category}</span>
-          <span className="font-display text-2xl font-bold sm:text-4xl">{selected.title}</span>
+          <span className="w-full break-words font-display text-2xl font-bold sm:text-4xl">{selected.title}</span>
           <span className="line-clamp-2 max-w-2xl text-sm text-white/85 sm:text-base">{selected.description}</span>
           <span className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold">
             Explore <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
@@ -114,7 +112,7 @@ const Spotlight: React.FC<SpotlightProps> = ({ items, onNavigate }) => {
             type="button"
             onClick={() => setSelectedId(item.id)}
             aria-pressed={item.id === selected.id}
-            className={`truncate rounded-lg px-3 py-2.5 text-center text-sm font-semibold transition-colors ${
+            className={`w-full min-w-0 whitespace-normal break-words rounded-lg px-3 py-2.5 text-center text-sm font-semibold leading-5 transition-colors ${
               item.id === selected.id ? 'bg-[#861F31] text-white' : 'text-slate-700 hover:bg-slate-100'
             }`}
           >
@@ -193,9 +191,9 @@ export const ServicesSolutionsSection: React.FC<ServicesSolutionsSectionProps> =
 
   return (
     <SectionContainer id="featured-services" className="home-showcase-section" background="white" paddingY="xl" hasBorderBottom>
-      <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-        <H2 className="text-slate-900">Services &amp; Solutions</H2>
-        <div role="tablist" aria-label="Show services or gallery" className="flex gap-1.5 self-start rounded-xl border border-slate-200 bg-slate-100/90 p-1">
+      <div className="mb-8 flex flex-col items-center gap-5">
+        <H2 className="text-center text-slate-900">Services &amp; Solutions</H2>
+        <div role="tablist" aria-label="Show services or gallery" className="flex gap-1.5 rounded-xl border border-slate-200 bg-slate-100/90 p-1">
           {availableTabs.map(({ id, label }) => (
             <button
               key={id}

@@ -14,7 +14,7 @@ const formatLocalPageTitle = (pageName: string) => `${pageName} | Trincomalee & 
 
 const LOCAL_PAGES = new Set([
   '/about', '/contact', '/services', '/gallery', '/portfolio', '/catalog', '/book', '/divisions',
-  '/testimonials', '/clients', '/promotions', '/milestones', '/insights', '/careers',
+  '/testimonials', '/clients', '/promotions', '/milestones', '/blog', '/careers',
 ]);
 
 const PAGE_NAMES: Record<string, string> = {
@@ -27,7 +27,7 @@ const PAGE_NAMES: Record<string, string> = {
   '/milestones': 'Our Milestones',
   '/clients': 'Clients & Partners',
   '/portfolio': 'Portfolio',
-  '/insights': 'Insights',
+  '/blog': 'Mahdev Blog',
   '/catalog': 'Services, Gallery & Products',
   '/book': 'Book a Service',
   '/promotions': 'Promotions',
@@ -64,6 +64,7 @@ const PAGE_ALIASES: Record<string, string> = {
   '/partners': '/clients',
   '/companies': '/clients',
   '/promotion': '/promotions',
+  '/insights': '/blog',
 };
 
 /**

@@ -27,6 +27,7 @@ import { Badge } from '../components/ui/Badge';
 import { IconRenderer } from '../components/ui/IconRenderer';
 import { SWSService, SWSPackage, SWSRentalItem } from '../data/swsData';
 import { DIVISION_SEO } from '../config/divisionSeo';
+import { SWS_TARGET_KEYWORDS } from '../data/swsLocalSeo';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
@@ -154,6 +155,7 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
         title={DIVISION_SEO.sws.title}
         description={DIVISION_SEO.sws.description}
         canonicalUrl={`${CANONICAL_SITE_ORIGIN}/sws`}
+        keywords={[...SWS_TARGET_KEYWORDS]}
       />
 
       {/* 1. SWS CINEMATIC HERO SECTION */}

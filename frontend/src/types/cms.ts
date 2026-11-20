@@ -273,6 +273,7 @@ export interface CmsPage extends BaseCmsEntity {
   metaDescription: string;
   heroHeading: string;
   heroSubheading?: string;
+  heroImageUrl?: string;
   content: string; // rich markdown / html
   sections: {
     heading: string;

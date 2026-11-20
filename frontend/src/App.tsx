@@ -1424,6 +1424,7 @@ function AppContent() {
       case '/services':
       case '/featured-services':
         return <ExploreAllView onNavigate={navigate} initialPage="services" />;
+      case '/blog':
       case '/insights':
         return <InsightsView onNavigate={navigate} />;
       case '/about':

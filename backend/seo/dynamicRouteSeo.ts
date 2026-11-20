@@ -36,6 +36,24 @@ const isListedProject = ({ data }: TursoDocument) =>
   data.isPublished === true || data.status === 'published' || data.status === 'active';
 const isListedGalleryItem = ({ data }: TursoDocument) =>
   data.isPublished !== false && !['hidden', 'inactive', 'draft', 'archived'].includes(String(data.status));
+const isPublishedArticle = ({ data }: TursoDocument) =>
+  data.category === 'insights' && data.isPublished === true && data.isDeleted !== true;
+
+function isoDate(value: unknown): string | undefined {
+  if (typeof value !== 'string' && typeof value !== 'number') return undefined;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+}
+
+function absoluteImage(value: unknown): string | undefined {
+  if (typeof value !== 'string' || !value.trim() || value.startsWith('data:')) return undefined;
+  try {
+    const url = new URL(value, CANONICAL_SITE_ORIGIN);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 /** Finds a listed record by slug, id or SKU (case-insensitive), as the app does. */
 async function findRecord(
@@ -115,6 +133,61 @@ export async function resolveDynamicRouteSeo(path: string, search: URLSearchPara
     const record = await findRecord('portfolio', key, isListedProject);
     if (!record) return null;
     return toRouteSeo(projectSeo(record.data, record.id), `A ${SITE_NAME} project.`, record.data);
+  }
+
+  if (!rest.length && key && (segment === 'blog' || segment === 'insights')) {
+    const record = await findRecord('pages', key, isPublishedArticle);
+    if (!record) return null;
+    const data = record.data;
+    const slug = typeof data.slug === 'string' ? data.slug.trim() : '';
+    if (!slug || slug.includes('/')) return null;
+    const path = `/blog/${encodeURIComponent(slug)}`;
+    const description = typeof data.metaDescription === 'string' && data.metaDescription.trim()
+      ? data.metaDescription.trim()
+      : typeof data.heroSubheading === 'string' && data.heroSubheading.trim()
+        ? data.heroSubheading.trim()
+        : String(data.content || '').replace(/[#*_`>\[\]()]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160);
+    const heading = typeof data.heroHeading === 'string' && data.heroHeading.trim()
+      ? data.heroHeading.trim()
+      : String(data.title || 'Mahdev Blog');
+    const image = absoluteImage(data.heroImageUrl);
+    const sections = Array.isArray(data.sections)
+      ? data.sections.filter((section): section is Record<string, unknown> => Boolean(section) && typeof section === 'object')
+      : [];
+    const articleSections = sections.map((section) => ({
+      heading: typeof section.heading === 'string' ? section.heading : '',
+      text: typeof section.body === 'string' ? section.body : '',
+      imageUrl: absoluteImage(section.imageUrl),
+    })).filter((section) => section.text || section.imageUrl);
+    const articleContent = [
+      ...(typeof data.content === 'string' && data.content.trim() ? [{ text: data.content.trim() }] : []),
+      ...articleSections,
+    ];
+    const articleImages = [...new Set([image, ...articleSections.map((section) => section.imageUrl)].filter((url): url is string => Boolean(url)))];
+    const datePublished = isoDate(data.publishedAt || data.createdAt);
+    const dateModified = isoDate(data.updatedAt);
+    return {
+      path,
+      title: `${String(data.title || heading)} | Mahdev Blog`,
+      description,
+      heading,
+      intro: description,
+      ...(image ? { ogImage: image } : {}),
+      articleContent,
+      structuredData: [{
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: String(data.title || heading),
+        description,
+        ...(articleImages.length ? { image: articleImages } : {}),
+        ...(datePublished ? { datePublished } : {}),
+        ...(dateModified ? { dateModified } : {}),
+        mainEntityOfPage: { '@type': 'WebPage', '@id': `${CANONICAL_SITE_ORIGIN}${path}` },
+        author: { '@type': 'Organization', name: SITE_NAME },
+        publisher: { '@id': `${CANONICAL_SITE_ORIGIN}/#organization` },
+        inLanguage: 'en-LK',
+      }],
+    };
   }
 
   // Clean URL /gallery/<title>-<id>, or the older /gallery?id=<id> (its canonical is the clean URL).

@@ -27,7 +27,7 @@ const PATH_FOR: Record<string, (data: Record<string, unknown>, id: string) => st
   pages: (data) => {
     const slug = typeof data.slug === 'string' ? data.slug.trim().replace(/^\/+|\/+$/g, '').toLowerCase() : '';
     if (!slug) return null;
-    return data.category === 'insights' ? `/insights/${slug}` : `/${slug}`;
+    return data.category === 'insights' ? `/blog/${slug}` : `/${slug}`;
   },
 };
 

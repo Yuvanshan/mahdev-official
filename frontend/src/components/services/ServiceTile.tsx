@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
-import { ImageWithShimmer } from '../ui/ImageWithShimmer';
+import { BlurredImageFrame } from '../common/BlurredImageFrame';
 import { useAutoSlideImage } from '../../hooks/useAutoSlideImage';
 
 interface ServiceTileProps {
@@ -63,14 +63,12 @@ export const ServiceTile: React.FC<ServiceTileProps> = ({ title, images, onView,
         ariaLabel={`View ${title}`}
         className="relative block w-full text-left"
       >
-        <div ref={containerRef}>
-        <ImageWithShimmer
+        <div ref={containerRef} className="w-full">
+        <BlurredImageFrame
           src={usableImages[activeIndex] || usableImages[0] || ''}
           alt={imageAlt || title}
-          className="aspect-[4/3] w-full bg-slate-100"
-          imageFit="cover"
+          className="w-full"
           imageClassName="transition-transform duration-500 group-hover:scale-[1.02]"
-          fallbackText={title}
           fallbackSources={usableImages.filter((_, index) => index !== activeIndex)}
           loading={imageLoading}
         />
