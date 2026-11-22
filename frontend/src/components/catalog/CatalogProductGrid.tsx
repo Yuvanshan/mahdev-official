@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, PackageSearch } from 'lucide-react';
 
 interface CatalogProductGridProps {
   products: CatalogProduct[];
+  newProductIds?: ReadonlySet<string>;
   totalProducts: number;
   currentPage: number;
   totalPages: number;
@@ -15,6 +16,7 @@ interface CatalogProductGridProps {
 
 export const CatalogProductGrid: React.FC<CatalogProductGridProps> = ({
   products,
+  newProductIds,
   totalProducts,
   currentPage,
   totalPages,
@@ -50,6 +52,7 @@ export const CatalogProductGrid: React.FC<CatalogProductGridProps> = ({
           <CatalogProductCard
             key={product.id}
             product={product}
+            isNew={newProductIds?.has(product.id)}
             onSelect={onSelectProduct}
           />
         ))}

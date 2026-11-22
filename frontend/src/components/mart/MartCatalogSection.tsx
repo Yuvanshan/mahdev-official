@@ -18,6 +18,7 @@ import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { matchesFilterSearch } from '../common/DivisionFilter';
+import { getNewestListedIds } from '../../utils/listingOrder';
 import {
   EMPTY_PRICE_RANGE,
   PriceRange,
@@ -128,6 +129,7 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
   }, [allMartProducts, allMartCategories, selectedCategoryId, searchQuery, inStockOnly, priceRange, sortBy]);
 
   const priceBounds = useMemo(() => getPriceBounds(allMartProducts.map((p) => p.price)), [allMartProducts]);
+  const newProductIds = useMemo(() => getNewestListedIds(allMartProducts), [allMartProducts]);
 
   // Early return only after every hook has run (keeps hook order stable; React error #310).
   if (allMartProducts.length === 0) {
@@ -291,6 +293,7 @@ export const MartCatalogSection: React.FC<MartCatalogSectionProps> = ({
             <MartProductCard
               key={prod.id}
               product={prod}
+              isNew={newProductIds.has(prod.id)}
               onViewProduct={onViewProduct}
               onAddToCart={onAddToCart}
             />

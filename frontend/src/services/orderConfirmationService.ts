@@ -30,6 +30,8 @@ export interface ConfirmationInput {
   venue: string;
   notes: string;
   discount: number;
+  promoCode?: string;
+  promoDiscount?: number;
   deliveryFee: number;
   advanceAmount: number;
   expiresInDays: number;
@@ -69,6 +71,8 @@ export interface PublicConfirmation {
   notes: string;
   subtotal: number;
   discount: number;
+  promoCode?: string;
+  promoDiscount?: number;
   deliveryFee: number;
   advanceAmount: number;
   total: number;
@@ -146,10 +150,31 @@ export function checkCustomerDetails(token: string, details: { email?: string; n
   return post<{ email?: AvailabilityResult; nic?: AvailabilityResult }>('/check', { token, ...details });
 }
 
-export async function confirmOrder(token: string, details: { address: string; notes: string }) {
+export interface ConfirmationPromo {
+  code: string;
+  couponDiscount: number;
+  discount: number;
+  total: number;
+  advanceAmount: number;
+}
+
+export async function checkConfirmationPromo(token: string, code: string): Promise<ConfirmationPromo> {
+  return (await post<{ promo: ConfirmationPromo }>('/promo', { token, code })).promo;
+}
+
+export async function confirmOrder(token: string, details: { address: string; notes: string; promoCode?: string }) {
   const user = auth.currentUser;
   if (!user) throw new Error('Please sign in to confirm your order.');
-  return post<{ bookingId: string; emailSent?: boolean; alreadyConfirmed?: boolean }>(
+  return post<{
+    bookingId: string;
+    emailSent?: boolean;
+    alreadyConfirmed?: boolean;
+    discount?: number;
+    promoCode?: string;
+    promoDiscount?: number;
+    total?: number;
+    advanceAmount?: number;
+  }>(
     '/confirm',
     { token, ...details },
     { Authorization: `Bearer ${await user.getIdToken()}` }

@@ -18,6 +18,7 @@ import { deriveLookupSku } from '../utils/whatsapp';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { productSeo } from '../config/itemSeo';
 import { analyticsService } from '../services/analyticsService';
+import { getNewestListedIds } from '../utils/listingOrder';
 
 const CATALOG_DIVISION = 'mart';
 
@@ -145,6 +146,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   const allMasterProducts = useMemo(() => {
     return catalogService.queryProducts({ divisionId: CATALOG_DIVISION });
   }, [catalogVersion]);
+  const newProductIds = useMemo(() => getNewestListedIds(allMasterProducts), [allMasterProducts]);
 
   // Product-list structured data (ItemList) for search engines, from the Mart products shown.
   useEffect(() => {
@@ -255,6 +257,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
           title={productSeoData.title}
           description={productSeoData.description}
           canonicalUrl={`${CANONICAL_SITE_ORIGIN}${productSeoData.path}`}
+          ogImage={productSeoData.image}
         />
       ) : (
         <SEOHead
@@ -349,6 +352,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
         ) : (
           <CatalogProductGrid
             products={displayedProducts}
+            newProductIds={newProductIds}
             totalProducts={displayedTotal}
             currentPage={isSingleItemMode ? 1 : paginatedResult.page}
             totalPages={isSingleItemMode ? 1 : paginatedResult.totalPages}

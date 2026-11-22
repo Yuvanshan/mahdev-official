@@ -69,7 +69,7 @@ export function renderSeoHtml(baseHtml: string, route: RouteSeo, origin: string)
   html = replaceTag(
     html,
     /(<main id="seo-fallback"[^>]*>)[\s\S]*?(<\/main>)/,
-    (_match, open, close) => `${open}\n        <h1>${escapeHtml(route.heading)}</h1>\n        <p>${escapeHtml(route.intro)}</p>\n        <p>${description}</p>${subheadings}${articleImage}${articleContent}\n        <nav aria-label="Mahdev sites"><a href="/">Mahdev home</a> · <a href="/sws">SWS Event Management</a> · <a href="/u1">U1 Studio</a> · <a href="/it">Mahdev IT</a> · <a href="/travels">Mahdev Travels</a> · <a href="/mart">Mahdev Mart</a> · <a href="/services">Services</a> · <a href="/portfolio">Portfolio</a> · <a href="/about">About</a> · <a href="/contact">Contact</a></nav>\n        <p>Follow Mahdev: ${SOCIAL_LINKS_HTML}</p>\n      ${close}`,
+    (_match, open, close) => `${open}\n        <h1>${escapeHtml(route.heading)}</h1>\n        <p>${escapeHtml(route.intro)}</p>\n        <p>${description}</p>${subheadings}${articleImage}${articleContent}\n        <nav aria-label="Mahdev sites"><a href="/">Mahdev home</a> · <a href="/sws">SWS Event Management</a> · <a href="/u1">U1 Studio</a> · <a href="/it">Mahdev IT</a> · <a href="/travels">Mahdev Travels</a> · <a href="/mart">Mahdev Mart</a> · <a href="/services">Services</a> · <a href="/portfolio">Portfolio</a> · <a href="/about">About</a> · <a href="/contact">Contact</a> · <a href="/faq">FAQs</a></nav>\n        <p>Follow Mahdev: ${SOCIAL_LINKS_HTML}</p>\n      ${close}`,
     'seo-fallback block'
   );
   if (route.structuredData?.length) {

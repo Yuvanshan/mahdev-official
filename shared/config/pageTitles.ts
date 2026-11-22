@@ -13,13 +13,14 @@ export const formatPageTitle = (pageName: string) => `${pageName} - ${SITE_NAME}
 const formatLocalPageTitle = (pageName: string) => `${pageName} | Trincomalee & Colombo - ${SITE_NAME}`;
 
 const LOCAL_PAGES = new Set([
-  '/about', '/contact', '/services', '/gallery', '/portfolio', '/catalog', '/book', '/divisions',
+  '/about', '/contact', '/services', '/gallery', '/portfolio', '/catalog', '/book', '/divisions', '/faq',
   '/testimonials', '/clients', '/promotions', '/milestones', '/blog', '/careers',
 ]);
 
 const PAGE_NAMES: Record<string, string> = {
   '/about': 'About Us',
   '/contact': 'Contact Us',
+  '/faq': 'Frequently Asked Questions',
   '/services': 'Services',
   '/gallery': 'Gallery',
   '/careers': 'Careers',

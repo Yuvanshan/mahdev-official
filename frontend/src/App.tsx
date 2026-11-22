@@ -218,6 +218,7 @@ const AboutView = lazy(() => import('./views/AboutView').then((module) => ({ def
 const PortfolioView = lazy(() => import('./views/PortfolioView').then((module) => ({ default: module.PortfolioView })));
 const ProjectDetailView = lazy(() => import('./views/ProjectDetailView').then((module) => ({ default: module.ProjectDetailView })));
 const ContactView = lazy(() => import('./views/ContactView').then((module) => ({ default: module.ContactView })));
+const FaqPageView = lazy(() => import('./views/FaqPageView').then((module) => ({ default: module.FaqPageView })));
 const ExploreAllView = lazy(() => import('./views/ExploreAllView').then((module) => ({ default: module.ExploreAllView })));
 const ServiceDetailView = lazy(() => import('./views/ServiceDetailView').then((module) => ({ default: module.ServiceDetailView })));
 const ClientsView = lazy(() => import('./views/ClientsView').then((module) => ({ default: module.ClientsView })));
@@ -278,7 +279,7 @@ function AppContent() {
       'admin-yuvan1709',
       'sws', 'u1', 'it', 'travels', 'mart',
       'sws-events', 'sws-event-management', 'u1-studio', 'it-solutions', 'mahdev-travels', 'online-mart',
-      'about', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'wishlist', 'catalog', 'track-order', 'order', 'orders'
+      'about', 'contact', 'faq', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'wishlist', 'catalog', 'track-order', 'order', 'orders'
     ];
     if (
       directHashRoutes.includes(cleanHash) ||
@@ -413,7 +414,7 @@ function AppContent() {
         'admin-yuvan1709',
         'sws', 'u1', 'it', 'travels', 'mart',
         'sws-events', 'sws-event-management', 'u1-studio', 'it-solutions', 'mahdev-travels', 'online-mart',
-        'about', 'about-us', 'contact', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'wishlist', 'catalog', 'track-order', 'order', 'orders', 'promotion', 'promotions', 'terms-and-conditions', 'privacy-policy', 'refund-policy', 'shipping-policy', 'cookie-policy'
+        'about', 'about-us', 'contact', 'faq', 'services', 'divisions', 'projects', 'portfolio', 'gallery', 'milestones', 'testimonials', 'clients', 'companies', 'checkout', 'cart', 'wishlist', 'catalog', 'track-order', 'order', 'orders', 'promotion', 'promotions', 'terms-and-conditions', 'privacy-policy', 'refund-policy', 'shipping-policy', 'cookie-policy'
       ];
       if (
         directHashRoutes.includes(cleanHash) ||
@@ -1469,6 +1470,8 @@ function AppContent() {
         return <ClientsView onNavigate={navigate} />;
       case '/contact':
         return <ContactView onNavigate={navigate} />;
+      case '/faq':
+        return <FaqPageView />;
       default:
         return <CmsPageView slug={normalizedPath.replace(/^\/+/, '')} onNavigate={navigate} />;
     }

@@ -139,6 +139,7 @@ export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ slug, onNa
         title={seo.title}
         description={seo.description}
         canonicalUrl={`${SITE_ORIGIN}${seo.path}`}
+        ogImage={seo.image}
         keywords={[title, service.category || '', divisionName, 'Sri Lanka'].filter(Boolean)}
       />
       <script type="application/ld+json">

@@ -7,6 +7,7 @@ import {
   writeTursoBatch,
   writeTursoDocument,
   type TursoDocument,
+  type TursoWrite,
 } from '../../db/tursoDatabase.js';
 import { AdminSessionAuthError, requireAdminSession } from '../../auth/adminCredentialAuth.js';
 import { FirebaseTokenError, verifyFirebaseIdToken } from '../../auth/firebaseIdToken.js';
@@ -189,6 +190,82 @@ function totals(items: ConfirmationItem[], discount: number, deliveryFee: number
   return { subtotal, total: Math.round((subtotal - discount + deliveryFee) * 100) / 100 };
 }
 
+interface ConfirmationPromo {
+  code: string;
+  couponDiscount: number;
+  discount: number;
+  total: number;
+  advanceAmount: number;
+  coupon: TursoDocument;
+}
+
+async function calculateConfirmationPromo(data: Record<string, unknown>, rawCode: unknown): Promise<ConfirmationPromo> {
+  if (typeof rawCode !== 'string' || rawCode.trim().length > 50) {
+    throw new RequestError('Enter a valid promo code.');
+  }
+  const code = text(rawCode, 50).toUpperCase();
+  if (!code) throw new RequestError('Enter a promo code.');
+  const coupons = await listTursoDocuments('coupons', '', [], undefined, 500);
+  const coupon = coupons.find((document) => String(document.data.code || '').trim().toUpperCase() === code);
+  if (!coupon || coupon.data.isActive !== true || coupon.data.isDeleted === true) {
+    throw new RequestError(`Promo code "${code}" is invalid or expired.`);
+  }
+
+  const now = Date.now();
+  const validFrom = typeof coupon.data.validFrom === 'string' && coupon.data.validFrom
+    ? Date.parse(`${coupon.data.validFrom}T00:00:00`)
+    : null;
+  const validUntil = typeof coupon.data.validUntil === 'string' && coupon.data.validUntil
+    ? Date.parse(`${coupon.data.validUntil}T23:59:59`)
+    : null;
+  if (
+    (validFrom !== null && (!Number.isFinite(validFrom) || validFrom > now)) ||
+    (validUntil !== null && (!Number.isFinite(validUntil) || validUntil < now))
+  ) {
+    throw new RequestError(`Promo code "${code}" is invalid or expired.`);
+  }
+
+  const usageLimit = Number(coupon.data.usageLimit) || 0;
+  const usageCount = Number(coupon.data.usageCount) || 0;
+  if (usageLimit > 0 && usageCount >= usageLimit) {
+    throw new RequestError(`Promo code "${code}" has reached its usage limit.`);
+  }
+
+  const divisionRestriction = String(coupon.data.divisionRestriction || 'all');
+  if (divisionRestriction !== 'all' && divisionRestriction !== String(data.divisionId || '')) {
+    throw new RequestError(`This promo code is only valid for the ${divisionRestriction} division.`);
+  }
+
+  const subtotal = amount(data.subtotal, 'Subtotal');
+  const minimum = Number(coupon.data.minSpend) || 0;
+  if (subtotal < minimum) {
+    throw new RequestError(`This promo code requires a minimum subtotal of ${formatLkr(minimum)}.`);
+  }
+  const value = Number(coupon.data.discountValue);
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new RequestError('This promo code has an invalid discount.');
+  }
+  const couponDiscount = coupon.data.discountType === 'percentage'
+    ? subtotal * value / 100
+    : coupon.data.discountType === 'fixed'
+      ? value
+      : NaN;
+  if (!Number.isFinite(couponDiscount)) {
+    throw new RequestError('This promo code has an unsupported discount type.');
+  }
+  const cappedCouponDiscount = coupon.data.maxDiscount === undefined
+    ? couponDiscount
+    : Math.min(couponDiscount, amount(coupon.data.maxDiscount, 'Maximum discount'));
+  const baseDiscount = amount(data.discount, 'Discount');
+  const discount = Math.round(Math.min(subtotal, baseDiscount + cappedCouponDiscount) * 100) / 100;
+  const appliedCouponDiscount = Math.round((discount - baseDiscount) * 100) / 100;
+  const deliveryFee = amount(data.deliveryFee, 'Delivery fee');
+  const total = Math.round((subtotal - discount + deliveryFee) * 100) / 100;
+  const advanceAmount = Math.min(amount(data.advanceAmount, 'Advance'), total);
+
+  return { code, couponDiscount: appliedCouponDiscount, discount, total, advanceAmount, coupon };
+}
+
 /** What the customer's link shows: no token, admin details or internal fields. */
 function publicView(document: TursoDocument) {
   const data = document.data;
@@ -208,6 +285,8 @@ function publicView(document: TursoDocument) {
     notes: data.notes || '',
     subtotal: data.subtotal,
     discount: data.discount,
+    promoCode: data.promoCode || undefined,
+    promoDiscount: data.promoDiscount || 0,
     deliveryFee: data.deliveryFee,
     advanceAmount: data.advanceAmount,
     total: data.total,
@@ -401,7 +480,7 @@ async function sendLink(body: Record<string, unknown>): Promise<Record<string, u
   });
   const at = new Date().toISOString();
   await writeTursoDocument({
-    type: 'update',
+    type: 'update' as const,
     collection: COLLECTION,
     parentPath: '',
     id,
@@ -538,6 +617,8 @@ function bookingFromConfirmation(
     lineItems: data.items,
     subtotal: data.subtotal,
     discount: data.discount,
+    promoCode: data.promoCode || undefined,
+    promoDiscount: data.promoDiscount || 0,
     deliveryFee: data.deliveryFee,
     advanceAmount: data.advanceAmount,
     amountPaid: 0,
@@ -609,7 +690,17 @@ async function confirmOrder(req: IncomingMessage, body: Record<string, unknown>)
 
   // Confirming twice (double click, retry after a lost response) returns the same booking.
   if (data.status === 'confirmed') {
-    if (data.customerId === identity.uid) return { bookingId: bookingIdFor(data), alreadyConfirmed: true };
+    if (data.customerId === identity.uid) {
+      return {
+        bookingId: bookingIdFor(data),
+        alreadyConfirmed: true,
+        discount: data.discount,
+        promoCode: data.promoCode || undefined,
+        promoDiscount: data.promoDiscount || 0,
+        total: data.total,
+        advanceAmount: data.advanceAmount,
+      };
+    }
     throw new RequestError('This order has already been confirmed.', 409);
   }
   const status = effectiveStatus(data);
@@ -632,13 +723,25 @@ async function confirmOrder(req: IncomingMessage, body: Record<string, unknown>)
     throw new RequestError('Please add your contact number and NIC to your account, then confirm again.', 409);
   }
 
-  const booking = bookingFromConfirmation(document.id, data, customer, {
+  const promoRequested = body.promoCode !== undefined && body.promoCode !== null && body.promoCode !== '';
+  const promo = promoRequested ? await calculateConfirmationPromo(data, body.promoCode) : null;
+  const confirmedData = promo
+    ? {
+        ...data,
+        promoCode: promo.code,
+        promoDiscount: promo.couponDiscount,
+        discount: promo.discount,
+        total: promo.total,
+        advanceAmount: promo.advanceAmount,
+      }
+    : data;
+  const booking = bookingFromConfirmation(document.id, confirmedData, customer, {
     address: text(body.address, 300),
     notes: text(body.notes, 1000),
   });
   const confirmedAt = String(booking.createdAt);
   // Booking and link status change together.
-  await writeTursoBatch([
+  const updates: TursoWrite[] = [
     { type: 'set', collection: 'bookings', parentPath: '', id: String(booking.id), data: booking },
     {
       type: 'update',
@@ -647,6 +750,13 @@ async function confirmOrder(req: IncomingMessage, body: Record<string, unknown>)
       id: document.id,
       data: {
         status: 'confirmed',
+        ...(promo ? {
+          promoCode: promo.code,
+          promoDiscount: promo.couponDiscount,
+          discount: promo.discount,
+          total: promo.total,
+          advanceAmount: promo.advanceAmount,
+        } : {}),
         confirmedAt,
         customerId: identity.uid,
         bookingId: booking.id,
@@ -655,7 +765,15 @@ async function confirmOrder(req: IncomingMessage, body: Record<string, unknown>)
         updatedAt: confirmedAt,
       },
     },
-  ]);
+    ...(promo ? [{
+      type: 'update' as const,
+      collection: 'coupons',
+      parentPath: '',
+      id: promo.coupon.id,
+      data: { usageCount: (Number(promo.coupon.data.usageCount) || 0) + 1 },
+    }] : []),
+  ];
+  await writeTursoBatch(updates);
 
   // Booking is saved; messages are best effort and reported back to the page.
   const message = receipt(booking, siteOrigin(data.siteOrigin), data.divisionName);
@@ -678,7 +796,15 @@ async function confirmOrder(req: IncomingMessage, body: Record<string, unknown>)
     data: { confirmationSent: { email: email.delivered } },
   }).catch((error: unknown) => console.error('[OrderConfirmation] Could not record delivery:', error));
 
-  return { bookingId: booking.id, emailSent: email.delivered };
+  return {
+    bookingId: booking.id,
+    emailSent: email.delivered,
+    discount: confirmedData.discount,
+    promoCode: confirmedData.promoCode || undefined,
+    promoDiscount: confirmedData.promoDiscount || 0,
+    total: confirmedData.total,
+    advanceAmount: confirmedData.advanceAmount,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -721,6 +847,22 @@ export default async function handler(req: ConfirmationRequest, res: ServerRespo
     } else if (action === 'check' && req.method === 'POST') {
       await consumeRateLimit(`order-confirmation-check:${ip}`, 40, 10 * 60_000);
       result = await checkDetails(body);
+    } else if (action === 'promo' && req.method === 'POST') {
+      await consumeRateLimit(`order-confirmation-promo:${ip}`, 20, 10 * 60_000);
+      const document = await findByToken(body.token);
+      if (effectiveStatus(document.data) !== 'pending') {
+        throw new RequestError('This confirmation link is no longer active.', 410);
+      }
+      const promo = await calculateConfirmationPromo(document.data, body.code);
+      result = {
+        promo: {
+          code: promo.code,
+          couponDiscount: promo.couponDiscount,
+          discount: promo.discount,
+          total: promo.total,
+          advanceAmount: promo.advanceAmount,
+        },
+      };
     } else if (action === 'confirm' && req.method === 'POST') {
       await consumeRateLimit(`order-confirmation-confirm:${ip}`, 10, 60 * 60_000);
       result = await confirmOrder(req, body);

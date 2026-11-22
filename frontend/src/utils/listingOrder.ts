@@ -31,3 +31,14 @@ export function newestListedFirst<T>(items: T[]): T[] {
   listed.sort((a, b) => b.time - a.time);
   return [...listed.map((entry) => entry.item), ...rest];
 }
+
+/** IDs of the newest listed records, used for "New" labels across filtered listings. */
+export function getNewestListedIds<T extends { id?: unknown }>(items: readonly T[], limit = 3): Set<string> {
+  const listed = items.flatMap((item, index) => {
+    const id = typeof item.id === 'string' ? item.id : '';
+    const time = listedTime(item);
+    return id && time !== null ? [{ id, time, index }] : [];
+  });
+  listed.sort((a, b) => b.time - a.time || a.index - b.index);
+  return new Set(listed.slice(0, Math.max(0, limit)).map(({ id }) => id));
+}

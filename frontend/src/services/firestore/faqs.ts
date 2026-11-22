@@ -18,7 +18,7 @@ export interface FirestoreFAQ {
   divisionId?: string;
   order: number;
   isActive: boolean;
-  /** Pages this FAQ appears on (see FAQ_PAGES), e.g. ['contact']. */
+  /** Pages this FAQ appears on (see FAQ_PAGES). */
   pages?: string[];
   createdAt?: any;
   updatedAt?: any;
@@ -28,7 +28,10 @@ const COLLECTION_NAME = 'faqs';
 
 /** Pages that can show FAQs, managed from Admin → FAQs. */
 export const FAQ_PAGES = [
+  { id: 'home', label: 'Home page' },
   { id: 'contact', label: 'Contact page (/contact)' },
+  { id: 'sws', label: 'SWS page (/sws)' },
+  { id: 'faq', label: 'FAQ index (/faq)' },
 ] as const;
 
 export const firestoreFaqsService = {

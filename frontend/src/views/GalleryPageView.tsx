@@ -253,7 +253,7 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
       const seo = gallerySeo(inquiredItem as unknown as Record<string, unknown>, targetQuery);
       return (
         <div className="min-h-screen bg-slate-50 pt-20">
-          <SEOHead title={seo.title} description={seo.description} canonicalUrl={`${CANONICAL_SITE_ORIGIN}${seo.path}`} />
+          <SEOHead title={seo.title} description={seo.description} canonicalUrl={`${CANONICAL_SITE_ORIGIN}${seo.path}`} ogImage={seo.image} />
           <InquiredItemSpotlight
             item={inquiredItem}
             totalGalleryCount={allItems.length}

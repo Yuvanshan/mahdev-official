@@ -26,12 +26,14 @@ import { getRecordImageAlt } from '../../config/imageAlt';
 
 interface CatalogProductCardProps {
   product: CatalogProduct;
+  isNew?: boolean;
   onSelect: (product: CatalogProduct) => void;
   onAddToCart?: (product: CatalogProduct) => void;
 }
 
 export const CatalogProductCard: React.FC<CatalogProductCardProps> = ({
   product,
+  isNew = false,
   onSelect,
   onAddToCart,
 }) => {
@@ -126,7 +128,14 @@ export const CatalogProductCard: React.FC<CatalogProductCardProps> = ({
             alt={getRecordImageAlt(product)}
             className="absolute inset-0 rounded-none"
             imageClassName="transition-transform duration-500 ease-out group-hover:scale-105"
+            imageWidth={640}
           />
+
+          {isNew && (
+            <span className="absolute right-3 top-3 z-10 rounded-full bg-[#861F31] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm">
+              New
+            </span>
+          )}
 
           {/* Division Badge Top Left */}
           <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">

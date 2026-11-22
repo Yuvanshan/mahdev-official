@@ -111,6 +111,7 @@ export function mapFirestoreProductToCatalog(
     isFeatured: (fp as any).isFeatured ?? true,
     brand: (fp as any).brand || 'Mahdev',
     status: fp.isPublished === false || fp.status === 'draft' || (fp as any).status === 'archived' ? 'draft' : 'active',
+    listedAt: fp.listedAt,
     createdAt: fp.createdAt || new Date().toISOString(),
     updatedAt: fp.updatedAt || new Date().toISOString(),
   };

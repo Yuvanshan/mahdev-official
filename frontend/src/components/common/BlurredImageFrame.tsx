@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { withOptimizedSources } from '../../utils/optimizedImage';
 
 interface BlurredImageFrameProps {
   src?: string;
@@ -19,7 +20,7 @@ export const BlurredImageFrame: React.FC<BlurredImageFrameProps> = ({
 }) => {
   const fallbackKey = fallbackSources.join('\n');
   const sources = useMemo(
-    () => [...new Set([src, ...fallbackSources].filter((source): source is string => Boolean(source)))],
+    () => [...new Set(withOptimizedSources([src, ...fallbackSources].filter((source): source is string => Boolean(source)), 640))],
     [src, fallbackKey]
   );
   const sourcesKey = sources.join('\n');

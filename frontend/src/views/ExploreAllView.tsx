@@ -31,6 +31,7 @@ import { getImageSourceCandidates } from '../utils/imageSources';
 import { DIVISIONS } from '../config/divisions';
 import type { DivisionId } from '../types';
 import { getImageAlt, preferSavedAlt } from '../config/imageAlt';
+import { getNewestListedIds } from '../utils/listingOrder';
 
 type BrowseType = 'service' | 'gallery' | 'product';
 type BrowseItem =
@@ -96,7 +97,8 @@ const BrowseCard: React.FC<{
   onSelect: (item: BrowseItem) => void;
   onNavigate: (route: string) => void;
   imageLoading: 'eager' | 'lazy';
-}> = ({ item, onSelect, onNavigate, imageLoading }) => {
+  isNew?: boolean;
+}> = ({ item, onSelect, onNavigate, imageLoading, isNew = false }) => {
   const imageSources = getImageSourceCandidates(item.image, item.images);
   // Each card links to the item's own page (listed in the sitemap), so search engines can
   // follow it; a plain click opens the details pop-up instead.
@@ -117,6 +119,7 @@ const BrowseCard: React.FC<{
         href={href}
         onView={() => onSelect(item)}
         imageLoading={imageLoading}
+        isNew={isNew}
       />
     );
   }
@@ -146,6 +149,11 @@ const BrowseCard: React.FC<{
         <span className="absolute left-3 top-3 rounded-full bg-slate-950/75 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur">
           {KIND_LABELS[item.type]}
         </span>
+        {isNew && (
+          <span className="absolute right-3 top-3 rounded-full bg-[#861F31] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm">
+            New
+          </span>
+        )}
         {item.images.length > 1 && (
           <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/75 px-2.5 py-1 text-[10px] font-medium text-white">
             {item.images.length} photos
@@ -225,6 +233,15 @@ export const ExploreAllView: React.FC<{
       .map((product) => mapFirestoreProductToCatalog(product, productCategories)),
     [availableProducts, productCategories]
   );
+  const newServiceIds = useMemo(
+    () => getNewestListedIds(availableServices.filter((service) => service.isPublished !== false && service.status !== 'draft' && service.status !== 'inactive')),
+    [availableServices]
+  );
+  const newGalleryIds = useMemo(
+    () => getNewestListedIds(availableGallery.filter((item) => item.status !== 'hidden')),
+    [availableGallery]
+  );
+  const newProductIds = useMemo(() => getNewestListedIds(productItems), [productItems]);
 
   const allItems = useMemo<BrowseItem[]>(() => {
     const serviceItems: BrowseItem[] = availableServices
@@ -647,6 +664,11 @@ export const ExploreAllView: React.FC<{
                   onSelect={handleSelect}
                   onNavigate={onNavigate}
                   imageLoading={index < 4 ? 'eager' : 'lazy'}
+                  isNew={
+                    item.type === 'service' ? newServiceIds.has(item.id)
+                      : item.type === 'gallery' ? newGalleryIds.has(item.id)
+                        : newProductIds.has(item.id)
+                  }
                 />
               ))}
             </div>

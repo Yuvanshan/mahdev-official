@@ -3,6 +3,7 @@ import { CrossfadeImage } from '../common/CrossfadeImage';
 import { ImageWatermark } from '../common/ImageWatermark';
 import { getImageSourceCandidates } from '../../utils/imageSources';
 import { withOptimizedSources } from '../../utils/optimizedImage';
+import type { OptimizedImageWidth } from '../../utils/optimizedImage';
 
 const EMPTY_IMAGE_SOURCES: string[] = [];
 
@@ -13,6 +14,7 @@ interface ImageWithShimmerProps {
   className: string;
   imageClassName?: string;
   imageFit?: 'cover' | 'contain';
+  imageWidth?: OptimizedImageWidth;
   loading?: 'eager' | 'lazy';
   fallbackText?: string;
   showShimmer?: boolean;
@@ -26,13 +28,14 @@ export const ImageWithShimmer: React.FC<ImageWithShimmerProps> = ({
   className,
   imageClassName = '',
   imageFit = 'cover',
+  imageWidth,
   loading = 'lazy',
   fallbackText,
   showShimmer = true,
   watermarkLabel,
 }) => {
   const [hasLoadedImage, setHasLoadedImage] = useState(false);
-  const sourceCandidates = withOptimizedSources(getImageSourceCandidates(src, fallbackSources));
+  const sourceCandidates = withOptimizedSources(getImageSourceCandidates(src, fallbackSources), imageWidth);
   const candidateKey = sourceCandidates.join('\n');
   const hasPositionClass = className
     .split(/\s+/)

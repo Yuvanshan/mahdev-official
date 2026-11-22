@@ -24,7 +24,9 @@ import { markAccountDataStale } from '../services/customerAccountService';
 import {
   checkCustomerDetails,
   confirmOrder,
+  checkConfirmationPromo,
   getPublicConfirmation,
+  type ConfirmationPromo,
   type AvailabilityResult,
   type PublicConfirmation,
 } from '../services/orderConfirmationService';
@@ -47,6 +49,49 @@ type FieldErrors = Partial<
 >;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const PromoCodeEntry: React.FC<{
+  code: string;
+  onCodeChange: (value: string) => void;
+  promo: ConfirmationPromo | null;
+  checking: boolean;
+  error: string | null;
+  onApply: () => void;
+  onRemove: () => void;
+}> = ({ code, onCodeChange, promo, checking, error, onApply, onRemove }) => (
+  <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+    <label htmlFor="confirmation-promo" className="block text-xs font-semibold text-slate-700">Promo code</label>
+    {promo ? (
+      <div className="flex items-center justify-between gap-3 text-xs">
+        <p className="text-emerald-700">
+          <strong>{promo.code}</strong> applied. Updated total: {formatCurrency(promo.total, 'LKR')}.
+        </p>
+        <button type="button" onClick={onRemove} className="shrink-0 font-semibold text-slate-600 underline">Remove</button>
+      </div>
+    ) : (
+      <div className="flex gap-2">
+        <input
+          id="confirmation-promo"
+          value={code}
+          onChange={(event) => onCodeChange(event.target.value)}
+          autoComplete="off"
+          maxLength={50}
+          placeholder="Enter code"
+          className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm uppercase"
+        />
+        <button
+          type="button"
+          onClick={onApply}
+          disabled={checking || !code.trim()}
+          className="shrink-0 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+        >
+          {checking ? 'Checking…' : 'Apply'}
+        </button>
+      </div>
+    )}
+    {error && <p role="alert" className="text-xs text-rose-700">{error}</p>}
+  </div>
+);
 
 const formatDate = (iso: string) =>
   iso ? new Date(`${iso.slice(0, 10)}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
@@ -82,6 +127,10 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
   const [confirmation, setConfirmation] = useState<PublicConfirmation | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState(0);
+  const [promoCode, setPromoCode] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<ConfirmationPromo | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [isCheckingPromo, setIsCheckingPromo] = useState(false);
 
   const [form, setForm] = useState({
     fullName: '',
@@ -172,17 +221,62 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
     if (!slipFile) return null;
     const amount = Number(slipAmount);
     if (!Number.isFinite(amount) || amount <= 0) return 'Enter the amount you transferred.';
-    if (confirmation && confirmation.total > 0 && amount > confirmation.total) {
-      return `The amount cannot be more than the total of ${formatCurrency(confirmation.total, 'LKR')}.`;
+    const total = appliedPromo?.total ?? confirmation?.total;
+    if (total && total > 0 && amount > total) {
+      return `The amount cannot be more than the total of ${formatCurrency(total, 'LKR')}.`;
     }
     return null;
   };
 
+  const applyPromo = async () => {
+    if (!promoCode.trim()) return;
+    setPromoError(null);
+    setAppliedPromo(null);
+    if (confirmation) {
+      const amountDue = confirmation.advanceAmount > 0 ? confirmation.advanceAmount : confirmation.total;
+      if (amountDue > 0) setSlipAmount(String(amountDue));
+    }
+    setIsCheckingPromo(true);
+    try {
+      const promo = await checkConfirmationPromo(token, promoCode);
+      setAppliedPromo(promo);
+      setPromoCode(promo.code);
+      setSlipAmount(String(promo.advanceAmount > 0 ? promo.advanceAmount : promo.total));
+    } catch (error) {
+      setPromoError(error instanceof Error ? error.message : 'Promo code could not be checked.');
+    } finally {
+      setIsCheckingPromo(false);
+    }
+  };
+
+  const removePromo = () => {
+    setAppliedPromo(null);
+    setPromoCode('');
+    setPromoError(null);
+    if (confirmation) {
+      const amountDue = confirmation.advanceAmount > 0 ? confirmation.advanceAmount : confirmation.total;
+      if (amountDue > 0) setSlipAmount(String(amountDue));
+    }
+  };
+
   const finish = async () => {
-    const confirmed = await confirmOrder(token, { address: form.address.trim(), notes: form.notes.trim() });
+    const confirmed = await confirmOrder(token, {
+      address: form.address.trim(),
+      notes: form.notes.trim(),
+      promoCode: appliedPromo?.code,
+    });
     markAccountDataStale();
     setResult(confirmed);
-    setConfirmation((current) => (current ? { ...current, status: 'confirmed', bookingId: confirmed.bookingId } : current));
+    setConfirmation((current) => (current ? {
+      ...current,
+      status: 'confirmed',
+      bookingId: confirmed.bookingId,
+      ...(confirmed.discount !== undefined ? { discount: confirmed.discount } : {}),
+      ...(confirmed.promoCode ? { promoCode: confirmed.promoCode, promoDiscount: confirmed.promoDiscount } : {}),
+      ...(confirmed.total !== undefined ? { total: confirmed.total } : {}),
+      ...(confirmed.advanceAmount !== undefined ? { advanceAmount: confirmed.advanceAmount } : {}),
+    } : current));
+    setAppliedPromo(null);
     await sendSlip(confirmed.bookingId);
   };
 
@@ -208,6 +302,10 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
   const handleNewCustomer = async (event: React.FormEvent) => {
     event.preventDefault();
     setErrorMessage(null);
+    if (isCheckingPromo) {
+      setPromoError('Wait for the promo code check to finish.');
+      return;
+    }
     const errors = validateNewCustomer();
     setFieldErrors(errors);
     if (Object.keys(errors).length) return;
@@ -245,6 +343,10 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
   const handleSignedIn = async (event: React.FormEvent) => {
     event.preventDefault();
     setErrorMessage(null);
+    if (isCheckingPromo) {
+      setPromoError('Wait for the promo code check to finish.');
+      return;
+    }
     const errors: FieldErrors = {};
     if (!form.agreeToTerms) errors.agreeToTerms = 'Please accept the Terms and Privacy Policy.';
     const amountProblem = slipAmountError();
@@ -293,6 +395,14 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
   }
 
   const images = confirmation.designImages || [];
+  const visibleConfirmation = appliedPromo
+    ? {
+        ...confirmation,
+        discount: appliedPromo.discount,
+        total: appliedPromo.total,
+        advanceAmount: appliedPromo.advanceAmount,
+      }
+    : confirmation;
 
   return (
     <div className="bg-slate-50 min-h-screen py-10 sm:py-14">
@@ -386,17 +496,17 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
             <div className="px-5 sm:px-6 py-4 border-t border-slate-100 flex justify-end">
               <div className="w-full sm:w-64 space-y-1.5 text-xs">
                 <div className="flex justify-between text-slate-600"><span>Subtotal</span><span className="font-mono">{formatCurrency(confirmation.subtotal, 'LKR')}</span></div>
-                {confirmation.discount > 0 && (
-                  <div className="flex justify-between text-emerald-700"><span>Discount</span><span className="font-mono">-{formatCurrency(confirmation.discount, 'LKR')}</span></div>
+                {visibleConfirmation.discount > 0 && (
+                  <div className="flex justify-between text-emerald-700"><span>Discount{appliedPromo ? ` (${appliedPromo.code})` : ''}</span><span className="font-mono">-{formatCurrency(visibleConfirmation.discount, 'LKR')}</span></div>
                 )}
-                {confirmation.deliveryFee > 0 && (
-                  <div className="flex justify-between text-slate-600"><span>Transport & setup</span><span className="font-mono">{formatCurrency(confirmation.deliveryFee, 'LKR')}</span></div>
+                {visibleConfirmation.deliveryFee > 0 && (
+                  <div className="flex justify-between text-slate-600"><span>Transport & setup</span><span className="font-mono">{formatCurrency(visibleConfirmation.deliveryFee, 'LKR')}</span></div>
                 )}
                 <div className="flex justify-between text-base font-bold text-slate-900 pt-2 border-t border-slate-200">
-                  <span>Total</span><span className="font-mono text-[#861F31]">{formatCurrency(confirmation.total, 'LKR')}</span>
+                  <span>Total</span><span className="font-mono text-[#861F31]">{formatCurrency(visibleConfirmation.total, 'LKR')}</span>
                 </div>
-                {confirmation.advanceAmount > 0 && (
-                  <div className="flex justify-between text-slate-600"><span>Advance to reserve the date</span><span className="font-mono font-bold">{formatCurrency(confirmation.advanceAmount, 'LKR')}</span></div>
+                {visibleConfirmation.advanceAmount > 0 && (
+                  <div className="flex justify-between text-slate-600"><span>Advance to reserve the date</span><span className="font-mono font-bold">{formatCurrency(visibleConfirmation.advanceAmount, 'LKR')}</span></div>
                 )}
               </div>
             </div>
@@ -436,8 +546,8 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
                   // Just confirmed in this visit: the slip can still be added here, or later.
                   <div className="text-left space-y-3">
                     <BankDetailsCard
-                      advanceAmount={confirmation.advanceAmount}
-                      total={confirmation.total}
+                      advanceAmount={visibleConfirmation.advanceAmount}
+                      total={visibleConfirmation.total}
                       reference={confirmation.bookingId || confirmation.reference}
                     />
                     <PaymentSlipField
@@ -470,8 +580,8 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
                   </div>
                 ) : (
                   <BankDetailsCard
-                    advanceAmount={confirmation.advanceAmount}
-                    total={confirmation.total}
+                    advanceAmount={visibleConfirmation.advanceAmount}
+                    total={visibleConfirmation.total}
                     reference={confirmation.bookingId || confirmation.reference}
                     laterHint
                   />
@@ -523,9 +633,21 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
                   </div>
                 ) : (
                   <>
+                    <PromoCodeEntry
+                      code={promoCode}
+                      onCodeChange={(value) => {
+                        setPromoCode(value);
+                        setPromoError(null);
+                      }}
+                      promo={appliedPromo}
+                      checking={isCheckingPromo}
+                      error={promoError}
+                      onApply={() => void applyPromo()}
+                      onRemove={removePromo}
+                    />
                     <ExtraFields form={form} update={update} />
                     <OptionalSlipSection
-                      confirmation={confirmation}
+                      confirmation={visibleConfirmation}
                       file={slipFile}
                       onFileChange={setSlipFile}
                       amount={slipAmount}
@@ -558,6 +680,18 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
                   <LogIn className="w-4 h-4" /> I already have an account
                 </button>
                 <AuthAlert tone="error" message={errorMessage} />
+                <PromoCodeEntry
+                  code={promoCode}
+                  onCodeChange={(value) => {
+                    setPromoCode(value);
+                    setPromoError(null);
+                  }}
+                  promo={appliedPromo}
+                  checking={isCheckingPromo}
+                  error={promoError}
+                  onApply={() => void applyPromo()}
+                  onRemove={removePromo}
+                />
                 <AuthField
                   label="Full name"
                   autoComplete="name"
@@ -630,7 +764,7 @@ export const ConfirmOrderView: React.FC<ConfirmOrderViewProps> = ({ token, onNav
                 />
                 <ExtraFields form={form} update={update} />
                 <OptionalSlipSection
-                  confirmation={confirmation}
+                  confirmation={visibleConfirmation}
                   file={slipFile}
                   onFileChange={setSlipFile}
                   amount={slipAmount}

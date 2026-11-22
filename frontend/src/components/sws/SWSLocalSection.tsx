@@ -3,7 +3,9 @@ import { Clock, MapPin, Phone, MessageCircle } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body } from '../ui/Heading';
 import { ScrollReveal } from '../motion/MotionWrappers';
-import { SWS_BUSINESS, SWS_FAQS, SWS_PROFILE_SERVICES, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS } from '../../data/swsLocalSeo';
+import { SWS_BUSINESS, SWS_PROFILE_SERVICES, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS } from '../../data/swsLocalSeo';
+import { FaqSection } from '../common/FaqSection';
+import { usePageFaqs } from '../../hooks/usePageFaqs';
 
 /**
  * Local search section for /sws: keyword service headings, the exact business
@@ -12,6 +14,7 @@ import { SWS_BUSINESS, SWS_FAQS, SWS_PROFILE_SERVICES, SWS_SERVICE_AREA_SUMMARY,
  * which also feeds the page's structured data.
  */
 export const SWSLocalSection: React.FC = () => {
+  const faqs = usePageFaqs('sws');
   // Coordinates of the Trincomalee Google Maps pin. google.com is already allowed in the CSP frame-src.
   const mapEmbedUrl = `https://www.google.com/maps?q=${SWS_BUSINESS.trincomalee.latitude},${SWS_BUSINESS.trincomalee.longitude}&z=16&output=embed`;
 
@@ -39,19 +42,12 @@ export const SWSLocalSection: React.FC = () => {
         </ScrollReveal>
       </SectionContainer>
 
-      <SectionContainer background="subtle" paddingY="xl" id="sws-faq">
-        <ScrollReveal>
-          <H2 className="text-center text-slate-900">Event planning in Trincomalee: common questions</H2>
-          <div className="mx-auto mt-6 max-w-3xl divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
-            {SWS_FAQS.map((faq) => (
-              <details key={faq.question} className="group p-5">
-                <summary className="cursor-pointer text-center text-base font-semibold text-slate-900">{faq.question}</summary>
-                <Body className="mt-2 text-center text-slate-600">{faq.answer}</Body>
-              </details>
-            ))}
-          </div>
-        </ScrollReveal>
-      </SectionContainer>
+      <FaqSection
+        items={faqs}
+        title="Event planning in Trincomalee: common questions"
+        id="sws-faq"
+        background="subtle"
+      />
 
       <SectionContainer background="white" paddingY="xl" id="sws-visit-us">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">

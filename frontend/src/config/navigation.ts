@@ -93,6 +93,7 @@ export const FOOTER_SECTIONS: FooterSection[] = [
       { label: 'Our Divisions', href: '/#divisions' },
       { label: 'Projects & Portfolio', href: '/portfolio' },
       { label: 'Blog', href: '/blog' },
+      { label: 'FAQs', href: '/faq' },
       { label: 'Careers', href: '/careers' },
       { label: 'Contact Us', href: '/contact' },
     ],

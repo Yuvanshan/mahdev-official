@@ -10,15 +10,18 @@ import {
 import { Product } from '../../data/martData';
 import { formatCurrency } from '../../utils/currency';
 import { getImageAlt } from '../../config/imageAlt';
+import { BlurredImageFrame } from '../common/BlurredImageFrame';
 
 interface MartProductCardProps {
   product: Product;
+  isNew?: boolean;
   onViewProduct: (product: Product) => void;
   onAddToCart: (product: Product) => void;
 }
 
 export const MartProductCard: React.FC<MartProductCardProps> = ({
   product,
+  isNew = false,
   onViewProduct,
   onAddToCart,
 }) => {
@@ -45,13 +48,19 @@ export const MartProductCard: React.FC<MartProductCardProps> = ({
           onClick={() => onViewProduct(product)}
           className="relative aspect-square overflow-hidden bg-slate-100 cursor-pointer"
         >
-          <img
+          <BlurredImageFrame
             src={product.imageUrl}
             alt={getImageAlt(product.name, 'mart', product.category)}
             loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            className="absolute inset-0"
+            imageClassName="transition-transform duration-500 group-hover:scale-[1.03]"
           />
 
+          {isNew && (
+            <span className="absolute right-3 top-3 z-10 rounded-full bg-[#861F31] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm">
+              New
+            </span>
+          )}
           {/* Badges Overlay */}
           <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
             {product.discountPercent && (

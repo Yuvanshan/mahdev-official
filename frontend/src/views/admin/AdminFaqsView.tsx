@@ -2,15 +2,16 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, Edit2, Eye, EyeOff, Loader2, Plus, Save, Trash2, X } from 'lucide-react';
 import { FAQ_PAGES, FirestoreFAQ, firestoreFaqsService } from '../../services/firestore/faqs';
 import { SITE_FAQS } from '../../data/siteFaqs';
+import { SWS_FAQS } from '../../../../shared/data/swsLocalSeo';
 
 type Draft = Pick<FirestoreFAQ, 'question' | 'answer' | 'isActive' | 'pages'>;
-const EMPTY_DRAFT: Draft = { question: '', answer: '', isActive: true, pages: ['contact'] };
+const EMPTY_DRAFT: Draft = { question: '', answer: '', isActive: true, pages: ['contact', 'faq'] };
 
 const newId = () => `faq_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 
 /**
  * Admin → FAQs: add, edit, reorder, publish/hide and delete the FAQs shown on
- * the website (Contact page). Changes reach the public site within
+ * the website. Changes reach the public site within
  * the snapshot cache window (about 5 minutes).
  */
 export const AdminFaqsView: React.FC = () => {
@@ -101,7 +102,9 @@ export const AdminFaqsView: React.FC = () => {
         question: faq.question,
         answer: faq.answer,
         isActive: true,
-        pages: ['contact'],
+        pages: SWS_FAQS.some((swsFaq) => swsFaq.question === faq.question)
+          ? ['sws', 'faq']
+          : ['home', 'contact', 'faq'],
         order: i + 1,
         createdAt: new Date().toISOString(),
       })));
@@ -170,7 +173,7 @@ export const AdminFaqsView: React.FC = () => {
       <div className="flex flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center">
         <div>
           <h2 className="text-lg font-bold text-slate-900">FAQs</h2>
-          <p className="text-xs text-slate-500">Questions shown on the Contact page, also published to Google as FAQ results.</p>
+          <p className="text-xs text-slate-500">Manage FAQs across the website and the public FAQ index.</p>
         </div>
         <button type="button" onClick={() => startEdit()} disabled={isSaving || editingId !== null} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
           <Plus className="h-4 w-4" /> Add FAQ
@@ -206,7 +209,7 @@ export const AdminFaqsView: React.FC = () => {
                     <p className="font-semibold text-slate-900">{index + 1}. {faq.question}</p>
                     <p className="mt-1 line-clamp-2 text-sm text-slate-600">{faq.answer}</p>
                     <p className="mt-2 text-xs text-slate-500">
-                      {faq.isActive === false ? 'Hidden' : 'Published'} · Shown on: {(faq.pages || []).map((p) => FAQ_PAGES.find((x) => x.id === p)?.id || p).join(', ') || 'no pages'}
+                      {faq.isActive === false ? 'Hidden' : 'Published'} · Shown on: {(faq.pages || []).map((p) => FAQ_PAGES.find((x) => x.id === p)?.label || p).join(', ') || 'no pages'}
                     </p>
                   </div>
                   <div className="flex shrink-0 gap-1">

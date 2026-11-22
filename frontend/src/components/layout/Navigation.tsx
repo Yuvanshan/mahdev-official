@@ -533,12 +533,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
               {/* Phone Hotline Link */}
               <a
                 href={getTelLink(primaryPhone)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50/90 hover:bg-blue-100 border border-blue-200/80 text-xs font-mono font-bold text-slate-900 hover:text-[#861F31] transition-colors shadow-2xs shrink-0"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-200/80 bg-blue-50/90 p-0 text-xs font-mono font-bold text-slate-900 shadow-2xs transition-colors hover:bg-blue-100 hover:text-[#861F31]"
                 title={`Call Hotline ${primaryPhone}`}
                 aria-label={`Call Hotline ${primaryPhone}`}
               >
-                <Phone className="w-3.5 h-3.5 text-[#861F31] shrink-0" />
-                <span className="hidden sm:inline">{primaryPhone}</span>
+                <Phone className="h-4 w-4 shrink-0 text-[#861F31]" />
               </a>
 
               {/* WhatsApp Link */}
@@ -546,12 +545,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                 href={dynamicWhatsAppUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-xs font-semibold text-emerald-800 hover:text-emerald-900 transition-colors shadow-2xs shrink-0"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-300 bg-emerald-50 p-0 text-xs font-semibold text-emerald-800 shadow-2xs transition-colors hover:bg-emerald-100 hover:text-emerald-900"
                 title="Direct WhatsApp"
                 aria-label="Direct WhatsApp"
               >
-                <MessageCircle className="w-4 h-4 text-[#25D366] shrink-0" />
-                <span className="hidden sm:inline">WhatsApp</span>
+                <MessageCircle className="h-4 w-4 shrink-0 text-[#25D366]" />
               </a>
 
               {/* Cart: item count badge; opens the cart sheet. */}
@@ -561,7 +559,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                   setIsMobileMenuOpen(false);
                   openCart();
                 }}
-                className="relative inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-blue-50 border border-slate-200 text-xs font-semibold text-slate-900 transition-colors shadow-2xs shrink-0"
+                className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white p-0 text-xs font-semibold text-slate-900 shadow-2xs transition-colors hover:bg-blue-50"
                 title="View cart"
                 aria-label={`View cart, ${totalQuantity} ${totalQuantity === 1 ? 'item' : 'items'}`}
               >
@@ -575,11 +573,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
               {isAuthLoading ? (
                 // While the session restores, show the saved profile photo instead of a shimmer.
                 savedProfile ? (
-                  <span className="inline-flex shrink-0 rounded-xl border border-slate-200 bg-white p-1 shadow-2xs" aria-hidden="true">
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white p-1 shadow-2xs" aria-hidden="true">
                     <Avatar name={savedProfile.fullName} email={savedProfile.email} src={savedProfile.avatarUrl} className="h-7 w-7 rounded-lg" textClassName="text-[11px]" />
                   </span>
                 ) : (
-                  <span className="h-9 w-9 shrink-0 animate-pulse rounded-xl bg-slate-200" aria-hidden="true" />
+                  <span className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-slate-200" aria-hidden="true" />
                 )
               ) : isAuthenticated && user ? (
                 <div className="relative shrink-0" ref={accountDropdownRef}>
@@ -589,16 +587,12 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                       setIsMobileMenuOpen(false);
                       setIsAccountMenuOpen((open) => !open);
                     }}
-                    className="relative inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-1 pr-1 shadow-2xs transition-colors hover:border-blue-300 hover:bg-blue-50 xl:pr-2.5"
+                    className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white p-1 shadow-2xs transition-colors hover:border-blue-300 hover:bg-blue-50"
                     aria-label={`Account menu for ${user.fullName}${profileIncomplete ? ', profile incomplete' : ''}`}
                     aria-haspopup="menu"
                     aria-expanded={isAccountMenuOpen}
                   >
                     <Avatar name={user.fullName} email={user.email} src={user.avatarUrl} className="h-7 w-7 rounded-lg" textClassName="text-[11px]" />
-                    <span className="hidden max-w-[7rem] truncate text-xs font-semibold text-slate-800 xl:inline">
-                      {hasRealName(user) ? user.fullName.split(' ')[0] : 'Account'}
-                    </span>
-                    <ChevronDown className={`hidden h-3.5 w-3.5 text-slate-500 transition-transform xl:block ${isAccountMenuOpen ? 'rotate-180' : ''}`} />
                     {profileIncomplete && (
                       <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-amber-500 ring-2 ring-white" aria-hidden="true" />
                     )}
@@ -664,12 +658,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                 <a
                   href={signInHref}
                   onClick={(event) => handleAnchorClick(event, signInHref)}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-2xs transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-[#861F31]"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white p-0 text-xs font-semibold text-slate-900 shadow-2xs transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-[#861F31]"
                   title="Sign in"
                   aria-label="Sign in to your account"
                 >
                   <User className="h-4 w-4 shrink-0 text-slate-800" aria-hidden="true" />
-                  <span className="hidden xl:inline">Sign in</span>
                 </a>
               )}
 
@@ -677,7 +670,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="relative z-[62] p-2 rounded-xl text-slate-900 hover:text-[#861F31] hover:bg-blue-50 min-[900px]:hidden focus:outline-none focus:ring-2 focus:ring-[#861F31] cursor-pointer shrink-0 border border-blue-200/80 bg-[#FAF6EF]"
+                className="relative z-[62] inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-200/80 bg-[#FAF6EF] p-0 text-slate-900 hover:bg-blue-50 hover:text-[#861F31] min-[900px]:hidden focus:outline-none focus:ring-2 focus:ring-[#861F31] cursor-pointer"
                 aria-label="Toggle navigation menu"
                 aria-expanded={isMobileMenuOpen}
                 aria-controls="mahdev-mobile-navigation"

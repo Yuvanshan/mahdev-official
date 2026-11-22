@@ -13,6 +13,7 @@ import { getPageTitle } from '../../shared/config/pageTitles.js';
 import { withServiceArea } from '../../shared/config/itemSeo.js';
 import { CAREERS_PAGE_SEO } from '../../shared/config/careerSeo.js';
 import { getFaqStructuredData, getSwsStructuredData, SWS_BUSINESS, SWS_PRIMARY_HEADING, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS, SWS_TARGET_KEYWORDS } from '../../shared/data/swsLocalSeo.js';
+import { getSiteFaqStructuredData, SITE_FAQS } from '../../shared/data/siteFaqs.js';
 import { U1_PRIMARY_HEADING, U1_SERVICE_AREA_SUMMARY, U1_SERVICE_HIGHLIGHTS } from '../../shared/data/u1LocalSeo.js';
 import { getCanonicalPublicUrl } from '../../shared/config/divisionSites.js';
 
@@ -222,6 +223,15 @@ const ROUTES: RouteSeo[] = [
     intro: 'Send an enquiry to the Mahdev team and we will get back to you.',
   },
   {
+    path: '/faq',
+    title: titleFor('/faq'),
+    description: 'Answers to common questions about Mahdev services, event planning, photography, online orders and contacting our teams.',
+    heading: 'Frequently asked questions',
+    intro: 'Find answers about our services, bookings, products and locations.',
+    articleContent: SITE_FAQS.map((faq) => ({ heading: faq.question, text: faq.answer })),
+    structuredData: [getSiteFaqStructuredData()],
+  },
+  {
     path: '/promotions',
     title: titleFor('/promotions'),
     description: 'Current promotions and special offers across Mahdev events, studio, IT, travel and online mart.',
@@ -281,7 +291,7 @@ export const APP_ROUTE_SEGMENTS = new Set([
   '', 'about', 'about-us', 'account', 'admin-yuvan1709', 'articles', 'auth', 'blog', 'book', 'bookings', 'careers', 'cart',
   'catalog', 'catelog', 'checkout', 'cinema', 'clients', 'companies', 'company', 'confirm-order', 'contact', 'cookie-policy', 'decor',
   'decorations', 'division', 'divisions', 'event-management', 'events', 'events-management', 'featured-services',
-  'forgot-password', 'gallery', 'insights', 'it', 'it-services', 'it-solutions', 'jobs', 'journey', 'login',
+  'faq', 'forgot-password', 'gallery', 'insights', 'it', 'it-services', 'it-solutions', 'jobs', 'journey', 'login',
   'mahdev-it', 'mahdev-mart', 'mahdev-travels', 'mart', 'media', 'milestones', 'online-mart', 'order', 'orders',
   'partners', 'photography', 'portfolio', 'post', 'posts', 'privacy-policy', 'product', 'products', 'project',
   'projects', 'promotion', 'promotions', 'refund-policy', 'register', 'reviews', 'service', 'services',

@@ -64,6 +64,7 @@ export interface CatalogProduct {
   /** Search description from the admin editor (auto-filled, ~160 characters). */
   seoDescription?: string;
   id: string;
+  listedAt?: string;
   sku: string;
   name: string;
   slug: string;

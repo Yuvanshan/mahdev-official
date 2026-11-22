@@ -39,6 +39,7 @@ const STATIC_PUBLIC_PATHS = [
   '/careers',
   '/clients',
   '/contact',
+  '/faq',
   '/promotions',
   '/privacy-policy',
   '/terms-and-conditions',
