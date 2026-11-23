@@ -2844,10 +2844,6 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   transition-delay: var(--public-scroll-delay, 0ms);
 }
 
-.public-scroll-section--from-right {
-  transform: translate3d(24px, 10px, 0);
-}
-
 .public-scroll-revealed {
   opacity: 1;
   transform: none;
@@ -3113,10 +3109,6 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
     flex-direction: column;
   }
 
-  .public-editorial .public-scroll-section--from-right {
-    transform: translate3d(16px, 8px, 0);
-  }
-
   .home-button {
     width: fit-content;
     min-height: 48px;
@@ -3303,8 +3295,7 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 @media (prefers-reduced-motion: reduce) {
   .public-scroll-section,
   .public-scroll-card,
-  .public-scroll-heading,
-  .public-scroll-section--from-right {
+  .public-scroll-heading {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
