@@ -311,14 +311,17 @@ export const U1PortfolioSection: React.FC = () => {
                   setCardCopiedId(item.id);
                   setTimeout(() => setCardCopiedId(null), 2000);
                 }}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow-lg transition-transform hover:scale-105"
+                className="flex h-8 items-center justify-center gap-1.5 rounded-full bg-white/95 px-2.5 text-[10px] font-semibold text-slate-700 shadow-lg transition-transform hover:scale-105"
                 title="Share this frame"
                 aria-label="Share frame"
               >
                 {cardCopiedId === item.id ? (
                   <Check className="w-3.5 h-3.5 text-emerald-400" />
                 ) : (
-                  <Share2 className="w-3.5 h-3.5" />
+                  <>
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>Share</span>
+                  </>
                 )}
               </button>
 

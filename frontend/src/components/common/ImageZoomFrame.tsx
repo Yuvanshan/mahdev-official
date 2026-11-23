@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Crosshair } from 'lucide-react';
 
 const MOBILE_IMAGE_ZOOM_SCALE = '1.4';
-const TOUCH_MOVE_THRESHOLD = 8;
 
 interface ImageZoomFrameProps {
   children: React.ReactNode;
@@ -20,13 +19,15 @@ export const ImageZoomFrame: React.FC<ImageZoomFrameProps> = ({
   const [isZoomed, setIsZoomed] = useState(false);
   const frameRef = useRef<HTMLDivElement>(null);
   const lensRef = useRef<HTMLDivElement>(null);
-  const touchGestureRef = useRef<{ x: number; y: number; moved: boolean } | null>(null);
+  const touchGestureRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null);
 
   useEffect(() => {
     setIsZoomed(false);
     frameRef.current?.style.setProperty('--image-mobile-scale', MOBILE_IMAGE_ZOOM_SCALE);
     frameRef.current?.style.setProperty('--image-zoom-x', '50%');
     frameRef.current?.style.setProperty('--image-zoom-y', '50%');
+    frameRef.current?.style.setProperty('--image-pan-x', '0px');
+    frameRef.current?.style.setProperty('--image-pan-y', '0px');
     const image = frameRef.current?.querySelector<HTMLImageElement>('img');
     if (image && lensRef.current) {
       const applySource = () => {
@@ -55,18 +56,27 @@ export const ImageZoomFrame: React.FC<ImageZoomFrameProps> = ({
       updateFocusPoint(event.currentTarget, event.clientX, event.clientY);
       return;
     }
-    if (!isZoomed) return;
     const gesture = touchGestureRef.current;
-    if (gesture && Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) > TOUCH_MOVE_THRESHOLD) {
-      gesture.moved = true;
-    }
-    updateFocusPoint(event.currentTarget, event.clientX, event.clientY);
+    if (!isZoomed || !gesture) return;
+
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const scaleOverflowX = bounds.width * ((Number(MOBILE_IMAGE_ZOOM_SCALE) - 1) / 2);
+    const scaleOverflowY = bounds.height * ((Number(MOBILE_IMAGE_ZOOM_SCALE) - 1) / 2);
+    const panX = Math.max(-scaleOverflowX, Math.min(scaleOverflowX, event.clientX - gesture.startX));
+    const panY = Math.max(-scaleOverflowY, Math.min(scaleOverflowY, event.clientY - gesture.startY));
+    gesture.panX = panX;
+    gesture.panY = panY;
+
+    event.currentTarget.style.setProperty('--image-pan-x', `${panX}px`);
+    event.currentTarget.style.setProperty('--image-pan-y', `${panY}px`);
   };
 
   const onTouchPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
-    touchGestureRef.current = { x: event.clientX, y: event.clientY, moved: false };
+    touchGestureRef.current = { startX: event.clientX, startY: event.clientY, panX: 0, panY: 0 };
     updateFocusPoint(event.currentTarget, event.clientX, event.clientY);
+    event.currentTarget.style.setProperty('--image-pan-x', '0px');
+    event.currentTarget.style.setProperty('--image-pan-y', '0px');
     setIsZoomed(true);
     event.currentTarget.setPointerCapture(event.pointerId);
   };
@@ -81,6 +91,8 @@ export const ImageZoomFrame: React.FC<ImageZoomFrameProps> = ({
     setIsZoomed(false);
     frameRef.current?.style.setProperty('--image-zoom-x', '50%');
     frameRef.current?.style.setProperty('--image-zoom-y', '50%');
+    frameRef.current?.style.setProperty('--image-pan-x', '0px');
+    frameRef.current?.style.setProperty('--image-pan-y', '0px');
   };
 
   return (

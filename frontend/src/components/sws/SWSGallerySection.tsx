@@ -211,9 +211,10 @@ export const SWSGallerySection: React.FC = () => {
                   }}
                   title="Share frame"
                   aria-label={`Share ${item.title}`}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow-md transition hover:bg-white"
+                  className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-white/95 px-3 text-[10px] font-semibold text-slate-700 shadow-md transition hover:bg-white"
                 >
                   <Share2 className="h-4 w-4" />
+                  <span>Share</span>
                 </button>
               </div>
 

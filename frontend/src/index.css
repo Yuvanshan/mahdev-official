@@ -624,7 +624,7 @@ html[data-seasonal-theme="diwali"] {
     user-select: none;
   }
   .image-zoom-active img {
-    transform: scale(var(--image-mobile-scale, 1.4));
+    transform: translate(var(--image-pan-x, 0px), var(--image-pan-y, 0px)) scale(var(--image-mobile-scale, 1.4));
   }
   .image-zoom-active {
     touch-action: none;

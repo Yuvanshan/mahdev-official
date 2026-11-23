@@ -387,11 +387,12 @@ export const GalleryPageView: React.FC<GalleryPageViewProps> = ({ onNavigate, in
                         setShareFeedback(res.message);
                         setTimeout(() => setShareFeedback(null), 2500);
                       }}
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-700 shadow-md transition-transform hover:scale-105"
+                      className="flex h-8 items-center justify-center gap-1.5 rounded-full bg-white px-2.5 text-[10px] font-semibold text-slate-700 shadow-md transition-transform hover:scale-105"
                       title="Share asset"
                       aria-label="Share asset"
                     >
-                      <Share2 className="h-4 w-4" />
+                      <Share2 className="h-3.5 w-3.5" />
+                      <span>Share</span>
                     </button>
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowRight, CalendarCheck, CheckCircle2, ChevronLeft, ChevronRight, MessageCircle, ShoppingCart, Truck, X } from 'lucide-react';
+import { ArrowRight, CalendarCheck, CheckCircle2, ChevronLeft, ChevronRight, MessageCircle, Share2, ShoppingCart, Truck, X } from 'lucide-react';
 import { ImageWithShimmer } from '../ui/ImageWithShimmer';
 import { ImageWatermark } from '../common/ImageWatermark';
 import { ImageZoomFrame } from '../common/ImageZoomFrame';
@@ -384,7 +384,9 @@ export const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
                     }}
                     className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 text-xs font-semibold text-slate-800 hover:border-blue-600 hover:text-blue-700 sm:min-h-11 sm:px-4 sm:text-sm"
                   >
-                    {action!.label} {!action!.keepOpen && <ArrowRight className="h-4 w-4" aria-hidden="true" />}
+                    {/share/i.test(action!.label) && <Share2 className="h-4 w-4" aria-hidden="true" />}
+                    <span>{action!.label}</span>
+                    {!action!.keepOpen && <ArrowRight className="h-4 w-4" aria-hidden="true" />}
                   </button>
                 ))}
               </div>
