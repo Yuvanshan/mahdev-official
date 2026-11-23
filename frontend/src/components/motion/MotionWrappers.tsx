@@ -39,6 +39,7 @@ export const PublicScrollRevealObserver: React.FC = () => {
         if (observed.has(element)) return;
         observed.add(element);
         const isHeading = element.matches('.home-section-heading');
+        const isSection = element.matches('section:not(.home-video-hero):not(.division-video-hero)');
         const isCard = element.matches(
           '.home-trust-grid > *, .home-occasion, .home-pillar-grid > *, .home-product-card, ' +
           '.home-process-grid > *, section .grid > article, section .grid > a, ' +
@@ -47,6 +48,12 @@ export const PublicScrollRevealObserver: React.FC = () => {
         element.classList.add(
           isHeading ? 'public-scroll-heading' : isCard ? 'public-scroll-card' : 'public-scroll-section'
         );
+        if (isSection) {
+          const sectionIndex = Array.from(element.parentElement?.children || [])
+            .filter((child) => child.matches('section:not(.home-video-hero):not(.division-video-hero)'))
+            .indexOf(element);
+          if (sectionIndex % 2 === 1) element.classList.add('public-scroll-section--from-right');
+        }
         if (isCard) {
           const index = Array.from(element.parentElement?.children || []).indexOf(element);
           element.style.setProperty('--public-scroll-delay', `${Math.min(index, 5) * 55}ms`);

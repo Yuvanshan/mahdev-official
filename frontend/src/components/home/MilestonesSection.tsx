@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
-import { Sparkles, ChevronRight } from 'lucide-react';
+import { Sparkles, ChevronRight, Trophy } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { HorizontalScrollArea } from '../ui/HorizontalScrollArea';
-import { H2, Body } from '../ui/Heading';
+import { H2 } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { ParallelWatermark } from '../motion/ParallelScroll';
@@ -15,6 +16,7 @@ interface MilestonesSectionProps {
 
 export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate }) => {
   const { milestones, homepageConfig, isMilestonesLoading } = useFirestoreDataContext();
+  const reducedMotion = useReducedMotion();
 
   const milestonesCms = homepageConfig?.milestones;
 
@@ -61,7 +63,7 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
             <h3 className="font-display text-2xl font-bold text-slate-900 mb-2">
               {milestonesCms?.title || 'Our Milestones & Trajectory'}
             </h3>
-            <p className="text-slate-600 text-sm max-w-lg mx-auto">
+            <p className="hidden max-w-lg text-sm text-slate-600 sm:block mx-auto">
               {milestonesCms?.subtitle || 'Create and publish corporate milestones from the Admin Portal.'}
             </p>
           </div>
@@ -71,46 +73,63 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
   }
 
   return (
-    <div className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50/50 to-white">
+    <div className="milestones-showcase relative overflow-hidden bg-[#2A0810] text-white">
       <ParallelWatermark text="07 // TRAJECTORY" />
       <SectionContainer id="milestones" background="none" paddingY="xl" hasBorderBottom>
-        {/* Section Header */}
-        <div className="max-w-6xl mx-auto mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="flex h-2 w-2 rounded-full bg-blue-600" />
-            <Badge variant="electric" size="sm" className="font-mono text-[11px] uppercase tracking-wider">
-              {milestonesCms?.badge || 'Corporate Trajectory'}
-            </Badge>
-            <span className="text-xs font-semibold text-slate-500">
-              • {totalPoints} Key Milestone{totalPoints === 1 ? '' : 's'}
-            </span>
+        <div className="mx-auto mb-8 flex max-w-6xl flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="mb-3 flex items-center gap-2">
+              <span className="grid h-9 w-9 place-items-center rounded-xl border border-[#DFC070]/40 bg-[#DFC070]/10 text-[#DFC070]">
+                <Trophy className="h-4 w-4" aria-hidden="true" />
+              </span>
+              <Badge variant="electric" size="sm" className="border-[#DFC070]/40 bg-[#DFC070]/10 font-mono text-[11px] uppercase tracking-wider text-[#F0D88F]">
+                {milestonesCms?.badge || 'Our achievements'}
+              </Badge>
+            </div>
+            <H2 className="mb-2 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              {milestonesCms?.title || 'A journey worth celebrating'}
+            </H2>
+            {milestonesCms?.subtitle && (
+              <p className="max-w-2xl text-sm text-white/65 sm:text-base">{milestonesCms.subtitle}</p>
+            )}
           </div>
-          <H2 className="text-slate-900 mb-2 font-display text-3xl sm:text-4xl font-bold tracking-tight">
-            {milestonesCms?.title || 'Our Milestones & Trajectory'}
-          </H2>
+          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white/80">
+            <span className="h-2 w-2 rounded-full bg-[#DFC070]" />
+            {totalPoints} achievements
+          </span>
         </div>
 
-        {/* Swipe horizontally to browse milestone titles and years. */}
         <HorizontalScrollArea
           ariaLabel="Company milestones"
-          className="mb-10"
-          contentClassName="flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-4 touch-pan-x no-visible-scrollbar"
+          className="milestones-rail mb-10"
+          contentClassName="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-5 touch-pan-x no-visible-scrollbar sm:gap-4"
         >
-            {displayMilestones.map((ms, index) => {
-              const milestoneKey = ms.id ? `ms-card-${ms.id}` : `ms-card-${ms.year}-${index}`;
-
-              return (
-                <article
-                  key={milestoneKey}
-                  className="w-[78vw] max-w-xs shrink-0 snap-start rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs transition-all duration-200 hover:border-blue-400 hover:bg-slate-50/90 sm:w-72"
-                >
-                  <p className="mb-3 text-xs font-mono font-bold tracking-wide text-blue-700">{ms.year}</p>
-                  <h3 className="font-display text-base font-bold leading-snug text-slate-900">
-                    {ms.title}
-                  </h3>
-                </article>
-              );
-            })}
+          {displayMilestones.map((ms, index) => {
+            const milestoneKey = ms.id ? `ms-card-${ms.id}` : `ms-card-${ms.year}-${index}`;
+            return (
+              <motion.article
+                key={milestoneKey}
+                initial={reducedMotion ? false : { opacity: 0, x: 32 }}
+                whileInView={reducedMotion ? undefined : { opacity: 1, x: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.55, delay: reducedMotion ? 0 : Math.min(index, 5) * 0.07, ease: [0.22, 1, 0.36, 1] }}
+                className="group relative w-[78vw] max-w-xs shrink-0 snap-start overflow-hidden rounded-2xl border border-white/15 bg-white/[0.07] p-5 shadow-lg shadow-black/10 backdrop-blur-sm transition-colors hover:border-[#DFC070]/60 hover:bg-white/[0.11] sm:w-72 sm:p-6"
+              >
+                <span className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#DFC070] via-[#F2D98C] to-transparent" aria-hidden="true" />
+                <div className="mb-7 flex items-start justify-between gap-3">
+                  <span className="font-mono text-3xl font-bold tracking-tight text-[#F0D88F] sm:text-4xl">{ms.year}</span>
+                  <span className="grid h-9 w-9 place-items-center rounded-full border border-[#DFC070]/30 bg-[#DFC070]/10 text-[#DFC070] transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110">
+                    <Sparkles className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                </div>
+                <div className="mb-3 h-px w-full bg-gradient-to-r from-[#DFC070]/60 to-white/10" aria-hidden="true" />
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
+                  Achievement {String(index + 1).padStart(2, '0')}
+                </p>
+                <h3 className="font-display text-base font-semibold leading-snug text-white sm:text-lg">{ms.title}</h3>
+              </motion.article>
+            );
+          })}
         </HorizontalScrollArea>
 
         {/* View Company Journey Button */}
@@ -118,10 +137,10 @@ export const MilestonesSection: React.FC<MilestonesSectionProps> = ({ onNavigate
           <div className="mt-10 text-center">
             <button
               onClick={() => onNavigate('/milestones')}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 font-semibold text-sm hover:border-blue-600 hover:text-blue-600 hover:shadow-md transition-all cursor-pointer group"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#DFC070]/35 bg-[#DFC070] px-5 text-sm font-bold text-[#2A0810] transition-all hover:bg-[#F0D88F] cursor-pointer group"
             >
               <span>View Full Company Journey & Timeline</span>
-              <ChevronRight className="w-4 h-4 text-blue-600 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </button>
           </div>
         )}
