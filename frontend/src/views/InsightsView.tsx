@@ -64,27 +64,33 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onNavigate }) => {
 
       <SectionContainer background="white" paddingY="lg">
         {articles.length > 0 ? (
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 2xl:grid-cols-5">
             {articles.map((article) => (
-              <article key={article.id} className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <BlurredImageFrame src={article.heroImageUrl} alt={article.title} className="w-full" />
-                <div className="flex flex-1 flex-col items-center p-6 text-center">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">
+              <article key={article.id} className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+                <BlurredImageFrame
+                  src={article.heroImageUrl}
+                  alt={article.title}
+                  className="!aspect-[4/3] w-full"
+                  imageWidth={640}
+                  imageSizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, (max-width: 1280px) 22vw, 18vw"
+                />
+                <div className="flex flex-1 flex-col items-center p-3 text-center sm:p-4">
+                  <p className="line-clamp-1 text-[10px] font-semibold uppercase tracking-wider text-blue-700 sm:text-xs">
                     {article.heroSubheading || 'Mahdev Blog'}
                   </p>
-                  <h2 className="mt-3 font-display text-xl font-bold text-slate-950">
+                  <h2 className="mt-2 line-clamp-2 font-display text-sm font-bold leading-snug text-slate-950 sm:text-base">
                     {article.title}
                   </h2>
-                  <p className="mt-3 line-clamp-4 flex-1 text-sm leading-relaxed text-slate-600">
+                  <p className="mt-2 line-clamp-3 flex-1 text-xs leading-relaxed text-slate-600 sm:text-sm">
                     {article.metaDescription}
                   </p>
                   {article.publishedAt && (
-                    <p className="mt-5 inline-flex items-center gap-2 text-xs text-slate-500">
-                      <CalendarDays aria-hidden="true" className="h-4 w-4" />
+                    <p className="mt-3 inline-flex items-center gap-1.5 text-[10px] text-slate-500 sm:text-xs">
+                      <CalendarDays aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
                       <time dateTime={article.publishedAt}>
                         {new Date(article.publishedAt).toLocaleDateString('en-LK', {
                           year: 'numeric',
-                          month: 'long',
+                          month: 'short',
                           day: 'numeric',
                         })}
                       </time>
@@ -96,9 +102,9 @@ export const InsightsView: React.FC<InsightsViewProps> = ({ onNavigate }) => {
                       event.preventDefault();
                       onNavigate(`/blog/${encodeURIComponent(article.slug)}`);
                     }}
-                    className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-900"
+                    className="mt-3 inline-flex min-h-9 items-center gap-1.5 text-xs font-semibold text-blue-700 hover:text-blue-900 sm:text-sm"
                   >
-                    Read article <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                    Read <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
                   </a>
                 </div>
               </article>
