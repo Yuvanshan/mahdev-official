@@ -641,7 +641,7 @@ html[data-seasonal-theme="diwali"] {
   .image-zoom-active img {
     width: 100% !important;
     height: 100% !important;
-    object-fit: cover !important;
+    object-fit: contain !important;
     border-radius: 0 !important;
   }
   .image-zoom-active .image-zoom-hint {

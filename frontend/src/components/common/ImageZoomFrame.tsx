@@ -21,7 +21,6 @@ export const ImageZoomFrame: React.FC<ImageZoomFrameProps> = ({
   const frameRef = useRef<HTMLDivElement>(null);
   const lensRef = useRef<HTMLDivElement>(null);
   const touchGestureRef = useRef<{ x: number; y: number; moved: boolean } | null>(null);
-  const suppressClickRef = useRef(false);
 
   useEffect(() => {
     setIsZoomed(false);
@@ -68,6 +67,7 @@ export const ImageZoomFrame: React.FC<ImageZoomFrameProps> = ({
     if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
     touchGestureRef.current = { x: event.clientX, y: event.clientY, moved: false };
     updateFocusPoint(event.currentTarget, event.clientX, event.clientY);
+    setIsZoomed(true);
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
@@ -78,22 +78,9 @@ export const ImageZoomFrame: React.FC<ImageZoomFrameProps> = ({
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
-    if (cancelled || gesture?.moved) return;
-
-    suppressClickRef.current = true;
-    const frame = event.currentTarget;
-    setIsZoomed((current) => {
-      const next = !current;
-      if (!next) {
-        frame.style.setProperty('--image-mobile-scale', MOBILE_IMAGE_ZOOM_SCALE);
-        frame.style.setProperty('--image-zoom-x', '50%');
-        frame.style.setProperty('--image-zoom-y', '50%');
-      }
-      return next;
-    });
-    window.setTimeout(() => {
-      suppressClickRef.current = false;
-    }, 350);
+    setIsZoomed(false);
+    frameRef.current?.style.setProperty('--image-zoom-x', '50%');
+    frameRef.current?.style.setProperty('--image-zoom-y', '50%');
   };
 
   return (
@@ -123,17 +110,20 @@ export const ImageZoomFrame: React.FC<ImageZoomFrameProps> = ({
         aria-label={isZoomed ? `Reset zoom: ${label}` : `Zoom image: ${label}`}
         aria-pressed={isZoomed}
         onClick={(event) => {
-          if (suppressClickRef.current) {
+          const frame = frameRef.current;
+          const isCoarsePointer = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+          if (isCoarsePointer) {
             event.preventDefault();
-            suppressClickRef.current = false;
             return;
           }
-          if (window.matchMedia('(hover: none), (pointer: coarse)').matches && event.detail > 0) {
-            event.preventDefault();
-            return;
+          if (frame) {
+            if (event.detail === 0) {
+              frame.style.setProperty('--image-zoom-x', '50%');
+              frame.style.setProperty('--image-zoom-y', '50%');
+            }
           }
           setIsZoomed((current) => !current);
-          frameRef.current?.style.setProperty('--image-mobile-scale', MOBILE_IMAGE_ZOOM_SCALE);
+          if (frame) frame.style.setProperty('--image-mobile-scale', MOBILE_IMAGE_ZOOM_SCALE);
         }}
       />
       <span className="image-zoom-focus" aria-hidden="true">
