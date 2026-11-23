@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Crosshair } from 'lucide-react';
 
 const MOBILE_IMAGE_ZOOM_SCALE = '1.4';
+const MOBILE_IMAGE_MIN_SCALE = 1;
+const MOBILE_IMAGE_MAX_SCALE = 4;
 
 interface ImageZoomFrameProps {
   children: React.ReactNode;
@@ -19,7 +21,8 @@ export const ImageZoomFrame: React.FC<ImageZoomFrameProps> = ({
   const [isZoomed, setIsZoomed] = useState(false);
   const frameRef = useRef<HTMLDivElement>(null);
   const lensRef = useRef<HTMLDivElement>(null);
-  const touchGestureRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null);
+  const touchPointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchGestureRef = useRef<{ distance: number; scale: number } | null>(null);
 
   useEffect(() => {
     setIsZoomed(false);
@@ -28,6 +31,7 @@ export const ImageZoomFrame: React.FC<ImageZoomFrameProps> = ({
     frameRef.current?.style.setProperty('--image-zoom-y', '50%');
     frameRef.current?.style.setProperty('--image-pan-x', '0px');
     frameRef.current?.style.setProperty('--image-pan-y', '0px');
+    frameRef.current?.style.setProperty('--image-mobile-scale', String(MOBILE_IMAGE_MIN_SCALE));
     const image = frameRef.current?.querySelector<HTMLImageElement>('img');
     if (image && lensRef.current) {
       const applySource = () => {
@@ -56,43 +60,64 @@ export const ImageZoomFrame: React.FC<ImageZoomFrameProps> = ({
       updateFocusPoint(event.currentTarget, event.clientX, event.clientY);
       return;
     }
-    const gesture = touchGestureRef.current;
-    if (!isZoomed || !gesture) return;
+    if (!touchPointersRef.current.has(event.pointerId)) return;
+    touchPointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+    const pointers = Array.from(touchPointersRef.current.values());
+    if (pointers.length < 2) return;
+
+    const [first, second] = pointers;
+    const distance = Math.hypot(second.x - first.x, second.y - first.y);
+    if (!pinchGestureRef.current) {
+      pinchGestureRef.current = { distance, scale: Number(MOBILE_IMAGE_ZOOM_SCALE) };
+      setIsZoomed(true);
+    }
+
+    const ratio = distance / pinchGestureRef.current.distance;
+    const scale = Math.max(MOBILE_IMAGE_MIN_SCALE, Math.min(MOBILE_IMAGE_MAX_SCALE, pinchGestureRef.current.scale * ratio));
+    event.currentTarget.style.setProperty('--image-mobile-scale', scale.toFixed(3));
 
     const bounds = event.currentTarget.getBoundingClientRect();
-    const scaleOverflowX = bounds.width * ((Number(MOBILE_IMAGE_ZOOM_SCALE) - 1) / 2);
-    const scaleOverflowY = bounds.height * ((Number(MOBILE_IMAGE_ZOOM_SCALE) - 1) / 2);
-    const panX = Math.max(-scaleOverflowX, Math.min(scaleOverflowX, event.clientX - gesture.startX));
-    const panY = Math.max(-scaleOverflowY, Math.min(scaleOverflowY, event.clientY - gesture.startY));
-    gesture.panX = panX;
-    gesture.panY = panY;
-
-    event.currentTarget.style.setProperty('--image-pan-x', `${panX}px`);
-    event.currentTarget.style.setProperty('--image-pan-y', `${panY}px`);
+    const centerX = (first.x + second.x) / 2;
+    const centerY = (first.y + second.y) / 2;
+    const x = Math.max(0, Math.min(100, ((centerX - bounds.left) / bounds.width) * 100));
+    const y = Math.max(0, Math.min(100, ((centerY - bounds.top) / bounds.height) * 100));
+    event.currentTarget.style.setProperty('--image-zoom-x', `${x}%`);
+    event.currentTarget.style.setProperty('--image-zoom-y', `${y}%`);
   };
 
   const onTouchPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
-    touchGestureRef.current = { startX: event.clientX, startY: event.clientY, panX: 0, panY: 0 };
-    updateFocusPoint(event.currentTarget, event.clientX, event.clientY);
+    touchPointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     event.currentTarget.style.setProperty('--image-pan-x', '0px');
     event.currentTarget.style.setProperty('--image-pan-y', '0px');
-    setIsZoomed(true);
     event.currentTarget.setPointerCapture(event.pointerId);
+
+    if (touchPointersRef.current.size === 2) {
+      const pointers = Array.from(touchPointersRef.current.values());
+      const distance = Math.hypot(pointers[1].x - pointers[0].x, pointers[1].y - pointers[0].y);
+      pinchGestureRef.current = { distance, scale: Number(MOBILE_IMAGE_ZOOM_SCALE) };
+      event.currentTarget.style.setProperty('--image-mobile-scale', MOBILE_IMAGE_ZOOM_SCALE);
+      setIsZoomed(true);
+    }
   };
 
   const onPointerEnd = (event: React.PointerEvent<HTMLDivElement>, cancelled = false) => {
     if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
-    const gesture = touchGestureRef.current;
-    touchGestureRef.current = null;
+    touchPointersRef.current.delete(event.pointerId);
+    pinchGestureRef.current = null;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
-    setIsZoomed(false);
-    frameRef.current?.style.setProperty('--image-zoom-x', '50%');
-    frameRef.current?.style.setProperty('--image-zoom-y', '50%');
-    frameRef.current?.style.setProperty('--image-pan-x', '0px');
-    frameRef.current?.style.setProperty('--image-pan-y', '0px');
+    if (touchPointersRef.current.size < 2) {
+      setIsZoomed(false);
+      frameRef.current?.style.setProperty('--image-zoom-x', '50%');
+      frameRef.current?.style.setProperty('--image-zoom-y', '50%');
+      frameRef.current?.style.setProperty('--image-pan-x', '0px');
+      frameRef.current?.style.setProperty('--image-pan-y', '0px');
+      frameRef.current?.style.setProperty('--image-mobile-scale', String(MOBILE_IMAGE_MIN_SCALE));
+      touchPointersRef.current.clear();
+    }
   };
 
   return (
@@ -107,7 +132,7 @@ export const ImageZoomFrame: React.FC<ImageZoomFrameProps> = ({
         if (event.pointerType === 'mouse') setIsZoomed(true);
       }}
       onPointerLeave={() => {
-        if (touchGestureRef.current) return;
+        if (touchPointersRef.current.size > 0) return;
         setIsZoomed(false);
         window.requestAnimationFrame(() => {
           frameRef.current?.style.setProperty('--image-zoom-x', '50%');
@@ -143,7 +168,7 @@ export const ImageZoomFrame: React.FC<ImageZoomFrameProps> = ({
       </span>
       <span ref={lensRef} className="image-zoom-lens" aria-hidden="true" />
       <span className="image-zoom-hint" aria-hidden="true">
-        {isZoomed ? 'Tap to reset' : 'Hover or tap to zoom'}
+        {isZoomed ? 'Release to reset' : 'Hover or pinch to zoom'}
       </span>
     </div>
   );
