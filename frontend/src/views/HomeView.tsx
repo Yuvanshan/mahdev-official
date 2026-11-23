@@ -143,7 +143,13 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
         })}
       </div>
       <HomeConversionSections onNavigate={onNavigate} />
-      <FaqSection items={faqs} id="home-faq" background="subtle" />
+      <FaqSection
+        items={faqs}
+        id="home-faq"
+        background="subtle"
+        previewLimit={6}
+        onNavigate={onNavigate}
+      />
     </div>
   );
 };

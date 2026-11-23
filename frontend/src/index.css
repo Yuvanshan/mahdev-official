@@ -2953,8 +2953,6 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 }
 
 .public-nav-inner > div > div > a[aria-label="Direct WhatsApp"] {
-  min-height: 44px;
-  border-radius: 9999px;
   background: var(--whatsapp);
   color: #08311a;
 }
@@ -2964,10 +2962,16 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 }
 
 .public-nav-inner > div > div > button[aria-label^="View cart"] {
-  width: 46px;
-  height: 46px;
   justify-content: center;
   padding: 0;
+}
+
+.public-nav-inner .public-nav-action {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  flex: 0 0 42px;
   border-radius: 50%;
 }
 
@@ -3064,7 +3068,12 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   }
 
   .home-video-hero__content {
+    align-self: flex-end;
     padding: 78px var(--page-gutter) 116px;
+  }
+
+  .home-video-hero__content .home-hero-eyebrow {
+    display: none;
   }
 
   .home-video-hero__content h1 {
@@ -3093,8 +3102,15 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
 
   .home-scroll-button {
     bottom: 26px;
-    left: 28px;
+    left: auto;
+    right: 22px;
     transform: none;
+  }
+
+  .division-video-hero > div:last-child {
+    align-self: flex-end;
+    padding-top: 0;
+    padding-bottom: calc(7rem + env(safe-area-inset-bottom));
   }
 
   .home-hero-actions {
@@ -3139,6 +3155,10 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
     font-size: 10px;
   }
 
+  .home-trust-card .home-trust-detail {
+    display: none;
+  }
+
   .home-section {
     padding: 64px 0;
   }
@@ -3176,6 +3196,15 @@ nav.public-bottom-navigation .public-bottom-navigation__bar button:not([aria-cur
   .home-occasion-more {
     opacity: 1;
     transform: none;
+  }
+
+  .home-occasion-more-label {
+    display: none;
+  }
+
+  .home-occasion-more svg {
+    width: 20px;
+    height: 20px;
   }
 
   .home-marquee-run {

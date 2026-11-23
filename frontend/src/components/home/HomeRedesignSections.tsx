@@ -22,7 +22,7 @@ const OCCASIONS = [
   { name: 'Baby showers', terms: ['baby', 'shower'] },
   { name: 'Big girl ceremonies', terms: ['big girl', 'half saree'] },
   { name: 'Cradle ceremonies', terms: ['cradle', 'newborn'] },
-  { name: 'Birthdays', terms: ['birthday', 'birthday'] },
+  { name: 'Birthdays', terms: ['birthday', 'birthdays'] },
   { name: 'Corporate events', terms: ['corporate', 'conference'] },
 ];
 
@@ -62,18 +62,30 @@ const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ on
         ].filter((url): url is string => typeof url === 'string' && url.trim().length > 0);
         const image = candidates.find((url) => !/\.(mp4|webm|mov|m4v|ogv)(?:[?#]|$)/i.test(url));
         if (!image) return null;
+        const title = item.title || '';
+        const tags = Array.isArray(item.tags) ? item.tags.join(' ') : '';
+        const categories = `${item.category || ''} ${item.tag || ''} ${tags}`;
         return {
           image,
-          searchText: `${item.title || ''} ${item.category || ''} ${item.tag || ''} ${(item as any).tags?.join(' ') || ''}`.toLowerCase(),
+          title,
+          categories,
         };
       })
       .filter((item): item is NonNullable<typeof item> => item !== null);
+    const classifyText = (value: string) =>
+      OCCASIONS
+        .flatMap((occasion) => occasion.terms
+          .filter((term) => value.toLowerCase().includes(term))
+          .map((term) => ({ occasion, term })))
+        .sort((a, b) => b.term.length - a.term.length)[0]?.occasion;
+    const classifiedImages = images.map((item) => ({
+      ...item,
+      occasion: classifyText(item.title) || classifyText(item.categories),
+    }));
     const usedImages = new Set<string>();
 
     return OCCASIONS.map((occasion) => {
-      const match = images.find((item) =>
-        !usedImages.has(item.image) && occasion.terms.some((term) => item.searchText.includes(term))
-      );
+      const match = classifiedImages.find((item) => item.occasion?.name === occasion.name && !usedImages.has(item.image));
       if (!match) return null;
       usedImages.add(match.image);
       return { name: occasion.name, image: match.image, filterTerm: 'filterTerm' in occasion ? occasion.filterTerm : occasion.terms[0] };
@@ -91,7 +103,7 @@ const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ on
               <p>
                 <strong className="home-trust-value">{metric.value}</strong>
                 <span className="home-trust-label">{metric.label}</span>
-                <span>{metric.detail}</span>
+                <span className="home-trust-detail">{metric.detail}</span>
               </p>
             </article>
           );
@@ -112,6 +124,7 @@ const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ on
                   type="button"
                   className={`home-occasion${index === 0 ? ' home-occasion--feature' : ''}${index === 7 ? ' home-occasion--wide' : ''}`}
                   key={`${occasion.name}-${occasion.image}`}
+                  aria-label={`Explore ${occasion.name} from the Mahdev gallery`}
                   style={{ backgroundImage: `linear-gradient(180deg, transparent 34%, rgba(42,8,16,.72)), url("${occasion.image}")` }}
                   onClick={() => {
                     onNavigate(`/sws?category=${encodeURIComponent(occasion.filterTerm)}`);
@@ -119,7 +132,7 @@ const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ on
                 >
                   <span className="home-occasion-label">
                     <span>{occasion.name}</span>
-                    <span className="home-occasion-more">Explore this collection <ArrowRight aria-hidden="true" /></span>
+                    <span className="home-occasion-more"><span className="home-occasion-more-label">Explore this collection</span><ArrowRight aria-hidden="true" /></span>
                   </span>
                 </button>
               ))

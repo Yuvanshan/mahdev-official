@@ -40,8 +40,8 @@ interface SpotlightProps {
 /** Service and gallery cards use the same 4:5 image proportion as the full gallery. */
 const Spotlight: React.FC<SpotlightProps> = ({ items, onNavigate }) => {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-      {items.map((item) => (
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:auto-rows-[230px] lg:grid-cols-4">
+      {items.map((item, index) => (
         <a
           key={item.id}
           href={item.path}
@@ -51,7 +51,11 @@ const Spotlight: React.FC<SpotlightProps> = ({ items, onNavigate }) => {
             onNavigate(item.path);
           }}
           aria-label={`Explore ${item.title}`}
-          className="group relative block aspect-[4/5] overflow-hidden rounded-2xl bg-slate-900 text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#861F31]"
+          className={`group relative block overflow-hidden rounded-2xl bg-slate-900 text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#861F31] ${
+            index === 0
+              ? 'col-span-2 aspect-[4/3] lg:row-span-2 lg:aspect-auto'
+              : 'aspect-[4/5] lg:aspect-auto'
+          }`}
         >
           <BlurredImageFrame
             src={item.image}
@@ -62,11 +66,12 @@ const Spotlight: React.FC<SpotlightProps> = ({ items, onNavigate }) => {
           />
           <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" aria-hidden="true" />
           <span className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-1.5 p-3 text-center sm:p-4">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-white/75">{item.category}</span>
+            <span className="hidden text-[10px] font-semibold uppercase tracking-widest text-white/75 sm:block">{item.category}</span>
             <span className="line-clamp-2 w-full break-words text-sm font-bold leading-5 sm:text-base">{item.title}</span>
-            <span className="line-clamp-2 hidden text-xs leading-4 text-white/85 sm:block">{item.description}</span>
+            <span className="line-clamp-2 hidden text-xs leading-4 text-white/85 lg:block">{item.description}</span>
             <span className="mt-1 inline-flex items-center gap-1 text-xs font-semibold">
-              Explore <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+              <span className="hidden sm:inline">Explore</span>
+              <ArrowUpRight className="h-4 w-4 sm:h-3.5 sm:w-3.5" aria-hidden="true" />
             </span>
           </span>
         </a>

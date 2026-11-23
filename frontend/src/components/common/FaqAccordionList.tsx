@@ -7,7 +7,7 @@ interface FaqAccordionListProps {
 }
 
 export const FaqAccordionList: React.FC<FaqAccordionListProps> = ({ items }) => (
-  <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4">
+  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:gap-4">
     {items.map((faq, index) => (
       <details
         key={faq.question}

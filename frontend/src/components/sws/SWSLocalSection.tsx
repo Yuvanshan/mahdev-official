@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, MapPin, Phone, MessageCircle } from 'lucide-react';
+import { Baby, Building2, Cake, Clock, Flower2, Heart, MapPin, MessageCircle, PartyPopper, Phone, Sparkles } from 'lucide-react';
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2, Body } from '../ui/Heading';
 import { ScrollReveal } from '../motion/MotionWrappers';
@@ -15,6 +15,7 @@ import { usePageFaqs } from '../../hooks/usePageFaqs';
  */
 export const SWSLocalSection: React.FC = () => {
   const faqs = usePageFaqs('sws');
+  const serviceIcons = [Heart, Cake, Baby, Sparkles, PartyPopper, Baby, Building2, Flower2];
   // Coordinates of the Trincomalee Google Maps pin. google.com is already allowed in the CSP frame-src.
   const mapEmbedUrl = `https://www.google.com/maps?q=${SWS_BUSINESS.trincomalee.latitude},${SWS_BUSINESS.trincomalee.longitude}&z=16&output=embed`;
 
@@ -24,20 +25,28 @@ export const SWSLocalSection: React.FC = () => {
         <ScrollReveal>
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">Trincomalee &amp; Colombo</p>
           <p className="font-editorial text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">Event decoration and styling services</p>
-          <Body className="mt-3 max-w-3xl text-slate-600">{SWS_SERVICE_AREA_SUMMARY}</Body>
-          <ul className="mt-5 flex flex-wrap gap-2" aria-label="SWS Event Management services">
+          <Body className="mt-3 hidden max-w-3xl text-slate-600 sm:block">{SWS_SERVICE_AREA_SUMMARY}</Body>
+          <ul className="mt-5 hidden flex-wrap gap-2 sm:flex" aria-label="SWS Event Management services">
             {SWS_PROFILE_SERVICES.map((name) => (
               <li key={name} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-700">{name}</li>
             ))}
           </ul>
           <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2">
-            {SWS_SERVICE_HIGHLIGHTS.map((service) => (
+            {SWS_SERVICE_HIGHLIGHTS.map((service, index) => {
+              const Icon = serviceIcons[index % serviceIcons.length];
+              return (
               <article key={service.heading} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
                 {/* Each service is its own h2 so search engines see the local service keywords. */}
-                <h2 className="text-lg font-semibold leading-snug text-slate-900">{service.heading}</h2>
-                <Body className="mt-2 text-slate-600">{service.body}</Body>
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700" aria-hidden="true">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <h2 className="text-lg font-semibold leading-snug text-slate-900">{service.heading}</h2>
+                </div>
+                <Body className="mt-2 hidden text-slate-600 sm:block">{service.body}</Body>
               </article>
-            ))}
+              );
+            })}
           </div>
         </ScrollReveal>
       </SectionContainer>
