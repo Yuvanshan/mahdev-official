@@ -37,89 +37,40 @@ interface SpotlightProps {
   onNavigate: (route: string) => void;
 }
 
-/** Small clickable photo that makes its item the large one. */
-const SmallCard: React.FC<{ item: SpotlightItem; onSelect: (id: string) => void }> = ({ item, onSelect }) => (
-  <button
-    type="button"
-    onClick={() => onSelect(item.id)}
-    aria-label={`Show ${item.title} larger`}
-    className="group relative min-h-[120px] overflow-hidden rounded-xl bg-slate-900 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#861F31] lg:min-h-[100px]"
-  >
-    <BlurredImageFrame
-      src={item.image}
-      alt={item.imageAlt}
-      className="absolute inset-0 h-full w-full"
-      imageClassName="transition-transform duration-500 group-hover:scale-105"
-      loading="lazy"
-    />
-  </button>
-);
-
-/**
- * Desktop: big image top-left, two small photos beside it, two small photos under it and the title list
- * bottom-right. Phones stack them. Picking a title or small photo swaps the big image.
- */
+/** Service and gallery cards use the same 4:5 image proportion as the full gallery. */
 const Spotlight: React.FC<SpotlightProps> = ({ items, onNavigate }) => {
-  const [selectedId, setSelectedId] = useState(items[0].id);
-  const selected = items.find((item) => item.id === selectedId) || items[0];
-  const others = items.filter((item) => item.id !== selected.id);
-
-  const open = (event: React.MouseEvent<HTMLAnchorElement>) => {
-    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    event.preventDefault();
-    onNavigate(selected.path);
-  };
-
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-3 lg:grid-rows-[minmax(0,1fr)_auto]">
-      <a
-        href={selected.path}
-        onClick={open}
-        aria-label={`Explore ${selected.title}`}
-        className="group relative block min-h-[320px] overflow-hidden rounded-2xl bg-slate-900 sm:min-h-[420px] lg:col-span-2 lg:min-h-[240px]"
-      >
-        <BlurredImageFrame
-          key={selected.id}
-          src={selected.image}
-          alt={selected.imageAlt}
-          className="absolute inset-0 h-full w-full"
-          imageClassName="transition-transform duration-700 group-hover:scale-105"
-          loading="lazy"
-        />
-        <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" aria-hidden="true" />
-        <span className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-2 p-5 text-center text-white sm:p-8">
-          <span className="text-xs font-semibold uppercase tracking-widest text-white/75">{selected.category}</span>
-          <span className="w-full break-words font-display text-2xl font-bold sm:text-4xl">{selected.title}</span>
-          <span className="line-clamp-2 max-w-2xl text-sm text-white/85 sm:text-base">{selected.description}</span>
-          <span className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold">
-            Explore <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+      {items.map((item) => (
+        <a
+          key={item.id}
+          href={item.path}
+          onClick={(event) => {
+            if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            event.preventDefault();
+            onNavigate(item.path);
+          }}
+          aria-label={`Explore ${item.title}`}
+          className="group relative block aspect-[4/5] overflow-hidden rounded-2xl bg-slate-900 text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#861F31]"
+        >
+          <BlurredImageFrame
+            src={item.image}
+            alt={item.imageAlt}
+            className="absolute inset-0 h-full w-full"
+            imageClassName="transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+          <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" aria-hidden="true" />
+          <span className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-1.5 p-3 text-center sm:p-4">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-white/75">{item.category}</span>
+            <span className="line-clamp-2 w-full break-words text-sm font-bold leading-5 sm:text-base">{item.title}</span>
+            <span className="line-clamp-2 hidden text-xs leading-4 text-white/85 sm:block">{item.description}</span>
+            <span className="mt-1 inline-flex items-center gap-1 text-xs font-semibold">
+              Explore <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </span>
           </span>
-        </span>
-      </a>
-
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-1 lg:grid-rows-2">
-        {others.slice(0, 2).map((item) => <SmallCard key={item.id} item={item} onSelect={setSelectedId} />)}
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 lg:col-span-2">
-        {others.slice(2, 4).map((item) => <SmallCard key={item.id} item={item} onSelect={setSelectedId} />)}
-      </div>
-
-      <div role="group" aria-label="Choose an item to show larger" className="flex flex-col justify-center gap-1">
-        {items.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setSelectedId(item.id)}
-            aria-pressed={item.id === selected.id}
-            className={`w-full min-w-0 whitespace-normal break-words rounded-lg px-3 py-2.5 text-center text-sm font-semibold leading-5 transition-colors lg:py-1.5 ${
-              item.id === selected.id ? 'bg-[#861F31] text-white' : 'text-slate-700 hover:bg-slate-100'
-            }`}
-          >
-            {item.title}
-          </button>
-        ))}
-      </div>
+        </a>
+      ))}
     </div>
   );
 };

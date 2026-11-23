@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { FirestoreGallery } from '../../types/firestore';
 import { getInterestWeights, scoreInterest } from '../../utils/usageProfile';
 import { ShopTileData } from './ShopProductTile';
+import { galleryPath } from '../../config/itemSeo';
 
 /**
  * Tiles that match this visitor's searches and views (read from this browser only) come first,
@@ -26,7 +27,7 @@ export function useSuggestedGallery(gallery: FirestoreGallery[], limit: number):
         name: item.title,
         imageUrl: item.thumbnailUrl || item.mediaUrl || item.url,
         caption: item.category || item.tag || 'Gallery',
-        href: `/gallery?id=${encodeURIComponent(item.id)}`,
+        href: galleryPath(item.title, item.id),
         interest: [item.title, item.category, item.tag, item.caption, ...(item.tags || [])].filter(Boolean).join(' '),
       }));
     return rankByInterest(tiles, limit);

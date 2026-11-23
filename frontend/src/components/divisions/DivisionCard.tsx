@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, Building2, Camera, Code2, Plane, ShoppingBag } from 'lucide-react';
 import { DIVISIONS } from '../../config/divisions';
 import { DivisionCardItem } from '../../utils/divisionPresentation';
 import { resolveMediaUrl } from '../../services/firestoreMediaService';
+import { useDeviceMotion } from '../motion/MotionWrappers';
 
 interface DivisionCardProps {
   division: DivisionCardItem;
@@ -27,6 +28,8 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({
 }) => {
   const [mediaUrl, setMediaUrl] = useState('');
   const [posterUrl, setPosterUrl] = useState('');
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const { reducedMotion } = useDeviceMotion();
   const destination = division.externalUrl || division.route;
   const fallbackImage = variant === 'featured'
     ? DIVISIONS[division.id as keyof typeof DIVISIONS]?.imageUrl || ''
@@ -80,6 +83,44 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({
     };
   }, [division.id, division.posterUrl]);
 
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !mediaUrl || division.mediaType !== 'video') return;
+
+    let isVisible = false;
+    const syncPlayback = () => {
+      if (reducedMotion || !isVisible || document.visibilityState === 'hidden') {
+        video.pause();
+        return;
+      }
+      video.muted = true;
+      void video.play().catch((error: unknown) => {
+        console.warn(`[DivisionCard] Muted autoplay was blocked for ${division.id}:`, error);
+      });
+    };
+    const onVisibilityChange = () => syncPlayback();
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    const observer = typeof IntersectionObserver === 'undefined'
+      ? null
+      : new IntersectionObserver(([entry]) => {
+          isVisible = entry.isIntersecting;
+          syncPlayback();
+        }, { threshold: 0.1 });
+    if (observer) {
+      observer.observe(video);
+    } else {
+      isVisible = true;
+      syncPlayback();
+    }
+
+    return () => {
+      observer?.disconnect();
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      video.pause();
+    };
+  }, [division.id, division.mediaType, mediaUrl, reducedMotion]);
+
   return (
     <a
       href={destination}
@@ -108,15 +149,15 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({
       <div className={`division-card-media relative overflow-hidden bg-slate-100 ${variant === 'featured' ? 'aspect-[16/9]' : 'aspect-[16/10]'}`}>
         {mediaUrl && division.mediaType === 'video' ? (
           <video
+            ref={videoRef}
             src={mediaUrl}
             poster={posterUrl || undefined}
-            autoPlay
             loop
             muted
             playsInline
             disablePictureInPicture
             disableRemotePlayback
-            preload="metadata"
+            preload="none"
             aria-hidden="true"
             className="h-full w-full object-cover"
           />

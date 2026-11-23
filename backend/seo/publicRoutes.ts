@@ -29,6 +29,8 @@ export interface RouteSeo {
   subheadings?: readonly string[];
   /** 1200x630 share image (path) for Facebook/WhatsApp/X; defaults to the site image. */
   ogImage?: string;
+  /** Optional brand for social previews on a distinct division landing page. */
+  siteName?: string;
   /** Extra JSON-LD blocks added to this page's prerendered <head>. */
   structuredData?: Array<Record<string, unknown>>;
   keywords?: readonly string[];
@@ -85,6 +87,7 @@ const ROUTES: RouteSeo[] = [
   },
   {
     path: '/sws',
+    siteName: 'SWS Event Management',
     ogImage: '/assets/og/og-sws.jpg',
     title: DIVISION_SEO.sws.title,
     description: DIVISION_SEO.sws.description,

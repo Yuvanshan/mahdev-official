@@ -76,6 +76,7 @@ const DecorationVideoShowcaseContent: React.FC<
       return;
     }
 
+    setResolvedVideoUrl('');
     resolveMediaUrl(activeVideo.videoUrl)
       .then((url) => {
         if (active) setResolvedVideoUrl(url);
@@ -113,13 +114,40 @@ const DecorationVideoShowcaseContent: React.FC<
   React.useEffect(() => {
     const video = videoRef.current;
     if (!video || !resolvedVideoUrl) return;
-    video.defaultMuted = true;
-    video.muted = isMuted;
-    video.playsInline = true;
-    video.play().catch((error) => {
-      console.debug('Showcase video autoplay deferred:', error);
-    });
-  }, [resolvedVideoUrl, isMuted]);
+
+    let isVisible = false;
+    const syncPlayback = () => {
+      if (reducedMotion || !isVisible || document.visibilityState === 'hidden') {
+        video.pause();
+        return;
+      }
+      video.muted = isMuted;
+      void video.play().catch((error: unknown) => {
+        console.debug('[DecorationVideoShowcase] Autoplay was blocked:', error);
+      });
+    };
+    const onVisibilityChange = () => syncPlayback();
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    const observer = typeof IntersectionObserver === 'undefined'
+      ? null
+      : new IntersectionObserver(([entry]) => {
+          isVisible = entry.isIntersecting;
+          syncPlayback();
+        }, { threshold: 0.05 });
+    if (observer) {
+      observer.observe(video);
+    } else {
+      isVisible = true;
+      syncPlayback();
+    }
+
+    return () => {
+      observer?.disconnect();
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      video.pause();
+    };
+  }, [activeVideo.videoUrl, isMuted, reducedMotion, resolvedVideoUrl]);
 
   return (
     <div ref={containerRef} className="relative overflow-hidden border-y border-slate-800 bg-slate-950 text-white">
@@ -172,13 +200,13 @@ const DecorationVideoShowcaseContent: React.FC<
               key={activeVideo.videoUrl}
               src={resolvedVideoUrl || undefined}
               poster={resolvedThumbnails[activeVideo.id] || FALLBACK_THUMBNAIL}
-              autoPlay
+              controls
               loop={playbackVideos.length === 1}
               muted={isMuted}
               playsInline
               disablePictureInPicture
               disableRemotePlayback
-              preload="metadata"
+              preload="none"
               aria-label="Event production showcase video"
               className="aspect-video h-full w-full object-cover"
               onEnded={() => setActiveVideoIndex((index) => (index + 1) % playbackVideos.length)}

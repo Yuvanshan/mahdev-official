@@ -275,7 +275,8 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     setMetaTag('property', 'og:type', ogType);
     setMetaTag('property', 'og:url', effectiveCanonical);
     // Fixed (not admin-editable) so Google sees one consistent site name.
-    setMetaTag('property', 'og:site_name', SITE_NAME);
+    const socialSiteName = /^\/sws(\/|$)/.test(currentPath) ? 'SWS Event Management' : SITE_NAME;
+    setMetaTag('property', 'og:site_name', socialSiteName);
     setMetaTag('property', 'og:locale', 'en_LK');
     setMetaTag('property', 'og:image:alt', effectiveOgTitle);
     setMetaTag('name', 'twitter:card', 'summary_large_image');

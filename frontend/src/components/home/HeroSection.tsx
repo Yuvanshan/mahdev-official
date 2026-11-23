@@ -30,6 +30,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
   const [activeUploadedVideo, setActiveUploadedVideo] = useState('');
   const [isVideoPaused, setIsVideoPaused] = useState(false);
   const reducedMotion = useReducedMotion();
+  const useStaticHero = Boolean(reducedMotion);
   const { homepageConfig } = useFirestoreDataContext();
   const cmsHero = homepageConfig?.hero;
   const configuredVideo = cmsHero?.videoUrl || cmsHero?.mediaUrl || '';
@@ -98,7 +99,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
     video.addEventListener('loadedmetadata', restorePlaybackPosition);
     if (video.readyState >= HTMLMediaElement.HAVE_METADATA) restorePlaybackPosition();
     const syncPlayback = () => {
-      if (reducedMotion || isVideoPaused || !isHeroVisible || document.visibilityState === 'hidden') {
+      if (useStaticHero || isVideoPaused || !isHeroVisible || document.visibilityState === 'hidden') {
         if (playbackTimer !== undefined) window.clearTimeout(playbackTimer);
         playbackTimer = undefined;
         savePlaybackPosition();
@@ -139,7 +140,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
       savePlaybackPosition();
       video.pause();
     };
-  }, [heroVideo, isCmsVideoEmbed, isUploadedVideoActive, isVideoPaused, reducedMotion, useCmsImage]);
+  }, [heroVideo, isCmsVideoEmbed, isUploadedVideoActive, isVideoPaused, useStaticHero, useCmsImage]);
 
   const activateUploadedVideo = () => {
     if (reducedMotion) return;
@@ -188,7 +189,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
               aria-hidden="true"
               className="absolute inset-0 h-full w-full object-cover object-center"
             />
-          ) : reducedMotion ? (
+          ) : useStaticHero ? (
             <img
               src={heroPoster}
               alt=""
@@ -248,7 +249,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
           )}
         </ScrollParallax>
         <div className="home-video-hero__tint absolute inset-0" aria-hidden="true" />
-        {!useCmsImage && !isCmsVideoEmbed && !reducedMotion && (
+        {!useCmsImage && !isCmsVideoEmbed && !useStaticHero && (
           <button
             type="button"
             className="home-video-control absolute right-6 top-6 z-30"

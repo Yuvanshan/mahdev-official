@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Crosshair } from 'lucide-react';
 
 const MOBILE_IMAGE_ZOOM_SCALE = '1.4';
+const TOUCH_MOVE_THRESHOLD = 8;
 
 interface ImageZoomFrameProps {
   children: React.ReactNode;
@@ -19,8 +20,7 @@ export const ImageZoomFrame: React.FC<ImageZoomFrameProps> = ({
   const [isZoomed, setIsZoomed] = useState(false);
   const frameRef = useRef<HTMLDivElement>(null);
   const lensRef = useRef<HTMLDivElement>(null);
-  const holdTimerRef = useRef<number | null>(null);
-  const touchGestureRef = useRef<{ y: number; active: boolean } | null>(null);
+  const touchGestureRef = useRef<{ x: number; y: number; moved: boolean } | null>(null);
   const suppressClickRef = useRef(false);
 
   useEffect(() => {
@@ -38,70 +38,72 @@ export const ImageZoomFrame: React.FC<ImageZoomFrameProps> = ({
     }
   }, [imageKey]);
 
-  useEffect(() => () => {
-    if (holdTimerRef.current !== null) window.clearTimeout(holdTimerRef.current);
-  }, []);
-
-  const updateFocusPoint = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType !== 'mouse' && !isZoomed) return;
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const x = Math.max(0, Math.min(100, ((event.clientX - bounds.left) / bounds.width) * 100));
-    const y = Math.max(0, Math.min(100, ((event.clientY - bounds.top) / bounds.height) * 100));
-    event.currentTarget.style.setProperty('--image-zoom-x', `${x}%`);
-    event.currentTarget.style.setProperty('--image-zoom-y', `${y}%`);
+  const updateFocusPoint = (element: HTMLDivElement, clientX: number, clientY: number) => {
+    const bounds = element.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, ((clientX - bounds.left) / bounds.width) * 100));
+    const y = Math.max(0, Math.min(100, ((clientY - bounds.top) / bounds.height) * 100));
+    element.style.setProperty('--image-zoom-x', `${x}%`);
+    element.style.setProperty('--image-zoom-y', `${y}%`);
     if (lensRef.current) {
-      lensRef.current.style.setProperty('left', `${event.clientX - bounds.left}px`);
-      lensRef.current.style.setProperty('top', `${event.clientY - bounds.top}px`);
+      lensRef.current.style.setProperty('left', `${clientX - bounds.left}px`);
+      lensRef.current.style.setProperty('top', `${clientY - bounds.top}px`);
       lensRef.current.style.setProperty('background-position', `${x}% ${y}%`);
     }
   };
 
+  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse') {
+      updateFocusPoint(event.currentTarget, event.clientX, event.clientY);
+      return;
+    }
+    if (!isZoomed) return;
+    const gesture = touchGestureRef.current;
+    if (gesture && Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) > TOUCH_MOVE_THRESHOLD) {
+      gesture.moved = true;
+    }
+    updateFocusPoint(event.currentTarget, event.clientX, event.clientY);
+  };
+
   const onTouchPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
-    suppressClickRef.current = false;
-    touchGestureRef.current = { y: event.clientY, active: false };
-    if (holdTimerRef.current !== null) window.clearTimeout(holdTimerRef.current);
-    holdTimerRef.current = window.setTimeout(() => {
-      if (!touchGestureRef.current) return;
-      touchGestureRef.current.active = true;
-      suppressClickRef.current = true;
-      setIsZoomed((current) => {
-        const next = !current;
-        if (!next) frameRef.current?.style.setProperty('--image-mobile-scale', MOBILE_IMAGE_ZOOM_SCALE);
-        return next;
-      });
-    }, 260);
+    touchGestureRef.current = { x: event.clientX, y: event.clientY, moved: false };
+    updateFocusPoint(event.currentTarget, event.clientX, event.clientY);
+    event.currentTarget.setPointerCapture(event.pointerId);
   };
 
-  const onTouchPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+  const onPointerEnd = (event: React.PointerEvent<HTMLDivElement>, cancelled = false) => {
     if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
     const gesture = touchGestureRef.current;
-    if (!gesture?.active) return;
-  };
-
-  const onTouchPointerEnd = () => {
-    const wasGestureActive = touchGestureRef.current?.active === true;
-    if (holdTimerRef.current !== null) {
-      window.clearTimeout(holdTimerRef.current);
-      holdTimerRef.current = null;
-    }
     touchGestureRef.current = null;
-    if (wasGestureActive) {
-      window.setTimeout(() => {
-        suppressClickRef.current = false;
-      }, 350);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
     }
+    if (cancelled || gesture?.moved) return;
+
+    suppressClickRef.current = true;
+    const frame = event.currentTarget;
+    setIsZoomed((current) => {
+      const next = !current;
+      if (!next) {
+        frame.style.setProperty('--image-mobile-scale', MOBILE_IMAGE_ZOOM_SCALE);
+        frame.style.setProperty('--image-zoom-x', '50%');
+        frame.style.setProperty('--image-zoom-y', '50%');
+      }
+      return next;
+    });
+    window.setTimeout(() => {
+      suppressClickRef.current = false;
+    }, 350);
   };
 
   return (
     <div
       ref={frameRef}
       className={`image-zoom-frame ${isZoomed ? 'image-zoom-active' : ''} ${className}`}
-      onPointerMove={updateFocusPoint}
+      onPointerMove={onPointerMove}
       onPointerDown={onTouchPointerDown}
-      onPointerMoveCapture={onTouchPointerMove}
-      onPointerUp={onTouchPointerEnd}
-      onPointerCancel={onTouchPointerEnd}
+      onPointerUp={(event) => onPointerEnd(event)}
+      onPointerCancel={(event) => onPointerEnd(event, true)}
       onPointerEnter={(event) => {
         if (event.pointerType === 'mouse') setIsZoomed(true);
       }}
@@ -126,7 +128,7 @@ export const ImageZoomFrame: React.FC<ImageZoomFrameProps> = ({
             suppressClickRef.current = false;
             return;
           }
-          if (window.matchMedia('(hover: none), (pointer: coarse)').matches) {
+          if (window.matchMedia('(hover: none), (pointer: coarse)').matches && event.detail > 0) {
             event.preventDefault();
             return;
           }

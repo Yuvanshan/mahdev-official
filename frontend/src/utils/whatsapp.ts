@@ -3,6 +3,9 @@
  * Official WhatsApp Contact: 0750928078 (Sri Lanka +94 75 092 8078)
  */
 
+import { CANONICAL_SITE_ORIGIN } from '../config/site';
+import { galleryPath } from '../config/itemSeo';
+
 export const MAHDEV_WHATSAPP_NUMBER = '94750928078'; // WhatsApp international format
 export const MAHDEV_DISPLAY_PHONE = '075 092 8078';
 
@@ -79,9 +82,7 @@ export interface WhatsAppOrderPayload {
 }
 
 function addWhatsAppAttribution(rawUrl: string, campaign: string): string {
-  const origin = typeof window !== 'undefined' && window.location.origin
-    ? window.location.origin
-    : 'https://mahdev.lk';
+  const origin = CANONICAL_SITE_ORIGIN;
   try {
     const url = new URL(rawUrl, origin);
     if (url.origin !== origin) return rawUrl;
@@ -111,16 +112,16 @@ export function deriveLookupSku(title?: string, divisionName?: string): string {
  * Resolves a direct canonical link for the item so the recipient can click and view it directly
  */
 export function resolveItemDirectUrl(options: WhatsAppInquiryOptions, effectiveSku: string): string {
-  const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://mahdev.lk';
+  const origin = CANONICAL_SITE_ORIGIN;
 
   if (options.type === 'product' && options.productId) {
-    return `${origin}/mart?id=${encodeURIComponent(options.productId)}`;
+    return `${origin}/products/${encodeURIComponent(options.productId)}`;
   }
   if (options.type === 'service' && options.serviceId) {
     return `${origin}/services/${encodeURIComponent(options.serviceId)}`;
   }
   if ((options.type === 'gallery' || options.type === 'media') && options.itemId) {
-    return `${origin}/gallery?id=${encodeURIComponent(options.itemId)}`;
+    return `${origin}${galleryPath(options.title, options.itemId)}`;
   }
   if (options.itemUrl) {
     if (options.itemUrl.startsWith('http')) return options.itemUrl;
@@ -294,7 +295,7 @@ export function buildWhatsAppMessage(options: WhatsAppInquiryOptions): string {
  */
 export function buildWhatsAppOrderMessage(payload: WhatsAppOrderPayload): string {
   const lines: string[] = [];
-  const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://mahdev.lk';
+  const origin = CANONICAL_SITE_ORIGIN;
 
   lines.push('🛒 *NEW ORDER REQUEST — MAHDEV ECOSYSTEM*');
   lines.push('================================');
@@ -317,7 +318,7 @@ export function buildWhatsAppOrderMessage(payload: WhatsAppOrderPayload): string
     const itemSku = item.sku || deriveLookupSku(item.name);
     const skuTag = `[SKU: \`${itemSku}\`]`;
     const itemDirectUrl = item.productId
-      ? `${origin}/mart?id=${encodeURIComponent(item.productId)}`
+      ? `${origin}/products/${encodeURIComponent(item.slug || item.productId)}`
       : item.itemUrl || (
         item.slug
           ? `${origin}/mart?product=${encodeURIComponent(item.slug)}`

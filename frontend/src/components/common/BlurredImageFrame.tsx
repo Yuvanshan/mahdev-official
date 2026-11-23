@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { withOptimizedSources } from '../../utils/optimizedImage';
+import { optimizedImageSrcSet, withOptimizedSources } from '../../utils/optimizedImage';
+import type { OptimizedImageWidth } from '../../utils/optimizedImage';
 
 interface BlurredImageFrameProps {
   src?: string;
@@ -8,6 +9,8 @@ interface BlurredImageFrameProps {
   imageClassName?: string;
   fallbackSources?: string[];
   loading?: 'eager' | 'lazy';
+  imageWidth?: OptimizedImageWidth;
+  imageSizes?: string;
 }
 
 export const BlurredImageFrame: React.FC<BlurredImageFrameProps> = ({
@@ -17,17 +20,24 @@ export const BlurredImageFrame: React.FC<BlurredImageFrameProps> = ({
   imageClassName = '',
   fallbackSources = [],
   loading = 'lazy',
+  imageWidth = 640,
+  imageSizes = '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw',
 }) => {
   const fallbackKey = fallbackSources.join('\n');
-  const sources = useMemo(
-    () => [...new Set(withOptimizedSources([src, ...fallbackSources].filter((source): source is string => Boolean(source)), 640))],
+  const rawSources = useMemo(
+    () => [...new Set([src, ...fallbackSources].filter((source): source is string => Boolean(source)))],
     [src, fallbackKey]
+  );
+  const sources = useMemo(
+    () => [...new Set(withOptimizedSources(rawSources, imageWidth))],
+    [rawSources, imageWidth]
   );
   const sourcesKey = sources.join('\n');
   const [sourceIndex, setSourceIndex] = useState(0);
   useEffect(() => setSourceIndex(0), [sourcesKey]);
 
   const currentSrc = sources[Math.min(sourceIndex, Math.max(0, sources.length - 1))];
+  const currentSrcSet = sourceIndex === 0 && rawSources[0] ? optimizedImageSrcSet(rawSources[0]) : undefined;
   return (
     <div className={`relative aspect-[4/5] overflow-hidden bg-slate-100 ${className}`}>
       {currentSrc ? (
@@ -35,6 +45,8 @@ export const BlurredImageFrame: React.FC<BlurredImageFrameProps> = ({
           <img
             key={`background-${currentSrc}`}
             src={currentSrc}
+            srcSet={currentSrcSet}
+            sizes={imageSizes}
             alt=""
             aria-hidden="true"
             loading={loading}
@@ -47,6 +59,8 @@ export const BlurredImageFrame: React.FC<BlurredImageFrameProps> = ({
           <img
             key={`foreground-${currentSrc}`}
             src={currentSrc}
+            srcSet={currentSrcSet}
+            sizes={imageSizes}
             alt={alt}
             loading={loading}
             draggable={false}

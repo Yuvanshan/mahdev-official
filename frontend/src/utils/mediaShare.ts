@@ -1,5 +1,6 @@
 import { openWhatsAppInquiry, deriveLookupSku } from './whatsapp';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
+import { galleryPath } from '../config/itemSeo';
 
 export interface MediaAssetSharePayload {
   id?: string;
@@ -26,12 +27,9 @@ export interface ShareResult {
  * Resolves a direct canonical share URL for a media asset
  */
 export function getMediaAssetShareUrl(asset: MediaAssetSharePayload): string {
-  const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : CANONICAL_SITE_ORIGIN;
-  if (asset.id && asset.division?.toLowerCase().includes('u1')) {
-    return `${origin}/u1?sku=${encodeURIComponent(asset.id)}`;
-  }
+  const origin = CANONICAL_SITE_ORIGIN;
   if (asset.id) {
-    return `${origin}/gallery?id=${encodeURIComponent(asset.id)}`;
+    return `${origin}${galleryPath(asset.title, asset.id)}`;
   }
   const effectiveSku = asset.sku || deriveLookupSku(asset.title, asset.division);
   return `${origin}/gallery?sku=${encodeURIComponent(effectiveSku)}&title=${encodeURIComponent(asset.title)}`;

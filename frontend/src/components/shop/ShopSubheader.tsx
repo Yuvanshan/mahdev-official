@@ -4,6 +4,7 @@ import { reportSearch } from '../../services/searchHistoryService';
 import { clearSearches, getRecentSearches, recordSearch, recordView } from '../../utils/usageProfile';
 import { useWishlist } from '../../context/WishlistContext';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { galleryPath } from '../../config/itemSeo';
 
 interface ShopSubheaderProps {
   onNavigate: (route: string) => void;
@@ -56,7 +57,7 @@ export const ShopSubheader: React.FC<ShopSubheaderProps> = ({ onNavigate }) => {
     const galleryHits = gallery
       .filter((item) => item.type === 'image' && match(item.title, item.category, item.tag, ...(item.tags || [])))
       .slice(0, SUGGESTIONS_PER_KIND)
-      .map<Suggestion>((item) => ({ key: `g-${item.id}`, label: item.title, kind: 'Gallery', imageUrl: item.thumbnailUrl || item.mediaUrl || item.url, href: `/gallery?id=${encodeURIComponent(item.id)}` }));
+      .map<Suggestion>((item) => ({ key: `g-${item.id}`, label: item.title, kind: 'Gallery', imageUrl: item.thumbnailUrl || item.mediaUrl || item.url, href: galleryPath(item.title, item.id) }));
     const productHits = products
       .filter((item) => (item as { status?: string }).status !== 'archived' && (item as { status?: string }).status !== 'draft' && match(item.name))
       .slice(0, SUGGESTIONS_PER_KIND)

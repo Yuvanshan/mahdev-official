@@ -49,6 +49,14 @@ export function renderSeoHtml(baseHtml: string, route: RouteSeo, origin: string)
   }
   html = upsertTag(html, /<link rel="canonical" href="[^"]*" \/>/, `<link rel="canonical" href="${url}" />`);
   html = replaceTag(html, /<meta property="og:title" content="[^"]*" \/>/, `<meta property="og:title" content="${title}" />`, 'og:title');
+  if (route.siteName) {
+    html = replaceTag(
+      html,
+      /<meta property="og:site_name" content="[^"]*" \/>/,
+      `<meta property="og:site_name" content="${escapeHtml(route.siteName)}" />`,
+      'og:site_name'
+    );
+  }
   html = replaceTag(html, /<meta property="og:description" content="[^"]*" \/>/, `<meta property="og:description" content="${description}" />`, 'og:description');
   html = upsertTag(html, /<meta property="og:url" content="[^"]*" \/>/, `<meta property="og:url" content="${url}" />`);
   html = replaceTag(html, /<meta name="twitter:title" content="[^"]*" \/>/, `<meta name="twitter:title" content="${title}" />`, 'twitter:title');
