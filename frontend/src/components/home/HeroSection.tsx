@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowRight, Pause, Play } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { ScrollParallax } from '../motion/ParallelScroll';
+import { OptimizedImage } from '../ui/OptimizedImage';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { resolveMediaUrl } from '../../services/firestoreMediaService';
 import { extractYouTubeId, getYouTubeEmbedUrl } from '../../utils/youtube';
@@ -183,17 +184,23 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
       <div className="home-video-hero__panel relative isolate flex min-h-[680px] w-full items-center overflow-hidden bg-[#2A0810] text-white sm:min-h-[740px] lg:min-h-[clamp(640px,72svh,820px)]">
         <ScrollParallax targetRef={heroRef} distance={24} className="home-video-hero__media absolute -inset-y-10 right-[-2%] w-[72%] overflow-hidden">
           {useCmsImage ? (
-            <img
+            <OptimizedImage
               src={resolvedHeroMedia.image || HERO_POSTER}
               alt=""
               aria-hidden="true"
+              loading="eager"
+              fetchPriority="high"
+              sizes="72vw"
               className="absolute inset-0 h-full w-full object-cover object-center"
             />
           ) : useStaticHero ? (
-            <img
+            <OptimizedImage
               src={heroPoster}
               alt=""
               aria-hidden="true"
+              loading="eager"
+              fetchPriority="high"
+              sizes="72vw"
               className="absolute inset-0 h-full w-full object-cover object-center"
             />
           ) : isCmsVideoEmbed ? (

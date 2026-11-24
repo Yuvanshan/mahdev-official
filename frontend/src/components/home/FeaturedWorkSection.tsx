@@ -10,6 +10,7 @@ import { DivisionId } from '../../types';
 import { ParallelWatermark } from '../motion/ParallelScroll';
 import { useDeviceMotion } from '../motion/MotionWrappers';
 import { getRecordImageAlt } from '../../config/imageAlt';
+import { OptimizedImage } from '../ui/OptimizedImage';
 
 interface FeaturedWorkSectionProps {
   onNavigate: (route: string) => void;
@@ -97,13 +98,14 @@ const FeaturedWorkSectionContent: React.FC<
             >
               {/* Large Project Image */}
               <div className="lg:col-span-7 relative aspect-16/10 lg:aspect-auto min-h-[320px] sm:min-h-[420px] overflow-hidden bg-slate-900">
-                <img
+                <OptimizedImage
                   src={
                     (featuredHeroProject.imageUrl && featuredHeroProject.imageUrl.trim() !== '')
                       ? featuredHeroProject.imageUrl.trim()
                       : 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'
                   }
                   alt={getRecordImageAlt(featuredHeroProject)}
+                  sizes="(min-width: 1024px) 58vw, 100vw"
                   className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-700 ease-out"
                   loading="lazy"
                 />
@@ -170,13 +172,14 @@ const FeaturedWorkSectionContent: React.FC<
                       <div>
                         {/* Large Project Image */}
                         <div className="relative aspect-16/10 overflow-hidden bg-slate-100">
-                          <img
+                          <OptimizedImage
                             src={
                               (project.imageUrl && project.imageUrl.trim() !== '')
                                 ? project.imageUrl.trim()
                                 : 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80'
                             }
                             alt={getRecordImageAlt(project)}
+                            sizes="(min-width: 1024px) 66vw, 100vw"
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                             loading="lazy"
                           />

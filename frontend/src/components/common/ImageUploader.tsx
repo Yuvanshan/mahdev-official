@@ -169,6 +169,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
               <img
                 src={previewUrl}
                 alt="Uploaded media preview"
+                loading="eager"
+                decoding="async"
                 className="w-full h-full object-cover"
                 
               />

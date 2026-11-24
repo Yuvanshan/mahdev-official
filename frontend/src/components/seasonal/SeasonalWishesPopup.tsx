@@ -152,7 +152,7 @@ export const SeasonalWishesPopup: React.FC<SeasonalWishesPopupProps> = ({ onNavi
       >
         <div className="seasonal-wishes-hanger" aria-hidden="true" />
         {resolvedArtwork && (
-          <img className="seasonal-wishes-artwork" src={resolvedArtwork} alt="" aria-hidden="true" />
+          <img className="seasonal-wishes-artwork" src={resolvedArtwork} alt="" aria-hidden="true" loading="lazy" decoding="async" />
         )}
         <div className="seasonal-wishes-content">
           <p className="seasonal-wishes-occasion">{visibleCampaign.occasion}</p>

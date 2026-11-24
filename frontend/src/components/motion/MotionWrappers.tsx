@@ -359,7 +359,7 @@ export const ImageReveal: React.FC<{
   if (reducedMotion) {
     return (
       <div className={`overflow-hidden rounded-2xl ${aspectRatio} ${className}`}>
-        <img src={validSrc} alt={alt} className="w-full h-full object-cover"  />
+        <img src={validSrc} alt={alt} loading="lazy" decoding="async" className="w-full h-full object-cover" />
       </div>
     );
   }
@@ -375,6 +375,8 @@ export const ImageReveal: React.FC<{
       <motion.img
         src={validSrc}
         alt={alt}
+        loading="lazy"
+        decoding="async"
         className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
         
       />

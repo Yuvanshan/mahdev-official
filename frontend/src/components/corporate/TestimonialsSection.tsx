@@ -4,6 +4,7 @@ import { SectionContainer } from '../ui/SectionContainer';
 import { H2 } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { OptimizedImage } from '../ui/OptimizedImage';
 import { DivisionId } from '../../types/firestore';
 
 interface TestimonialsSectionProps {
@@ -243,11 +244,13 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
               <div className="flex items-center gap-3 border-t border-slate-200/80 pt-3">
                 <div className="relative shrink-0">
                   {review.avatarUrl && review.avatarUrl.trim() !== '' ? (
-                    <img
+                    <OptimizedImage
                       src={review.avatarUrl}
                       alt={review.authorName}
                       className="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-2xs"
-                      
+                      loading="lazy"
+                      optimizedWidth={320}
+                      sizes="40px"
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shadow-2xs">

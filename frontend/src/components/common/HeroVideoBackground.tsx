@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { resolveMediaUrl } from '../../services/firestoreMediaService';
 import { getYouTubeEmbedUrl, extractYouTubeId } from '../../utils/youtube';
 import { HeroVideoControls } from './HeroVideoControls';
+import { OptimizedImage } from '../ui/OptimizedImage';
 
 interface HeroVideoBackgroundProps {
   videoUrl?: string;
@@ -198,9 +199,12 @@ export const HeroVideoBackground: React.FC<HeroVideoBackgroundProps> = ({
       {/* A poster is present from first paint, so a slow or unavailable video
           never exposes a black box, loader, or recovery panel on the landing page. */}
       {fallbackImage && (
-        <img
+        <OptimizedImage
           src={fallbackImage}
           alt={title}
+          loading="eager"
+          fetchPriority="high"
+          sizes="100vw"
           className="absolute inset-0 h-full w-full object-cover brightness-[1.04] contrast-[1.12] saturate-[1.08]"
         />
       )}

@@ -151,6 +151,8 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                   <img
                     src={product.gallery[activeImageIndex] || product.imageUrl}
                     alt={getImageAlt(product.name, 'mart', product.category)}
+                    loading="eager"
+                    decoding="async"
                     className="h-full w-full object-contain"
                   />
                 </ImageZoomFrame>
@@ -174,7 +176,7 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                           : 'border-slate-200 opacity-70 hover:opacity-100'
                       }`}
                     >
-                      <img src={img} alt={getImageAltForPhoto(getImageAlt(product.name, 'mart', product.category), idx, product.gallery.length)} className="w-full h-full object-contain" />
+                      <img src={img} alt={getImageAltForPhoto(getImageAlt(product.name, 'mart', product.category), idx, product.gallery.length)} loading="lazy" decoding="async" className="w-full h-full object-contain" />
                     </button>
                   ))}
                 </div>
@@ -476,6 +478,8 @@ export const MartProductDetailModal: React.FC<MartProductDetailModalProps> = ({
                     <img
                       src={rel.imageUrl}
                       alt={getImageAlt(rel.name, 'mart', rel.category)}
+                      loading="lazy"
+                      decoding="async"
                       className="w-14 h-14 rounded-lg object-cover bg-slate-100 shrink-0"
                     />
                     <div className="min-w-0">

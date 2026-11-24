@@ -824,6 +824,8 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                       <img
                         src={item.imageUrl}
                         alt={item.name}
+                        loading="lazy"
+                        decoding="async"
                         className="w-12 h-12 rounded-lg object-cover bg-slate-100 border border-slate-200 shrink-0"
                       />
                       <div className="flex-1 min-w-0">

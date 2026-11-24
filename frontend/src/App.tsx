@@ -199,6 +199,9 @@ const RouteLoadingFallback: React.FC<RouteLoadingFallbackProps> = ({ path }) => 
 };
 
 const HomeView = lazy(() => import('./views/HomeView').then((module) => ({ default: module.HomeView })));
+if (typeof window !== 'undefined' && window.location.pathname === '/') {
+  void import('./views/HomeView');
+}
 const DivisionView = lazy(() => import('./views/DivisionView').then((module) => ({ default: module.DivisionView })));
 const DivisionComingSoonView = lazy(() => import('./views/DivisionComingSoonView').then((module) => ({ default: module.DivisionComingSoonView })));
 const SWSView = lazy(() => import('./views/SWSView').then((module) => ({ default: module.SWSView })));

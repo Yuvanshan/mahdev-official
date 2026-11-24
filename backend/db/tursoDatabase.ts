@@ -500,6 +500,48 @@ export async function listTursoDocuments(
   }));
 }
 
+export async function listTursoCollections(
+  collections: readonly string[],
+  parentPath = '',
+  filtersByCollection: ReadonlyMap<string, TursoFilter[]> = new Map(),
+  maxRows = 1000
+): Promise<Map<string, TursoDocument[]>> {
+  if (!Number.isInteger(maxRows) || maxRows < 1 || maxRows > 10000) {
+    throw new Error('Query limit must be an integer between 1 and 10000.');
+  }
+  if (new Set(collections).size !== collections.length) {
+    throw new Error('Collection list must not contain duplicates.');
+  }
+  if (collections.length === 0) return new Map();
+
+  const tables = await Promise.all(collections.map(async (collection) => ({
+    collection,
+    table: await ensureCollectionTable(collection),
+  })));
+  const statements: InStatement[] = tables.map(({ collection, table }) => {
+    const conditions = ['parent_path = ?'];
+    const args: SqlValue[] = [parentPath];
+    for (const filter of filtersByCollection.get(collection) || []) {
+      const parsed = whereSql(filter);
+      conditions.push(parsed.sql);
+      args.push(...parsed.args);
+    }
+    return {
+      sql: `SELECT id, data FROM "${table}" WHERE ${conditions.join(' AND ')} ORDER BY id ASC LIMIT ?`,
+      args: [...args, maxRows],
+    };
+  });
+  const results = await getTursoClient().batch(statements, 'read');
+
+  return new Map(results.map((result, index) => [
+    tables[index].collection,
+    result.rows.map((row) => ({
+      id: String(row.id),
+      data: JSON.parse(String(row.data)) as Record<string, unknown>,
+    })),
+  ]));
+}
+
 function mergeData(
   existing: Record<string, unknown>,
   incoming: Record<string, unknown>

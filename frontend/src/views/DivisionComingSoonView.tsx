@@ -16,6 +16,7 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 import { SectionContainer } from '../components/ui/SectionContainer';
+import { OptimizedImage } from '../components/ui/OptimizedImage';
 import { DisplayHeading, H2, H3, BodyLarge, Body } from '../components/ui/Heading';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -180,9 +181,12 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
       <div className="relative flex-1 flex flex-col justify-center overflow-hidden py-16 sm:py-24 z-10">
         {/* Background Image with Deep Overlay */}
         <div className="absolute inset-0 z-0">
-          <img
+          <OptimizedImage
             src={heroImage}
             alt={divisionName}
+            loading="eager"
+            fetchPriority="high"
+            sizes="100vw"
             className="w-full h-full object-cover object-center filter brightness-[0.25] scale-105 transition-transform duration-1000"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/85 to-slate-950/60" />
@@ -198,9 +202,12 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
           {/* Optional Brand Logo */}
           {logoImage && (
             <div className="mx-auto mb-5 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/10 p-3 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-2xl">
-              <img
+              <OptimizedImage
                 src={logoImage}
                 alt={divisionName}
+                optimizedWidth={320}
+                loading="eager"
+                sizes="80px"
                 className="max-h-full max-w-full object-contain"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';

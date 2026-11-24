@@ -20,6 +20,7 @@ import { TravelPackage } from '../../data/travelsData';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { getImageAlt, getImageAltForPhoto } from '../../config/imageAlt';
+import { OptimizedImage } from '../ui/OptimizedImage';
 
 interface TravelsPackageDetailModalProps {
   pkg: TravelPackage | null;
@@ -83,9 +84,11 @@ export const TravelsPackageDetailModal: React.FC<TravelsPackageDetailModalProps>
           {/* 1. HERO & GALLERY PREVIEW */}
           <div className="space-y-3">
             <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-950">
-              <img
+              <OptimizedImage
                 src={pkg.gallery[activeGalleryIndex] || pkg.heroImage}
                 alt={getImageAlt(pkg.title, 'travels')}
+                loading="eager"
+                sizes="90vw"
                 className="w-full h-full object-cover"
               />
               <div className="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-lg text-white text-xs font-mono font-bold">
@@ -104,7 +107,7 @@ export const TravelsPackageDetailModal: React.FC<TravelsPackageDetailModalProps>
                       activeGalleryIndex === idx ? 'border-[#861F31] scale-105' : 'border-transparent opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <img src={img} alt={getImageAltForPhoto(getImageAlt(pkg.title, 'travels'), idx, pkg.gallery.length)} className="w-full h-full object-cover" />
+                    <OptimizedImage src={img} alt={getImageAltForPhoto(getImageAlt(pkg.title, 'travels'), idx, pkg.gallery.length)} optimizedWidth={320} sizes="80px" loading="lazy" className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>

@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowLeft, ArrowRight, CalendarDays, Tag } from 'lucide-react';
 import { useAvailableCmsBanners } from '../hooks/useAvailableCmsBanners';
 import { isWhatsAppUrl, notifyWhatsAppClick } from '../utils/whatsapp';
+import { OptimizedImage } from '../components/ui/OptimizedImage';
 
 interface PromotionsViewProps {
   onNavigate: (route: string) => void;
@@ -59,9 +60,12 @@ export const PromotionsView: React.FC<PromotionsViewProps> = ({ onNavigate, sele
           </button>
           <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:rounded-3xl">
             {selectedOffer.imageUrl ? (
-              <img
+              <OptimizedImage
                 src={selectedOffer.imageUrl}
                 alt={selectedOffer.title}
+                loading="eager"
+                fetchPriority="high"
+                sizes="100vw"
                 className="max-h-[min(55vh,32rem)] w-full bg-slate-200 object-cover"
               />
             ) : (
@@ -143,10 +147,11 @@ export const PromotionsView: React.FC<PromotionsViewProps> = ({ onNavigate, sele
                 >
                   {banner.imageUrl ? (
                     <div className="relative h-52 bg-slate-200">
-                      <img
+                      <OptimizedImage
                         src={banner.imageUrl}
                         alt={banner.title}
                         loading="lazy"
+                        sizes="(max-width: 640px) 100vw, 50vw"
                         className="h-full w-full object-cover"
                       />
                       {banner.badgeText && (

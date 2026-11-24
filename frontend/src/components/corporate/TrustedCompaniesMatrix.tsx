@@ -3,6 +3,7 @@ import { ExternalLink, Building2, CheckCircle2, Globe, Shield, Sparkles } from '
 import { SectionContainer } from '../ui/SectionContainer';
 import { H2 } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
+import { OptimizedImage } from '../ui/OptimizedImage';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import {
@@ -82,7 +83,7 @@ export const TrustedCompaniesMatrix: React.FC<TrustedCompaniesMatrixProps> = ({ 
                       <div className="flex items-center justify-between mb-4">
                         <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 shadow-2xs flex items-center justify-center font-display font-bold text-slate-800 text-sm group-hover:bg-[#861F31] group-hover:text-white group-hover:border-[#861F31] transition-all duration-300">
                           {company.logoUrl && company.logoUrl.trim() !== '' ? (
-                            <img src={company.logoUrl} alt={company.name} className="w-8 h-8 object-contain" />
+                            <OptimizedImage src={company.logoUrl} alt={company.name} optimizedWidth={320} sizes="32px" loading="lazy" className="w-8 h-8 object-contain" />
                           ) : (
                             initials
                           )}

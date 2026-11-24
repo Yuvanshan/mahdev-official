@@ -183,6 +183,9 @@ export const AppBootLoader: React.FC<AppBootLoaderProps> = ({
                 <img
                   src="/brand-assets/mahdev-symbol.png"
                   alt="Mahdev"
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
                   className="w-12 h-12 object-contain filter drop-shadow-md"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = '/icon.png';

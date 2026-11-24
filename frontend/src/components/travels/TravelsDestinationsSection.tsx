@@ -14,6 +14,7 @@ import { H2, Caption, Body } from '../ui/Heading';
 import { Badge } from '../ui/Badge';
 import { ScrollReveal } from '../motion/MotionWrappers';
 import { getImageAlt } from '../../config/imageAlt';
+import { OptimizedImage } from '../ui/OptimizedImage';
 
 interface TravelsDestinationsSectionProps {
   onPlanTripForDestination: (dest: TravelDestination) => void;
@@ -109,10 +110,12 @@ export const TravelsDestinationsSection: React.FC<TravelsDestinationsSectionProp
         <div className="lg:col-span-7 rounded-2xl bg-white border border-slate-200/90 shadow-xl overflow-hidden flex flex-col justify-between">
           <div>
             <div className="relative aspect-[16/10] overflow-hidden bg-slate-950">
-              <img
+              <OptimizedImage
                 src={activeDest.imageUrl}
                 alt={getImageAlt(activeDest.name, 'travels')}
                 className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+                loading="lazy"
+                sizes="(max-width: 640px) 100vw, 58vw"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
               <div className="absolute bottom-4 left-4 right-4 text-white">

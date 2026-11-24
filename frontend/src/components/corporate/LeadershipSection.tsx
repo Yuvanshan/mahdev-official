@@ -8,6 +8,7 @@ import { Modal } from '../ui/Modal';
 import { ScrollReveal, TiltCard } from '../motion/MotionWrappers';
 import { LeadershipMember } from '../../types';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
+import { OptimizedImage } from '../ui/OptimizedImage';
 
 interface LeadershipSectionProps {
   onContactLeadership?: (member: LeadershipMember) => void;
@@ -66,7 +67,7 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({ onContactL
                   {/* Photo & Division Header */}
                   <div>
                     <div className="relative h-64 w-full overflow-hidden bg-slate-900">
-                      <img
+                      <OptimizedImage
                         src={
                           member.photoUrl && member.photoUrl.trim() !== ''
                             ? member.photoUrl.trim()
@@ -74,7 +75,8 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({ onContactL
                         }
                         alt={member.name}
                         className="w-full h-full object-cover object-top opacity-90 group-hover:scale-105 group-hover:opacity-100 transition-all duration-500"
-                        
+                        loading="lazy"
+                        sizes="(max-width: 640px) 100vw, 33vw"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
 
@@ -193,7 +195,7 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({ onContactL
         {selectedMember && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start">
-              <img
+              <OptimizedImage
                 src={
                   selectedMember.photoUrl && selectedMember.photoUrl.trim() !== ''
                     ? selectedMember.photoUrl.trim()
@@ -201,7 +203,9 @@ export const LeadershipSection: React.FC<LeadershipSectionProps> = ({ onContactL
                 }
                 alt={selectedMember.name}
                 className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover object-top border-2 border-blue-500 shadow-md shrink-0"
-                
+                loading="eager"
+                optimizedWidth={320}
+                sizes="112px"
               />
               <div className="text-center sm:text-left space-y-1 flex-1">
                 <Badge variant="electric" size="sm">

@@ -90,6 +90,9 @@ export const InitialAppLoader: React.FC<InitialAppLoaderProps> = ({
             <motion.img
               src={effectiveLogo}
               alt="Mahdev (Pvt) Ltd"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
               className="h-20 sm:h-24 md:h-28 w-auto max-w-[280px] sm:max-w-[340px] object-contain drop-shadow-xs relative z-10"
               
               animate={{

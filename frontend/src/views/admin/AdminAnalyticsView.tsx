@@ -1117,7 +1117,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({
                   return (
                     <g key={idx}>
                       <line x1="0" y1={y} x2={chartWidth} y2={y} stroke="#F3ECE1" strokeWidth="1" />
-                      <text x="0" y={y - 4} fill="#A8958A" fontSize="9" fontFamily="monospace">
+                      <text x="0" y={y - 4} fill="#A8958A" fontSize="9" fontFamily="Plus Jakarta Sans, sans-serif">
                         {currencySymbol} {Math.round(maxRevenue * pct).toLocaleString()}
                       </text>
                     </g>

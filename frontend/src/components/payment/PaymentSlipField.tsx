@@ -69,7 +69,7 @@ export const PaymentSlipField: React.FC<PaymentSlipFieldProps> = ({
         {file ? (
           <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3">
             {preview ? (
-              <img src={preview} alt="Selected transfer slip" className="h-14 w-14 rounded-lg object-cover border border-emerald-200 bg-white" />
+              <img src={preview} alt="Selected transfer slip" loading="eager" decoding="async" className="h-14 w-14 rounded-lg object-cover border border-emerald-200 bg-white" />
             ) : (
               <div className="h-14 w-14 rounded-lg bg-white border border-emerald-200 flex items-center justify-center">
                 <FileText className="h-6 w-6 text-emerald-600" />

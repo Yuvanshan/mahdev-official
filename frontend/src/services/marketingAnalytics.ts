@@ -28,6 +28,8 @@ let initialized = false;
 let googleMeasurementId = '';
 let metaPixelId = '';
 let googleTagManagerId = '';
+let googleTagManagerStartQueued = false;
+let googleTagManagerLoadTimer: number | undefined;
 const MARKETING_SITE_HOST = new URL(
   import.meta.env?.VITE_APP_URL || CANONICAL_SITE_ORIGIN
 ).hostname;
@@ -43,17 +45,33 @@ function isAllowedMarketingHost(): boolean {
   return window.location.hostname === MARKETING_SITE_HOST;
 }
 
-function loadGoogleTagManager(): void {
+function loadGoogleTagManager(defer: boolean): void {
   if (!googleTagManagerId || document.getElementById('mahdev-gtm-script')) return;
 
   window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+  if (!googleTagManagerStartQueued) {
+    window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+    googleTagManagerStartQueued = true;
+  }
 
-  const script = document.createElement('script');
-  script.id = 'mahdev-gtm-script';
-  script.async = true;
-  script.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(googleTagManagerId)}`;
-  document.head.appendChild(script);
+  const appendScript = () => {
+    googleTagManagerLoadTimer = undefined;
+    if (document.getElementById('mahdev-gtm-script')) return;
+    const script = document.createElement('script');
+    script.id = 'mahdev-gtm-script';
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(googleTagManagerId)}`;
+    document.head.appendChild(script);
+  };
+
+  if (!defer) {
+    if (googleTagManagerLoadTimer !== undefined) {
+      window.clearTimeout(googleTagManagerLoadTimer);
+    }
+    appendScript();
+  } else if (googleTagManagerLoadTimer === undefined) {
+    googleTagManagerLoadTimer = window.setTimeout(appendScript, 5000);
+  }
 }
 
 function initializeMarketingAnalytics(): void {
@@ -75,8 +93,6 @@ function initializeMarketingAnalytics(): void {
   window.gtag = window.gtag || ((...args: unknown[]) => {
     window.dataLayer?.push(args);
   });
-  if (validGoogleTagManagerId) loadGoogleTagManager();
-
   if (validGoogleId) {
     window.gtag('js', new Date());
     window.gtag('config', googleMeasurementId, { send_page_view: false });
@@ -123,6 +139,7 @@ export function trackMarketingEvent(
 ): void {
   if (hasTrackingOptOut() || !isAllowedMarketingHost()) return;
   initializeMarketingAnalytics();
+  loadGoogleTagManager(type === 'page_view');
 
   const gaEventNames: Record<string, string> = {
     page_view: 'page_view',

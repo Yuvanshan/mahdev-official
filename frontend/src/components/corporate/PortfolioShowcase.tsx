@@ -16,6 +16,7 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { openWhatsAppInquiry } from '../../utils/whatsapp';
 import { DataLoadingOverlay } from '../common/DataLoadingOverlay';
 import { getImageAltForPhoto, getRecordImageAlt } from '../../config/imageAlt';
+import { OptimizedImage } from '../ui/OptimizedImage';
 
 interface PortfolioShowcaseProps {
   onInquireProject?: (project: PortfolioProject) => void;
@@ -184,7 +185,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
               >
               <div className="group relative rounded-3xl overflow-hidden bg-slate-950 border border-slate-800 shadow-md h-full flex flex-col justify-end p-6 sm:p-7 text-white transition-all duration-500 hover:shadow-2xl">
                 {/* Image background with scale effect */}
-                <img
+                <OptimizedImage
                   src={
                     project.imageUrl && project.imageUrl.trim() !== ''
                       ? project.imageUrl.trim()
@@ -192,7 +193,8 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                   }
                   alt={getRecordImageAlt(project)}
                   className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 group-hover:opacity-75 transition-all duration-700 ease-out"
-                  
+                  loading="lazy"
+                  sizes="(min-width: 1024px) 33vw, 50vw"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
 
@@ -293,11 +295,12 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                 return (
                   <div>
                     <div className="relative h-64 sm:h-80 md:h-96 w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-200">
-                      <img
+                      <OptimizedImage
                         src={activeImg}
                         alt={getRecordImageAlt(selectedProject)}
                         className="w-full h-full object-cover"
-                        
+                        loading="eager"
+                        sizes="90vw"
                       />
                       <div className="absolute top-4 left-4">
                         <Badge variant="electric" size="sm">
@@ -319,11 +322,13 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                                 : 'border-slate-200 opacity-60 hover:opacity-100'
                             }`}
                           >
-                            <img
+                            <OptimizedImage
                               src={img}
                               alt={getImageAltForPhoto(getRecordImageAlt(selectedProject), i, allImages.length)}
                               className="w-full h-full object-cover"
-                              
+                              loading="lazy"
+                              optimizedWidth={320}
+                              sizes="64px"
                             />
                           </button>
                         ))}

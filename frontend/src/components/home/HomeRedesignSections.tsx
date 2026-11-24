@@ -14,6 +14,7 @@ import { useCart } from '../../context/CartContext';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
 import { formatCurrency } from '../../utils/currency';
+import { OptimizedImage } from '../ui/OptimizedImage';
 
 const OCCASIONS = [
   { name: 'Weddings', terms: ['wedding', 'marriage'] },
@@ -208,7 +209,7 @@ export const HomeConversionSections: React.FC<HomeConversionSectionsProps> = ({ 
                     onClick={() => onNavigate(`/mart?product=${encodeURIComponent(product.id)}`)}
                     aria-label={`View ${product.name}`}
                   >
-                    {image && <img src={image} alt={product.imageAlt || product.name} loading="lazy" />}
+                    {image && <OptimizedImage src={image} alt={product.imageAlt || product.name} optimizedWidth={320} sizes="(max-width: 640px) 45vw, 220px" loading="lazy" />}
                     <span>Online Mart</span>
                   </button>
                   <div className="home-product-details">

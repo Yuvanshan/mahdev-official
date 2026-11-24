@@ -231,6 +231,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
                 <img
                   src={item.imageUrl}
                   alt={item.name}
+                  loading="lazy"
+                  decoding="async"
                   className="w-16 h-16 rounded-xl object-contain bg-slate-100 border border-slate-200 shrink-0"
                 />
 
@@ -343,7 +345,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
               <ul className="divide-y divide-slate-100">
                 {savedItems.map((item) => (
                   <li key={item.id} className="flex items-center gap-3 py-2">
-                    <img src={item.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg border border-slate-200 bg-slate-100 object-contain" />
+                    <img src={item.imageUrl} alt="" loading="lazy" decoding="async" className="h-12 w-12 shrink-0 rounded-lg border border-slate-200 bg-slate-100 object-contain" />
                     <div className="min-w-0 flex-1">
                       <p className="line-clamp-1 text-xs font-semibold text-slate-900">{item.name}</p>
                       <p className="text-[11px] text-slate-500">{formatCurrency(item.unitPrice, 'LKR')}</p>

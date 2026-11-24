@@ -14,6 +14,7 @@ import { SectionContainer } from '../components/ui/SectionContainer';
 import { H1, H2, Body, Caption } from '../components/ui/Heading';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
+import { OptimizedImage } from '../components/ui/OptimizedImage';
 import { ScrollReveal, TiltCard } from '../components/motion/MotionWrappers';
 import { SEOHead } from '../components/layout/SEOHead';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
@@ -337,11 +338,13 @@ export const TestimonialsView: React.FC<TestimonialsViewProps> = ({ onNavigate }
                       <div className="flex items-center gap-3">
                         <div className="relative">
                           {review.authorPhotoUrl ? (
-                            <img
+                            <OptimizedImage
                               src={review.authorPhotoUrl}
                               alt={review.authorName}
+                              optimizedWidth={320}
+                              sizes="44px"
+                              loading="lazy"
                               className="w-11 h-11 rounded-full object-cover border border-slate-200 shadow-2xs shrink-0"
-                              
                             />
                           ) : (
                             <div className="w-11 h-11 rounded-full bg-blue-600 text-white font-bold text-sm flex items-center justify-center shadow-2xs">

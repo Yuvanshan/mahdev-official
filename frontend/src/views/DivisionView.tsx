@@ -15,6 +15,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { SectionContainer } from '../components/ui/SectionContainer';
+import { OptimizedImage } from '../components/ui/OptimizedImage';
 import { DisplayHeading, H2, H3, BodyLarge, Body, Caption } from '../components/ui/Heading';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -392,9 +393,12 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ divisionId, onNaviga
             <div className="flex items-center gap-3">
               {divisionLogo && (
                 <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-white/10 p-2 backdrop-blur-md border border-white/20 flex items-center justify-center shrink-0 shadow-lg">
-                  <img
+                  <OptimizedImage
                     src={divisionLogo}
                     alt={division.name}
+                    optimizedWidth={320}
+                    loading="eager"
+                    sizes="48px"
                     className="max-h-full max-w-full object-contain"
                     onError={(e) => {
                       (e.target as HTMLElement).style.display = 'none';

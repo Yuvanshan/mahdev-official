@@ -506,6 +506,8 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
                           <img
                             src={item.imageUrl}
                             alt={item.name}
+                            loading="lazy"
+                            decoding="async"
                             className="w-10 h-10 rounded-lg object-cover bg-slate-100 shrink-0 border border-slate-200"
                           />
                           <div>

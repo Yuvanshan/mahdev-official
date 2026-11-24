@@ -1,10 +1,9 @@
-// Firebase Storage photos are full-size PNGs (2-3 MB). In production, Vercel Image
-// Optimization serves them resized and as WebP instead; the allowed host is in vercel.json.
+// In production, Vercel Image Optimization serves Firebase Storage images in AVIF or WebP.
 const FIREBASE_STORAGE_URL = /^https:\/\/firebasestorage\.googleapis\.com\//;
 const OPTIMIZED_IMAGE_QUALITY = 82;
 
 // Must be one of the "sizes" in vercel.json, or Vercel rejects the request.
-export type OptimizedImageWidth = 640 | 1080 | 1920;
+export type OptimizedImageWidth = 320 | 640 | 1080 | 1920;
 const DEFAULT_OPTIMIZED_WIDTH: OptimizedImageWidth = 1080;
 
 export function optimizedImageUrl(src: string, width: OptimizedImageWidth = DEFAULT_OPTIMIZED_WIDTH): string {
@@ -12,10 +11,10 @@ export function optimizedImageUrl(src: string, width: OptimizedImageWidth = DEFA
   return `/_vercel/image?url=${encodeURIComponent(src)}&w=${width}&q=${OPTIMIZED_IMAGE_QUALITY}`;
 }
 
-/** Responsive WebP candidates let the browser select a suitable file for viewport and pixel density. */
+/** Responsive candidates let the browser select a suitable size for the viewport and pixel density. */
 export function optimizedImageSrcSet(src: string): string | undefined {
   if (!import.meta.env.PROD || !FIREBASE_STORAGE_URL.test(src)) return undefined;
-  return ([640, 1080, 1920] as const)
+  return ([320, 640, 1080, 1920] as const)
     .map((width) => `${optimizedImageUrl(src, width)} ${width}w`)
     .join(', ');
 }

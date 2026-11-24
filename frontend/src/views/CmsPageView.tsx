@@ -6,6 +6,7 @@ import { NotFoundView } from './NotFoundView';
 import { SEOHead } from '../components/layout/SEOHead';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { formatPageTitle } from '../config/pageTitles';
+import { OptimizedImage } from '../components/ui/OptimizedImage';
 
 interface CmsPageViewProps {
   slug: string;
@@ -108,9 +109,12 @@ export const CmsPageView: React.FC<CmsPageViewProps> = ({ slug, onNavigate }) =>
         )}
       </header>
       {articleImage && (
-        <img
+        <OptimizedImage
           src={articleImage}
           alt={page.title}
+          loading="eager"
+          fetchPriority="high"
+          sizes="(max-width: 640px) 100vw, 768px"
           className="mb-10 max-h-[34rem] w-full rounded-2xl bg-slate-100 object-contain"
         />
       )}
@@ -121,10 +125,11 @@ export const CmsPageView: React.FC<CmsPageViewProps> = ({ slug, onNavigate }) =>
             <h2 className="font-display text-xl font-bold text-slate-900 mb-2">{section.heading}</h2>
             <p className="whitespace-pre-wrap">{section.body}</p>
             {resolveContentImage(section.imageUrl) && (
-              <img
+              <OptimizedImage
                 src={resolveContentImage(section.imageUrl)}
                 alt={section.heading || page.title}
                 loading="lazy"
+                sizes="(max-width: 640px) 100vw, 768px"
                 className="mt-4 max-h-[34rem] w-full rounded-2xl bg-slate-100 object-contain"
               />
             )}

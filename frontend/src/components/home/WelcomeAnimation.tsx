@@ -152,6 +152,9 @@ export const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({ onComplete }
                 <img
                   src={uploadedLogo && uploadedLogo.trim() !== '' ? uploadedLogo : '/logo.png'}
                   alt={brandName}
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
                   className="h-16 sm:h-20 w-auto object-contain max-w-[240px]"
                   
                   onError={(e) => {

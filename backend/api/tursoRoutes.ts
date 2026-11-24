@@ -136,6 +136,19 @@ export function compactPublicImageDocument(collection: string, document: TursoDo
   return { ...document, data };
 }
 
+export function sanitizePublicListDocuments(
+  collection: string,
+  documents: TursoDocument[]
+): TursoDocument[] {
+  if (collection === 'settings') return documents.map(sanitizePublicSettingsDocument);
+  if (PUBLIC_IMAGE_COLLECTIONS.has(collection)) {
+    return documents.map((document) => compactPublicImageDocument(collection, document));
+  }
+  return documents
+    .map((document) => hidePublicDrafts(collection, document))
+    .filter((document): document is TursoDocument => document !== null);
+}
+
 const PUBLIC_READ_COLLECTIONS = new Set([
   'announcements',
   'banners',
@@ -192,7 +205,7 @@ function hideInternalRecordFields(collection: string, document: TursoDocument): 
 const MEDIA_CHUNK_COLLECTION = 'media_blobs/chunks';
 const MEDIA_CHUNK_PARENT = /^media_blobs\/[A-Za-z0-9_-]{1,128}$/;
 const MAX_PUBLIC_READ_BATCH_SIZE = 8;
-const MAX_PUBLIC_LIST_ROWS = 1000;
+export const MAX_PUBLIC_LIST_ROWS = 1000;
 const MAX_PUBLIC_READ_BATCH_RESPONSE_BYTES = 3_500_000;
 const CUSTOMER_OWNED_COLLECTIONS = new Set(['users', 'orders', 'bookings', 'payments']);
 const ADMIN_ONLY_READ_COLLECTIONS = new Set([
@@ -1211,12 +1224,8 @@ export async function handleTursoAction(
       return {
         status: 200,
         body: {
-          documents: access.role === 'public' && collection === 'settings'
-            ? documents.map(sanitizePublicSettingsDocument)
-            : access.role === 'public' && PUBLIC_IMAGE_COLLECTIONS.has(collection)
-              ? documents.map((document) => compactPublicImageDocument(collection, document))
-            : access.role === 'public'
-              ? documents.map((document) => hidePublicDrafts(collection, document)).filter((document): document is TursoDocument => document !== null)
+          documents: access.role === 'public'
+            ? sanitizePublicListDocuments(collection, documents)
             : access.role === 'customer'
               ? documents.map((document) => hideInternalRecordFields(collection, document))
             : documents,

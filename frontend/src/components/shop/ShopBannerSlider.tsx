@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { optimizedImageSrcSet, optimizedImageUrl } from '../../utils/optimizedImage';
 
 export interface ShopBanner {
   id: string;
@@ -19,6 +20,41 @@ interface ShopBannerSliderProps {
 
 const AUTOPLAY_MS = 5000;
 const SWIPE_PX = 40;
+
+const OptimizedBannerImage: React.FC<{
+  imageUrl: string;
+  mobileImageUrl?: string;
+  loading: 'eager' | 'lazy';
+}> = ({ imageUrl, mobileImageUrl, loading }) => {
+  const [useOriginalSources, setUseOriginalSources] = useState(false);
+  const desktopSrc = useOriginalSources ? imageUrl : optimizedImageUrl(imageUrl, 1080);
+  const desktopSrcSet = useOriginalSources ? undefined : optimizedImageSrcSet(imageUrl);
+  const mobileSrcSet = mobileImageUrl
+    ? useOriginalSources
+      ? mobileImageUrl
+      : optimizedImageSrcSet(mobileImageUrl) || mobileImageUrl
+    : undefined;
+
+  return (
+    <picture>
+      {mobileImageUrl && (
+        <source media="(max-width: 639px)" sizes="100vw" srcSet={mobileSrcSet} />
+      )}
+      <img
+        src={desktopSrc}
+        srcSet={desktopSrcSet}
+        sizes="100vw"
+        alt=""
+        loading={loading}
+        fetchPriority={loading === 'eager' ? 'high' : 'low'}
+        decoding="async"
+        draggable={false}
+        onError={() => setUseOriginalSources(true)}
+        className="h-full w-full object-cover"
+      />
+    </picture>
+  );
+};
 
 // Auto-advancing banner carousel with arrows and dots (Flipkart home banner).
 export const ShopBannerSlider: React.FC<ShopBannerSliderProps> = ({ banners, onNavigate }) => {
@@ -72,10 +108,11 @@ export const ShopBannerSlider: React.FC<ShopBannerSliderProps> = ({ banners, onN
             tabIndex={position === index ? 0 : -1}
             className="relative h-full w-full shrink-0 text-left"
           >
-            <picture>
-              {banner.mobileImageUrl && <source media="(max-width: 639px)" srcSet={banner.mobileImageUrl} />}
-              <img src={banner.imageUrl} alt="" loading={position === 0 ? 'eager' : 'lazy'} draggable={false} className="h-full w-full object-cover" />
-            </picture>
+            <OptimizedBannerImage
+              imageUrl={banner.imageUrl}
+              mobileImageUrl={banner.mobileImageUrl}
+              loading={position === 0 ? 'eager' : 'lazy'}
+            />
             <span className="absolute inset-0 bg-gradient-to-r from-blue-950/80 via-blue-950/30 to-transparent" />
             <span className="absolute inset-y-0 left-0 flex max-w-xl flex-col justify-center gap-2 px-6 sm:px-12">
               <span className="text-2xl font-bold text-white sm:text-4xl">{banner.title}</span>

@@ -170,7 +170,7 @@ export const AccountInvoicesTab: React.FC<AccountInvoicesTabProps> = ({ orders, 
             <div className="relative bg-[#3F0C17] text-white px-6 sm:px-8 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-4 border-[#c49a2c]">
               <div className="flex items-center gap-3">
                 <div className="bg-white rounded-xl p-1.5">
-                  <img src="/logo.png" alt={company.legalName} className="h-12 w-auto" />
+                  <img src="/logo.png" alt={company.legalName} loading="eager" decoding="async" className="h-12 w-auto" />
                 </div>
                 <div>
                   <div className="font-display font-bold">{selected.divisionName || company.legalName}</div>

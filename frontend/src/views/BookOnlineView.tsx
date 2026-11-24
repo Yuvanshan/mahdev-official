@@ -33,6 +33,7 @@ import { getServiceStartingPrice } from '../components/common/StartingPriceTag';
 import { MIN_PASSWORD_LENGTH, passwordPolicyError } from '../services/authService';
 import { bookingService, newBookingReference, uploadPaymentSlip } from '../services/bookingService';
 import { PaymentSlipField } from '../components/payment/PaymentSlipField';
+import { OptimizedImage } from '../components/ui/OptimizedImage';
 import { markAccountDataStale } from '../services/customerAccountService';
 import { Booking, BookingLineItem, BookingLocation, BookingPaymentSlip, BookingType } from '../types/booking';
 import type { CartItem } from '../types/cart';
@@ -849,7 +850,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
             {images.length > 0 && (
               <div className="space-y-3">
                 <div className="rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
-                  <img src={images[activeImage] || images[0]} alt={item.title} className="w-full max-h-[480px] object-contain" />
+                  <OptimizedImage src={images[activeImage] || images[0]} alt={item.title} loading="lazy" sizes="(max-width: 640px) 100vw, 480px" className="w-full max-h-[480px] object-contain" />
                 </div>
                 {images.length > 1 && (
                   <div className="flex gap-2 overflow-x-auto pb-1">
@@ -861,7 +862,7 @@ export const BookOnlineView: React.FC<BookOnlineViewProps> = ({ kind, itemId, on
                         className={`shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 ${index === activeImage ? 'border-blue-600' : 'border-transparent opacity-70 hover:opacity-100'}`}
                         aria-label={`Show image ${index + 1}`}
                       >
-                        <img src={image} alt="" className="w-full h-full object-cover" />
+                        <OptimizedImage src={image} alt="" optimizedWidth={320} loading="lazy" sizes="80px" className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>

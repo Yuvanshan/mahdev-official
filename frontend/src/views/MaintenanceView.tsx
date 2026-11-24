@@ -12,6 +12,7 @@ import {
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { getMailtoLink, getTelLink } from '../config/company';
 import { ADMIN_PORTAL_PATH } from '../config/adminRoutes';
+import { OptimizedImage } from '../components/ui/OptimizedImage';
 
 interface MaintenanceViewProps {
   onAdminLogin?: () => void;
@@ -49,11 +50,13 @@ export const MaintenanceView: React.FC<MaintenanceViewProps> = ({ onAdminLogin }
         {/* Optional Custom Cover / Banner Image */}
         {imageUrl ? (
           <div className="relative w-full h-48 sm:h-56 rounded-2xl overflow-hidden mb-6 border border-slate-800">
-            <img
+            <OptimizedImage
               src={imageUrl}
               alt="Scheduled Maintenance Banner"
+              loading="eager"
+              fetchPriority="high"
+              sizes="(max-width: 640px) 100vw, 672px"
               className="w-full h-full object-cover"
-              
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
             <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md border border-amber-500/30 text-amber-300 text-[11px] font-bold tracking-wide">

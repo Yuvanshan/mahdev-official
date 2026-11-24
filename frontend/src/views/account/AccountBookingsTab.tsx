@@ -226,7 +226,7 @@ export const AccountBookingsTab: React.FC<AccountBookingsTabProps> = ({
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="flex gap-2 shrink-0">
                     {b.designImages.slice(0, 3).map((image) => (
-                      <img key={image} src={image} alt={b.designTitle || 'Approved design'} className="w-20 h-20 rounded-xl object-cover border border-slate-200" />
+                      <img key={image} src={image} alt={b.designTitle || 'Approved design'} loading="lazy" decoding="async" className="w-20 h-20 rounded-xl object-cover border border-slate-200" />
                     ))}
                   </div>
                   {b.lineItems && b.lineItems.length > 0 && (

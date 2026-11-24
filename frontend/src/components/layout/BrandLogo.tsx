@@ -204,6 +204,8 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
           <img
             src={uploadedLogo}
             alt={brandName}
+            loading="eager"
+            decoding="async"
             className={`${currentSize.imgHeight} w-auto max-w-[340px] sm:max-w-[420px] object-contain transition-transform duration-200 group-hover:scale-[1.02] filter drop-shadow-xs`}
             
             onError={() => setImgError(true)}

@@ -136,6 +136,9 @@ export const InquiredItemSpotlight: React.FC<InquiredItemSpotlightProps> = ({
             <img
               src={item.url}
               alt={getRecordImageAlt(item)}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
               className="w-full h-full max-h-[550px] object-contain cursor-zoom-in"
               onClick={() => setIsZoomed(true)}
             />
@@ -274,6 +277,8 @@ export const InquiredItemSpotlight: React.FC<InquiredItemSpotlightProps> = ({
           <img
             src={item.url}
             alt={getRecordImageAlt(item)}
+            loading="eager"
+            decoding="async"
             className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
           />
         </div>

@@ -53,9 +53,10 @@ export const Avatar: React.FC<AvatarProps> = ({ name, email, src, className = 'h
           ref={imgRef}
           src={src}
           alt=""
+          loading="lazy"
+          decoding="async"
           // Google profile photos are refused when a referrer is sent.
           referrerPolicy="no-referrer"
-          decoding="async"
           onLoad={() => setLoadedSrc(src)}
           onError={() => setFailedSrc(src)}
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}

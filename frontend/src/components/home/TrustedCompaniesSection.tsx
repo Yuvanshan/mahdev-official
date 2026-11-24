@@ -4,6 +4,7 @@ import { HorizontalScrollArea } from '../ui/HorizontalScrollArea';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { FirestoreTrustedCompany } from '../../types/firestore';
 import { isPublishedTrustedCompany } from '../../services/firestore/trustedCompanies';
+import { OptimizedImage } from '../ui/OptimizedImage';
 
 interface TrustedCompaniesSectionProps {
   onExplorePartners?: () => void;
@@ -63,9 +64,12 @@ export const TrustedCompaniesSection: React.FC<TrustedCompaniesSectionProps> = (
               }`}
             >
               {company.logoUrl && company.logoUrl.trim() !== '' ? (
-                <img
+                <OptimizedImage
                   src={company.logoUrl}
                   alt={company.name}
+                  optimizedWidth={320}
+                  sizes="192px"
+                  loading="lazy"
                   className="max-h-14 max-w-full object-contain transition-transform group-hover:scale-105"
                 />
               ) : (

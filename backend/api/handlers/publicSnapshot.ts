@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { initializeTursoDatabase } from '../../db/tursoDatabase.js';
-import { handleTursoAction } from '../tursoRoutes.js';
+import { initializeTursoDatabase, listTursoCollections } from '../../db/tursoDatabase.js';
+import { handleTursoAction, MAX_PUBLIC_LIST_ROWS, sanitizePublicListDocuments } from '../tursoRoutes.js';
 
 /**
  * GET /api/public/snapshot
@@ -49,6 +49,7 @@ export const PUBLIC_SNAPSHOT_COLLECTIONS = [
 
 // Vercel serverless responses are capped at 4.5 MB; stay safely below it.
 const MAX_SNAPSHOT_BYTES = 4_000_000;
+const SNAPSHOT_CACHE_TTL_MS = 60_000;
 
 // Inline images (base64 data URLs stored in records, e.g. a 550 KB logo) are
 // moved out of the snapshot and served from /api/public/media/<hash>.<ext>
@@ -105,19 +106,40 @@ async function buildSnapshot(): Promise<PublicSnapshot> {
   const omitted: string[] = [];
   const collections: Record<string, SnapshotDocument[]> = {};
 
-  await Promise.all(PUBLIC_SNAPSHOT_COLLECTIONS.map(async (collection) => {
-    try {
-      const result = await handleTursoAction({ action: 'list', collection, parentPath: '' }, { role: 'public' });
-      if (result.status === 200 && Array.isArray(result.body.documents)) {
-        collections[collection] = result.body.documents as SnapshotDocument[];
-      } else {
+  try {
+    const batchFilters = new Map([
+      ['careerOpenings', [{ field: 'status', operator: '==', value: 'published' }]],
+    ]);
+    const documentsByCollection = await listTursoCollections(
+      PUBLIC_SNAPSHOT_COLLECTIONS,
+      '',
+      batchFilters,
+      MAX_PUBLIC_LIST_ROWS
+    );
+    for (const collection of PUBLIC_SNAPSHOT_COLLECTIONS) {
+      const documents = documentsByCollection.get(collection);
+      if (!documents) {
+        omitted.push(collection);
+        continue;
+      }
+      collections[collection] = sanitizePublicListDocuments(collection, documents) as SnapshotDocument[];
+    }
+  } catch (error) {
+    console.error('[PublicSnapshot] Batched collection read failed; retrying individual reads:', error);
+    await Promise.all(PUBLIC_SNAPSHOT_COLLECTIONS.map(async (collection) => {
+      try {
+        const result = await handleTursoAction({ action: 'list', collection, parentPath: '' }, { role: 'public' });
+        if (result.status === 200 && Array.isArray(result.body.documents)) {
+          collections[collection] = result.body.documents as SnapshotDocument[];
+        } else {
+          omitted.push(collection);
+        }
+      } catch (error) {
+        console.error(`[PublicSnapshot] Could not read ${collection}:`, error);
         omitted.push(collection);
       }
-    } catch (error) {
-      console.error(`[PublicSnapshot] Could not read ${collection}:`, error);
-      omitted.push(collection);
-    }
-  }));
+    }));
+  }
 
   const documents: Record<string, SnapshotDocument | null> = {};
   try {
@@ -161,6 +183,27 @@ async function buildSnapshot(): Promise<PublicSnapshot> {
   return { version, generatedAt: new Date().toISOString(), collections, documents, omitted: omitted.sort() };
 }
 
+let cachedSnapshot: { value: PublicSnapshot; expiresAt: number } | null = null;
+let snapshotBuild: Promise<PublicSnapshot> | null = null;
+
+function getPublicSnapshot(): Promise<PublicSnapshot> {
+  if (cachedSnapshot && cachedSnapshot.expiresAt > Date.now()) {
+    return Promise.resolve(cachedSnapshot.value);
+  }
+  if (snapshotBuild) return snapshotBuild;
+
+  const pending = buildSnapshot()
+    .then((snapshot) => {
+      cachedSnapshot = { value: snapshot, expiresAt: Date.now() + SNAPSHOT_CACHE_TTL_MS };
+      return snapshot;
+    })
+    .finally(() => {
+      if (snapshotBuild === pending) snapshotBuild = null;
+    });
+  snapshotBuild = pending;
+  return pending;
+}
+
 export default async function publicSnapshotHandler(req: IncomingMessage, res: ServerResponse): Promise<void> {
   res.setHeader('Content-Type', 'application/json');
   if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -171,7 +214,7 @@ export default async function publicSnapshotHandler(req: IncomingMessage, res: S
   }
 
   try {
-    const snapshot = await buildSnapshot();
+    const snapshot = await getPublicSnapshot();
     const etag = `"${snapshot.version}"`;
     res.setHeader('ETag', etag);
     // Browser always revalidates; the CDN serves cached copies and refreshes in the background.
@@ -213,7 +256,7 @@ async function rebuildMediaIndexIfDue(): Promise<void> {
   }
   if (Date.now() - mediaIndexRebuiltAt < MEDIA_INDEX_REBUILD_INTERVAL_MS) return;
   mediaIndexRebuiltAt = Date.now();
-  mediaIndexRebuild = buildSnapshot().finally(() => {
+  mediaIndexRebuild = getPublicSnapshot().finally(() => {
     mediaIndexRebuild = null;
   });
   await mediaIndexRebuild;

@@ -278,10 +278,8 @@ export const AdminSeasonalWishesView: React.FC = () => {
                 {label}
               </label>
             ))}
-            <label className="text-sm text-slate-700 sm:col-span-3">Font style
-              <select value={draft.fontFamily} onChange={(event) => updateDraft({ fontFamily: event.target.value as CampaignDraft['fontFamily'] })} className="ml-2 rounded-lg border border-slate-300 bg-white px-3 py-2">
-                <option value="serif">Editorial serif</option><option value="sans">Modern sans</option><option value="display">Display</option>
-              </select>
+            <label className="text-sm text-slate-700 sm:col-span-3">Font family
+              <span className="ml-2 inline-block rounded-lg border border-slate-300 bg-slate-50 px-3 py-2">Plus Jakarta Sans</span>
             </label>
           </fieldset>
 

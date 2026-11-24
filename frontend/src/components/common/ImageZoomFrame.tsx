@@ -279,6 +279,8 @@ export const ImageZoomFrame: React.FC<ImageZoomFrameProps> = ({
               src={lightboxSrc}
               alt={label}
               draggable={false}
+              loading="eager"
+              decoding="async"
               className="max-h-[100dvh] max-w-full select-none object-contain will-change-transform"
               style={{ transform: 'translate3d(var(--lightbox-pan-x, 0px), var(--lightbox-pan-y, 0px), 0) scale(var(--lightbox-scale, 1))' }}
             />

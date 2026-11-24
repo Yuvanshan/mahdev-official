@@ -135,6 +135,8 @@ export const MartCartDrawer: React.FC<MartCartDrawerProps> = ({
                 <img
                   src={item.product.imageUrl}
                   alt={item.product.name}
+                  loading="lazy"
+                  decoding="async"
                   className="w-16 h-16 rounded-xl object-cover bg-slate-100 border border-slate-200 shrink-0"
                 />
 

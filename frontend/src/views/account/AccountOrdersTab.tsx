@@ -188,7 +188,7 @@ export const AccountOrdersTab: React.FC<AccountOrdersTabProps> = ({ orders, onNa
                 <div className="flex items-center gap-3">
                   <div className="flex gap-1.5 shrink-0">
                     {order.designImages.slice(0, 3).map((image) => (
-                      <img key={image} src={image} alt={order.designTitle || 'Approved design'} className="w-16 h-16 rounded-xl object-cover border border-slate-200" />
+                      <img key={image} src={image} alt={order.designTitle || 'Approved design'} loading="lazy" decoding="async" className="w-16 h-16 rounded-xl object-cover border border-slate-200" />
                     ))}
                   </div>
                   <div className="text-xs text-slate-600 min-w-0">
@@ -213,6 +213,8 @@ export const AccountOrdersTab: React.FC<AccountOrdersTabProps> = ({ orders, onNa
                         <img
                           src={item.imageUrl}
                           alt={item.name}
+                          loading="lazy"
+                          decoding="async"
                           className="w-8 h-8 rounded-lg object-cover bg-white"
                         />
                         <div>
