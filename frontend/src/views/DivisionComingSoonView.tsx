@@ -66,7 +66,12 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
 
   const divisionName = firestoreDiv?.name || fallbackConfig.name;
   const shortName = firestoreDiv?.shortName || fallbackConfig.shortName || divisionName;
-  const tagline = firestoreDiv?.tagline || fallbackConfig.tagline;
+  const hasMismatchedTravelCopy = (value: unknown): value is string =>
+    normalizedKey === 'travels' &&
+    typeof value === 'string' &&
+    /\bSWS\b|wedding mandap|stage decor|event furniture|concert arena|flagship division/i.test(value);
+  const configuredTagline = firestoreDiv?.tagline || fallbackConfig.tagline;
+  const tagline = hasMismatchedTravelCopy(configuredTagline) ? fallbackConfig.tagline : configuredTagline;
   const accentColor = firestoreDiv?.accentColor || fallbackConfig.accentColor || '#861F31';
   const heroImage =
     (firestoreDiv as any)?.defaultImageUrl ||
@@ -85,25 +90,30 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
     (fallbackConfig as any)?.logoUrl ||
     (fallbackConfig as any)?.logo;
 
+  const configuredComingSoonTitle = (firestoreDiv as any)?.comingSoonTitle;
   const comingSoonTitle =
-    (firestoreDiv as any)?.comingSoonTitle ||
-    `${shortName} is Coming Soon`;
+    typeof configuredComingSoonTitle === 'string' && !hasMismatchedTravelCopy(configuredComingSoonTitle)
+      ? configuredComingSoonTitle
+      : `${shortName} is Coming Soon`;
 
   const defaultComingSoonMessage = normalizedKey === 'travels'
     ? 'Mahdev Travels is preparing bespoke Sri Lankan journeys, private transport, and curated stays. We are finalizing our launch details and look forward to helping you plan your next trip.'
     : `We are curating state-of-the-art infrastructure, exclusive enterprise services, and calibrated equipment for ${divisionName}. Our engineering and creative teams are finalizing every standard of perfection before our grand public launch.`;
   const configuredComingSoonMessage = (firestoreDiv as any)?.comingSoonMessage;
-  const hasMismatchedTravelCopy =
-    normalizedKey === 'travels' &&
-    typeof configuredComingSoonMessage === 'string' &&
-    /\bSWS\b|wedding mandap|stage decor|event furniture|concert arena/i.test(configuredComingSoonMessage);
   const comingSoonMessage =
-    typeof configuredComingSoonMessage === 'string' && !hasMismatchedTravelCopy
+    typeof configuredComingSoonMessage === 'string' && !hasMismatchedTravelCopy(configuredComingSoonMessage)
       ? configuredComingSoonMessage
       : defaultComingSoonMessage;
 
+  const configuredExpectedLaunch = (firestoreDiv as any)?.comingSoonExpectedLaunch;
+  const hasStaleTravelTimeline =
+    normalizedKey === 'travels' &&
+    typeof configuredExpectedLaunch === 'string' &&
+    /\b(?:later this year|this year)\b/i.test(configuredExpectedLaunch);
   const expectedLaunch =
-    (firestoreDiv as any)?.comingSoonExpectedLaunch || 'Coming Later This Year';
+    typeof configuredExpectedLaunch === 'string' && !hasStaleTravelTimeline
+      ? configuredExpectedLaunch
+      : 'Launch date to be announced';
 
   const contactPhone = companySettings?.primaryPhone || '075 092 8078';
   const contactEmail = companySettings?.email || 'info.mahdev.lk@gmail.com';

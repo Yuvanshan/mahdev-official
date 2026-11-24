@@ -34,6 +34,7 @@ import { getImageAlt, preferSavedAlt } from '../config/imageAlt';
 import { getNewestListedIds } from '../utils/listingOrder';
 
 type BrowseType = 'service' | 'gallery' | 'product';
+const BROWSE_PAGE_SIZE = 24;
 type BrowseItem =
   | { type: 'service'; id: string; title: string; description: string; category: string; division: string; image: string; images: string[]; searchableText: string; data: FirestoreService }
   | { type: 'gallery'; id: string; title: string; description: string; category: string; division: string; image: string; images: string[]; searchableText: string; data: FirestoreGallery }
@@ -211,6 +212,7 @@ export const ExploreAllView: React.FC<{
   const [priceRange, setPriceRange] = useState<PriceRange>(initialParams.price);
   const [pricedOnly, setPricedOnly] = useState(initialParams.pricedOnly);
   const [sortBy, setSortBy] = useState<ListingSort>(initialParams.sort);
+  const [visibleItemCount, setVisibleItemCount] = useState(BROWSE_PAGE_SIZE);
   const defaultFilter = initialPage === 'gallery' ? 'type:gallery' : 'all';
   // Select the category from the URL immediately, so a direct visit never flashes "All items".
   const [selectedFilter, setSelectedFilter] = useState(() =>
@@ -367,6 +369,11 @@ export const ExploreAllView: React.FC<{
     });
     return sortListing(matches, sortBy, getItemPrice, (item) => item.title);
   }, [itemsInSelection, query, priceRange, pricedOnly, sortBy]);
+
+  useEffect(() => {
+    setVisibleItemCount(BROWSE_PAGE_SIZE);
+  }, [initialCategorySlug, initialPage, query, selectedFilter, priceRange.min, priceRange.max, pricedOnly, sortBy]);
+  const visibleItems = filteredItems.slice(0, visibleItemCount);
 
   // Previous/Next in the gallery pop-up move through the gallery items in the current list.
   const listedGalleryItems = filteredItems.filter((item) => item.type === 'gallery');
@@ -656,22 +663,38 @@ export const ExploreAllView: React.FC<{
             </div>
           </div>
           {filteredItems.length ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
-              {filteredItems.map((item, index) => (
-                <BrowseCard
-                  key={`${item.type}:${item.id}`}
-                  item={item}
-                  onSelect={handleSelect}
-                  onNavigate={onNavigate}
-                  imageLoading={index < 4 ? 'eager' : 'lazy'}
-                  isNew={
-                    item.type === 'service' ? newServiceIds.has(item.id)
-                      : item.type === 'gallery' ? newGalleryIds.has(item.id)
-                        : newProductIds.has(item.id)
-                  }
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+                {visibleItems.map((item, index) => (
+                  <BrowseCard
+                    key={`${item.type}:${item.id}`}
+                    item={item}
+                    onSelect={handleSelect}
+                    onNavigate={onNavigate}
+                    imageLoading={index < 4 ? 'eager' : 'lazy'}
+                    isNew={
+                      item.type === 'service' ? newServiceIds.has(item.id)
+                        : item.type === 'gallery' ? newGalleryIds.has(item.id)
+                          : newProductIds.has(item.id)
+                    }
+                  />
+                ))}
+              </div>
+              {visibleItems.length < filteredItems.length && (
+                <div className="mt-8 flex flex-col items-center gap-2">
+                  <p className="text-xs text-slate-500">
+                    Showing {visibleItems.length} of {filteredItems.length} items
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setVisibleItemCount((count) => Math.min(count + BROWSE_PAGE_SIZE, filteredItems.length))}
+                    className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-300 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                  >
+                    Show {Math.min(BROWSE_PAGE_SIZE, filteredItems.length - visibleItems.length)} more
+                  </button>
+                </div>
+              )}
+            </>
           ) : isLoading ? (
             <div className="rounded-2xl border border-slate-200 bg-white px-5 py-16 text-center">
               <GallerySectionShimmer divisionName="Mahdev catalog" />

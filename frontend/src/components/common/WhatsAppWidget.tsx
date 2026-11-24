@@ -47,15 +47,26 @@ const playNotificationSound = () => {
   }
 };
 
-export const WhatsAppWidget: React.FC = () => {
+export const WhatsAppWidget: React.FC<{ hideOnMobile?: boolean }> = ({ hideOnMobile = false }) => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [hasUnreadNotice, setHasUnreadNotice] = useState(false);
   const [isBackToTopVisible, setIsBackToTopVisible] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+  );
 
   useEffect(() => {
-    if (isOpen) return;
+    const mobileViewport = window.matchMedia('(max-width: 767px)');
+    const updateViewport = () => setIsMobileViewport(mobileViewport.matches);
+    updateViewport();
+    mobileViewport.addEventListener('change', updateViewport);
+    return () => mobileViewport.removeEventListener('change', updateViewport);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen || (hideOnMobile && isMobileViewport)) return;
     try {
       if (sessionStorage.getItem(WELCOME_SHOWN_KEY) === '1') return;
     } catch (error) {
@@ -73,7 +84,7 @@ export const WhatsAppWidget: React.FC = () => {
     }, 500);
 
     return () => window.clearTimeout(timer);
-  }, [isOpen]);
+  }, [isOpen, hideOnMobile, isMobileViewport]);
 
   const dismissUnreadNotice = () => {
     setHasUnreadNotice(false);
@@ -120,7 +131,7 @@ export const WhatsAppWidget: React.FC = () => {
   };
 
   return (
-    <div className="whatsapp-widget fixed bottom-24 right-4 z-[120] flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
+    <div className={`whatsapp-widget${hideOnMobile ? ' whatsapp-widget--mobile-hidden' : ''} fixed bottom-24 right-4 z-[120] flex flex-col items-end gap-3 sm:bottom-6 sm:right-6`}>
       {isBackToTopVisible && (
         <button
           type="button"

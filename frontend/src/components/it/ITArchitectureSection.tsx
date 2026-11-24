@@ -1,14 +1,8 @@
 import React from 'react';
 import {
-  Server,
   ShieldCheck,
-  Cpu,
   Lock,
   GitBranch,
-  Layers,
-  Database,
-  Terminal,
-  Activity,
   CheckCircle2,
   Zap,
 } from 'lucide-react';
@@ -20,28 +14,28 @@ import { ScrollReveal } from '../motion/MotionWrappers';
 export const ITArchitectureSection: React.FC = () => {
   const pillars = [
     {
-      title: 'Full Intellectual Property Ownership',
-      desc: 'You receive 100% of the source code, database schemas, Docker containers, and CI/CD pipelines. No vendor lock-in, proprietary licensing traps, or per-seat fees.',
+      title: 'Clear Ownership & Handover',
+      desc: 'Ownership, source code, and documentation are defined in the project agreement, with handover requirements confirmed before delivery.',
       icon: <Lock className="w-5 h-5 text-blue-600" />,
-      badge: '100% Client Owned',
+      badge: 'Defined per project',
     },
     {
-      title: 'Sub-50ms API & Latency SLA',
-      desc: 'Engineered with edge compute, Redis in-memory caching, PostgreSQL connection pooling, and optimized query plans to ensure snappy performance even at 10,000+ RPS.',
+      title: 'Performance Built Around Requirements',
+      desc: 'Architecture and optimization choices are guided by the product’s expected workload, with measurable targets agreed for each engagement.',
       icon: <Zap className="w-5 h-5 text-sky-600" />,
-      badge: '< 50ms Response',
+      badge: 'Targets agreed together',
     },
     {
-      title: 'Zero-Trust Cyber Resilience',
-      desc: 'Encrypted at rest (AES-256) and in transit (TLS 1.3). Role-based access controls, OWASP Top 10 penetration testing, and automated vulnerability scanning in every pull request.',
+      title: 'Security Scoped to the Product',
+      desc: 'Security controls and verification are selected for the project’s data, risks, and regulatory needs, then documented as part of delivery.',
       icon: <ShieldCheck className="w-5 h-5 text-emerald-600" />,
-      badge: 'ISO 27001 / SOC 2 Ready',
+      badge: 'Scope defined per project',
     },
     {
-      title: 'Zero-Downtime CI/CD Deployments',
-      desc: 'Automated blue/green or rolling Kubernetes deployments with canary analysis and instant automated rollback if error rates exceed 0.01%.',
+      title: 'Reliable Release Planning',
+      desc: 'Testing, monitoring, deployment, and recovery practices are planned to suit the system and the service level agreed for each project.',
       icon: <GitBranch className="w-5 h-5 text-[#861F31]" />,
-      badge: 'Zero-Downtime Rollouts',
+      badge: 'Planned for each release',
     },
   ];
 
@@ -73,7 +67,7 @@ export const ITArchitectureSection: React.FC = () => {
             Architectural Philosophy & Standards
           </Caption>
           <H2 className="text-slate-900">
-            Engineered with Zero Technical Debt and Infinite Scalability
+            Maintainable systems designed to grow with your business
           </H2>
         </ScrollReveal>
       </div>
@@ -100,7 +94,7 @@ export const ITArchitectureSection: React.FC = () => {
 
             <div className="pt-2 border-t border-slate-100 text-[11px] font-semibold text-emerald-600 flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Standard in all client contracts</span>
+              <span>Scope agreed for each engagement</span>
             </div>
           </div>
         ))}
@@ -111,15 +105,15 @@ export const ITArchitectureSection: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
           <div>
             <span className="text-[10px] font-mono uppercase tracking-wider text-blue-400">
-              Enterprise Technology Stack
+              Technology Capabilities
             </span>
             <h3 className="font-display text-lg font-bold text-white mt-0.5">
-              Our Vetted Production Technology Matrix
+              Tools selected to fit each project
             </h3>
           </div>
           <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
-            <Activity className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-            <span>Regularly audited for CVEs & end-of-life cycles</span>
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Stack choices depend on project needs</span>
           </div>
         </div>
 

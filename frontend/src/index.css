@@ -1135,6 +1135,10 @@ html[data-seasonal-theme="diwali"] a.bg-blue-600:hover {
 }
 
 @media (max-width: 767px) {
+  .whatsapp-widget--mobile-hidden .whatsapp-panel,
+  .whatsapp-widget--mobile-hidden .whatsapp-popup-notification,
+  .whatsapp-widget--mobile-hidden .whatsapp-launcher { display: none !important; }
+
   .seasonal-wishes-card {
     width: min(var(--wishes-mobile-width, 92vw), calc(100vw - 1rem));
     min-height: 165px;

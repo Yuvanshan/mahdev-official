@@ -1554,7 +1554,16 @@ function AppContent() {
         onNavigate={navigate}
         currentPath={normalizedPath}
       />
-      {!isAdminRoute && <WhatsAppWidget />}
+      {!isAdminRoute && (
+        <WhatsAppWidget
+          hideOnMobile={
+            normalizedPath === '/catalog' ||
+            normalizedPath === '/services' ||
+            normalizedPath.startsWith('/services/category/') ||
+            ['/gallery', '/media', '/travels', '/mahdev-travels', '/divisions/travels', '/division/travels'].includes(normalizedPath)
+          }
+        />
+      )}
     </div>
   );
 }
