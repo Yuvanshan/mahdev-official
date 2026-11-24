@@ -92,7 +92,9 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
 
   const configuredComingSoonTitle = (firestoreDiv as any)?.comingSoonTitle;
   const comingSoonTitle =
-    typeof configuredComingSoonTitle === 'string' && !hasMismatchedTravelCopy(configuredComingSoonTitle)
+    typeof configuredComingSoonTitle === 'string' &&
+    configuredComingSoonTitle.trim() &&
+    !hasMismatchedTravelCopy(configuredComingSoonTitle)
       ? configuredComingSoonTitle
       : `${shortName} is Coming Soon`;
 
@@ -101,7 +103,9 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
     : `We are curating state-of-the-art infrastructure, exclusive enterprise services, and calibrated equipment for ${divisionName}. Our engineering and creative teams are finalizing every standard of perfection before our grand public launch.`;
   const configuredComingSoonMessage = (firestoreDiv as any)?.comingSoonMessage;
   const comingSoonMessage =
-    typeof configuredComingSoonMessage === 'string' && !hasMismatchedTravelCopy(configuredComingSoonMessage)
+    typeof configuredComingSoonMessage === 'string' &&
+    configuredComingSoonMessage.trim() &&
+    !hasMismatchedTravelCopy(configuredComingSoonMessage)
       ? configuredComingSoonMessage
       : defaultComingSoonMessage;
 
@@ -111,7 +115,9 @@ export const DivisionComingSoonView: React.FC<DivisionComingSoonViewProps> = ({
     typeof configuredExpectedLaunch === 'string' &&
     /\b(?:later this year|this year)\b/i.test(configuredExpectedLaunch);
   const expectedLaunch =
-    typeof configuredExpectedLaunch === 'string' && !hasStaleTravelTimeline
+    typeof configuredExpectedLaunch === 'string' &&
+    configuredExpectedLaunch.trim() &&
+    !hasStaleTravelTimeline
       ? configuredExpectedLaunch
       : 'Launch date to be announced';
 
