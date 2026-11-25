@@ -72,16 +72,17 @@ export async function fetchPlaceReviews(placeId: string, apiKey: string, timeout
 
 export type Branch = 'trincomalee' | 'colombo';
 
-// What to search Google for when no Place ID is configured. Check the result on the first sync;
+// What to search Google for when no Place ID is configured. Tried in order; the first hit wins.
+// Short names work better than full street addresses. Check the result on the first sync;
 // set GOOGLE_PLACE_ID_TRINCOMALEE / GOOGLE_PLACE_ID_COLOMBO to pin an exact profile.
-const SEARCH_QUERY: Record<Branch, string> = {
-  trincomalee: `SWS Event Management ${COMPANY_INFO.offices.trincomalee.fullAddress}`,
-  colombo: `${COMPANY_INFO.legalName} ${COMPANY_INFO.offices.colombo.fullAddress}`,
+const SEARCH_QUERIES: Record<Branch, string[]> = {
+  trincomalee: ['SWS Event Management Trincomalee', 'SWS Events Trincomalee', `${COMPANY_INFO.legalName} Trincomalee`],
+  colombo: [`${COMPANY_INFO.legalName} Colombo`, 'SWS Event Management Colombo', 'Mahdev Kotahena Colombo 13'],
 };
 
 const resolvedIds = new Map<Branch, string>();
 
-async function searchPlaceId(query: string, apiKey: string, timeoutMs: number): Promise<string> {
+async function searchPlaceId(query: string, apiKey: string, timeoutMs: number): Promise<string | undefined> {
   const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
     method: 'POST',
     headers: { 'X-Goog-Api-Key': apiKey, 'X-Goog-FieldMask': 'places.id', 'Content-Type': 'application/json' },
@@ -90,8 +91,7 @@ async function searchPlaceId(query: string, apiKey: string, timeoutMs: number): 
   });
   if (!response.ok) throw new Error(`Places search returned status ${response.status}`);
   const id = ((await response.json()) as { places?: Array<{ id?: string }> }).places?.[0]?.id;
-  if (!isValidPlaceId(id)) throw new Error('Google found no matching place.');
-  return id;
+  return isValidPlaceId(id) ? id : undefined;
 }
 
 /** Place ID for a branch: the given override, then the env variable, then a Google search (kept for later calls). */
@@ -101,7 +101,12 @@ export async function placeIdFor(branch: Branch, apiKey: string, timeoutMs: numb
   if (isValidPlaceId(fromEnv)) return fromEnv;
   const known = resolvedIds.get(branch);
   if (known) return known;
-  const found = await searchPlaceId(SEARCH_QUERY[branch], apiKey, timeoutMs);
-  resolvedIds.set(branch, found);
-  return found;
+  for (const query of SEARCH_QUERIES[branch]) {
+    const found = await searchPlaceId(query, apiKey, timeoutMs);
+    if (found) {
+      resolvedIds.set(branch, found);
+      return found;
+    }
+  }
+  throw new Error('Google found no matching place.');
 }

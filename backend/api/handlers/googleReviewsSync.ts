@@ -47,9 +47,18 @@ export default async function handler(req: SyncRequest, res: ServerResponse): Pr
   }
 
   try {
-    // An admin-entered Place ID wins; otherwise the server finds the profile itself.
-    const placeId = await placeIdFor(body.branch as Branch, apiKey, GOOGLE_TIMEOUT_MS, body.placeId);
-    sendJson(res, 200, { success: true, placeId, ...(await fetchPlaceReviews(placeId, apiKey, GOOGLE_TIMEOUT_MS)) });
+    // An admin-entered Place ID wins. If Google rejects it (for example an old placeholder saved
+    // earlier), fall back to finding the profile by name.
+    let placeId = await placeIdFor(body.branch as Branch, apiKey, GOOGLE_TIMEOUT_MS, body.placeId);
+    let place;
+    try {
+      place = await fetchPlaceReviews(placeId, apiKey, GOOGLE_TIMEOUT_MS);
+    } catch (error) {
+      if (!body.placeId) throw error;
+      placeId = await placeIdFor(body.branch as Branch, apiKey, GOOGLE_TIMEOUT_MS);
+      place = await fetchPlaceReviews(placeId, apiKey, GOOGLE_TIMEOUT_MS);
+    }
+    sendJson(res, 200, { success: true, placeId, ...place });
   } catch (error) {
     console.error('[Google Reviews] Sync failed:', error instanceof Error ? error.message : error);
     sendJson(res, 502, { success: false, error: 'Google did not return the reviews. Check the API key and that Places API (New) is enabled.' });
