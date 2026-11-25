@@ -14,7 +14,7 @@ import { db, sanitizeForFirestore } from '../../lib/firebase';
 import { FirestoreCompanySettings, FirestoreSiteSettings } from '../../types/firestore';
 import { HomepageCmsConfig } from '../../types/cms';
 import { COMPANY_INFO } from '../../config/company';
-import { CANONICAL_SITE_ORIGIN } from '../../config/site';
+import { CANONICAL_SITE_ORIGIN, HOME_TITLE } from '../../config/site';
 
 const CACHE_TTL_MS = 1000 * 60 * 15; // 15 minutes cache
 
@@ -258,7 +258,7 @@ export function getDefaultHomepageSettings(): HomepageCmsConfig {
       corporateLocation: COMPANY_INFO.offices.colombo.fullAddress,
     },
     seo: {
-      pageTitle: 'Mahdev (Pvt) Ltd - Creating Moments | Capturing Memories | Delivering Innovation',
+      pageTitle: HOME_TITLE,
       metaDescription: 'Creating Moments... Capturing Memories... & Delivering Innovation... Integrated enterprise spanning Event Decorations & Management, Photography & Studio Cinema, IT Solutions & Software, Travels, and Online Mart.',
       ogImage: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
       canonicalUrl: `${CANONICAL_SITE_ORIGIN}/`,

@@ -7,15 +7,16 @@
  * the home page's head. The React app still takes over in the browser.
  */
 
-import { CANONICAL_SITE_ORIGIN, SITE_NAME } from '../../shared/config/site.js';
+import { CANONICAL_SITE_ORIGIN, HOME_DESCRIPTION, SITE_NAME } from '../../shared/config/site.js';
 import { DIVISION_SEO } from '../../shared/config/divisionSeo.js';
 import { getPageTitle } from '../../shared/config/pageTitles.js';
 import { withServiceArea } from '../../shared/config/itemSeo.js';
 import { CAREERS_PAGE_SEO } from '../../shared/config/careerSeo.js';
-import { getFaqStructuredData, getSwsStructuredData, SWS_BUSINESS, SWS_PRIMARY_HEADING, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS, SWS_TARGET_KEYWORDS } from '../../shared/data/swsLocalSeo.js';
+import { getFaqStructuredData, getSwsStructuredData, SWS_BUSINESS, SWS_PRIMARY_HEADING, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS } from '../../shared/data/swsLocalSeo.js';
 import { getSiteFaqStructuredData, SITE_FAQS } from '../../shared/data/siteFaqs.js';
 import { U1_PRIMARY_HEADING, U1_SERVICE_AREA_SUMMARY, U1_SERVICE_HIGHLIGHTS } from '../../shared/data/u1LocalSeo.js';
 import { getCanonicalPublicUrl } from '../../shared/config/divisionSites.js';
+import { COMPANY_INFO, OFFICE_LIST } from '../../shared/config/company.js';
 
 export const SITE_ORIGIN = CANONICAL_SITE_ORIGIN;
 
@@ -81,7 +82,7 @@ const ROUTES: RouteSeo[] = [
   {
     path: '/divisions',
     title: titleFor('/divisions'),
-    description: 'Mahdev Group is the parent company behind SWS Event Management, U1 Studio, Mahdev IT Solutions, Mahdev Travels and Mahdev Online Mart, with more divisions to come.',
+    description: HOME_DESCRIPTION,
     heading: 'Mahdev divisions',
     intro: 'Explore Mahdev Group’s specialist divisions and services, with additional divisions joining the group as it grows.',
   },
@@ -92,8 +93,7 @@ const ROUTES: RouteSeo[] = [
     title: DIVISION_SEO.sws.title,
     description: DIVISION_SEO.sws.description,
     heading: SWS_PRIMARY_HEADING,
-    subheadings: SWS_SERVICE_HIGHLIGHTS.map((service) => service.heading),
-    keywords: SWS_TARGET_KEYWORDS,
+    articleContent: SWS_SERVICE_HIGHLIGHTS.map(({ heading, body }) => ({ heading, text: body })),
     intro: `${SWS_SERVICE_AREA_SUMMARY} ${SWS_BUSINESS.displayName}. Trincomalee: ${SWS_BUSINESS.trincomalee.full}. Colombo: ${SWS_BUSINESS.colombo.full}. Hotline / WhatsApp: ${SWS_BUSINESS.phoneDisplay}.`,
     structuredData: [...getSwsStructuredData(), getFaqStructuredData(), divisionBreadcrumb('sws')],
   },
@@ -224,6 +224,12 @@ const ROUTES: RouteSeo[] = [
     description: 'Contact the Mahdev team for events, photography, IT solutions, travel and equipment enquiries. Call, WhatsApp or send a message.',
     heading: 'Contact Mahdev',
     intro: 'Send an enquiry to the Mahdev team and we will get back to you.',
+    // Crawlable name, address and phone, kept identical to the Google Business Profile listing.
+    articleContent: [
+      { heading: 'Call or WhatsApp', text: `${COMPANY_INFO.primaryPhone} (WhatsApp: ${COMPANY_INFO.socials.whatsapp}). Email: ${COMPANY_INFO.email}.` },
+      ...OFFICE_LIST.map((office) => ({ heading: office.name, text: office.fullAddress })),
+      { heading: 'Opening hours', text: `${COMPANY_INFO.workingHours.weekdays}. ${COMPANY_INFO.workingHours.weekends}.` },
+    ],
   },
   {
     path: '/faq',

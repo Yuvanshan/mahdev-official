@@ -1,5 +1,5 @@
 import { DIVISION_SEO } from './divisionSeo.js';
-import { SITE_NAME } from './site.js';
+import { HOME_TITLE, SITE_NAME } from './site.js';
 
 /**
  * Browser-tab and search-result titles for the fixed pages, in the form
@@ -75,7 +75,7 @@ const PAGE_ALIASES: Record<string, string> = {
 export function getPageTitle(path: string): string | null {
   const normalized = `/${(path || '').split(/[?#]/)[0].replace(/^\/+|\/+$/g, '').toLowerCase()}`;
   const route = PAGE_ALIASES[normalized] || normalized;
-  if (route === '/') return 'Mahdev (Pvt) Ltd - Creating Moments | Capturing Memories | Delivering Innovation';
+  if (route === '/') return HOME_TITLE;
   const division = DIVISION_SEO[route.slice(1) as keyof typeof DIVISION_SEO];
   if (division) return division.title;
   if (route.startsWith('/services/category/')) return formatLocalPageTitle('Services');

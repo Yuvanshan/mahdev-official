@@ -43,10 +43,6 @@ export function renderSeoHtml(baseHtml: string, route: RouteSeo, origin: string)
   let html = baseHtml;
   html = replaceTag(html, /<title>[^<]*<\/title>/, `<title>${title}</title>`, '<title>');
   html = replaceTag(html, /<meta name="description" content="[^"]*" \/>/, `<meta name="description" content="${description}" />`, 'meta description');
-  if (route.keywords?.length) {
-    const keywords = escapeHtml(route.keywords.join(', '));
-    html = upsertTag(html, /<meta name="keywords" content="[^"]*" \/>/, `<meta name="keywords" content="${keywords}" />`);
-  }
   html = upsertTag(html, /<link rel="canonical" href="[^"]*" \/>/, `<link rel="canonical" href="${url}" />`);
   html = replaceTag(html, /<meta property="og:title" content="[^"]*" \/>/, `<meta property="og:title" content="${title}" />`, 'og:title');
   if (route.siteName) {
@@ -57,6 +53,7 @@ export function renderSeoHtml(baseHtml: string, route: RouteSeo, origin: string)
       'og:site_name'
     );
   }
+  html = replaceTag(html, /<meta property="og:image:alt" content="[^"]*" \/>/, `<meta property="og:image:alt" content="${title}" />`, 'og:image:alt');
   html = replaceTag(html, /<meta property="og:description" content="[^"]*" \/>/, `<meta property="og:description" content="${description}" />`, 'og:description');
   html = upsertTag(html, /<meta property="og:url" content="[^"]*" \/>/, `<meta property="og:url" content="${url}" />`);
   html = replaceTag(html, /<meta name="twitter:title" content="[^"]*" \/>/, `<meta name="twitter:title" content="${title}" />`, 'twitter:title');

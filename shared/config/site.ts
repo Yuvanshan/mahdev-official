@@ -38,3 +38,8 @@ export const SITE_NAME = 'Mahdev (Pvt) Ltd';
 export const SITE_ALTERNATE_NAMES = ['Mahdev', 'Mahdev Pvt Ltd', 'MAHDEV Pvt. Ltd.'];
 /** Legal name; keep identical to the Google Business Profile listing. */
 export const ORGANIZATION_LEGAL_NAME = 'MAHDEV Pvt. Ltd.';
+
+/** Home page title and description. Keep index.html in step. */
+export const HOME_TITLE = 'Mahdev (Pvt) Ltd - Creating Moments | Capturing Memories | Delivering Innovation';
+export const HOME_DESCRIPTION =
+  'Mahdev Group is the parent company of five divisions in Sri Lanka: SWS Event Management, U1 Studio, Mahdev IT Solutions, Mahdev Travels and Mahdev Online Mart.';

@@ -9,7 +9,7 @@ import { useFirestoreDataContext } from '../context/FirestoreDataContext';
 import { DEFAULT_HOMEPAGE_SECTIONS } from '../services/firestore/settings';
 import { DynamicSectionItem } from '../types/cms';
 import { motion, useReducedMotion } from 'motion/react';
-import { CANONICAL_SITE_ORIGIN } from '../config/site';
+import { CANONICAL_SITE_ORIGIN, HOME_DESCRIPTION, HOME_TITLE } from '../config/site';
 import { ShopHome } from '../components/shop/ShopHome';
 import { FaqSection } from '../components/common/FaqSection';
 import { usePageFaqs } from '../hooks/usePageFaqs';
@@ -100,9 +100,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
   };
 
   const effectivePageTitle =
-    homepageConfig?.seo?.pageTitle || 'Mahdev (Pvt) Ltd - Creating Moments | Capturing Memories | Delivering Innovation';
+    homepageConfig?.seo?.pageTitle || HOME_TITLE;
   const defaultHomeDescription =
-    'Mahdev Group is the parent company behind SWS Event Management, U1 Studio, Mahdev IT Solutions, Mahdev Travels and Mahdev Online Mart, with more divisions to come.';
+    HOME_DESCRIPTION;
   return (
     <div className="w-full flex flex-col pb-24 lg:pb-0">
       <SEOHead

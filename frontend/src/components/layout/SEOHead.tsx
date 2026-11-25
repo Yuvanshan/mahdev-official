@@ -5,6 +5,8 @@ import { db } from '../../lib/firebase';
 import { doc, getDoc } from '../../lib/tursoFirestore';
 import {
   CANONICAL_SITE_ORIGIN,
+  HOME_DESCRIPTION,
+  HOME_TITLE,
   ORGANIZATION_LEGAL_NAME,
   SITE_ALTERNATE_NAMES,
   SITE_NAME,
@@ -123,16 +125,12 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     }
 
     // 2. Dynamic Title
-    const baseCompanyName = companySettings?.name
-      ? (companySettings.name.includes('(Pvt) Ltd') || companySettings.name.includes('Pvt Ltd') ? companySettings.name : `${companySettings.name} (Pvt) Ltd`)
-      : (siteSettings?.siteName || 'Mahdev (Pvt) Ltd');
-
     let sanitizedTitle = title;
     if (
       sanitizedTitle.toLowerCase().includes('corporate eco') ||
       sanitizedTitle.toLowerCase().includes('corporate ecosystem')
     ) {
-      sanitizedTitle = `${baseCompanyName} - Creating Moments | Capturing Memories | Delivering Innovation`;
+      sanitizedTitle = HOME_TITLE;
     }
 
     // Titles that already name Mahdev (e.g. "SWS Event Management – ... | Mahdev (Pvt) Ltd",
@@ -148,7 +146,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
 
     // Check if there is an admin-configured SEO override in CMS
     let effectiveTitle = dynamicFullTitle;
-    let effectiveDesc = description || siteSettings?.metaDescription || companySettings?.description || 'Mahdev (Pvt) Ltd - Creating Moments | Capturing Memories | Delivering Innovation.';
+    let effectiveDesc = description || siteSettings?.metaDescription || companySettings?.description || HOME_DESCRIPTION;
     let effectiveOgTitle = ogTitle || dynamicFullTitle;
     let effectiveOgDesc = ogDescription || effectiveDesc;
     let effectiveCanonical = canonicalUrl;
@@ -185,11 +183,11 @@ export const SEOHead: React.FC<SEOMetaData> = ({
 
     if (currentPath === '/') {
       effectiveTitle =
-        routeTitle || 'Mahdev (Pvt) Ltd - Creating Moments | Capturing Memories | Delivering Innovation';
+        routeTitle || HOME_TITLE;
       const requiredDescriptionTerms = ['mahdev', 'parent company', 'divisions'];
       if (!requiredDescriptionTerms.every((term) => effectiveDesc.toLowerCase().includes(term))) {
         effectiveDesc =
-          'Mahdev Group is the parent company behind SWS Event Management, U1 Studio, Mahdev IT Solutions, Mahdev Travels and Mahdev Online Mart, with more divisions to come.';
+          HOME_DESCRIPTION;
       }
       effectiveOgTitle = effectiveTitle;
       effectiveOgDesc = effectiveDesc;
@@ -274,10 +272,8 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     );
 
     setMetaTag('name', 'description', effectiveDesc);
-    // An empty keywords tag is flagged by SEO checkers, so remove it when a page has none.
-    const keywordList = effectiveKeywords.filter(Boolean).join(', ');
-    if (keywordList) setMetaTag('name', 'keywords', keywordList);
-    else document.querySelector('meta[name="keywords"]')?.remove();
+    // shortcut: meta keywords are ignored by Google and Bing and flagged by SEO checkers, so none is published; the admin keywords field is now unused.
+    document.querySelector('meta[name="keywords"]')?.remove();
     const googleVerification = import.meta.env.VITE_GOOGLE_SITE_VERIFICATION;
     const bingVerification = import.meta.env.VITE_BING_SITE_VERIFICATION;
     if (googleVerification) ensureMetaTag('name', 'google-site-verification', googleVerification);
