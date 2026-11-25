@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { useSeasonalTheme } from '../../context/SeasonalThemeContext';
 import { resolveMediaUrl } from '../../services/firestoreMediaService';
+import { OptimizedImage } from '../ui/OptimizedImage';
 
 interface BrandLogoProps {
   divisionLabel?: string;
@@ -201,9 +202,11 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
       {hasValidUploadedImage ? (
         // 1. Live Uploaded Logo from Admin Portal (Firestore) or default uploaded PNG
         <div className="flex items-center gap-2.5">
-          <img
+          <OptimizedImage
             src={uploadedLogo}
             alt={brandName}
+            optimizedWidth={640}
+            sizes="(max-width: 640px) 140px, 240px"
             loading="eager"
             decoding="async"
             className={`${currentSize.imgHeight} w-auto max-w-[340px] sm:max-w-[420px] object-contain transition-transform duration-200 group-hover:scale-[1.02] filter drop-shadow-xs`}

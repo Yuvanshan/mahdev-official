@@ -19,7 +19,26 @@ process.env.VITE_SITE_URL ||= fileEnv.VITE_SITE_URL || fileEnv.PUBLIC_SITE_URL |
 const { PRERENDERED_ROUTES, SITE_ORIGIN } = await import('../backend/seo/publicRoutes');
 
 const DIST = 'dist';
-const baseHtml = readFileSync(join(DIST, 'index.html'), 'utf8');
+const builtHtml = readFileSync(join(DIST, 'index.html'), 'utf8');
+
+const preloadStylesheet = (html: string) => {
+  const stylesheetLinks = html.match(/<link\b(?=[^>]*\brel="stylesheet")[^>]*>/g) || [];
+  if (stylesheetLinks.length !== 1) {
+    throw new Error(`Expected one application stylesheet link; found ${stylesheetLinks.length}.`);
+  }
+
+  const stylesheetLink = stylesheetLinks[0];
+  const href = stylesheetLink.match(/\bhref="([^"]+)"/)?.[1];
+  if (!href) throw new Error('The application stylesheet link is missing its href.');
+  const crossorigin = /\bcrossorigin(?:\s|>)/.test(stylesheetLink) ? ' crossorigin' : '';
+  const preload = `<link rel="preload" as="style" href="${href}"${crossorigin} data-app-stylesheet />`;
+  const noScriptStylesheet = `<noscript><link rel="stylesheet" href="${href}"${crossorigin} /><style>#startup-shimmer{display:none!important}#seo-fallback{position:static!important;width:auto!important;height:auto!important;padding:1.5rem!important;margin:0 auto!important;overflow:visible!important;clip:auto!important;white-space:normal!important;border:0!important;max-width:70ch}</style></noscript>`;
+
+  return html.replace(stylesheetLink, `${preload}\n    ${noScriptStylesheet}`);
+};
+
+const baseHtml = preloadStylesheet(builtHtml);
+writeFileSync(join(DIST, 'index.html'), baseHtml);
 
 const removeHomeOnly = (html: string) => html.replace(/^\s*<!-- Home only:.*\n/m, '').replace(/^\s*<link[^>]*data-home-only[^>]*>\n/m, '');
 

@@ -88,7 +88,8 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     getDoc(doc(db, 'settings', 'seo'))
       .then((snapshot) => {
         if (!active) return;
-        const configs = snapshot.exists() ? snapshot.data().configs : [];
+        const snapshotData = snapshot.data() ?? {};
+        const configs = snapshot.exists() ? snapshotData.configs ?? [] : [];
         if (!Array.isArray(configs)) return;
         setSeoConfigs(configs);
         try {
@@ -180,6 +181,18 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       }
       if (!ogTitle && matched.title) effectiveOgTitle = matched.title;
       if (!ogDescription && matched.description) effectiveOgDesc = matched.description;
+    }
+
+    if (currentPath === '/') {
+      effectiveTitle =
+        routeTitle || 'Mahdev (Pvt) Ltd - Creating Moments | Capturing Memories | Delivering Innovation';
+      const requiredDescriptionTerms = ['mahdev', 'parent company', 'divisions'];
+      if (!requiredDescriptionTerms.every((term) => effectiveDesc.toLowerCase().includes(term))) {
+        effectiveDesc =
+          'Mahdev Group is the parent company behind SWS Event Management, U1 Studio, Mahdev IT Solutions, Mahdev Travels and Mahdev Online Mart, with more divisions to come.';
+      }
+      effectiveOgTitle = effectiveTitle;
+      effectiveOgDesc = effectiveDesc;
     }
 
     if (ogImage) {

@@ -41,7 +41,7 @@ interface HomeViewProps {
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
-  const { companySettings, siteSettings, homepageConfig } = useFirestoreDataContext();
+  const { homepageConfig } = useFirestoreDataContext();
   const reducedMotion = useReducedMotion();
   // Visible questions on the home page; FaqSection publishes the matching FAQPage data.
   const faqs = usePageFaqs('home');
@@ -99,16 +99,15 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
     }
   };
 
-  const effectiveBrandName = companySettings?.name
-    ? companySettings.name
-    : siteSettings?.siteName || 'Mahdev Group';
   const effectivePageTitle =
-    homepageConfig?.seo?.pageTitle || 'Mahdev (Pvt) Ltd | Events, Studio, IT & Travel, Trincomalee & Colombo';
+    homepageConfig?.seo?.pageTitle || 'Mahdev (Pvt) Ltd - Creating Moments | Capturing Memories | Delivering Innovation';
+  const defaultHomeDescription =
+    'Mahdev Group is the parent company behind SWS Event Management, U1 Studio, Mahdev IT Solutions, Mahdev Travels and Mahdev Online Mart, with more divisions to come.';
   return (
     <div className="w-full flex flex-col pb-24 lg:pb-0">
       <SEOHead
         title={effectivePageTitle}
-        description={homepageConfig?.seo?.metaDescription || `${effectiveBrandName} brings together events, creative studio, technology, travel and retail.`}
+        description={homepageConfig?.seo?.metaDescription || defaultHomeDescription}
         canonicalUrl={homepageConfig?.seo?.canonicalUrl || CANONICAL_SITE_ORIGIN}
         ogTitle={effectivePageTitle}
         ogDescription={homepageConfig?.seo?.metaDescription}

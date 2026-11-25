@@ -69,12 +69,13 @@ const PAGE_ALIASES: Record<string, string> = {
 };
 
 /**
- * Title for a fixed page or division page, or null for pages that set their own
- * (home, a single service, project, article or CMS page).
+ * Title for a fixed page, division or the homepage, or null for pages that set
+ * their own (a single service, project, article or CMS page).
  */
 export function getPageTitle(path: string): string | null {
   const normalized = `/${(path || '').split(/[?#]/)[0].replace(/^\/+|\/+$/g, '').toLowerCase()}`;
   const route = PAGE_ALIASES[normalized] || normalized;
+  if (route === '/') return 'Mahdev (Pvt) Ltd - Creating Moments | Capturing Memories | Delivering Innovation';
   const division = DIVISION_SEO[route.slice(1) as keyof typeof DIVISION_SEO];
   if (division) return division.title;
   if (route.startsWith('/services/category/')) return formatLocalPageTitle('Services');

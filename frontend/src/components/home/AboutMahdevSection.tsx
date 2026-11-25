@@ -7,6 +7,7 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { getTelLink } from '../../config/company';
 import { ParallelWatermark } from '../motion/ParallelScroll';
 import { useDeviceMotion } from '../motion/MotionWrappers';
+import { DIVISION_LIST } from '../../config/divisions';
 
 interface AboutMahdevSectionProps {
   onExploreDivisions: () => void;
@@ -21,7 +22,7 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
   const description =
     intro?.description ||
     companySettings?.description ||
-    'Mahdev Group unites luxury event production, cinema filmmaking, custom software engineering, Ceylon travel, and retail commerce under unified governance and strict quality standards.';
+    'Mahdev Group is the parent company for SWS Event Management, U1 Studio, Mahdev IT Solutions, Mahdev Travels and Mahdev Online Mart, with more specialist divisions to come.';
 
   const { reducedMotion, isTouch } = useDeviceMotion();
 
@@ -36,7 +37,7 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
   const yCol1 = useTransform(smoothProgress, [0, 1], ['-24px', '24px']);
   const yCol2 = useTransform(smoothProgress, [0, 1], ['24px', '-24px']);
 
-  const divisionCount = divisions && divisions.length > 0 ? `${divisions.length} Units` : '5 Units';
+  const divisionCount = `${divisions.length || DIVISION_LIST.length} Units`;
 
   const col1Metrics = [
     {
@@ -57,7 +58,7 @@ export const AboutMahdevSection: React.FC<AboutMahdevSectionProps> = ({ onExplor
     {
       value: divisionCount,
       label: 'Specialized Units',
-      caption: 'Events, Media, IT, Travel, Mart',
+      caption: 'Events, media, IT, travel, retail & more',
       icon: Users,
     },
     {

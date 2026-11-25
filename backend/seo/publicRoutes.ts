@@ -81,9 +81,9 @@ const ROUTES: RouteSeo[] = [
   {
     path: '/divisions',
     title: titleFor('/divisions'),
-    description: 'Explore the five Mahdev divisions in Sri Lanka: SWS Event Management, U1 Studio, Mahdev IT Solutions, Mahdev Travels and Mahdev Online Mart.',
+    description: 'Mahdev Group is the parent company behind SWS Event Management, U1 Studio, Mahdev IT Solutions, Mahdev Travels and Mahdev Online Mart, with more divisions to come.',
     heading: 'Mahdev divisions',
-    intro: 'Mahdev brings together event management, photography and cinema, technology, travel and online retail under one Sri Lankan group.',
+    intro: 'Explore Mahdev Group’s specialist divisions and services, with additional divisions joining the group as it grows.',
   },
   {
     path: '/sws',

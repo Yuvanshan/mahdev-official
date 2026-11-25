@@ -4,6 +4,7 @@ import { DIVISIONS } from '../../config/divisions';
 import { DivisionCardItem } from '../../utils/divisionPresentation';
 import { resolveMediaUrl } from '../../services/firestoreMediaService';
 import { useDeviceMotion } from '../motion/MotionWrappers';
+import { OptimizedImage } from '../ui/OptimizedImage';
 
 interface DivisionCardProps {
   division: DivisionCardItem;
@@ -162,9 +163,11 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({
             className="h-full w-full object-cover"
           />
         ) : displayMediaUrl ? (
-          <img
+          <OptimizedImage
             src={displayMediaUrl}
             alt={division.name}
+            optimizedWidth={640}
+            sizes="(max-width: 640px) 92vw, (max-width: 1024px) 48vw, 380px"
             loading="lazy"
             decoding="async"
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
@@ -179,10 +182,12 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({
             </span>
             {showLogo && division.logoUrl && (
               <div className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-xl border border-white/80 bg-white/95 p-1.5 shadow-sm">
-                <img
+                <OptimizedImage
                   src={division.logoUrl}
                   alt=""
                   aria-hidden="true"
+                  optimizedWidth={320}
+                  sizes="44px"
                   loading="lazy"
                   decoding="async"
                   className="max-h-full max-w-full object-contain"
@@ -197,9 +202,11 @@ export const DivisionCard: React.FC<DivisionCardProps> = ({
           </>
         ) : showLogo && division.logoUrl && (
           <div className="absolute inset-x-[14%] top-[10%] bottom-[23%] flex items-center justify-center rounded-2xl border border-white/60 bg-white/90 p-3 shadow-lg backdrop-blur-sm sm:inset-x-[18%] sm:p-4">
-            <img
+            <OptimizedImage
               src={division.logoUrl}
               alt={`${division.name} logo`}
+              optimizedWidth={320}
+              sizes="(max-width: 640px) 52px, 68px"
               loading="lazy"
               decoding="async"
               className="max-h-full max-w-full object-contain"

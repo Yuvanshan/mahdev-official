@@ -5,6 +5,7 @@ import { clearSearches, getRecentSearches, recordSearch, recordView } from '../.
 import { useWishlist } from '../../context/WishlistContext';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { galleryPath } from '../../config/itemSeo';
+import { OptimizedImage } from '../ui/OptimizedImage';
 
 interface ShopSubheaderProps {
   onNavigate: (route: string) => void;
@@ -195,23 +196,34 @@ export const ShopSubheader: React.FC<ShopSubheaderProps> = ({ onNavigate }) => {
         )}
         {categories.length > 0 && (
           <nav aria-label="Divisions" className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:justify-center sm:gap-6">
-            {categories.map((division) => (
-              <button
-                key={division.id}
-                type="button"
-                onClick={() => onNavigate(division.route || `/${division.slug || division.id}`)}
-                className="group flex w-20 shrink-0 flex-col items-center gap-1 rounded-sm p-1 sm:w-24"
-              >
-                <span className="h-12 w-12 overflow-hidden rounded-full border border-slate-200 bg-slate-100 transition-transform duration-200 group-hover:scale-110 group-hover:border-amber-400">
-                  {(division.logoUrl || division.logo || division.imageUrl) && (
-                    <img src={division.logoUrl || division.logo || division.imageUrl} alt="" loading="lazy" draggable={false} className="h-full w-full object-cover" />
-                  )}
-                </span>
-                <span className="line-clamp-1 text-xs font-medium text-slate-800 group-hover:text-blue-700">
-                  {division.shortName || division.name}
-                </span>
-              </button>
-            ))}
+            {categories.map((division) => {
+              const imageUrl = division.logoUrl || division.logo || division.imageUrl;
+              return (
+                <button
+                  key={division.id}
+                  type="button"
+                  onClick={() => onNavigate(division.route || `/${division.slug || division.id}`)}
+                  className="group flex w-20 shrink-0 flex-col items-center gap-1 rounded-sm p-1 sm:w-24"
+                >
+                  <span className="h-12 w-12 overflow-hidden rounded-full border border-slate-200 bg-slate-100 transition-transform duration-200 group-hover:scale-110 group-hover:border-amber-400">
+                    {imageUrl && (
+                      <OptimizedImage
+                        src={imageUrl}
+                        alt=""
+                        optimizedWidth={320}
+                        sizes="48px"
+                        loading="lazy"
+                        draggable={false}
+                        className="h-full w-full object-cover"
+                      />
+                    )}
+                  </span>
+                  <span className="line-clamp-1 text-xs font-medium text-slate-800 group-hover:text-blue-700">
+                    {division.shortName || division.name}
+                  </span>
+                </button>
+              );
+            })}
           </nav>
         )}
       </div>

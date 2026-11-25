@@ -15,6 +15,7 @@ import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { MAHDEV_WHATSAPP_NUMBER } from '../../utils/whatsapp';
 import { formatCurrency } from '../../utils/currency';
 import { OptimizedImage } from '../ui/OptimizedImage';
+import { DIVISION_LIST } from '../../config/divisions';
 
 const OCCASIONS = [
   { name: 'Weddings', terms: ['wedding', 'marriage'] },
@@ -43,12 +44,13 @@ export const HomeDiscoverySections: React.FC<HomeDiscoverySectionsProps> = ({ on
 );
 
 const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ onNavigate }) => {
-  const { gallery, isGalleryLoading } = useFirestoreDataContext();
+  const { gallery, isGalleryLoading, divisions } = useFirestoreDataContext();
+  const divisionCount = divisions.length || DIVISION_LIST.length;
   const metrics = [
     { label: 'Projects done', value: '1,800+', detail: 'Across all Mahdev divisions', icon: Briefcase },
     { label: 'Customer satisfaction', value: '99.8%', detail: 'Committed to every experience', icon: Users },
     { label: 'Years of experience', value: '5+', detail: 'Serving customers across Sri Lanka', icon: CalendarDays },
-    { label: 'Specialist divisions', value: '5', detail: 'Events, studio, IT, travel & retail', icon: Building2 },
+    { label: 'Specialist divisions', value: String(divisionCount), detail: 'SWS, U1 Studio, IT, Travel, Mart & more', icon: Building2 },
   ];
   const galleryCards = useMemo(() => {
     const images = gallery
@@ -95,6 +97,7 @@ const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ on
   return (
   <>
     <section className="home-trust-wrap" aria-label="Mahdev in numbers">
+      <h2 className="home-trust-heading">Mahdev's Specialist Divisions &amp; Services in Trincomalee</h2>
       <div className="home-trust-grid">
         {metrics.map((metric) => {
           const Icon = metric.icon;
@@ -126,11 +129,19 @@ const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ on
                   className={`home-occasion${index === 0 ? ' home-occasion--feature' : ''}${index === 7 ? ' home-occasion--wide' : ''}`}
                   key={`${occasion.name}-${occasion.image}`}
                   aria-label={`Explore ${occasion.name} from the Mahdev gallery`}
-                  style={{ backgroundImage: `linear-gradient(180deg, transparent 34%, rgba(42,8,16,.72)), url("${occasion.image}")` }}
                   onClick={() => {
                     onNavigate(`/sws?category=${encodeURIComponent(occasion.filterTerm)}`);
                   }}
                 >
+                  <OptimizedImage
+                    src={occasion.image}
+                    alt=""
+                    aria-hidden="true"
+                    optimizedWidth={640}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    loading="lazy"
+                    className="home-occasion-image"
+                  />
                   <span className="home-occasion-label">
                     <span>{occasion.name}</span>
                     <span className="home-occasion-more"><span className="home-occasion-more-label">Explore this collection</span><ArrowRight aria-hidden="true" /></span>
@@ -153,7 +164,7 @@ const HomeDiscoverySectionsContent: React.FC<HomeDiscoverySectionsProps> = ({ on
         {[0, 1].map((copy) => (
           <span className="home-marquee-run" key={copy}>
             SWS Event Management <i>✦</i> <em>U1 Studio</em> <i>✦</i> IT Solutions <i>✦</i>
-            <em>Mahdev Travels</em> <i>✦</i> Online Mart <i>✦</i>
+            <em>Mahdev Travels</em> <i>✦</i> Online Mart <i>✦</i> More specialist divisions <i>✦</i>
           </span>
         ))}
       </div>
