@@ -22,15 +22,17 @@ import { GoogleReview, GoogleReviewsConfig } from '../../types/googleReviews';
 import { DivisionId } from '../../types/firestore';
 
 export const DEFAULT_GOOGLE_REVIEWS_CONFIG: GoogleReviewsConfig = {
-  placeId: 'ChIJ5_qM-Dlm4joRw_r2-4a0bEc',
+  // Optional: leave empty and the server finds both profiles itself. Set to pin an exact profile.
+  placeId: '',
+  colomboPlaceId: '',
   businessName: 'Mahdev Pvt Ltd (SWS Events & U1 Studio)',
   formattedAddress: 'Trincomalee & Colombo, Sri Lanka',
-  mapsUrl: 'https://share.google/MTi1hJxhhXtx6OXrd',
-  writeReviewUrl: 'https://share.google/MTi1hJxhhXtx6OXrd',
-  trincomaleeMapsUrl: 'https://share.google/MTi1hJxhhXtx6OXrd',
-  trincomaleeWriteReviewUrl: 'https://share.google/MTi1hJxhhXtx6OXrd',
-  colomboMapsUrl: 'https://share.google/VjJA6IPKLSMaA9AgR',
-  colomboWriteReviewUrl: 'https://share.google/VjJA6IPKLSMaA9AgR',
+  mapsUrl: 'https://share.google/1Sx5EXJcuuOnZ9ikt',
+  writeReviewUrl: 'https://share.google/1Sx5EXJcuuOnZ9ikt',
+  trincomaleeMapsUrl: 'https://share.google/1Sx5EXJcuuOnZ9ikt',
+  trincomaleeWriteReviewUrl: 'https://share.google/1Sx5EXJcuuOnZ9ikt',
+  colomboMapsUrl: 'https://share.google/k5K9CADVpUKOzLobU',
+  colomboWriteReviewUrl: 'https://share.google/k5K9CADVpUKOzLobU',
   overallRating: 5.0,
   totalReviews: 184,
   enabled: true,
@@ -236,53 +238,49 @@ export const firestoreGoogleReviewsService = {
     error?: string;
   }> {
     const config = await this.getConfig(true);
-    const placeId = customPlaceId || config.placeId;
+    const placeId = (customPlaceId || config.placeId || '').trim();
 
-    if (!placeId) {
-      return { success: false, count: 0, overallRating: config.overallRating, totalReviews: config.totalReviews, error: 'Google Place ID is missing.' };
-    }
 
     // Set syncing state
     await this.saveConfig({ syncStatus: 'syncing' });
 
     try {
-      // 1. Attempt backend proxy sync endpoint first
-      let syncedReviews: Array<{
-        googleReviewId: string;
-        authorName: string;
-        authorPhotoUrl?: string;
-        authorUrl?: string;
-        rating: number;
-        text: string;
-        relativePublishTimeDescription?: string;
-        publishTime?: string;
-      }> = [];
+      // One Google profile per branch. Each is read through the admin-only server endpoint,
+      // so the Google API key never reaches the browser.
+      const profiles = [
+        { branch: 'trincomalee' as const, branchName: 'Trincomalee Branch', placeId: placeId || '' },
+        { branch: 'colombo' as const, branchName: 'Colombo Branch', placeId: config.colomboPlaceId?.trim() || '' },
+      ];
 
-      let fetchedRating = config.overallRating;
-      let fetchedTotal = config.totalReviews;
+      let syncedCount = 0;
+      let totalRatingPoints = 0;
+      let totalRatingCount = 0;
 
-      try {
+      for (const profile of profiles) {
         const response = await fetch('/api/google-reviews/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ placeId }),
+          body: JSON.stringify({ branch: profile.branch, placeId: profile.placeId || undefined }),
         });
-
-        if (response.ok) {
-          const resData = await response.json();
-          if (resData.success && Array.isArray(resData.reviews)) {
-            syncedReviews = resData.reviews;
-            if (resData.rating) fetchedRating = Number(resData.rating);
-            if (resData.userRatingCount) fetchedTotal = Number(resData.userRatingCount);
-          }
+        const resData = await response.json().catch(() => ({}));
+        if (!response.ok || !resData.success || !Array.isArray(resData.reviews)) {
+          throw new Error(`${profile.branchName}: ${resData.error || 'Google sync failed.'}`);
         }
-      } catch (proxyErr) {
-        console.warn('[database GoogleReviews] Backend proxy sync not reachable, using direct verified provider sync', proxyErr);
-      }
 
-      // If backend returned verified genuine Google reviews, write to Firestore
-      if (syncedReviews.length > 0) {
-        for (const rev of syncedReviews) {
+        const count = Number(resData.userRatingCount) || 0;
+        totalRatingCount += count;
+        totalRatingPoints += (Number(resData.rating) || 0) * count;
+
+        for (const rev of resData.reviews as Array<{
+          googleReviewId: string;
+          authorName: string;
+          authorPhotoUrl?: string;
+          authorUrl?: string;
+          rating: number;
+          text: string;
+          relativePublishTimeDescription?: string;
+          publishTime?: string;
+        }>) {
           const docId = `gr-${rev.googleReviewId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
           const existingSnap = await getDoc(doc(db, 'testimonials', docId));
           const existingData = existingSnap.exists() ? existingSnap.data() : {};
@@ -291,7 +289,7 @@ export const firestoreGoogleReviewsService = {
           const reviewDoc: GoogleReview = {
             id: docId,
             googleReviewId: rev.googleReviewId,
-            placeId,
+            placeId: resData.placeId || profile.placeId,
             authorName: rev.authorName,
             authorPhotoUrl: rev.authorPhotoUrl || '',
             authorUrl: rev.authorUrl || '',
@@ -302,6 +300,8 @@ export const firestoreGoogleReviewsService = {
             date: new Date().getFullYear().toString(),
             source: 'google',
             sourceBadge: 'Google Verified Review',
+            branch: profile.branch,
+            branchName: profile.branchName,
             isFeatured: existingData.isFeatured !== undefined ? existingData.isFeatured : true,
             isHidden: !!existingData.isHidden,
             divisionId: (existingData.divisionId as any) || 'sws',
@@ -311,8 +311,15 @@ export const firestoreGoogleReviewsService = {
           };
 
           await setDoc(doc(db, 'testimonials', docId), sanitizeForFirestore(reviewDoc), { merge: true });
+          syncedCount += 1;
         }
       }
+
+      // Combined rating across both profiles, weighted by each profile's review count.
+      const fetchedTotal = totalRatingCount || config.totalReviews;
+      const fetchedRating = totalRatingCount
+        ? Math.round((totalRatingPoints / totalRatingCount) * 10) / 10
+        : config.overallRating;
 
       // Update sync status & metrics in config
       await this.saveConfig({
@@ -327,7 +334,7 @@ export const firestoreGoogleReviewsService = {
 
       return {
         success: true,
-        count: syncedReviews.length,
+        count: syncedCount,
         overallRating: fetchedRating,
         totalReviews: fetchedTotal,
       };

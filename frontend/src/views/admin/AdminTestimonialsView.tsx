@@ -744,7 +744,7 @@ export const AdminTestimonialsView: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Google Place ID <span className="text-red-500">*</span>
+                Trincomalee Google Place ID (optional)
               </label>
               <input
                 type="text"
@@ -753,7 +753,21 @@ export const AdminTestimonialsView: React.FC = () => {
                 placeholder="ChIJ..."
                 className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               />
-              <p className="text-[11px] text-slate-400 mt-1">Official Place ID for Mahdev / SWS on Google Maps.</p>
+              <p className="text-[11px] text-slate-400 mt-1">Leave empty: the server finds the profile itself. Set only to pin an exact profile.</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Colombo Google Place ID (optional)
+              </label>
+              <input
+                type="text"
+                value={configForm.colomboPlaceId || ''}
+                onChange={(e) => setConfigForm({ ...configForm, colomboPlaceId: e.target.value })}
+                placeholder="ChIJ..."
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+              <p className="text-[11px] text-slate-400 mt-1">Leave empty: the server finds the profile itself.</p>
             </div>
 
             <div>

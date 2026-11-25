@@ -53,7 +53,8 @@ export interface GoogleBranchProfile {
 }
 
 export interface GoogleReviewsConfig {
-  placeId: string; // Google Maps Place ID
+  placeId: string; // Google Maps Place ID (Trincomalee profile)
+  colomboPlaceId?: string; // Google Maps Place ID of the Colombo profile
   apiKey?: string; // Optional custom Google Maps Platform API Key
   businessName: string; // e.g. "Mahdev Pvt Ltd / SWS Event Management"
   formattedAddress?: string; // e.g. "Colombo & Trincomalee, Sri Lanka"

@@ -45,6 +45,7 @@ import { firestoreTrustedCompaniesService } from '../services/firestore/trustedC
 import { firestoreTestimonialsService } from '../services/firestore/testimonials';
 import { firestoreGoogleReviewsService, DEFAULT_GOOGLE_REVIEWS_CONFIG } from '../services/firestore/googleReviews';
 import { GoogleReview, GoogleReviewsConfig } from '../types/googleReviews';
+import { useLiveGoogleReviews } from '../hooks/useLiveGoogleReviews';
 import { firestorePortfolioService } from '../services/firestore/portfolio';
 import { firestoreGalleryService } from '../services/firestore/gallery';
 import { cmsService } from '../services/cmsService';
@@ -2132,9 +2133,17 @@ export function useGoogleReviews(divisionId?: DivisionId | 'all') {
     isReady,
   } = useFirestoreDataContext();
 
+  // Live Google reviews win when Google answered; otherwise the reviews the admin saved are shown.
+  const live = useLiveGoogleReviews();
+  const shownGoogleReviews = live?.reviews ?? googleReviews;
+  const shownConfig = useMemo(
+    () => (live ? { ...googleReviewsConfig, totalReviews: live.total, overallRating: live.rating ?? googleReviewsConfig.overallRating } : googleReviewsConfig),
+    [live, googleReviewsConfig]
+  );
+
   // Curated list for public website display
   const publicReviews = useMemo(() => {
-    return googleReviews.filter((r) => {
+    return shownGoogleReviews.filter((r) => {
       if (r.isHidden) return false;
       if (googleReviewsConfig.featuredOnly && !r.isFeatured) return false;
       if (googleReviewsConfig.minStarRating && r.rating < googleReviewsConfig.minStarRating) return false;
@@ -2143,12 +2152,12 @@ export function useGoogleReviews(divisionId?: DivisionId | 'all') {
       }
       return true;
     });
-  }, [googleReviews, googleReviewsConfig, divisionId]);
+  }, [shownGoogleReviews, googleReviewsConfig, divisionId]);
 
   return {
     reviews: publicReviews,
-    allReviews: googleReviews,
-    config: googleReviewsConfig,
+    allReviews: shownGoogleReviews,
+    config: shownConfig,
     sync: syncGoogleReviews,
     updateConfig: updateGoogleReviewsConfig,
     isLoading: isInitialLoading,

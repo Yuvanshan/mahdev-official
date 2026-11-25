@@ -118,7 +118,7 @@ export const TestimonialsView: React.FC<TestimonialsViewProps> = ({ onNavigate }
               {/* Direct Branch Google Maps Review Links */}
               <div className="flex flex-wrap items-center gap-3 mt-4">
                 <a
-                  href={config.trincomaleeMapsUrl || 'https://share.google/MTi1hJxhhXtx6OXrd'}
+                  href={config.trincomaleeMapsUrl || 'https://share.google/1Sx5EXJcuuOnZ9ikt'}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 font-bold text-xs hover:bg-blue-100 transition-colors shadow-2xs"
@@ -126,7 +126,7 @@ export const TestimonialsView: React.FC<TestimonialsViewProps> = ({ onNavigate }
                   📍 Trincomalee Branch Profile & Reviews <ExternalLink className="w-3.5 h-3.5" />
                 </a>
                 <a
-                  href={config.colomboMapsUrl || 'https://share.google/VjJA6IPKLSMaA9AgR'}
+                  href={config.colomboMapsUrl || 'https://share.google/k5K9CADVpUKOzLobU'}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold text-xs hover:bg-indigo-100 transition-colors shadow-2xs"
@@ -154,7 +154,7 @@ export const TestimonialsView: React.FC<TestimonialsViewProps> = ({ onNavigate }
 
               <div className="w-full sm:w-auto flex flex-col gap-2">
                 <a
-                  href={config.writeReviewUrl || 'https://share.google/MTi1hJxhhXtx6OXrd'}
+                  href={config.writeReviewUrl || 'https://share.google/1Sx5EXJcuuOnZ9ikt'}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 transition-colors shadow-2xs"
@@ -163,7 +163,7 @@ export const TestimonialsView: React.FC<TestimonialsViewProps> = ({ onNavigate }
                   Write a Review
                 </a>
                 <a
-                  href={config.mapsUrl || 'https://share.google/MTi1hJxhhXtx6OXrd'}
+                  href={config.mapsUrl || 'https://share.google/1Sx5EXJcuuOnZ9ikt'}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-100 transition-colors"

@@ -6,6 +6,7 @@ import { Badge } from '../ui/Badge';
 import { useFirestoreDataContext } from '../../context/FirestoreDataContext';
 import { OptimizedImage } from '../ui/OptimizedImage';
 import { DivisionId } from '../../types/firestore';
+import { useLiveGoogleReviews } from '../../hooks/useLiveGoogleReviews';
 
 interface TestimonialsSectionProps {
   initialDivision?: DivisionId | 'all';
@@ -19,6 +20,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
   const [selectedDivision, setSelectedDivision] = useState<DivisionId | 'all'>(initialDivision);
   const { homepageConfig, testimonials: firestoreTestimonials, isTestimonialsLoading } = useFirestoreDataContext();
   const testimonialsTrackRef = useRef<HTMLDivElement>(null);
+  const live = useLiveGoogleReviews();
 
   useEffect(() => {
     testimonialsTrackRef.current?.scrollTo({ left: 0 });
@@ -33,7 +35,9 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
 
   // Strictly show testimonials saved in Firestore by the admin
   const activeTestimonials = useMemo(() => {
-    return (firestoreTestimonials || [])
+    // Live Google reviews replace the admin's list whenever Google answered in time.
+    const source: any[] = live?.reviews ?? firestoreTestimonials ?? [];
+    return source
       .filter((t) => !t.isHidden && t.isPublished !== false && (t as any).status !== 'archived')
       .map((t) => ({
         id: t.id,
@@ -47,7 +51,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
         date: t.date || t.relativePublishTimeDescription || '',
       }))
       .filter((t) => t.text.trim().length > 0);
-  }, [firestoreTestimonials]);
+  }, [live, firestoreTestimonials]);
 
   // Unique divisions with testimonials to show filter pills
   const availableDivisions = useMemo(() => {

@@ -14,7 +14,7 @@ const SLIDER_LIMIT = 8;
 
 // Flipkart-style storefront top of the home page: banner, then rows of deals, services and divisions.
 export const ShopHome: React.FC<ShopHomeProps> = ({ onNavigate }) => {
-  const { divisions, products, services, gallery, isDivisionsLoading, isHomepageConfigLoading } = useFirestoreDataContext();
+  const { divisions, products, services, gallery, isDivisionsLoading, isHomepageConfigLoading, isServicesLoading } = useFirestoreDataContext();
   const cmsBanners = useAvailableCmsBanners();
 
   // Banners uploaded in the admin portal (placement "Home hero") come first; divisions are the fallback.
@@ -94,6 +94,10 @@ export const ShopHome: React.FC<ShopHomeProps> = ({ onNavigate }) => {
           className="aspect-[4/3] w-full animate-pulse rounded-sm bg-slate-200 sm:aspect-[16/5] sm:max-h-[26rem]"
         />
       ) : null}
+      {/* Reserve the row's height until services load so the hero below is not pushed down (CLS). */}
+      {serviceTiles.length === 0 && isServicesLoading && (
+        <div aria-hidden="true" className="h-[22rem] w-full animate-pulse rounded-sm border border-slate-200 bg-slate-100" />
+      )}
       {serviceTiles.length > 0 && (
         <ShopSlider title="Top Services" tagline="Events, studio, IT and travel, ready to book" onViewAll={() => onNavigate('/services')}>
           {serviceTiles.slice(0, SLIDER_LIMIT).map((tile) => (

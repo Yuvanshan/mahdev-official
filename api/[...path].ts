@@ -22,6 +22,8 @@ import orderConfirmationsHandler from '../backend/api/handlers/orderConfirmation
 import accountCheckHandler from '../backend/api/handlers/accountCheck.js';
 import accountRecoveryHandler from '../backend/api/handlers/accountRecovery.js';
 import seasonalThemeHandler from '../backend/api/handlers/seasonalTheme.js';
+import googleReviewsSyncHandler from '../backend/api/handlers/googleReviewsSync.js';
+import googleReviewsLiveHandler from '../backend/api/handlers/googleReviewsLive.js';
 import firebaseAuthProxy from '../backend/api/handlers/firebaseAuthProxy.js';
 import { isFromThisSite } from '../backend/security/sameSite.js';
 import pageShellHandler, { sendNotFoundPage } from '../backend/api/handlers/pageShell.js';
@@ -117,7 +119,7 @@ function isBrowserPageRequest(req: ApiRequest): boolean {
 // Data APIs used only by the website itself.
 // Images under /api/public/media/ stay public so link previews and image search work.
 // '/api/account/check' reveals whether an account exists, so only this site's pages may ask.
-const SITE_ONLY_API_PREFIXES = ['/api/public/snapshot', '/api/database', '/api/data/', '/api/analytics', '/api/account/check', '/api/account/recovery', '/api/product-reviews', '/api/search-history'];
+const SITE_ONLY_API_PREFIXES = ['/api/google-reviews', '/api/public/snapshot', '/api/database', '/api/data/', '/api/analytics', '/api/account/check', '/api/account/recovery', '/api/product-reviews', '/api/search-history'];
 
 
 export default async function handler(req: ApiRequest, res: ServerResponse): Promise<void> {
@@ -218,6 +220,14 @@ export default async function handler(req: ApiRequest, res: ServerResponse): Pro
   }
   if (pathname === '/api/bookings/slip') {
     await bookingSlipHandler(req, res);
+    return;
+  }
+  if (pathname === '/api/google-reviews') {
+    await googleReviewsLiveHandler(req, res);
+    return;
+  }
+  if (pathname === '/api/google-reviews/sync') {
+    await googleReviewsSyncHandler(req, res);
     return;
   }
   if (pathname === '/api/product-reviews') {

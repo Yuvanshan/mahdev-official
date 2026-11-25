@@ -171,6 +171,16 @@
       "permanent": true
     },
     {
+      "source": "/privacy",
+      "destination": "/privacy-policy",
+      "permanent": true
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms-and-conditions",
+      "permanent": true
+    },
+    {
       "source": "/jobs",
       "destination": "/careers",
       "permanent": true
@@ -382,6 +392,15 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=86400, s-maxage=31536000, stale-while-revalidate=604800"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.+-[A-Za-z0-9_-]{8}\\.(?:js|css))",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, s-maxage=31536000, immutable"
         }
       ]
     },

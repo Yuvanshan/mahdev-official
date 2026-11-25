@@ -13,6 +13,8 @@ import {
   createAdminMediaUpload,
   forwardAdminMediaUploadChunk,
 } from '../services/media/adminMediaUpload.js';
+import googleReviewsSyncHandler from './handlers/googleReviewsSync.js';
+import googleReviewsLiveHandler from './handlers/googleReviewsLive.js';
 import careerCvHandler from './handlers/careers/cv.js';
 import careerStatusHandler from './handlers/careers/status.js';
 import careerApplicationHandler from './handlers/careers/application.js';
@@ -49,6 +51,19 @@ apiRouter.get('/careers/status', async (req: Request, res: Response) => {
 });
 apiRouter.delete('/careers/application', async (req: Request, res: Response) => {
   await careerApplicationHandler(req, res);
+});
+
+apiRouter.get('/google-reviews', async (req: Request, res: Response) => {
+  // Only this website's own pages may read the reviews (protects the Google API quota).
+  if (!isFromThisSite(req)) {
+    res.status(404).json({ success: false, error: 'Not found.' });
+    return;
+  }
+  await googleReviewsLiveHandler(req, res);
+});
+
+apiRouter.post('/google-reviews/sync', async (req: Request, res: Response) => {
+  await googleReviewsSyncHandler(req, res);
 });
 
 apiRouter.all('/product-reviews', async (req: Request, res: Response) => {
