@@ -23,7 +23,7 @@ export const U1HeroSection: React.FC<U1HeroSectionProps> = ({
       <ScrollParallax targetRef={heroRef} distance={24} className="division-video-hero__media absolute -inset-y-10 right-[-2%] w-[72%] overflow-hidden">
         <HeroVideoBackground
           videoUrl="/assets/u1-studio-hero.mp4?v=3"
-          posterImageUrl="/assets/u1_studio_hero_poster.jpg"
+          posterImageUrl="/assets/u1_studio_hero_poster.webp"
           title="U1 Studio Photography & Cinema"
           enableAutomaticAudio
         />

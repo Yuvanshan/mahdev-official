@@ -72,15 +72,8 @@ const RouteLoadingFallback: React.FC<RouteLoadingFallbackProps> = ({ path }) => 
   const heroHeadline = routeHeadlines[divisionPath];
 
   if (heroHeadline) {
-    const showContentShimmer = ['/', '/sws', '/u1'].includes(divisionPath);
-
     return (
       <>
-        {divisionPath === '/' && (
-          <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-2 py-3 sm:px-4" aria-hidden="true">
-            <div className="aspect-[4/3] w-full animate-pulse rounded-sm bg-slate-200 sm:aspect-[16/5] sm:max-h-[26rem]" />
-          </div>
-        )}
         <section
           role="status"
           aria-busy="true"
@@ -98,36 +91,6 @@ const RouteLoadingFallback: React.FC<RouteLoadingFallbackProps> = ({ path }) => 
             </motion.h1>
           </div>
         </section>
-        {showContentShimmer && (
-          <section
-            role="status"
-            aria-busy="true"
-            aria-label="Loading page content"
-            className="space-y-10 bg-slate-50 px-4 py-10 sm:px-8 sm:py-14"
-          >
-            {[0, 1].map((section) => (
-              <div className="mx-auto max-w-7xl animate-pulse" key={section}>
-                <div className="mb-6 space-y-3">
-                  <div className="h-3 w-28 rounded bg-slate-200" />
-                  <div className="h-8 w-2/3 max-w-xl rounded-lg bg-slate-200" />
-                  <div className="h-4 w-full max-w-2xl rounded bg-slate-100" />
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {[0, 1, 2].map((card) => (
-                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white" key={card}>
-                      <div className="aspect-[4/3] bg-slate-200" />
-                      <div className="space-y-3 p-5">
-                        <div className="h-5 w-2/3 rounded bg-slate-200" />
-                        <div className="h-3 w-full rounded bg-slate-100" />
-                        <div className="h-3 w-4/5 rounded bg-slate-100" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </section>
-        )}
       </>
     );
   }
@@ -1516,7 +1479,7 @@ function AppContent() {
       {!isAdminRoute && !isStandaloneComingSoon && <ShopSubheader onNavigate={navigate} />}
 
       {/* Main Content Area with Smooth View Transitions */}
-      <main className="flex-1 w-full max-w-full min-w-0" aria-live="polite">
+      <main className="flex-1 w-full max-w-full min-w-0 min-h-[100svh]" aria-live="polite">
         <AnimatePresence
           mode="wait"
           initial={false}

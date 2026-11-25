@@ -20,38 +20,9 @@ window.addEventListener('vite:preloadError', (event) => {
   window.location.reload();
 });
 
-const renderApp = () => {
-  const rootElement = document.getElementById('root');
-  if (!rootElement) throw new Error('Application root element is missing.');
-
-  createRoot(rootElement).render(
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>,
-  );
-};
-
-const appStylesheet = document.querySelector<HTMLLinkElement>('link[data-app-stylesheet]');
-if (appStylesheet) {
-  let hasRendered = false;
-  const renderOnce = () => {
-    if (hasRendered) return;
-    hasRendered = true;
-    renderApp();
-  };
-
-  appStylesheet.addEventListener('load', renderOnce, { once: true });
-  appStylesheet.addEventListener(
-    'error',
-    (event) => {
-      console.error('[startup] Failed to load the application stylesheet.', event);
-      renderOnce();
-    },
-    { once: true },
-  );
-  appStylesheet.rel = 'stylesheet';
-  if (appStylesheet.sheet) renderOnce();
-} else {
-  renderApp();
-}
+createRoot(document.getElementById('root')!).render(
+  <ErrorBoundary>
+    <App />
+  </ErrorBoundary>,
+);
 

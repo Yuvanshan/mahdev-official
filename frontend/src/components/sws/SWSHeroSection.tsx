@@ -29,7 +29,7 @@ export const SWSHeroSection: React.FC<SWSHeroSectionProps> = ({
       <ScrollParallax targetRef={heroRef} distance={24} className="division-video-hero__media absolute -inset-y-10 right-[-2%] w-[72%] overflow-hidden">
         <HeroVideoBackground
           videoUrl="/assets/hero_main.mp4?v=3"
-          posterImageUrl="/assets/hero_main_poster.jpg"
+          posterImageUrl="/assets/hero_main_poster.webp"
           title="SWS Luxury Event Decor & Rentals"
           enableAutomaticAudio
         />

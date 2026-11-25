@@ -14,9 +14,9 @@ interface HeroSectionProps {
   onExploreServices?: () => void;
 }
 
-const HERO_VIDEO = '/assets/hero_landing.mp4?v=3';
+const HERO_VIDEO = '/assets/hero_landing.mp4?v=4';
 // First frame shown instantly (preloaded in index.html) until the video can play.
-const HERO_POSTER = '/assets/hero_landing_poster.jpg';
+const HERO_POSTER = '/assets/hero_landing_poster.webp';
 let savedHeroVideoTime = 0;
 
 function extractVimeoId(url: string): string | null {
@@ -114,7 +114,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
         void video.play().catch((error: unknown) => {
           console.warn('[HomeHero] Muted autoplay was blocked:', error);
         });
-      }, 1500);
+      }, 3500);
     };
     const onVisibilityChange = () => syncPlayback();
     document.addEventListener('visibilitychange', onVisibilityChange);
@@ -214,6 +214,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
             />
           ) : (
             <>
+              <img
+                src={heroPoster}
+                alt=""
+                aria-hidden="true"
+                width={862}
+                height={480}
+                decoding="async"
+                fetchPriority="high"
+                className="absolute inset-0 h-full w-full object-cover object-center"
+              />
               <video
                 ref={videoRef}
                 src={HERO_VIDEO}
@@ -272,7 +282,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
         >
-          <p className="home-hero-eyebrow">Events <span>·</span> Studio <span>·</span> IT <span>·</span> Travels <span>·</span> Mart</p>
+          <p className="home-hero-eyebrow">Mahdev Group <span>·</span> Events <span>·</span> Studio <span>·</span> IT <span>·</span> Travels <span>·</span> Mart</p>
           <h1>
             <span>Creating moments.</span>
             <span><em>Capturing</em> memories.</span>

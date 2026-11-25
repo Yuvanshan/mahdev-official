@@ -10,7 +10,7 @@ interface ShopHomeProps {
   onNavigate: (route: string) => void;
 }
 
-const SLIDER_LIMIT = 14;
+const SLIDER_LIMIT = 8;
 
 // Flipkart-style storefront top of the home page: banner, then rows of deals, services and divisions.
 export const ShopHome: React.FC<ShopHomeProps> = ({ onNavigate }) => {
