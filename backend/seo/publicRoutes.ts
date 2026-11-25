@@ -7,7 +7,7 @@
  * the home page's head. The React app still takes over in the browser.
  */
 
-import { CANONICAL_SITE_ORIGIN, HOME_DESCRIPTION, SITE_NAME } from '../../shared/config/site.js';
+import { CANONICAL_SITE_ORIGIN, SITE_NAME } from '../../shared/config/site.js';
 import { DIVISION_SEO } from '../../shared/config/divisionSeo.js';
 import { getPageTitle } from '../../shared/config/pageTitles.js';
 import { withServiceArea } from '../../shared/config/itemSeo.js';
@@ -16,6 +16,7 @@ import { getFaqStructuredData, getSwsStructuredData, SWS_BUSINESS, SWS_PRIMARY_H
 import { getSiteFaqStructuredData, SITE_FAQS } from '../../shared/data/siteFaqs.js';
 import { U1_PRIMARY_HEADING, U1_SERVICE_AREA_SUMMARY, U1_SERVICE_HIGHLIGHTS } from '../../shared/data/u1LocalSeo.js';
 import { getCanonicalPublicUrl } from '../../shared/config/divisionSites.js';
+import { SWS_LANDING_PAGES } from '../../shared/data/swsLandingPages.js';
 import { COMPANY_INFO, OFFICE_LIST } from '../../shared/config/company.js';
 
 export const SITE_ORIGIN = CANONICAL_SITE_ORIGIN;
@@ -82,7 +83,7 @@ const ROUTES: RouteSeo[] = [
   {
     path: '/divisions',
     title: titleFor('/divisions'),
-    description: HOME_DESCRIPTION,
+    description: 'Mahdev Group is the parent company of five divisions in Sri Lanka: SWS Event Management, U1 Studio, Mahdev IT Solutions, Mahdev Travels and Mahdev Online Mart.',
     heading: 'Mahdev divisions',
     intro: 'Explore Mahdev Group’s specialist divisions and services, with additional divisions joining the group as it grows.',
   },
@@ -97,6 +98,25 @@ const ROUTES: RouteSeo[] = [
     intro: `${SWS_SERVICE_AREA_SUMMARY} ${SWS_BUSINESS.displayName}. Trincomalee: ${SWS_BUSINESS.trincomalee.full}. Colombo: ${SWS_BUSINESS.colombo.full}. Hotline / WhatsApp: ${SWS_BUSINESS.phoneDisplay}.`,
     structuredData: [...getSwsStructuredData(), getFaqStructuredData(), divisionBreadcrumb('sws')],
   },
+  ...SWS_LANDING_PAGES.map((page): RouteSeo => ({
+    path: `/sws/${page.slug}`,
+    siteName: 'SWS Event Management',
+    ogImage: '/assets/og/og-sws.jpg',
+    title: page.title,
+    description: page.description,
+    heading: page.heading,
+    intro: page.paragraphs[0],
+    articleContent: page.paragraphs.slice(1).map((text) => ({ text })),
+    structuredData: [{
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: SITE_NAME, item: `${SITE_ORIGIN}/` },
+        { '@type': 'ListItem', position: 2, name: DIVISION_SEO.sws.name, item: getCanonicalPublicUrl('/sws', SITE_ORIGIN) },
+        { '@type': 'ListItem', position: 3, name: page.heading, item: getCanonicalPublicUrl(`/sws/${page.slug}`, SITE_ORIGIN) },
+      ],
+    }],
+  })),
   {
     path: '/u1',
     ogImage: '/assets/og/og-u1.jpg',
@@ -221,7 +241,7 @@ const ROUTES: RouteSeo[] = [
   {
     path: '/contact',
     title: titleFor('/contact'),
-    description: 'Contact the Mahdev team for events, photography, IT solutions, travel and equipment enquiries. Call, WhatsApp or send a message.',
+    description: 'Contact Mahdev for events, photography, IT, travel and equipment enquiries. Call or WhatsApp 075 092 8078 in Trincomalee or Colombo, Sri Lanka.',
     heading: 'Contact Mahdev',
     intro: 'Send an enquiry to the Mahdev team and we will get back to you.',
     // Crawlable name, address and phone, kept identical to the Google Business Profile listing.

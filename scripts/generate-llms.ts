@@ -13,6 +13,7 @@ const [
   { SWS_BUSINESS, SWS_SERVICE_AREA_SUMMARY, SWS_SERVICE_HIGHLIGHTS },
   { DIVISION_SEO },
   { SITE_FAQS },
+  { SWS_LANDING_PAGES },
 ] = await Promise.all([
   import('../frontend/src/config/site.js'),
   import('../frontend/src/config/company.js'),
@@ -21,6 +22,7 @@ const [
   import('../frontend/src/data/swsLocalSeo.js'),
   import('../frontend/src/config/divisionSeo.js'),
   import('../frontend/src/data/siteFaqs.js'),
+  import('../frontend/src/data/swsLandingPages.js'),
 ]);
 
 const pages = [
@@ -32,6 +34,7 @@ const pages = [
   ['Contact', '/contact', 'Public contact and enquiry information.'],
   ['Careers', '/careers', 'Current job opportunities and applications.'],
   ['SWS Event Management', '/sws', 'SWS Events, an event planner in Trincomalee for wedding, birthday, cultural ceremony and corporate event decoration in Trincomalee, Colombo and nearby areas.'],
+  ...SWS_LANDING_PAGES.map((page) => [page.heading, `/sws/${page.slug}`, page.description] as const),
   ['U1 Studio', '/u1', 'Photography and cinema services in Sri Lanka.'],
   ['Mahdev IT Solutions', '/it', 'Software, web, mobile and cloud services.'],
   ['Mahdev Travels', '/travels', 'Travel planning and journeys across Sri Lanka.'],

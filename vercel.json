@@ -274,6 +274,10 @@
       "destination": "/:route/index.html"
     },
     {
+      "source": "/sws/:slug(wedding-decoration-trincomalee|wedding-decoration-colombo|beach-wedding-decoration-nilaveli|birthday-decoration-trincomalee|puberty-ceremony-decoration|cradle-ceremony-decoration|corporate-event-planner-colombo)",
+      "destination": "/sws/:slug/index.html"
+    },
+    {
       "source": "/gallery",
       "missing": [
         {

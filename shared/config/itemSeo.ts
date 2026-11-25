@@ -31,7 +31,7 @@ function truncateDescription(value: string, limit: number): string {
   const truncated = value.slice(0, limit - 1);
   const wordBoundary = truncated.lastIndexOf(' ');
   const prefix = wordBoundary >= limit * 0.6 ? truncated.slice(0, wordBoundary) : truncated;
-  return `${prefix.trimEnd()}…`;
+  return `${prefix.replace(/[\s,;:&-]+$/, '')}.`;
 }
 
 /** Description that names both branches and fits the search-result snippet limit. */
@@ -48,10 +48,10 @@ export function withServiceArea(description: string): string {
   }
 
   const suffix = `Serving ${SERVICE_AREA}.`;
-  const baseLimit = META_DESCRIPTION_LIMIT - suffix.length - 2;
-  const shortened = truncateDescription(base, baseLimit);
-  const separator = /[.!?…]$/.test(shortened) ? ' ' : '. ';
-  return `${shortened}${separator}${suffix}`;
+  const separator = /[.!?]$/.test(base) ? ' ' : '. ';
+  const full = `${base}${separator}${suffix}`;
+  // A clipped description never gets the suffix after it (it read "for wedding and… Serving...").
+  return full.length <= META_DESCRIPTION_LIMIT ? full : truncateDescription(base, META_DESCRIPTION_LIMIT);
 }
 
 const divisionName = (record: ItemRecord) => {

@@ -13,12 +13,14 @@ import {
   DIVISION_SITE_IDS,
   getCanonicalPublicUrl,
 } from '../../../shared/config/divisionSites.js';
+import { SWS_LANDING_PAGES } from '../../../shared/data/swsLandingPages.js';
 import { getRequestSiteOrigin } from '../../seo/requestOrigin.js';
 
 const STATIC_PUBLIC_PATHS = [
   '/',
   '/divisions',
   '/sws',
+  ...SWS_LANDING_PAGES.map((page) => `/sws/${page.slug}`),
   '/u1',
   '/it',
   '/travels',
@@ -277,17 +279,6 @@ export function buildSitemapXml(
       .flatMap(divisionPaths)
       .filter((path) => !liveDivisionPaths.has(path))
   );
-  const excludedPaths = new Set(
-    Array.isArray(content.seoConfig?.data.configs)
-      ? content.seoConfig.data.configs.flatMap((config) => {
-          if (!config || typeof config !== 'object') return [];
-          const record = config as Record<string, unknown>;
-          if (record.allowIndexing !== false || typeof record.route !== 'string') return [];
-          const path = record.route.startsWith('/') ? record.route : `/${record.route}`;
-          return /^\/[a-z0-9_-]+(?:\/[a-z0-9_-]+)*$/.test(path) ? [path] : [];
-        })
-      : []
-  );
   const sharedImages = [
     content.homepage,
     content.siteSettings,
@@ -305,8 +296,7 @@ export function buildSitemapXml(
   const entries = new Map<string, string>(
     STATIC_PUBLIC_PATHS
       .filter((path) =>
-        !excludedPaths.has(path) &&
-          (!inactiveDivisionPaths.has(path) ||
+        (!inactiveDivisionPaths.has(path) ||
             DIVISION_SITE_IDS.some((id) => path === `/${id}`)) &&
           isPublicPath(path)
       )
@@ -315,6 +305,8 @@ export function buildSitemapXml(
         entry(path, origin, null, [
           ...(path === '/' ? sharedImages : []),
           ...(defaultDivisionImages.get(path) || []),
+          // The /sws city pages share the SWS share image, so it is listed for image search.
+          ...(path.startsWith('/sws/') ? [`${origin}/assets/og/og-sws.jpg`] : []),
         ]),
       ])
   );
@@ -422,9 +414,7 @@ export function buildSitemapXml(
   ];
 
   for (const [path, item] of dynamicEntries) {
-    if (!excludedPaths.has(path.split(/[?#]/, 1)[0])) {
-      entries.set(path, mergeEntries(entries.get(path), item));
-    }
+    entries.set(path, mergeEntries(entries.get(path), item));
   }
 
   return [

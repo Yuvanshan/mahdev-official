@@ -18,7 +18,7 @@ export const DIVISION_SEO = {
     name: 'SWS Event Management',
     title: 'SWS Event Management | Event Planner in Trincomalee & Colombo',
     description:
-      'SWS Event Management is an event planner and event management company in Trincomalee, Sri Lanka, for wedding and birthday decoration, cultural ceremonies, corporate events and rentals in Trincomalee, Nilaveli, Uppuveli and Colombo. Call or WhatsApp 075 092 8078.',
+      'Wedding, birthday, cradle, puberty ceremony and corporate decoration in Trincomalee, Nilaveli and Colombo. Call 075 092 8078 for a quote.',
   },
   u1: {
     name: 'U1 Studio',

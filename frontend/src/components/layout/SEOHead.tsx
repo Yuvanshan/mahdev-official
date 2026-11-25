@@ -160,7 +160,6 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     const shareImage = divisionShareImage || siteSettings?.ogImageUrl || '/assets/og/og-default.jpg';
     let effectiveOgImage = shareImage.startsWith('/') ? `${activeSiteOrigin}${shareImage}` : shareImage;
     let effectiveKeywords = keywords;
-    let allowIndexing = true;
     const matched = isItemUrl ? undefined : seoConfigs.find(
       (config) => config.route === currentPath ||
         (config.canonicalUrl && canonicalUrl && config.canonicalUrl.includes(currentPath))
@@ -171,7 +170,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
       if (matched.description) effectiveDesc = matched.description;
       if (matched.ogImage) effectiveOgImage = matched.ogImage;
       if (matched.canonicalUrl) effectiveCanonical = matched.canonicalUrl;
-      if (matched.allowIndexing === false) allowIndexing = false;
+      // Admin "allow indexing" toggles are ignored on purpose: every public page stays indexable.
       if (matched.keywords) {
         effectiveKeywords = Array.isArray(matched.keywords)
           ? matched.keywords
@@ -184,7 +183,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     if (currentPath === '/') {
       effectiveTitle =
         routeTitle || HOME_TITLE;
-      const requiredDescriptionTerms = ['mahdev', 'parent company', 'divisions'];
+      const requiredDescriptionTerms = ['mahdev', 'trincomalee', 'colombo'];
       if (!requiredDescriptionTerms.every((term) => effectiveDesc.toLowerCase().includes(term))) {
         effectiveDesc =
           HOME_DESCRIPTION;
@@ -233,7 +232,7 @@ export const SEOHead: React.FC<SEOMetaData> = ({
     const isPrivateRoute = privateRoutePrefixes.some(
       (prefix) => currentPath === prefix || currentPath.startsWith(`${prefix}/`)
     );
-    const canIndexPage = IS_PRODUCTION_DEPLOYMENT && !noIndex && !isPrivateRoute && allowIndexing;
+    const canIndexPage = IS_PRODUCTION_DEPLOYMENT && !noIndex && !isPrivateRoute;
 
     // Helper to safely update or create meta tags
     const setMetaTag = (attr: string, key: string, content: string) => {

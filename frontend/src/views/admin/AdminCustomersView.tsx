@@ -37,6 +37,13 @@ import { AdminModal } from '../../components/admin/AdminModal';
 import { AdminConfirmDialog } from '../../components/admin/AdminConfirmDialog';
 import { formatCurrency } from '../../utils/currency';
 
+/** Date text for the customer details card; returns the raw text when it is not a valid date. */
+const formatDetailDate = (value?: string) => {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
 export const AdminCustomersView: React.FC = () => {
   const [customers, setCustomers] = useState<CustomerUser[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -441,6 +448,26 @@ export const AdminCustomersView: React.FC = () => {
                         </span>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Identity details: shown to any signed-in admin, no extra password step. */}
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2.5 md:col-span-2">
+                    <span className="font-bold text-slate-900 text-xs block pb-1 border-b border-slate-200">
+                      Identity & Personal Details
+                    </span>
+                    {[
+                      ['NIC Number', selectedCustomer.nic],
+                      ['Gender', selectedCustomer.gender ? selectedCustomer.gender.charAt(0).toUpperCase() + selectedCustomer.gender.slice(1) : ''],
+                      ['Date of Birth', formatDetailDate(selectedCustomer.dateOfBirth)],
+                      ['Customer ID', selectedCustomer.customerCode || selectedCustomer.id],
+                      ['Member Since', formatDetailDate(selectedCustomer.createdAt)],
+                      ['Last Login', formatDetailDate(selectedCustomer.lastLogin)],
+                    ].map(([label, value]) => (
+                      <div key={label} className="flex justify-between">
+                        <span className="text-slate-500">{label}:</span>
+                        <span className="font-mono text-slate-900">{value || 'Not provided'}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>

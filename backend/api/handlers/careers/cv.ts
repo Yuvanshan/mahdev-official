@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { AdminSessionAuthError, requireAdminSession } from '../../../auth/adminCredentialAuth.js';
 import { initializeTursoDatabase, getTursoDocument } from '../../../db/tursoDatabase.js';
 import { readCareerCv, storeCareerCv } from '../../../services/media/adminMediaUpload.js';
+import { getClientIp } from '../../../security/rateLimit.js';
 
 const MAX_CV_BYTES = 10 * 1024 * 1024;
 const UPLOAD_WINDOW_MS = 10 * 60 * 1000;
@@ -34,10 +35,8 @@ async function readBody(request: IncomingMessage): Promise<Buffer> {
 }
 
 function checkUploadRateLimit(request: IncomingMessage): void {
-  const forwardedFor = request.headers['x-forwarded-for'];
-  const clientKey = (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor)
-    ?.split(',')[0]
-    ?.trim() || request.socket.remoteAddress || 'unknown';
+  // Platform-set IP: a visitor can send any x-forwarded-for value, so it must not be the limit key.
+  const clientKey = getClientIp(request);
   const now = Date.now();
   for (const [key, attempt] of uploadAttempts) {
     if (attempt.resetAt <= now) uploadAttempts.delete(key);

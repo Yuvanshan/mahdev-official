@@ -28,6 +28,7 @@ import { IconRenderer } from '../components/ui/IconRenderer';
 import { SWSService, SWSPackage, SWSRentalItem } from '../data/swsData';
 import { DIVISION_SEO } from '../config/divisionSeo';
 import { SWS_TARGET_KEYWORDS } from '../data/swsLocalSeo';
+import { getSwsLandingPage, SWS_LANDING_PAGES } from '../data/swsLandingPages';
 import { CANONICAL_SITE_ORIGIN } from '../config/site';
 import { COMPANY_INFO, getTelLink } from '../config/company';
 import { useFirestoreDataContext } from '../context/FirestoreDataContext';
@@ -40,6 +41,8 @@ interface SWSViewProps {
 }
 
 export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
+  // /sws/<slug> is a service-and-city landing page: same page, its own title, canonical and intro.
+  const landing = getSwsLandingPage(window.location.pathname.replace(/\/+$/, '').split('/').pop() || '');
   const {
     companySettings,
     divisionLoadErrors,
@@ -152,11 +155,19 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
   return (
     <div className="division-experience public-editorial min-h-screen w-full flex flex-col bg-[#FAF6EF]">
       <SEOHead
-        title={DIVISION_SEO.sws.title}
-        description={DIVISION_SEO.sws.description}
-        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/sws`}
+        title={landing?.title ?? DIVISION_SEO.sws.title}
+        description={landing?.description ?? DIVISION_SEO.sws.description}
+        canonicalUrl={`${CANONICAL_SITE_ORIGIN}/sws${landing ? `/${landing.slug}` : ''}`}
         keywords={[...SWS_TARGET_KEYWORDS]}
       />
+      {landing && (
+        <section className="mx-auto w-full max-w-3xl px-[var(--page-gutter)] pt-28 pb-8">
+          <h2 className="font-display text-3xl font-bold text-slate-900 sm:text-4xl">{landing.heading}</h2>
+          {landing.paragraphs.map((text) => (
+            <p key={text} className="mt-4 leading-7 text-slate-700">{text}</p>
+          ))}
+        </section>
+      )}
 
       {/* 1. SWS CINEMATIC HERO SECTION */}
       <SWSHeroSection
@@ -206,6 +217,19 @@ export const SWSView: React.FC<SWSViewProps> = ({ onNavigate }) => {
         <SWSPackagesSection onBookPackage={handleBookPackage} />
 
         <SWSPortfolioSection onConsultationClick={() => handleBookNow()} />
+
+        <nav aria-label="SWS services by place" className="mx-auto w-full max-w-7xl px-[var(--page-gutter)] py-8">
+          <h2 className="text-xl font-semibold text-slate-900">SWS services by place and occasion</h2>
+          <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
+            {SWS_LANDING_PAGES.filter((page) => page.slug !== landing?.slug).map((page) => (
+              <li key={page.slug}>
+                <a href={`/sws/${page.slug}`} onClick={(event) => { event.preventDefault(); onNavigate(`/sws/${page.slug}`); }} className="text-blue-700 underline">
+                  {page.heading}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
         {/* Local search: service keywords, exact business address/phone, map and FAQ. */}
         <SWSLocalSection />

@@ -33,8 +33,10 @@ const DISALLOWED_PATHS = [
 
 // Search and AI answer engines may read the public pages (SEO, AEO, GEO).
 const AI_CRAWLERS = [
-  'GPTBot', 'ChatGPT-User', 'OAI-SearchBot', 'ClaudeBot', 'Claude-User', 'Claude-SearchBot',
-  'PerplexityBot', 'Perplexity-User', 'Google-Extended', 'Applebot-Extended', 'Bingbot',
+  'Googlebot', 'Googlebot-Image', 'Bingbot', 'Applebot', 'DuckDuckBot', 'YandexBot',
+  'GPTBot', 'ChatGPT-User', 'OAI-SearchBot', 'ClaudeBot', 'Claude-User', 'Claude-SearchBot', 'anthropic-ai',
+  'PerplexityBot', 'Perplexity-User', 'Google-Extended', 'Applebot-Extended', 'Amazonbot',
+  'Meta-ExternalAgent', 'FacebookBot', 'CCBot', 'cohere-ai', 'MistralAI-User', 'DuckAssistBot', 'YouBot', 'Bytespider',
 ];
 
 export function buildRobotsTxt(origin: string): string {
