@@ -93,7 +93,7 @@ export class TranslationService {
     const missHashes = [...byHash.keys()].filter((hash) => !cached.has(hash));
     if (missHashes.length === 0) return result;
     if (!this.deps.provider) {
-      this.deps.warn?.('[Translate] GEMINI_API_KEY is not set; returning English for uncached text.');
+      this.deps.warn?.('[Translate] Provider is off (TRANSLATE_ENABLED is not true or GEMINI_API_KEY is not set); returning English for uncached text.');
       return result;
     }
     if (this.deps.reserveMisses && !(await this.safeReserve(missHashes.length))) {
