@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { firestoreFaqsService } from '../services/firestore/faqs';
 import { SITE_FAQS } from '../data/siteFaqs';
 import { SWS_FAQS } from '../../../shared/data/swsLocalSeo';
+import { useI18n } from '../i18n/I18nContext';
+import { localizeRecord } from '../i18n/localizeData';
 
 export interface PageFaq {
   question: string;
@@ -16,6 +18,7 @@ export interface PageFaq {
  * questions remain first and take precedence over matching defaults.
  */
 export function usePageFaqs(page: string): PageFaq[] {
+  const { lang } = useI18n();
   const [faqs, setFaqs] = useState<PageFaq[]>(() => [...(page === 'sws' ? SWS_FAQS : SITE_FAQS)]);
 
   useEffect(() => {
@@ -28,7 +31,11 @@ export function usePageFaqs(page: string): PageFaq[] {
           : all.filter((faq) => (faq.pages || []).includes(page));
         const publishedFaqs = pageFaqs
           .filter((faq) => faq.isActive !== false)
-          .map((faq) => ({ question: faq.question, answer: faq.answer }));
+          .map((faq) => {
+            // Stored Tamil or Sinhala text for the admin-managed FAQ (English when none).
+            const shown = lang === 'en' ? faq : localizeRecord('faqs', faq, lang);
+            return { question: shown.question, answer: shown.answer };
+          });
         const normalizeQuestion = (question: string) => question.trim().toLocaleLowerCase();
         const configuredQuestions = new Set(pageFaqs.map((faq) => normalizeQuestion(faq.question)));
         const visibleQuestions = new Set(publishedFaqs.map((faq) => normalizeQuestion(faq.question)));
@@ -52,7 +59,7 @@ export function usePageFaqs(page: string): PageFaq[] {
     return () => {
       active = false;
     };
-  }, [page]);
+  }, [page, lang]);
 
   return faqs;
 }

@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* The legacy dark: utilities target the OS setting and were written for a slate-800/900 dark UI.
+   They are switched off; dark mode is handled by theme-dark.css via data-theme. */
+@custom-variant dark (&:where([data-legacy-dark], [data-legacy-dark] *));
+
 @font-face {
   font-family: "Plus Jakarta Sans";
   font-style: normal;

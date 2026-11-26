@@ -189,6 +189,16 @@ export async function ensureCollectionTable(collectionPath: string): Promise<str
   return initialization;
 }
 
+/** Cache of machine translations, one row per (sha-256 of trimmed English text, language). */
+export const TRANSLATION_CACHE_TABLE_SQL = `CREATE TABLE IF NOT EXISTS translation_cache (
+  hash TEXT NOT NULL,
+  lang TEXT NOT NULL,
+  source TEXT NOT NULL,
+  translated TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (hash, lang)
+)`;
+
 export function initializeTursoDatabase(): Promise<void> {
   if (databaseInitialization) return databaseInitialization;
 
@@ -210,6 +220,7 @@ export function initializeTursoDatabase(): Promise<void> {
     {
       sql: 'INSERT OR IGNORE INTO turso_migrations (version) VALUES (1)',
     },
+    { sql: TRANSLATION_CACHE_TABLE_SQL },
   ];
   for (const collection of CORE_COLLECTIONS) {
     const tableName = tableNameFor(collection);
@@ -542,7 +553,7 @@ export async function listTursoCollections(
   ]));
 }
 
-function mergeData(
+export function mergeData(
   existing: Record<string, unknown>,
   incoming: Record<string, unknown>
 ): Record<string, unknown> {

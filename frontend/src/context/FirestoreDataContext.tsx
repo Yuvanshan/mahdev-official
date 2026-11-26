@@ -54,6 +54,9 @@ import { bookingService } from '../services/bookingService';
 import { resolveMediaUrl, preloadVideo } from '../services/firestoreMediaService';
 import { mediaService, StoredMediaItem } from '../services/firestore/media';
 import { getPublishedCareerOpenings } from '../services/careerService';
+import { useI18n } from '../i18n/I18nContext';
+import type { TranslatedLang } from '../i18n/languages';
+import { localizeList, localizeRecord } from '../i18n/localizeData';
 
 const DEVICE_CACHE_REQUIRED_KEYS = [
   'mahdev_cached_company_settings',
@@ -315,7 +318,30 @@ export interface FirestoreDataContextValue {
   isLiveHydrated: boolean;
 }
 
+// Two views of the same data. Public pages read the localised one (Tamil or Sinhala text
+// for admin-managed content). The admin portal reads the original English records,
+// because admins must edit English and a save must never write translated text back.
 const FirestoreDataContext = createContext<FirestoreDataContextValue | null>(null);
+const OriginalFirestoreDataContext = createContext<FirestoreDataContextValue | null>(null);
+
+function localizeValue(value: FirestoreDataContextValue, lang: TranslatedLang): FirestoreDataContextValue {
+  return {
+    ...value,
+    companySettings: localizeRecord('settings/company', value.companySettings, lang),
+    siteSettings: localizeRecord('settings/site', value.siteSettings, lang),
+    homepageConfig: localizeRecord('settings/homepage', value.homepageConfig, lang),
+    divisions: localizeList('divisions', value.divisions, lang),
+    activeDivisions: localizeList('divisions', value.activeDivisions, lang),
+    categories: localizeList('categories', value.categories, lang),
+    services: localizeList('services', value.services, lang),
+    products: localizeList('products', value.products, lang),
+    milestones: localizeList('milestones', value.milestones, lang),
+    trustedCompanies: localizeList('trustedCompanies', value.trustedCompanies, lang),
+    testimonials: localizeList('testimonials', value.testimonials, lang),
+    portfolio: localizeList('portfolio', value.portfolio, lang),
+    gallery: localizeList('gallery', value.gallery, lang),
+  };
+}
 
 export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const hasCachedData = useMemo(prepareDeviceCache, []);
@@ -1715,7 +1741,7 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
   const orderedProducts = useMemo(() => newestListedFirst(products), [products]);
   const orderedGallery = useMemo(() => newestListedFirst(gallery), [gallery]);
 
-  const value = useMemo<FirestoreDataContextValue>(
+  const originalValue = useMemo<FirestoreDataContextValue>(
     () => ({
       isInitialLoading,
       isReady,
@@ -1830,7 +1856,23 @@ export const FirestoreDataProvider: React.FC<{ children: React.ReactNode }> = ({
     ]
   );
 
-  return <FirestoreDataContext.Provider value={value}>{children}</FirestoreDataContext.Provider>;
+  const { lang } = useI18n();
+  const localizedValue = useMemo(
+    () => (lang === 'en' ? originalValue : localizeValue(originalValue, lang)),
+    [originalValue, lang]
+  );
+
+  return (
+    <OriginalFirestoreDataContext.Provider value={originalValue}>
+      <FirestoreDataContext.Provider value={localizedValue}>{children}</FirestoreDataContext.Provider>
+    </OriginalFirestoreDataContext.Provider>
+  );
+};
+
+/** Wrap the admin portal in this so every admin screen reads the original English records. */
+export const AdminOriginalDataScope: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const original = useContext(OriginalFirestoreDataContext);
+  return <FirestoreDataContext.Provider value={original}>{children}</FirestoreDataContext.Provider>;
 };
 
 export const useFirestoreDataContext = (): FirestoreDataContextValue => {

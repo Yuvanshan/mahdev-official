@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Heart, Search, SlidersHorizontal } from 'lucide-react';
+import { LanguageSwitcher } from '../ui/LanguageSwitcher';
+import { ThemeToggle } from '../ui/ThemeToggle';
 import { reportSearch } from '../../services/searchHistoryService';
 import { clearSearches, getRecentSearches, recordSearch, recordView } from '../../utils/usageProfile';
 import { useWishlist } from '../../context/WishlistContext';
@@ -171,6 +173,11 @@ export const ShopSubheader: React.FC<ShopSubheaderProps> = ({ onNavigate }) => {
             </span>
           )}
         </button>
+        {/* Language and theme for tablets and small laptops, where the main header has no room. */}
+        <div className="hidden min-[900px]:flex min-[1440px]:hidden shrink-0 items-center gap-2">
+          <LanguageSwitcher />
+          <ThemeToggle className="rounded-sm border-slate-300 bg-white text-slate-700" />
+        </div>
         </div>
         {showFilters && (
           <div className="flex flex-wrap items-end gap-3 rounded-sm border border-slate-200 bg-slate-50 p-3 text-sm">

@@ -16,7 +16,7 @@ import { SeasonalThemeProvider } from './context/SeasonalThemeContext';
 import { SeasonalOverlay } from './components/seasonal/SeasonalOverlay';
 import { SeasonalWishesPopup } from './components/seasonal/SeasonalWishesPopup';
 import { AdminAuthProvider, useAdminAuth } from './context/AdminAuthContext';
-import { FirestoreDataProvider, useFirestoreDataContext } from './context/FirestoreDataContext';
+import { AdminOriginalDataScope, FirestoreDataProvider, useFirestoreDataContext } from './context/FirestoreDataContext';
 import { CartDrawer } from './components/cart/CartDrawer';
 import { ShopSubheader } from './components/shop/ShopSubheader';
 import { AnnouncementBanner } from './components/layout/AnnouncementBanner';
@@ -712,7 +712,9 @@ function AppContent() {
   if (isAdminRoute) {
     return (
       <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
-        <AdminLayout currentPath={normalizedPath} onNavigate={navigate} />
+        <AdminOriginalDataScope>
+          <AdminLayout currentPath={normalizedPath} onNavigate={navigate} />
+        </AdminOriginalDataScope>
       </Suspense>
     );
   }

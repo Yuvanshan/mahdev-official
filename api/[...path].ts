@@ -7,6 +7,8 @@ import careerCvHandler from '../backend/api/handlers/careers/cv.js';
 import careerStatusHandler from '../backend/api/handlers/careers/status.js';
 import productReviewsHandler from '../backend/api/handlers/productReviews.js';
 import searchHistoryHandler from '../backend/api/handlers/searchHistory.js';
+import translateHandler from '../backend/api/handlers/translate.js';
+import adminTranslateBackfillHandler from '../backend/api/handlers/admin/translateBackfill.js';
 import bookingSlipHandler from '../backend/api/handlers/bookingSlip.js';
 import adminLoginHandler from '../backend/api/handlers/admin/auth/login.js';
 import adminLogoutHandler from '../backend/api/handlers/admin/auth/logout.js';
@@ -119,7 +121,7 @@ function isBrowserPageRequest(req: ApiRequest): boolean {
 // Data APIs used only by the website itself.
 // Images under /api/public/media/ stay public so link previews and image search work.
 // '/api/account/check' reveals whether an account exists, so only this site's pages may ask.
-const SITE_ONLY_API_PREFIXES = ['/api/google-reviews', '/api/public/snapshot', '/api/database', '/api/data/', '/api/analytics', '/api/account/check', '/api/account/recovery', '/api/product-reviews', '/api/search-history'];
+const SITE_ONLY_API_PREFIXES = ['/api/google-reviews', '/api/public/snapshot', '/api/database', '/api/data/', '/api/analytics', '/api/account/check', '/api/account/recovery', '/api/product-reviews', '/api/search-history', '/api/translate'];
 
 
 export default async function handler(req: ApiRequest, res: ServerResponse): Promise<void> {
@@ -236,6 +238,14 @@ export default async function handler(req: ApiRequest, res: ServerResponse): Pro
   }
   if (pathname === '/api/search-history') {
     await searchHistoryHandler(req, res);
+    return;
+  }
+  if (pathname === '/api/translate') {
+    await translateHandler(req, res);
+    return;
+  }
+  if (pathname === '/api/admin/translate-backfill') {
+    await adminTranslateBackfillHandler(req, res);
     return;
   }
   if (pathname === '/api/careers/status') {

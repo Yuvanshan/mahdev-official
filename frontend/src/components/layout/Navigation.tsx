@@ -25,6 +25,8 @@ import {
 import { AnimatePresence, motion } from 'motion/react';
 import { createPortal } from 'react-dom';
 import { BrandLogo } from './BrandLogo';
+import { LanguageSwitcher } from '../ui/LanguageSwitcher';
+import { ThemeToggle } from '../ui/ThemeToggle';
 import { MAIN_NAV_ITEMS as ALL_NAV_ITEMS } from '../../config/navigation';
 import { DIVISION_SITE_IDS, getDivisionSiteHref, type DivisionSiteId } from '../../config/divisionSites';
 
@@ -530,6 +532,14 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
 
             {/* Right: Phone Hotline, WhatsApp & Mobile Hamburger Toggle */}
             <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+              {/* Language and theme: here on very wide screens only. Between 900px and 1439px the
+                  header is full, so they sit in the search row below it (ShopSubheader); on phones
+                  they are at the top of the mobile menu. */}
+              <div className="hidden min-[1440px]:flex items-center gap-2">
+                <LanguageSwitcher />
+                <ThemeToggle className="border-slate-200 bg-white text-slate-800 shadow-2xs" />
+              </div>
+
               {/* Phone Hotline Link */}
               <a
                 href={getTelLink(primaryPhone)}
@@ -718,6 +728,12 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPath, onNavigate,
                     </button>
                   </div>
                   <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 py-5 pb-[max(2.5rem,env(safe-area-inset-bottom))]">
+            {/* Language and theme */}
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher variant="segmented" className="min-w-0 flex-1" />
+              <ThemeToggle className="border-slate-200 bg-white text-slate-800 shadow-2xs" />
+            </div>
+
             {/* Account */}
             {!isAuthLoading && (
               isAuthenticated && user ? (

@@ -195,6 +195,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
 
   return (
     <div
+      data-no-translate
       onClick={onClick}
       className={`inline-flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none group shrink-0 ${className}`}
       role="banner"

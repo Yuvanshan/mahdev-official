@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MessageCircle, MapPin, ArrowRight, Shield, FileText, Check, ExternalLink, Globe } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
+import { LanguageSwitcher } from '../ui/LanguageSwitcher';
+import { ThemeToggle } from '../ui/ThemeToggle';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Modal } from '../ui/Modal';
@@ -239,10 +241,14 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, currentPath, divisio
           </div>
 
           {/* Bottom Bar: Clean Copyright */}
-          <div className="mt-12 flex items-center justify-center border-t pt-6 text-center text-xs text-slate-500 sm:mt-16 sm:pt-8">
+          <div className="mt-12 flex flex-col items-center justify-center gap-4 border-t pt-6 text-center text-xs text-slate-500 sm:mt-16 sm:flex-row sm:justify-between sm:pt-8">
             <span>
               © 2026 Mahdev Private Limited. All rights reserved.
             </span>
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher variant="segmented" className="w-56" />
+              <ThemeToggle className="border-slate-200 bg-white text-slate-800" />
+            </div>
           </div>
         </div>
       </footer>

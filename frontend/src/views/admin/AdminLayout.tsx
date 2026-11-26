@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import {
   LayoutDashboard,
   Building2,
@@ -490,8 +491,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, onNavigat
             </div>
           </div>
 
-          {/* Top Bar Right Tools */}
+          {/* Top Bar Right Tools (admin stays English: theme switch only, no language switch) */}
           <div className="flex items-center gap-3">
+            <ThemeToggle className="h-9 w-9 border-slate-200 bg-white text-slate-700" />
             <AdminNotificationCenter onNavigate={(path) => {
               if (isAdminPortalPath(path)) {
                 const canonicalPath = canonicalizeAdminPath(path).split('?')[0];

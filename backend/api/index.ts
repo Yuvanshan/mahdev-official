@@ -33,6 +33,8 @@ import adminLogoutHandler from './handlers/admin/auth/logout.js';
 import seasonalThemeHandler from './handlers/seasonalTheme.js';
 import productReviewsHandler from './handlers/productReviews.js';
 import searchHistoryHandler from './handlers/searchHistory.js';
+import translateHandler from './handlers/translate.js';
+import adminTranslateBackfillHandler from './handlers/admin/translateBackfill.js';
 
 const apiRouter = Router();
 
@@ -82,6 +84,21 @@ apiRouter.all('/search-history', async (req: Request, res: Response) => {
     return;
   }
   await searchHistoryHandler(req, res);
+});
+
+// Public English -> Tamil/Sinhala translation of UI text (cached, rate limited, capped per day).
+apiRouter.post('/translate', async (req: Request, res: Response) => {
+  // Only this website's own pages may call it (protects the translation budget).
+  if (!isFromThisSite(req)) {
+    res.status(404).json({ success: false, error: 'Not found.' });
+    return;
+  }
+  await translateHandler(req, res);
+});
+
+// Admin: translate existing records that have no translations yet, one page per call.
+apiRouter.post('/admin/translate-backfill', async (req: Request, res: Response) => {
+  await adminTranslateBackfillHandler(req, res);
 });
 
 // Bank transfer slips: the customer uploads (raw file body), the admin views.

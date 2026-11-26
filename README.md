@@ -80,6 +80,18 @@ Frontend CI and backend CI are separate reusable workflows under `.github/workfl
 
 ---
 
+## 🌍 Languages (English, Tamil, Sinhala)
+
+The public site is English by default. Visitors can switch to Tamil (`ta`) or Sinhala (`si`) with the language button (header, mobile menu and footer). The choice is kept in `localStorage` (`mahdev_lang`). Server-rendered HTML and crawlers always get English, and the admin portal always stays English.
+
+How text is translated (code in `frontend/src/i18n/`):
+
+1. **Admin content** (services, products, divisions, FAQs, homepage text and so on): when an admin saves, the server translates the fields listed in `shared/config/translatableFields.ts` and stores them on the record (`translations.ta`, `translations.si`). This needs `GEMINI_API_KEY`. The public site shows the stored text through `applyTranslations`; a field with no translation stays English.
+2. **Fixed interface text**: a DOM translator (`domTranslator.ts`) changes the text of the page in place, so no component needs editing. It looks each string up in the bundled dictionaries `dictionaries/ta.ts` and `si.ts`, then in the cache of earlier results, and last asks `POST /api/translate` for unknown strings. If that fails the English text stays.
+3. Text inside `data-no-translate`, code, numbers, emails, links and the brand name is never translated. Pages with personal data (`/account`, `/checkout`, `/login`, `/register`) use the dictionaries only and send nothing to the server.
+
+To add or fix a string: copy the exact English text into a new key in both `dictionaries/ta.ts` and `dictionaries/si.ts` (the values should be reviewed by a native speaker). Keep both dictionaries on the same keys. For text in your own component that should stay English, add `data-no-translate` to its element.
+
 ## 🚀 Getting Started (Local Development)
 
 ### Prerequisites

@@ -28,7 +28,9 @@ This document outlines the environment configuration architecture for the **Mahd
 | `APP_URL` | Server | Standard | Canonical base URL | `https://mahdev.lk` |
 | `VITE_APP_URL` | Client | Public | Public origin URL for redirects | `https://mahdev.lk` |
 | `VITE_SITE_URL` | Client + Server | Public | Corporate site's public origin; drives the main site's canonical URLs and SEO metadata. Set to `https://mahdev.lk` after the domain is connected. | `https://mahdev-official.vercel.app` (default when unset) |
-| `GEMINI_API_KEY` | Server | **Confidential** | Google Gemini AI processing | Injected by AI Studio |
+| `GEMINI_API_KEY` | Server | **Confidential** | Google Gemini key used for automatic English to Tamil/Sinhala translation (admin saves, `POST /api/translate`, backfill). Set it in Vercel (Production and Preview). Without it the site keeps showing English and admin saves are marked `translationsPending`. Never expose to the client. | Set in Vercel |
+| `TRANSLATE_DAILY_MISS_LIMIT` | Server | Standard | Optional. Most new (uncached) texts the public `/api/translate` endpoint may send to Gemini per UTC day. Cached texts do not count. Admin saves are not capped. | `2000` (default) |
+| `TRANSLATE_MODEL` | Server | Standard | Optional. Gemini model used for translation. | `gemini-2.5-flash` (default) |
 | `TURSO_DATABASE_URL` | Server | Standard | Connection URL for the existing Turso database | Set the URL from the chosen environment |
 | `TURSO_AUTH_TOKEN` | Server | **Confidential** | Authentication token for the Turso database | Generated in the Turso dashboard |
 | `TURSO_DATABASE_NAME` | Server | Standard | Exact database name allowed by the URL validator; prevents accidentally connecting to a different database | Set to the existing database name |

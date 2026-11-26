@@ -1,7 +1,10 @@
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { ThemeProvider } from './context/ThemeContext';
+import { I18nProvider } from './i18n/I18nContext';
 import './index.css';
+import './theme-dark.css';
 
 // After a new deployment, a tab opened on the previous build still asks for that
 // build's chunk files, which no longer exist (404). Reload once to pick up the
@@ -22,7 +25,11 @@ window.addEventListener('vite:preloadError', (event) => {
 
 createRoot(document.getElementById('root')!).render(
   <ErrorBoundary>
-    <App />
+    <ThemeProvider>
+      <I18nProvider>
+        <App />
+      </I18nProvider>
+    </ThemeProvider>
   </ErrorBoundary>,
 );
 

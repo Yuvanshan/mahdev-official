@@ -25,6 +25,8 @@ import {
   verifyFirebaseIdToken,
 } from '../auth/firebaseIdToken.js';
 import { normaliseInternationalPhone, parseNic } from '../../shared/domain/sriLankaIdentity.js';
+import { addTranslationsToWrites } from '../services/translation/adminWriteTranslation.js';
+import { getAdminTranslationService } from '../services/translation/index.js';
 
 export interface DatabaseAccess {
   role: 'admin' | 'customer' | 'public';
@@ -1050,6 +1052,14 @@ function parseWrite(value: unknown): TursoWrite {
   };
 }
 
+/** Adds ta/si translations to admin writes of CMS collections. Never blocks or fails a save. */
+function translateAdminWrites(writes: TursoWrite[]): Promise<TursoWrite[]> {
+  return addTranslationsToWrites(writes, {
+    service: getAdminTranslationService(),
+    loadExisting: (write) => getTursoDocument(write.collection, write.parentPath, write.id),
+  });
+}
+
 export async function handleTursoAction(
   input: unknown,
   access: DatabaseAccess = { role: 'admin' }
@@ -1079,6 +1089,8 @@ export async function handleTursoAction(
       ) {
         write = await preparePublicWrite(write);
       }
+      // Admin saves of CMS text get Tamil/Sinhala translations stored with the record.
+      if (access.role === 'admin') [write] = await translateAdminWrites([write]);
       await writeTursoDocument(write);
       // A customer's own profile write returns the identity read from their NIC, so the
       // browser does not need a second request to show date of birth and gender.
@@ -1103,7 +1115,8 @@ export async function handleTursoAction(
     }
     if (action === 'batch') {
       if (!Array.isArray(body.writes)) throw new Error('Batch writes must be an array.');
-      await writeTursoBatch(body.writes.map(parseWrite));
+      const batch = body.writes.map(parseWrite);
+      await writeTursoBatch(access.role === 'admin' ? await translateAdminWrites(batch) : batch);
       return { status: 200, body: { success: true } };
     }
     if (action === 'multiRead') {
