@@ -115,8 +115,10 @@ export class TranslationService {
           }
         });
       } catch (error) {
-        // Short, non-secret message only; texts could be personal so they are never logged.
-        this.deps.warn?.(`[Translate] Provider failed (${lang}): ${error instanceof Error ? error.name : 'error'}`);
+        // Name, HTTP status and a short message only; texts could be personal so they are never logged.
+        const status = (error as { status?: number } | null)?.status;
+        const detail = error instanceof Error ? `${error.name}${status ? ` ${status}` : ''}: ${error.message.slice(0, 200)}` : 'error';
+        this.deps.warn?.(`[Translate] Provider failed (${lang}): ${detail}`);
       }
     }));
 
