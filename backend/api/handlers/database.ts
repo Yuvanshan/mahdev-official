@@ -78,7 +78,8 @@ export async function handleTursoDatabaseRequest(
       Array.isArray(req.headers.cookie) ? req.headers.cookie[0] : req.headers.cookie,
       Array.isArray(req.headers.authorization)
         ? req.headers.authorization[0]
-        : req.headers.authorization
+        : req.headers.authorization,
+      req.headers['x-own-data'] === '1'
     );
   } catch (error) {
     const status = error instanceof AdminSessionAuthError || error instanceof FirebaseTokenError

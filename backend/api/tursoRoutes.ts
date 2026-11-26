@@ -354,7 +354,8 @@ export function requiresSuperAdminForDatabaseAction(input: unknown): boolean {
 export async function authorizeDatabaseAction(
   input: unknown,
   cookieHeader: string | undefined,
-  authorizationHeader?: string
+  authorizationHeader?: string,
+  ownDataOnly = false
 ): Promise<DatabaseAccess> {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     throw new Error('Invalid database request.');
@@ -414,7 +415,13 @@ export async function authorizeDatabaseAction(
         PUBLIC_CREATE_COLLECTIONS.has(writeCollections[0]))
     ));
 
-  if (cookieHeader) {
+  // A signed-in customer's own-data read (account pages) is never widened by an admin cookie in the
+  // same browser: it must return only that customer's records. The flag can only narrow access.
+  const wantsOwnData = ownDataOnly && Boolean(authorizationHeader) &&
+    (body.action === 'get' || body.action === 'list') &&
+    [...collections].every((name) => CUSTOMER_OWNED_COLLECTIONS.has(name));
+
+  if (cookieHeader && !wantsOwnData) {
     try {
       const { user } = await requireAdminSession(cookieHeader);
       if (requiresSuperAdminForDatabaseAction(input) && user.role !== 'super_admin') {

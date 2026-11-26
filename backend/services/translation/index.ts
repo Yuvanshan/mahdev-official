@@ -24,8 +24,8 @@ async function reservePublicMisses(count: number): Promise<boolean> {
 }
 
 function createProvider(): GeminiTranslationProvider | null {
-  // Gemini is switched off until TRANSLATE_ENABLED=true (credits depleted). Cached translations still serve.
-  if (process.env.TRANSLATE_ENABLED !== 'true') return null;
+  // One switch for browser and server: Gemini is off until VITE_TRANSLATE_ENABLED=true. Cached translations still serve.
+  if (process.env.VITE_TRANSLATE_ENABLED !== 'true') return null;
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   return apiKey ? new GeminiTranslationProvider(apiKey, process.env.TRANSLATE_MODEL?.trim() || undefined) : null;
 }

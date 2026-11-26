@@ -356,6 +356,9 @@ async function request<T>(
     const currentUser = getAuth().currentUser;
     if (currentUser) {
       headers.Authorization = `Bearer ${await currentUser.getIdToken()}`;
+      // Outside the admin portal, reads of customer data return only the signed-in customer's own
+      // records, even if this browser also holds an admin session.
+      if (!isBrowserOnAdminPortal()) headers['X-Own-Data'] = '1';
     }
     const controller = new AbortController();
     const timeoutMs = getRequestTimeoutMs();

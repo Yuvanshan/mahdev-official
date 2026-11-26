@@ -10,6 +10,8 @@ import type { TranslatedLang } from './languages';
 import { MAX_TEXT_LENGTH } from './textRules';
 
 const ENDPOINT = '/api/translate';
+// Build-time switch: when off, the browser never calls the endpoint (cached text still shows).
+const TRANSLATE_ENABLED = import.meta.env.VITE_TRANSLATE_ENABLED === 'true';
 const MAX_TEXTS_PER_REQUEST = 60;
 const MAX_TOTAL_CHARS = 20000;
 const DEBOUNCE_MS = 400;
@@ -140,7 +142,7 @@ export function createTranslateClient(lang: TranslatedLang, fetcher: Fetcher = (
   return {
     get: (text) => cache.get(text),
     request(text) {
-      if (disposed || cache.has(text) || queued.has(text) || inFlight.has(text) || givenUp.has(text)) return;
+      if (!TRANSLATE_ENABLED || disposed || cache.has(text) || queued.has(text) || inFlight.has(text) || givenUp.has(text)) return;
       if (text.length > MAX_TEXT_LENGTH) return;
       queued.add(text);
       schedule(DEBOUNCE_MS);
